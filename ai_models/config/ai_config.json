@@ -1,0 +1,66 @@
+{
+  "openai": {
+    "model": "gpt-4-turbo-preview",
+    "temperature": 0.7,
+    "max_tokens": 4000,
+    "top_p": 0.95,
+    "frequency_penalty": 0.0,
+    "presence_penalty": 0.0
+  },
+  "anthropic": {
+    "model": "claude-3-opus-20240229",
+    "temperature": 0.7,
+    "max_tokens": 4000
+  },
+  "gemini": {
+    "model": "gemini-pro",
+    "temperature": 0.7,
+    "top_k": 40,
+    "top_p": 0.95
+  },
+  "default_provider": "openai",
+  "subject_preferences": {
+    "mathematics": {
+      "preferred_provider": "gemini",
+      "temperature": 0.3
+    },
+    "computer_science": {
+      "preferred_provider": "openai",
+      "temperature": 0.2
+    },
+    "english": {
+      "preferred_provider": "anthropic",
+      "temperature": 0.8
+    }
+  },
+  "assignment_type_settings": {
+    "problem_solving": {
+      "temperature": 0.3,
+      "max_tokens": 2000
+    },
+    "essay": {
+      "temperature": 0.8,
+      "max_tokens": 4000
+    },
+    "research": {
+      "temperature": 0.6,
+      "max_tokens": 4000
+    },
+    "code": {
+      "temperature": 0.2,
+      "max_tokens": 2000
+    }
+  },
+  "features": {
+    "plagiarism_detection": true,
+    "citation_generation": true,
+    "code_formatting": true,
+    "key_points_extraction": true
+  },
+  "retry_settings": {
+    "max_attempts": 3,
+    "initial_wait": 1,
+    "max_wait": 10,
+    "exponential_base": 2
+  }
+}

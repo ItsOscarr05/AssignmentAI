@@ -1,0 +1,41 @@
+version: "20240320_000000"
+name: "add_quantum_safe_crypto"
+description: "Add quantum-safe cryptography settings and update security configurations"
+created_at: "2024-03-20T00:00:00Z"
+changes:
+  add:
+    security.quantum_safe: true
+    security.post_quantum_algorithm: "CRYSTALS-Kyber"
+    security.hybrid_scheme: true
+  modify:
+    security.algorithm: "HS512"
+    security.access_token_expire_minutes: 30
+  remove:
+    - security.legacy_algorithm
+  deprecate:
+    - security.old_key_rotation
+environment_specific:
+  development:
+    security.quantum_safe: false
+    security.access_token_expire_minutes: 60
+  staging:
+    security.quantum_safe: true
+    security.access_token_expire_minutes: 45
+  production:
+    security.quantum_safe: true
+    security.access_token_expire_minutes: 30
+    security.key_rotation_days: 30
+validation_rules:
+  pre:
+    - type: "required"
+      field: "security.secret_key"
+    - type: "format"
+      field: "security.post_quantum_algorithm"
+      pattern: "^[A-Z0-9-]+$"
+  post:
+    - type: "range"
+      field: "security.access_token_expire_minutes"
+      min: 5
+      max: 120
+    - type: "required"
+      field: "security.quantum_safe"

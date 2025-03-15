@@ -1,0 +1,55 @@
+{
+  "max_file_size_mb": 50,
+  "supported_extensions": {
+    "text": [".txt", ".md", ".log"],
+    "pdf": [".pdf"],
+    "image": [".png", ".jpg", ".jpeg", ".gif", ".bmp"],
+    "word": [".doc", ".docx"],
+    "excel": [".xls", ".xlsx", ".csv"],
+    "html": [".html", ".htm"],
+    "code": [".py", ".js", ".java", ".cpp", ".c", ".cs", ".php", ".rb"]
+  },
+  "ocr": {
+    "enabled": true,
+    "language": "eng",
+    "psm": 3,
+    "dpi": 300,
+    "preprocessing": {
+      "resize": true,
+      "max_dimension": 4096,
+      "denoise": true,
+      "contrast_enhancement": true
+    }
+  },
+  "extraction": {
+    "max_pages": 50,
+    "timeout": 30,
+    "chunk_size": 4096,
+    "parallel_processing": true,
+    "max_workers": 4
+  },
+  "content_cleaning": {
+    "remove_special_chars": true,
+    "normalize_whitespace": true,
+    "remove_urls": false,
+    "remove_emails": false,
+    "preserve_equations": true,
+    "preserve_code_blocks": true
+  },
+  "security": {
+    "scan_for_malware": true,
+    "allowed_mime_types": [
+      "text/plain",
+      "application/pdf",
+      "image/jpeg",
+      "image/png",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "text/html"
+    ],
+    "max_zip_depth": 2,
+    "max_files_per_upload": 10
+  }
+}
