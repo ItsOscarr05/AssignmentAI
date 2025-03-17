@@ -79,6 +79,33 @@ class Settings(BaseSettings):
     docs_url: str = Field("/docs", description="Swagger docs URL")
     redoc_url: str = Field("/redoc", description="ReDoc URL")
     
+    # Cache settings
+    REDIS_URL: str = Field("redis://localhost:6379/0", description="Redis URL")
+    REDIS_HOST: str = Field("localhost", description="Redis host")
+    REDIS_PORT: int = Field(6379, description="Redis port")
+    REDIS_PASSWORD: Optional[str] = Field(None, description="Redis password")
+    REDIS_MAX_CONNECTIONS: int = Field(10, ge=1, le=100, description="Redis maximum connections")
+    BINARY_REDIS_URL: str = Field("redis://localhost:6379/1", description="Binary Redis URL")
+    CACHE_MAX_MEMORY_ITEMS: int = Field(10000, ge=100, le=100000, description="Redis maximum memory items")
+    LOCAL_CACHE_SIZE: int = Field(1000, ge=100, le=10000, description="Local cache size")
+    LOCAL_CACHE_TTL: int = Field(300, ge=60, le=1800, description="Local cache TTL in seconds")
+    
+    # Database
+    DATABASE_URL: str = Field("postgresql+asyncpg://user:password@localhost:5432/assignmentai", description="Database URL")
+    DB_MIN_CONNECTIONS: int = Field(5, ge=1, le=100, description="Database minimum connections")
+    DB_MAX_CONNECTIONS: int = Field(20, ge=5, le=100, description="Database maximum connections")
+    
+    # Security
+    SECRET_KEY: str = Field("your-secret-key", description="JWT secret key")
+    ALGORITHM: str = Field("HS256", description="JWT algorithm")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(30, ge=5, le=1440, description="Access token expiration in minutes")
+    
+    # CORS
+    ALLOWED_ORIGINS: List[str] = Field(default_factory=list, description="Allowed CORS origins")
+    
+    # Monitoring
+    METRICS_PORT: int = Field(9090, ge=1024, le=65535, description="Prometheus metrics port")
+    
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

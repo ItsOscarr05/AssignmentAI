@@ -1,84 +1,129 @@
-import React from "react";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
-import { BrowserRouter } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AuthProvider } from "../../contexts/AuthContext";
-import Dashboard from "../Dashboard";
+import userEvent from "@testing-library/user-event";
+import { Dashboard } from "@/app/(dashboard)/page";
 
-// Create a wrapper component that provides necessary context
-const createTestQueryClient = () =>
-  new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-      },
+// Mock the auth context
+vi.mock("@/lib/auth", () => ({
+  useAuth: () => ({
+    user: {
+      name: "Test User",
+      email: "test@example.com",
     },
+    isLoading: false,
+  }),
+}));
+
+// Mock the API calls
+vi.mock("@/lib/api", () => ({
+  useAssignments: () => ({
+    data: [
+      {
+        id: 1,
+        title: "Assignment 1",
+        dueDate: "2024-03-20",
+        status: "pending",
+      },
+      {
+        id: 2,
+        title: "Assignment 2",
+        dueDate: "2024-03-25",
+        status: "completed",
+      },
+    ],
+    isLoading: false,
+  }),
+  useStats: () => ({
+    data: {
+      completed: 5,
+      pending: 3,
+      total: 8,
+    },
+    isLoading: false,
+  }),
+}));
+
+describe("Dashboard", () => {
+  it("renders user information", () => {
+    render(<Dashboard />);
+
+    expect(screen.getByText("Test User")).toBeInTheDocument();
+    expect(screen.getByText("test@example.com")).toBeInTheDocument();
   });
 
-const AllTheProviders = ({ children }) => {
-  const testQueryClient = createTestQueryClient();
+  it("displays assignment statistics", () => {
+    render(<Dashboard />);
 
-  return (
-    <QueryClientProvider client={testQueryClient}>
-      <AuthProvider>
-        <BrowserRouter>{children}</BrowserRouter>
-      </AuthProvider>
-    </QueryClientProvider>
-  );
-};
-
-describe("Dashboard Component", () => {
-  beforeEach(() => {
-    // Mock localStorage
-    const mockUser = {
-      token: "fake-jwt-token",
-      full_name: "Test User",
-    };
-    Storage.prototype.getItem = jest.fn((key) => {
-      if (key === "user") {
-        return JSON.stringify(mockUser);
-      }
-      return null;
-    });
+    expect(screen.getByText("5")).toBeInTheDocument(); // Completed
+    expect(screen.getByText("3")).toBeInTheDocument(); // Pending
+    expect(screen.getByText("8")).toBeInTheDocument(); // Total
   });
 
-  it("renders welcome message with user name", async () => {
-    render(<Dashboard />, { wrapper: AllTheProviders });
+  it("renders assignment list", () => {
+    render(<Dashboard />);
+
+    expect(screen.getByText("Assignment 1")).toBeInTheDocument();
+    expect(screen.getByText("Assignment 2")).toBeInTheDocument();
+    expect(screen.getByText("Mar 20, 2024")).toBeInTheDocument();
+    expect(screen.getByText("Mar 25, 2024")).toBeInTheDocument();
+  });
+
+  it("filters assignments by status", async () => {
+    const user = userEvent.setup();
+    render(<Dashboard />);
+
+    const pendingFilter = screen.getByRole("button", { name: /pending/i });
+    await user.click(pendingFilter);
 
     await waitFor(() => {
-      expect(screen.getByText(/Welcome back, Test User!/i)).toBeInTheDocument();
+      expect(screen.getByText("Assignment 1")).toBeInTheDocument();
+      expect(screen.queryByText("Assignment 2")).not.toBeInTheDocument();
     });
-  });
 
-  it("displays loading state initially", () => {
-    render(<Dashboard />, { wrapper: AllTheProviders });
-    expect(screen.getByRole("progressbar")).toBeInTheDocument();
-  });
-
-  it("displays assignment statistics", async () => {
-    render(<Dashboard />, { wrapper: AllTheProviders });
+    const completedFilter = screen.getByRole("button", { name: /completed/i });
+    await user.click(completedFilter);
 
     await waitFor(() => {
-      expect(screen.getByText("10")).toBeInTheDocument(); // Total assignments
-      expect(screen.getByText("5")).toBeInTheDocument(); // Completed assignments
+      expect(screen.queryByText("Assignment 1")).not.toBeInTheDocument();
+      expect(screen.getByText("Assignment 2")).toBeInTheDocument();
     });
   });
 
-  it("displays recent assignments", async () => {
-    render(<Dashboard />, { wrapper: AllTheProviders });
+  it("shows loading state", () => {
+    vi.mock("@/lib/api", () => ({
+      useAssignments: () => ({
+        data: null,
+        isLoading: true,
+      }),
+      useStats: () => ({
+        data: null,
+        isLoading: true,
+      }),
+    }));
 
-    await waitFor(() => {
-      expect(screen.getByText("Math")).toBeInTheDocument();
-      expect(screen.getByText("English")).toBeInTheDocument();
-    });
+    render(<Dashboard />);
+
+    expect(screen.getAllByRole("progressbar")).toHaveLength(2);
   });
 
-  it("displays quick action buttons", async () => {
-    render(<Dashboard />, { wrapper: AllTheProviders });
+  it("handles empty assignment list", () => {
+    vi.mock("@/lib/api", () => ({
+      useAssignments: () => ({
+        data: [],
+        isLoading: false,
+      }),
+      useStats: () => ({
+        data: {
+          completed: 0,
+          pending: 0,
+          total: 0,
+        },
+        isLoading: false,
+      }),
+    }));
 
-    await waitFor(() => {
-      expect(screen.getByText("New Assignment")).toBeInTheDocument();
-      expect(screen.getByText("View All Assignments")).toBeInTheDocument();
-    });
+    render(<Dashboard />);
+
+    expect(screen.getByText(/no assignments found/i)).toBeInTheDocument();
   });
 });

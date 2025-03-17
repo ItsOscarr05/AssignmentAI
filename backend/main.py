@@ -1,49 +1,65 @@
-# backend/main.py
-from fastapi import FastAPI, HTTPException, Depends, Query, Path, Body, Request, Response
-from fastapi.middleware.cors import CORSMiddleware
-from grpc import Status
-from psutil import process_iter
-from pydantic import BaseModel, Field
-from typing import Optional, List
-from enum import Enum
-import uvicorn
-from datetime import datetime
+"""Main FastAPI application module."""
+import asyncio
 import logging
 import os
+import time
+import uuid
+from asyncio import Event, TaskGroup
+from collections import defaultdict
+from contextlib import asynccontextmanager
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
+
+import uvicorn
 from dotenv import load_dotenv
-from database import check_database_health, create_indexes
-import document_routes
-from middleware.error_handler import error_handler_middleware
-from middleware.rate_limiter import rate_limit_middleware, RateLimiter
-from middleware.validation import validation_middleware
-from monitoring import MetricsMiddleware, init_metrics, registry
-from cache import cache, binary_cache
-from prometheus_client import make_asgi_app, Histogram
-from config import settings
-from tasks import celery, process_document, generate_assignment, analyze_performance
-from security import (
-    Token, User, authenticate_user, create_access_token,
-    get_current_active_user, check_permissions, security_headers_middleware
-)
-from fastapi.security import OAuth2PasswordRequestForm
-from datetime import timedelta
-from monitoring.metrics import (
-    track_request_duration,
-    track_assignment_creation,
-    init_metrics,
-    metrics_updater
-)
-import asyncio
+from fastapi import (BackgroundTasks, Body, Depends, FastAPI, HTTPException,
+                    Path, Query, Request, Response, WebSocket,
+                    WebSocketDisconnect)
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
-import time
-from contextlib import asynccontextmanager
-from monitoring.memory_manager import memory_manager
-from database.connection_pool import pool
-from database.query_optimizer import query_optimizer
+from fastapi.security import OAuth2PasswordRequestForm
+from grpc import Status
+from prometheus_client import Counter, Histogram, make_asgi_app, start_http_server
+from psutil import process_iter
+from pydantic import BaseModel, Field, ValidationError
+
 import assignment_routes
-import user_routes
+import document_routes
 import feedback_routes
+import user_routes
+from backend.core.cache.multi_level_cache import (CacheLevel, cache,
+                                                cache_instance)
+from backend.core.communication.event_manager import event_store
+from backend.core.communication.graphql_manager import graphql_router
+from backend.core.communication.grpc_manager import grpc_manager
+from backend.core.communication.service_mesh import service_mesh
+from backend.core.communication.websocket_manager import websocket_manager
+from backend.core.database.connection_pool import pool as db_pool
+from backend.core.error_handling.error_manager import error_manager
+from backend.core.monitoring.telemetry import monitor, telemetry
+from backend.core.scaling.resource_manager import resource_manager
+from backend.core.security.security_manager import security_manager
+from backend.docs.documentation_manager import documentation_manager
+from backend.tests.test_manager import test_manager
+from cache import binary_cache, cache
+from config import settings
+from database import check_database_health, create_indexes
+from middleware import rate_limiter
+from middleware.error_handler import error_handler_middleware
+from middleware.rate_limiter import RateLimiter, rate_limit_middleware
+from middleware.validation import validation_middleware
+from monitoring import MetricsMiddleware, init_metrics, registry
+from monitoring.memory_manager import memory_manager
+from monitoring.metrics import (init_metrics, metrics_updater,
+                              track_assignment_creation,
+                              track_request_duration)
+from schemas import AssignmentCreate
+from security import (Token, User, authenticate_user, check_permissions,
+                     create_access_token, get_current_active_user,
+                     get_current_user, security_headers_middleware)
+from tasks import (analyze_performance, celery, generate_assignment,
+                  process_document)
 
 # Load environment variables
 load_dotenv()
@@ -59,10 +75,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Performance metrics
+# Initialize metrics
+REQUEST_COUNT = Counter(
+    'http_requests_total',
+    'Total number of HTTP requests',
+    ['method', 'endpoint', 'status']
+)
 REQUEST_LATENCY = Histogram(
     'http_request_duration_seconds',
-    'HTTP request latency',
+    'HTTP request duration in seconds',
     ['method', 'endpoint']
 )
 
@@ -72,428 +93,822 @@ RATE_LIMIT = {
     'burst': 50      # burst size
 }
 
-class RateLimiter:
-    def __init__(self):
-        self.requests = {}
-        self.last_cleanup = time.time()
-    
-    async def is_allowed(self, client_id: str) -> bool:
-        now = time.time()
-        
-        # Cleanup old entries every minute
-        if now - self.last_cleanup > 60:
-            self._cleanup(now)
-        
-        # Initialize or get client's request history
-        if client_id not in self.requests:
-            self.requests[client_id] = []
-        
-        # Remove requests older than 1 minute
-        self.requests[client_id] = [
-            req_time for req_time in self.requests[client_id]
-            if now - req_time < 60
-        ]
-        
-        # Check rate limit
-        if len(self.requests[client_id]) >= RATE_LIMIT['default']:
-            return False
-        
-        # Add new request
-        self.requests[client_id].append(now)
-        return True
-    
-    def _cleanup(self, now: float):
-        """Remove old entries from rate limiter"""
-        self.requests = {
-            client_id: [
-                req_time for req_time in requests
-                if now - req_time < 60
-            ]
-            for client_id, requests in self.requests.items()
-        }
-        self.last_cleanup = now
+# Models
+class AssignmentSubmission(BaseModel):
+    """Model for assignment submission."""
+    content: str = Field(..., description="The content of the assignment submission")
+    attachments: Optional[List[str]] = Field(default=None, description="List of attachment URLs")
+    metadata: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Additional metadata")
 
-# Initialize FastAPI with optimizations
+async def get_system_config() -> Dict[str, Any]:
+    """Get system configuration settings.
+    
+    Returns:
+        Dict containing system configuration settings.
+    """
+    async with db_pool.get_connection(read_only=True) as conn:
+        config = await conn.fetchrow("SELECT * FROM system_config WHERE active = true")
+        return dict(config) if config else {}
+
+async def get_active_users() -> List[Dict[str, Any]]:
+    """Get list of active users.
+    
+    Returns:
+        List of active user records.
+    """
+    async with db_pool.get_connection(read_only=True) as conn:
+        users = await conn.fetch(
+            """
+            SELECT id, username, email, last_active
+            FROM users
+            WHERE status = 'active'
+            AND last_active > NOW() - INTERVAL '30 days'
+            """
+        )
+        return [dict(user) for user in users]
+
+# Initialize components
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan manager."""
+    """Application lifespan manager with enhanced startup and shutdown."""
     # Startup
-    logger.info("Starting AssignmentAI...")
+    logger.info("Starting AssignmentAI API...")
     
-    # Initialize metrics
-    init_metrics(app.version, os.getenv("ENVIRONMENT", "development"))
-    
-    # Start metrics updater task
-    metrics_task = asyncio.create_task(metrics_updater())
-    
-    # Check database health
-    if not await check_database_health():
-        logger.error("Database health check failed")
-        raise HTTPException(status_code=500, detail="Database connection failed")
-    
-    # Create database indexes
     try:
+        # Initialize database pools
+        await db_pool.initialize()
+        
+        # Initialize cache connections
+        await cache_instance.connect()
+        await binary_cache.connect()
+        
+        # Initialize metrics
+        init_metrics(app.version, os.getenv("ENVIRONMENT", "development"))
+        
+        # Start metrics updater task
+        metrics_task = asyncio.create_task(metrics_updater())
+        
+        # Create database indexes
         await create_indexes()
-        logger.info("Database indexes created successfully")
+        
+        # Warm up cache for frequently accessed data
+        asyncio.create_task(warm_up_cache())
+        
+        # Initialize memory manager
+        memory_manager.start()
+        
+        # Start resource monitoring
+        monitoring_task = asyncio.create_task(resource_manager.monitor_resources())
+        
+        # Initialize security manager
+        app.state.security = security_manager
+        await app.state.security.initialize()
+        
+        # Initialize telemetry
+        app.state.telemetry = telemetry
+        await app.state.telemetry.initialize()
+        
+        # Initialize resource manager
+        app.state.resources = resource_manager
+        await app.state.resources.initialize()
+        
+        # Generate documentation
+        await documentation_manager.generate_all_documentation()
+        
+        # Run initial tests
+        test_results = await test_manager.run_test_suite(
+            categories=["unit", "integration"]
+        )
+        if not all(result.success for results in test_results.values() 
+                  for result in results):
+            logger.error("Initial tests failed")
+        
+        # Initialize core components
+        await grpc_manager.initialize()
+        await service_mesh.initialize()
+        
+        yield
+        
+        # Shutdown
+        logger.info("Shutting down AssignmentAI API...")
+        
+        # Cancel background tasks
+        metrics_task.cancel()
+        try:
+            await metrics_task
+        except asyncio.CancelledError:
+            pass
+        
+        # Close connections
+        await db_pool.close()
+        await cache_instance.disconnect()
+        await binary_cache.disconnect()
+        
+        # Stop memory manager
+        memory_manager.stop()
+        
+        # Cancel resource monitoring
+        monitoring_task.cancel()
+        
+        # Cleanup
+        await grpc_manager.close()
+        await service_mesh.close()
+        
     except Exception as e:
-        logger.error(f"Failed to create indexes: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to create database indexes")
-    
-    yield
-    
-    # Shutdown
-    metrics_task.cancel()
-    try:
-        await metrics_task
-    except asyncio.CancelledError:
-        pass
-    logger.info("Shutting down AssignmentAI...")
+        logger.error(f"Startup/shutdown error: {str(e)}")
+        raise
+
 
 app = FastAPI(
     title="AssignmentAI API",
-    description="API for AssignmentAI educational platform",
-    version="1.0.0",
+    description="Advanced AI-powered assignment management system",
+    version="2.0.0",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
-    lifespan=lifespan
+    lifespan=lifespan,
+    openapi_url="/api/openapi.json",
+    default_response_class=JSONResponse
 )
 
-# Add compression middleware
+# Middleware configuration with optimal ordering
 app.add_middleware(
     GZipMiddleware,
-    minimum_size=1000  # Only compress responses larger than 1KB
+    minimum_size=1000,  # Compress responses larger than 1KB
+    compresslevel=6     # Balanced compression level
 )
 
-# Add CORS middleware with optimized settings
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=settings.ALLOWED_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_credentials=True,
     max_age=3600  # Cache preflight requests for 1 hour
 )
 
-# Add custom middleware
-app.middleware("http")(error_handler_middleware)
-app.middleware("http")(validation_middleware)
-app.middleware("http")(rate_limit_middleware)
-app.add_middleware(MetricsMiddleware)
-app.middleware("http")(security_headers_middleware)
 
-# Mount Prometheus metrics
-metrics_app = make_asgi_app(registry=registry)
-app.mount("/metrics", metrics_app)
-
-# Initialize metrics
-init_metrics(app.version, os.getenv("ENVIRONMENT", "development"))
-
-# Rate limiter instance
-rate_limiter = RateLimiter()
-
+# Custom middleware for security and performance
 @app.middleware("http")
 async def performance_middleware(request: Request, call_next):
-    """Middleware for performance monitoring and rate limiting"""
+    """Enhanced performance monitoring and optimization middleware."""
+    # Track request timing
+    start_time = time.time()
+    
     # Rate limiting
     client_id = request.client.host
     if not await rate_limiter.is_allowed(client_id):
         return JSONResponse(
             status_code=429,
-            content={"error": "Too many requests"}
+            content={
+                "error": "Too many requests",
+                "retry_after": rate_limiter.get_retry_after(client_id)
+            }
         )
     
-    # Performance monitoring
-    start_time = time.time()
+    # Process request
+    try:
+        # Set request ID for tracing
+        request_id = str(uuid.uuid4())
+        request.state.request_id = request_id
+        
+        # Add correlation ID header if provided
+        correlation_id = request.headers.get("X-Correlation-ID", request_id)
+        
+        # Memory usage check
+        if memory_manager.is_memory_critical():
+            return JSONResponse(
+                status_code=503,
+                content={"error": "Service temporarily unavailable"}
+            )
+        
+        # Process request with timeout
+        try:
+            async with asyncio.timeout(settings.REQUEST_TIMEOUT):
+                response = await call_next(request)
+        except asyncio.TimeoutError:
+            return JSONResponse(
+                status_code=504,
+                content={"error": "Request timeout"}
+            )
+        
+        # Add response headers
+        response.headers["X-Request-ID"] = request_id
+        response.headers["X-Correlation-ID"] = correlation_id
+        
+        # Track response time
+        process_time = time.time() - start_time
+        response.headers["X-Process-Time"] = str(process_time)
+        
+        # Update metrics
+        REQUEST_LATENCY.labels(
+            method=request.method,
+            endpoint=request.url.path
+        ).observe(process_time)
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Request processing error: {str(e)}", exc_info=True)
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Internal server error"}
+        )
+
+
+# Error handling middleware
+@app.middleware("http")
+async def error_handler(request: Request, call_next):
+    """Enhanced error handling middleware."""
+    try:
+        return await call_next(request)
+    except ValidationError as e:
+        return JSONResponse(
+            status_code=422,
+            content={"error": "Validation error", "details": e.errors()}
+        )
+    except HTTPException as e:
+        return JSONResponse(
+            status_code=e.status_code,
+            content={"error": e.detail}
+        )
+    except Exception as e:
+        logger.error(f"Unhandled error: {str(e)}", exc_info=True)
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Internal server error"}
+        )
+
+
+# Security middleware
+@app.middleware("http")
+async def security_middleware(request: Request, call_next):
+    """Enhanced security middleware."""
+    # Add security headers
     response = await call_next(request)
-    elapsed = time.time() - start_time
-    
-    # Record metrics
-    REQUEST_LATENCY.labels(
-        method=request.method,
-        endpoint=request.url.path
-    ).observe(elapsed)
-    
+    response.headers.update({
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "X-XSS-Protection": "1; mode=block",
+        "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+        "Content-Security-Policy": settings.CSP_POLICY,
+        "Referrer-Policy": "strict-origin-when-cross-origin"
+    })
     return response
 
-# Enhanced Pydantic models with documentation
-class GradeLevel(str, Enum):
-    ELEMENTARY = "elementary"
-    MIDDLE_SCHOOL = "middle_school"
-    HIGH_SCHOOL = "high_school"
-    COLLEGE = "college"
-    UNIVERSITY = "university"
 
-class Subject(str, Enum):
-    MATHEMATICS = "mathematics"
-    SCIENCE = "science"
-    ENGLISH = "english"
-    HISTORY = "history"
-    COMPUTER_SCIENCE = "computer_science"
-    OTHER = "other"
+# Cache warming function
+async def warm_up_cache():
+    """Warm up cache with frequently accessed data."""
+    try:
+        # Cache common configurations
+        config = await get_system_config()
+        await cache_instance.set("system:config", config, expire=3600)
+        
+        # Cache frequently accessed user data
+        active_users = await get_active_users()
+        for user in active_users:
+            await cache_instance.set(f"user:{user.get('id')}", user, expire=1800)
+        
+        logger.info("Cache warm-up completed")
+    except Exception as e:
+        logger.error(f"Cache warm-up error: {str(e)}")
 
-class AssignmentRequest(BaseModel):
-    subject: Subject = Field(..., description="The subject area of the assignment")
-    grade_level: GradeLevel = Field(..., description="The target grade level for the assignment")
-    assignment_text: str = Field(..., min_length=10, description="The main text or requirements for the assignment")
-    additional_requirements: Optional[List[str]] = Field(default=None, description="Any additional requirements or specifications")
-    
-    class Config:
-        schema_extra = {
-            "example": {
-                "subject": "mathematics",
-                "grade_level": "high_school",
-                "assignment_text": "Create a comprehensive lesson plan for teaching quadratic equations",
-                "additional_requirements": [
-                    "Include real-world applications",
-                    "Provide step-by-step solutions"
-                ]
-            }
-        }
 
-class AssignmentResponse(BaseModel):
-    id: str = Field(..., description="Unique identifier for the assignment")
-    subject: Subject = Field(..., description="The subject area of the assignment")
-    grade_level: GradeLevel = Field(..., description="The target grade level for the assignment")
-    assignment_text: str = Field(..., description="The main text or requirements for the assignment")
-    response: str = Field(..., description="The generated response or status message")
-    created_at: datetime = Field(..., description="Timestamp when the assignment was created")
-    status: str = Field(..., description="Current status of the assignment processing")
-    
-    class Config:
-        schema_extra = {
-            "example": {
-                "id": "task-123",
-                "subject": "mathematics",
-                "grade_level": "high_school",
-                "assignment_text": "Create a comprehensive lesson plan for teaching quadratic equations",
-                "response": "Task submitted for processing",
-                "created_at": "2024-03-11T12:00:00",
-                "status": "pending"
-            }
-        }
+# Mount Prometheus metrics endpoint
+metrics_app = make_asgi_app(registry=registry)
+app.mount("/metrics", metrics_app)
 
-class TaskStatus(BaseModel):
-    task_id: str = Field(..., description="Unique identifier for the task")
-    status: str = Field(..., description="Current status of the task")
-    result: Optional[dict] = Field(None, description="Task result if completed")
-    error: Optional[str] = Field(None, description="Error message if task failed")
-    
-    class Config:
-        schema_extra = {
-            "example": {
-                "task_id": "task-123",
-                "status": "completed",
-                "result": {
-                    "status": "success",
-                    "assignment_data": {
-                        "subject": "mathematics",
-                        "grade_level": "high_school",
-                        "assignment_text": "Create a comprehensive lesson plan for teaching quadratic equations"
-                    }
-                }
-            }
-        }
-
-class HealthStatus(BaseModel):
-    status: str = Field(..., description="Overall health status of the system")
-    timestamp: datetime = Field(..., description="Current timestamp")
-    version: str = Field(..., description="API version")
-    cache: bool = Field(..., description="Redis cache connection status")
-    binary_cache: bool = Field(..., description="Binary cache connection status")
-    celery: bool = Field(..., description="Celery worker status")
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialize application on startup"""
-    # Initialize metrics
-    init_metrics(app.version, os.getenv("ENVIRONMENT", "development"))
-    
-    # Initialize Redis connections
-    await cache.connect()
-    await binary_cache.connect()
-    logger.info("Application startup completed")
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    # Close Redis connections
-    await cache.disconnect()
-    await binary_cache.disconnect()
-    logger.info("Application shutdown completed")
-
-@app.get("/")
-async def root():
-    return {"message": "Welcome to AssignmentAI API"}
-
-@app.post("/api/token",
-    response_model=Token,
-    summary="Create access token",
-    description="Create a new access token for authentication.",
-    tags=["authentication"]
+# Include routers with versioning
+app.include_router(
+    document_routes.router,
+    prefix="/api/v1",
+    tags=["documents"]
 )
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = await authenticate_user(form_data.username, form_data.password)
-    if not user:
-        raise HTTPException(
-            status_code=Status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.username, "scopes": user.roles},
-        expires_delta=access_token_expires
-    )
-    return {"access_token": access_token, "token_type": "bearer"}
-
-@app.get("/api/users/me",
-    response_model=User,
-    summary="Get current user",
-    description="Get information about the currently authenticated user.",
+app.include_router(
+    assignment_routes.router,
+    prefix="/api/v1",
+    tags=["assignments"]
+)
+app.include_router(
+    user_routes.router,
+    prefix="/api/v1",
     tags=["users"]
 )
-async def read_users_me(current_user: User = Depends(get_current_active_user)):
-    return current_user
-
-@app.post("/api/assignments",
-    response_model=AssignmentResponse,
-    summary="Create a new assignment",
-    description="Submit a new assignment for AI-powered generation. Requires authentication.",
-    response_description="Returns the created assignment details and task ID for tracking",
-    dependencies=[Depends(check_permissions(["teacher", "admin"]))]
+app.include_router(
+    feedback_routes.router,
+    prefix="/api/v1",
+    tags=["feedback"]
 )
-@track_request_duration
-@track_assignment_creation(subject=lambda x: x.subject, grade_level=lambda x: x.grade_level)
-async def create_assignment(
-    assignment: AssignmentRequest = Body(..., description="The assignment details to process"),
-    current_user: User = Depends(get_current_active_user)
-):
-    """
-    Create a new assignment with the following steps:
-    1. Validate the input data and user permissions
-    2. Submit the assignment for asynchronous processing
-    3. Return a task ID for tracking the progress
-    """
-    try:
-        # Submit assignment generation task to Celery
-        task = generate_assignment.delay({
-            "subject": assignment.subject,
-            "grade_level": assignment.grade_level,
-            "assignment_text": assignment.assignment_text,
-            "additional_requirements": assignment.additional_requirements,
-            "created_by": current_user.username
-        })
+
+# Mount GraphQL router
+app.include_router(graphql_router, prefix="/graphql")
+
+
+# WebSocket endpoint
+@app.websocket("/ws/{channel}")
+async def websocket_endpoint(websocket: WebSocket, channel: str):
+    """WebSocket endpoint for real-time communication."""
+    user = await get_current_user(websocket)
+    if not user:
+        await websocket.close(code=4001)
+        return
         
-        # Return task ID for status tracking
-        return {
-            "id": task.id,
-            "subject": assignment.subject,
-            "grade_level": assignment.grade_level,
-            "assignment_text": assignment.assignment_text,
-            "response": "Task submitted for processing",
-            "created_at": datetime.now(),
-            "status": "pending"
-        }
-    except Exception as e:
-        logger.error(f"Error submitting assignment task: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/tasks/{task_id}",
-    response_model=TaskStatus,
-    summary="Get task status",
-    description="Retrieve the current status and result of a task by its ID. Requires authentication.",
-    response_description="Returns the task status and result if available",
-    dependencies=[Depends(get_current_active_user)]
-)
-async def get_task_status(
-    task_id: str = Path(..., description="The ID of the task to check")
-):
-    """Get the status of a Celery task by its ID"""
-    task = celery.AsyncResult(task_id)
-    return {
-        "task_id": task_id,
-        "status": task.status,
-        "result": task.result if task.ready() else None,
-        "error": str(task.error) if task.failed() else None
-    }
-
-@app.get("/api/health",
-    response_model=HealthStatus,
-    summary="Health check",
-    description="Check the health status of the API and its dependencies.",
-    response_description="Returns the health status of all system components"
-)
-async def health_check():
-    """Enhanced health check endpoint with database pool metrics"""
-    db_healthy = await check_database_health()
-    cache_healthy = await cache.check_health()
-    pool_stats = pool.get_pool_stats()
+    await websocket_manager.connect(websocket, channel, user.id)
     
-    return {
-        "status": "healthy" if db_healthy and cache_healthy else "unhealthy",
-        "database": {
-            "status": "up" if db_healthy else "down",
-            "pool": pool_stats
-        },
-        "cache": "up" if cache_healthy else "down",
-        "memory": memory_manager.get_memory_analytics(),
-        "version": settings.VERSION
-    }
+    try:
+        while True:
+            data = await websocket.receive_json()
+            await websocket_manager.handle_message(
+                websocket, channel, user.id, data
+            )
+    except WebSocketDisconnect:
+        await websocket_manager.disconnect(websocket, channel, user.id)
 
-@app.get("/api/metrics/database")
-async def get_database_metrics():
-    """Get detailed database performance metrics"""
-    async with pool.optimized_session() as session:
-        # Get query statistics
-        query_stats = await query_optimizer.get_query_stats(session)
-        
-        # Get pool statistics
-        pool_stats = pool.get_pool_stats()
-        
-        return {
-            "pool_metrics": pool_stats,
-            "query_metrics": query_stats,
-            "optimization_suggestions": await query_optimizer.get_optimization_suggestions(session)
-        }
 
-# Include routers
-app.include_router(document_routes.router, prefix="/api/v1", tags=["documents"])
-app.include_router(assignment_routes.router, prefix="/api/v1", tags=["assignments"])
-app.include_router(user_routes.router, prefix="/api/v1", tags=["users"])
-app.include_router(feedback_routes.router, prefix="/api/v1", tags=["feedback"])
+# Event sourcing endpoint
+@app.post("/events")
+@monitor("create_event")
+async def create_event(event_data: Dict[str, Any]):
+    """Create a new event in the event store."""
+    event = Event(
+        id=str(uuid.uuid4()),
+        type=event_data["type"],
+        aggregate_id=event_data["aggregate_id"],
+        data=event_data["data"],
+        metadata=event_data.get("metadata", {}),
+        timestamp=datetime.now(),
+        version=event_data.get("version", 1)
+    )
+    await event_store.append(event)
+    return {"status": "success", "event_id": event.id}
+
+
+# Service mesh routing
+@app.post("/route/{service}")
+@monitor("route_request")
+async def route_request(
+    service: str,
+    request: Request,
+    background_tasks: BackgroundTasks
+):
+    """Route request through service mesh."""
+    data = await request.json()
+    return await service_mesh.route_request(
+        service,
+        request.method,
+        request.url.path,
+        data,
+        dict(request.headers)
+    )
+
 
 # Error handling for 404
 @app.exception_handler(404)
 async def not_found_handler(request, exc):
+    """Handle 404 errors."""
     return {
         "error": "Resource not found",
         "path": request.url.path
     }
 
-@app.post("/batch")
-async def batch_operations(operations: List[dict]):
-    """Handle batch operations efficiently"""
-    results = await asyncio.gather(*[
-        process_operation(op) for op in operations
-    ])
-    return {"results": results}
 
-async def process_operation(operation: dict):
-    """Process a single operation in the batch"""
-    try:
-        # Implementation specific to operation type
-        op_type = operation.get("type")
-        if op_type == "assignment":
-            return await process_assignment(operation)
-        elif op_type == "user":
-            return await process_iter(operation)
+@app.post("/batch", response_model=List[dict])
+async def batch_operations(operations: List[dict], background_tasks: BackgroundTasks):
+    """Handle batch operations efficiently with improved concurrency and error handling."""
+    # Validate batch size
+    MAX_BATCH_SIZE = 100
+    if len(operations) > MAX_BATCH_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Batch size exceeds maximum limit of {MAX_BATCH_SIZE}"
+        )
+
+    # Group operations by type for efficient processing
+    operation_groups = defaultdict(list)
+    for op in operations:
+        operation_groups[op.get("type")].append(op)
+
+    results = []
+    async with asyncio.TaskGroup() as tg:
+        for op_type, ops in operation_groups.items():
+            if op_type == "assignment":
+                results.extend(await process_assignment_batch(ops, tg))
+            elif op_type == "user":
+                results.extend(await process_user_batch(ops, tg))
+            else:
+                results.extend([{"error": f"Unknown operation type: {op_type}"} for _ in ops])
+
+    # Schedule cleanup task
+    background_tasks.add_task(cleanup_batch_resources, operation_groups)
+    
+    return results
+
+
+async def process_assignment_batch(operations: List[dict], tg: asyncio.TaskGroup) -> List[dict]:
+    """Process a batch of assignment operations concurrently."""
+    results = []
+    semaphore = asyncio.Semaphore(10)  # Limit concurrent assignment processing
+    
+    async def process_single_assignment(op: dict) -> dict:
+        async with semaphore:
+            try:
+                if "data" not in op:
+                    return {"error": "Missing operation data"}
+                
+                # Use connection from pool
+                async with db_pool.acquire() as conn:
+                    # Process with timeout
+                    async with asyncio.timeout(30):
+                        result = await assignment_routes.process_assignment_operation(
+                            op["data"],
+                            conn=conn
+                        )
+                        
+                        # Cache successful results
+                        if result.get("success"):
+                            cache_key = f"assignment:{result['id']}"
+                            await cache_instance.set(cache_key, result, expire=3600)
+                        
+                        return {"success": True, "result": result}
+                        
+            except asyncio.TimeoutError:
+                return {
+                    "error": "Operation timed out",
+                    "operation_id": op.get("id"),
+                    "status": "failed"
+                }
+            except ValidationError as e:
+                return {"error": "Validation failed", "details": str(e)}
+            except Exception as e:
+                logger.error(f"Assignment processing error: {str(e)}", exc_info=True)
+                return {"error": f"Failed to process assignment: {str(e)}"}
+
+    # Create tasks for each operation
+    tasks = [
+        tg.create_task(
+            process_single_assignment(op),
+            name=f"assignment-{op.get('id', 'unknown')}"
+        )
+        for op in operations
+    ]
+    
+    # Wait for all tasks to complete
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    
+    # Handle any exceptions in results
+    processed_results = []
+    for result in results:
+        if isinstance(result, Exception):
+            processed_results.append({
+                "error": f"Operation failed: {str(result)}",
+                "status": "failed"
+            })
         else:
-            return {"error": f"Unknown operation type: {op_type}"}
+            processed_results.append(result)
+    
+    return processed_results
+
+
+async def process_user_batch(operations: List[dict], tg: asyncio.TaskGroup) -> List[dict]:
+    """Process a batch of user operations concurrently."""
+    results = []
+    semaphore = asyncio.Semaphore(5)  # More restrictive limit for user operations
+    
+    async def process_single_user(op: dict) -> dict:
+        async with semaphore:
+            try:
+                async with db_pool.acquire() as conn:
+                    async with asyncio.timeout(15):
+                        result = await user_routes.process_user_operation(
+                            op,
+                            conn=conn
+                        )
+                        return {"success": True, "result": result}
+            except Exception as e:
+                logger.error(f"User processing error: {str(e)}", exc_info=True)
+                return {"error": f"Failed to process user operation: {str(e)}"}
+
+    tasks = [
+        tg.create_task(
+            process_single_user(op),
+            name=f"user-{op.get('id', 'unknown')}"
+        )
+        for op in operations
+    ]
+    
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    return [
+        {"error": f"Operation failed: {str(result)}"} if isinstance(result, Exception) else result
+        for result in results
+    ]
+
+
+async def cleanup_batch_resources(operation_groups: Dict[str, List[dict]]):
+    """Cleanup resources after batch processing."""
+    try:
+        # Release any held connections
+        await db_pool.cleanup()
+        
+        # Clear temporary cache entries
+        cleanup_tasks = []
+        for op_type, ops in operation_groups.items():
+            if op_type == "assignment":
+                cleanup_tasks.extend([
+                    cache_instance.delete(f"temp:assignment:{op.get('id')}")
+                    for op in ops
+                    if op.get('id')
+                ])
+        
+        if cleanup_tasks:
+            await asyncio.gather(*cleanup_tasks)
+            
     except Exception as e:
-        return {"error": str(e)}
+        logger.error(f"Cleanup error: {str(e)}", exc_info=True)
+
+
+# Health check endpoint
+@app.get("/health")
+@monitor("health_check")
+@cache(ttl=60, level=CacheLevel.L1)
+async def health_check():
+    """Enhanced health check endpoint."""
+    status = {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "version": settings.VERSION,
+        "components": {}
+    }
+    
+    # Check database
+    try:
+        await db_pool.health_check()
+        status["components"]["database"] = "healthy"
+    except Exception as e:
+        status["components"]["database"] = str(e)
+        status["status"] = "degraded"
+    
+    # Check cache
+    try:
+        await cache_instance.get("health_check")
+        status["components"]["cache"] = "healthy"
+    except Exception as e:
+        status["components"]["cache"] = str(e)
+        status["status"] = "degraded"
+    
+    # Check service mesh
+    try:
+        services = await service_mesh._get_service_instance("health")
+        status["components"]["service_mesh"] = "healthy"
+    except Exception as e:
+        status["components"]["service_mesh"] = str(e)
+        status["status"] = "degraded"
+    
+    return status
+
+
+# Assignment endpoints
+@app.post("/api/v1/assignments")
+@monitor("create_assignment")
+async def create_assignment(assignment: AssignmentCreate, user = Depends(get_current_user)):
+    """Create a new assignment."""
+    # Check permissions
+    if not await security_manager.check_permission(user.id, "assignments", "create"):
+        raise HTTPException(status_code=403, detail="Permission denied")
+    
+    async with db_pool.get_connection() as conn:
+        result = await conn.fetchrow(
+            """
+            INSERT INTO assignments (title, description, due_date, created_by)
+            VALUES ($1, $2, $3, $4)
+            RETURNING id
+            """,
+            assignment.title,
+            assignment.description,
+            assignment.due_date,
+            user.id
+        )
+        
+    # Invalidate relevant caches
+    await cache_instance.invalidate("assignments_list")
+    
+    # Track metrics
+    telemetry.metrics.assignments_created.inc()
+    
+    return {"id": result["id"]}
+
+
+@app.get("/api/v1/assignments")
+@monitor("list_assignments")
+@cache(ttl=300, level=CacheLevel.L2)
+async def list_assignments(
+    page: int = 1,
+    limit: int = 10,
+    search: str = None,
+    user = Depends(get_current_user)
+):
+    """List assignments with pagination and search."""
+    # Check permissions
+    if not await security_manager.check_permission(user.id, "assignments", "read"):
+        raise HTTPException(status_code=403, detail="Permission denied")
+    
+    # Build query
+    query = "SELECT * FROM assignments WHERE 1=1"
+    params = []
+    
+    if search:
+        query += " AND (title ILIKE $1 OR description ILIKE $1)"
+        params.append(f"%{search}%")
+    
+    # Add pagination
+    query += " ORDER BY created_at DESC LIMIT $2 OFFSET $3"
+    params.extend([limit, (page - 1) * limit])
+    
+    # Execute query
+    async with db_pool.get_connection(read_only=True) as conn:
+        results = await conn.fetch(query, *params)
+    
+    return {
+        "items": [dict(row) for row in results],
+        "page": page,
+        "limit": limit,
+        "total": await _get_total_assignments()
+    }
+
+
+@app.post("/api/v1/assignments/{assignment_id}/submit")
+@monitor("submit_assignment")
+async def submit_assignment(
+    assignment_id: int,
+    submission: AssignmentSubmission,
+    user = Depends(get_current_user)
+):
+    """Submit an assignment."""
+    # Check permissions
+    if not await security_manager.check_permission(user.id, "assignments", "submit"):
+        raise HTTPException(status_code=403, detail="Permission denied")
+    
+    # Create task for processing
+    task = {
+        "id": str(uuid.uuid4()),
+        "type": "assignment_submission",
+        "data": {
+            "assignment_id": assignment_id,
+            "user_id": user.id,
+            "content": submission.content
+        }
+    }
+    
+    # Distribute task to workers
+    await resource_manager.distribute_tasks([task])
+    
+    return {"task_id": task["id"]}
+
+
+@app.get("/api/v1/tasks/{task_id}")
+@monitor("get_task_status")
+@cache(ttl=30, level=CacheLevel.L1)
+async def get_task_status(task_id: str, user = Depends(get_current_user)):
+    """Get task status."""
+    async with db_pool.get_connection(read_only=True) as conn:
+        task = await conn.fetchrow(
+            "SELECT * FROM tasks WHERE id = $1",
+            task_id
+        )
+    
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    return dict(task)
+
+
+# Error handling
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """Handle HTTP exceptions."""
+    await telemetry.logger.log_event(
+        "ERROR",
+        "http_error",
+        str(exc.detail),
+        {
+            "status_code": exc.status_code,
+            "path": request.url.path
+        }
+    )
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail}
+    )
+
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    """Handle general exceptions."""
+    await telemetry.logger.log_event(
+        "ERROR",
+        "unhandled_error",
+        str(exc),
+        {"path": request.url.path}
+    )
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"}
+    )
+
+
+# Helper functions
+async def _get_total_assignments() -> int:
+    """Get total number of assignments."""
+    cache_key = "total_assignments"
+    total = await cache_instance.get(cache_key)
+    
+    if total is None:
+        async with db_pool.get_connection(read_only=True) as conn:
+            total = await conn.fetchval("SELECT COUNT(*) FROM assignments")
+        await cache_instance.set(cache_key, total, ttl=300)
+    
+    return total
+
+
+@app.get("/metrics")
+async def get_metrics() -> Dict[str, Any]:
+    """Get system metrics."""
+    try:
+        return await telemetry.get_metrics()
+    except Exception as e:
+        error_id = await error_manager.handle_error(e)
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "Failed to retrieve metrics",
+                "error_id": error_id
+            }
+        )
+
+
+@app.get("/docs/architecture")
+async def get_architecture_docs() -> Dict[str, Any]:
+    """Get system architecture documentation."""
+    try:
+        return {
+            "content": await documentation_manager.generate_architecture_docs()
+        }
+    except Exception as e:
+        error_id = await error_manager.handle_error(e)
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "Failed to retrieve architecture documentation",
+                "error_id": error_id
+            }
+        )
+
+
+@app.get("/docs/runbook")
+async def get_runbook() -> Dict[str, Any]:
+    """Get system runbook."""
+    try:
+        return {
+            "content": await documentation_manager.generate_runbooks()
+        }
+    except Exception as e:
+        error_id = await error_manager.handle_error(e)
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "Failed to retrieve runbook",
+                "error_id": error_id
+            }
+        )
+
+
+@app.post("/tests/run")
+async def run_tests(
+    categories: Optional[List[str]] = None,
+    tags: Optional[List[str]] = None
+) -> Dict[str, Any]:
+    """Run test suite."""
+    try:
+        results = await test_manager.run_test_suite(categories, tags)
+        report = await test_manager.generate_test_report(results)
+        return {
+            "success": True,
+            "report": report
+        }
+    except Exception as e:
+        error_id = await error_manager.handle_error(e)
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "Failed to run tests",
+                "error_id": error_id
+            }
+        )
+
 
 if __name__ == "__main__":
     # Get configuration from environment variables
-    host = settings.API_HOST
-    port = settings.API_PORT
+    host = settings.HOST
+    port = settings.PORT
     debug = settings.DEBUG
     
     # Run the application
@@ -502,5 +917,5 @@ if __name__ == "__main__":
         host=host,
         port=port,
         reload=debug,
-        workers=settings.API_WORKERS
+        workers=settings.WORKERS
     )

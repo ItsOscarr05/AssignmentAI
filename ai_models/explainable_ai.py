@@ -19,6 +19,9 @@ from captum.attr import (
 )
 from collections import defaultdict
 import logging
+import asyncio
+
+logger = logging.getLogger(__name__)
 
 class ExplanationMethod(Enum):
     SHAP = "shap"
@@ -73,14 +76,14 @@ class ShapExplainer(ExplanationBase):
         """Generate SHAP explanations"""
         try:
             # Create explainer
-            background = self._get_background_data(inputs, config)
+            background = await self._get_background_data(inputs, config)
             explainer = shap.DeepExplainer(model, background)
             
             # Calculate SHAP values
-            shap_values = explainer.shap_values(inputs)
+            shap_values = await asyncio.to_thread(explainer.shap_values, inputs)
             
             # Process feature importance
-            feature_importance = self._process_shap_values(
+            feature_importance = await self._process_shap_values(
                 shap_values,
                 config.feature_names if config else None
             )
@@ -100,7 +103,8 @@ class ShapExplainer(ExplanationBase):
             )
             
         except Exception as e:
-            raise Exception(f"SHAP explanation failed: {str(e)}")
+            logger.error(f"SHAP explanation failed: {str(e)}")
+            raise
             
     async def visualize(self, explanation: Explanation) -> None:
         """Visualize SHAP explanations"""
@@ -109,6 +113,11 @@ class ShapExplainer(ExplanationBase):
             
         viz_data = explanation.visualization_data
         
+        # Run visualization in thread pool to avoid blocking
+        await asyncio.to_thread(self._create_visualizations, viz_data)
+        
+    async def _create_visualizations(self, viz_data: Dict[str, Any]) -> None:
+        """Create SHAP visualizations"""
         # Summary plot
         shap.summary_plot(
             viz_data["shap_values"],
@@ -122,7 +131,7 @@ class ShapExplainer(ExplanationBase):
             feature_names=viz_data["feature_names"]
         )
         
-    def _get_background_data(
+    async def _get_background_data(
         self,
         inputs: Any,
         config: Optional[ExplanationConfig]
@@ -137,7 +146,7 @@ class ShapExplainer(ExplanationBase):
             return inputs[indices]
         return inputs[:100]  # Default to first 100 samples
         
-    def _process_shap_values(
+    async def _process_shap_values(
         self,
         shap_values: Any,
         feature_names: Optional[List[str]]
@@ -166,7 +175,8 @@ class LimeExplainer(ExplanationBase):
         """Generate LIME explanations"""
         try:
             # Create explainer
-            explainer = lime.lime_tabular.LimeTabularExplainer(
+            explainer = await asyncio.to_thread(
+                lime.lime_tabular.LimeTabularExplainer,
                 training_data=inputs,
                 feature_names=config.feature_names if config else None,
                 class_names=config.class_names if config else None,
@@ -176,7 +186,8 @@ class LimeExplainer(ExplanationBase):
             # Generate explanation for each instance
             explanations = []
             for instance in inputs[:config.num_samples if config else 1]:
-                exp = explainer.explain_instance(
+                exp = await asyncio.to_thread(
+                    explainer.explain_instance,
                     instance,
                     model.predict_proba,
                     num_features=len(instance)
@@ -184,7 +195,7 @@ class LimeExplainer(ExplanationBase):
                 explanations.append(exp)
                 
             # Process feature importance
-            feature_importance = self._process_lime_explanations(explanations)
+            feature_importance = await self._process_lime_explanations(explanations)
             
             return Explanation(
                 method=ExplanationMethod.LIME,
@@ -194,7 +205,8 @@ class LimeExplainer(ExplanationBase):
             )
             
         except Exception as e:
-            raise Exception(f"LIME explanation failed: {str(e)}")
+            logger.error(f"LIME explanation failed: {str(e)}")
+            raise
             
     async def visualize(self, explanation: Explanation) -> None:
         """Visualize LIME explanations"""
@@ -202,9 +214,9 @@ class LimeExplainer(ExplanationBase):
             raise ValueError("Invalid explanation method")
             
         for idx, exp in enumerate(explanation.visualization_data):
-            exp.show_in_notebook(show_all=False)
+            await asyncio.to_thread(exp.show_in_notebook, show_all=False)
             
-    def _process_lime_explanations(
+    async def _process_lime_explanations(
         self,
         explanations: List[Any]
     ) -> Dict[str, float]:

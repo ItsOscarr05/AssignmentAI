@@ -1,15 +1,19 @@
+from datetime import timedelta
+import datetime
 import pytest
 from fastapi.testclient import TestClient
 import asyncio
 import os
 import sys
 
+import redis
+
 # Add the backend directory to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from main import app
-from config import Settings, get_settings
-from security import SecurityConfig, SecurityManager, create_encryption_key
+from config import Settings, get_settings, settings
+from security import SecurityConfig, SecurityManager, create_access_token, create_encryption_key
 
 def get_test_settings() -> Settings:
     """Get test settings."""
