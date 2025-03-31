@@ -1,0 +1,304 @@
+openapi: 3.0.0
+info:
+  title: AssignmentAI API
+  version: 1.0.0
+  description: AI-powered educational platform for teachers and students
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Development server
+  - url: https://api.assignmentai.com/api/v1
+    description: Production server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        full_name: { type: string }
+        role: { type: string, enum: [student, teacher] }
+        is_active: { type: boolean }
+        created_at: { type: string, format: date-time }
+
+    Assignment:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        description: { type: string }
+        due_date: { type: string, format: date-time }
+        teacher_id: { type: string, format: uuid }
+        created_at: { type: string, format: date-time }
+
+    Submission:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        content: { type: string }
+        student_id: { type: string, format: uuid }
+        assignment_id: { type: string, format: uuid }
+        submitted_at: { type: string, format: date-time }
+
+    Feedback:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        content: { type: string }
+        score: { type: number }
+        submission_id: { type: string, format: uuid }
+        teacher_id: { type: string, format: uuid }
+        created_at: { type: string, format: date-time }
+
+paths:
+  /auth/login:
+    post:
+      summary: User login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        200:
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token: { type: string }
+                  token_type: { type: string }
+
+  /users:
+    get:
+      summary: List users
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [student, teacher]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        200:
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+    post:
+      summary: Create user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+                full_name: { type: string }
+                role: { type: string, enum: [student, teacher] }
+      responses:
+        201:
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /assignments:
+    get:
+      summary: List assignments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: teacher_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        200:
+          description: List of assignments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Assignment"
+
+    post:
+      summary: Create assignment
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                description: { type: string }
+                due_date: { type: string, format: date-time }
+      responses:
+        201:
+          description: Assignment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Assignment"
+
+  /submissions:
+    get:
+      summary: List submissions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: assignment_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: student_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        200:
+          description: List of submissions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Submission"
+
+    post:
+      summary: Create submission
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content: { type: string }
+                assignment_id: { type: string, format: uuid }
+      responses:
+        201:
+          description: Submission created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Submission"
+
+  /feedback:
+    get:
+      summary: List feedback
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: submission_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: teacher_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        200:
+          description: List of feedback
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Feedback"
+
+    post:
+      summary: Create feedback
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content: { type: string }
+                score: { type: number }
+                submission_id: { type: string, format: uuid }
+      responses:
+        201:
+          description: Feedback created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Feedback"
