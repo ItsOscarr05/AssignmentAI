@@ -1,4 +1,14 @@
 import React, { useEffect, useState } from 'react';
+import {
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { useToast } from '../contexts/ToastContext';
 import { api } from '../lib/api';
 
@@ -8,6 +18,35 @@ interface Session {
   ip: string;
   lastActive: string;
   expiresAt: string;
+  analytics?: SessionAnalytics;
+}
+
+interface SessionAnalytics {
+  session_info: {
+    created_at: string;
+    last_activity: string;
+    ip_address: string;
+    user_agent: string;
+  };
+  metrics: {
+    page_views: number;
+    api_calls: number;
+    errors: number;
+    total_duration: number;
+    last_interaction: string;
+  };
+  activity_log: Array<{
+    timestamp: string;
+    type: string;
+    details: Record<string, any>;
+    metrics: Record<string, any>;
+  }>;
+  summary: {
+    total_page_views: number;
+    total_api_calls: number;
+    error_rate: number;
+    average_session_duration: number;
+  };
 }
 
 interface ActiveSessionsProps {
@@ -16,7 +55,8 @@ interface ActiveSessionsProps {
 
 export const ActiveSessions: React.FC<ActiveSessionsProps> = ({ onSessionRevoked }) => {
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [selectedSession, setSelectedSession] = useState<string | null>(null);
+  const [analytics, setAnalytics] = useState<SessionAnalytics | null>(null);
   const { showToast } = useToast();
 
   const fetchSessions = async () => {
@@ -24,10 +64,16 @@ export const ActiveSessions: React.FC<ActiveSessionsProps> = ({ onSessionRevoked
       const response = await api.get('/auth/sessions');
       setSessions(response.data);
     } catch (error) {
-      showToast('Failed to fetch active sessions', 'error');
-      setSessions([]);
-    } finally {
-      setIsLoading(false);
+      showToast('Failed to fetch sessions', 'error');
+    }
+  };
+
+  const fetchSessionAnalytics = async (sessionId: string) => {
+    try {
+      const response = await api.get(`/auth/sessions/${sessionId}/analytics`);
+      setAnalytics(response.data);
+    } catch (error) {
+      showToast('Failed to fetch session analytics', 'error');
     }
   };
 
@@ -35,33 +81,43 @@ export const ActiveSessions: React.FC<ActiveSessionsProps> = ({ onSessionRevoked
     fetchSessions();
   }, []);
 
+  useEffect(() => {
+    if (selectedSession) {
+      fetchSessionAnalytics(selectedSession);
+    }
+  }, [selectedSession]);
+
   const handleRevokeSession = async (sessionId: string) => {
     try {
       await api.delete(`/auth/sessions/${sessionId}`);
-      setSessions(sessions.filter(session => session.id !== sessionId));
-      onSessionRevoked?.();
       showToast('Session revoked successfully', 'success');
+      fetchSessions();
+      if (onSessionRevoked) {
+        onSessionRevoked();
+      }
     } catch (error) {
       showToast('Failed to revoke session', 'error');
-      setSessions([]);
     }
   };
 
   const handleRevokeAllSessions = async () => {
     try {
       await api.delete('/auth/sessions');
-      setSessions([]);
-      onSessionRevoked?.();
       showToast('All sessions revoked successfully', 'success');
+      fetchSessions();
+      if (onSessionRevoked) {
+        onSessionRevoked();
+      }
     } catch (error) {
       showToast('Failed to revoke all sessions', 'error');
-      setSessions([]);
     }
   };
 
-  if (isLoading) {
-    return <div>Loading sessions...</div>;
-  }
+  const formatDuration = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}m ${remainingSeconds}s`;
+  };
 
   return (
     <div className="space-y-4">
@@ -96,6 +152,12 @@ export const ActiveSessions: React.FC<ActiveSessionsProps> = ({ onSessionRevoked
                   <p className="text-sm text-gray-600">
                     Expires: {new Date(session.expiresAt).toLocaleString()}
                   </p>
+                  <button
+                    onClick={() => setSelectedSession(session.id)}
+                    className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+                  >
+                    {selectedSession === session.id ? 'Hide Analytics' : 'Show Analytics'}
+                  </button>
                 </div>
                 <button
                   onClick={() => handleRevokeSession(session.id)}
@@ -104,6 +166,58 @@ export const ActiveSessions: React.FC<ActiveSessionsProps> = ({ onSessionRevoked
                   Revoke
                 </button>
               </div>
+
+              {selectedSession === session.id && analytics && (
+                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-4">Session Analytics</h3>
+
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="p-3 bg-white rounded shadow">
+                      <p className="text-sm text-gray-600">Total Page Views</p>
+                      <p className="text-xl font-semibold">{analytics.summary.total_page_views}</p>
+                    </div>
+                    <div className="p-3 bg-white rounded shadow">
+                      <p className="text-sm text-gray-600">Total API Calls</p>
+                      <p className="text-xl font-semibold">{analytics.summary.total_api_calls}</p>
+                    </div>
+                    <div className="p-3 bg-white rounded shadow">
+                      <p className="text-sm text-gray-600">Error Rate</p>
+                      <p className="text-xl font-semibold">
+                        {analytics.summary.error_rate.toFixed(1)}%
+                      </p>
+                    </div>
+                    <div className="p-3 bg-white rounded shadow">
+                      <p className="text-sm text-gray-600">Avg. Session Duration</p>
+                      <p className="text-xl font-semibold">
+                        {formatDuration(analytics.summary.average_session_duration)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart
+                        data={analytics.activity_log.map(log => ({
+                          time: new Date(log.timestamp).toLocaleTimeString(),
+                          pageViews: log.metrics.page_views,
+                          apiCalls: log.metrics.api_calls,
+                          errors: log.metrics.errors,
+                        }))}
+                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="time" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Line type="monotone" dataKey="pageViews" stroke="#8884d8" />
+                        <Line type="monotone" dataKey="apiCalls" stroke="#82ca9d" />
+                        <Line type="monotone" dataKey="errors" stroke="#ff7300" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

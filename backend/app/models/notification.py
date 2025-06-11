@@ -1,15 +1,22 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Text, DateTime
+from sqlalchemy import Column, String, DateTime, JSON, ForeignKey, Boolean
 from sqlalchemy.sql import func
-from .base import Base
+from sqlalchemy.orm import relationship
+from app.db.base_class import Base
 
 class Notification(Base):
     __tablename__ = "notifications"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    type = Column(String(50), nullable=False)
-    title = Column(String(255), nullable=False)
-    message = Column(Text, nullable=False)
-    read = Column(Boolean, default=False)
+    id = Column(String, primary_key=True, index=True)
+    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    type = Column(String, nullable=False)  # e.g., "assignment_due", "comment", "grade", etc.
+    title = Column(String, nullable=False)
+    message = Column(String, nullable=False)
+    data = Column(JSON)  # Additional context data
+    is_read = Column(Boolean, default=False)
+    is_archived = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now()) 
+    read_at = Column(DateTime(timezone=True))
+    expires_at = Column(DateTime(timezone=True))
+
+    # Relationships
+    user = relationship("User", back_populates="notifications") 

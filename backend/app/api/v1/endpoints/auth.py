@@ -132,7 +132,6 @@ async def get_active_sessions(
     
     # Update user's sessions list
     current_user.sessions = active_sessions
-    # TODO: Save updated sessions to MongoDB/Beanie
     
     return active_sessions
 
@@ -144,6 +143,57 @@ async def revoke_session(
     """Revoke a specific session"""
     session_service.revoke_session(session_id)
     return {"message": "Session revoked successfully"}
+
+@router.get("/sessions/{session_id}/analytics")
+async def get_session_analytics(
+    session_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get analytics for a specific session"""
+    # Verify session belongs to user
+    if not any(session.get("id") == session_id for session in current_user.sessions):
+        raise HTTPException(
+            status_code=404,
+            detail="Session not found"
+        )
+    
+    analytics = session_service.get_session_analytics(session_id)
+    if not analytics:
+        raise HTTPException(
+            status_code=404,
+            detail="Session analytics not found"
+        )
+    
+    return analytics
+
+@router.get("/sessions/analytics")
+async def get_user_session_analytics(
+    current_user: User = Depends(get_current_user)
+):
+    """Get analytics for all sessions of current user"""
+    return session_service.get_user_session_analytics(current_user.id)
+
+@router.post("/sessions/{session_id}/activity")
+async def track_session_activity(
+    session_id: str,
+    activity: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """Track activity for a specific session"""
+    # Verify session belongs to user
+    if not any(session.get("id") == session_id for session in current_user.sessions):
+        raise HTTPException(
+            status_code=404,
+            detail="Session not found"
+        )
+    
+    session_service.track_session_activity(
+        session_id,
+        activity.get("type"),
+        activity.get("details")
+    )
+    
+    return {"status": "success"}
 
 @router.post("/test-token", response_model=schemas.User)
 def test_token(current_user: models.User = Depends(deps.get_current_user)) -> Any:
@@ -228,41 +278,104 @@ async def oauth_callback(
         )
         user_info = await oauth_config.get_user_info(provider, token["access_token"])
         
-        # Check if user exists
+        # Create or update user
         user = crud.user.get_by_email(user_info["email"])
-        
         if not user:
-            # Create new user
-            user_in = UserCreate(
-                email=user_info["email"],
-                full_name=user_info["name"],
-                hashed_password=get_password_hash(security.generate_random_password()),
-                is_active=True,
-                is_verified=True,  # OAuth users are pre-verified
-            )
-            user = crud.user.create(user_in)
-        elif not user.is_active:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Inactive user",
-            )
+            user = crud.user.create({
+                "email": user_info["email"],
+                "full_name": user_info["name"],
+                "oauth_provider": provider,
+                "oauth_id": user_info.get("id"),
+            })
         
-        # Generate access token
-        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        access_token = security.create_access_token(
-            user.id, expires_delta=access_token_expires
+        # Store OAuth tokens
+        user.oauth_access_token = token["access_token"]
+        user.oauth_refresh_token = token.get("refresh_token")
+        user.oauth_token_expires_at = datetime.utcnow() + timedelta(seconds=token.get("expires_in", 3600))
+        crud.user.update(user)
+        
+        # Create session
+        session_id = session_service.create_session(
+            user,
+            request.client.host,
+            request.headers.get("user-agent", ""),
+        )
+        
+        # Create access and refresh tokens
+        access_token = create_access_token(
+            data={"sub": str(user.id), "session_id": session_id}
+        )
+        refresh_token = create_refresh_token(
+            data={"sub": str(user.id), "session_id": session_id}
         )
         
         return {
             "access_token": access_token,
+            "refresh_token": refresh_token,
             "token_type": "bearer",
-            "user": user,
+            "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         }
-        
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Failed to authenticate with {provider}: {str(e)}",
+            detail=f"OAuth error: {str(e)}",
+        )
+
+@router.post("/refresh-token")
+async def refresh_token(
+    refresh_token: str = Body(..., embed=True),
+    db: Session = Depends(get_db),
+):
+    """
+    Refresh access token using refresh token
+    """
+    try:
+        # Verify refresh token
+        payload = verify_token(refresh_token)
+        if payload.get("type") != "refresh":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid refresh token",
+            )
+        
+        user_id = payload.get("sub")
+        session_id = payload.get("session_id")
+        
+        # Get user and verify session
+        user = crud.user.get(db, id=user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found",
+            )
+        
+        # Verify session is still valid
+        if not session_service.validate_session(session_id, request.client.host, request.headers.get("user-agent", "")):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Session expired",
+            )
+        
+        # Create new access token
+        access_token = create_access_token(
+            data={"sub": str(user.id), "session_id": session_id}
+        )
+        
+        # Create new refresh token (rotate refresh token)
+        new_refresh_token = create_refresh_token(
+            data={"sub": str(user.id), "session_id": session_id}
+        )
+        
+        return {
+            "access_token": access_token,
+            "refresh_token": new_refresh_token,
+            "token_type": "bearer",
+            "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        }
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token",
         )
 
 @router.post("/2fa/setup", response_model=TwoFactorSetup)

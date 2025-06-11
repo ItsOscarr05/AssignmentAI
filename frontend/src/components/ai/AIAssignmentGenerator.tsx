@@ -1,12 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  Add as AddIcon,
-  AutoAwesome as AutoAwesomeIcon,
-  Delete as DeleteIcon,
-} from '@mui/icons-material';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 import {
   Box,
   Button,
+  Card,
+  CardContent,
   CircularProgress,
   FormControl,
   FormHelperText,
@@ -14,46 +13,51 @@ import {
   IconButton,
   InputLabel,
   MenuItem,
-  Paper,
   Select,
+  Stack,
   TextField,
   Typography,
 } from '@mui/material';
+import { useSnackbar } from 'notistack';
 import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { assignments } from '../../services/api';
-import { AssignmentGenerationRequest } from '../../types/ai';
-import { Toast } from '../common/Toast';
+import { useUsageTracking } from '../../hooks/useUsageTracking';
+import { api } from '../../services/api';
 
-const generationSchema = z.object({
+// Define the form schema
+const assignmentSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
   subject: z.string().min(1, 'Subject is required'),
   difficulty: z.enum(['easy', 'medium', 'hard']),
   grade_level: z.string().min(1, 'Grade level is required'),
   estimated_duration: z.number().min(1, 'Duration must be at least 1 minute'),
-  max_points: z.number().min(1, 'Maximum points must be at least 1'),
+  max_points: z.number().min(1, 'Points must be at least 1'),
+  requirements: z.array(z.string()).min(1, 'At least one requirement is needed'),
 });
 
-type GenerationFormData = z.infer<typeof generationSchema>;
+type AssignmentFormData = z.infer<typeof assignmentSchema>;
+
+interface AssignmentGenerationResponse {
+  generated_assignment: AssignmentFormData;
+  message: string;
+}
 
 const AIAssignmentGenerator: React.FC = () => {
-  const [loading, setLoading] = useState(false);
-  const [requirements, setRequirements] = useState<string[]>(['']);
-  const [learningObjectives, setLearningObjectives] = useState<string[]>(['']);
-  const [toast, setToast] = useState<{
-    open: boolean;
-    message: string;
-    severity: 'success' | 'error' | 'warning' | 'info';
-  }>({
-    open: false,
-    message: '',
-    severity: 'info',
-  });
+  const { enqueueSnackbar } = useSnackbar();
+  const { trackUsage } = useUsageTracking('assignment_generation');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedAssignment, setGeneratedAssignment] = useState<AssignmentFormData | null>(null);
 
-  const form = useForm<GenerationFormData>({
-    resolver: zodResolver(generationSchema),
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+    reset,
+  } = useForm<AssignmentFormData>({
+    resolver: zodResolver(assignmentSchema),
     defaultValues: {
       title: '',
       description: '',
@@ -62,332 +66,216 @@ const AIAssignmentGenerator: React.FC = () => {
       grade_level: '',
       estimated_duration: 30,
       max_points: 100,
+      requirements: [''],
     },
   });
 
-  const handleAddItem = (items: string[], setItems: (items: string[]) => void) => {
-    setItems([...items, '']);
-  };
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'requirements',
+  });
 
-  const handleRemoveItem = (
-    items: string[],
-    setItems: (items: string[]) => void,
-    index: number
-  ) => {
-    setItems(items.filter((_, i) => i !== index));
-  };
-
-  const handleItemChange = (
-    items: string[],
-    setItems: (items: string[]) => void,
-    index: number,
-    value: string
-  ) => {
-    const newItems = [...items];
-    newItems[index] = value;
-    setItems(newItems);
-  };
-
-  const onSubmit = async (data: GenerationFormData) => {
-    console.log('Form submission started with data:', data);
-    console.log('Current requirements:', requirements);
-    console.log('Current learning objectives:', learningObjectives);
-
-    if (requirements.filter(Boolean).length === 0) {
-      console.log('Validation failed: No requirements provided');
-      setToast({
-        open: true,
-        message: 'At least one requirement is required',
-        severity: 'error',
-      });
-      return;
-    }
-
-    if (learningObjectives.filter(Boolean).length === 0) {
-      console.log('Validation failed: No learning objectives provided');
-      setToast({
-        open: true,
-        message: 'At least one learning objective is required',
-        severity: 'error',
-      });
-      return;
-    }
-
+  const onSubmit = async (data: AssignmentFormData) => {
     try {
-      console.log('Setting loading state to true');
-      setLoading(true);
-      const request: AssignmentGenerationRequest = {
-        title: data.title,
-        description: data.description,
-        subject: data.subject,
-        difficulty: data.difficulty,
-        type: 'essay', // Default type
-        timeLimit: data.estimated_duration,
-        additionalContext: requirements.filter(Boolean).join('\n'),
-      };
-      console.log('Sending request to API:', request);
-      const response = await assignments.generateAssignment(request);
-      console.log('Received API response:', response);
+      setIsGenerating(true);
+      await trackUsage('generate');
 
-      if (response.content) {
-        console.log('Setting success toast');
-        setToast({
-          open: true,
-          message: 'Assignment generated successfully',
-          severity: 'success',
-        });
-      } else {
-        console.log('Setting error toast - no content in response');
-        setToast({
-          open: true,
-          message: 'Failed to generate assignment',
-          severity: 'error',
-        });
+      const response = await api.post<AssignmentGenerationResponse>(
+        '/ai/generate-assignment',
+        data
+      );
+
+      if (response.data.generated_assignment) {
+        setGeneratedAssignment(response.data.generated_assignment);
+        enqueueSnackbar('Assignment generated successfully!', { variant: 'success' });
       }
-    } catch (error) {
-      console.error('API call failed:', error);
-      setToast({
-        open: true,
-        message: 'Failed to generate assignment',
-        severity: 'error',
+    } catch (error: any) {
+      enqueueSnackbar(error.response?.data?.message || 'Failed to generate assignment', {
+        variant: 'error',
       });
     } finally {
-      console.log('Setting loading state to false');
-      setLoading(false);
+      setIsGenerating(false);
     }
+  };
+
+  const handleUseGenerated = () => {
+    if (generatedAssignment) {
+      reset(generatedAssignment);
+      setGeneratedAssignment(null);
+      enqueueSnackbar('Generated assignment loaded into form', { variant: 'success' });
+    }
+  };
+
+  const handleAddRequirement = () => {
+    const currentRequirements = control._formValues.requirements || [];
+    append([...currentRequirements, '']);
   };
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
-        AI Assignment Generator
-      </Typography>
-      <Paper sx={{ p: 3 }}>
-        <form onSubmit={form.handleSubmit(onSubmit)} data-testid="assignment-form">
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Title"
-                {...form.register('title')}
-                error={!!form.formState.errors.title}
-                helperText={form.formState.errors.title?.message}
-                disabled={loading}
-                data-testid="text-field"
-                id="title"
-                InputLabelProps={{
-                  htmlFor: 'title',
-                  'data-testid': 'title-label',
-                }}
-                inputProps={{
-                  'aria-label': 'Title',
-                  'data-testid': 'title-input',
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
+      <Card>
+        <CardContent>
+          <Typography variant="h5" gutterBottom>
+            AI Assignment Generator
+          </Typography>
+
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <Stack spacing={3}>
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Title"
+                    {...register('title')}
+                    error={!!errors.title}
+                    helperText={errors.title?.message}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Subject"
+                    {...register('subject')}
+                    error={!!errors.subject}
+                    helperText={errors.subject?.message}
+                  />
+                </Grid>
+              </Grid>
+
               <TextField
                 fullWidth
                 label="Description"
-                {...form.register('description')}
-                error={!!form.formState.errors.description}
-                helperText={form.formState.errors.description?.message}
-                disabled={loading}
-                data-testid="text-field"
-                id="description"
-                InputLabelProps={{
-                  htmlFor: 'description',
-                  'data-testid': 'description-label',
-                }}
-                inputProps={{
-                  'aria-label': 'Description',
-                  'data-testid': 'description-input',
-                }}
+                multiline
+                rows={3}
+                {...register('description')}
+                error={!!errors.description}
+                helperText={errors.description?.message}
               />
-            </Grid>
-            <Grid item xs={12} md={6}>
+
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={4}>
+                  <FormControl fullWidth error={!!errors.difficulty}>
+                    <InputLabel>Difficulty</InputLabel>
+                    <Select label="Difficulty" {...register('difficulty')}>
+                      <MenuItem value="easy">Easy</MenuItem>
+                      <MenuItem value="medium">Medium</MenuItem>
+                      <MenuItem value="hard">Hard</MenuItem>
+                    </Select>
+                    {errors.difficulty && (
+                      <FormHelperText>{errors.difficulty.message}</FormHelperText>
+                    )}
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <TextField
+                    fullWidth
+                    label="Grade Level"
+                    {...register('grade_level')}
+                    error={!!errors.grade_level}
+                    helperText={errors.grade_level?.message}
+                  />
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <TextField
+                    fullWidth
+                    type="number"
+                    label="Estimated Duration (minutes)"
+                    {...register('estimated_duration', { valueAsNumber: true })}
+                    error={!!errors.estimated_duration}
+                    helperText={errors.estimated_duration?.message}
+                  />
+                </Grid>
+              </Grid>
+
               <TextField
                 fullWidth
-                label="Subject"
-                {...form.register('subject')}
-                error={!!form.formState.errors.subject}
-                helperText={form.formState.errors.subject?.message}
-                disabled={loading}
-                data-testid="text-field"
-                id="subject"
-                InputLabelProps={{
-                  htmlFor: 'subject',
-                  'data-testid': 'subject-label',
-                }}
-                inputProps={{
-                  'aria-label': 'Subject',
-                  'data-testid': 'subject-input',
-                }}
+                type="number"
+                label="Maximum Points"
+                {...register('max_points', { valueAsNumber: true })}
+                error={!!errors.max_points}
+                helperText={errors.max_points?.message}
               />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth error={!!form.formState.errors.difficulty}>
-                <InputLabel id="difficulty-label" htmlFor="difficulty">
-                  Difficulty Level
-                </InputLabel>
-                <Select
-                  labelId="difficulty-label"
-                  id="difficulty"
-                  label="Difficulty Level"
-                  {...form.register('difficulty')}
-                  defaultValue="medium"
-                  disabled={loading}
-                  inputProps={{
-                    'aria-label': 'Difficulty Level',
-                    'data-testid': 'difficulty-input',
-                  }}
+
+              <Box>
+                <Typography variant="subtitle1" gutterBottom>
+                  Requirements
+                </Typography>
+                {fields.map((field, index) => (
+                  <Box key={field.id} sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                    <TextField
+                      fullWidth
+                      {...register(`requirements.${index}`)}
+                      error={!!errors.requirements?.[index]}
+                      helperText={errors.requirements?.[index]?.message}
+                    />
+                    <IconButton
+                      onClick={() => remove(index)}
+                      color="error"
+                      disabled={fields.length === 1}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Box>
+                ))}
+                <Button
+                  startIcon={<AddIcon />}
+                  onClick={handleAddRequirement}
+                  variant="outlined"
+                  sx={{ mt: 1 }}
                 >
-                  <MenuItem value="easy">Easy</MenuItem>
-                  <MenuItem value="medium">Medium</MenuItem>
-                  <MenuItem value="hard">Hard</MenuItem>
-                </Select>
-                {form.formState.errors.difficulty && (
-                  <FormHelperText>{form.formState.errors.difficulty.message}</FormHelperText>
-                )}
-              </FormControl>
-            </Grid>
-            <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom>
-                Requirements
-              </Typography>
-              {requirements.map((requirement, index) => (
-                <Box key={index} sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                  <TextField
-                    fullWidth
-                    label={`Requirement ${index + 1}`}
-                    value={requirement}
-                    onChange={e =>
-                      handleItemChange(requirements, setRequirements, index, e.target.value)
-                    }
-                    error={requirements.length === 1 && !requirement}
-                    helperText={
-                      requirements.length === 1 && !requirement
-                        ? 'At least one requirement is required'
-                        : ''
-                    }
-                    disabled={loading}
-                    data-testid="text-field"
-                    id={`requirement-${index + 1}`}
-                    InputLabelProps={{
-                      htmlFor: `requirement-${index + 1}`,
-                      'data-testid': `requirement-label-${index + 1}`,
-                    }}
-                    inputProps={{
-                      'aria-label': `Requirement ${index + 1}`,
-                      'data-testid': `requirement-input-${index + 1}`,
-                    }}
-                  />
-                  <IconButton
-                    onClick={() => handleRemoveItem(requirements, setRequirements, index)}
-                    disabled={requirements.length === 1 || loading}
-                    aria-label={`Remove requirement ${index + 1}`}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </Box>
-              ))}
-              <Button
-                startIcon={<AddIcon />}
-                onClick={() => handleAddItem(requirements, setRequirements)}
-                sx={{ mt: 1 }}
-                disabled={loading}
-                aria-label="Add requirement"
-              >
-                Add Requirement
-              </Button>
-            </Grid>
-            <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom>
-                Learning Objectives
-              </Typography>
-              {learningObjectives.map((objective, index) => (
-                <Box key={index} sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                  <TextField
-                    fullWidth
-                    label={`Learning Objective ${index + 1}`}
-                    value={objective}
-                    onChange={e =>
-                      handleItemChange(
-                        learningObjectives,
-                        setLearningObjectives,
-                        index,
-                        e.target.value
-                      )
-                    }
-                    error={learningObjectives.length === 1 && !objective}
-                    helperText={
-                      learningObjectives.length === 1 && !objective
-                        ? 'At least one learning objective is required'
-                        : ''
-                    }
-                    disabled={loading}
-                    data-testid="text-field"
-                    id={`objective-${index + 1}`}
-                    InputLabelProps={{
-                      htmlFor: `objective-${index + 1}`,
-                      'data-testid': `objective-label-${index + 1}`,
-                    }}
-                    inputProps={{
-                      'aria-label': `Learning Objective ${index + 1}`,
-                      'data-testid': `objective-input-${index + 1}`,
-                    }}
-                  />
-                  <IconButton
-                    onClick={() =>
-                      handleRemoveItem(learningObjectives, setLearningObjectives, index)
-                    }
-                    disabled={learningObjectives.length === 1 || loading}
-                    aria-label={`Remove learning objective ${index + 1}`}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </Box>
-              ))}
-              <Button
-                startIcon={<AddIcon />}
-                onClick={() => handleAddItem(learningObjectives, setLearningObjectives)}
-                sx={{ mt: 1 }}
-                disabled={loading}
-                aria-label="Add learning objective"
-              >
-                Add Learning Objective
-              </Button>
-            </Grid>
-            <Grid item xs={12}>
+                  Add Requirement
+                </Button>
+              </Box>
+
               <Button
                 type="submit"
                 variant="contained"
-                color="primary"
-                startIcon={loading ? <CircularProgress size={20} /> : <AutoAwesomeIcon />}
-                disabled={!!loading}
-                data-testid="generate-button"
-                aria-label="Generate assignment"
+                disabled={isGenerating}
                 sx={{
-                  '&.Mui-disabled': {
-                    pointerEvents: 'none',
-                    opacity: 0.7,
+                  background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+                  '&:hover': {
+                    background: 'linear-gradient(45deg, #1976D2 30%, #00BCD4 90%)',
                   },
                 }}
               >
-                {loading ? 'Generating...' : 'Generate Assignment'}
+                {isGenerating ? (
+                  <>
+                    <CircularProgress size={24} sx={{ mr: 1 }} />
+                    Generating...
+                  </>
+                ) : (
+                  'Generate Assignment'
+                )}
               </Button>
-            </Grid>
-          </Grid>
-        </form>
-      </Paper>
-      <Toast
-        open={toast.open}
-        message={toast.message}
-        severity={toast.severity}
-        onClose={() => setToast({ ...toast, open: false })}
-        data-testid="snackbar"
-        data-severity={toast.severity}
-      />
+            </Stack>
+          </form>
+        </CardContent>
+      </Card>
+
+      {generatedAssignment && (
+        <Card sx={{ mt: 3 }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              Generated Assignment
+            </Typography>
+            <Typography variant="body1" paragraph>
+              {generatedAssignment.description}
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={handleUseGenerated}
+              sx={{
+                background: 'linear-gradient(45deg, #4CAF50 30%, #81C784 90%)',
+                '&:hover': {
+                  background: 'linear-gradient(45deg, #388E3C 30%, #66BB6A 90%)',
+                },
+              }}
+            >
+              Use Generated Assignment
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </Box>
   );
 };

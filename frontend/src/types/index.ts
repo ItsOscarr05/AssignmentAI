@@ -1,28 +1,55 @@
-import { NOTIFICATION_TYPES } from '../constants';
-
 // User Types
 export interface User {
   id: string;
   email: string;
-  fullName: string;
+  firstName: string;
+  lastName: string;
   role: UserRole;
+  bio?: string;
+  location?: string;
+  website?: string;
+  avatar?: string;
   createdAt: string;
   updatedAt: string;
-  isVerified: boolean;
-  avatarUrl?: string;
-  institution?: string;
+}
+
+export interface UserProfile {
+  name: string;
+  email: string;
+  avatar: string;
+  bio?: string;
+  location?: string;
+  website?: string;
+}
+
+export interface UserPreferences {
+  emailNotifications: boolean;
+  pushNotifications: boolean;
+  darkMode: boolean;
+  language: string;
+  timezone: string;
 }
 
 export type UserRole = 'student' | 'teacher' | 'admin';
 
-export interface UserPreferences {
-  theme: 'light' | 'dark';
-  language: string;
-  notifications: {
-    email: boolean;
-    push: boolean;
-  };
-  timezone: string;
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export interface Token {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_in: number;
+}
+
+export interface Session {
+  id: string;
+  device: string;
+  location: string;
+  last_active: string;
+  created_at: string;
 }
 
 // Assignment Types
@@ -135,12 +162,24 @@ export interface Link {
 // Notification Types
 export interface Notification {
   id: string;
-  type: (typeof NOTIFICATION_TYPES)[keyof typeof NOTIFICATION_TYPES];
+  user_id: string;
+  type: string;
   title: string;
   message: string;
-  read: boolean;
-  createdAt: string;
-  metadata?: Record<string, unknown>;
+  data?: Record<string, any>;
+  is_read: boolean;
+  is_archived: boolean;
+  created_at: string;
+  read_at?: string;
+  expires_at?: string;
+}
+
+export interface NotificationFilter {
+  type?: string;
+  is_read?: boolean;
+  is_archived?: boolean;
+  start_date?: string;
+  end_date?: string;
 }
 
 // API Response Types
@@ -391,3 +430,69 @@ export interface SubmissionFormProps {
   onSubmit: (data: any) => void;
   initialData?: any;
 }
+
+export interface Activity {
+  id: string;
+  user_id: string;
+  action: string;
+  resource_type?: string;
+  resource_id?: string;
+  metadata?: Record<string, any>;
+  ip_address?: string;
+  user_agent?: string;
+  created_at: string;
+}
+
+export interface ActivityFilter {
+  user_id?: string;
+  action?: string;
+  resource_type?: string;
+  resource_id?: string;
+  start_date?: string;
+  end_date?: string;
+}
+
+export interface ActivityStats {
+  total_activities: number;
+  actions: Record<string, number>;
+  resource_types: Record<string, number>;
+  daily_activity: Record<string, number>;
+}
+
+export interface NotificationTypes {
+  assignment_due: boolean;
+  grade: boolean;
+  comment: boolean;
+  announcement: boolean;
+}
+
+export interface Preference {
+  id: string;
+  user_id: string;
+
+  // UI Preferences
+  theme: 'light' | 'dark' | 'system';
+  language: string;
+  font_size: 'small' | 'medium' | 'large';
+  compact_mode: boolean;
+
+  // Notification Preferences
+  email_notifications: boolean;
+  push_notifications: boolean;
+  notification_types: NotificationTypes;
+
+  // Privacy Preferences
+  show_profile: boolean;
+  show_progress: boolean;
+  show_activity: boolean;
+
+  // Accessibility Preferences
+  high_contrast: boolean;
+  reduced_motion: boolean;
+  screen_reader: boolean;
+
+  // Custom Preferences
+  custom_preferences: Record<string, any>;
+}
+
+export type PreferenceUpdate = Partial<Preference>;

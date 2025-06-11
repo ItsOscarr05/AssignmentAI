@@ -1,11 +1,13 @@
 import {
   Close as CloseIcon,
   Description as DescriptionIcon,
+  Google as GoogleIcon,
   Image as ImageIcon,
   CloudUpload as UploadIcon,
 } from '@mui/icons-material';
 import { Alert, Box, Button, IconButton, LinearProgress, Paper, Typography } from '@mui/material';
 import React, { useRef, useState } from 'react';
+import { GoogleDocsIntegration } from '../files/GoogleDocsIntegration';
 
 interface FileUploadProps {
   files?: File[];
@@ -57,6 +59,7 @@ export const FileUpload: React.FC<
   const [dragActive, setDragActive] = useState(false);
   const [internalFiles, setInternalFiles] = useState<File[]>([]);
   const [errorState, setErrorState] = useState<string | undefined>(undefined);
+  const [showGoogleDocs, setShowGoogleDocs] = useState(false);
 
   // Use value if provided, otherwise use files, otherwise use internalFiles
   const displayedFiles = value
@@ -190,6 +193,27 @@ export const FileUpload: React.FC<
   // Accessibility: announce file selection
   const fileAnnouncement = displayedFiles.length ? displayedFiles.map(f => f.name).join(', ') : '';
 
+  const handleGoogleDocSelect = (file: { id: string; name: string; content: string }) => {
+    const blob = new Blob([file.content], { type: 'text/plain' });
+    const googleDocFile = new File([blob], file.name, { type: 'text/plain' });
+
+    if (onFileSelect) {
+      onFileSelect(googleDocFile);
+    }
+    if (onChange) {
+      if (multiple) {
+        onChange([...displayedFiles, googleDocFile]);
+      } else {
+        onChange([googleDocFile]);
+      }
+    } else {
+      setInternalFiles(multiple ? [...displayedFiles, googleDocFile] : [googleDocFile]);
+    }
+    if (onUpload) {
+      onUpload([googleDocFile]);
+    }
+  };
+
   return (
     <Box>
       {(errorState || error) && (
@@ -286,8 +310,25 @@ export const FileUpload: React.FC<
               {success}
             </Alert>
           )}
+          <Button
+            variant="outlined"
+            startIcon={<GoogleIcon />}
+            onClick={e => {
+              e.stopPropagation();
+              setShowGoogleDocs(true);
+            }}
+            sx={{ mt: 2 }}
+          >
+            Import from Google Docs
+          </Button>
         </Paper>
       </label>
+
+      <GoogleDocsIntegration
+        open={showGoogleDocs}
+        onClose={() => setShowGoogleDocs(false)}
+        onSelect={handleGoogleDocSelect}
+      />
 
       <div
         aria-live="polite"

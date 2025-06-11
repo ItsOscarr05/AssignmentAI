@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { api } from './api';
 
 export interface UsageMetrics {
   totalTokens: number;
@@ -160,24 +161,38 @@ export const useAnalytics = () => {
   };
 };
 
-interface AnalyticsEvent {
+export interface AnalyticsEvent {
   name: string;
+  category: string;
+  action: string;
+  label?: string;
+  value?: number;
   properties?: Record<string, any>;
-  timestamp: number;
+  timestamp?: number;
 }
 
-interface PageView {
-  path: string;
-  title: string;
-  timestamp: number;
-  duration: number;
+export interface AnalyticsConfig {
+  enabled: boolean;
+  debug: boolean;
+  sampleRate: number;
+  endpoint: string;
+  batchSize: number;
+  flushInterval: number;
 }
 
-class AnalyticsService {
+export class AnalyticsService {
   private static instance: AnalyticsService;
-  private events: AnalyticsEvent[] = [];
-  private pageViews: PageView[] = [];
-  private currentPageStartTime: number = 0;
+  private queue: AnalyticsEvent[] = [];
+  private config: AnalyticsConfig = {
+    enabled: true,
+    debug: false,
+    sampleRate: 1.0,
+    endpoint: '/api/v1/analytics',
+    batchSize: 10,
+    flushInterval: 5000,
+  };
+  private flushTimer: NodeJS.Timeout | null = null;
+  private isProcessing = false;
 
   private constructor() {
     this.initialize();
@@ -190,75 +205,173 @@ class AnalyticsService {
     return AnalyticsService.instance;
   }
 
-  private initialize() {
-    // Initialize any third-party analytics services here
-    this.currentPageStartTime = Date.now();
+  private initialize(): void {
+    if (typeof window !== 'undefined') {
+      // Start periodic flush
+      this.startPeriodicFlush();
+
+      // Track page views
+      this.trackPageView();
+
+      // Add event listeners for automatic tracking
+      this.setupAutomaticTracking();
+    }
   }
 
-  public trackEvent(name: string, properties?: Record<string, any>) {
-    const event: AnalyticsEvent = {
-      name,
+  public configure(config: Partial<AnalyticsConfig>): void {
+    this.config = { ...this.config, ...config };
+  }
+
+  public trackEvent(event: AnalyticsEvent): void {
+    if (!this.config.enabled) return;
+
+    // Add timestamp if not provided
+    if (!event.timestamp) {
+      event.timestamp = Date.now();
+    }
+
+    this.queue.push(event);
+
+    // Flush if queue reaches batch size
+    if (this.queue.length >= this.config.batchSize) {
+      this.flush();
+    }
+  }
+
+  public trackPageView(path?: string): void {
+    const currentPath = path || window.location.pathname;
+    this.trackEvent({
+      name: 'page_view',
+      category: 'Page',
+      action: 'View',
+      label: currentPath,
+      properties: {
+        path: currentPath,
+        referrer: document.referrer,
+        title: document.title,
+      },
+    });
+  }
+
+  public trackError(error: Error, context?: Record<string, any>): void {
+    this.trackEvent({
+      name: 'error',
+      category: 'Error',
+      action: 'Occurred',
+      label: error.message,
+      properties: {
+        stack: error.stack,
+        ...context,
+      },
+    });
+  }
+
+  public trackUserAction(action: string, properties?: Record<string, any>): void {
+    this.trackEvent({
+      name: 'user_action',
+      category: 'User',
+      action,
       properties,
-      timestamp: Date.now(),
-    };
-    this.events.push(event);
-    this.sendEvent(event);
+    });
   }
 
-  public trackPageView(path: string, title: string) {
-    const now = Date.now();
-    const duration = now - this.currentPageStartTime;
-
-    const pageView: PageView = {
-      path,
-      title,
-      timestamp: now,
-      duration,
-    };
-
-    this.pageViews.push(pageView);
-    this.currentPageStartTime = now;
-    this.sendPageView(pageView);
+  public trackPerformance(metric: string, value: number): void {
+    this.trackEvent({
+      name: 'performance',
+      category: 'Performance',
+      action: 'Measure',
+      label: metric,
+      value,
+    });
   }
 
-  public trackError(error: Error, context?: Record<string, any>) {
-    console.error('Error tracked:', error, context);
+  private setupAutomaticTracking(): void {
+    // Track clicks on important elements
+    document.addEventListener('click', event => {
+      const target = event.target as HTMLElement;
+      if (target.matches('button, a, [role="button"]')) {
+        this.trackUserAction('click', {
+          element: target.tagName.toLowerCase(),
+          text: target.textContent?.trim(),
+          id: target.id,
+          className: target.className,
+        });
+      }
+    });
+
+    // Track form submissions
+    document.addEventListener('submit', event => {
+      const form = event.target as HTMLFormElement;
+      this.trackUserAction('form_submit', {
+        formId: form.id,
+        formAction: form.action,
+      });
+    });
+
+    // Track performance metrics
+    if ('performance' in window) {
+      window.addEventListener('load', () => {
+        const timing = performance.timing;
+        this.trackPerformance('load_time', timing.loadEventEnd - timing.navigationStart);
+        this.trackPerformance(
+          'dom_ready',
+          timing.domContentLoadedEventEnd - timing.navigationStart
+        );
+      });
+    }
   }
 
-  public trackPerformance(metrics: {
-    averageResponseTime: number;
-    maxResponseTime: number;
-    minResponseTime: number;
-    successRate: number;
-    errorRate: number;
-  }) {
-    console.log('Performance metrics tracked:', metrics);
+  private startPeriodicFlush(): void {
+    if (this.flushTimer) {
+      clearInterval(this.flushTimer);
+    }
+    this.flushTimer = setInterval(() => this.flush(), this.config.flushInterval);
   }
 
-  private sendEvent(event: AnalyticsEvent) {
-    // TODO: Implement actual analytics service integration
-    console.log('Analytics Event:', event);
+  private async flush(): Promise<void> {
+    if (this.isProcessing || this.queue.length === 0) return;
+
+    this.isProcessing = true;
+    const events = [...this.queue];
+    this.queue = [];
+
+    try {
+      await api.post(this.config.endpoint, { events });
+      if (this.config.debug) {
+        console.log('Analytics events flushed:', events);
+      }
+    } catch (error) {
+      console.error('Failed to flush analytics events:', error);
+      // Put events back in queue
+      this.queue = [...events, ...this.queue];
+    } finally {
+      this.isProcessing = false;
+    }
   }
 
-  private sendPageView(pageView: PageView) {
-    // TODO: Implement actual analytics service integration
-    console.log('Page View:', pageView);
+  public async flushEvents(): Promise<void> {
+    await this.flush();
   }
 
-  public getEvents(): AnalyticsEvent[] {
-    return [...this.events];
+  public clearQueue(): void {
+    this.queue = [];
   }
 
-  public getPageViews(): PageView[] {
-    return [...this.pageViews];
+  public getQueueSize(): number {
+    return this.queue.length;
   }
 
-  public clearEvents() {
-    this.events = [];
+  public isEnabled(): boolean {
+    return this.config.enabled;
   }
 
-  public clearPageViews() {
-    this.pageViews = [];
+  public enable(): void {
+    this.config.enabled = true;
+  }
+
+  public disable(): void {
+    this.config.enabled = false;
+    this.clearQueue();
   }
 }
 

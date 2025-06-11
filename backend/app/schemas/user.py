@@ -1,26 +1,44 @@
-from typing import Optional
+from typing import Optional, Dict, Any
 from pydantic import BaseModel, EmailStr
 from app.models.user import UserRole
 from app.schemas.base import BaseSchema
 from datetime import datetime
 
 class UserBase(BaseModel):
-    email: Optional[EmailStr] = None
-    full_name: Optional[str] = None
-    is_active: Optional[bool] = True
-    is_superuser: Optional[bool] = False
+    email: EmailStr
+    name: Optional[str] = None
+    avatar: Optional[str] = None
+    bio: Optional[str] = None
+    location: Optional[str] = None
+    website: Optional[str] = None
+    preferences: Optional[Dict[str, Any]] = None
+    role: str = "user"
+    is_active: bool = True
 
 class UserCreate(UserBase):
-    email: EmailStr
     password: str
-    full_name: str
 
 class UserUpdate(UserBase):
     password: Optional[str] = None
 
+class UserProfile(BaseModel):
+    name: str
+    email: EmailStr
+    avatar: str
+    bio: Optional[str] = None
+    location: Optional[str] = None
+    website: Optional[str] = None
+
+class UserPreferences(BaseModel):
+    emailNotifications: bool = True
+    pushNotifications: bool = True
+    darkMode: bool = False
+    language: str = "en"
+    timezone: str = "UTC"
+
 class UserInDBBase(UserBase):
-    id: Optional[int] = None
-    created_at: Optional[datetime] = None
+    id: str
+    created_at: datetime
     updated_at: Optional[datetime] = None
 
     class Config:

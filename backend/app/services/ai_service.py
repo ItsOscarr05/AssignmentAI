@@ -14,42 +14,45 @@ from app.schemas.ai_assignment import (
 from app.schemas.feedback import FeedbackCreate
 from app.core.config import settings
 from app.core.logger import logger
+import re
+import asyncio
 
 class AIService:
     def __init__(self, db: AsyncSession):
         self.db = db
         self.model_version = settings.AI_MODEL_VERSION
         self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-        self.model = "gpt-3.5-turbo"
+        self.model = settings.OPENAI_MODEL
 
     async def generate_assignment(self, request: AssignmentGenerationRequest) -> AssignmentGenerationResponse:
         """
         Generate an assignment using AI based on the provided request parameters.
         """
         try:
+            # Validate input parameters
+            if not self._validate_request(request):
+                return AssignmentGenerationResponse(
+                    success=False,
+                    error="Invalid request parameters"
+                )
+
             # Construct the prompt for the AI model
             prompt = self._construct_assignment_prompt(request)
             
-            # Call OpenAI API
-            response = await self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": "You are a helpful teacher's assistant that creates educational assignments."},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=settings.AI_MAX_TOKENS,
-                temperature=settings.AI_TEMPERATURE,
-                top_p=settings.AI_TOP_P,
-                frequency_penalty=settings.AI_FREQUENCY_PENALTY,
-                presence_penalty=settings.AI_PRESENCE_PENALTY
-            )
-            
-            generated_content = response.choices[0].message.content
+            # Call OpenAI API with retry logic
+            response = await self._call_openai_with_retry(prompt)
             
             # Parse and structure the AI response
-            assignment_content = self._parse_assignment_content(generated_content)
+            assignment_content = self._parse_assignment_content(response)
             
-            # Create the response object
+            # Validate the generated content
+            if not self._validate_generated_content(assignment_content):
+                return AssignmentGenerationResponse(
+                    success=False,
+                    error="Generated content failed validation"
+                )
+
+            # Create the response object with enhanced metadata
             response = AssignmentGenerationResponse(
                 success=True,
                 assignment=GeneratedAssignment(
@@ -62,7 +65,14 @@ class AIService:
                         evaluation_criteria=assignment_content.get("evaluation_criteria", []),
                         estimated_duration=assignment_content.get("estimated_duration", "1 hour"),
                         resources=assignment_content.get("resources", [])
-                    )
+                    ),
+                    metadata={
+                        "word_count": self._count_words(assignment_content),
+                        "difficulty_level": request.difficulty,
+                        "generation_timestamp": datetime.utcnow().isoformat(),
+                        "model_version": self.model,
+                        "confidence_score": self._calculate_confidence_score(assignment_content)
+                    }
                 )
             )
             
@@ -72,7 +82,7 @@ class AIService:
             logger.error(f"Error generating assignment: {str(e)}")
             return AssignmentGenerationResponse(
                 success=False,
-                error=str(e)
+                error=f"Failed to generate assignment: {str(e)}"
             )
 
     async def generate_feedback(self, submission_content: str, feedback_type: str) -> Optional[FeedbackCreate]:
@@ -115,6 +125,64 @@ class AIService:
         except Exception as e:
             logger.error(f"Error generating feedback: {str(e)}")
             return None
+
+    def _validate_request(self, request: AssignmentGenerationRequest) -> bool:
+        """Validate the request parameters."""
+        try:
+            if not request.subject or len(request.subject) < 2:
+                return False
+            if not request.grade_level or not re.match(r'^(K|[1-9]|1[0-2]|College|University)$', request.grade_level):
+                return False
+            if not request.topic or len(request.topic) < 3:
+                return False
+            if not request.difficulty or request.difficulty not in ['easy', 'medium', 'hard']:
+                return False
+            return True
+        except Exception:
+            return False
+
+    async def _call_openai_with_retry(self, prompt: str, max_retries: int = 3) -> str:
+        """Call OpenAI API with retry logic."""
+        for attempt in range(max_retries):
+            try:
+                response = await self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": "You are a helpful teacher's assistant that creates educational assignments."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_tokens=settings.AI_MAX_TOKENS,
+                    temperature=settings.AI_TEMPERATURE,
+                    top_p=settings.AI_TOP_P,
+                    frequency_penalty=settings.AI_FREQUENCY_PENALTY,
+                    presence_penalty=settings.AI_PRESENCE_PENALTY
+                )
+                return response.choices[0].message.content
+            except Exception as e:
+                if attempt == max_retries - 1:
+                    raise e
+                await asyncio.sleep(1 * (attempt + 1))  # Exponential backoff
+
+    def _validate_generated_content(self, content: Dict[str, Any]) -> bool:
+        """Validate the generated content structure and completeness."""
+        required_fields = ['title', 'description', 'objectives', 'instructions', 'requirements']
+        return all(field in content and content[field] for field in required_fields)
+
+    def _count_words(self, content: Dict[str, Any]) -> int:
+        """Count the total words in the generated content."""
+        text = ' '.join(str(value) for value in content.values() if isinstance(value, (str, list)))
+        return len(text.split())
+
+    def _calculate_confidence_score(self, content: Dict[str, Any]) -> float:
+        """Calculate a confidence score for the generated content."""
+        # Simple scoring based on content completeness and length
+        score = 0.0
+        if content.get('title'): score += 0.2
+        if content.get('description'): score += 0.2
+        if content.get('objectives'): score += 0.2
+        if content.get('instructions'): score += 0.2
+        if content.get('requirements'): score += 0.2
+        return min(score, 1.0)
 
     def _construct_assignment_prompt(self, request: AssignmentGenerationRequest) -> str:
         """

@@ -1,11 +1,6 @@
-import { api } from './api';
-
-export interface LoginCredentials {
-  email: string;
-  password: string;
-  code?: string;
-  remember_me?: boolean;
-}
+import { REFRESH_TOKEN_KEY } from '../config/constants';
+import { api } from '../lib/api';
+import { Session, Token, User } from '../types';
 
 export interface RegisterData {
   email: string;
@@ -13,27 +8,32 @@ export interface RegisterData {
   confirm_password: string;
 }
 
-export interface Token {
-  access_token: string;
-  token_type: string;
-}
-
-export interface Session {
-  id: string;
-  device: string;
-  ip: string;
-  last_active: string;
-  expires_at: string;
-}
-
 class AuthService {
-  async login(credentials: LoginCredentials): Promise<Token> {
-    const response = await api.post<Token>('/auth/login', credentials);
-    if (response.data.access_token) {
-      localStorage.setItem('token', response.data.access_token);
-      api.defaults.headers.common['Authorization'] = `Bearer ${response.data.access_token}`;
+  private static instance: AuthService;
+  private token: string | null = null;
+  private refreshTokenTimeout: NodeJS.Timeout | null = null;
+
+  private constructor() {
+    this.token = localStorage.getItem('token');
+  }
+
+  public static getInstance(): AuthService {
+    if (!AuthService.instance) {
+      AuthService.instance = new AuthService();
     }
-    return response.data;
+    return AuthService.instance;
+  }
+
+  async login(provider: string): Promise<void> {
+    const response = await api.get(`/auth/${provider}/login`);
+    window.location.href = response.data.url;
+  }
+
+  async handleCallback(code: string, state: string): Promise<User> {
+    const response = await api.post('/auth/callback', { code, state });
+    this.token = response.data.token;
+    localStorage.setItem('token', this.token);
+    return response.data.user;
   }
 
   async logout(): Promise<void> {
@@ -66,27 +66,95 @@ class AuthService {
   }
 
   setToken(token: string): void {
+    if (!token) {
+      this.clearAuth();
+      return;
+    }
     localStorage.setItem('token', token);
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   }
 
   clearAuth(): void {
     localStorage.removeItem('token');
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
     delete api.defaults.headers.common['Authorization'];
+    this.stopRefreshTokenTimer();
   }
 
   getToken(): string | null {
     return localStorage.getItem('token');
   }
 
+  getRefreshToken(): string | null {
+    return localStorage.getItem(REFRESH_TOKEN_KEY);
+  }
+
   isAuthenticated(): boolean {
     return !!this.getToken();
+  }
+
+  private startRefreshTokenTimer(expiresIn: number): void {
+    // Refresh token 1 minute before it expires
+    const refreshTime = (expiresIn - 60) * 1000;
+    this.refreshTokenTimeout = setTimeout(() => {
+      this.refreshToken();
+    }, refreshTime);
+  }
+
+  private stopRefreshTokenTimer(): void {
+    if (this.refreshTokenTimeout) {
+      clearTimeout(this.refreshTokenTimeout);
+      this.refreshTokenTimeout = null;
+    }
+  }
+
+  public async refreshToken(): Promise<void> {
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) {
+      this.clearAuth();
+      return;
+    }
+
+    try {
+      const response = await api.post<Token>('/auth/refresh-token', {
+        refresh_token: refreshToken,
+      });
+
+      const { access_token, refresh_token, expires_in } = response.data;
+      if (access_token && refresh_token) {
+        this.setToken(access_token);
+        localStorage.setItem(REFRESH_TOKEN_KEY, refresh_token);
+        this.startRefreshTokenTimer(expires_in);
+      } else {
+        this.clearAuth();
+      }
+    } catch (error) {
+      this.clearAuth();
+      throw error;
+    }
   }
 
   async getOAuthUrl(provider: string): Promise<{ url: string }> {
     const response = await api.get<{ url: string }>(`/auth/oauth/${provider}`);
     return response.data;
   }
+
+  async handleOAuthCallback(provider: string, code: string, state: string): Promise<Token> {
+    const response = await api.post<Token>(`/auth/oauth/${provider}/callback`, {
+      code,
+      state,
+    });
+
+    if (response.data.access_token) {
+      this.setToken(response.data.access_token);
+      if (response.data.refresh_token) {
+        localStorage.setItem(REFRESH_TOKEN_KEY, response.data.refresh_token);
+        this.startRefreshTokenTimer(response.data.expires_in);
+      }
+    }
+
+    return response.data;
+  }
 }
 
-export const authService = new AuthService();
+export { AuthService };
