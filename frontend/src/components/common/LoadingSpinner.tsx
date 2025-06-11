@@ -1,38 +1,18 @@
-import styled, { keyframes } from "@emotion/styled";
-import React from "react";
-
-const spin = keyframes`
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-`;
-
-const SpinnerContainer = styled.div<{ size?: string; color?: string }>`
-  display: inline-block;
-  width: ${({ size }) => size || "24px"};
-  height: ${({ size }) => size || "24px"};
-  border: 3px solid
-    ${({ theme, color }) => color || theme.colors.backgroundHover};
-  border-radius: 50%;
-  border-top-color: ${({ theme, color }) => color || theme.colors.primary};
-  animation: ${spin} 1s linear infinite;
-`;
+import { CircularProgress } from '@mui/material';
+import React from 'react';
 
 interface LoadingSpinnerProps {
-  size?: string;
-  color?: string;
-  className?: string;
+  size?: string | number;
 }
 
-const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
-  size,
-  color,
-  className,
-}) => {
-  return <SpinnerContainer size={size} color={color} className={className} />;
+const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ size }) => {
+  return (
+    <div
+      style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}
+    >
+      <CircularProgress size={size} />
+    </div>
+  );
 };
 
 export default LoadingSpinner;

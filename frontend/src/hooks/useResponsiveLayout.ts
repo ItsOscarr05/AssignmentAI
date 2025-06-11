@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
-import { usePerformanceMonitoring } from "../utils/performance";
-import { useErrorTracking } from "./useErrorTracking";
+import { useCallback, useEffect, useState } from 'react';
+import { usePerformanceMonitoring } from '../utils/performance';
+import { useErrorTracking } from './useErrorTracking';
 
 interface Breakpoint {
   name: string;
@@ -14,42 +14,63 @@ interface TouchState {
   touchStartY: number;
   currentX: number;
   currentY: number;
-  direction: "left" | "right" | "up" | "down" | null;
+  direction: 'left' | 'right' | 'up' | 'down' | null;
   distance: number;
 }
 
 interface ResponsiveLayoutOptions {
   breakpoints?: Breakpoint[];
   defaultBreakpoint?: string;
-  touchThreshold?: number;
   onBreakpointChange?: (breakpoint: string) => void;
-  onSwipe?: (direction: string, distance: number) => void;
+  onOrientationChange?: (orientation: 'portrait' | 'landscape') => void;
+  onSwipe?: (direction: 'left' | 'right' | 'up' | 'down', distance: number) => void;
+  touchThreshold?: number;
 }
 
-const DEFAULT_BREAKPOINTS: Breakpoint[] = [
-  { name: "xs", minWidth: 0, maxWidth: 599 },
-  { name: "sm", minWidth: 600, maxWidth: 959 },
-  { name: "md", minWidth: 960, maxWidth: 1279 },
-  { name: "lg", minWidth: 1280, maxWidth: 1919 },
-  { name: "xl", minWidth: 1920 },
+const defaultBreakpoints: Breakpoint[] = [
+  { name: 'xs', minWidth: 0, maxWidth: 599 },
+  { name: 'sm', minWidth: 600, maxWidth: 959 },
+  { name: 'md', minWidth: 960, maxWidth: 1279 },
+  { name: 'lg', minWidth: 1280, maxWidth: 1919 },
+  { name: 'xl', minWidth: 1920 },
 ];
 
 export const useResponsiveLayout = (options: ResponsiveLayoutOptions = {}) => {
+  const { trackError } = useErrorTracking();
+  const { measurePerformance } = usePerformanceMonitoring();
+
   const {
-    breakpoints = DEFAULT_BREAKPOINTS,
-    defaultBreakpoint = "xs",
-    touchThreshold = 50,
+    breakpoints = defaultBreakpoints,
+    defaultBreakpoint = 'xs',
     onBreakpointChange,
+    onOrientationChange,
     onSwipe,
+    touchThreshold = 50,
   } = options;
 
-  const { trackError } = useErrorTracking();
-  usePerformanceMonitoring("ResponsiveLayout");
+  // Initialize state based on current window dimensions
+  const getInitialState = () => {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const initialBreakpoint =
+      breakpoints.find(bp => width >= bp.minWidth && (!bp.maxWidth || width <= bp.maxWidth))
+        ?.name || defaultBreakpoint;
 
-  const [currentBreakpoint, setCurrentBreakpoint] = useState(defaultBreakpoint);
-  const [isMobile, setIsMobile] = useState(false);
-  const [isTablet, setIsTablet] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(false);
+    return {
+      breakpoint: initialBreakpoint,
+      isMobile: initialBreakpoint === 'xs',
+      isTablet: initialBreakpoint === 'sm' || initialBreakpoint === 'md',
+      isDesktop: initialBreakpoint === 'lg' || initialBreakpoint === 'xl',
+      isLandscape: width > height,
+    };
+  };
+
+  const [currentBreakpoint, setCurrentBreakpoint] = useState(getInitialState().breakpoint);
+  const [isMobile, setIsMobile] = useState(getInitialState().isMobile);
+  const [isTablet, setIsTablet] = useState(getInitialState().isTablet);
+  const [isDesktop, setIsDesktop] = useState(getInitialState().isDesktop);
+  const [isLandscape, setIsLandscape] = useState(getInitialState().isLandscape);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [touchState, setTouchState] = useState<TouchState>({
     isTouching: false,
     touchStartX: 0,
@@ -60,130 +81,134 @@ export const useResponsiveLayout = (options: ResponsiveLayoutOptions = {}) => {
     distance: 0,
   });
 
-  // Update breakpoint based on window width
-  const updateBreakpoint = useCallback(() => {
-    const width = window.innerWidth;
-    const newBreakpoint =
-      breakpoints.find(
-        (bp) => width >= bp.minWidth && (!bp.maxWidth || width <= bp.maxWidth)
-      )?.name || defaultBreakpoint;
+  const updateBreakpoint = useCallback(
+    (width: number) => {
+      const newBreakpoint =
+        breakpoints.find(bp => width >= bp.minWidth && (!bp.maxWidth || width <= bp.maxWidth))
+          ?.name || defaultBreakpoint;
 
-    if (newBreakpoint !== currentBreakpoint) {
-      setCurrentBreakpoint(newBreakpoint);
-      setIsMobile(newBreakpoint === "xs");
-      setIsTablet(newBreakpoint === "sm" || newBreakpoint === "md");
-      setIsDesktop(newBreakpoint === "lg" || newBreakpoint === "xl");
-      onBreakpointChange?.(newBreakpoint);
-    }
-  }, [breakpoints, currentBreakpoint, defaultBreakpoint, onBreakpointChange]);
-
-  // Handle window resize
-  useEffect(() => {
-    const handleResize = () => {
-      updateBreakpoint();
-    };
-
-    window.addEventListener("resize", handleResize);
-    updateBreakpoint(); // Initial check
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, [updateBreakpoint]);
-
-  // Handle touch events
-  const handleTouchStart = useCallback((event: TouchEvent) => {
-    const touch = event.touches[0];
-    setTouchState({
-      isTouching: true,
-      touchStartX: touch.clientX,
-      touchStartY: touch.clientY,
-      currentX: touch.clientX,
-      currentY: touch.clientY,
-      direction: null,
-      distance: 0,
-    });
-  }, []);
-
-  const handleTouchMove = useCallback((event: TouchEvent) => {
-    const touch = event.touches[0];
-    setTouchState((prev) => {
-      const deltaX = touch.clientX - prev.touchStartX;
-      const deltaY = touch.clientY - prev.touchStartY;
-      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-
-      let direction: "left" | "right" | "up" | "down" | null = null;
-      if (Math.abs(deltaX) > Math.abs(deltaY)) {
-        direction = deltaX > 0 ? "right" : "left";
-      } else {
-        direction = deltaY > 0 ? "down" : "up";
+      if (newBreakpoint !== currentBreakpoint) {
+        setCurrentBreakpoint(newBreakpoint);
+        setIsMobile(newBreakpoint === 'xs');
+        setIsTablet(newBreakpoint === 'sm' || newBreakpoint === 'md');
+        setIsDesktop(newBreakpoint === 'lg' || newBreakpoint === 'xl');
+        onBreakpointChange?.(newBreakpoint);
       }
-
-      return {
-        ...prev,
-        currentX: touch.clientX,
-        currentY: touch.clientY,
-        direction,
-        distance,
-      };
-    });
-  }, []);
-
-  const handleTouchEnd = useCallback(() => {
-    setTouchState((prev) => {
-      if (prev.distance >= touchThreshold && prev.direction) {
-        onSwipe?.(prev.direction, prev.distance);
-      }
-
-      return {
-        ...prev,
-        isTouching: false,
-        direction: null,
-        distance: 0,
-      };
-    });
-  }, [touchThreshold, onSwipe]);
-
-  // Add touch event listeners
-  useEffect(() => {
-    window.addEventListener("touchstart", handleTouchStart);
-    window.addEventListener("touchmove", handleTouchMove);
-    window.addEventListener("touchend", handleTouchEnd);
-
-    return () => {
-      window.removeEventListener("touchstart", handleTouchStart);
-      window.removeEventListener("touchmove", handleTouchMove);
-      window.removeEventListener("touchend", handleTouchEnd);
-    };
-  }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
-
-  // Handle orientation change
-  const [orientation, setOrientation] = useState<"portrait" | "landscape">(
-    window.innerHeight > window.innerWidth ? "portrait" : "landscape"
+    },
+    [breakpoints, currentBreakpoint, defaultBreakpoint, onBreakpointChange]
   );
 
-  useEffect(() => {
-    const handleOrientationChange = () => {
-      setOrientation(
-        window.innerHeight > window.innerWidth ? "portrait" : "landscape"
-      );
-    };
+  const handleResize = useCallback(() => {
+    measurePerformance('handleResize', () => {
+      try {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        const newIsLandscape = width > height;
 
-    window.addEventListener("resize", handleOrientationChange);
+        updateBreakpoint(width);
+        setIsLandscape(newIsLandscape);
+        onOrientationChange?.(newIsLandscape ? 'landscape' : 'portrait');
+      } catch (error) {
+        trackError('Error in handleResize', error);
+      }
+    });
+  }, [measurePerformance, onOrientationChange, trackError, updateBreakpoint]);
+
+  const handleTouchStart = useCallback(
+    (event: TouchEvent) => {
+      try {
+        const touch = event.touches[0];
+        setTouchState({
+          isTouching: true,
+          touchStartX: touch.clientX,
+          touchStartY: touch.clientY,
+          currentX: touch.clientX,
+          currentY: touch.clientY,
+          direction: null,
+          distance: 0,
+        });
+        setIsTouchDevice(true);
+      } catch (error) {
+        trackError('Error in handleTouchStart', error);
+      }
+    },
+    [trackError]
+  );
+
+  const handleTouchMove = useCallback(
+    (event: TouchEvent) => {
+      try {
+        const touch = event.touches[0];
+        const deltaX = touch.clientX - touchState.touchStartX;
+        const deltaY = touch.clientY - touchState.touchStartY;
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        const direction =
+          Math.abs(deltaX) > Math.abs(deltaY)
+            ? deltaX > 0
+              ? 'right'
+              : 'left'
+            : deltaY > 0
+            ? 'down'
+            : 'up';
+
+        setTouchState(prev => ({
+          ...prev,
+          currentX: touch.clientX,
+          currentY: touch.clientY,
+          direction,
+          distance,
+        }));
+      } catch (error) {
+        trackError('Error in handleTouchMove', error);
+      }
+    },
+    [touchState.touchStartX, touchState.touchStartY, trackError]
+  );
+
+  const handleTouchEnd = useCallback(() => {
+    try {
+      if (touchState.distance >= touchThreshold && touchState.direction) {
+        onSwipe?.(touchState.direction, touchState.distance);
+      }
+
+      setTouchState({
+        isTouching: false,
+        touchStartX: 0,
+        touchStartY: 0,
+        currentX: 0,
+        currentY: 0,
+        direction: null,
+        distance: 0,
+      });
+    } catch (error) {
+      trackError('Error in handleTouchEnd', error);
+    }
+  }, [onSwipe, touchState.direction, touchState.distance, touchThreshold, trackError]);
+
+  useEffect(() => {
+    handleResize();
+
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('touchstart', handleTouchStart);
+    window.addEventListener('touchmove', handleTouchMove);
+    window.addEventListener('touchend', handleTouchEnd);
+
     return () => {
-      window.removeEventListener("resize", handleOrientationChange);
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
     };
-  }, []);
+  }, [handleResize, handleTouchStart, handleTouchMove, handleTouchEnd]);
 
   return {
     currentBreakpoint,
     isMobile,
     isTablet,
     isDesktop,
-    orientation,
+    isLandscape,
+    isTouchDevice,
     touchState,
-    windowWidth: window.innerWidth,
-    windowHeight: window.innerHeight,
   };
 };
 
@@ -195,13 +220,15 @@ const ResponsiveComponent: React.FC = () => {
     isMobile,
     isTablet,
     isDesktop,
-    orientation,
+    isLandscape,
+    isTouchDevice,
     touchState,
-    windowWidth,
-    windowHeight,
   } = useResponsiveLayout({
     onBreakpointChange: (breakpoint) => {
       console.log(`Breakpoint changed to: ${breakpoint}`);
+    },
+    onOrientationChange: (orientation) => {
+      console.log(`Orientation changed to: ${orientation}`);
     },
     onSwipe: (direction, distance) => {
       console.log(`Swipe detected: ${direction} with distance ${distance}`);
@@ -213,9 +240,8 @@ const ResponsiveComponent: React.FC = () => {
       <h2>Responsive Layout Demo</h2>
       <div>Current Breakpoint: {currentBreakpoint}</div>
       <div>Device Type: {isMobile ? 'Mobile' : isTablet ? 'Tablet' : 'Desktop'}</div>
-      <div>Orientation: {orientation}</div>
-      <div>Window Size: {windowWidth}x{windowHeight}</div>
-      {touchState.isTouching && (
+      <div>Orientation: {isLandscape ? 'Landscape' : 'Portrait'}</div>
+      {isTouchDevice && (
         <div>
           Touch Direction: {touchState.direction || 'none'}
           Touch Distance: {touchState.distance}

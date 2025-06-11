@@ -1,5 +1,6 @@
-import { useCallback, useState } from "react";
-import { useToast } from "../contexts/ToastContext";
+import axios, { AxiosError } from 'axios';
+import { useCallback, useState } from 'react';
+import { useToast } from '../contexts/ToastContext';
 
 interface UseApiOptions<T> {
   onSuccess?: (data: T) => void;
@@ -11,7 +12,7 @@ interface UseApiOptions<T> {
 interface UseApiResult<T> {
   data: T | null;
   loading: boolean;
-  error: any;
+  error: string | null;
   execute: (...args: any[]) => Promise<void>;
   reset: () => void;
 }
@@ -22,7 +23,7 @@ export function useApi<T>(
 ): UseApiResult<T> {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
   const { showToast } = useToast();
 
   const execute = useCallback(
@@ -33,13 +34,35 @@ export function useApi<T>(
         const result = await apiFunction(...args);
         setData(result);
         if (options.successMessage) {
-          showToast(options.successMessage, "success");
+          showToast(options.successMessage, 'success');
         }
         options.onSuccess?.(result);
       } catch (err) {
-        setError(err);
+        let errorMessage = 'An unexpected error occurred';
+
+        if (axios.isAxiosError(err)) {
+          const axiosError = err as AxiosError;
+          if (axiosError.code === 'ECONNABORTED') {
+            errorMessage = 'Request timed out. Please try again.';
+          } else if (axiosError.code === 'ERR_NETWORK') {
+            errorMessage =
+              'Unable to connect to the server. Please check your internet connection.';
+          } else if (axiosError.response) {
+            errorMessage = axiosError.response.data?.message || axiosError.message;
+          } else if (axiosError.message.includes('timeout')) {
+            errorMessage = 'Request timed out. Please try again.';
+          } else if (axios.isCancel(axiosError)) {
+            errorMessage = 'Request was cancelled';
+          }
+        } else if (err instanceof Error) {
+          errorMessage = err.message;
+        }
+
+        setError(errorMessage);
         if (options.errorMessage) {
-          showToast(options.errorMessage, "error");
+          showToast(options.errorMessage, 'error');
+        } else {
+          showToast(errorMessage, 'error');
         }
         options.onError?.(err);
       } finally {

@@ -1,0 +1,3 @@
+"""
+AssignmentAI Services Package
+""" 

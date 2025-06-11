@@ -1,23 +1,16 @@
 from datetime import datetime
 from typing import Any
-from sqlalchemy.ext.declarative import as_declarative, declared_attr
+from sqlalchemy.orm import DeclarativeBase, declared_attr
 from sqlalchemy import Column, Integer, DateTime
 
-@as_declarative()
-class Base:
-    id: Any
-    __name__: str
-    
-    # Generate __tablename__ automatically
-    @declared_attr
+class Base(DeclarativeBase):
+    """Base class for all models"""
+    @declared_attr.directive
     def __tablename__(cls) -> str:
         return cls.__name__.lower()
-    
-    # Common columns for all models
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 class BaseModel(Base):
+    """Abstract base model with common columns"""
     __abstract__ = True
 
     id = Column(Integer, primary_key=True, index=True)

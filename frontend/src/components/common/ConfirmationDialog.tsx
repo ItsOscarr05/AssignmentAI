@@ -1,109 +1,181 @@
-import styled from "@emotion/styled";
-import React from "react";
-
-const Overlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-`;
-
-const Dialog = styled.div`
-  background-color: ${({ theme }) => theme.colors.background};
-  border-radius: 8px;
-  padding: 1.5rem;
-  max-width: 400px;
-  width: 90%;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-`;
-
-const Title = styled.h2`
-  margin: 0 0 1rem 0;
-  color: ${({ theme }) => theme.colors.text};
-  font-size: 1.25rem;
-`;
-
-const Message = styled.p`
-  margin: 0 0 1.5rem 0;
-  color: ${({ theme }) => theme.colors.text};
-  line-height: 1.5;
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-`;
-
-const Button = styled.button<{ variant: "primary" | "secondary" }>`
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  border: none;
-  cursor: pointer;
-  font-size: 0.875rem;
-  transition: background-color 0.2s;
-
-  ${({ variant, theme }) =>
-    variant === "primary"
-      ? `
-    background-color: ${theme.colors.error};
-    color: white;
-    &:hover {
-      background-color: ${theme.colors.errorDark};
-    }
-  `
-      : `
-    background-color: ${theme.colors.background};
-    color: ${theme.colors.text};
-    border: 1px solid ${theme.colors.border};
-    &:hover {
-      background-color: ${theme.colors.backgroundHover};
-    }
-  `}
-`;
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import DeleteIcon from '@mui/icons-material/Delete';
+import {
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+} from '@mui/material';
+import React from 'react';
 
 interface ConfirmationDialogProps {
-  isOpen: boolean;
-  title: string;
-  message: string;
-  confirmText?: string;
-  cancelText?: string;
+  open: boolean;
+  title?: string;
+  message?: string;
   onConfirm: () => void;
   onCancel: () => void;
+  confirmText?: string;
+  cancelText?: string;
+  confirmColor?: 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning';
+  cancelColor?: 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning';
+  confirmVariant?: 'text' | 'outlined' | 'contained';
+  cancelVariant?: 'text' | 'outlined' | 'contained';
+  confirmSize?: 'small' | 'medium' | 'large';
+  cancelSize?: 'small' | 'medium' | 'large';
+  confirmDisabled?: boolean;
+  cancelDisabled?: boolean;
+  confirmLoading?: boolean;
+  cancelLoading?: boolean;
+  showConfirm?: boolean;
+  showCancel?: boolean;
+  role?: 'dialog' | 'alertdialog';
+  'aria-label'?: string;
+  'aria-describedby'?: string;
+  tabIndex?: number;
+  'data-testid'?: string;
+  actionsClassName?: string;
+  actionsStyle?: React.CSSProperties;
+  confirmClassName?: string;
+  confirmStyle?: React.CSSProperties;
+  cancelClassName?: string;
+  cancelStyle?: React.CSSProperties;
+  dialogClassName?: string;
+  dialogStyle?: React.CSSProperties;
+  titleClassName?: string;
+  titleStyle?: React.CSSProperties;
+  messageClassName?: string;
+  messageStyle?: React.CSSProperties;
+  confirmIcon?: string;
+  cancelIcon?: string;
 }
 
-const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
-  isOpen,
+function renderIcon(iconName?: string) {
+  if (!iconName) return null;
+  switch (iconName.toLowerCase()) {
+    case 'delete':
+      return <DeleteIcon data-testid="DeleteIcon" sx={{ mr: 1 }} />;
+    case 'arrow_back':
+      return <ArrowBackIcon data-testid="ArrowBackIcon" sx={{ mr: 1 }} />;
+    default:
+      return null;
+  }
+}
+
+export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
+  open,
   title,
   message,
-  confirmText = "Confirm",
-  cancelText = "Cancel",
   onConfirm,
   onCancel,
+  confirmText = 'Confirm',
+  cancelText = 'Cancel',
+  confirmColor = 'primary',
+  cancelColor = 'primary',
+  confirmVariant = 'text',
+  cancelVariant = 'text',
+  confirmSize = 'medium',
+  cancelSize = 'medium',
+  confirmDisabled = false,
+  cancelDisabled = false,
+  confirmLoading = false,
+  cancelLoading = false,
+  showConfirm = true,
+  showCancel = true,
+  role = 'dialog',
+  'aria-label': ariaLabel,
+  'aria-describedby': ariaDescribedBy,
+  tabIndex,
+  'data-testid': dataTestId,
+  actionsClassName,
+  actionsStyle,
+  confirmClassName,
+  confirmStyle,
+  cancelClassName,
+  cancelStyle,
+  dialogClassName,
+  dialogStyle,
+  titleClassName,
+  titleStyle,
+  messageClassName,
+  messageStyle,
+  confirmIcon,
+  cancelIcon,
 }) => {
-  if (!isOpen) return null;
-
   return (
-    <Overlay onClick={onCancel}>
-      <Dialog onClick={(e) => e.stopPropagation()}>
-        <Title>{title}</Title>
-        <Message>{message}</Message>
-        <ButtonGroup>
-          <Button variant="secondary" onClick={onCancel}>
-            {cancelText}
+    <Dialog
+      open={open}
+      onClose={onCancel}
+      role={role}
+      aria-label={ariaLabel}
+      aria-describedby={ariaDescribedBy}
+      tabIndex={tabIndex}
+      data-testid={dataTestId}
+      className={dialogClassName}
+      style={dialogStyle}
+      PaperProps={{
+        className: dialogClassName,
+        style: dialogStyle,
+      }}
+    >
+      {title && (
+        <DialogTitle className={titleClassName} style={titleStyle}>
+          {title}
+        </DialogTitle>
+      )}
+      {message && (
+        <DialogContent>
+          <DialogContentText className={messageClassName} style={messageStyle}>
+            {message}
+          </DialogContentText>
+        </DialogContent>
+      )}
+      <DialogActions role="group" className={actionsClassName} style={actionsStyle}>
+        {showCancel && (
+          <Button
+            onClick={onCancel}
+            color={cancelColor}
+            variant={cancelVariant}
+            size={cancelSize}
+            disabled={cancelDisabled}
+            className={cancelClassName}
+            style={cancelStyle}
+          >
+            {cancelLoading ? (
+              <CircularProgress size={24} />
+            ) : (
+              <>
+                {renderIcon(cancelIcon)}
+                {cancelText}
+              </>
+            )}
           </Button>
-          <Button variant="primary" onClick={onConfirm}>
-            {confirmText}
+        )}
+        {showConfirm && (
+          <Button
+            onClick={onConfirm}
+            color={confirmColor}
+            variant={confirmVariant}
+            size={confirmSize}
+            disabled={confirmDisabled}
+            autoFocus
+            className={confirmClassName}
+            style={confirmStyle}
+          >
+            {confirmLoading ? (
+              <CircularProgress size={24} />
+            ) : (
+              <>
+                {renderIcon(confirmIcon)}
+                {confirmText}
+              </>
+            )}
           </Button>
-        </ButtonGroup>
-      </Dialog>
-    </Overlay>
+        )}
+      </DialogActions>
+    </Dialog>
   );
 };
 

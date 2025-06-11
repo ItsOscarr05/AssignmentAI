@@ -1,21 +1,17 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.ext.declarative import declarative_base
-
+from motor.motor_asyncio import AsyncIOMotorClient
+from beanie import init_beanie
 from app.core.config import settings
+from app.models.user import User
 
-engine = create_engine(
-    settings.SQLALCHEMY_DATABASE_URI,
-    pool_pre_ping=True,
-)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+async def init_db():
+    # Create Motor client
+    client = AsyncIOMotorClient(settings.MONGODB_URL)
+    
+    # Initialize beanie with the Product document class
+    await init_beanie(
+        database=client[settings.DATABASE_NAME],
+        document_models=[User]
+    )
 
-Base = declarative_base()
-
-# Dependency
-def get_db() -> Session:
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close() 
+async def get_db():
+    return AsyncIOMotorClient(settings.MONGODB_URL)[settings.DATABASE_NAME] 

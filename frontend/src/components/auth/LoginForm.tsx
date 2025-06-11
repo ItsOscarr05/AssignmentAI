@@ -1,124 +1,161 @@
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Link,
-  Paper,
-  TextField,
-  Typography,
-} from "@mui/material";
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { auth } from "../../services/api";
+import { Box, CircularProgress, createTheme, Typography } from '@mui/material';
+import { ThemeProvider } from '@mui/material/styles';
+import React, { lazy, Suspense } from 'react';
+import { useTheme } from '../../contexts/ThemeContext';
+import { fadeIn, scaleIn, slideIn } from '../../styles/animations';
+import { responsiveStyles } from '../../styles/breakpoints';
+import '../../styles/transitions.css';
 
-export const LoginForm: React.FC = () => {
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+// Lazy load non-critical components
+const LoginFormContent = lazy(() => import('./LoginFormContent'));
+const ThemeToggle = lazy(() => import('../common/ThemeToggle'));
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+const LoginForm: React.FC = () => {
+  const { theme } = useTheme();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      setLoading(true);
-      setError(null);
-      await auth.login(formData.email, formData.password);
-      navigate("/dashboard");
-    } catch (error) {
-      setError("Invalid email or password");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const themeConfig = React.useMemo(
+    () =>
+      createTheme({
+        palette: {
+          mode: theme,
+          primary: {
+            main: '#ff1a1a',
+          },
+          background: {
+            default: theme === 'light' ? '#ffffff' : '#121212',
+            paper: theme === 'light' ? '#ffffff' : '#1e1e1e',
+          },
+        },
+        components: {
+          MuiButton: {
+            defaultProps: {
+              disableRipple: true,
+            },
+          },
+        },
+      }),
+    [theme]
+  );
 
   return (
-    <Box
-      sx={{
-        height: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        bgcolor: "background.default",
-      }}
-    >
-      <Paper
-        elevation={3}
+    <ThemeProvider theme={themeConfig}>
+      <Box
+        component="main"
+        className="login-page"
         sx={{
-          p: 4,
-          width: "100%",
-          maxWidth: 400,
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'background.default',
+          p: 0,
+          position: 'relative',
+          overflow: 'hidden',
+          contain: 'paint layout',
         }}
+        role="main"
+        aria-label="Login page"
       >
-        <Typography variant="h5" component="h1" gutterBottom align="center">
-          Welcome Back
-        </Typography>
+        <Suspense fallback={<CircularProgress />}>
+          <ThemeToggle />
+        </Suspense>
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          <TextField
-            fullWidth
-            label="Email"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-            margin="normal"
-            required
-            autoComplete="email"
-          />
-
-          <TextField
-            fullWidth
-            label="Password"
-            name="password"
-            type="password"
-            value={formData.password}
-            onChange={handleChange}
-            margin="normal"
-            required
-            autoComplete="current-password"
-          />
-
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{ mt: 3, mb: 2 }}
-            disabled={loading}
+        {/* Left Side - Cover Image */}
+        <Box
+          sx={{
+            width: { xs: '100%', md: '50%' },
+            height: { xs: '30vh', md: '100vh' },
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: '#ff1a1a',
+            position: 'relative',
+            overflow: 'hidden',
+            animation: `${slideIn} 1s ease-out`,
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background:
+                theme === 'light'
+                  ? 'linear-gradient(135deg, rgba(255,26,26,0.9) 0%, rgba(255,77,77,0.9) 100%)'
+                  : 'linear-gradient(135deg, rgba(255,26,26,0.8) 0%, rgba(255,77,77,0.8) 100%)',
+              zIndex: 1,
+            },
+          }}
+        >
+          <Box
+            sx={{
+              position: 'relative',
+              zIndex: 2,
+              textAlign: 'center',
+              color: 'white',
+              p: responsiveStyles.container.padding,
+              animation: `${fadeIn} 1s ease-out 0.5s both`,
+            }}
           >
-            {loading ? <CircularProgress size={24} /> : "Sign In"}
-          </Button>
-
-          <Box sx={{ textAlign: "center" }}>
-            <Link href="/forgot-password" variant="body2">
-              Forgot password?
-            </Link>
+            <Typography
+              variant="h1"
+              component="h1"
+              sx={{
+                fontWeight: 'bold',
+                mb: 2,
+                fontSize: responsiveStyles.typography.h1.fontSize,
+                textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+              }}
+            >
+              Welcome to AssignmentAI
+            </Typography>
+            <Typography
+              variant="h2"
+              sx={{
+                mb: 4,
+                opacity: 0.9,
+                fontSize: responsiveStyles.typography.h2.fontSize,
+                animation: `${fadeIn} 1s ease-out 0.8s both`,
+              }}
+            >
+              Your AI-powered assignment management platform
+            </Typography>
+            <Box
+              component="img"
+              src="/images/login-cover.svg"
+              alt="AssignmentAI Platform Illustration"
+              sx={{
+                maxWidth: '100%',
+                height: 'auto',
+                maxHeight: { xs: '150px', sm: '200px', md: '300px' },
+                filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))',
+                animation: `${scaleIn} 1s ease-out 1s both`,
+              }}
+            />
           </Box>
-        </form>
-
-        <Box sx={{ mt: 3, textAlign: "center" }}>
-          <Typography variant="body2">
-            Don't have an account? <Link href="/register">Sign up</Link>
-          </Typography>
         </Box>
-      </Paper>
-    </Box>
+
+        {/* Right Side - Login Form */}
+        <Box
+          sx={{
+            width: { xs: '100%', md: '50%' },
+            height: { xs: 'auto', md: '100vh' },
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            p: { xs: 3, md: 0 },
+            animation: `${fadeIn} 1s ease-out`,
+            bgcolor: 'background.default',
+          }}
+        >
+          <Suspense fallback={<CircularProgress />}>
+            <LoginFormContent />
+          </Suspense>
+        </Box>
+      </Box>
+    </ThemeProvider>
   );
 };
+
+export default React.memo(LoginForm);

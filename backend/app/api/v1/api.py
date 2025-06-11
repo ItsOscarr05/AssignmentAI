@@ -12,37 +12,7 @@ from app.api.v1.endpoints import (
     ai_assignment
 )
 
-api_router = APIRouter(
-    title="AssignmentAI API",
-    description="""
-    AssignmentAI API provides endpoints for managing assignments, submissions, and AI-powered feedback.
-    
-    ## Features
-    * User authentication and authorization
-    * Assignment management
-    * Submission handling
-    * AI-powered assignment generation
-    * AI-powered feedback generation
-    * File upload and management
-    * Rate limiting and caching
-    
-    ## Authentication
-    All endpoints except login and registration require a valid JWT token.
-    Include the token in the Authorization header: `Bearer <token>`
-    
-    ## Rate Limiting
-    API requests are rate limited to prevent abuse.
-    * Default: 100 requests per minute
-    * AI endpoints: 10 requests per minute
-    
-    ## Caching
-    Responses are cached for improved performance.
-    * Assignments: 5 minutes
-    * User data: 5 minutes
-    * AI responses: 1 hour
-    """,
-    version="1.0.0"
-)
+api_router = APIRouter()
 
 # Include routers with tags for better organization
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])

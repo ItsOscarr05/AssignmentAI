@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from 'react';
 
 interface UseAccessibilityOptions {
   trapFocus?: boolean;
@@ -24,7 +24,7 @@ export function useAccessibility({
 
     // Handle keyboard navigation
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && onEscape) {
+      if (event.key === 'Escape' && onEscape) {
         onEscape();
         return;
       }
@@ -36,11 +36,9 @@ export function useAccessibility({
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
       );
       const firstFocusable = focusableElements[0] as HTMLElement;
-      const lastFocusable = focusableElements[
-        focusableElements.length - 1
-      ] as HTMLElement;
+      const lastFocusable = focusableElements[focusableElements.length - 1] as HTMLElement;
 
-      if (event.key === "Tab") {
+      if (event.key === 'Tab') {
         if (event.shiftKey) {
           if (document.activeElement === firstFocusable) {
             lastFocusable.focus();
@@ -53,8 +51,8 @@ export function useAccessibility({
       }
     };
 
-    element.addEventListener("keydown", handleKeyDown);
-    return () => element.removeEventListener("keydown", handleKeyDown);
+    element.addEventListener('keydown', handleKeyDown);
+    return () => element.removeEventListener('keydown', handleKeyDown);
   }, [trapFocus, onEscape, initialFocus]);
 
   return ref;

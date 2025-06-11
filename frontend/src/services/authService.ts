@@ -1,43 +1,145 @@
-import axios from "axios";
-import { AuthResponse, LoginRequest, RegisterRequest } from "../types/auth";
+import { create } from 'zustand';
+import { api } from './api';
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000/api/v1";
+export interface RegisterData {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+}
 
-export const authService = {
-  login: async (credentials: LoginRequest): Promise<AuthResponse> => {
-    const response = await axios.post(`${API_URL}/auth/login`, credentials);
-    if (response.data.access_token) {
-      localStorage.setItem("token", response.data.access_token);
-    }
-    return response.data;
-  },
+export interface LoginData {
+  email: string;
+  password: string;
+}
 
-  register: async (userData: RegisterRequest): Promise<AuthResponse> => {
-    const response = await axios.post(`${API_URL}/auth/register`, userData);
-    if (response.data.access_token) {
-      localStorage.setItem("token", response.data.access_token);
-    }
-    return response.data;
-  },
+export interface AuthResponse {
+  token: string;
+  user: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+  };
+}
 
-  logout: () => {
-    localStorage.removeItem("token");
-  },
+interface AuthState {
+  user: AuthResponse['user'] | null;
+  token: string | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+  register: (data: RegisterData) => Promise<void>;
+  login: (data: LoginData) => Promise<void>;
+  logout: () => Promise<void>;
+  setAuth: (data: AuthResponse) => void;
+  clearAuth: () => void;
+}
 
-  getCurrentUser: async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return null;
-
+export const useAuthStore = create<AuthState>(set => ({
+  user: null,
+  token: null,
+  isAuthenticated: false,
+  isLoading: false,
+  error: null,
+  register: async data => {
     try {
-      const response = await axios.get(`${API_URL}/auth/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      set({ isLoading: true, error: null });
+      const response = await api.post<AuthResponse>('/auth/register', data);
+      set({
+        user: response.data.user,
+        token: response.data.token,
+        isAuthenticated: true,
+        isLoading: false,
       });
-      return response.data;
+      localStorage.setItem('token', response.data.token);
     } catch (error) {
-      localStorage.removeItem("token");
-      return null;
+      set({
+        error: error instanceof Error ? error.message : 'Registration failed',
+        isLoading: false,
+      });
+      throw error;
     }
   },
+  login: async data => {
+    try {
+      set({ isLoading: true, error: null });
+      const response = await api.post<AuthResponse>('/auth/login', data);
+      set({
+        user: response.data.user,
+        token: response.data.token,
+        isAuthenticated: true,
+        isLoading: false,
+      });
+      localStorage.setItem('token', response.data.token);
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Login failed',
+        isLoading: false,
+      });
+      throw error;
+    }
+  },
+  logout: async () => {
+    try {
+      set({ isLoading: true, error: null });
+      await api.post('/auth/logout');
+      set({
+        user: null,
+        token: null,
+        isAuthenticated: false,
+        isLoading: false,
+      });
+      localStorage.removeItem('token');
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Logout failed',
+        isLoading: false,
+      });
+      throw error;
+    }
+  },
+  setAuth: data => {
+    set({
+      user: data.user,
+      token: data.token,
+      isAuthenticated: true,
+    });
+    localStorage.setItem('token', data.token);
+  },
+  clearAuth: () => {
+    set({
+      user: null,
+      token: null,
+      isAuthenticated: false,
+    });
+    localStorage.removeItem('token');
+  },
+}));
+
+export const register = async (data: RegisterData): Promise<AuthResponse> => {
+  const response = await api.post<AuthResponse>('/auth/register', data);
+  return response.data;
+};
+
+export const login = async (data: LoginData): Promise<AuthResponse> => {
+  const response = await api.post<AuthResponse>('/auth/login', data);
+  return response.data;
+};
+
+export const logout = async (): Promise<void> => {
+  await api.post('/auth/logout');
+  useAuthStore.getState().clearAuth();
+};
+
+export const getCurrentUser = async (): Promise<AuthResponse['user']> => {
+  const response = await api.get<AuthResponse>('/auth/me');
+  return response.data.user;
+};
+
+export const AuthService = {
+  register,
+  login,
+  logout,
+  getCurrentUser,
 };

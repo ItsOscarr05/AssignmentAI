@@ -1,91 +1,73 @@
-import { AuthService } from "../auth/AuthService";
-import { ApiError, ApiInterceptor } from "./types";
+import { AxiosError } from 'axios';
+import { AuthService } from '../auth/AuthService';
 
-export class ErrorHandler implements ApiInterceptor {
-  private authService: AuthService;
+interface ApiError extends AxiosError {
+  response?: {
+    data: { [key: string]: any; message?: string };
+    status: number;
+    headers: Record<string, string>;
+    statusText: string;
+    config: any;
+  };
+}
 
-  constructor(authService: AuthService) {
-    this.authService = authService;
+export class ErrorHandler {
+  private authService: typeof AuthService;
+
+  constructor() {
+    this.authService = AuthService;
   }
 
-  onError = async (error: ApiError): Promise<never> => {
-    // Handle authentication errors
-    if (error.code === "UNAUTHORIZED" || error.code === "TOKEN_EXPIRED") {
-      try {
-        // Try to refresh the token
-        await this.authService.refreshToken();
-        // Retry the original request
-        return Promise.reject(error);
-      } catch (refreshError) {
-        // If refresh fails, redirect to login
-        this.handleAuthError();
-        return Promise.reject(error);
+  public handleError(error: ApiError): Promise<any> {
+    if (error.response) {
+      switch (error.response.status) {
+        case 401:
+          return this.handleAuthError();
+        case 403:
+          return this.handleForbiddenError();
+        case 404:
+          return this.handleNotFoundError();
+        case 429:
+          return this.handleRateLimitError(error);
+        default:
+          return this.handleGenericError(error);
       }
     }
-
-    // Handle other specific error codes
-    switch (error.code) {
-      case "FORBIDDEN":
-        this.handleForbiddenError();
-        break;
-      case "NOT_FOUND":
-        this.handleNotFoundError();
-        break;
-      case "VALIDATION_ERROR":
-        this.handleValidationError(error);
-        break;
-      case "SERVER_ERROR":
-        this.handleServerError();
-        break;
-      default:
-        this.handleGenericError(error);
-    }
-
     return Promise.reject(error);
-  };
+  }
 
   private handleAuthError() {
-    // Clear auth state and redirect to login
     this.authService.logout();
-    window.location.href = "/login";
+    window.location.href = '/login';
+    return Promise.reject(new Error('Authentication failed'));
   }
 
   private handleForbiddenError() {
-    // Show forbidden error message
-    this.showErrorToast("You do not have permission to perform this action");
+    return Promise.reject(new Error('You do not have permission to perform this action'));
   }
 
   private handleNotFoundError() {
-    // Show not found error message
-    this.showErrorToast("The requested resource was not found");
+    return Promise.reject(new Error('The requested resource was not found'));
   }
 
-  private handleValidationError(error: ApiError) {
-    // Show validation error message with details
-    const message = error.details
-      ? Object.values(error.details).join(", ")
-      : "Please check your input and try again";
-    this.showErrorToast(message);
-  }
-
-  private handleServerError() {
-    // Show server error message
-    this.showErrorToast("An unexpected error occurred. Please try again later");
+  private handleRateLimitError(error: ApiError) {
+    const retryAfter = error.response?.headers['retry-after'];
+    if (retryAfter) {
+      const delay = parseInt(retryAfter, 10) * 1000;
+      return new Promise(resolve => setTimeout(resolve, delay)).then(() => {
+        return this.retryRequest();
+      });
+    }
+    return Promise.reject(new Error('Rate limit exceeded'));
   }
 
   private handleGenericError(error: ApiError) {
-    // Show generic error message
-    this.showErrorToast(error.message || "An error occurred");
+    const message = error.response?.data?.message || 'An unexpected error occurred';
+    return Promise.reject(new Error(message));
   }
 
-  private showErrorToast(message: string) {
-    // Dispatch a custom event that the Toast component will listen for
-    const event = new CustomEvent("showToast", {
-      detail: {
-        message,
-        severity: "error",
-      },
-    });
-    window.dispatchEvent(event);
+  private retryRequest() {
+    // Implementation of retry logic
+    return Promise.reject(new Error('Retry not implemented'));
   }
 }

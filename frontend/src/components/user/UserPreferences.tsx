@@ -1,6 +1,5 @@
-import { Save as SaveIcon } from "@mui/icons-material";
+import { Save as SaveIcon } from '@mui/icons-material';
 import {
-  Alert,
   Box,
   Button,
   CircularProgress,
@@ -12,52 +11,92 @@ import {
   MenuItem,
   Paper,
   Select,
+  SelectChangeEvent,
   Switch,
   Typography,
-} from "@mui/material";
-import React, { useEffect, useState } from "react";
-import { UserPreferences } from "../../types/user";
-import { LoadingSpinner } from "../common/LoadingSpinner";
-import { Toast } from "../common/Toast";
+} from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import { UserPreferences } from '../../types/user';
+import LoadingSpinner from '../common/LoadingSpinner';
+import { Toast } from '../common/Toast';
 
-const UserPreferences: React.FC = () => {
+const UserPreferencesComponent: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
   const [toast, setToast] = useState<{
     open: boolean;
     message: string;
-    severity: "success" | "error" | "info" | "warning";
+    severity: 'success' | 'error' | 'info' | 'warning';
   }>({
     open: false,
-    message: "",
-    severity: "info",
+    message: '',
+    severity: 'info',
   });
 
   useEffect(() => {
+    console.log('Component mounted, fetching preferences...');
     fetchPreferences();
   }, []);
 
+  useEffect(() => {
+    console.log('Preferences state updated:', preferences);
+  }, [preferences]);
+
+  useEffect(() => {
+    console.log('Loading state updated:', loading);
+  }, [loading]);
+
   const fetchPreferences = async () => {
     try {
+      console.log('Fetching preferences...');
       setLoading(true);
-      // TODO: Replace with actual API call
-      const response = await fetch("/api/users/preferences");
+      console.log('Loading state set to true');
+
+      const response = await fetch('/api/users/preferences');
+      console.log('Fetch response:', {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+      });
 
       if (!response.ok) {
-        throw new Error("Failed to fetch preferences");
+        console.error('Failed to fetch preferences:', response.status);
+        throw new Error('Failed to fetch preferences');
       }
 
       const data = await response.json();
+      console.log('Fetched preferences:', data);
+
+      if (!data || typeof data !== 'object') {
+        console.error('Invalid preferences data received:', data);
+        throw new Error('Invalid preferences data received');
+      }
+
+      // Validate required fields
+      const requiredFields = ['theme', 'language', 'timezone', 'notifications', 'accessibility'];
+      const missingFields = requiredFields.filter(field => !(field in data));
+
+      if (missingFields.length > 0) {
+        console.error('Missing required fields:', missingFields);
+        throw new Error('Missing required fields in preferences data');
+      }
+
+      console.log('Setting preferences state...');
       setPreferences(data);
+      console.log('Preferences state updated');
     } catch (error) {
+      console.error('Error in fetchPreferences:', error);
       setToast({
         open: true,
-        message: "Failed to load preferences",
-        severity: "error",
+        message: 'Failed to load preferences',
+        severity: 'error',
       });
+      console.log('Error toast set');
     } finally {
+      console.log('Setting loading to false');
       setLoading(false);
+      console.log('Loading state updated');
     }
   };
 
@@ -66,105 +105,97 @@ const UserPreferences: React.FC = () => {
 
     try {
       setSaving(true);
-      // TODO: Replace with actual API call
-      const response = await fetch("/api/users/preferences", {
-        method: "PUT",
+      const response = await fetch('/api/users/preferences', {
+        method: 'PUT',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(preferences),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to update preferences");
+        throw new Error('Failed to update preferences');
       }
 
       setToast({
         open: true,
-        message: "Preferences saved successfully",
-        severity: "success",
+        message: 'Preferences saved successfully',
+        severity: 'success',
       });
     } catch (error) {
       setToast({
         open: true,
-        message: "Failed to save preferences",
-        severity: "error",
+        message: 'Failed to save preferences',
+        severity: 'error',
       });
     } finally {
       setSaving(false);
     }
   };
 
-  const handleAssignmentDisplayChange =
-    (key: keyof UserPreferences["assignmentDisplay"]) =>
+  const handleThemeChange = (event: SelectChangeEvent) => {
+    setPreferences(prev => ({
+      ...prev!,
+      theme: event.target.value as 'light' | 'dark' | 'system',
+    }));
+  };
+
+  const handleLanguageChange = (event: SelectChangeEvent) => {
+    setPreferences(prev => ({
+      ...prev!,
+      language: event.target.value as string,
+    }));
+  };
+
+  const handleTimezoneChange = (event: SelectChangeEvent) => {
+    setPreferences(prev => ({
+      ...prev!,
+      timezone: event.target.value as string,
+    }));
+  };
+
+  const handleNotificationChange =
+    (key: keyof UserPreferences['notifications']) =>
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      setPreferences((prev) => ({
+      setPreferences(prev => ({
         ...prev!,
-        assignmentDisplay: {
-          ...prev!.assignmentDisplay,
+        notifications: {
+          ...prev!.notifications,
           [key]: event.target.checked,
         },
       }));
     };
 
-  const handleGradingPreferencesChange =
-    (key: keyof UserPreferences["gradingPreferences"]) =>
+  const handleAccessibilityChange =
+    (key: keyof UserPreferences['accessibility']) =>
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      setPreferences((prev) => ({
+      setPreferences(prev => ({
         ...prev!,
-        gradingPreferences: {
-          ...prev!.gradingPreferences,
+        accessibility: {
+          ...prev!.accessibility,
           [key]: event.target.checked,
         },
       }));
     };
-
-  const handleDefaultGradeChange = (
-    event: React.ChangeEvent<{ value: unknown }>
-  ) => {
-    setPreferences((prev) => ({
-      ...prev!,
-      gradingPreferences: {
-        ...prev!.gradingPreferences,
-        defaultGrade: event.target.value as number,
-      },
-    }));
-  };
-
-  const handleItemsPerPageChange = (
-    event: React.ChangeEvent<{ value: unknown }>
-  ) => {
-    setPreferences((prev) => ({
-      ...prev!,
-      itemsPerPage: event.target.value as number,
-    }));
-  };
 
   if (loading) {
+    console.log('Rendering loading state');
     return <LoadingSpinner />;
   }
 
   if (!preferences) {
+    console.log('Rendering error state - no preferences');
     return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="400px"
-      >
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <Typography variant="h6">Failed to load preferences</Typography>
       </Box>
     );
   }
 
+  console.log('Rendering preferences form with data:', preferences);
   return (
     <Box>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={3}
-      >
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4">Application Preferences</Typography>
         <Button
           variant="contained"
@@ -172,201 +203,135 @@ const UserPreferences: React.FC = () => {
           onClick={handleSave}
           disabled={saving}
         >
-          {saving ? "Saving..." : "Save Changes"}
+          {saving ? 'Saving...' : 'Save Changes'}
         </Button>
       </Box>
 
       <Grid container spacing={3}>
-        {/* Assignment Display Preferences */}
+        {/* Theme and Language */}
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Assignment Display
-            </Typography>
-            <FormGroup>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={preferences.assignmentDisplay.showDueDates}
-                    onChange={handleAssignmentDisplayChange("showDueDates")}
-                  />
-                }
-                label="Show Due Dates"
-              />
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={preferences.assignmentDisplay.showGrades}
-                    onChange={handleAssignmentDisplayChange("showGrades")}
-                  />
-                }
-                label="Show Grades"
-              />
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={preferences.assignmentDisplay.showFeedback}
-                    onChange={handleAssignmentDisplayChange("showFeedback")}
-                  />
-                }
-                label="Show Feedback"
-              />
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={preferences.assignmentDisplay.groupByStatus}
-                    onChange={handleAssignmentDisplayChange("groupByStatus")}
-                  />
-                }
-                label="Group by Status"
-              />
-            </FormGroup>
-          </Paper>
-        </Grid>
-
-        {/* Grading Preferences */}
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Grading Preferences
-            </Typography>
-            <FormGroup>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={preferences.gradingPreferences.autoGrade}
-                    onChange={handleGradingPreferencesChange("autoGrade")}
-                  />
-                }
-                label="Enable Auto-Grading"
-              />
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={preferences.gradingPreferences.showRubric}
-                    onChange={handleGradingPreferencesChange("showRubric")}
-                  />
-                }
-                label="Show Rubric While Grading"
-              />
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={preferences.gradingPreferences.allowComments}
-                    onChange={handleGradingPreferencesChange("allowComments")}
-                  />
-                }
-                label="Allow Comments"
-              />
-            </FormGroup>
-            <FormControl fullWidth sx={{ mt: 2 }}>
-              <InputLabel>Default Grade Scale</InputLabel>
-              <Select
-                value={preferences.gradingPreferences.defaultGrade}
-                onChange={handleDefaultGradeChange}
-                label="Default Grade Scale"
-              >
-                <MenuItem value={100}>100-point scale</MenuItem>
-                <MenuItem value={50}>50-point scale</MenuItem>
-                <MenuItem value={20}>20-point scale</MenuItem>
-                <MenuItem value={10}>10-point scale</MenuItem>
-              </Select>
-            </FormControl>
-          </Paper>
-        </Grid>
-
-        {/* Display Preferences */}
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Display Preferences
+              Appearance
             </Typography>
             <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel>Items per Page</InputLabel>
-              <Select
-                value={preferences.itemsPerPage}
-                onChange={handleItemsPerPageChange}
-                label="Items per Page"
-              >
-                <MenuItem value={10}>10 items</MenuItem>
-                <MenuItem value={25}>25 items</MenuItem>
-                <MenuItem value={50}>50 items</MenuItem>
-                <MenuItem value={100}>100 items</MenuItem>
+              <InputLabel>Theme</InputLabel>
+              <Select value={preferences.theme} onChange={handleThemeChange} label="Theme">
+                <MenuItem value="light">Light</MenuItem>
+                <MenuItem value="dark">Dark</MenuItem>
+                <MenuItem value="system">System</MenuItem>
               </Select>
             </FormControl>
-            <FormGroup>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={preferences.showProgress}
-                    onChange={(e) =>
-                      setPreferences((prev) => ({
-                        ...prev!,
-                        showProgress: e.target.checked,
-                      }))
-                    }
-                  />
-                }
-                label="Show Progress Indicators"
-              />
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={preferences.showTooltips}
-                    onChange={(e) =>
-                      setPreferences((prev) => ({
-                        ...prev!,
-                        showTooltips: e.target.checked,
-                      }))
-                    }
-                  />
-                }
-                label="Show Tooltips"
-              />
-            </FormGroup>
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel>Language</InputLabel>
+              <Select value={preferences.language} onChange={handleLanguageChange} label="Language">
+                <MenuItem value="en">English</MenuItem>
+                <MenuItem value="es">Spanish</MenuItem>
+                <MenuItem value="fr">French</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl fullWidth>
+              <InputLabel>Timezone</InputLabel>
+              <Select value={preferences.timezone} onChange={handleTimezoneChange} label="Timezone">
+                <MenuItem value="UTC">UTC</MenuItem>
+                <MenuItem value="EST">Eastern Time</MenuItem>
+                <MenuItem value="PST">Pacific Time</MenuItem>
+              </Select>
+            </FormControl>
           </Paper>
         </Grid>
 
-        {/* AI Preferences */}
+        {/* Notifications */}
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              AI Assistant Preferences
+              Notifications
             </Typography>
             <FormGroup>
               <FormControlLabel
                 control={
                   <Switch
-                    checked={preferences.aiSuggestions}
-                    onChange={(e) =>
-                      setPreferences((prev) => ({
-                        ...prev!,
-                        aiSuggestions: e.target.checked,
-                      }))
-                    }
+                    checked={preferences.notifications.email}
+                    onChange={handleNotificationChange('email')}
                   />
                 }
-                label="Enable AI Suggestions"
+                label="Email Notifications"
               />
               <FormControlLabel
                 control={
                   <Switch
-                    checked={preferences.aiFeedback}
-                    onChange={(e) =>
-                      setPreferences((prev) => ({
-                        ...prev!,
-                        aiFeedback: e.target.checked,
-                      }))
-                    }
+                    checked={preferences.notifications.push}
+                    onChange={handleNotificationChange('push')}
                   />
                 }
-                label="Enable AI Feedback"
+                label="Push Notifications"
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={preferences.notifications.assignmentReminders}
+                    onChange={handleNotificationChange('assignmentReminders')}
+                  />
+                }
+                label="Assignment Reminders"
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={preferences.notifications.gradeUpdates}
+                    onChange={handleNotificationChange('gradeUpdates')}
+                  />
+                }
+                label="Grade Updates"
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={preferences.notifications.feedbackAlerts}
+                    onChange={handleNotificationChange('feedbackAlerts')}
+                  />
+                }
+                label="Feedback Alerts"
               />
             </FormGroup>
-            <Alert severity="info" sx={{ mt: 2 }}>
-              AI features help provide intelligent suggestions and feedback to
-              improve your experience.
-            </Alert>
+          </Paper>
+        </Grid>
+
+        {/* Accessibility */}
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Accessibility
+            </Typography>
+            <FormGroup>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={preferences.accessibility.highContrast}
+                    onChange={handleAccessibilityChange('highContrast')}
+                  />
+                }
+                label="High Contrast Mode"
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={preferences.accessibility.largeText}
+                    onChange={handleAccessibilityChange('largeText')}
+                  />
+                }
+                label="Large Text"
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={preferences.accessibility.screenReader}
+                    onChange={handleAccessibilityChange('screenReader')}
+                  />
+                }
+                label="Screen Reader Mode"
+              />
+            </FormGroup>
           </Paper>
         </Grid>
       </Grid>
@@ -381,4 +346,4 @@ const UserPreferences: React.FC = () => {
   );
 };
 
-export default UserPreferences;
+export default UserPreferencesComponent;

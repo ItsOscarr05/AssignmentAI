@@ -6,42 +6,40 @@ from app.schemas.user import UserResponse
 from app.models.assignment import AssignmentStatus, DifficultyLevel
 
 class AssignmentBase(BaseModel):
-    title: str
-    subject: str
-    grade_level: str
-    assignment_type: str
-    topic: str
-    difficulty: DifficultyLevel
-    estimated_time: int
-    additional_requirements: Optional[str] = None
-    description: Optional[str] = None
-    max_score: float = 100.0
-    status: AssignmentStatus = AssignmentStatus.DRAFT
-    is_active: bool = True
+    title: str = Field(..., min_length=1, max_length=255)
+    description: str = Field(..., min_length=1)
+    subject: str = Field(..., min_length=1, max_length=100)
+    grade_level: str = Field(..., min_length=1, max_length=50)
+    due_date: datetime
+    max_score: int = Field(..., ge=0, le=100)
+    attachments: Optional[List[str]] = None
 
 class AssignmentCreate(AssignmentBase):
     pass
 
-class AssignmentUpdate(AssignmentBase):
-    title: Optional[str] = None
-    subject: Optional[str] = None
-    grade_level: Optional[str] = None
-    assignment_type: Optional[str] = None
-    topic: Optional[str] = None
-    difficulty: Optional[DifficultyLevel] = None
-    estimated_time: Optional[int] = None
-    max_score: Optional[float] = None
+class AssignmentUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=255)
+    description: Optional[str] = Field(None, min_length=1)
+    subject: Optional[str] = Field(None, min_length=1, max_length=100)
+    grade_level: Optional[str] = Field(None, min_length=1, max_length=50)
+    due_date: Optional[datetime] = None
+    max_score: Optional[int] = Field(None, ge=0, le=100)
     status: Optional[AssignmentStatus] = None
-    is_active: Optional[bool] = None
+    attachments: Optional[List[str]] = None
 
 class AssignmentResponse(AssignmentBase):
     id: int
-    teacher_id: int
-    teacher: UserResponse
-    class_: ClassResponse
+    status: AssignmentStatus
+    created_by_id: int
+    created_at: datetime
+    updated_at: datetime
 
     class Config:
         from_attributes = True
+
+class AssignmentList(BaseModel):
+    total: int
+    items: List[AssignmentResponse]
 
 class AssignmentInDBBase(AssignmentBase):
     id: int

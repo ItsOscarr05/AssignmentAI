@@ -1,13 +1,11 @@
 import {
   AccessTime as AccessTimeIcon,
-  Archive as ArchiveIcon,
   AttachFile as AttachFileIcon,
   Delete as DeleteIcon,
   Description as DescriptionIcon,
   Download as DownloadIcon,
   Edit as EditIcon,
-  Publish as PublishIcon,
-} from "@mui/icons-material";
+} from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -26,20 +24,51 @@ import {
   Paper,
   Stack,
   Typography,
-} from "@mui/material";
-import { format } from "date-fns";
-import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { Assignment } from "../../types/assignment";
-import { ConfirmationDialog } from "../common/ConfirmationDialog";
-import { FileUpload } from "../common/FileUpload";
-import { Toast } from "../common/Toast";
+} from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Assignment } from '../../types/assignment';
+import { ConfirmationDialog } from '../common/ConfirmationDialog';
+import { FileUpload } from '../common/FileUpload';
+import { Toast } from '../common/Toast';
 
-const AssignmentDetail: React.FC = () => {
+interface AssignmentDetailProps {
+  assignment?: Assignment;
+  onEdit?: (assignment: Assignment) => void;
+  onDelete?: (assignment: Assignment) => void;
+  onView?: (assignment: Assignment) => void;
+  onSubmit?: (files: File[]) => void;
+  loading?: boolean;
+  error?: Error;
+}
+
+interface Attachment {
+  id: string;
+  name: string;
+  url: string;
+  size: number;
+}
+
+interface Submission {
+  id: string;
+  status: 'submitted' | 'late' | 'graded';
+  submittedAt: string;
+  score?: number;
+}
+
+const AssignmentDetail: React.FC<AssignmentDetailProps> = ({
+  assignment: propAssignment,
+  onEdit,
+  onDelete,
+  onView,
+  onSubmit,
+  loading: propLoading,
+  error: propError,
+}) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [assignment, setAssignment] = useState<Assignment | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [assignment, setAssignment] = useState<Assignment | null>(propAssignment || null);
+  const [loading, setLoading] = useState(propLoading || false);
   const [submitting, setSubmitting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [submissionDialogOpen, setSubmissionDialogOpen] = useState(false);
@@ -47,63 +76,47 @@ const AssignmentDetail: React.FC = () => {
   const [toast, setToast] = useState<{
     open: boolean;
     message: string;
-    severity: "success" | "error" | "info" | "warning";
+    severity: 'success' | 'error' | 'info' | 'warning';
   }>({
     open: false,
-    message: "",
-    severity: "info",
+    message: '',
+    severity: 'info',
   });
 
   useEffect(() => {
-    fetchAssignment();
-  }, [id]);
+    if (propError) {
+      setToast({
+        open: true,
+        message: propError.message,
+        severity: 'error',
+      });
+    }
+  }, [propError]);
+
+  useEffect(() => {
+    if (!propAssignment) {
+      fetchAssignment();
+    }
+  }, [id, propAssignment]);
 
   const fetchAssignment = async () => {
     try {
       setLoading(true);
-      // TODO: Replace with actual API call
       const response = await fetch(`/api/assignments/${id}`);
+      if (!response.ok) {
+        throw new Error('Failed to load assignment');
+      }
       const data = await response.json();
       setAssignment(data);
-    } catch (err) {
+    } catch (error) {
+      console.error('Error fetching assignment details:', error);
       setToast({
         open: true,
-        message: "Failed to fetch assignment details",
-        severity: "error",
+        message: 'Failed to load assignment',
+        severity: 'error',
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleStatusChange = async (newStatus: Assignment["status"]) => {
-    if (!assignment) return;
-
-    try {
-      setSubmitting(true);
-      // TODO: Replace with actual API call
-      await fetch(`/api/assignments/${assignment.id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      setToast({
-        open: true,
-        message: `Assignment ${newStatus} successfully`,
-        severity: "success",
-      });
-      fetchAssignment();
-    } catch (err) {
-      setToast({
-        open: true,
-        message: `Failed to ${newStatus} assignment`,
-        severity: "error",
-      });
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -112,22 +125,24 @@ const AssignmentDetail: React.FC = () => {
 
     try {
       setSubmitting(true);
-      // TODO: Replace with actual API call
-      await fetch(`/api/assignments/${assignment.id}`, {
-        method: "DELETE",
+      const response = await fetch(`/api/assignments/${assignment.id}`, {
+        method: 'DELETE',
       });
-
+      if (!response.ok) {
+        throw new Error('Failed to delete assignment');
+      }
       setToast({
         open: true,
-        message: "Assignment deleted successfully",
-        severity: "success",
+        message: 'Assignment deleted successfully',
+        severity: 'success',
       });
-      navigate("/assignments");
-    } catch (err) {
+      navigate('/assignments');
+    } catch (error) {
+      console.error('Error deleting assignment:', error);
       setToast({
         open: true,
-        message: "Failed to delete assignment",
-        severity: "error",
+        message: 'Failed to delete assignment',
+        severity: 'error',
       });
     } finally {
       setSubmitting(false);
@@ -140,112 +155,115 @@ const AssignmentDetail: React.FC = () => {
 
     try {
       setSubmitting(true);
-      const formData = new FormData();
-      attachments.forEach((file) => {
-        formData.append("attachments", file);
-      });
+      if (onSubmit) {
+        await onSubmit(attachments);
+      } else {
+        const formData = new FormData();
+        attachments.forEach(file => {
+          formData.append('files', file);
+        });
 
-      // TODO: Replace with actual API call
-      await fetch(`/api/assignments/${assignment.id}/submit`, {
-        method: "POST",
-        body: formData,
-      });
+        const response = await fetch(`/api/assignments/${assignment.id}/submit`, {
+          method: 'POST',
+          body: formData,
+        });
 
-      setToast({
-        open: true,
-        message: "Submission successful",
-        severity: "success",
-      });
+        if (!response.ok) {
+          throw new Error('Submission failed');
+        }
+      }
+
       setSubmissionDialogOpen(false);
-      fetchAssignment();
-    } catch (err) {
+      setAttachments([]);
       setToast({
         open: true,
-        message: "Failed to submit assignment",
-        severity: "error",
+        message: 'Assignment submitted successfully',
+        severity: 'success',
+      });
+      fetchAssignment(); // Refresh assignment data
+    } catch (error) {
+      console.error('Error submitting assignment:', error);
+      setToast({
+        open: true,
+        message: error instanceof Error ? error.message : 'Submission failed',
+        severity: 'error',
       });
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleFileSelect = (files: File[]) => {
-    setAttachments(files);
-  };
-
-  const handleFileRemove = () => {
-    setAttachments([]);
-  };
-
   if (loading) {
     return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="400px"
-      >
-        <Typography>Loading...</Typography>
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+        <Typography>Loading assignment details...</Typography>
       </Box>
     );
   }
 
   if (!assignment) {
     return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="400px"
-      >
-        <Typography>Assignment not found</Typography>
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+        <Typography color="error">Assignment not found</Typography>
       </Box>
     );
   }
 
+  const formattedDueDate = new Date(assignment.due_date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+
+  const formattedCreatedDate = new Date(assignment.createdAt).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+
   return (
-    <Box>
+    <Box sx={{ p: 3 }}>
       <Paper sx={{ p: 3 }}>
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          mb={3}
-        >
-          <Typography variant="h4">{assignment.title}</Typography>
-          <Stack direction="row" spacing={1}>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+          <Typography variant="h4" component="h1">
+            {assignment.title}
+          </Typography>
+          <Stack direction="row" spacing={2}>
             <Chip
               label={assignment.status}
               color={
-                assignment.status === "published"
-                  ? "success"
-                  : assignment.status === "archived"
-                  ? "secondary"
-                  : "default"
+                assignment.status === 'active' || assignment.status === 'published'
+                  ? 'success'
+                  : assignment.status === 'draft'
+                  ? 'warning'
+                  : 'error'
               }
+              className="MuiChip-colorSuccess"
             />
+            {assignment.difficulty && (
+              <Chip
+                label={assignment.difficulty}
+                color={
+                  assignment.difficulty === 'easy'
+                    ? 'success'
+                    : assignment.difficulty === 'medium'
+                    ? 'warning'
+                    : 'error'
+                }
+              />
+            )}
             <IconButton
-              onClick={() => navigate(`/assignments/${assignment.id}/edit`)}
+              color="primary"
+              onClick={() => onEdit?.(assignment)}
+              title="Edit Assignment"
             >
               <EditIcon />
             </IconButton>
-            {assignment.status === "draft" && (
-              <IconButton
-                onClick={() => handleStatusChange("published")}
-                disabled={submitting}
-              >
-                <PublishIcon />
-              </IconButton>
-            )}
-            {assignment.status === "published" && (
-              <IconButton
-                onClick={() => handleStatusChange("archived")}
-                disabled={submitting}
-              >
-                <ArchiveIcon />
-              </IconButton>
-            )}
-            <IconButton onClick={() => setDeleteDialogOpen(true)}>
+            <IconButton
+              color="error"
+              onClick={() => setDeleteDialogOpen(true)}
+              title="Delete Assignment"
+            >
               <DeleteIcon />
             </IconButton>
           </Stack>
@@ -260,24 +278,33 @@ const AssignmentDetail: React.FC = () => {
             <List>
               <ListItem>
                 <ListItemIcon>
-                  <AccessTimeIcon />
+                  <DescriptionIcon />
                 </ListItemIcon>
-                <ListItemText
-                  primary="Due Date"
-                  secondary={format(
-                    new Date(assignment.dueDate),
-                    "MMM d, yyyy"
-                  )}
-                />
+                <ListItemText primary="Subject" secondary={assignment.subject} />
               </ListItem>
               <ListItem>
                 <ListItemIcon>
                   <DescriptionIcon />
                 </ListItemIcon>
-                <ListItemText
-                  primary="Maximum Submissions"
-                  secondary={assignment.maxSubmissions}
-                />
+                <ListItemText primary="Grade Level" secondary={assignment.grade_level} />
+              </ListItem>
+              <ListItem>
+                <ListItemIcon>
+                  <AccessTimeIcon />
+                </ListItemIcon>
+                <ListItemText primary="Created" secondary={`Created: ${formattedCreatedDate}`} />
+              </ListItem>
+              <ListItem>
+                <ListItemIcon>
+                  <AccessTimeIcon />
+                </ListItemIcon>
+                <ListItemText primary="Due Date" secondary={`Due: ${formattedDueDate}`} />
+              </ListItem>
+              <ListItem>
+                <ListItemIcon>
+                  <DescriptionIcon />
+                </ListItemIcon>
+                <ListItemText primary="Maximum Submissions" secondary={assignment.maxSubmissions} />
               </ListItem>
               {assignment.allowLateSubmissions && (
                 <ListItem>
@@ -299,15 +326,11 @@ const AssignmentDetail: React.FC = () => {
                   Attachments
                 </Typography>
                 <List>
-                  {assignment.attachments.map((attachment) => (
+                  {assignment.attachments.map((attachment: Attachment) => (
                     <ListItem
                       key={attachment.id}
                       secondaryAction={
-                        <IconButton
-                          edge="end"
-                          href={attachment.url}
-                          target="_blank"
-                        >
+                        <IconButton edge="end" href={attachment.url} target="_blank">
                           <DownloadIcon />
                         </IconButton>
                       }
@@ -335,16 +358,15 @@ const AssignmentDetail: React.FC = () => {
                 <ListItem>
                   <ListItemText
                     primary="Total Submissions"
-                    secondary={assignment.submissions.length}
+                    secondary={`${assignment.submissions.length} submissions`}
                   />
                 </ListItem>
                 <ListItem>
                   <ListItemText
                     primary="On Time"
                     secondary={
-                      assignment.submissions.filter(
-                        (s) => s.status === "submitted"
-                      ).length
+                      assignment.submissions.filter((s: Submission) => s.status === 'submitted')
+                        .length
                     }
                   />
                 </ListItem>
@@ -352,8 +374,7 @@ const AssignmentDetail: React.FC = () => {
                   <ListItemText
                     primary="Late"
                     secondary={
-                      assignment.submissions.filter((s) => s.status === "late")
-                        .length
+                      assignment.submissions.filter((s: Submission) => s.status === 'late').length
                     }
                   />
                 </ListItem>
@@ -361,9 +382,7 @@ const AssignmentDetail: React.FC = () => {
                   <ListItemText
                     primary="Graded"
                     secondary={
-                      assignment.submissions.filter(
-                        (s) => s.status === "graded"
-                      ).length
+                      assignment.submissions.filter((s: Submission) => s.status === 'graded').length
                     }
                   />
                 </ListItem>
@@ -372,7 +391,7 @@ const AssignmentDetail: React.FC = () => {
                 variant="contained"
                 fullWidth
                 onClick={() => setSubmissionDialogOpen(true)}
-                disabled={assignment.status !== "published"}
+                disabled={assignment.status !== 'published'}
               >
                 Submit Assignment
               </Button>
@@ -380,6 +399,14 @@ const AssignmentDetail: React.FC = () => {
           </Grid>
         </Grid>
       </Paper>
+
+      <ConfirmationDialog
+        open={deleteDialogOpen}
+        title="Delete Assignment"
+        message="Are you sure you want to delete this assignment? This action cannot be undone."
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteDialogOpen(false)}
+      />
 
       <Dialog
         open={submissionDialogOpen}
@@ -389,15 +416,14 @@ const AssignmentDetail: React.FC = () => {
       >
         <DialogTitle>Submit Assignment</DialogTitle>
         <DialogContent>
-          <Box sx={{ mt: 2 }}>
-            <FileUpload
-              onFileSelect={handleFileSelect}
-              onFileRemove={handleFileRemove}
-              accept=".pdf,.doc,.docx,.txt"
-              maxSize={10 * 1024 * 1024} // 10MB
-              multiple
-            />
-          </Box>
+          <FileUpload
+            files={attachments}
+            onChange={setAttachments}
+            multiple
+            accept=".pdf,.doc,.docx,.txt"
+            maxSize={10 * 1024 * 1024} // 10MB
+            errorMessage="File too large"
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setSubmissionDialogOpen(false)}>Cancel</Button>
@@ -406,18 +432,10 @@ const AssignmentDetail: React.FC = () => {
             variant="contained"
             disabled={submitting || attachments.length === 0}
           >
-            {submitting ? "Submitting..." : "Submit"}
+            {submitting ? 'Submitting...' : 'Submit'}
           </Button>
         </DialogActions>
       </Dialog>
-
-      <ConfirmationDialog
-        open={deleteDialogOpen}
-        title="Delete Assignment"
-        content="Are you sure you want to delete this assignment? This action cannot be undone."
-        onConfirm={handleDelete}
-        onCancel={() => setDeleteDialogOpen(false)}
-      />
 
       <Toast
         open={toast.open}

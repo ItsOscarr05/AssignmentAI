@@ -1,353 +1,439 @@
-import { Button as UiButton } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { LockOutlined, Visibility, VisibilityOff } from "@mui/icons-material";
 import {
-  Avatar,
+  GitHub as GitHubIcon,
+  Google as GoogleIcon,
+  Visibility as VisibilityIcon,
+  VisibilityOff as VisibilityOffIcon,
+} from '@mui/icons-material';
+import {
   Box,
   Button,
-  Checkbox,
-  Fade,
-  FormControlLabel,
+  CircularProgress,
+  Container,
+  Divider,
   Grid,
   IconButton,
   InputAdornment,
-  styled,
+  Link,
+  Paper,
+  Stack,
+  TextField,
   Typography,
-} from "@mui/material";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { useLocation, useNavigate } from "react-router-dom";
-import { z } from "zod";
-import AppIcon from "../components/AppIcon";
-import {
-  StyledContainer,
-  StyledSubtitle,
-  StyledTitle,
-} from "../components/styled";
-import { useAuth } from "../contexts/AuthContext";
+  useTheme,
+} from '@mui/material';
+import React, { useState } from 'react';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
-// Define animated components
-const AnimatedBox = styled(Box)(({ theme }) => ({
-  animation: `fadeInUp 0.8s ease-out`,
-  "@keyframes fadeInUp": {
-    from: {
-      opacity: 0,
-      transform: "translateY(20px)",
-    },
-    to: {
-      opacity: 1,
-      transform: "translateY(0)",
-    },
-  },
-}));
-
-const FloatingBox = styled(Box)(({ theme }) => ({
-  position: "absolute",
-  borderRadius: "50%",
-  background: "rgba(255, 255, 255, 0.1)",
-  animation: `float 6s ease-in-out infinite`,
-  "@keyframes float": {
-    "0%": {
-      transform: "translateY(0px)",
-    },
-    "50%": {
-      transform: "translateY(-20px)",
-    },
-    "100%": {
-      transform: "translateY(0px)",
-    },
-  },
-}));
-
-const SlidingBox = styled(Box)(({ theme }) => ({
-  animation: `slideIn 1s ease-out`,
-  "@keyframes slideIn": {
-    from: {
-      opacity: 0,
-      transform: "translateX(-100px)",
-    },
-    to: {
-      opacity: 1,
-      transform: "translateX(0)",
-    },
-  },
-}));
-
-const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
-
-type LoginForm = z.infer<typeof loginSchema>;
-
-export default function Login() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { login, isLoggingIn, loginError } = useAuth();
-  const [error, setError] = useState<string | null>(null);
-  const [rememberMe, setRememberMe] = useState(false);
+const Login: React.FC = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const theme = useTheme();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginForm>({
-    resolver: zodResolver(loginSchema),
-  });
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setEmailError('Invalid email address');
+      return false;
+    }
+    setEmailError('');
+    return true;
+  };
 
-  const onSubmit = async (data: LoginForm) => {
+  const validatePassword = (password: string) => {
+    if (password.length < 6) {
+      setPasswordError('Password must be at least 6 characters');
+      return false;
+    }
+    setPasswordError('');
+    return true;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    const isEmailValid = validateEmail(email);
+    const isPasswordValid = validatePassword(password);
+
+    if (!isEmailValid || !isPasswordValid) {
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      await login(data);
-      const from = (location.state as any)?.from?.pathname || "/dashboard";
-      navigate(from, { replace: true });
+      await login(email, password);
+      navigate('/dashboard');
     } catch (err) {
-      setError("Invalid email or password");
+      setError(err instanceof Error ? err.message : 'An error occurred during login');
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+    if (emailError) {
+      validateEmail(e.target.value);
+    }
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPassword(e.target.value);
+    if (passwordError) {
+      validatePassword(e.target.value);
+    }
+  };
+
+  const handleEmailBlur = () => {
+    validateEmail(email);
+  };
+
+  const handlePasswordBlur = () => {
+    validatePassword(password);
+  };
+
   return (
-    <StyledContainer>
-      <Grid container sx={{ height: "100vh" }}>
-        {/* Left side - Illustration */}
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.dark} 90%)`,
+      }}
+    >
+      <Container
+        maxWidth={false}
+        disableGutters
+        sx={{
+          display: 'flex',
+          alignItems: 'stretch',
+          height: '100vh',
+          width: '100vw',
+        }}
+      >
         <Grid
-          item
-          xs={12}
-          md={6}
+          container
+          component={Paper}
           sx={{
-            display: { xs: "none", md: "flex" },
-            alignItems: "center",
-            justifyContent: "center",
-            background: "linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%)",
-            position: "relative",
-            overflow: "hidden",
+            borderRadius: 0,
+            overflow: 'hidden',
+            flex: 1,
           }}
         >
-          <SlidingBox
+          {/* Left side - Branding */}
+          <Grid
+            item
+            xs={12}
+            md={5}
             sx={{
-              position: "relative",
-              width: "100%",
-              height: "100%",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
+              background: 'radial-gradient(circle at center, #FF5252 0%,rgb(84, 8, 8) 100%)',
+              p: 6,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              color: 'white',
+              position: 'relative',
             }}
           >
-            {/* Animated shapes */}
-            <FloatingBox
+            <Box
               sx={{
-                width: "300px",
-                height: "300px",
-                top: "20%",
-                left: "20%",
-                animation: "float 6s ease-in-out infinite",
-              }}
-            />
-            <FloatingBox
-              sx={{
-                width: "200px",
-                height: "200px",
-                bottom: "20%",
-                right: "20%",
-                animation: "float 8s ease-in-out infinite",
-              }}
-            />
-            <FloatingBox
-              sx={{
-                width: "150px",
-                height: "150px",
-                top: "50%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
-                animation: "float 7s ease-in-out infinite",
-              }}
-            />
-            <AppIcon size={120} />
-            <Typography
-              variant="h3"
-              sx={{
-                color: "white",
-                fontWeight: 700,
-                textAlign: "center",
+                position: 'relative',
+                textAlign: 'center',
                 zIndex: 1,
-                animation: "fadeInUp 1s ease-out",
-                mt: 4,
+                width: '100%',
+                maxWidth: 480,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
               }}
             >
-              Welcome Back!
-            </Typography>
-          </SlidingBox>
-        </Grid>
-
-        {/* Right side - Login Form */}
-        <Grid
-          item
-          xs={12}
-          md={6}
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            p: 3,
-            background: "white",
-          }}
-        >
-          <Fade in timeout={800}>
-            <AnimatedBox
-              sx={{
-                width: "100%",
-                maxWidth: 400,
-              }}
-            >
-              <Box sx={{ textAlign: "center", mb: 4 }}>
-                <Avatar
-                  sx={{
-                    m: "0 auto",
-                    bgcolor: "primary.main",
-                    boxShadow: "0 0 20px rgba(220, 38, 38, 0.3)",
-                  }}
-                >
-                  <LockOutlined />
-                </Avatar>
-                <StyledTitle
-                  component="h1"
-                  variant="h5"
-                  sx={{
-                    mt: 2,
-                    animation: "fadeInUp 0.8s ease-out 0.2s both",
-                  }}
-                >
-                  Sign in
-                </StyledTitle>
-                <StyledSubtitle
-                  variant="body2"
-                  sx={{
-                    animation: "fadeInUp 0.8s ease-out 0.4s both",
-                  }}
-                >
-                  Welcome back! Please enter your details.
-                </StyledSubtitle>
-              </Box>
-
-              <form
-                className="mt-8 space-y-6"
-                onSubmit={handleSubmit(onSubmit)}
+              <img
+                src="/AssignmentAI_Logo-transparent-white.png"
+                alt="Logo"
+                style={{
+                  height: 320,
+                  marginBottom: 32,
+                  width: 'auto',
+                  maxWidth: '100%',
+                  objectFit: 'contain',
+                  filter: 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.3))',
+                }}
+              />
+              <Typography
+                variant="h4"
+                component="h1"
+                fontWeight="bold"
+                gutterBottom
+                sx={{
+                  fontFamily: "'Playfair Display', serif",
+                  fontSize: { xs: '3rem', md: '4rem' },
+                  letterSpacing: '-0.02em',
+                  mb: 2,
+                }}
               >
-                <div className="rounded-md shadow-sm space-y-4">
-                  <Input
-                    label="Email address"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    error={errors.email?.message}
-                    {...register("email")}
-                  />
-                  <Input
-                    label="Password"
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="current-password"
-                    required
-                    error={errors.password?.message}
-                    {...register("password")}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton
-                            onClick={() => setShowPassword(!showPassword)}
-                            edge="end"
-                            sx={{
-                              color: "primary.main",
-                              "&:hover": {
-                                backgroundColor: "rgba(220, 38, 38, 0.04)",
-                              },
-                            }}
-                          >
-                            {showPassword ? <VisibilityOff /> : <Visibility />}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </div>
+                AssignmentAI
+              </Typography>
+              <Typography
+                variant="h6"
+                sx={{
+                  opacity: 0.9,
+                  mb: 3,
+                  fontFamily: "'Inter', sans-serif",
+                  fontWeight: 300,
+                  letterSpacing: '0.02em',
+                  fontSize: '1.5rem',
+                }}
+              >
+                Your AI-powered assignment companion
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  opacity: 0.8,
+                  fontFamily: "'Inter', sans-serif",
+                  fontWeight: 300,
+                  letterSpacing: '0.01em',
+                  lineHeight: 1.4,
+                  fontSize: '1.2rem',
+                }}
+              >
+                Get intelligent help with your assignments using advanced AI technology.
+              </Typography>
+            </Box>
+          </Grid>
 
-                {(error || loginError) && (
-                  <div className="text-sm text-red-600">
-                    {error || "An error occurred during login"}
-                  </div>
+          {/* Right side - Login Form */}
+          <Grid item xs={12} md={7} sx={{ p: { xs: 4, md: 6 } }}>
+            <Box sx={{ maxWidth: 480, mx: 'auto' }}>
+              <Typography
+                variant="h4"
+                fontWeight="bold"
+                gutterBottom
+                sx={{
+                  fontFamily: "'Playfair Display', serif",
+                  fontSize: { xs: '2rem', md: '2.4rem' },
+                  letterSpacing: '-0.02em',
+                  color: 'text.primary',
+                }}
+              >
+                Welcome Back
+              </Typography>
+              <Typography
+                color="text.secondary"
+                sx={{
+                  mb: 5,
+                  fontFamily: "'Inter', sans-serif",
+                  fontWeight: 300,
+                  letterSpacing: '0.01em',
+                  fontSize: '1.1rem',
+                }}
+              >
+                Sign in to continue to AssignmentAI
+              </Typography>
+
+              <Box component="form" onSubmit={handleSubmit}>
+                <TextField
+                  margin="normal"
+                  required
+                  fullWidth
+                  id="email"
+                  label="Email Address"
+                  name="email"
+                  autoComplete="email"
+                  autoFocus
+                  value={email}
+                  onChange={handleEmailChange}
+                  onBlur={handleEmailBlur}
+                  error={!!emailError}
+                  helperText={emailError}
+                  sx={{
+                    mb: 2,
+                    '& .MuiInputLabel-root': {
+                      fontFamily: "'Inter', sans-serif",
+                      fontWeight: 400,
+                    },
+                    '& .MuiInputBase-input': {
+                      fontFamily: "'Inter', sans-serif",
+                      fontWeight: 400,
+                    },
+                  }}
+                />
+                <TextField
+                  margin="normal"
+                  required
+                  fullWidth
+                  name="password"
+                  label="Password"
+                  type={showPassword ? 'text' : 'password'}
+                  id="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={handlePasswordChange}
+                  onBlur={handlePasswordBlur}
+                  error={!!passwordError}
+                  helperText={passwordError}
+                  inputProps={{ 'data-testid': 'password-input' }}
+                  sx={{
+                    '& .MuiInputLabel-root': {
+                      fontFamily: "'Inter', sans-serif",
+                      fontWeight: 400,
+                    },
+                    '& .MuiInputBase-input': {
+                      fontFamily: "'Inter', sans-serif",
+                      fontWeight: 400,
+                    },
+                  }}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle password visibility"
+                          onClick={() => setShowPassword(!showPassword)}
+                          edge="end"
+                        >
+                          {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+
+                <Box sx={{ mt: 1, textAlign: 'right' }}>
+                  <Link
+                    component={RouterLink}
+                    to="/forgot-password"
+                    variant="body2"
+                    sx={{
+                      fontFamily: "'Inter', sans-serif",
+                      fontWeight: 500,
+                      fontSize: '0.875rem',
+                      letterSpacing: '0.01em',
+                    }}
+                    color="primary"
+                    underline="hover"
+                  >
+                    Forgot password?
+                  </Link>
+                </Box>
+
+                {error && (
+                  <Typography
+                    color="error"
+                    sx={{
+                      mt: 2,
+                      textAlign: 'center',
+                      fontFamily: "'Inter', sans-serif",
+                      fontWeight: 400,
+                    }}
+                  >
+                    {error}
+                  </Typography>
                 )}
 
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      value="remember"
-                      color="primary"
-                      checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
-                      sx={{
-                        "&.Mui-checked": {
-                          color: "primary.main",
-                        },
-                      }}
-                    />
-                  }
-                  label="Remember me"
-                />
-                <div>
-                  <UiButton
-                    type="submit"
-                    className="w-full"
-                    isLoading={isLoggingIn}
+                <Button
+                  type="submit"
+                  fullWidth
+                  variant="contained"
+                  disabled={isLoading}
+                  sx={{
+                    mt: 3,
+                    mb: 2,
+                    py: 1.5,
+                    fontFamily: "'Inter', sans-serif",
+                    fontWeight: 500,
+                    letterSpacing: '0.02em',
+                    fontSize: '0.9375rem',
+                  }}
+                >
+                  {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
+                </Button>
+
+                <Divider sx={{ my: 3 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: 'text.secondary',
+                      fontFamily: "'Inter', sans-serif",
+                      fontWeight: 400,
+                    }}
                   >
-                    Sign in
-                  </UiButton>
-                </div>
-                <Grid container spacing={2} sx={{ mt: 2 }}>
-                  <Grid item xs={12} sm={6}>
-                    <Button
-                      variant="text"
-                      onClick={() => navigate("/forgot-password")}
-                      sx={{
-                        color: "primary.main",
-                        textTransform: "none",
-                        fontWeight: 500,
-                        fontSize: "0.875rem",
-                        transition: "all 0.3s ease",
-                        "&:hover": {
-                          backgroundColor: "rgba(220, 38, 38, 0.04)",
-                          transform: "translateX(5px)",
-                        },
-                      }}
-                    >
-                      Forgot password?
-                    </Button>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Button
-                      variant="text"
-                      onClick={() => navigate("/register")}
-                      sx={{
-                        color: "primary.main",
-                        textTransform: "none",
-                        fontWeight: 500,
-                        fontSize: "0.875rem",
-                        transition: "all 0.3s ease",
-                        "&:hover": {
-                          backgroundColor: "rgba(220, 38, 38, 0.04)",
-                          transform: "translateX(5px)",
-                        },
-                      }}
-                    >
-                      Don't have an account? Sign Up
-                    </Button>
-                  </Grid>
-                </Grid>
-              </form>
-            </AnimatedBox>
-          </Fade>
+                    or continue with
+                  </Typography>
+                </Divider>
+
+                <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    startIcon={<GoogleIcon />}
+                    onClick={() => {
+                      /* Implement Google login */
+                    }}
+                    sx={{
+                      py: 1.5,
+                      fontFamily: "'Inter', sans-serif",
+                      fontWeight: 500,
+                      letterSpacing: '0.01em',
+                    }}
+                  >
+                    Google
+                  </Button>
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    startIcon={<GitHubIcon />}
+                    onClick={() => {
+                      /* Implement GitHub login */
+                    }}
+                    sx={{
+                      py: 1.5,
+                      fontFamily: "'Inter', sans-serif",
+                      fontWeight: 500,
+                      letterSpacing: '0.01em',
+                    }}
+                  >
+                    GitHub
+                  </Button>
+                </Stack>
+
+                <Typography
+                  variant="body2"
+                  align="center"
+                  sx={{
+                    mt: 3,
+                    fontFamily: "'Inter', sans-serif",
+                    fontWeight: 400,
+                  }}
+                >
+                  Don't have an account?{' '}
+                  <Link
+                    component={RouterLink}
+                    to="/register"
+                    color="primary"
+                    underline="hover"
+                    sx={{
+                      fontFamily: "'Inter', sans-serif",
+                      fontWeight: 500,
+                      letterSpacing: '0.01em',
+                    }}
+                  >
+                    Sign up
+                  </Link>
+                </Typography>
+              </Box>
+            </Box>
+          </Grid>
         </Grid>
-      </Grid>
-    </StyledContainer>
+      </Container>
+    </Box>
   );
-}
+};
+
+export default Login;

@@ -1,86 +1,233 @@
-import styled from "@emotion/styled";
-import React from "react";
-import type { PerformanceMetrics } from "../utils/performance";
-import { usePerformanceObserver } from "../utils/performance";
+import {
+  Alert,
+  Box,
+  Card,
+  CardContent,
+  CircularProgress,
+  Grid,
+  LinearProgress,
+  Typography,
+} from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 
-const DashboardContainer = styled.div`
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 15px;
-  border-radius: 8px;
-  font-family: monospace;
-  font-size: 12px;
-  z-index: 9999;
-  min-width: 200px;
-`;
+interface PerformanceMetrics {
+  totalSubmissions: number;
+  averageGrade: number;
+  completionRate: number;
+  plagiarismRate: number;
+  feedbackQuality: number;
+  submissionTrends: Array<{
+    date: string;
+    submissions: number;
+    averageGrade: number;
+  }>;
+  gradeDistribution: Array<{
+    range: string;
+    count: number;
+  }>;
+}
 
-const MetricRow = styled.div`
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 5px;
-`;
+interface PerformanceDashboardProps {
+  classId?: string;
+  timeRange?: 'week' | 'month' | 'semester';
+}
 
-const MetricLabel = styled.span`
-  color: #888;
-`;
+const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
+  classId,
+  timeRange = 'month',
+}) => {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [metrics, setMetrics] = useState<PerformanceMetrics | null>(null);
 
-const MetricValue = styled.span<{ warning?: boolean }>`
-  color: ${(props) => (props.warning ? "#ff6b6b" : "#4caf50")};
-`;
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const params = new URLSearchParams();
+        if (classId) params.append('classId', classId);
+        params.append('timeRange', timeRange);
 
-const PerformanceDashboard: React.FC = () => {
-  const [metrics, setMetrics] = React.useState<PerformanceMetrics>({
-    pageLoadTime: 0,
-    componentRenderTime: 0,
-    apiResponseTime: 0,
-    memoryUsage: 0,
-    fps: 0,
-  });
+        const response = await fetch(`/api/analytics/performance?${params.toString()}`);
 
-  usePerformanceObserver((newMetrics) => {
-    setMetrics(newMetrics);
-  });
+        if (!response.ok) {
+          throw new Error('Failed to fetch performance metrics');
+        }
 
-  const formatTime = (ms: number): string => {
-    return `${ms.toFixed(2)}ms`;
-  };
+        const data = await response.json();
+        setMetrics(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const formatMemory = (mb: number): string => {
-    return `${mb.toFixed(2)}MB`;
-  };
+    fetchMetrics();
+  }, [classId, timeRange]);
 
-  const isWarning = (fps: number): boolean => {
-    return fps < 30;
-  };
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error">{error}</Alert>
+      </Box>
+    );
+  }
+
+  if (!metrics) {
+    return null;
+  }
 
   return (
-    <DashboardContainer>
-      <MetricRow>
-        <MetricLabel>Page Load:</MetricLabel>
-        <MetricValue>{formatTime(metrics.pageLoadTime)}</MetricValue>
-      </MetricRow>
-      <MetricRow>
-        <MetricLabel>Render Time:</MetricLabel>
-        <MetricValue>{formatTime(metrics.componentRenderTime)}</MetricValue>
-      </MetricRow>
-      <MetricRow>
-        <MetricLabel>API Response:</MetricLabel>
-        <MetricValue>{formatTime(metrics.apiResponseTime)}</MetricValue>
-      </MetricRow>
-      <MetricRow>
-        <MetricLabel>Memory Usage:</MetricLabel>
-        <MetricValue>{formatMemory(metrics.memoryUsage)}</MetricValue>
-      </MetricRow>
-      <MetricRow>
-        <MetricLabel>FPS:</MetricLabel>
-        <MetricValue warning={isWarning(metrics.fps)}>
-          {metrics.fps}
-        </MetricValue>
-      </MetricRow>
-    </DashboardContainer>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h5" gutterBottom>
+        Performance Dashboard
+      </Typography>
+
+      {/* Key Metrics */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Typography color="textSecondary" gutterBottom>
+                Total Submissions
+              </Typography>
+              <Typography variant="h4">{metrics.totalSubmissions}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Typography color="textSecondary" gutterBottom>
+                Average Grade
+              </Typography>
+              <Typography variant="h4">{metrics.averageGrade.toFixed(1)}%</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Typography color="textSecondary" gutterBottom>
+                Completion Rate
+              </Typography>
+              <Typography variant="h4">{metrics.completionRate.toFixed(1)}%</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Typography color="textSecondary" gutterBottom>
+                Plagiarism Rate
+              </Typography>
+              <Typography variant="h4" color="error">
+                {metrics.plagiarismRate.toFixed(1)}%
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Submission Trends */}
+      <Card sx={{ mb: 4 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            Submission Trends
+          </Typography>
+          <Box sx={{ height: 300 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={metrics.submissionTrends}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis yAxisId="left" />
+                <YAxis yAxisId="right" orientation="right" />
+                <Tooltip />
+                <Legend />
+                <Line
+                  yAxisId="left"
+                  type="monotone"
+                  dataKey="submissions"
+                  stroke="#8884d8"
+                  name="Submissions"
+                />
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="averageGrade"
+                  stroke="#82ca9d"
+                  name="Average Grade"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </Box>
+        </CardContent>
+      </Card>
+
+      {/* Grade Distribution */}
+      <Card>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            Grade Distribution
+          </Typography>
+          <Box sx={{ height: 300 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={metrics.gradeDistribution}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="range" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="count" fill="#8884d8" name="Number of Submissions" />
+              </BarChart>
+            </ResponsiveContainer>
+          </Box>
+        </CardContent>
+      </Card>
+
+      {/* Feedback Quality */}
+      <Card sx={{ mt: 4 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            Feedback Quality
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <Box sx={{ flexGrow: 1, mr: 2 }}>
+              <LinearProgress
+                variant="determinate"
+                value={metrics.feedbackQuality}
+                sx={{ height: 10, borderRadius: 5 }}
+              />
+            </Box>
+            <Typography variant="body2" color="text.secondary">
+              {metrics.feedbackQuality.toFixed(1)}%
+            </Typography>
+          </Box>
+        </CardContent>
+      </Card>
+    </Box>
   );
 };
 

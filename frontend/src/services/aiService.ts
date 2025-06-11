@@ -1,35 +1,82 @@
-import axios from "axios";
 import {
+  AIGenerationOptions,
+  AIGenerationResponse,
+  AIModel,
+  AISettings,
   AssignmentGenerationRequest,
   AssignmentGenerationResponse,
-} from "../types/ai";
-
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000/api/v1";
+  SubmissionAnalysis,
+  TokenUsage,
+} from '../types/ai';
+import { api } from './api';
 
 export const aiService = {
+  /**
+   * Generate a new assignment using AI
+   */
   generateAssignment: async (
     request: AssignmentGenerationRequest
   ): Promise<AssignmentGenerationResponse> => {
-    try {
-      const response = await axios.post(`${API_URL}/ai/generate`, request, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      return response.data;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        return {
-          success: false,
-          error:
-            error.response?.data?.detail || "Failed to generate assignment",
-        };
-      }
-      return {
-        success: false,
-        error: "An unexpected error occurred",
-      };
-    }
+    const response = await api.post<AssignmentGenerationResponse>(
+      '/ai/assignments/generate',
+      request
+    );
+    return response.data;
+  },
+
+  /**
+   * Analyze a student's submission
+   */
+  analyzeSubmission: async (submissionId: string): Promise<SubmissionAnalysis> => {
+    const response = await api.post<SubmissionAnalysis>(`/ai/submissions/${submissionId}/analyze`);
+    return response.data;
+  },
+
+  /**
+   * Get AI suggestions for improvement
+   */
+  getSuggestions: async (content: string): Promise<string[]> => {
+    const response = await api.post<string[]>('/ai/suggestions', { content });
+    return response.data;
+  },
+
+  /**
+   * Generate content using AI
+   */
+  generateContent: async (options: AIGenerationOptions): Promise<AIGenerationResponse> => {
+    const response = await api.post<AIGenerationResponse>('/ai/generate', options);
+    return response.data;
+  },
+
+  /**
+   * Get token usage statistics
+   */
+  getTokenUsage: async (): Promise<TokenUsage> => {
+    const response = await api.get<TokenUsage>('/ai/token-usage');
+    return response.data;
+  },
+
+  /**
+   * Get available AI models
+   */
+  getAvailableModels: async (): Promise<AIModel[]> => {
+    const response = await api.get<AIModel[]>('/ai/models');
+    return response.data;
+  },
+
+  /**
+   * Get current AI settings
+   */
+  getSettings: async (): Promise<AISettings> => {
+    const response = await api.get<AISettings>('/ai/settings');
+    return response.data;
+  },
+
+  /**
+   * Update AI settings
+   */
+  updateSettings: async (settings: Partial<AISettings>): Promise<AISettings> => {
+    const response = await api.put<AISettings>('/ai/settings', settings);
+    return response.data;
   },
 };

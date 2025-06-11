@@ -1,196 +1,154 @@
-import { useAuth } from "@/hooks/useAuth";
-import { Dialog, Transition } from "@headlessui/react";
+import { useAuth } from '@/hooks/useAuth';
 import {
   AcademicCapIcon,
-  Bars3Icon,
   ClipboardDocumentListIcon,
   HomeIcon,
   UserIcon,
-} from "@heroicons/react/24/outline";
-import { Fragment, useState } from "react";
-import { Link, Outlet, useLocation } from "react-router-dom";
+} from '@heroicons/react/24/outline';
+import { Menu as MenuIcon } from '@mui/icons-material';
+import {
+  AppBar,
+  Avatar,
+  Box,
+  CssBaseline,
+  Divider,
+  Drawer,
+  IconButton,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Toolbar,
+  Typography,
+} from '@mui/material';
+import { ReactNode, useState } from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import Notifications from './Notifications';
 
-const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: HomeIcon },
-  { name: "Assignments", href: "/assignments", icon: AcademicCapIcon },
+// Navigation items for the sidebar
+const navigationItems = [
+  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
+  { name: 'Assignments', href: '/assignments', icon: AcademicCapIcon },
   {
-    name: "Submissions",
-    href: "/submissions",
+    name: 'Submissions',
+    href: '/submissions',
     icon: ClipboardDocumentListIcon,
   },
-  { name: "Profile", href: "/profile", icon: UserIcon },
+  { name: 'Profile', href: '/profile', icon: UserIcon },
 ];
 
-export default function Layout() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+interface LayoutProps {
+  children?: ReactNode;
+}
+
+const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuth();
 
-  return (
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
+
+  const drawerContent = (
     <>
-      <div>
-        <Transition.Root show={sidebarOpen} as={Fragment}>
-          <Dialog
-            as="div"
-            className="relative z-50 lg:hidden"
-            onClose={setSidebarOpen}
-          >
-            <Transition.Child
-              as={Fragment}
-              enter="transition-opacity ease-linear duration-300"
-              enterFrom="opacity-0"
-              enterTo="opacity-100"
-              leave="transition-opacity ease-linear duration-300"
-              leaveFrom="opacity-100"
-              leaveTo="opacity-0"
+      <Toolbar sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2 }}>
+        {user && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Avatar src={user.avatarUrl} alt={user.fullName} />
+            <Typography variant="body1">{user.fullName}</Typography>
+          </Box>
+        )}
+      </Toolbar>
+      <Divider />
+      <List>
+        {navigationItems.map(item => (
+          <ListItem key={item.name} disablePadding>
+            <ListItemButton
+              selected={location.pathname === item.href}
+              onClick={() => {
+                navigate(item.href);
+                setMobileOpen(false);
+              }}
             >
-              <div className="fixed inset-0 bg-gray-900/80" />
-            </Transition.Child>
-
-            <div className="fixed inset-0 flex">
-              <Transition.Child
-                as={Fragment}
-                enter="transition ease-in-out duration-300 transform"
-                enterFrom="-translate-x-full"
-                enterTo="translate-x-0"
-                leave="transition ease-in-out duration-300 transform"
-                leaveFrom="translate-x-0"
-                leaveTo="-translate-x-full"
-              >
-                <Dialog.Panel className="relative mr-16 flex w-full max-w-xs flex-1">
-                  <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white px-6 pb-4">
-                    <div className="flex h-16 shrink-0 items-center">
-                      <img
-                        className="h-8 w-auto"
-                        src="/logo.svg"
-                        alt="AssignmentAI"
-                      />
-                    </div>
-                    <nav className="flex flex-1 flex-col">
-                      <ul role="list" className="flex flex-1 flex-col gap-y-7">
-                        <li>
-                          <ul role="list" className="-mx-2 space-y-1">
-                            {navigation.map((item) => (
-                              <li key={item.name}>
-                                <Link
-                                  to={item.href}
-                                  className={`
-                                    group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold
-                                    ${
-                                      location.pathname === item.href
-                                        ? "bg-gray-50 text-primary-600"
-                                        : "text-gray-700 hover:text-primary-600 hover:bg-gray-50"
-                                    }
-                                  `}
-                                >
-                                  <item.icon
-                                    className={`h-6 w-6 shrink-0 ${
-                                      location.pathname === item.href
-                                        ? "text-primary-600"
-                                        : "text-gray-400 group-hover:text-primary-600"
-                                    }`}
-                                    aria-hidden="true"
-                                  />
-                                  {item.name}
-                                </Link>
-                              </li>
-                            ))}
-                          </ul>
-                        </li>
-                      </ul>
-                    </nav>
-                  </div>
-                </Dialog.Panel>
-              </Transition.Child>
-            </div>
-          </Dialog>
-        </Transition.Root>
-
-        {/* Static sidebar for desktop */}
-        <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
-          <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6 pb-4">
-            <div className="flex h-16 shrink-0 items-center">
-              <img className="h-8 w-auto" src="/logo.svg" alt="AssignmentAI" />
-            </div>
-            <nav className="flex flex-1 flex-col">
-              <ul role="list" className="flex flex-1 flex-col gap-y-7">
-                <li>
-                  <ul role="list" className="-mx-2 space-y-1">
-                    {navigation.map((item) => (
-                      <li key={item.name}>
-                        <Link
-                          to={item.href}
-                          className={`
-                            group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold
-                            ${
-                              location.pathname === item.href
-                                ? "bg-gray-50 text-primary-600"
-                                : "text-gray-700 hover:text-primary-600 hover:bg-gray-50"
-                            }
-                          `}
-                        >
-                          <item.icon
-                            className={`h-6 w-6 shrink-0 ${
-                              location.pathname === item.href
-                                ? "text-primary-600"
-                                : "text-gray-400 group-hover:text-primary-600"
-                            }`}
-                            aria-hidden="true"
-                          />
-                          {item.name}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-              </ul>
-            </nav>
-          </div>
-        </div>
-
-        <div className="lg:pl-72">
-          <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-0 lg:pl-0">
-            <button
-              type="button"
-              className="-m-2.5 p-2.5 text-gray-700 lg:hidden"
-              onClick={() => setSidebarOpen(true)}
-            >
-              <span className="sr-only">Open sidebar</span>
-              <Bars3Icon className="h-6 w-6" aria-hidden="true" />
-            </button>
-
-            {/* Separator */}
-            <div
-              className="h-6 w-px bg-gray-200 lg:hidden"
-              aria-hidden="true"
-            />
-
-            <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
-              <div className="flex flex-1"></div>
-              <div className="flex items-center gap-x-4 lg:gap-x-6">
-                <div className="relative">
-                  <button
-                    type="button"
-                    className="-m-1.5 flex items-center p-1.5"
-                    onClick={logout}
-                  >
-                    <span className="sr-only">Logout</span>
-                    <span className="text-sm font-semibold leading-6 text-gray-900">
-                      {user?.full_name}
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <main className="py-10">
-            <div className="px-4 sm:px-6 lg:px-8">
-              <Outlet />
-            </div>
-          </main>
-        </div>
-      </div>
+              <ListItemIcon>
+                <item.icon className="h-6 w-6" />
+              </ListItemIcon>
+              <ListItemText primary={item.name} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
     </>
   );
-}
+
+  return (
+    <Box sx={{ display: 'flex' }}>
+      <CssBaseline />
+      <AppBar
+        position="fixed"
+        sx={{
+          width: { sm: `calc(100% - 240px)` },
+          ml: { sm: `240px` },
+        }}
+      >
+        <Toolbar>
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            edge="start"
+            onClick={handleDrawerToggle}
+            sx={{ mr: 2, display: { sm: 'none' } }}
+          >
+            <MenuIcon />
+          </IconButton>
+          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+            AssignmentAI
+          </Typography>
+          <Notifications />
+        </Toolbar>
+      </AppBar>
+      <Box component="nav" sx={{ width: { sm: 240 }, flexShrink: { sm: 0 } }}>
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={handleDrawerToggle}
+          ModalProps={{
+            keepMounted: true, // Better open performance on mobile.
+          }}
+          sx={{
+            display: { xs: 'block', sm: 'none' },
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 240 },
+          }}
+        >
+          {drawerContent}
+        </Drawer>
+        <Drawer
+          variant="permanent"
+          sx={{
+            display: { xs: 'none', sm: 'block' },
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 240 },
+          }}
+          open
+        >
+          {drawerContent}
+        </Drawer>
+      </Box>
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: 3,
+          width: { sm: `calc(100% - 240px)` },
+          mt: 8,
+        }}
+      >
+        {children || <Outlet />}
+      </Box>
+    </Box>
+  );
+};
+
+export default Layout;

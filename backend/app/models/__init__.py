@@ -1,15 +1,27 @@
 from .base import Base
 from .user import User
+from .token import Token
 from .assignment import Assignment
 from .submission import Submission
+from .feedback import Feedback
+from .ai_assignment import AIAssignment
 from .class_model import Class
+from .security import SecurityAlert, AuditLog, TwoFactorSetup
 from .log import SystemLog
+from .notification import Notification
 
 __all__ = [
     "Base",
     "User",
+    "Token",
     "Assignment",
     "Submission",
+    "Feedback",
+    "AIAssignment",
     "Class",
-    "SystemLog"
+    "SecurityAlert",
+    "AuditLog",
+    "TwoFactorSetup",
+    "SystemLog",
+    "Notification",
 ] 

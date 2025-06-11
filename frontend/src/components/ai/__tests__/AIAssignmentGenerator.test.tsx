@@ -1,260 +1,255 @@
-import { ThemeProvider } from "@mui/material/styles";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { BrowserRouter } from "react-router-dom";
-import { mockAssignments } from "../../../test/mocks/data";
-import { theme } from "../../../theme";
-import AIAssignmentGenerator from "../AIAssignmentGenerator";
+import { ThemeProvider } from '@mui/material/styles';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { assignments } from '../../../services/api';
+import { theme } from '../../../theme';
+import { AssignmentGenerationResponse } from '../../../types/ai';
+import AIAssignmentGenerator from '../AIAssignmentGenerator';
 
-// Mock the API client
-jest.mock("../../../services/api", () => ({
-  apiClient: {
-    post: jest.fn(),
+// Mock Material-UI icons
+vi.mock('@mui/icons-material', () => ({
+  Add: () => <span data-testid="AddIcon">Add</span>,
+  AutoAwesome: () => <span data-testid="AutoAwesomeIcon">AutoAwesome</span>,
+  Delete: () => <span data-testid="DeleteIcon">Delete</span>,
+}));
+
+// Mock the API module first
+vi.mock('../../../services/api', () => ({
+  assignments: {
+    generateAssignment: vi.fn(),
   },
 }));
 
-describe("AIAssignmentGenerator", () => {
+// Then get the mocked functions
+const mockGenerateAssignment = vi.mocked(assignments.generateAssignment);
+
+describe('AIAssignmentGenerator', () => {
   const renderComponent = () => {
     return render(
       <ThemeProvider theme={theme}>
-        <BrowserRouter>
+        <MemoryRouter>
           <AIAssignmentGenerator />
-        </BrowserRouter>
+        </MemoryRouter>
       </ThemeProvider>
     );
   };
 
   beforeEach(() => {
-    // Reset all mocks before each test
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
-  it("renders the form correctly", () => {
+  it('renders the form with all required fields', () => {
     renderComponent();
 
-    // Check for form elements
-    expect(screen.getByLabelText("Subject")).toBeInTheDocument();
-    expect(screen.getByLabelText("Topic")).toBeInTheDocument();
-    expect(screen.getByLabelText("Difficulty Level")).toBeInTheDocument();
-    expect(screen.getByLabelText("Grade Level")).toBeInTheDocument();
-    expect(
-      screen.getByLabelText("Estimated Duration (hours)")
-    ).toBeInTheDocument();
-    expect(screen.getByLabelText("Maximum Points")).toBeInTheDocument();
-    expect(screen.getByText("Requirements")).toBeInTheDocument();
-    expect(screen.getByText("Learning Objectives")).toBeInTheDocument();
+    expect(screen.getByTestId('assignment-form')).toBeInTheDocument();
+    expect(screen.getByLabelText(/title/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/subject/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/difficulty level/i)).toBeInTheDocument();
+    expect(screen.getByText(/learning objectives/i)).toBeInTheDocument();
+    expect(screen.getByText(/requirements/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /generate assignment/i })).toBeInTheDocument();
   });
 
-  it("allows adding requirements and learning objectives", () => {
+  it('validates required fields before submission', async () => {
+    renderComponent();
+
+    // Submit form without filling required fields
+    fireEvent.click(screen.getByRole('button', { name: /generate assignment/i }));
+
+    // Check for validation messages
+    await waitFor(() => {
+      expect(screen.getByText(/title is required/i)).toBeInTheDocument();
+      expect(screen.getByText(/description is required/i)).toBeInTheDocument();
+      expect(screen.getByText(/subject is required/i)).toBeInTheDocument();
+    });
+  });
+
+  it('handles successful assignment generation', async () => {
+    const user = userEvent.setup();
+    const mockResponse = {
+      id: '123',
+      content: 'Generated assignment content',
+      metadata: {
+        wordCount: 500,
+        estimatedTime: 30,
+        difficulty: 'Intermediate',
+        topics: ['Mathematics', 'Algebra'],
+      },
+      createdAt: new Date().toISOString(),
+      success: true,
+    };
+    mockGenerateAssignment.mockResolvedValue(mockResponse);
+
+    renderComponent();
+
+    // Fill in the form
+    const textFields = screen.getAllByTestId('text-field');
+    await user.type(textFields[0], 'Test Assignment'); // Title
+    await user.type(textFields[1], 'Test Description'); // Description
+    await user.type(textFields[2], 'Mathematics'); // Subject
+    await user.type(textFields[3], 'Test Requirement'); // Requirement
+    await user.type(textFields[4], 'Test Objective'); // Learning Objective
+
+    // Submit the form
+    const generateButton = screen.getByRole('button', { name: /generate assignment/i });
+    await user.click(generateButton);
+
+    // Wait for the success message
+    await waitFor(() => {
+      const snackbar = screen.getByTestId('snackbar');
+      expect(snackbar).toHaveAttribute('data-severity', 'success');
+    });
+
+    expect(mockGenerateAssignment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Test Assignment',
+        description: 'Test Description',
+        subject: 'Mathematics',
+      })
+    );
+  });
+
+  it('handles API errors during generation', async () => {
+    const user = userEvent.setup();
+    mockGenerateAssignment.mockRejectedValue(new Error('API Error'));
+
+    renderComponent();
+
+    // Fill in the form
+    const textFields = screen.getAllByTestId('text-field');
+    await user.type(textFields[0], 'Test Assignment'); // Title
+    await user.type(textFields[1], 'Test Description'); // Description
+    await user.type(textFields[2], 'Mathematics'); // Subject
+    await user.type(textFields[3], 'Test Requirement'); // Requirement
+    await user.type(textFields[4], 'Test Objective'); // Learning Objective
+
+    // Submit the form
+    const generateButton = screen.getByRole('button', { name: /generate assignment/i });
+    await user.click(generateButton);
+
+    // Wait for error message
+    await waitFor(() => {
+      const snackbar = screen.getByTestId('snackbar');
+      expect(snackbar).toHaveAttribute('data-severity', 'error');
+    });
+  });
+
+  it('allows adding and removing requirements', async () => {
+    const user = userEvent.setup();
     renderComponent();
 
     // Add a requirement
-    fireEvent.click(screen.getByText("Add Requirement"));
-    const requirementInput = screen.getByPlaceholderText("Enter requirement");
-    fireEvent.change(requirementInput, {
-      target: { value: "Test requirement" },
-    });
+    await user.click(screen.getByText(/add requirement/i));
+    const textFields = screen.getAllByTestId('text-field');
+    const requirementFields = textFields.filter(field =>
+      field.getAttribute('label')?.includes('Requirement')
+    );
+    expect(requirementFields).toHaveLength(2);
+
+    // Remove the requirement
+    const removeButtons = screen.getAllByTestId('DeleteIcon');
+    await user.click(removeButtons[0]);
+    const remainingFields = screen.getAllByTestId('text-field');
+    const remainingRequirementFields = remainingFields.filter(field =>
+      field.getAttribute('label')?.includes('Requirement')
+    );
+    expect(remainingRequirementFields).toHaveLength(1);
+  });
+
+  it('allows adding and removing learning objectives', async () => {
+    const user = userEvent.setup();
+    renderComponent();
 
     // Add a learning objective
-    fireEvent.click(screen.getByText("Add Learning Objective"));
-    const objectiveInput = screen.getByPlaceholderText(
-      "Enter learning objective"
+    await user.click(screen.getByText(/add learning objective/i));
+    const textFields = screen.getAllByTestId('text-field');
+    const objectiveFields = textFields.filter(field =>
+      field.getAttribute('label')?.includes('Learning Objective')
     );
-    fireEvent.change(objectiveInput, { target: { value: "Test objective" } });
+    expect(objectiveFields).toHaveLength(2);
 
-    // Verify inputs are present
-    expect(screen.getByDisplayValue("Test requirement")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("Test objective")).toBeInTheDocument();
+    // Remove the learning objective
+    const removeButtons = screen.getAllByTestId('DeleteIcon');
+    await user.click(removeButtons[1]);
+    const remainingFields = screen.getAllByTestId('text-field');
+    const remainingObjectiveFields = remainingFields.filter(field =>
+      field.getAttribute('label')?.includes('Learning Objective')
+    );
+    expect(remainingObjectiveFields).toHaveLength(1);
   });
 
-  it("allows removing requirements and learning objectives", () => {
+  it('validates minimum number of requirements and objectives', async () => {
+    const user = userEvent.setup();
     renderComponent();
 
-    // Add items
-    fireEvent.click(screen.getByText("Add Requirement"));
-    fireEvent.click(screen.getByText("Add Learning Objective"));
-
-    // Remove items
-    const removeButtons = screen.getAllByRole("button", { name: /remove/i });
-    fireEvent.click(removeButtons[0]);
-    fireEvent.click(removeButtons[1]);
-
-    // Verify items are removed
-    expect(
-      screen.queryByPlaceholderText("Enter requirement")
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByPlaceholderText("Enter learning objective")
-    ).not.toBeInTheDocument();
-  });
-
-  it("validates required fields before submission", async () => {
-    renderComponent();
-
-    // Try to generate without filling required fields
-    fireEvent.click(screen.getByText("Generate Assignment"));
+    // Try to submit without any requirements or objectives
+    await user.click(screen.getByRole('button', { name: /generate assignment/i }));
 
     // Check for validation messages
-    expect(screen.getByText("Subject is required")).toBeInTheDocument();
-    expect(screen.getByText("Topic is required")).toBeInTheDocument();
-    expect(
-      screen.getByText("Difficulty level is required")
-    ).toBeInTheDocument();
-    expect(screen.getByText("Grade level is required")).toBeInTheDocument();
-  });
-
-  it("successfully generates an assignment", async () => {
-    // Mock the API response
-    const { apiClient } = require("../../../services/api");
-    apiClient.post.mockResolvedValueOnce({
-      data: {
-        content: {
-          title: "Generated Assignment",
-          description: "Test description",
-          instructions: "Test instructions",
-          rubric: "Test rubric",
-          sampleSolution: "Test solution",
-          suggestedResources: ["Resource 1", "Resource 2"],
-          tags: ["test", "generated"],
-        },
-        metadata: {
-          generationTime: 2.5,
-          model: "gpt-4",
-          confidence: 0.95,
-        },
-      },
-    });
-
-    renderComponent();
-
-    // Fill in the form
-    fireEvent.change(screen.getByLabelText("Subject"), {
-      target: { value: "Computer Science" },
-    });
-    fireEvent.change(screen.getByLabelText("Topic"), {
-      target: { value: "Programming Basics" },
-    });
-    fireEvent.change(screen.getByLabelText("Difficulty Level"), {
-      target: { value: "beginner" },
-    });
-    fireEvent.change(screen.getByLabelText("Grade Level"), {
-      target: { value: "9" },
-    });
-    fireEvent.change(screen.getByLabelText("Estimated Duration (hours)"), {
-      target: { value: "2" },
-    });
-    fireEvent.change(screen.getByLabelText("Maximum Points"), {
-      target: { value: "100" },
-    });
-
-    // Generate assignment
-    fireEvent.click(screen.getByText("Generate Assignment"));
-
-    // Wait for preview dialog
     await waitFor(() => {
-      expect(screen.getByText("Generated Assignment")).toBeInTheDocument();
-      expect(screen.getByText("Test description")).toBeInTheDocument();
-      expect(screen.getByText("Test instructions")).toBeInTheDocument();
-      expect(screen.getByText("Test rubric")).toBeInTheDocument();
-      expect(screen.getByText("Test solution")).toBeInTheDocument();
-      expect(screen.getByText("Resource 1")).toBeInTheDocument();
-      expect(screen.getByText("Resource 2")).toBeInTheDocument();
-      expect(screen.getByText("test")).toBeInTheDocument();
-      expect(screen.getByText("generated")).toBeInTheDocument();
+      const textFields = screen.getAllByTestId('text-field');
+      const requirementField = textFields.find(field =>
+        field.getAttribute('label')?.includes('Requirement')
+      );
+      const objectiveField = textFields.find(field =>
+        field.getAttribute('label')?.includes('Learning Objective')
+      );
+
+      expect(requirementField).toHaveAttribute(
+        'helpertext',
+        'At least one requirement is required'
+      );
+      expect(objectiveField).toHaveAttribute(
+        'helpertext',
+        'At least one learning objective is required'
+      );
     });
   });
 
-  it("handles API errors during generation", async () => {
-    // Mock the API error
-    const { apiClient } = require("../../../services/api");
-    apiClient.post.mockRejectedValueOnce(
-      new Error("Failed to generate assignment")
+  it('disables the generate button during API calls', async () => {
+    const user = userEvent.setup();
+    let resolvePromise: (value: AssignmentGenerationResponse) => void;
+    mockGenerateAssignment.mockImplementation(
+      () =>
+        new Promise<AssignmentGenerationResponse>(resolve => {
+          resolvePromise = resolve;
+        })
     );
 
     renderComponent();
 
     // Fill in the form
-    fireEvent.change(screen.getByLabelText("Subject"), {
-      target: { value: "Computer Science" },
-    });
-    fireEvent.change(screen.getByLabelText("Topic"), {
-      target: { value: "Programming Basics" },
-    });
-    fireEvent.change(screen.getByLabelText("Difficulty Level"), {
-      target: { value: "beginner" },
-    });
-    fireEvent.change(screen.getByLabelText("Grade Level"), {
-      target: { value: "9" },
-    });
+    const textFields = screen.getAllByTestId('text-field');
+    await user.type(textFields[0], 'Test Assignment'); // Title
+    await user.type(textFields[1], 'Test Description'); // Description
+    await user.type(textFields[2], 'Mathematics'); // Subject
+    await user.type(textFields[3], 'Test Requirement'); // Requirement
+    await user.type(textFields[4], 'Test Objective'); // Learning Objective
 
-    // Try to generate
-    fireEvent.click(screen.getByText("Generate Assignment"));
+    // Submit the form
+    const generateButton = screen.getByRole('button', { name: /generate assignment/i });
+    await user.click(generateButton);
 
-    // Check for error message
+    // Wait for the loading state to be set and button to be disabled
     await waitFor(() => {
-      expect(
-        screen.getByText("Failed to generate assignment")
-      ).toBeInTheDocument();
+      expect(generateButton).toHaveAttribute('disabled');
     });
-  });
 
-  it("allows saving generated assignment", async () => {
-    // Mock the API responses
-    const { apiClient } = require("../../../services/api");
-    apiClient.post
-      .mockResolvedValueOnce({
-        data: {
-          content: {
-            title: "Generated Assignment",
-            description: "Test description",
-            instructions: "Test instructions",
-            rubric: "Test rubric",
-            sampleSolution: "Test solution",
-            suggestedResources: ["Resource 1"],
-            tags: ["test"],
-          },
-          metadata: {
-            generationTime: 2.5,
-            model: "gpt-4",
-            confidence: 0.95,
-          },
-        },
-      })
-      .mockResolvedValueOnce({ data: { ...mockAssignments[0] } });
-
-    renderComponent();
-
-    // Fill in the form and generate
-    fireEvent.change(screen.getByLabelText("Subject"), {
-      target: { value: "Computer Science" },
-    });
-    fireEvent.change(screen.getByLabelText("Topic"), {
-      target: { value: "Programming Basics" },
-    });
-    fireEvent.change(screen.getByLabelText("Difficulty Level"), {
-      target: { value: "beginner" },
-    });
-    fireEvent.change(screen.getByLabelText("Grade Level"), {
-      target: { value: "9" },
-    });
-    fireEvent.click(screen.getByText("Generate Assignment"));
-
-    // Wait for preview dialog and save
-    await waitFor(() => {
-      expect(screen.getByText("Generated Assignment")).toBeInTheDocument();
-    });
-    fireEvent.click(screen.getByText("Save Assignment"));
-
-    // Verify API call
-    await waitFor(() => {
-      expect(apiClient.post).toHaveBeenCalledWith("/api/assignments", {
-        title: "Generated Assignment",
-        description: "Test description",
-        instructions: "Test instructions",
-        rubric: "Test rubric",
-        sampleSolution: "Test solution",
-        suggestedResources: ["Resource 1"],
-        tags: ["test"],
-      });
+    // Resolve the promise to clean up
+    resolvePromise!({
+      id: '123',
+      content: 'Generated assignment content',
+      metadata: {
+        wordCount: 500,
+        estimatedTime: 30,
+        difficulty: 'Intermediate',
+        topics: ['Mathematics', 'Algebra'],
+      },
+      createdAt: new Date().toISOString(),
+      success: true,
     });
   });
 });

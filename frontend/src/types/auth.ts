@@ -6,24 +6,42 @@ export interface LoginRequest {
 export interface RegisterRequest {
   email: string;
   password: string;
-  full_name: string;
-  role: "teacher" | "student";
+  firstName: string;
+  lastName: string;
+  role: 'teacher' | 'student';
 }
 
 export interface AuthResponse {
   access_token: string;
   token_type: string;
   user: {
-    id: number;
+    id: string;
     email: string;
-    full_name: string;
-    role: "teacher" | "student";
+    fullName: string;
+    role: 'teacher' | 'student';
   };
 }
 
 export interface User {
-  id: number;
+  id: string;
   email: string;
-  full_name: string;
-  role: "teacher" | "student";
+  fullName: string;
+  role: 'teacher' | 'student';
+}
+
+export interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+  register: (data: RegisterRequest) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => void;
+}
+
+export interface RegisterData {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
 }

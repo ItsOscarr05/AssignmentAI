@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { usePerformanceMonitoring } from "../utils/performance";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { usePerformanceMonitoring } from '../utils/performance';
 
 interface VirtualizationOptions {
   itemHeight: number;
@@ -23,19 +23,14 @@ interface VirtualizationResult<T> {
   scrollToIndex: (index: number) => void;
   scrollToOffset: (offset: number) => void;
   measure: () => void;
+  containerRef: React.RefObject<HTMLDivElement>;
 }
 
 export const useVirtualization = <T>(
   items: T[],
   options: VirtualizationOptions
 ): VirtualizationResult<T> => {
-  const {
-    itemHeight,
-    overscan = 3,
-    containerHeight,
-    containerWidth = 0,
-    horizontal = false,
-  } = options;
+  const { itemHeight, overscan = 3, containerHeight, horizontal = false } = options;
 
   const [scrollOffset, setScrollOffset] = useState(0);
   const [startIndex, setStartIndex] = useState(0);
@@ -43,7 +38,7 @@ export const useVirtualization = <T>(
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Performance monitoring
-  usePerformanceMonitoring("VirtualizedList");
+  usePerformanceMonitoring('VirtualizedList');
 
   const calculateVisibleRange = useCallback(() => {
     const start = Math.max(0, Math.floor(scrollOffset / itemHeight) - overscan);
@@ -97,20 +92,18 @@ export const useVirtualization = <T>(
   useEffect(() => {
     const container = containerRef.current;
     if (container) {
-      container.addEventListener("scroll", handleScroll);
-      return () => container.removeEventListener("scroll", handleScroll);
+      container.addEventListener('scroll', handleScroll);
+      return () => container.removeEventListener('scroll', handleScroll);
     }
   }, [handleScroll]);
 
-  const virtualItems = items
-    .slice(startIndex, endIndex + 1)
-    .map((item, index) => ({
-      index: startIndex + index,
-      item,
-      start: (startIndex + index) * itemHeight,
-      end: (startIndex + index + 1) * itemHeight,
-      size: itemHeight,
-    }));
+  const virtualItems = items.slice(startIndex, endIndex + 1).map((item, index) => ({
+    index: startIndex + index,
+    item,
+    start: (startIndex + index) * itemHeight,
+    end: (startIndex + index + 1) * itemHeight,
+    size: itemHeight,
+  }));
 
   const totalSize = items.length * itemHeight;
 

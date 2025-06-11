@@ -1,28 +1,28 @@
-from typing import Generator, Optional
+from typing import AsyncGenerator, Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
 from pydantic import ValidationError
-from sqlalchemy.orm import Session
+from motor.motor_asyncio import AsyncIOMotorClient
 
 from app import crud, models, schemas
 from app.core import security
 from app.core.config import settings
-from app.db.session import SessionLocal
 
 reusable_oauth2 = OAuth2PasswordBearer(
     tokenUrl=f"{settings.API_V1_STR}/auth/login"
 )
 
-def get_db() -> Generator:
+async def get_db() -> AsyncGenerator[AsyncIOMotorClient, None]:
+    """Get MongoDB database session."""
+    client = AsyncIOMotorClient(settings.MONGODB_URL)
     try:
-        db = SessionLocal()
-        yield db
+        yield client[settings.MONGODB_DB]
     finally:
-        db.close()
+        client.close()
 
-def get_current_user(
-    db: Session = Depends(get_db), token: str = Depends(reusable_oauth2)
+async def get_current_user(
+    db: AsyncIOMotorClient = Depends(get_db), token: str = Depends(reusable_oauth2)
 ) -> models.User:
     try:
         payload = jwt.decode(
@@ -34,19 +34,19 @@ def get_current_user(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Could not validate credentials",
         )
-    user = crud.user.get(db, id=token_data.sub)
+    user = await crud.user.get(db, id=token_data.sub)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
-def get_current_active_user(
+async def get_current_active_user(
     current_user: models.User = Depends(get_current_user),
 ) -> models.User:
-    if not crud.user.is_active(current_user):
+    if not await crud.user.is_active(current_user):
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
-def get_current_active_superuser(
+async def get_current_active_superuser(
     current_user: models.User = Depends(get_current_user),
 ) -> models.User:
     if not current_user.is_superuser:

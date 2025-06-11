@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { usePerformanceMonitoring } from "../utils/performance";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { usePerformanceMonitoring } from '../utils/performance';
 
 interface StatePersistenceOptions<T> {
   key: string;
@@ -18,13 +18,13 @@ interface StatePersistenceOptions<T> {
 interface CacheOptions {
   maxAge?: number;
   maxSize?: number;
-  priority?: "high" | "medium" | "low";
+  priority?: 'high' | 'medium' | 'low';
 }
 
 interface CacheEntry<T> {
   data: T;
   timestamp: number;
-  priority: "high" | "medium" | "low";
+  priority: 'high' | 'medium' | 'low';
 }
 
 export const useStatePersistence = <T>(options: StatePersistenceOptions<T>) => {
@@ -54,13 +54,13 @@ export const useStatePersistence = <T>(options: StatePersistenceOptions<T>) => {
         }
       }
     } catch (error) {
-      console.error("Error loading persisted state:", error);
+      console.error('Error loading persisted state:', error);
     }
     return initialState;
   });
 
   // Performance monitoring
-  usePerformanceMonitoring("StatePersistence");
+  usePerformanceMonitoring('StatePersistence');
 
   // Cache management
   const cache = useRef<Map<string, CacheEntry<any>>>(new Map());
@@ -70,14 +70,12 @@ export const useStatePersistence = <T>(options: StatePersistenceOptions<T>) => {
   const saveState = useCallback(
     (newState: T) => {
       try {
-        const transformedState = transformState?.save
-          ? transformState.save(newState)
-          : newState;
+        const transformedState = transformState?.save ? transformState.save(newState) : newState;
 
         storage.setItem(key, JSON.stringify(transformedState));
         onSave?.(newState);
       } catch (error) {
-        console.error("Error saving state:", error);
+        console.error('Error saving state:', error);
       }
     },
     [key, storage, transformState, onSave]
@@ -103,7 +101,7 @@ export const useStatePersistence = <T>(options: StatePersistenceOptions<T>) => {
   // Cache management functions
   const setCache = useCallback(
     <K extends string, V>(cacheKey: K, data: V, options: CacheOptions = {}) => {
-      const { maxAge = 3600000, maxSize = 100, priority = "medium" } = options;
+      const { maxAge = 3600000, maxSize = 100, priority = 'medium' } = options;
 
       // Check cache size
       if (cache.current.size >= maxSize) {
@@ -159,11 +157,9 @@ export const useStatePersistence = <T>(options: StatePersistenceOptions<T>) => {
   // State management functions
   const updateState = useCallback(
     (updater: T | ((prevState: T) => T)) => {
-      setState((prevState) => {
+      setState(prevState => {
         const newState =
-          typeof updater === "function"
-            ? (updater as (prevState: T) => T)(prevState)
-            : updater;
+          typeof updater === 'function' ? (updater as (prevState: T) => T)(prevState) : updater;
 
         if (validateState ? validateState(newState) : true) {
           return newState;

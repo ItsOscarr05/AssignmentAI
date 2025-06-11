@@ -9,7 +9,7 @@ export interface DashboardStats {
 
 export interface RecentActivity {
   id: string;
-  type: "submission" | "grade" | "assignment" | "feedback";
+  type: 'submission' | 'grade' | 'assignment' | 'feedback';
   title: string;
   description: string;
   timestamp: string;
@@ -22,7 +22,7 @@ export interface UpcomingDeadline {
   id: string;
   title: string;
   dueDate: string;
-  status: "pending" | "submitted" | "late";
+  status: 'pending' | 'submitted' | 'late';
   assignmentId: string;
 }
 
@@ -32,5 +32,5 @@ export interface QuickAction {
   description: string;
   icon: string;
   path: string;
-  color: "primary" | "secondary" | "success" | "error" | "info" | "warning";
+  color: 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
 }

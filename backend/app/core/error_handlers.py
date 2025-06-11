@@ -6,6 +6,7 @@ import logging
 from app.services.logging_service import LoggingService
 
 logger = logging.getLogger(__name__)
+logging_service = LoggingService()
 
 async def http_exception_handler(request: Request, exc: HTTPException):
     logger.error(f"HTTP Exception: {exc.detail}")
@@ -23,10 +24,13 @@ async def validation_exception_handler(request: Request, exc: ValidationError):
 
 async def database_error_handler(request: Request, exc: SQLAlchemyError):
     """Handle database errors"""
-    LoggingService.log_error(
-        request.state.db,
+    extra = {"error": str(exc)}
+    if hasattr(request.state, "db"):
+        extra["db"] = request.state.db
+    
+    logging_service.error(
         "Database error occurred",
-        {"error": str(exc)}
+        extra=extra
     )
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -35,10 +39,13 @@ async def database_error_handler(request: Request, exc: SQLAlchemyError):
 
 async def validation_error_handler(request: Request, exc: ValueError):
     """Handle validation errors"""
-    LoggingService.log_warning(
-        request.state.db,
+    extra = {"error": str(exc)}
+    if hasattr(request.state, "db"):
+        extra["db"] = request.state.db
+    
+    logging_service.warning(
         "Validation error occurred",
-        {"error": str(exc)}
+        extra=extra
     )
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -47,10 +54,13 @@ async def validation_error_handler(request: Request, exc: ValueError):
 
 async def general_exception_handler(request: Request, exc: Exception):
     """Handle general exceptions"""
-    LoggingService.log_error(
-        request.state.db,
+    extra = {"error": str(exc)}
+    if hasattr(request.state, "db"):
+        extra["db"] = request.state.db
+    
+    logging_service.error(
         "Unexpected error occurred",
-        {"error": str(exc)}
+        extra=extra
     )
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

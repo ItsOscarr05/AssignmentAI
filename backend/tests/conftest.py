@@ -1,188 +1,166 @@
 import pytest
-from typing import Generator, Dict, Any
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+import asyncio
+from typing import AsyncGenerator, Dict, Any
+from datetime import datetime
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.orm import sessionmaker
 from app.core.config import settings
-from app.db.base import Base
-from app.main import app
-from app.db.session import get_db
-from app.models.user import User
-from app.models.assignment import Assignment
-from app.models.submission import Submission
+from app.db.base_class import Base
+from app.models.user import User, UserRole
+from app.models.class_model import Class
+from app.models.assignment import Assignment, AssignmentStatus, DifficultyLevel
+from app.models.submission import Submission, SubmissionStatus
 from app.models.ai_assignment import AIAssignment
 from app.models.feedback import Feedback
-from app.core.security import create_access_token
-from app.schemas.user import UserCreate
-from app.schemas.assignment import AssignmentCreate
-from app.schemas.submission import SubmissionCreate
-from app.schemas.ai_assignment import AIAssignmentCreate
-from app.schemas.feedback import FeedbackCreate
+from app.core.security import get_password_hash
 
-# Test database URL
-TEST_SQLALCHEMY_DATABASE_URI = "sqlite:///./test.db"
+# Create async engine with asyncpg
+SQLALCHEMY_DATABASE_URI = settings.SQLALCHEMY_DATABASE_URI.replace("postgresql://", "postgresql+asyncpg://")
+engine = create_async_engine(
+    SQLALCHEMY_DATABASE_URI,
+    echo=True,
+    future=True
+)
 
-# Override settings for testing
-settings.SQLALCHEMY_DATABASE_URI = TEST_SQLALCHEMY_DATABASE_URI
-settings.ENVIRONMENT = "test"
-settings.CACHE_ENABLED = False
-settings.QUERY_OPTIMIZATION_ENABLED = False
+# Create async session factory
+async_session = async_sessionmaker(
+    engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+    autocommit=False,
+    autoflush=False
+)
 
 @pytest.fixture(scope="session")
-def engine():
-    """Create test database engine"""
-    engine = create_engine(TEST_SQLALCHEMY_DATABASE_URI)
-    Base.metadata.create_all(bind=engine)
-    yield engine
-    Base.metadata.drop_all(bind=engine)
+def event_loop():
+    """Create an instance of the default event loop for each test case."""
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
 
 @pytest.fixture(scope="function")
-def db(engine) -> Generator[Session, None, None]:
-    """Create test database session"""
-    connection = engine.connect()
-    transaction = connection.begin()
-    session = sessionmaker(bind=connection)()
+async def db() -> AsyncGenerator[AsyncSession, None]:
+    """Create a fresh database session for a test."""
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
     
-    yield session
-    
-    session.close()
-    transaction.rollback()
-    connection.close()
-
-@pytest.fixture(scope="function")
-def client(db: Session) -> Generator[TestClient, None, None]:
-    """Create test client"""
-    def override_get_db():
+    async with async_session() as session:
         try:
-            yield db
+            yield session
         finally:
-            pass
+            await session.rollback()
+            await session.close()
     
-    app.dependency_overrides[get_db] = override_get_db
-    yield TestClient(app)
-    app.dependency_overrides.clear()
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
 
-# Mock data fixtures
-@pytest.fixture
-def mock_user_data() -> Dict[str, Any]:
-    return {
-        "email": "test@example.com",
-        "password": "testpassword123",
-        "full_name": "Test User",
-        "role": "teacher"
-    }
-
-@pytest.fixture
-def mock_assignment_data() -> Dict[str, Any]:
-    return {
-        "title": "Test Assignment",
-        "description": "Test Description",
-        "due_date": "2024-12-31T23:59:59",
-        "grade_level": "9-12",
-        "subject": "Mathematics",
-        "difficulty": "medium"
-    }
-
-@pytest.fixture
-def mock_submission_data() -> Dict[str, Any]:
-    return {
-        "content": "Test submission content",
-        "file_path": "test_file.pdf",
-        "submitted_at": "2024-01-01T12:00:00"
-    }
-
-@pytest.fixture
-def mock_ai_assignment_data() -> Dict[str, Any]:
-    return {
-        "title": "AI Generated Assignment",
-        "description": "AI generated description",
-        "prompt": "Generate a math assignment",
-        "generated_content": "Generated content here",
-        "confidence_score": 0.95
-    }
-
-@pytest.fixture
-def mock_feedback_data() -> Dict[str, Any]:
-    return {
-        "content": "Test feedback content",
-        "feedback_type": "general",
-        "confidence_score": 0.9
-    }
-
-# Token generation fixtures
-@pytest.fixture
-def teacher_token(mock_user_data: Dict[str, Any]) -> str:
-    return create_access_token(
-        data={"sub": mock_user_data["email"], "role": "teacher"}
+@pytest.fixture(scope="function")
+async def test_user(db: AsyncSession) -> User:
+    """Create a test user."""
+    user = User(
+        email="test@example.com",
+        hashed_password=get_password_hash("testpassword"),
+        full_name="Test User",
+        role=UserRole.STUDENT
     )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return user
 
-@pytest.fixture
-def student_token(mock_user_data: Dict[str, Any]) -> str:
-    return create_access_token(
-        data={"sub": mock_user_data["email"], "role": "student"}
+@pytest.fixture(scope="function")
+async def test_admin(db: AsyncSession) -> User:
+    """Create a test admin user."""
+    admin = User(
+        email="admin@example.com",
+        hashed_password=get_password_hash("adminpassword"),
+        full_name="Test Admin",
+        role=UserRole.ADMIN
     )
+    db.add(admin)
+    await db.commit()
+    await db.refresh(admin)
+    return admin
 
-# Database object fixtures
-@pytest.fixture
-def test_user(db: Session, mock_user_data: Dict[str, Any]) -> User:
-    user = UserCreate(**mock_user_data)
-    db_user = User(
-        email=user.email,
-        hashed_password=user.password,  # In real app, this would be hashed
-        full_name=user.full_name,
-        role=user.role
-    )
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    return db_user
-
-@pytest.fixture
-def test_assignment(db: Session, test_user: User, mock_assignment_data: Dict[str, Any]) -> Assignment:
-    assignment = AssignmentCreate(**mock_assignment_data)
-    db_assignment = Assignment(
-        **assignment.dict(),
+@pytest.fixture(scope="function")
+async def test_class(db: AsyncSession, test_user: User) -> Class:
+    """Create a test class."""
+    class_ = Class(
+        name="Test Class",
+        code="TEST101",
+        description="Test Description",
         teacher_id=test_user.id
     )
-    db.add(db_assignment)
-    db.commit()
-    db.refresh(db_assignment)
-    return db_assignment
+    db.add(class_)
+    await db.commit()
+    await db.refresh(class_)
+    return class_
 
-@pytest.fixture
-def test_submission(db: Session, test_user: User, test_assignment: Assignment, mock_submission_data: Dict[str, Any]) -> Submission:
-    submission = SubmissionCreate(**mock_submission_data)
-    db_submission = Submission(
-        **submission.dict(),
-        student_id=test_user.id,
-        assignment_id=test_assignment.id
+@pytest.fixture(scope="function")
+async def test_assignment(db: AsyncSession, test_class: Class) -> Assignment:
+    """Create a test assignment."""
+    assignment = Assignment(
+        title="Test Assignment",
+        description="Test Description",
+        due_date=datetime.utcnow(),
+        class_id=test_class.id,
+        status=AssignmentStatus.DRAFT,
+        difficulty=DifficultyLevel.EASY,
+        subject="Mathematics",
+        grade_level="10",
+        assignment_type="homework",
+        topic="Algebra",
+        estimated_time=60,
+        content="Test content",
+        user_id=test_class.teacher_id,
+        created_by_id=test_class.teacher_id,
+        teacher_id=test_class.teacher_id
     )
-    db.add(db_submission)
-    db.commit()
-    db.refresh(db_submission)
-    return db_submission
+    db.add(assignment)
+    await db.commit()
+    await db.refresh(assignment)
+    return assignment
 
-@pytest.fixture
-def test_ai_assignment(db: Session, test_user: User, mock_ai_assignment_data: Dict[str, Any]) -> AIAssignment:
-    ai_assignment = AIAssignmentCreate(**mock_ai_assignment_data)
-    db_ai_assignment = AIAssignment(
-        **ai_assignment.dict(),
-        teacher_id=test_user.id
+@pytest.fixture(scope="function")
+async def test_submission(db: AsyncSession, test_assignment: Assignment, test_user: User) -> Submission:
+    """Create a test submission."""
+    submission = Submission(
+        title="Test Submission",
+        content="Test Submission",
+        assignment_id=test_assignment.id,
+        user_id=test_user.id,
+        status=SubmissionStatus.SUBMITTED
     )
-    db.add(db_ai_assignment)
-    db.commit()
-    db.refresh(db_ai_assignment)
-    return db_ai_assignment
+    db.add(submission)
+    await db.commit()
+    await db.refresh(submission)
+    return submission
 
-@pytest.fixture
-def test_feedback(db: Session, test_user: User, test_submission: Submission, mock_feedback_data: Dict[str, Any]) -> Feedback:
-    feedback = FeedbackCreate(**mock_feedback_data)
-    db_feedback = Feedback(
-        **feedback.dict(),
-        teacher_id=test_user.id,
-        submission_id=test_submission.id
+@pytest.fixture(scope="function")
+async def test_ai_assignment(db: AsyncSession, test_assignment: Assignment) -> AIAssignment:
+    """Create a test AI assignment."""
+    ai_assignment = AIAssignment(
+        prompt="Test Prompt",
+        generated_content="Test Generated Content",
+        assignment_id=test_assignment.id,
+        model_version="1.0",
+        confidence_score=0.95,
+        generated_at=datetime.utcnow()
     )
-    db.add(db_feedback)
-    db.commit()
-    db.refresh(db_feedback)
-    return db_feedback 
+    db.add(ai_assignment)
+    await db.commit()
+    await db.refresh(ai_assignment)
+    return ai_assignment
+
+@pytest.fixture(scope="function")
+async def test_feedback(db: AsyncSession, test_submission: Submission) -> Feedback:
+    """Create a test feedback."""
+    feedback = Feedback(
+        content="Test Feedback",
+        submission_id=test_submission.id,
+        score=90
+    )
+    db.add(feedback)
+    await db.commit()
+    await db.refresh(feedback)
+    return feedback 

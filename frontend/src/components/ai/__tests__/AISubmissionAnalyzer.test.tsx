@@ -1,204 +1,301 @@
-import { ThemeProvider } from "@mui/material/styles";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { BrowserRouter } from "react-router-dom";
-import { mockSubmissions } from "../../../test/mocks/data";
-import { theme } from "../../../theme";
-import AISubmissionAnalyzer from "../AISubmissionAnalyzer";
+import { ThemeProvider } from '@mui/material/styles';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { theme } from '../../../theme';
+import AISubmissionAnalyzer from '../AISubmissionAnalyzer';
 
-// Mock the API client
-jest.mock("../../../services/api", () => ({
-  apiClient: {
-    post: jest.fn(),
-  },
+// Mock Material-UI icons
+vi.mock('@mui/icons-material', () => ({
+  Upload: () => <span data-testid="UploadIcon">Upload</span>,
+  AutoAwesome: () => <span data-testid="AutoAwesomeIcon">AutoAwesome</span>,
+  Feedback: () => <span data-testid="FeedbackIcon">Feedback</span>,
 }));
 
-// Mock file upload
-const mockFile = new File(["test content"], "test.pdf", {
-  type: "application/pdf",
-});
+// Mock the LoadingSpinner component
+vi.mock('../../common/LoadingSpinner', () => ({
+  default: () => <div data-testid="loading-spinner">Loading...</div>,
+}));
 
-describe("AISubmissionAnalyzer", () => {
-  const mockSubmission = mockSubmissions[0];
+// Mock the Toast component
+vi.mock('../../common/Toast', () => ({
+  Toast: ({
+    message,
+    severity,
+    onClose,
+  }: {
+    message: string;
+    severity: string;
+    onClose: () => void;
+  }) => (
+    <div data-testid="toast" data-severity={severity} onClick={onClose}>
+      {message}
+    </div>
+  ),
+}));
+
+// Mock the FileUpload component
+vi.mock('../../common/FileUpload', () => ({
+  FileUpload: ({
+    onChange,
+    accept,
+    maxSize,
+  }: {
+    onChange: (files: File[]) => void;
+    accept?: string;
+    maxSize?: number;
+  }) => (
+    <div data-testid="file-upload">
+      <input
+        type="file"
+        accept={accept}
+        onChange={e => {
+          const file = e.target.files?.[0];
+          if (file) {
+            if (maxSize && file.size > maxSize) {
+              onChange([]);
+              return;
+            }
+            if (accept && !accept.split(',').some(type => file.type.match(type.trim()))) {
+              onChange([]);
+              return;
+            }
+            onChange([file]);
+          }
+        }}
+      />
+    </div>
+  ),
+}));
+
+// Mock fetch
+const mockFetch = vi.fn();
+global.fetch = mockFetch;
+
+describe('AISubmissionAnalyzer', () => {
+  const mockSubmissions = [
+    {
+      id: '1',
+      title: 'Test Submission',
+      content: 'Test content',
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    },
+  ];
 
   const renderComponent = () => {
     return render(
       <ThemeProvider theme={theme}>
-        <BrowserRouter>
-          <AISubmissionAnalyzer submissionId={mockSubmission.id} />
-        </BrowserRouter>
+        <MemoryRouter initialEntries={['/submissions/1']}>
+          <Routes>
+            <Route path="/submissions/:id" element={<AISubmissionAnalyzer />} />
+          </Routes>
+        </MemoryRouter>
       </ThemeProvider>
     );
   };
 
   beforeEach(() => {
-    // Reset all mocks before each test
-    jest.clearAllMocks();
-  });
-
-  it("renders the component correctly", () => {
-    renderComponent();
-
-    // Check for main elements
-    expect(screen.getByText("Upload Submission")).toBeInTheDocument();
-    expect(screen.getByText("Analysis Results")).toBeInTheDocument();
-    expect(screen.getByText("Feedback")).toBeInTheDocument();
-  });
-
-  it("handles file upload correctly", async () => {
-    // Mock the API response
-    const { apiClient } = require("../../../services/api");
-    apiClient.post.mockResolvedValueOnce({
-      data: {
-        analysis: {
-          score: 85,
-          strengths: ["Good code organization", "Clear comments"],
-          areasForImprovement: ["Error handling", "Documentation"],
-          suggestions: [
-            "Add try-catch blocks",
-            "Include more detailed comments",
-          ],
-          detailedAnalysis:
-            "Overall good submission with room for improvement.",
-        },
-      },
-    });
-
-    renderComponent();
-
-    // Get the file input
-    const fileInput = screen.getByLabelText("Upload Submission");
-
-    // Simulate file upload
-    fireEvent.change(fileInput, { target: { files: [mockFile] } });
-
-    // Wait for analysis results
-    await waitFor(() => {
-      expect(screen.getByText("85%")).toBeInTheDocument();
-      expect(screen.getByText("Good code organization")).toBeInTheDocument();
-      expect(screen.getByText("Error handling")).toBeInTheDocument();
-      expect(screen.getByText("Add try-catch blocks")).toBeInTheDocument();
-      expect(
-        screen.getByText("Overall good submission with room for improvement.")
-      ).toBeInTheDocument();
+    vi.clearAllMocks();
+    // Mock the initial fetch for submissions
+    mockFetch.mockImplementation(url => {
+      if (url === '/api/submissions') {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockSubmissions),
+        });
+      }
+      return Promise.reject(new Error('Not mocked'));
     });
   });
 
-  it("validates file type and size", async () => {
-    // Create a large file (>10MB)
-    const largeFile = new File(["x".repeat(11 * 1024 * 1024)], "large.pdf", {
-      type: "application/pdf",
-    });
-
-    // Create an invalid file type
-    const invalidFile = new File(["test"], "test.txt", { type: "text/plain" });
-
+  it('renders the component with initial state', async () => {
     renderComponent();
-
-    // Get the file input
-    const fileInput = screen.getByLabelText("Upload Submission");
-
-    // Try uploading invalid file type
-    fireEvent.change(fileInput, { target: { files: [invalidFile] } });
-    expect(
-      screen.getByText(
-        "Invalid file type. Please upload a PDF, DOC, DOCX, or TXT file."
-      )
-    ).toBeInTheDocument();
-
-    // Try uploading large file
-    fireEvent.change(fileInput, { target: { files: [largeFile] } });
-    expect(
-      screen.getByText("File size exceeds 10MB limit.")
-    ).toBeInTheDocument();
-  });
-
-  it("handles API errors during analysis", async () => {
-    // Mock the API error
-    const { apiClient } = require("../../../services/api");
-    apiClient.post.mockRejectedValueOnce(
-      new Error("Failed to analyze submission")
-    );
-
-    renderComponent();
-
-    // Get the file input and upload a file
-    const fileInput = screen.getByLabelText("Upload Submission");
-    fireEvent.change(fileInput, { target: { files: [mockFile] } });
-
-    // Check for error message
-    await waitFor(() => {
-      expect(
-        screen.getByText("Failed to analyze submission")
-      ).toBeInTheDocument();
-    });
-  });
-
-  it("allows editing and saving feedback", async () => {
-    // Mock the API responses
-    const { apiClient } = require("../../../services/api");
-    apiClient.post
-      .mockResolvedValueOnce({
-        data: {
-          analysis: {
-            score: 85,
-            strengths: ["Good code organization"],
-            areasForImprovement: ["Error handling"],
-            suggestions: ["Add try-catch blocks"],
-            detailedAnalysis: "Overall good submission.",
-          },
-        },
-      })
-      .mockResolvedValueOnce({
-        data: { ...mockSubmission, feedback: "Updated feedback" },
-      });
-
-    renderComponent();
-
-    // Upload a file and wait for analysis
-    const fileInput = screen.getByLabelText("Upload Submission");
-    fireEvent.change(fileInput, { target: { files: [mockFile] } });
-
-    await waitFor(() => {
-      expect(screen.getByText("85%")).toBeInTheDocument();
-    });
-
-    // Edit feedback
-    const feedbackInput = screen.getByLabelText("Feedback");
-    fireEvent.change(feedbackInput, { target: { value: "Updated feedback" } });
-
-    // Save feedback
-    fireEvent.click(screen.getByText("Save Feedback"));
-
-    // Verify API call
-    await waitFor(() => {
-      expect(apiClient.post).toHaveBeenCalledWith(
-        `/api/submissions/${mockSubmission.id}/feedback`,
-        {
-          feedback: "Updated feedback",
-        }
-      );
-    });
-  });
-
-  it("displays loading states during API calls", async () => {
-    // Mock the API response with a delay
-    const { apiClient } = require("../../../services/api");
-    apiClient.post.mockImplementationOnce(
-      () => new Promise((resolve) => setTimeout(resolve, 100))
-    );
-
-    renderComponent();
-
-    // Upload a file
-    const fileInput = screen.getByLabelText("Upload Submission");
-    fireEvent.change(fileInput, { target: { files: [mockFile] } });
-
-    // Check for loading state
-    expect(screen.getByRole("progressbar")).toBeInTheDocument();
 
     // Wait for loading to complete
     await waitFor(() => {
-      expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+      expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument();
+    });
+
+    // Check for main elements
+    expect(screen.getByText(/AI Submission Analyzer/i)).toBeInTheDocument();
+    expect(screen.getByTestId('file-upload')).toBeInTheDocument();
+    expect(screen.getByText(/Upload Submission Files/i)).toBeInTheDocument();
+  });
+
+  it('handles file upload and shows loading state', async () => {
+    const user = userEvent.setup();
+    renderComponent();
+
+    // Wait for initial loading to complete
+    await waitFor(() => {
+      expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument();
+    });
+
+    // Mock file upload
+    const file = new File(['test content'], 'test.pdf', { type: 'application/pdf' });
+    const fileInput = screen.getByTestId('file-upload').querySelector('input');
+    if (fileInput) {
+      await user.upload(fileInput, file);
+    }
+
+    // Check loading state
+    expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
+  });
+
+  it('handles API errors during analysis', async () => {
+    const user = userEvent.setup();
+
+    // Mock the analyze endpoint to fail
+    mockFetch.mockImplementation(url => {
+      if (url === '/api/submissions') {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockSubmissions),
+        });
+      }
+      if (url === '/api/submissions/1/analyze') {
+        return Promise.resolve({
+          ok: false,
+          status: 500,
+        });
+      }
+      return Promise.reject(new Error('Not mocked'));
+    });
+
+    renderComponent();
+
+    // Wait for initial loading to complete
+    await waitFor(() => {
+      expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument();
+    });
+
+    // Mock file upload
+    const file = new File(['test content'], 'test.pdf', { type: 'application/pdf' });
+    const fileInput = screen.getByTestId('file-upload').querySelector('input');
+    if (fileInput) {
+      await user.upload(fileInput, file);
+    }
+
+    // First check that loading spinner appears
+    expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
+
+    // Then wait for loading to complete and error message
+    await waitFor(() => {
+      const toast = screen.getByTestId('toast');
+      expect(toast).toHaveAttribute('data-severity', 'error');
+      expect(toast).toHaveTextContent('Failed to analyze submission');
+    });
+
+    // Finally verify loading spinner is gone
+    expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument();
+  });
+
+  it('handles successful analysis and shows results', async () => {
+    const user = userEvent.setup();
+    const mockAnalysis = {
+      analysis: {
+        id: '1',
+        submissionId: '123',
+        score: 85,
+        feedback: 'Good work!',
+        strengths: ['Content', 'Structure'],
+        weaknesses: ['Grammar'],
+        suggestions: ['Improve grammar'],
+        createdAt: new Date().toISOString(),
+      },
+      feedback: 'Good work!',
+    };
+
+    // Mock the analyze endpoint to succeed
+    mockFetch.mockImplementation(url => {
+      if (url === '/api/submissions') {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockSubmissions),
+        });
+      }
+      if (url === '/api/submissions/1/analyze') {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockAnalysis),
+        });
+      }
+      return Promise.reject(new Error('Not mocked'));
+    });
+
+    renderComponent();
+
+    // Wait for initial loading to complete
+    await waitFor(() => {
+      expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument();
+    });
+
+    // Mock file upload
+    const file = new File(['test content'], 'test.pdf', { type: 'application/pdf' });
+    const fileInput = screen.getByTestId('file-upload').querySelector('input');
+    if (fileInput) {
+      await user.upload(fileInput, file);
+    }
+
+    // Wait for loading to complete and results
+    await waitFor(() => {
+      expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument();
+      expect(screen.getByText('85%')).toBeInTheDocument();
+      expect(screen.getByText('Good work!')).toBeInTheDocument();
+      expect(screen.getByText('Content')).toBeInTheDocument();
+      expect(screen.getByText('Grammar')).toBeInTheDocument();
+    });
+  });
+
+  it('handles file type validation', async () => {
+    const user = userEvent.setup();
+    renderComponent();
+
+    // Wait for initial loading to complete
+    await waitFor(() => {
+      expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument();
+    });
+
+    // Try to upload an invalid file type
+    const file = new File(['test content'], 'test.txt', { type: 'text/plain' });
+    const fileInput = screen.getByTestId('file-upload').querySelector('input');
+    if (fileInput) {
+      await user.upload(fileInput, file);
+    }
+
+    // Wait for error message
+    await waitFor(() => {
+      const toast = screen.getByTestId('toast');
+      expect(toast).toHaveAttribute('data-severity', 'error');
+      expect(toast).toHaveTextContent('Please upload a PDF or Word document');
+    });
+  });
+
+  it('handles file size validation', async () => {
+    const user = userEvent.setup();
+    renderComponent();
+
+    // Wait for initial loading to complete
+    await waitFor(() => {
+      expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument();
+    });
+
+    // Create a large file (11MB)
+    const largeFile = new File(['x'.repeat(11 * 1024 * 1024)], 'large.pdf', {
+      type: 'application/pdf',
+    });
+    const fileInput = screen.getByTestId('file-upload').querySelector('input');
+    if (fileInput) {
+      await user.upload(fileInput, largeFile);
+    }
+
+    // Wait for error message
+    await waitFor(() => {
+      const toast = screen.getByTestId('toast');
+      expect(toast).toHaveAttribute('data-severity', 'error');
+      expect(toast).toHaveTextContent('File size must be less than 10MB');
     });
   });
 });

@@ -1,6 +1,6 @@
-import styled from "@emotion/styled";
-import React from "react";
-import LoadingSpinner from "./LoadingSpinner";
+import styled from '@emotion/styled';
+import { CircularProgress } from '@mui/material';
+import React from 'react';
 
 const Overlay = styled.div`
   position: fixed;
@@ -24,7 +24,7 @@ const Content = styled.div`
 
 const Message = styled.p`
   margin: 0;
-  color: ${({ theme }) => theme.colors.text};
+  color: rgba(0, 0, 0, 0.87);
   font-size: 1rem;
 `;
 
@@ -33,16 +33,13 @@ interface LoadingOverlayProps {
   isVisible: boolean;
 }
 
-const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
-  message = "Loading...",
-  isVisible,
-}) => {
+const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ message = 'Loading...', isVisible }) => {
   if (!isVisible) return null;
 
   return (
     <Overlay>
       <Content>
-        <LoadingSpinner size="40px" />
+        <CircularProgress size={40} role="progressbar" aria-busy="true" />
         <Message>{message}</Message>
       </Content>
     </Overlay>

@@ -3,7 +3,11 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from app.api import deps
 from app.services.storage_service import StorageService
-from app.schemas.file import FileResponse
+from app.schemas.file import FileUploadResponse, FileResponse, FileCreate
+from fastapi.responses import FileResponse
+import os
+
+from app.services import file_service
 
 router = APIRouter()
 
@@ -77,4 +81,41 @@ async def delete_file(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to delete file: {str(e)}"
-        ) 
+        )
+
+@router.get("/{file_path:path}")
+async def get_file(
+    file_path: str,
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_user)
+):
+    """
+    Get a file by its path.
+    """
+    full_path = os.path.join(file_service.upload_dir, file_path)
+    
+    if not os.path.exists(full_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    # TODO: Add permission check based on file ownership
+    # For now, we'll just check if the file exists
+    
+    return FileResponse(
+        full_path,
+        filename=os.path.basename(file_path),
+        media_type="application/octet-stream"
+    )
+
+@router.get("/files", response_model=List[FileResponse])
+async def get_files(
+    current_user: dict = Depends(deps.get_current_active_user)
+):
+    return await file_service.get_user_files(current_user)
+
+@router.delete("/files/{file_id}")
+async def delete_file_by_id(
+    file_id: str,
+    current_user: dict = Depends(deps.get_current_active_user)
+):
+    await file_service.delete_file(file_id, current_user)
+    return {"message": "File deleted successfully"} 

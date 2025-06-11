@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 // Base schemas for common data types
 export const baseSchemas = {
@@ -14,8 +14,8 @@ export const assignmentSchema = z.object({
   title: z.string().min(1).max(200),
   description: z.string().max(1000).optional(),
   dueDate: z.string().datetime(),
-  status: z.enum(["pending", "in_progress", "completed", "cancelled"]),
-  priority: z.enum(["low", "medium", "high"]),
+  status: z.enum(['pending', 'in_progress', 'completed', 'cancelled']),
+  priority: z.enum(['low', 'medium', 'high']),
   tags: z.array(z.string()).optional(),
   attachments: z
     .array(
@@ -51,7 +51,7 @@ export const submissionSchema = z.object({
       })
     )
     .optional(),
-  status: z.enum(["draft", "submitted", "graded"]),
+  status: z.enum(['draft', 'submitted', 'graded']),
   grade: z.number().min(0).max(100).optional(),
   feedback: z.string().optional(),
   submittedAt: baseSchemas.timestamp.optional(),
@@ -65,7 +65,7 @@ export const submissionSchema = z.object({
 export const userPreferencesSchema = z.object({
   id: baseSchemas.id,
   userId: baseSchemas.id,
-  theme: z.enum(["light", "dark", "system"]),
+  theme: z.enum(['light', 'dark', 'system']),
   fontSize: z.number().min(12).max(24),
   notifications: z.object({
     email: z.boolean(),
@@ -83,13 +83,13 @@ export const userPreferencesSchema = z.object({
 // Data validation utility
 export class DataValidator {
   private static instance: DataValidator;
-  private schemas: Map<string, z.ZodSchema>;
+  private schemas: Map<string, z.ZodType<any>>;
 
   private constructor() {
-    this.schemas = new Map([
-      ["assignment", assignmentSchema],
-      ["submission", submissionSchema],
-      ["userPreferences", userPreferencesSchema],
+    this.schemas = new Map<string, z.ZodType<any>>([
+      ['assignment', assignmentSchema],
+      ['submission', submissionSchema],
+      ['userPreferences', userPreferencesSchema],
     ]);
   }
 
@@ -100,10 +100,7 @@ export class DataValidator {
     return DataValidator.instance;
   }
 
-  public validate<T>(
-    type: string,
-    data: unknown
-  ): { success: boolean; data?: T; error?: string } {
+  public validate<T>(type: string, data: unknown): { success: boolean; data?: T; error?: string } {
     const schema = this.schemas.get(type);
     if (!schema) {
       return {
@@ -122,19 +119,17 @@ export class DataValidator {
       if (error instanceof z.ZodError) {
         return {
           success: false,
-          error: error.errors
-            .map((e) => `${e.path.join(".")}: ${e.message}`)
-            .join(", "),
+          error: error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '),
         };
       }
       return {
         success: false,
-        error: "Unknown validation error",
+        error: 'Unknown validation error',
       };
     }
   }
 
-  public addSchema(type: string, schema: z.ZodSchema): void {
+  public addSchema(type: string, schema: z.ZodType<any>): void {
     this.schemas.set(type, schema);
   }
 
@@ -157,7 +152,7 @@ export class DataTransformer {
   private constructor() {
     this.transformers = new Map([
       [
-        "assignment",
+        'assignment',
         {
           toServer: (data: any) => ({
             ...data,
@@ -172,7 +167,7 @@ export class DataTransformer {
         },
       ],
       [
-        "submission",
+        'submission',
         {
           toServer: (data: any) => ({
             ...data,
@@ -180,16 +175,14 @@ export class DataTransformer {
           }),
           fromServer: (data: any) => ({
             ...data,
-            submittedAt: data.submittedAt
-              ? new Date(data.submittedAt)
-              : undefined,
+            submittedAt: data.submittedAt ? new Date(data.submittedAt) : undefined,
             createdAt: new Date(data.createdAt),
             updatedAt: new Date(data.updatedAt),
           }),
         },
       ],
       [
-        "userPreferences",
+        'userPreferences',
         {
           toServer: (data: any) => ({
             ...data,
@@ -212,11 +205,7 @@ export class DataTransformer {
     return DataTransformer.instance;
   }
 
-  public transform<T>(
-    type: string,
-    data: any,
-    direction: "toServer" | "fromServer"
-  ): T {
+  public transform<T>(type: string, data: any, direction: 'toServer' | 'fromServer'): T {
     const transformer = this.transformers.get(type);
     if (!transformer) {
       return data;

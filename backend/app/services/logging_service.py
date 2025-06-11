@@ -1,117 +1,55 @@
 import logging
-import logging.handlers
-import json
 import os
 from datetime import datetime
 from typing import Any, Dict, Optional
-import sentry_sdk
-from sentry_sdk.integrations.logging import LoggingIntegration
+
 from app.core.config import settings
 
+# Configure logging
+logging.basicConfig(
+    level=getattr(logging, settings.LOG_LEVEL),
+    format=settings.LOG_FORMAT,
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler(
+            os.path.join(settings.LOGS_DIR, f"app_{datetime.now().strftime('%Y%m%d')}.log")
+        )
+    ]
+)
+
+logger = logging.getLogger(__name__)
+
 class LoggingService:
-    def __init__(self):
-        # Create logs directory if it doesn't exist
-        os.makedirs(settings.LOGS_DIR, exist_ok=True)
-        
-        # Configure logging
-        self.logger = logging.getLogger("app")
-        self.logger.setLevel(logging.INFO)
-        
-        # Create formatters
-        self.json_formatter = logging.Formatter(
-            '%(asctime)s %(levelname)s %(name)s %(message)s'
-        )
-        
-        # Create handlers
-        # File handler with rotation
-        file_handler = logging.handlers.RotatingFileHandler(
-            os.path.join(settings.LOGS_DIR, "app.log"),
-            maxBytes=10*1024*1024,  # 10MB
-            backupCount=5
-        )
-        file_handler.setFormatter(self.json_formatter)
-        self.logger.addHandler(file_handler)
-        
-        # Console handler
-        console_handler = logging.StreamHandler()
-        console_handler.setFormatter(self.json_formatter)
-        self.logger.addHandler(console_handler)
-        
-        # Configure Sentry
-        if settings.SENTRY_DSN:
-            sentry_logging = LoggingIntegration(
-                level=logging.INFO,
-                event_level=logging.ERROR
-            )
-            sentry_sdk.init(
-                dsn=settings.SENTRY_DSN,
-                environment=settings.ENVIRONMENT,
-                integrations=[sentry_logging]
-            )
-    
-    def _format_log_message(
-        self,
-        level: str,
-        message: str,
-        extra: Optional[Dict[str, Any]] = None
-    ) -> str:
-        """Format log message as JSON"""
-        log_data = {
-            "timestamp": datetime.utcnow().isoformat(),
-            "level": level,
-            "message": message,
-            "environment": settings.ENVIRONMENT,
-            "service": "assignment-ai"
-        }
-        
-        if extra:
-            log_data.update(extra)
-        
-        return json.dumps(log_data)
-    
-    def info(self, message: str, extra: Optional[Dict[str, Any]] = None):
-        """Log info message"""
-        self.logger.info(
-            self._format_log_message("INFO", message, extra)
-        )
-    
-    def error(self, message: str, extra: Optional[Dict[str, Any]] = None):
-        """Log error message"""
-        self.logger.error(
-            self._format_log_message("ERROR", message, extra)
-        )
-        if settings.SENTRY_DSN:
-            sentry_sdk.capture_message(message, extra=extra)
-    
-    def warning(self, message: str, extra: Optional[Dict[str, Any]] = None):
-        """Log warning message"""
-        self.logger.warning(
-            self._format_log_message("WARNING", message, extra)
-        )
-    
-    def debug(self, message: str, extra: Optional[Dict[str, Any]] = None):
-        """Log debug message"""
-        self.logger.debug(
-            self._format_log_message("DEBUG", message, extra)
-        )
-    
-    def critical(self, message: str, extra: Optional[Dict[str, Any]] = None):
-        """Log critical message"""
-        self.logger.critical(
-            self._format_log_message("CRITICAL", message, extra)
-        )
-        if settings.SENTRY_DSN:
-            sentry_sdk.capture_message(message, level="fatal", extra=extra)
-    
-    def exception(self, message: str, exc_info: bool = True, extra: Optional[Dict[str, Any]] = None):
-        """Log exception with traceback"""
-        self.logger.exception(
-            self._format_log_message("ERROR", message, extra),
-            exc_info=exc_info
-        )
-        if settings.SENTRY_DSN:
-            sentry_sdk.capture_exception(extra=extra)
-    
+    @staticmethod
+    def info(message: str, extra: Optional[Dict[str, Any]] = None) -> None:
+        """Log an info message."""
+        logger.info(message, extra=extra)
+
+    @staticmethod
+    def error(message: str, extra: Optional[Dict[str, Any]] = None) -> None:
+        """Log an error message."""
+        logger.error(message, extra=extra)
+
+    @staticmethod
+    def warning(message: str, extra: Optional[Dict[str, Any]] = None) -> None:
+        """Log a warning message."""
+        logger.warning(message, extra=extra)
+
+    @staticmethod
+    def debug(message: str, extra: Optional[Dict[str, Any]] = None) -> None:
+        """Log a debug message."""
+        logger.debug(message, extra=extra)
+
+    @staticmethod
+    def critical(message: str, extra: Optional[Dict[str, Any]] = None) -> None:
+        """Log a critical message."""
+        logger.critical(message, extra=extra)
+
+    @staticmethod
+    def exception(message: str, extra: Optional[Dict[str, Any]] = None) -> None:
+        """Log an exception with traceback."""
+        logger.exception(message, extra=extra)
+
     def request(self, request_id: str, method: str, path: str, duration: float, status: int):
         """Log HTTP request"""
         self.info(

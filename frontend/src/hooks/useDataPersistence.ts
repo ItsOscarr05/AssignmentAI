@@ -1,6 +1,6 @@
-import { useCallback, useRef, useState } from "react";
-import { usePerformanceMonitoring } from "../utils/performance";
-import { useErrorTracking } from "./useErrorTracking";
+import { useCallback, useRef, useState } from 'react';
+import { usePerformanceMonitoring } from '../utils/performance';
+import { useErrorTracking } from './useErrorTracking';
 
 interface DataPersistenceOptions<T> {
   storageKey: string;
@@ -33,7 +33,7 @@ export const useDataPersistence = <T>(options: DataPersistenceOptions<T>) => {
   } = options;
 
   const { trackError } = useErrorTracking();
-  usePerformanceMonitoring("DataPersistence");
+  usePerformanceMonitoring('DataPersistence');
 
   // State management
   const [data, setData] = useState<T>(() => {
@@ -41,9 +41,7 @@ export const useDataPersistence = <T>(options: DataPersistenceOptions<T>) => {
       const savedData = localStorage.getItem(storageKey);
       if (savedData) {
         const parsedData = JSON.parse(savedData);
-        const transformedData = transformData?.load
-          ? transformData.load(parsedData)
-          : parsedData;
+        const transformedData = transformData?.load ? transformData.load(parsedData) : parsedData;
 
         if (validateData ? validateData(transformedData) : true) {
           onLoad?.(transformedData);
@@ -51,11 +49,13 @@ export const useDataPersistence = <T>(options: DataPersistenceOptions<T>) => {
         }
       }
     } catch (error) {
-      trackError("Failed to load persisted data", {
-        error,
-        context: "DataPersistence",
-        storageKey,
-      });
+      trackError(
+        {
+          message: 'Failed to load persisted data',
+          error: error as Error,
+        },
+        'useDataPersistence'
+      );
     }
     return initialData;
   });
@@ -66,11 +66,9 @@ export const useDataPersistence = <T>(options: DataPersistenceOptions<T>) => {
 
   // Save data to storage
   const saveData = useCallback(
-    (newData: T, action: string = "update") => {
+    (newData: T, action: string = 'update') => {
       try {
-        const transformedData = transformData?.save
-          ? transformData.save(newData)
-          : newData;
+        const transformedData = transformData?.save ? transformData.save(newData) : newData;
 
         localStorage.setItem(storageKey, JSON.stringify(transformedData));
         onSave?.(newData);
@@ -97,11 +95,13 @@ export const useDataPersistence = <T>(options: DataPersistenceOptions<T>) => {
           historyIndex.current = Math.max(0, historyIndex.current - 1);
         }
       } catch (error) {
-        trackError("Failed to save data", {
-          error,
-          context: "DataPersistence",
-          storageKey,
-        });
+        trackError(
+          {
+            message: 'Failed to save data',
+            error: error as Error,
+          },
+          'useDataPersistence'
+        );
         throw error;
       }
     },
@@ -110,12 +110,10 @@ export const useDataPersistence = <T>(options: DataPersistenceOptions<T>) => {
 
   // Update data with optimistic updates
   const updateData = useCallback(
-    (updater: T | ((prevData: T) => T), action: string = "update") => {
-      setData((prevData) => {
+    (updater: T | ((prevData: T) => T), action: string = 'update') => {
+      setData(prevData => {
         const newData =
-          typeof updater === "function"
-            ? (updater as (prevData: T) => T)(prevData)
-            : updater;
+          typeof updater === 'function' ? (updater as (prevData: T) => T)(prevData) : updater;
 
         if (validateData ? validateData(newData) : true) {
           saveData(newData, action);
@@ -150,7 +148,7 @@ export const useDataPersistence = <T>(options: DataPersistenceOptions<T>) => {
   // Reset data to initial state
   const resetData = useCallback(() => {
     setData(initialData);
-    saveData(initialData, "reset");
+    saveData(initialData, 'reset');
   }, [initialData, saveData]);
 
   // Clear data and history

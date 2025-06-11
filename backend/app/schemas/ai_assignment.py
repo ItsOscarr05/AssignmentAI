@@ -5,7 +5,7 @@ import re
 
 class AssignmentGenerationRequest(BaseModel):
     subject: str = Field(..., min_length=2, max_length=100, description="Subject area (e.g., Mathematics, Science)")
-    grade_level: str = Field(..., pattern=r'^[K-12]|College|University$', description="Grade level (e.g., 9th, 10th)")
+    grade_level: str = Field(..., pattern=r'^(K|[1-9]|1[0-2]|College|University)$', description="Grade level (e.g., 9th, 10th)")
     topic: str = Field(..., min_length=3, max_length=200, description="Specific topic for the assignment")
     difficulty: str = Field(..., pattern=r'^(easy|medium|hard)$', description="Difficulty level (easy, medium, hard)")
     requirements: Optional[Dict[str, Any]] = Field(
@@ -70,7 +70,7 @@ class AIAssignmentBase(BaseModel):
     generated_content: str = Field(..., description="The AI-generated assignment content")
     model_version: str = Field(..., description="Version of the AI model used")
     confidence_score: float = Field(..., ge=0.0, le=1.0, description="AI model's confidence in the generation")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional generation data")
+    generation_metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional generation data")
 
     @validator('prompt', 'generated_content')
     def sanitize_text(cls, v):

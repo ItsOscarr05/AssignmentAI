@@ -1,98 +1,58 @@
-const CACHE_NAME = "app-cache-v1";
-const STATIC_ASSETS = [
-  "/",
-  "/index.html",
-  "/styles.css",
-  "/app.js",
-  "/offline.html",
-  "/manifest.json",
-  "/icons/icon-192x192.png",
-  "/icons/icon-512x512.png",
-];
+const CACHE_NAME = 'assignment-ai-cache-v1';
+const urlsToCache = ['/', '/index.html', '/manifest.json', '/favicon.ico', '/assets/logo.svg'];
 
 // Install event - cache static assets
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
-    })
-  );
+self.addEventListener('install', event => {
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache)));
 });
 
 // Activate event - clean up old caches
-self.addEventListener("activate", (event) => {
+self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
+    caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames
-          .filter((cacheName) => cacheName !== CACHE_NAME)
-          .map((cacheName) => caches.delete(cacheName))
+          .filter(cacheName => cacheName !== CACHE_NAME)
+          .map(cacheName => caches.delete(cacheName))
       );
     })
   );
 });
 
 // Fetch event - handle requests
-self.addEventListener("fetch", (event) => {
-  // Skip cross-origin requests
-  if (!event.request.url.startsWith(self.location.origin)) {
-    return;
-  }
-
+self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      // Return cached response if found
+    caches.match(event.request).then(response => {
       if (response) {
         return response;
       }
-
-      // Clone the request because it can only be used once
-      const fetchRequest = event.request.clone();
-
-      // Make network request and cache the response
-      return fetch(fetchRequest)
-        .then((response) => {
-          // Check if response is valid
-          if (
-            !response ||
-            response.status !== 200 ||
-            response.type !== "basic"
-          ) {
-            return response;
-          }
-
-          // Clone the response because it can only be used once
-          const responseToCache = response.clone();
-
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
-
+      return fetch(event.request).then(response => {
+        if (!response || response.status !== 200 || response.type !== 'basic') {
           return response;
-        })
-        .catch(() => {
-          // If offline and request is for HTML, return offline page
-          if (event.request.mode === "navigate") {
-            return caches.match("/offline.html");
-          }
+        }
+        const responseToCache = response.clone();
+        caches.open(CACHE_NAME).then(cache => {
+          cache.put(event.request, responseToCache);
         });
+        return response;
+      });
     })
   );
 });
 
 // Background sync for offline form submissions
-self.addEventListener("sync", (event) => {
-  if (event.tag === "sync-submissions") {
+self.addEventListener('sync', event => {
+  if (event.tag === 'sync-submissions') {
     event.waitUntil(syncSubmissions());
   }
 });
 
 // Push notification handling
-self.addEventListener("push", (event) => {
+self.addEventListener('push', event => {
   const options = {
     body: event.data.text(),
-    icon: "/icons/icon-192x192.png",
-    badge: "/icons/badge-72x72.png",
+    icon: '/icons/icon-192x192.png',
+    badge: '/icons/badge-72x72.png',
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
@@ -100,58 +60,56 @@ self.addEventListener("push", (event) => {
     },
     actions: [
       {
-        action: "explore",
-        title: "View Details",
-        icon: "/icons/checkmark.png",
+        action: 'explore',
+        title: 'View Details',
+        icon: '/icons/checkmark.png',
       },
       {
-        action: "close",
-        title: "Close",
-        icon: "/icons/xmark.png",
+        action: 'close',
+        title: 'Close',
+        icon: '/icons/xmark.png',
       },
     ],
   };
 
-  event.waitUntil(
-    self.registration.showNotification("AssignmentAI Notification", options)
-  );
+  event.waitUntil(self.registration.showNotification('AssignmentAI Notification', options));
 });
 
 // Notification click handling
-self.addEventListener("notificationclick", (event) => {
+self.addEventListener('notificationclick', event => {
   event.notification.close();
 
-  if (event.action === "explore") {
-    event.waitUntil(clients.openWindow("/dashboard"));
+  if (event.action === 'explore') {
+    event.waitUntil(clients.openWindow('/dashboard'));
   }
 });
 
 // Helper function to sync submissions
 async function syncSubmissions() {
   const db = await openDB();
-  const submissions = await db.getAll("submissions");
+  const submissions = await db.getAll('submissions');
 
   for (const submission of submissions) {
     try {
-      const response = await fetch("/api/submissions", {
-        method: "POST",
+      const response = await fetch('/api/submissions', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(submission),
       });
 
       if (response.ok) {
-        await db.delete("submissions", submission.id);
+        await db.delete('submissions', submission.id);
       }
     } catch (error) {
-      console.error("Failed to sync submission:", error);
+      console.error('Failed to sync submission:', error);
     }
   }
 }
 
 // IndexedDB setup
-const DB_NAME = "assignmentai-db";
+const DB_NAME = 'assignmentai-db';
 const DB_VERSION = 1;
 
 async function openDB() {
@@ -161,13 +119,13 @@ async function openDB() {
     request.onerror = () => reject(request.error);
     request.onsuccess = () => resolve(request.result);
 
-    request.onupgradeneeded = (event) => {
+    request.onupgradeneeded = event => {
       const db = event.target.result;
 
       // Create submissions store
-      if (!db.objectStoreNames.contains("submissions")) {
-        const store = db.createObjectStore("submissions", { keyPath: "id" });
-        store.createIndex("timestamp", "timestamp", { unique: false });
+      if (!db.objectStoreNames.contains('submissions')) {
+        const store = db.createObjectStore('submissions', { keyPath: 'id' });
+        store.createIndex('timestamp', 'timestamp', { unique: false });
       }
     };
   });

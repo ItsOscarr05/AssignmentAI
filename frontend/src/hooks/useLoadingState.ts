@@ -1,5 +1,5 @@
-import { useCallback, useState } from "react";
-import { useToast } from "../contexts/ToastContext";
+import { useCallback, useState } from 'react';
+import { useToast } from '../contexts/ToastContext';
 
 interface UseLoadingStateOptions<T> {
   onSuccess?: (data: T) => void;
@@ -35,13 +35,13 @@ export function useLoadingState<T>(
         const result = await asyncFunction(...args);
         setData(result);
         if (options.successMessage) {
-          showToast(options.successMessage, "success");
+          showToast(options.successMessage, 'success');
         }
         options.onSuccess?.(result);
       } catch (err) {
         setError(err);
         if (options.errorMessage) {
-          showToast(options.errorMessage, "error");
+          showToast(options.errorMessage, 'error');
         }
         options.onError?.(err);
       } finally {

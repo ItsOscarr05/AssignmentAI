@@ -1,9 +1,12 @@
 export interface AssignmentGenerationRequest {
+  title: string;
+  description: string;
   subject: string;
-  grade_level: string;
-  topic: string;
-  difficulty?: "easy" | "medium" | "hard";
-  requirements?: Record<string, any>;
+  difficulty: 'easy' | 'medium' | 'hard';
+  type: 'essay' | 'quiz' | 'project';
+  wordCount?: number;
+  timeLimit?: number;
+  additionalContext?: string;
 }
 
 export interface AssignmentContent {
@@ -19,32 +22,49 @@ export interface GeneratedAssignment {
   title: string;
   description: string;
   content: AssignmentContent;
+  instructions: string;
+  rubric: {
+    criteria: string[];
+    weights: number[];
+  };
+  sample_solution: string;
+  suggested_resources: string[];
 }
 
 export interface AssignmentGenerationResponse {
+  id: string;
+  content: string;
+  metadata: {
+    wordCount: number;
+    estimatedTime: number;
+    difficulty: string;
+    topics: string[];
+  };
+  createdAt: string;
   success: boolean;
-  assignment?: GeneratedAssignment;
   error?: string;
 }
 
 export interface SubmissionAnalysis {
+  id: string;
+  submissionId: string;
   score: number;
   feedback: string;
+  detailedAnalysis?: string;
   strengths: string[];
   weaknesses: string[];
   suggestions: string[];
-  detailed_analysis: string;
+  createdAt: string;
 }
 
 export interface AIGenerationOptions {
-  subject: string;
-  topic: string;
-  difficulty: "beginner" | "intermediate" | "advanced";
-  gradeLevel: string;
-  requirements: string[];
-  learningObjectives: string[];
-  estimatedDuration: number; // in minutes
-  maxPoints: number;
+  prompt: string;
+  model?: string;
+  temperature?: number;
+  maxTokens?: number;
+  topP?: number;
+  frequencyPenalty?: number;
+  presencePenalty?: number;
 }
 
 export interface AIGeneratedContent {
@@ -64,16 +84,48 @@ export interface AIGeneratedContent {
 }
 
 export interface AIGenerationResponse {
-  content: AIGeneratedContent;
-  metadata: {
-    generationTime: number;
-    model: string;
-    confidence: number;
+  id: string;
+  content: string;
+  usage: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
   };
+  createdAt: string;
 }
 
 export interface AIGenerationError {
   code: string;
   message: string;
   details?: unknown;
+}
+
+export interface TokenUsage {
+  total: number;
+  remaining: number;
+  dailyUsage: {
+    date: string;
+    count: number;
+  }[];
+}
+
+export interface AIModel {
+  id: string;
+  name: string;
+  description: string;
+  capabilities: string[];
+  maxTokens: number;
+  costPerToken: number;
+  isAvailable: boolean;
+}
+
+export interface AISettings {
+  defaultModel: string;
+  maxTokens: number;
+  temperature: number;
+  topP: number;
+  frequencyPenalty: number;
+  presencePenalty: number;
+  autoSave: boolean;
+  lastUpdated: string;
 }

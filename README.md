@@ -1,89 +1,133 @@
 # AssignmentAI
 
-A modern web application for managing and grading assignments using AI.
+A comprehensive assignment management system with AI-powered features for educational institutions.
 
-## Project Structure
+## Features
 
-```
-AssignmentAI/
-├── frontend/          # React + TypeScript frontend
-│   ├── src/          # Source code
-│   ├── public/       # Static files
-│   └── package.json  # Frontend dependencies
-└── backend/          # Python backend
-    ├── app/         # Application code
-    ├── tests/       # Test files
-    └── requirements.txt  # Backend dependencies
-```
+- 🔐 Secure Authentication System
+- 📝 Assignment Management
+- 🤖 AI Integration for Assignment Analysis
+- 📁 File Management
+- 💬 Communication System
+- 📊 Analytics and Reporting
+- 📱 Responsive Dashboard
+- 👤 Profile Management
+- ⚙️ Settings Customization
+- Assignment management
+- AI-powered feedback
+- Real-time notifications
+- User authentication
+- File storage
+- Email notifications
 
-## Prerequisites
+## Notification System
 
-- Node.js (v16 or higher)
-- Python (v3.8 or higher)
-- npm or yarn
+The application includes a comprehensive notification system that provides:
 
-## Setup Instructions
+- Real-time in-app notifications
+- Email notifications for important events
+- Multiple notification types (success, error, warning, info)
+- Notification persistence and management
+- Mark as read functionality
+- Notification grouping and filtering
 
-### Frontend Setup
+For detailed documentation about the notification system, see [Notifications Documentation](docs/notifications.md).
 
-1. Navigate to the frontend directory:
+## Tech Stack
+
+- Frontend: React, TypeScript, Material-UI
+- Backend: Node.js, Express
+- Database: MongoDB
+- AI Integration: OpenAI API
+- Authentication: JWT
+- File Storage: AWS S3
+- Testing: Jest, React Testing Library
+- Internationalization: i18next
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v14 or higher)
+- MongoDB
+- AWS S3 account (for file storage)
+- OpenAI API key
+
+### Installation
+
+1. Clone the repository:
 
    ```bash
-   cd frontend
+   git clone https://github.com/yourusername/assignmentai.git
+   cd assignmentai
    ```
 
 2. Install dependencies:
 
    ```bash
-   npm install
-   # or
-   yarn install
-   ```
-
-3. Start the development server:
-   ```bash
-   npm run dev
-   # or
-   yarn dev
-   ```
-
-### Backend Setup
-
-1. Navigate to the backend directory:
-
-   ```bash
+   # Install backend dependencies
    cd backend
+   npm install
+
+   # Install frontend dependencies
+   cd ../frontend
+   npm install
    ```
 
-2. Create and activate a virtual environment:
+3. Configure environment variables:
 
    ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   # Backend (.env)
+   PORT=3000
+   MONGODB_URI=mongodb://localhost:27017/assignmentai
+   JWT_SECRET=your_jwt_secret
+   AWS_ACCESS_KEY_ID=your_aws_access_key
+   AWS_SECRET_ACCESS_KEY=your_aws_secret_key
+   AWS_BUCKET_NAME=your_bucket_name
+   OPENAI_API_KEY=your_openai_api_key
+
+   # Frontend (.env)
+   REACT_APP_API_URL=http://localhost:3000
    ```
 
-3. Install dependencies:
+4. Start the development servers:
 
    ```bash
-   pip install -r requirements.txt
+   # Start backend server
+   cd backend
+   npm run dev
+
+   # Start frontend server
+   cd frontend
+   npm start
    ```
 
-4. Start the backend server:
-   ```bash
-   python main.py
-   ```
+## Project Structure
 
-## Development
+```
+assignmentai/
+├── backend/
+│   ├── src/
+│   │   ├── controllers/
+│   │   ├── models/
+│   │   ├── routes/
+│   │   ├── services/
+│   │   └── utils/
+│   └── package.json
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── contexts/
+│   │   ├── services/
+│   │   ├── utils/
+│   │   └── i18n/
+│   └── package.json
+└── README.md
+```
 
-- Frontend runs on: http://localhost:3000
-- Backend runs on: http://localhost:8000
+## API Documentation
 
-## Features (v1.0)
-
-- User authentication
-- Basic assignment management
-- AI-powered grading assistance
-- Modern, responsive UI
+See [API.md](docs/API.md) for detailed API documentation.
 
 ## Contributing
 
@@ -95,4 +139,19 @@ AssignmentAI/
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+For support, email support@assignmentai.com or open an issue in the repository.
+
+## Environment Variables
+
+See [Environment Variables Documentation](docs/environment-variables.md) for detailed information about required environment variables.
+
+## Documentation
+
+- [API Documentation](docs/api.md)
+- [Notifications Documentation](docs/notifications.md)
+- [Environment Variables](docs/environment-variables.md)
+- [Deployment Guide](docs/deployment.md)

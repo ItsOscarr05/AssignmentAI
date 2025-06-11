@@ -1,7 +1,14 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Float, JSON, Index
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Float, JSON, Index, Enum
 from sqlalchemy.orm import relationship
 from app.db.base_class import Base
+import enum
+
+class SubmissionStatus(str, enum.Enum):
+    SUBMITTED = "submitted"
+    LATE = "late"
+    GRADED = "graded"
+    RETURNED = "returned"
 
 class Submission(Base):
     __tablename__ = "submissions"
@@ -10,11 +17,14 @@ class Submission(Base):
     title = Column(String, nullable=False)
     content = Column(Text)
     file_path = Column(String)
-    status = Column(String, default="pending")  # pending, completed
-    submitted_at = Column(DateTime)
+    status = Column(Enum(SubmissionStatus), nullable=False, default=SubmissionStatus.SUBMITTED)
+    submitted_at = Column(DateTime, default=datetime.utcnow)
     score = Column(Float, nullable=True)
     feedback = Column(Text, nullable=True)
     submission_metadata = Column(JSON, nullable=True)  # For storing additional submission data
+    attachments = Column(Text, nullable=True)  # JSON string of file URLs
+    comments = Column(Text, nullable=True)
+    graded_at = Column(DateTime, nullable=True)
     
     # Foreign Keys
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)

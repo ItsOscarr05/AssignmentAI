@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { usePerformanceMonitoring } from "../utils/performance";
-import { useErrorTracking } from "./useErrorTracking";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { usePerformanceMonitoring } from '../utils/performance';
+import { useErrorTracking } from './useErrorTracking';
 
 interface GestureOptions {
-  threshold?: number;
-  velocity?: number;
-  preventDefault?: boolean;
+  threshold: number;
+  velocity: number;
+  preventDefault: boolean;
   onGesture?: (gesture: string) => void;
 }
 
@@ -15,7 +15,7 @@ interface MobileFeaturesOptions {
   enablePinchZoom?: boolean;
   enableDoubleTap?: boolean;
   enableLongPress?: boolean;
-  gestureOptions?: GestureOptions;
+  gestureOptions?: Partial<GestureOptions>;
 }
 
 interface GestureState {
@@ -37,11 +37,19 @@ export const useMobileFeatures = (options: MobileFeaturesOptions = {}) => {
     enablePinchZoom = true,
     enableDoubleTap = true,
     enableLongPress = true,
-    gestureOptions = {},
+    gestureOptions: userGestureOptions = {},
   } = options;
 
-  const { trackError } = useErrorTracking();
-  usePerformanceMonitoring("MobileFeatures");
+  const gestureOptions: GestureOptions = {
+    threshold: 50,
+    velocity: 0.5,
+    preventDefault: true,
+    onGesture: undefined,
+    ...userGestureOptions,
+  };
+
+  useErrorTracking();
+  usePerformanceMonitoring('MobileFeatures');
 
   const [isPulling, setIsPulling] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
@@ -84,7 +92,7 @@ export const useMobileFeatures = (options: MobileFeaturesOptions = {}) => {
       if (enableLongPress) {
         longPressTimeout.current = setTimeout(() => {
           setIsLongPressing(true);
-          gestureOptions.onGesture?.("longPress");
+          gestureOptions.onGesture?.('longPress');
         }, 500);
       }
 
@@ -92,8 +100,8 @@ export const useMobileFeatures = (options: MobileFeaturesOptions = {}) => {
       if (enableDoubleTap) {
         const currentTime = Date.now();
         if (currentTime - lastTapTime < 300) {
-          setScale((prev) => (prev === 1 ? 1.5 : 1));
-          gestureOptions.onGesture?.("doubleTap");
+          setScale(prev => (prev === 1 ? 1.5 : 1));
+          gestureOptions.onGesture?.('doubleTap');
         }
         setLastTapTime(currentTime);
       }
@@ -131,9 +139,9 @@ export const useMobileFeatures = (options: MobileFeaturesOptions = {}) => {
       if (enableSwipeNavigation) {
         if (Math.abs(deltaX) > Math.abs(deltaY)) {
           if (deltaX > gestureOptions.threshold) {
-            gestureOptions.onGesture?.("swipeRight");
+            gestureOptions.onGesture?.('swipeRight');
           } else if (deltaX < -gestureOptions.threshold) {
-            gestureOptions.onGesture?.("swipeLeft");
+            gestureOptions.onGesture?.('swipeLeft');
           }
         }
       }
@@ -150,18 +158,12 @@ export const useMobileFeatures = (options: MobileFeaturesOptions = {}) => {
           gestureState.current.startX - touch1.clientX,
           gestureState.current.startY - touch1.clientY
         );
-        const newScale =
-          (distance / initialDistance) * gestureState.current.scale;
+        const newScale = (distance / initialDistance) * gestureState.current.scale;
         setScale(Math.min(Math.max(newScale, 0.5), 3));
         setIsZooming(true);
       }
     },
-    [
-      enablePullToRefresh,
-      enableSwipeNavigation,
-      enablePinchZoom,
-      gestureOptions,
-    ]
+    [enablePullToRefresh, enableSwipeNavigation, enablePinchZoom, gestureOptions]
   );
 
   // Handle touch end
@@ -177,7 +179,7 @@ export const useMobileFeatures = (options: MobileFeaturesOptions = {}) => {
     // Handle pull to refresh
     if (isPulling && pullDistance >= pullThreshold.current) {
       setIsRefreshing(true);
-      gestureOptions.onGesture?.("pullToRefresh");
+      gestureOptions.onGesture?.('pullToRefresh');
       // Simulate refresh completion
       setTimeout(() => {
         setIsRefreshing(false);
@@ -195,14 +197,14 @@ export const useMobileFeatures = (options: MobileFeaturesOptions = {}) => {
 
   // Add event listeners
   useEffect(() => {
-    window.addEventListener("touchstart", handleTouchStart);
-    window.addEventListener("touchmove", handleTouchMove);
-    window.addEventListener("touchend", handleTouchEnd);
+    window.addEventListener('touchstart', handleTouchStart);
+    window.addEventListener('touchmove', handleTouchMove);
+    window.addEventListener('touchend', handleTouchEnd);
 
     return () => {
-      window.removeEventListener("touchstart", handleTouchStart);
-      window.removeEventListener("touchmove", handleTouchMove);
-      window.removeEventListener("touchend", handleTouchEnd);
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
       if (longPressTimeout.current) {
         clearTimeout(longPressTimeout.current);
       }
@@ -210,20 +212,18 @@ export const useMobileFeatures = (options: MobileFeaturesOptions = {}) => {
   }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
   // Handle device orientation
-  const [orientation, setOrientation] = useState<"portrait" | "landscape">(
-    window.innerHeight > window.innerWidth ? "portrait" : "landscape"
+  const [orientation, setOrientation] = useState<'portrait' | 'landscape'>(
+    window.innerHeight > window.innerWidth ? 'portrait' : 'landscape'
   );
 
   useEffect(() => {
     const handleOrientationChange = () => {
-      setOrientation(
-        window.innerHeight > window.innerWidth ? "portrait" : "landscape"
-      );
+      setOrientation(window.innerHeight > window.innerWidth ? 'portrait' : 'landscape');
     };
 
-    window.addEventListener("resize", handleOrientationChange);
+    window.addEventListener('resize', handleOrientationChange);
     return () => {
-      window.removeEventListener("resize", handleOrientationChange);
+      window.removeEventListener('resize', handleOrientationChange);
     };
   }, []);
 

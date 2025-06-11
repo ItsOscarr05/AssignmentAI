@@ -7,7 +7,7 @@ import enum
 class AssignmentStatus(str, enum.Enum):
     DRAFT = "draft"
     PUBLISHED = "published"
-    CLOSED = "closed"
+    ARCHIVED = "archived"
 
 class DifficultyLevel(str, enum.Enum):
     EASY = "easy"
@@ -32,19 +32,21 @@ class Assignment(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     max_score = Column(Float, default=100.0)
     status = Column(Enum(AssignmentStatus), default=AssignmentStatus.DRAFT)
-    description = Column(Text)
+    description = Column(Text, nullable=False)
     is_active = Column(Boolean, default=True)
-    
-    # Foreign Keys
+    due_date = Column(DateTime, nullable=False)
+    attachments = Column(Text, nullable=True)  # JSON string of file URLs
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     teacher_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     class_id = Column(Integer, ForeignKey("classes.id"), nullable=False)
     
     # Relationships
-    user = relationship("User", back_populates="assignments")
-    teacher = relationship("User", back_populates="assignments")
+    user = relationship("User", foreign_keys=[user_id], back_populates="assigned_assignments")
+    teacher = relationship("User", foreign_keys=[teacher_id], back_populates="teaching_assignments")
+    created_by = relationship("User", foreign_keys=[created_by_id], back_populates="created_assignments")
     class_ = relationship("Class", back_populates="assignments")
     submissions = relationship("Submission", back_populates="assignment")
-    ai_generation = relationship("AIAssignment", back_populates="assignment")
+    ai_generation = relationship("AIAssignment", back_populates="assignment", uselist=False)
 
     # Add indexes for common queries
     __table_args__ = (

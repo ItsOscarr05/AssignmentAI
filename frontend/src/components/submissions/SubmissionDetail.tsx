@@ -2,7 +2,7 @@ import {
   Delete as DeleteIcon,
   Download as DownloadIcon,
   Edit as EditIcon,
-} from "@mui/icons-material";
+} from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -15,17 +15,17 @@ import {
   Paper,
   Tooltip,
   Typography,
-} from "@mui/material";
-import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { api } from "../../services/api";
-import { Submission } from "../../types/submission";
+} from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { api } from '../../services/api';
+import { Submission } from '../../types/submission';
 
 const STATUS_COLORS = {
-  pending: "warning",
-  submitted: "info",
-  graded: "success",
-  late: "error",
+  pending: 'warning',
+  submitted: 'info',
+  graded: 'success',
+  late: 'error',
 } as const;
 
 export const SubmissionDetail: React.FC = () => {
@@ -44,21 +44,21 @@ export const SubmissionDetail: React.FC = () => {
       const response = await api.get(`/submissions/${id}`);
       setSubmission(response.data);
     } catch (error) {
-      console.error("Error fetching submission:", error);
-      setError("Failed to load submission");
+      console.error('Error fetching submission:', error);
+      setError('Failed to load submission');
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async () => {
-    if (window.confirm("Are you sure you want to delete this submission?")) {
+    if (window.confirm('Are you sure you want to delete this submission?')) {
       try {
         await api.delete(`/submissions/${id}`);
-        navigate("/submissions");
+        navigate('/submissions');
       } catch (error) {
-        console.error("Error deleting submission:", error);
-        setError("Failed to delete submission");
+        console.error('Error deleting submission:', error);
+        setError('Failed to delete submission');
       }
     }
   };
@@ -66,29 +66,24 @@ export const SubmissionDetail: React.FC = () => {
   const handleDownload = async (filePath: string) => {
     try {
       const response = await api.get(`/submissions/download/${filePath}`, {
-        responseType: "blob",
+        responseType: 'blob',
       });
       const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
+      const link = document.createElement('a');
       link.href = url;
-      link.setAttribute("download", filePath.split("/").pop() || "submission");
+      link.setAttribute('download', filePath.split('/').pop() || 'submission');
       document.body.appendChild(link);
       link.click();
       link.remove();
     } catch (error) {
-      console.error("Error downloading file:", error);
-      setError("Failed to download file");
+      console.error('Error downloading file:', error);
+      setError('Failed to download file');
     }
   };
 
   if (loading) {
     return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="400px"
-      >
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <CircularProgress />
       </Box>
     );
@@ -115,45 +110,36 @@ export const SubmissionDetail: React.FC = () => {
       <Paper sx={{ p: 3 }}>
         <Box
           sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
             mb: 3,
           }}
         >
           <Box>
-            <Typography variant="h4" gutterBottom>
+            <Typography variant="h4" gutterBottom data-testid="submission-title">
               {submission.title}
             </Typography>
             <Chip
               label={submission.status}
-              color={
-                STATUS_COLORS[submission.status as keyof typeof STATUS_COLORS]
-              }
+              color={STATUS_COLORS[submission.status as keyof typeof STATUS_COLORS]}
               size="small"
               sx={{ mr: 1 }}
             />
             <Typography variant="body2" color="textSecondary" component="span">
-              Submitted on{" "}
-              {new Date(submission.submitted_at).toLocaleDateString()}
+              Submitted on {new Date(submission.submitted_at).toLocaleDateString()}
             </Typography>
           </Box>
           <Box>
             {submission.file_path && (
               <Tooltip title="Download">
-                <IconButton
-                  onClick={() => handleDownload(submission.file_path!)}
-                  sx={{ mr: 1 }}
-                >
+                <IconButton onClick={() => handleDownload(submission.file_path!)} sx={{ mr: 1 }}>
                   <DownloadIcon />
                 </IconButton>
               </Tooltip>
             )}
             <Tooltip title="Edit">
-              <IconButton
-                onClick={() => navigate(`/submissions/${id}/edit`)}
-                sx={{ mr: 1 }}
-              >
+              <IconButton onClick={() => navigate(`/submissions/${id}/edit`)} sx={{ mr: 1 }}>
                 <EditIcon />
               </IconButton>
             </Tooltip>
@@ -179,7 +165,7 @@ export const SubmissionDetail: React.FC = () => {
               <strong>Subject:</strong> {submission.assignment_subject}
             </Typography>
             <Typography variant="body1" gutterBottom>
-              <strong>Due Date:</strong>{" "}
+              <strong>Due Date:</strong>{' '}
               {new Date(submission.assignment_due_date).toLocaleDateString()}
             </Typography>
           </Grid>
@@ -190,8 +176,7 @@ export const SubmissionDetail: React.FC = () => {
             </Typography>
             {submission.score !== null && (
               <Typography variant="body1" gutterBottom>
-                <strong>Score:</strong> {submission.score}/
-                {submission.max_score}
+                <strong>Score:</strong> {submission.score}/{submission.max_score}
               </Typography>
             )}
             {submission.feedback && (
@@ -201,7 +186,7 @@ export const SubmissionDetail: React.FC = () => {
             )}
             {submission.file_path && (
               <Typography variant="body1" gutterBottom>
-                <strong>File:</strong> {submission.file_path.split("/").pop()}
+                <strong>File:</strong> {submission.file_path.split('/').pop()}
               </Typography>
             )}
           </Grid>
@@ -216,8 +201,8 @@ export const SubmissionDetail: React.FC = () => {
           )}
         </Grid>
 
-        <Box sx={{ mt: 3, display: "flex", gap: 2 }}>
-          <Button variant="outlined" onClick={() => navigate("/submissions")}>
+        <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
+          <Button variant="outlined" onClick={() => navigate('/submissions')}>
             Back to Submissions
           </Button>
         </Box>

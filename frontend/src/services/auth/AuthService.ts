@@ -1,117 +1,41 @@
-import { ApiClient } from "../api/ApiClient";
-import {
-  AuthResponse,
-  LoginRequest,
-  RefreshTokenRequest,
-  RegisterRequest,
-} from "../api/types";
+import { AuthResponse, User } from '../../types';
+import { api } from '../api';
 
 export class AuthService {
-  private apiClient: ApiClient;
-  private static TOKEN_KEY = "auth_token";
-  private static REFRESH_TOKEN_KEY = "refresh_token";
-
-  constructor(apiClient: ApiClient) {
-    this.apiClient = apiClient;
+  static async login(email: string, password: string): Promise<AuthResponse> {
+    const response = await api.post<AuthResponse>('/auth/login', { email, password });
+    return response.data;
   }
 
-  private setTokens(token: string, refreshToken: string) {
-    localStorage.setItem(AuthService.TOKEN_KEY, token);
-    localStorage.setItem(AuthService.REFRESH_TOKEN_KEY, refreshToken);
+  static async register(userData: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+  }): Promise<AuthResponse> {
+    const response = await api.post<AuthResponse>('/auth/register', userData);
+    return response.data;
   }
 
-  private clearTokens() {
-    localStorage.removeItem(AuthService.TOKEN_KEY);
-    localStorage.removeItem(AuthService.REFRESH_TOKEN_KEY);
+  static async logout(): Promise<void> {
+    await api.post('/auth/logout');
   }
 
-  getToken(): string | null {
-    return localStorage.getItem(AuthService.TOKEN_KEY);
+  static async getCurrentUser(): Promise<User> {
+    const response = await api.get<User>('/auth/me');
+    return response.data;
   }
 
-  getRefreshToken(): string | null {
-    return localStorage.getItem(AuthService.REFRESH_TOKEN_KEY);
+  static async refreshToken(): Promise<AuthResponse> {
+    const response = await api.post<AuthResponse>('/auth/refresh-token');
+    return response.data;
   }
 
-  isAuthenticated(): boolean {
-    return !!this.getToken();
+  static async forgotPassword(email: string): Promise<void> {
+    await api.post('/auth/forgot-password', { email });
   }
 
-  async login(credentials: LoginRequest): Promise<AuthResponse> {
-    try {
-      const response = await this.apiClient.post<AuthResponse>(
-        "/auth/login",
-        credentials
-      );
-      const { token, refreshToken } = response.data;
-      this.setTokens(token, refreshToken);
-      return response.data;
-    } catch (error) {
-      this.clearTokens();
-      throw error;
-    }
-  }
-
-  async register(data: RegisterRequest): Promise<AuthResponse> {
-    try {
-      const response = await this.apiClient.post<AuthResponse>(
-        "/auth/register",
-        data
-      );
-      const { token, refreshToken } = response.data;
-      this.setTokens(token, refreshToken);
-      return response.data;
-    } catch (error) {
-      this.clearTokens();
-      throw error;
-    }
-  }
-
-  async logout(): Promise<void> {
-    try {
-      await this.apiClient.post("/auth/logout");
-    } finally {
-      this.clearTokens();
-    }
-  }
-
-  async refreshToken(): Promise<AuthResponse> {
-    const refreshToken = this.getRefreshToken();
-    if (!refreshToken) {
-      throw new Error("No refresh token available");
-    }
-
-    try {
-      const response = await this.apiClient.post<AuthResponse>(
-        "/auth/refresh",
-        {
-          refreshToken,
-        } as RefreshTokenRequest
-      );
-      const { token, newRefreshToken } = response.data;
-      this.setTokens(token, newRefreshToken);
-      return response.data;
-    } catch (error) {
-      this.clearTokens();
-      throw error;
-    }
-  }
-
-  async resetPassword(email: string): Promise<void> {
-    await this.apiClient.post("/auth/reset-password", { email });
-  }
-
-  async verifyEmail(token: string): Promise<void> {
-    await this.apiClient.post("/auth/verify-email", { token });
-  }
-
-  async changePassword(
-    currentPassword: string,
-    newPassword: string
-  ): Promise<void> {
-    await this.apiClient.post("/auth/change-password", {
-      currentPassword,
-      newPassword,
-    });
+  static async resetPassword(token: string, password: string): Promise<void> {
+    await api.post('/auth/reset-password', { token, password });
   }
 }

@@ -1,8 +1,8 @@
-import csrf from "csurf";
-import { NextFunction, Request, Response } from "express";
-import rateLimit from "express-rate-limit";
-import helmet from "helmet";
-import { z } from "zod";
+import csrf from 'csurf';
+import { NextFunction, Request, Response } from 'express';
+import rateLimit from 'express-rate-limit';
+import helmet from 'helmet';
+import { z } from 'zod';
 
 // Security headers middleware
 export const securityHeaders = helmet({
@@ -11,23 +11,23 @@ export const securityHeaders = helmet({
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https:"],
-      fontSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "https:"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+      fontSrc: ["'self'", 'data:', 'https:'],
+      connectSrc: ["'self'", 'https:'],
     },
   },
   crossOriginEmbedderPolicy: true,
   crossOriginOpenerPolicy: true,
-  crossOriginResourcePolicy: { policy: "same-site" },
+  crossOriginResourcePolicy: { policy: 'same-site' },
   dnsPrefetchControl: true,
-  frameguard: { action: "deny" },
+  frameguard: { action: 'deny' },
   hidePoweredBy: true,
   hsts: true,
   ieNoOpen: true,
   noSniff: true,
   originAgentCluster: true,
-  permittedCrossDomainPolicies: { permittedPolicies: "none" },
-  referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+  permittedCrossDomainPolicies: { permittedPolicies: 'none' },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   xssFilter: true,
 });
 
@@ -35,7 +35,7 @@ export const securityHeaders = helmet({
 export const rateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Limit each IP to 100 requests per windowMs
-  message: "Too many requests from this IP, please try again later.",
+  message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
@@ -44,8 +44,8 @@ export const rateLimiter = rateLimit({
 export const csrfProtection = csrf({
   cookie: {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
   },
 });
 
@@ -59,7 +59,7 @@ export const validateInput = (schema: z.ZodSchema) => {
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({
-          error: "Validation failed",
+          error: 'Validation failed',
           details: error.errors,
         });
       }
@@ -69,18 +69,14 @@ export const validateInput = (schema: z.ZodSchema) => {
 };
 
 // XSS protection middleware
-export const xssProtection = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const xssProtection = (req: Request, res: Response, next: NextFunction) => {
   if (req.body) {
     const sanitize = (obj: any): any => {
-      if (typeof obj !== "string") {
+      if (typeof obj !== 'string') {
         if (Array.isArray(obj)) {
           return obj.map(sanitize);
         }
-        if (obj && typeof obj === "object") {
+        if (obj && typeof obj === 'object') {
           return Object.keys(obj).reduce((acc, key) => {
             acc[key] = sanitize(obj[key]);
             return acc;
@@ -89,11 +85,11 @@ export const xssProtection = (
         return obj;
       }
       return obj
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
     };
 
     req.body = sanitize(req.body);
@@ -102,18 +98,14 @@ export const xssProtection = (
 };
 
 // Request size limit middleware
-export const requestSizeLimit = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  const contentLength = parseInt(req.headers["content-length"] || "0", 10);
+export const requestSizeLimit = (req: Request, res: Response, next: NextFunction) => {
+  const contentLength = parseInt(req.headers['content-length'] || '0', 10);
   const maxSize = 10 * 1024 * 1024; // 10MB
 
   if (contentLength > maxSize) {
     return res.status(413).json({
-      error: "Request entity too large",
-      message: "The request payload exceeds the maximum allowed size",
+      error: 'Request entity too large',
+      message: 'The request payload exceeds the maximum allowed size',
     });
   }
 
@@ -122,49 +114,41 @@ export const requestSizeLimit = (
 
 // CORS configuration
 export const corsOptions = {
-  origin: process.env.FRONTEND_URL || "http://localhost:3000",
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
   credentials: true,
   maxAge: 86400, // 24 hours
 };
 
 // Error handling middleware
-export const errorHandler = (
-  err: Error,
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error(err.stack);
 
-  if (err.name === "ValidationError") {
+  if (err.name === 'ValidationError') {
     return res.status(400).json({
-      error: "Validation Error",
+      error: 'Validation Error',
       message: err.message,
     });
   }
 
-  if (err.name === "UnauthorizedError") {
+  if (err.name === 'UnauthorizedError') {
     return res.status(401).json({
-      error: "Unauthorized",
-      message: "Invalid or expired token",
+      error: 'Unauthorized',
+      message: 'Invalid or expired token',
     });
   }
 
-  if (err.name === "ForbiddenError") {
+  if (err.name === 'ForbiddenError') {
     return res.status(403).json({
-      error: "Forbidden",
-      message: "You do not have permission to perform this action",
+      error: 'Forbidden',
+      message: 'You do not have permission to perform this action',
     });
   }
 
   return res.status(500).json({
-    error: "Internal Server Error",
-    message:
-      process.env.NODE_ENV === "development"
-        ? err.message
-        : "Something went wrong",
+    error: 'Internal Server Error',
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong',
   });
 };
 

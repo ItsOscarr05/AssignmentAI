@@ -1,77 +1,55 @@
-import styled from "@emotion/styled";
-import React, { createContext, useCallback, useContext, useState } from "react";
-import Toast from "../components/ui/Toast";
+import { Alert, AlertColor, Snackbar } from '@mui/material';
+import React, { createContext, ReactNode, useCallback, useContext, useState } from 'react';
 
 interface ToastContextType {
-  showToast: (
-    message: string,
-    type: "success" | "error" | "info" | "warning",
-    duration?: number
-  ) => void;
+  showToast: (message: string, severity?: AlertColor) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
-const ToastWrapper = styled.div`
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-`;
-
-interface ToastItem {
-  id: string;
-  message: string;
-  type: "success" | "error" | "info" | "warning";
-  duration?: number;
+interface ToastProviderProps {
+  children: ReactNode;
 }
 
-export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const [toasts, setToasts] = useState<ToastItem[]>([]);
+export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
+  const [open, setOpen] = useState(false);
+  const [message, setMessage] = useState('');
+  const [severity, setSeverity] = useState<AlertColor>('info');
 
-  const showToast = useCallback(
-    (
-      message: string,
-      type: "success" | "error" | "info" | "warning",
-      duration?: number
-    ) => {
-      const id = Math.random().toString(36).substr(2, 9);
-      setToasts((prev) => [...prev, { id, message, type, duration }]);
-    },
-    []
-  );
-
-  const removeToast = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+  const showToast = useCallback((message: string, severity: AlertColor = 'info') => {
+    setMessage(message);
+    setSeverity(severity);
+    setOpen(true);
   }, []);
+
+  const handleClose = (_event?: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setOpen(false);
+  };
 
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <ToastWrapper>
-        {toasts.map((toast) => (
-          <Toast
-            key={toast.id}
-            message={toast.message}
-            type={toast.type}
-            duration={toast.duration}
-            onClose={() => removeToast(toast.id)}
-          />
-        ))}
-      </ToastWrapper>
+      <Snackbar
+        open={open}
+        autoHideDuration={6000}
+        onClose={handleClose}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert onClose={handleClose} severity={severity} sx={{ width: '100%' }}>
+          {message}
+        </Alert>
+      </Snackbar>
     </ToastContext.Provider>
   );
 };
 
 export const useToast = () => {
   const context = useContext(ToastContext);
-  if (!context) {
-    throw new Error("useToast must be used within a ToastProvider");
+  if (context === undefined) {
+    throw new Error('useToast must be used within a ToastProvider');
   }
   return context;
 };

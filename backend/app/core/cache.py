@@ -4,6 +4,9 @@ import json
 import redis
 from app.core.config import settings
 from app.core.logger import logger
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.redis import RedisBackend
+from redis import asyncio as aioredis
 
 class RedisCache:
     def __init__(self):
@@ -103,4 +106,13 @@ CACHE_DURATIONS = {
 }
 
 # Create a singleton instance
-cache = RedisCache() 
+cache = RedisCache()
+
+async def init_cache():
+    """Initialize Redis cache."""
+    redis = aioredis.from_url(
+        settings.REDIS_URL,
+        encoding="utf8",
+        decode_responses=True
+    )
+    FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache") 

@@ -1,0 +1,250 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+.npm/
+.yarn/
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+.nuxt/
+.output/
+
+# Cache directories
+.cache/
+.temp/
+.tmp/
+.eslintcache/
+.stylelintcache/
+.prettiercache/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files
+.env*
+!.env.example
+
+# Large binary files
+*.zip
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+*.pdf
+*.mp4
+*.mov
+*.avi
+*.wmv
+*.mp3
+*.wav
+*.flac
+
+# Generated files
+*.min.js
+*.min.css
+*.bundle.js
+*.chunk.js
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Mobile specific
+*.ipa
+*.apk
+*.aab
+
+# Docker
+.docker/
+# Temporarily removed docker-compose files from ignore
+# docker-compose.override.yml
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+venv/
+ENV/
+
+# AI and ML related
+*.h5
+*.pkl
+*.model
+*.weights
+*.bin
+*.onnx
+*.tflite
+*.mlmodel
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+datasets/
+embeddings/
+vectors/
+*.npy
+*.npz
+*.joblib
+wandb/
+mlruns/
+runs/
+checkpoints/
+*.tfevents.*
+
+# Project specific
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# Monitoring and metrics
+prometheus/
+grafana/
+# Temporarily removed docker-compose files from ignore
+# *.yml
+alerting.rules.yml
+prometheus.yml
+
+# Deployment and infrastructure
+infrastructure/
+cloudfront-*.json
+web.config
+nginx.conf
+*.service
+deploy.sh
+setup_*.sh
+
+# Documentation and reports
+docs/
+*.report.html
+*.report.json
+lighthouse-report.*
+chromewebdata_*.report.html
+localhost_*.report.html
+bundle-report.html
+
+# Uploads and user data
+uploads/
+generated-secrets.txt
+
+# Mobile app
+AssignmentAIMobile/
+*.mobileprovision
+*.xcarchive
+*.xcodeproj/
+*.xcworkspace/
+
+# Configuration
+*.config.*
+*.conf
+*.ini
+*.rc
+*.json
+!package.json
+!tsconfig.json
+!vite.config.ts
+!cypress.config.ts
+!lighthouserc.js
+!alembic.ini
+!setup.cfg
+!pytest.ini
+!frontend/cypress/fixtures/*.json
+
+# Lock files
+*.lock
+!package-lock.json
+!yarn.lock
+
+# Temporary and generated
+uat_results.json
+query
+
+# Additional large files and directories
+# Source maps and debug files
+*.map
+*.d.ts
+*.tsbuildinfo
+
+# Large library files
+*.lib
+*.dll
+*.so
+*.dylib
+
+# Development tools
+.vite/
+.vitest/
+.rollup.cache/
+.esbuild/
+.pnp/
+.pnp.js
+
+# Large data files
+*.dat
+*.data
+*.bin
+*.raw
+
+# Machine learning model files
+*.onnx
+*.tflite
+*.mlmodel
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.h5
+*.pkl
+*.joblib
+
+# Large documentation
+*.mdx
+*.rst
+*.tex
+*.doc
+*.docx
+*.xls
+*.xlsx
+
+# Large media files
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.tiff
+*.ico
+*.svg
+*.webp
+*.webm
+
+# Large binary assets
+*.ttf
+*.otf
+*.woff
+*.woff2
+*.eot
+
+# Large configuration files
+*.dist-info/
+*.egg-info/
+*.egg
+*.whl 

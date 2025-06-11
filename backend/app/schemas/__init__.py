@@ -1,32 +1,49 @@
-from .token import Token, TokenPayload
-from .user import User, UserCreate, UserUpdate, UserInDB
-from .assignment import Assignment, AssignmentCreate, AssignmentUpdate, AssignmentInDB
-from .submission import Submission, SubmissionCreate, SubmissionUpdate, SubmissionInDB
-from .class_schema import Class, ClassCreate, ClassUpdate, ClassInDB
-from .ai import AssignmentGenerationRequest, AssignmentGenerationResponse
-from .log import SystemLog, SystemLogCreate
+from app.schemas.user import User, UserCreate, UserUpdate, UserInDB
+from app.schemas.token import Token, TokenPayload
+from app.schemas.assignment import (
+    Assignment,
+    AssignmentCreate,
+    AssignmentUpdate,
+    AssignmentResponse,
+    AssignmentList
+)
+from app.schemas.submission import (
+    Submission,
+    SubmissionCreate,
+    SubmissionUpdate,
+    SubmissionResponse,
+    SubmissionList
+)
+from app.schemas.feedback import (
+    FeedbackCreate,
+    FeedbackUpdate,
+    FeedbackResponse,
+    FeedbackList
+)
+from app.schemas.admin import AdminStats, UserStatusUpdate, SystemLog
 
 __all__ = [
-    "Token",
-    "TokenPayload",
     "User",
     "UserCreate",
     "UserUpdate",
     "UserInDB",
+    "Token",
+    "TokenPayload",
     "Assignment",
     "AssignmentCreate",
     "AssignmentUpdate",
-    "AssignmentInDB",
+    "AssignmentResponse",
+    "AssignmentList",
     "Submission",
     "SubmissionCreate",
     "SubmissionUpdate",
-    "SubmissionInDB",
-    "Class",
-    "ClassCreate",
-    "ClassUpdate",
-    "ClassInDB",
-    "AssignmentGenerationRequest",
-    "AssignmentGenerationResponse",
-    "SystemLog",
-    "SystemLogCreate"
+    "SubmissionResponse",
+    "SubmissionList",
+    "FeedbackCreate",
+    "FeedbackUpdate",
+    "FeedbackResponse",
+    "FeedbackList",
+    "AdminStats",
+    "UserStatusUpdate",
+    "SystemLog"
 ] 

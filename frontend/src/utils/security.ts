@@ -1,16 +1,16 @@
-import DOMPurify from "dompurify";
-import { useCallback } from "react";
-import { z } from "zod";
+import DOMPurify from 'dompurify';
+import { useCallback } from 'react';
+import { z } from 'zod';
 
 // Security headers configuration
 export const securityHeaders = {
-  "Content-Security-Policy":
+  'Content-Security-Policy':
     "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data: https:; connect-src 'self' https:;",
-  "X-Content-Type-Options": "nosniff",
-  "X-Frame-Options": "DENY",
-  "X-XSS-Protection": "1; mode=block",
-  "Referrer-Policy": "strict-origin-when-cross-origin",
-  "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'X-XSS-Protection': '1; mode=block',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
 };
 
 // Input validation schemas
@@ -18,37 +18,34 @@ export const inputSchemas = {
   // User input validation
   userInput: z
     .string()
-    .min(1, "Input cannot be empty")
-    .max(1000, "Input is too long")
-    .regex(/^[a-zA-Z0-9\s.,!?-]+$/, "Input contains invalid characters"),
+    .min(1, 'Input cannot be empty')
+    .max(1000, 'Input is too long')
+    .regex(/^[a-zA-Z0-9\s.,!?-]+$/, 'Input contains invalid characters'),
 
   // URL validation
   url: z
     .string()
-    .url("Invalid URL format")
-    .refine((url) => {
+    .url('Invalid URL format')
+    .refine(url => {
       try {
         const parsed = new URL(url);
-        return ["http:", "https:"].includes(parsed.protocol);
+        return ['http:', 'https:'].includes(parsed.protocol);
       } catch {
         return false;
       }
-    }, "Invalid URL protocol"),
+    }, 'Invalid URL protocol'),
 
   // Email validation
-  email: z.string().email("Invalid email format").max(255, "Email is too long"),
+  email: z.string().email('Invalid email format').max(255, 'Email is too long'),
 
   // Password validation
   password: z
     .string()
-    .min(8, "Password must be at least 8 characters")
-    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-    .regex(/[0-9]/, "Password must contain at least one number")
-    .regex(
-      /[^A-Za-z0-9]/,
-      "Password must contain at least one special character"
-    ),
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number')
+    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
 };
 
 // Input sanitization
@@ -63,23 +60,23 @@ export const sanitizeInput = (input: string): string => {
 // XSS Protection
 export const escapeHtml = (unsafe: string): string => {
   return unsafe
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 };
 
 // CSRF Token Management
 export const csrfToken = {
   get: (): string | null => {
-    return localStorage.getItem("csrfToken");
+    return localStorage.getItem('csrfToken');
   },
   set: (token: string): void => {
-    localStorage.setItem("csrfToken", token);
+    localStorage.setItem('csrfToken', token);
   },
   remove: (): void => {
-    localStorage.removeItem("csrfToken");
+    localStorage.removeItem('csrfToken');
   },
 };
 
@@ -99,9 +96,7 @@ export class RateLimiter {
 
   canMakeRequest(): boolean {
     const now = Date.now();
-    this.requests = this.requests.filter(
-      (timestamp) => now - timestamp < this.config.timeWindow
-    );
+    this.requests = this.requests.filter(timestamp => now - timestamp < this.config.timeWindow);
 
     if (this.requests.length >= this.config.maxRequests) {
       return false;
@@ -124,14 +119,14 @@ export const secureApiRequest = async (
   const token = csrfToken.get();
   const headers = {
     ...options.headers,
-    "X-CSRF-Token": token || "",
-    "Content-Type": "application/json",
+    'X-CSRF-Token': token || '',
+    'Content-Type': 'application/json',
   };
 
   const response = await fetch(url, {
     ...options,
     headers,
-    credentials: "include", // Include cookies for CSRF
+    credentials: 'include', // Include cookies for CSRF
   });
 
   if (!response.ok) {
@@ -153,7 +148,7 @@ export const useSecureForm = <T extends Record<string, any>>(
         const sanitizedData = Object.entries(rawData).reduce(
           (acc, [key, value]) => ({
             ...acc,
-            [key]: typeof value === "string" ? sanitizeInput(value) : value,
+            [key]: typeof value === 'string' ? sanitizeInput(value) : value,
           }),
           {}
         );

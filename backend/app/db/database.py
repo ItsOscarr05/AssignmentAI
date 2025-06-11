@@ -1,17 +1,26 @@
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from motor.motor_asyncio import AsyncIOMotorClient
+from beanie import init_beanie
 from app.core.config import settings
+from app.models.user import User
+from app.models.assignment import Assignment
+from app.models.submission import Submission
 
-engine = create_engine(settings.SQLALCHEMY_DATABASE_URI, pool_pre_ping=True)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+client = AsyncIOMotorClient(settings.MONGODB_URL)
 
-Base = declarative_base()
+async def init_db():
+    """Initialize database connection and Beanie ODM."""
+    await init_beanie(
+        database=client[settings.MONGODB_DB],
+        document_models=[
+            User,
+            Assignment,
+            Submission
+        ]
+    )
 
-# Dependency
-def get_db():
-    db = SessionLocal()
+async def get_db():
+    """Get MongoDB database instance."""
     try:
-        yield db
+        yield client[settings.MONGODB_DB]
     finally:
-        db.close() 
+        client.close() 

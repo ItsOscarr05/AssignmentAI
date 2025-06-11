@@ -1,6 +1,6 @@
+import logging
 from typing import Dict, Any
-from sqlalchemy.orm import Session
-from app.db.database import engine
+from motor.motor_asyncio import AsyncIOMotorClient
 from app.services.email_service import EmailService
 from app.services.ai_service import AIService
 import os
@@ -9,14 +9,14 @@ from app.services.logging_service import LoggingService
 logger = logging.getLogger(__name__)
 
 class HealthService:
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncIOMotorClient):
         self.db = db
 
-    def check_database(self) -> Dict[str, Any]:
+    async def check_database(self) -> Dict[str, Any]:
         """Check database health"""
         try:
             # Try to execute a simple query
-            self.db.execute("SELECT 1")
+            await self.db.command("ping")
             LoggingService.log_info(self.db, "Database health check successful")
             return {"status": "healthy", "message": "Database is responding"}
         except Exception as e:

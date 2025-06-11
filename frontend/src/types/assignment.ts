@@ -1,12 +1,15 @@
-export type DifficultyLevel = "Easy" | "Medium" | "Hard";
-export type AssignmentType = "Homework" | "Project" | "Quiz" | "Test" | "Essay";
-export type AssignmentStatus = "draft" | "published" | "archived";
+export type DifficultyLevel = 'Easy' | 'Medium' | 'Hard';
+export type AssignmentType = 'Homework' | 'Project' | 'Quiz' | 'Test' | 'Essay';
+export type AssignmentStatus = 'draft' | 'published' | 'archived';
 
 export interface Assignment {
   id: string;
   title: string;
   description: string;
-  dueDate: string;
+  subject: string;
+  grade_level: string;
+  due_date: string;
+  points: number;
   createdAt: string;
   updatedAt: string;
   status: 'draft' | 'published' | 'archived';

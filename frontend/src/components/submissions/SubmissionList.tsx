@@ -1,224 +1,194 @@
+import AddIcon from '@mui/icons-material/Add';
 import {
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  Download as DownloadIcon,
-  Edit as EditIcon,
-} from "@mui/icons-material";
-import {
+  Alert,
   Box,
   Button,
-  Card,
-  CardContent,
-  Chip,
   CircularProgress,
   FormControl,
   Grid,
-  IconButton,
   InputLabel,
   MenuItem,
   Select,
+  SelectChangeEvent,
   TextField,
-  Tooltip,
   Typography,
-} from "@mui/material";
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { api } from "../../services/api";
-import { Submission } from "../../types/submission";
+} from '@mui/material';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Submission } from '../../types';
 
-const STATUS_COLORS = {
-  pending: "warning",
-  submitted: "info",
-  graded: "success",
-  late: "error",
-} as const;
+interface SubmissionListProps {
+  submissions: Submission[];
+  onView: (submission: Submission) => void;
+  onEdit: (submission: Submission) => void;
+  onDelete: (submission: Submission) => void;
+  loading?: boolean;
+  error?: string;
+}
 
-export const SubmissionList: React.FC = () => {
+export const SubmissionList: React.FC<SubmissionListProps> = ({
+  submissions,
+  onView,
+  onEdit,
+  onDelete,
+  loading = false,
+  error = undefined,
+}) => {
   const navigate = useNavigate();
-  const [submissions, setSubmissions] = useState<Submission[]>([]);
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
-  useEffect(() => {
-    fetchSubmissions();
-  }, []);
-
-  const fetchSubmissions = async () => {
-    try {
-      const response = await api.get("/submissions");
-      setSubmissions(response.data);
-    } catch (error) {
-      console.error("Error fetching submissions:", error);
-    } finally {
-      setLoading(false);
-    }
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
   };
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm("Are you sure you want to delete this submission?")) {
-      try {
-        await api.delete(`/submissions/${id}`);
-        setSubmissions(
-          submissions.filter((submission) => submission.id !== id)
-        );
-      } catch (error) {
-        console.error("Error deleting submission:", error);
-      }
-    }
+  const handleStatusChange = (e: SelectChangeEvent) => {
+    const newStatus = e.target.value;
+    console.log('Status change event:', {
+      event: e,
+      newStatus,
+      currentStatusFilter: statusFilter,
+    });
+    setStatusFilter(newStatus);
   };
 
-  const handleDownload = async (filePath: string) => {
-    try {
-      const response = await api.get(`/submissions/download/${filePath}`, {
-        responseType: "blob",
-      });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", filePath.split("/").pop() || "submission");
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (error) {
-      console.error("Error downloading file:", error);
-    }
-  };
-
-  const filteredSubmissions = submissions.filter((submission) => {
+  const filteredSubmissions = submissions.filter(submission => {
     const matchesSearch =
-      search === "" ||
-      submission.title.toLowerCase().includes(search.toLowerCase()) ||
-      submission.assignment_title.toLowerCase().includes(search.toLowerCase());
+      searchTerm === '' || submission.content.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus =
-      status === "" || submission.status.toLowerCase() === status.toLowerCase();
+      statusFilter === '' || submission.status.toLowerCase() === statusFilter.toLowerCase();
+
+    console.log('Filtering submission:', {
+      submission,
+      statusFilter,
+      matchesStatus,
+      matchesSearch,
+      submissionStatus: submission.status.toLowerCase(),
+      filterStatus: statusFilter.toLowerCase(),
+    });
 
     return matchesSearch && matchesStatus;
   });
 
+  console.log('Current state:', {
+    statusFilter,
+    searchTerm,
+    filteredSubmissions,
+    allSubmissions: submissions,
+  });
+
   if (loading) {
     return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="400px"
-      >
-        <CircularProgress />
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+        <CircularProgress role="progressbar" />
       </Box>
     );
   }
 
   return (
     <Box sx={{ p: 3 }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4">Submissions</Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={() => navigate("/submissions/new")}
+          onClick={() => navigate('/submissions/new')}
         >
           New Submission
         </Button>
       </Box>
 
-      <Box sx={{ mb: 3, display: "flex", gap: 2 }}>
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }} role="alert">
+          {error}
+        </Alert>
+      )}
+
+      <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
         <TextField
           label="Search"
           variant="outlined"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          sx={{ flexGrow: 1 }}
+          value={searchTerm}
+          onChange={handleSearchChange}
+          placeholder="Search submissions..."
+          fullWidth
+          inputProps={{
+            'data-testid': 'text-field',
+          }}
         />
         <FormControl sx={{ minWidth: 200 }}>
-          <InputLabel>Status</InputLabel>
+          <InputLabel id="status-filter-label">Filter by Status</InputLabel>
           <Select
-            value={status}
-            label="Status"
-            onChange={(e) => setStatus(e.target.value)}
+            labelId="status-filter-label"
+            id="status-filter"
+            value={statusFilter}
+            onChange={handleStatusChange}
+            label="Filter by Status"
+            inputProps={{
+              'aria-label': 'Filter by Status',
+              'data-testid': 'select',
+            }}
           >
-            <MenuItem value="">All Statuses</MenuItem>
-            <MenuItem value="pending">Pending</MenuItem>
+            <MenuItem value="">All</MenuItem>
+            <MenuItem value="draft">Draft</MenuItem>
             <MenuItem value="submitted">Submitted</MenuItem>
             <MenuItem value="graded">Graded</MenuItem>
-            <MenuItem value="late">Late</MenuItem>
           </Select>
         </FormControl>
       </Box>
 
-      <Grid container spacing={3}>
-        {filteredSubmissions.map((submission) => (
-          <Grid item xs={12} sm={6} md={4} key={submission.id}>
-            <Card>
-              <CardContent>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                    mb: 2,
-                  }}
-                >
-                  <Typography variant="h6" gutterBottom>
-                    {submission.title}
-                  </Typography>
-                  <Chip
-                    label={submission.status}
-                    color={
-                      STATUS_COLORS[
-                        submission.status as keyof typeof STATUS_COLORS
-                      ]
-                    }
-                    size="small"
-                  />
-                </Box>
-                <Typography color="textSecondary" gutterBottom>
-                  Assignment: {submission.assignment_title}
-                </Typography>
+      <Grid
+        container
+        spacing={3}
+        component="ul"
+        role="list"
+        aria-label="Submissions"
+        data-testid="submissions-grid-container"
+      >
+        {filteredSubmissions.map(submission => (
+          <Grid
+            item
+            xs={12}
+            sm={6}
+            md={4}
+            key={submission.id}
+            component="li"
+            data-testid="submission-item"
+          >
+            <Box
+              sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
+              data-testid={`submission-${submission.id}`}
+            >
+              <Typography variant="h6" gutterBottom>
+                Submission {submission.id}
+              </Typography>
+              <Typography color="textSecondary" gutterBottom>
+                Content: {submission.content}
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                Status: {submission.status}
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                Submitted: {new Date(submission.submittedAt).toLocaleDateString()}
+              </Typography>
+              {submission.grade && (
                 <Typography variant="body2" color="textSecondary">
-                  Submitted:{" "}
-                  {new Date(submission.submitted_at).toLocaleDateString()}
+                  Grade: {submission.grade}
                 </Typography>
-                {submission.score && (
-                  <Typography variant="body2" color="textSecondary">
-                    Score: {submission.score}/{submission.max_score}
-                  </Typography>
-                )}
-              </CardContent>
-              <Box
-                sx={{
-                  p: 2,
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  gap: 1,
-                }}
-              >
-                {submission.file_path && (
-                  <Tooltip title="Download">
-                    <IconButton
-                      onClick={() => handleDownload(submission.file_path!)}
-                    >
-                      <DownloadIcon />
-                    </IconButton>
-                  </Tooltip>
-                )}
-                <Tooltip title="Edit">
-                  <IconButton
-                    onClick={() =>
-                      navigate(`/submissions/${submission.id}/edit`)
-                    }
-                  >
-                    <EditIcon />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Delete">
-                  <IconButton onClick={() => handleDelete(submission.id)}>
-                    <DeleteIcon />
-                  </IconButton>
-                </Tooltip>
+              )}
+              <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                <Button size="small" onClick={() => onView(submission)}>
+                  View
+                </Button>
+                <Button size="small" onClick={() => onEdit(submission)}>
+                  Edit
+                </Button>
+                <Button size="small" color="error" onClick={() => onDelete(submission)}>
+                  Delete
+                </Button>
               </Box>
-            </Card>
+            </Box>
           </Grid>
         ))}
       </Grid>

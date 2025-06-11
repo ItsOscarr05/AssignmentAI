@@ -1,7 +1,7 @@
 from typing import Dict, Any, Optional, List
 from datetime import datetime
-from sqlalchemy.orm import Session
-from openai import OpenAI
+from sqlalchemy.ext.asyncio import AsyncSession
+from openai import AsyncOpenAI
 from app.crud import ai_assignment as ai_assignment_crud
 from app.crud import feedback as feedback_crud
 from app.schemas.ai_assignment import (
@@ -16,10 +16,10 @@ from app.core.config import settings
 from app.core.logger import logger
 
 class AIService:
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         self.db = db
         self.model_version = settings.AI_MODEL_VERSION
-        self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
         self.model = "gpt-3.5-turbo"
 
     async def generate_assignment(self, request: AssignmentGenerationRequest) -> AssignmentGenerationResponse:
@@ -31,7 +31,7 @@ class AIService:
             prompt = self._construct_assignment_prompt(request)
             
             # Call OpenAI API
-            response = self.client.chat.completions.create(
+            response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": "You are a helpful teacher's assistant that creates educational assignments."},
@@ -84,7 +84,7 @@ class AIService:
             prompt = self._construct_feedback_prompt(submission_content, feedback_type)
             
             # Call OpenAI API
-            response = self.client.chat.completions.create(
+            response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": "You are a helpful teacher's assistant that provides constructive feedback on student submissions."},
@@ -104,7 +104,7 @@ class AIService:
                 content=feedback_content,
                 feedback_type=feedback_type,
                 confidence_score=0.8,  # TODO: Get actual confidence score from AI model
-                metadata={
+                feedback_metadata={
                     "model_version": self.model_version,
                     "generated_at": datetime.utcnow().isoformat()
                 }
@@ -257,7 +257,7 @@ class AIService:
         5. Specific suggestions for improvement
         """
 
-        response = self.client.chat.completions.create(
+        response = await self.client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "You are a helpful teacher's assistant that evaluates student submissions."},

@@ -1,21 +1,29 @@
-FROM node:18-alpine
+# Build stage
+FROM node:20-alpine as build
 
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies with legacy peer deps
+RUN npm install --legacy-peer-deps
 
 # Copy the rest of the application
 COPY . .
 
-# Build the application
-RUN npm run build
+# Build the application with error handling
+RUN npm run build || (echo "Build failed. Showing errors:" && cat /app/tsconfig.tsbuildinfo 2>/dev/null || true && exit 1)
 
-# Install serve to run the application
-RUN npm install -g serve
+# Production stage
+FROM nginx:alpine
 
-# Command to run the application
-CMD ["serve", "-s", "build", "-l", "3000"] 
+# Copy built assets from build stage
+COPY --from=build /app/build /usr/share/nginx/html
+
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"] 

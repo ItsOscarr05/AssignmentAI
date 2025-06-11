@@ -1,156 +1,316 @@
 import {
-  Alert,
   Box,
-  Button,
+  Card,
+  CardContent,
   CircularProgress,
-  Divider,
+  FormControl,
   FormControlLabel,
+  FormGroup,
   Grid,
-  Paper,
+  InputLabel,
+  MenuItem,
+  Select,
   Switch,
   Typography,
-} from "@mui/material";
-import React, { useEffect, useState } from "react";
-import { api } from "../../services/api";
+} from '@mui/material';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { settingsApi } from '../../services/api/settings';
+import { AppSettings } from '../../types/settings';
 
-interface SettingsData {
-  email_notifications: boolean;
-  dark_mode: boolean;
-  language: string;
-  timezone: string;
+interface SettingsProps {
+  initialSettings?: AppSettings;
+  onUpdate?: (settings: Partial<AppSettings>) => void;
+  on2FASetup?: () => void;
+  on2FADisable?: () => void;
+  onThemeChange?: (theme: 'light' | 'dark' | 'system') => void;
+  onNotificationUpdate?: (notifications: Partial<AppSettings['notifications']>) => void;
+  isLoading?: boolean;
+  error?: string;
+  success?: string;
 }
 
-export const Settings: React.FC = () => {
-  const [loading, setLoading] = useState(false);
+function Settings({ initialSettings, onUpdate }: SettingsProps) {
+  const { t, i18n } = useTranslation();
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [settings, setSettings] = useState<SettingsData>({
-    email_notifications: true,
-    dark_mode: false,
-    language: "en",
-    timezone: "UTC",
-  });
+  const [settings, setSettings] = useState<AppSettings | null>(initialSettings || null);
 
   useEffect(() => {
-    fetchSettings();
-  }, []);
+    if (!initialSettings) {
+      fetchSettings();
+    } else {
+      setLoading(false);
+    }
+  }, [initialSettings]);
 
   const fetchSettings = async () => {
-    try {
-      const response = await api.get("/users/settings");
-      setSettings(response.data);
-    } catch (error) {
-      console.error("Error fetching settings:", error);
-      setError("Failed to load settings");
-    }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, checked, value } = e.target;
-    setSettings((prev) => ({
-      ...prev,
-      [name]: e.target.type === "checkbox" ? checked : value,
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
     setLoading(true);
     setError(null);
-    setSuccess(null);
-
     try {
-      await api.put("/users/settings", settings);
-      setSuccess("Settings updated successfully");
-    } catch (error: any) {
-      setError(error.response?.data?.message || "Failed to update settings");
+      const response = await settingsApi.getSettings();
+      setSettings(response.data);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to fetch settings');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleSettingChange = async (section: keyof AppSettings, field: string, value: any) => {
+    if (!settings) return;
+
+    const updatedSettings = {
+      ...settings,
+      [section]: {
+        ...(settings[section] as Record<string, any>),
+        [field]: value,
+      },
+    };
+
+    setSettings(updatedSettings);
+
+    try {
+      await settingsApi.updateSettings(updatedSettings);
+      if (onUpdate) {
+        onUpdate(updatedSettings);
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to update settings');
+      // Revert the change on error
+      setSettings(settings);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" p={3}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box p={3}>
+        <Typography color="error">{error}</Typography>
+      </Box>
+    );
+  }
+
+  if (!settings) {
+    return null;
+  }
+
   return (
-    <Box sx={{ p: 3 }}>
-      <Paper sx={{ p: 3 }}>
-        <Typography variant="h4" gutterBottom>
-          Application Settings
-        </Typography>
-        <Typography color="textSecondary" paragraph>
-          Customize your application experience
-        </Typography>
+    <Box p={3}>
+      <Typography variant="h4" gutterBottom className="page-title" sx={{ mb: 3 }}>
+        Settings
+      </Typography>
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-
-        {success && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            {success}
-          </Alert>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
+      <Grid container spacing={3}>
+        {/* Notifications */}
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
               <Typography variant="h6" gutterBottom>
-                Notifications
+                {t('settings.notifications.title')}
               </Typography>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={settings.email_notifications}
-                    onChange={handleChange}
-                    name="email_notifications"
+              <FormGroup>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={settings.notifications.email}
+                      onChange={e =>
+                        handleSettingChange('notifications', 'email', e.target.checked)
+                      }
+                    />
+                  }
+                  label={t('settings.notifications.email')}
+                />
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={settings.notifications.push}
+                      onChange={e => handleSettingChange('notifications', 'push', e.target.checked)}
+                    />
+                  }
+                  label={t('settings.notifications.push')}
+                />
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={settings.notifications.assignments}
+                      onChange={e =>
+                        handleSettingChange('notifications', 'assignments', e.target.checked)
+                      }
+                    />
+                  }
+                  label={t('settings.notifications.assignments')}
+                />
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={settings.notifications.grades}
+                      onChange={e =>
+                        handleSettingChange('notifications', 'grades', e.target.checked)
+                      }
+                    />
+                  }
+                  label={t('settings.notifications.grades')}
+                />
+              </FormGroup>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Appearance */}
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                {t('settings.appearance.title')}
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <FormControl fullWidth>
+                    <InputLabel>{t('settings.appearance.theme')}</InputLabel>
+                    <Select
+                      value={settings.appearance.theme}
+                      onChange={e => handleSettingChange('appearance', 'theme', e.target.value)}
+                      label={t('settings.appearance.theme')}
+                    >
+                      <MenuItem value="light">{t('settings.appearance.themeLight')}</MenuItem>
+                      <MenuItem value="dark">{t('settings.appearance.themeDark')}</MenuItem>
+                      <MenuItem value="system">{t('settings.appearance.themeSystem')}</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12}>
+                  <FormControl fullWidth>
+                    <InputLabel>{t('settings.appearance.fontSize')}</InputLabel>
+                    <Select
+                      value={settings.appearance.fontSize}
+                      onChange={e => handleSettingChange('appearance', 'fontSize', e.target.value)}
+                      label={t('settings.appearance.fontSize')}
+                    >
+                      <MenuItem value="small">{t('settings.appearance.fontSizeSmall')}</MenuItem>
+                      <MenuItem value="medium">{t('settings.appearance.fontSizeMedium')}</MenuItem>
+                      <MenuItem value="large">{t('settings.appearance.fontSizeLarge')}</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12}>
+                  <FormControl fullWidth>
+                    <InputLabel>{t('settings.appearance.density')}</InputLabel>
+                    <Select
+                      value={settings.appearance.density}
+                      onChange={e => handleSettingChange('appearance', 'density', e.target.value)}
+                      label={t('settings.appearance.density')}
+                    >
+                      <MenuItem value="comfortable">
+                        {t('settings.appearance.densityComfortable')}
+                      </MenuItem>
+                      <MenuItem value="compact">{t('settings.appearance.densityCompact')}</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Language and Timezone */}
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                {t('settings.language.title')}
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <FormControl fullWidth>
+                    <InputLabel>{t('settings.language.language')}</InputLabel>
+                    <Select
+                      value={settings.language}
+                      onChange={e => {
+                        handleSettingChange('language', '', e.target.value);
+                        i18n.changeLanguage(e.target.value);
+                      }}
+                      label={t('settings.language.language')}
+                    >
+                      <MenuItem value="en">English</MenuItem>
+                      <MenuItem value="es">Español</MenuItem>
+                      <MenuItem value="fr">Français</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12}>
+                  <FormControl fullWidth>
+                    <InputLabel>{t('settings.language.timezone')}</InputLabel>
+                    <Select
+                      value={settings.timezone}
+                      onChange={e => handleSettingChange('timezone', '', e.target.value)}
+                      label={t('settings.language.timezone')}
+                    >
+                      <MenuItem value="UTC">UTC</MenuItem>
+                      <MenuItem value="America/New_York">Eastern Time</MenuItem>
+                      <MenuItem value="Europe/London">London</MenuItem>
+                      <MenuItem value="Asia/Tokyo">Tokyo</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Privacy */}
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                {t('settings.privacy.title')}
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <FormControl fullWidth>
+                    <InputLabel>{t('settings.privacy.profileVisibility')}</InputLabel>
+                    <Select
+                      value={settings.privacy.profileVisibility}
+                      onChange={e =>
+                        handleSettingChange('privacy', 'profileVisibility', e.target.value)
+                      }
+                      label={t('settings.privacy.profileVisibility')}
+                    >
+                      <MenuItem value="public">{t('settings.privacy.visibilityPublic')}</MenuItem>
+                      <MenuItem value="private">{t('settings.privacy.visibilityPrivate')}</MenuItem>
+                      <MenuItem value="connections">
+                        {t('settings.privacy.visibilityConnections')}
+                      </MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={settings.privacy.activityStatus}
+                        onChange={e =>
+                          handleSettingChange('privacy', 'activityStatus', e.target.checked)
+                        }
+                      />
+                    }
+                    label={t('settings.privacy.activityStatus')}
                   />
-                }
-                label="Email Notifications"
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <Divider sx={{ my: 2 }} />
-              <Typography variant="h6" gutterBottom>
-                Appearance
-              </Typography>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={settings.dark_mode}
-                    onChange={handleChange}
-                    name="dark_mode"
-                  />
-                }
-                label="Dark Mode"
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <Divider sx={{ my: 2 }} />
-              <Typography variant="h6" gutterBottom>
-                Language & Region
-              </Typography>
-              <Typography variant="body2" color="textSecondary" paragraph>
-                Coming soon...
-              </Typography>
-            </Grid>
-
-            <Grid item xs={12}>
-              <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
-                <Button
-                  variant="contained"
-                  type="submit"
-                  disabled={loading}
-                  startIcon={loading ? <CircularProgress size={20} /> : null}
-                >
-                  {loading ? "Saving..." : "Save Settings"}
-                </Button>
-              </Box>
-            </Grid>
-          </Grid>
-        </form>
-      </Paper>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
     </Box>
   );
-};
+}
+
+export default Settings;

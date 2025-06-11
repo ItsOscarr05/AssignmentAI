@@ -1,292 +1,333 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Delete as DeleteIcon, Upload as UploadIcon } from '@mui/icons-material';
 import {
   Box,
-  Paper,
-  Typography,
-  TextField,
   Button,
-  Grid,
-  FormControlLabel,
-  Switch,
   FormControl,
+  FormHelperText,
+  Grid,
+  IconButton,
   InputLabel,
-  Select,
   MenuItem,
-  Chip,
-  Stack,
-  Divider,
+  Paper,
+  Select,
+  TextField,
+  Typography,
 } from '@mui/material';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { Assignment } from '../../types/assignment';
-import { FileUpload } from '../common/FileUpload';
-import { useFormValidation } from '../../hooks/useFormValidation';
+import React from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Toast } from '../common/Toast';
+import { useAuth } from '../../hooks/useAuth';
+import { api } from '../../services/api';
 
-const assignmentSchema = z.object({
+const schema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
-  dueDate: z.date(),
-  maxSubmissions: z.number().min(1, 'Maximum submissions must be at least 1'),
-  allowLateSubmissions: z.boolean(),
-  lateSubmissionPenalty: z.number().min(0, 'Penalty cannot be negative'),
-  tags: z.array(z.string()),
+  subject: z.string().min(1, 'Subject is required'),
+  grade_level: z.string().min(1, 'Grade level is required'),
+  due_date: z.date().min(new Date(), 'Due date must be in the future'),
+  max_score: z.coerce.number().min(0, 'Maximum score must be a positive number'),
+  attachments: z.array(z.string()).optional(),
 });
 
-type AssignmentFormData = z.infer<typeof assignmentSchema>;
+type AssignmentFormData = z.infer<typeof schema>;
 
-const AssignmentForm: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [attachments, setAttachments] = useState<File[]>([]);
-  const [toast, setToast] = useState<{
-    open: boolean;
-    message: string;
-    severity: 'success' | 'error' | 'info' | 'warning';
-  }>({
-    open: false,
-    message: '',
-    severity: 'info',
-  });
+interface AssignmentFormProps {
+  onSubmit: (data: AssignmentFormData) => Promise<void>;
+  initialData?: Partial<AssignmentFormData>;
+  isSubmitting?: boolean;
+}
 
+const subjects = [
+  'Mathematics',
+  'Science',
+  'English',
+  'History',
+  'Geography',
+  'Computer Science',
+  'Art',
+  'Music',
+  'Physical Education',
+  'Other',
+];
+
+const gradeLevels = [
+  'Kindergarten',
+  '1st Grade',
+  '2nd Grade',
+  '3rd Grade',
+  '4th Grade',
+  '5th Grade',
+  '6th Grade',
+  '7th Grade',
+  '8th Grade',
+  '9th Grade',
+  '10th Grade',
+  '11th Grade',
+  '12th Grade',
+  'College',
+  'University',
+];
+
+const AssignmentForm: React.FC<AssignmentFormProps> = ({
+  onSubmit,
+  initialData,
+  isSubmitting = false,
+}) => {
+  useAuth();
   const {
-    register,
+    control,
     handleSubmit,
     formState: { errors },
-    setValue,
     watch,
-  } = useFormValidation<AssignmentFormData>(assignmentSchema, {
+    setValue,
+  } = useForm<AssignmentFormData>({
+    resolver: zodResolver(schema),
     defaultValues: {
       title: '',
       description: '',
-      dueDate: new Date(),
-      maxSubmissions: 1,
-      allowLateSubmissions: false,
-      lateSubmissionPenalty: 0,
-      tags: [],
+      subject: '',
+      grade_level: '',
+      due_date: new Date(),
+      max_score: 100,
+      attachments: [],
+      ...initialData,
     },
   });
 
-  const allowLateSubmissions = watch('allowLateSubmissions');
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
 
-  useEffect(() => {
-    if (id) {
-      fetchAssignment();
-    }
-  }, [id]);
+    const formData = new FormData();
+    Array.from(files).forEach(file => {
+      formData.append('files', file);
+    });
 
-  const fetchAssignment = async () => {
     try {
-      setLoading(true);
-      // TODO: Replace with actual API call
-      const response = await fetch(`/api/assignments/${id}`);
-      const data: Assignment = await response.json();
-      
-      setValue('title', data.title);
-      setValue('description', data.description);
-      setValue('dueDate', new Date(data.dueDate));
-      setValue('maxSubmissions', data.maxSubmissions);
-      setValue('allowLateSubmissions', data.allowLateSubmissions);
-      setValue('lateSubmissionPenalty', data.lateSubmissionPenalty);
-      setValue('tags', data.tags);
-    } catch (err) {
-      setToast({
-        open: true,
-        message: 'Failed to fetch assignment',
-        severity: 'error',
+      const response = await api.post('/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
-    } finally {
-      setLoading(false);
+      const currentAttachments = watch('attachments') || [];
+      setValue('attachments', [...currentAttachments, ...response.data.urls]);
+    } catch (error) {
+      console.error('Error uploading files:', error);
     }
   };
 
-  const onSubmit = async (data: AssignmentFormData) => {
-    try {
-      setLoading(true);
-      const formData = new FormData();
-      
-      // Append form fields
-      Object.entries(data).forEach(([key, value]) => {
-        if (key === 'dueDate') {
-          formData.append(key, value.toISOString());
-        } else if (key === 'tags') {
-          formData.append(key, JSON.stringify(value));
-        } else {
-          formData.append(key, value.toString());
-        }
-      });
-
-      // Append attachments
-      attachments.forEach((file) => {
-        formData.append('attachments', file);
-      });
-
-      // TODO: Replace with actual API call
-      const response = await fetch(`/api/assignments${id ? `/${id}` : ''}`, {
-        method: id ? 'PUT' : 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save assignment');
-      }
-
-      setToast({
-        open: true,
-        message: `Assignment ${id ? 'updated' : 'created'} successfully`,
-        severity: 'success',
-      });
-
-      navigate('/assignments');
-    } catch (err) {
-      setToast({
-        open: true,
-        message: `Failed to ${id ? 'update' : 'create'} assignment`,
-        severity: 'error',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleFileSelect = (files: File[]) => {
-    setAttachments(files);
-  };
-
-  const handleFileRemove = () => {
-    setAttachments([]);
+  const removeAttachment = (index: number) => {
+    const currentAttachments = watch('attachments') || [];
+    setValue(
+      'attachments',
+      currentAttachments.filter((_, i) => i !== index)
+    );
   };
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Box component="form" onSubmit={handleSubmit(onSubmit)}>
-        <Paper sx={{ p: 3 }}>
-          <Typography variant="h5" gutterBottom>
-            {id ? 'Edit Assignment' : 'Create Assignment'}
-          </Typography>
-
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Title"
-                {...register('title')}
-                error={!!errors.title}
-                helperText={errors.title?.message}
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                multiline
-                rows={4}
-                label="Description"
-                {...register('description')}
-                error={!!errors.description}
-                helperText={errors.description?.message}
-              />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <DatePicker
-                label="Due Date"
-                value={watch('dueDate')}
-                onChange={(date) => setValue('dueDate', date || new Date())}
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                    error: !!errors.dueDate,
-                    helperText: errors.dueDate?.message,
-                  },
-                }}
-              />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                type="number"
-                label="Maximum Submissions"
-                {...register('maxSubmissions', { valueAsNumber: true })}
-                error={!!errors.maxSubmissions}
-                helperText={errors.maxSubmissions?.message}
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    {...register('allowLateSubmissions')}
-                    checked={allowLateSubmissions}
-                  />
-                }
-                label="Allow Late Submissions"
-              />
-            </Grid>
-
-            {allowLateSubmissions && (
-              <Grid item xs={12} md={6}>
+    <Paper sx={{ p: 3 }}>
+      <Typography variant="h6" gutterBottom>
+        Create Assignment
+      </Typography>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <Controller
+              name="title"
+              control={control}
+              render={({ field }) => (
                 <TextField
+                  {...field}
+                  label="Title"
                   fullWidth
-                  type="number"
-                  label="Late Submission Penalty (%)"
-                  {...register('lateSubmissionPenalty', { valueAsNumber: true })}
-                  error={!!errors.lateSubmissionPenalty}
-                  helperText={errors.lateSubmissionPenalty?.message}
+                  error={!!errors.title}
+                  helperText={errors.title?.message}
+                  data-testid="text-field"
                 />
-              </Grid>
+              )}
+            />
+            {errors.title && <p data-testid="title-error">{errors.title.message}</p>}
+          </Grid>
+
+          <Grid item xs={12}>
+            <Controller
+              name="description"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Description"
+                  multiline
+                  rows={4}
+                  fullWidth
+                  error={!!errors.description}
+                  helperText={errors.description?.message}
+                  data-testid="text-field"
+                />
+              )}
+            />
+            {errors.description && (
+              <p data-testid="description-error">{errors.description.message}</p>
             )}
+          </Grid>
 
-            <Grid item xs={12}>
-              <Divider sx={{ my: 2 }} />
-              <Typography variant="subtitle1" gutterBottom>
-                Attachments
-              </Typography>
-              <FileUpload
-                onFileSelect={handleFileSelect}
-                onFileRemove={handleFileRemove}
-                accept=".pdf,.doc,.docx,.txt"
-                maxSize={10 * 1024 * 1024} // 10MB
-                multiple
+          <Grid item xs={12} sm={6}>
+            <Controller
+              name="subject"
+              control={control}
+              render={({ field }) => (
+                <FormControl fullWidth error={!!errors.subject}>
+                  <InputLabel id="subject-label">Subject</InputLabel>
+                  <Select
+                    {...field}
+                    label="Subject"
+                    labelId="subject-label"
+                    id="subject"
+                    data-testid="select"
+                  >
+                    {subjects.map(subject => (
+                      <MenuItem key={subject} value={subject}>
+                        {subject}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  <FormHelperText data-testid="form-helper-text">
+                    {errors.subject?.message}
+                  </FormHelperText>
+                </FormControl>
+              )}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <Controller
+              name="grade_level"
+              control={control}
+              render={({ field }) => (
+                <FormControl fullWidth error={!!errors.grade_level}>
+                  <InputLabel id="grade-level-label">Grade Level</InputLabel>
+                  <Select
+                    {...field}
+                    label="Grade Level"
+                    labelId="grade-level-label"
+                    id="grade-level"
+                    data-testid="select"
+                  >
+                    {gradeLevels.map(level => (
+                      <MenuItem key={level} value={level}>
+                        {level}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  <FormHelperText data-testid="form-helper-text">
+                    {errors.grade_level?.message}
+                  </FormHelperText>
+                </FormControl>
+              )}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              <Controller
+                name="due_date"
+                control={control}
+                render={({ field }) => (
+                  <div data-testid="date-picker">
+                    <DatePicker
+                      label="Due Date"
+                      {...field}
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          error: !!errors.due_date,
+                          helperText: errors.due_date?.message,
+                        },
+                      }}
+                    />
+                  </div>
+                )}
               />
-            </Grid>
+            </LocalizationProvider>
+          </Grid>
 
-            <Grid item xs={12}>
-              <Stack direction="row" spacing={2} justifyContent="flex-end">
+          <Grid item xs={12} sm={6}>
+            <Controller
+              name="max_score"
+              control={control}
+              render={({ field }) => (
+                <FormControl fullWidth error={!!errors.max_score}>
+                  <TextField
+                    {...field}
+                    label="Maximum Score"
+                    type="number"
+                    fullWidth
+                    error={!!errors.max_score}
+                    inputProps={{ min: 0 }}
+                    data-testid="text-field"
+                    onChange={e => {
+                      const value = e.target.value;
+                      field.onChange(value === '' ? '' : Number(value));
+                    }}
+                  />
+                  <FormHelperText data-testid="form-helper-text">
+                    {errors.max_score?.message}
+                  </FormHelperText>
+                </FormControl>
+              )}
+            />
+          </Grid>
+
+          <Grid item xs={12}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <input
+                type="file"
+                id="file-upload"
+                onChange={handleFileUpload}
+                style={{ display: 'none' }}
+                data-testid="file-upload"
+              />
+              <label htmlFor="file-upload">
                 <Button
                   variant="outlined"
-                  onClick={() => navigate('/assignments')}
-                  disabled={loading}
+                  component="span"
+                  startIcon={<UploadIcon />}
+                  disabled={isSubmitting}
                 >
-                  Cancel
+                  Upload Files
                 </Button>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  disabled={loading}
-                >
-                  {loading ? 'Saving...' : id ? 'Update' : 'Create'}
-                </Button>
-              </Stack>
-            </Grid>
+              </label>
+            </Box>
           </Grid>
-        </Paper>
 
-        <Toast
-          open={toast.open}
-          message={toast.message}
-          severity={toast.severity}
-          onClose={() => setToast({ ...toast, open: false })}
-        />
-      </Box>
-    </LocalizationProvider>
+          {watch('attachments')?.map((url, index) => (
+            <Grid item xs={12} key={url}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="body2">{url.split('/').pop()}</Typography>
+                <IconButton
+                  size="small"
+                  onClick={() => removeAttachment(index)}
+                  data-testid={`delete-attachment-${index}`}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </Box>
+            </Grid>
+          ))}
+
+          <Grid item xs={12}>
+            <Button type="submit" variant="contained" color="primary" disabled={isSubmitting}>
+              {isSubmitting ? 'Creating...' : 'Create Assignment'}
+            </Button>
+          </Grid>
+        </Grid>
+      </form>
+    </Paper>
   );
 };
 
-export default AssignmentForm;
+export { AssignmentForm };

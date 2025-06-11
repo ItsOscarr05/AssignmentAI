@@ -1,33 +1,37 @@
 from typing import List, Optional
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from app.models.log import SystemLog
 from app.schemas.log import SystemLogCreate
 
-def create_log(db: Session, log: SystemLogCreate) -> SystemLog:
+async def create_log(db: AsyncSession, log: SystemLogCreate) -> SystemLog:
     db_log = SystemLog(**log.dict())
     db.add(db_log)
-    db.commit()
-    db.refresh(db_log)
+    await db.commit()
+    await db.refresh(db_log)
     return db_log
 
-def get_logs(
-    db: Session,
+async def get_logs(
+    db: AsyncSession,
     skip: int = 0,
     limit: int = 100,
     level: Optional[str] = None
 ) -> List[SystemLog]:
-    query = db.query(SystemLog)
+    query = select(SystemLog)
     if level:
         query = query.filter(SystemLog.level == level)
-    return query.offset(skip).limit(limit).all()
+    query = query.offset(skip).limit(limit)
+    result = await db.execute(query)
+    return result.scalars().all()
 
-def get_log(db: Session, log_id: int) -> Optional[SystemLog]:
-    return db.query(SystemLog).filter(SystemLog.id == log_id).first()
+async def get_log(db: AsyncSession, log_id: int) -> Optional[SystemLog]:
+    result = await db.execute(select(SystemLog).filter(SystemLog.id == log_id))
+    return result.scalar_one_or_none()
 
-def delete_log(db: Session, log_id: int) -> bool:
-    log = get_log(db, log_id)
+async def delete_log(db: AsyncSession, log_id: int) -> bool:
+    log = await get_log(db, log_id)
     if log:
-        db.delete(log)
-        db.commit()
+        await db.delete(log)
+        await db.commit()
         return True
     return False 

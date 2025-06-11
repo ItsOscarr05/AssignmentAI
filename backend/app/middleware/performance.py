@@ -3,7 +3,7 @@ from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from app.services.cache_service import cache_service
 from app.services.db_optimization_service import db_optimizer
-from app.services.logging_service import logger
+from app.services.logging_service import logging_service
 import time
 import json
 
@@ -35,7 +35,7 @@ class PerformanceMiddleware(BaseHTTPMiddleware):
         # Try to get from cache
         cached_response = await cache_service.get(cache_key)
         if cached_response:
-            logger.info("Cache hit", extra={"path": request.url.path})
+            logging_service.info("Cache hit", extra={"path": request.url.path})
             return Response(
                 content=cached_response["content"],
                 status_code=cached_response["status_code"],
@@ -73,7 +73,7 @@ class PerformanceMiddleware(BaseHTTPMiddleware):
             }
             
             # Add cache tags based on path
-            tags = self._get_cache_tags(request.url.path)
+            tags = self._get_cache_tags(Request.url.path)
             
             await cache_service.set(
                 cache_key,
@@ -82,9 +82,9 @@ class PerformanceMiddleware(BaseHTTPMiddleware):
                 tags=tags
             )
             
-            logger.info("Cached response", extra={"path": request.url.path})
+            logging_service.info("Cached response", extra={"path": Request.url.path})
         except Exception as e:
-            logger.error("Error caching response", error=e)
+            logging_service.error("Error caching response", error=e)
     
     def _get_cache_tags(self, path: str) -> list:
         """Get cache tags based on the request path"""
@@ -127,7 +127,7 @@ class QueryOptimizationMiddleware(BaseHTTPMiddleware):
         
         # Log slow requests
         if duration > self.slow_query_threshold:
-            logger.warning(
+            logging_service.warning(
                 "Slow request detected",
                 extra={
                     "path": request.url.path,

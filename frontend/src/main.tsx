@@ -1,25 +1,24 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import React from "react";
-import ReactDOM from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
-import App from "./App";
-import "./index.css";
+import React, { Suspense, lazy } from 'react';
+import ReactDOM from 'react-dom/client';
+import { AppRouter } from './routes';
+import './styles/global.css';
+import { lightTheme } from './theme';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      retry: 1,
-    },
-  },
-});
+// Lazy load theme provider and CssBaseline
+const ThemeProvider = lazy(() =>
+  import('@mui/material/styles').then(module => ({ default: module.ThemeProvider }))
+);
+const CssBaseline = lazy(() =>
+  import('@mui/material/CssBaseline').then(module => ({ default: module.default }))
+);
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
+ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </QueryClientProvider>
+    <Suspense fallback={<div>Loading...</div>}>
+      <ThemeProvider theme={lightTheme}>
+        <CssBaseline />
+        <AppRouter />
+      </ThemeProvider>
+    </Suspense>
   </React.StrictMode>
 );

@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef } from "react";
-import { usePerformanceMonitoring } from "../utils/performance";
-import { useErrorTracking } from "./useErrorTracking";
+import { useCallback, useEffect, useRef } from 'react';
+import { usePerformanceMonitoring } from '../utils/performance';
+import { useErrorTracking } from './useErrorTracking';
 
 interface CacheOptions {
   maxAge?: number;
@@ -27,16 +27,12 @@ interface CacheStats {
 
 export const useDataCache = <T>(options: CacheOptions = {}) => {
   const {
-    maxAge = 3600000, // 1 hour
-    maxSize = 100,
     staleTime = 300000, // 5 minutes
-    cacheTime = 1800000, // 30 minutes
-    retryCount = 3,
-    retryDelay = 1000,
+    cacheTime = 1800000,
   } = options;
 
   const { trackError } = useErrorTracking();
-  usePerformanceMonitoring("DataCache");
+  usePerformanceMonitoring('DataCache');
 
   // Cache storage
   const cache = useRef<Map<string, CacheEntry<T>>>(new Map());
@@ -66,28 +62,6 @@ export const useDataCache = <T>(options: CacheOptions = {}) => {
   }, [cleanup]);
 
   // Fetch data with retry logic
-  const fetchWithRetry = useCallback(
-    async (url: string, options: RequestInit = {}): Promise<T> => {
-      let lastError: Error | null = null;
-      for (let i = 0; i < retryCount; i++) {
-        try {
-          const response = await fetch(url, options);
-          if (!response.ok)
-            throw new Error(`HTTP error! status: ${response.status}`);
-          return await response.json();
-        } catch (error) {
-          lastError = error as Error;
-          if (i < retryCount - 1) {
-            await new Promise((resolve) =>
-              setTimeout(resolve, retryDelay * (i + 1))
-            );
-          }
-        }
-      }
-      throw lastError;
-    },
-    [retryCount, retryDelay]
-  );
 
   // Get data from cache or fetch
   const getData = useCallback(
@@ -128,11 +102,13 @@ export const useDataCache = <T>(options: CacheOptions = {}) => {
         return data;
       } catch (error) {
         stats.current.errors++;
-        trackError("Failed to fetch data", {
-          error,
-          context: "DataCache",
-          key,
-        });
+        trackError(
+          {
+            message: 'Failed to fetch data from cache',
+            error: error as Error,
+          },
+          'useDataCache'
+        );
         throw error;
       }
     },
@@ -155,11 +131,13 @@ export const useDataCache = <T>(options: CacheOptions = {}) => {
           isStale: false,
         });
       } catch (error) {
-        trackError("Failed to prefetch data", {
-          error,
-          context: "DataCache",
-          key,
-        });
+        trackError(
+          {
+            message: 'Failed to prefetch data',
+            error: error as Error,
+          },
+          'useDataCache'
+        );
       } finally {
         prefetchQueue.current.delete(key);
       }
@@ -190,8 +168,7 @@ export const useDataCache = <T>(options: CacheOptions = {}) => {
   const getStats = useCallback(() => {
     return {
       ...stats.current,
-      hitRate:
-        stats.current.hits / (stats.current.hits + stats.current.misses) || 0,
+      hitRate: stats.current.hits / (stats.current.hits + stats.current.misses) || 0,
     };
   }, []);
 

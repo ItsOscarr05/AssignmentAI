@@ -1,56 +1,190 @@
 import os
-from fastapi import UploadFile
-from datetime import datetime
-from typing import Optional
-import aiofiles
+import uuid
+import mimetypes
+from typing import List, Optional, Tuple
+from fastapi import UploadFile, HTTPException
+from pathlib import Path
 from app.core.config import settings
+from app.services.security_service import security_service
+import aiofiles
+import logging
+from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 class FileService:
-    UPLOAD_DIR = "uploads"
-    
-    @classmethod
-    async def save_file(cls, file: UploadFile, user_id: int, file_type: str) -> Optional[str]:
+    def __init__(self):
+        self.upload_dir = Path(settings.UPLOAD_DIR)
+        self.upload_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Define allowed file types and their MIME types
+        self.allowed_types = {
+            # Documents
+            'pdf': ['application/pdf'],
+            'doc': ['application/msword'],
+            'docx': ['application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+            'txt': ['text/plain'],
+            'rtf': ['application/rtf'],
+            
+            # Spreadsheets
+            'xls': ['application/vnd.ms-excel'],
+            'xlsx': ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+            'csv': ['text/csv'],
+            
+            # Presentations
+            'ppt': ['application/vnd.ms-powerpoint'],
+            'pptx': ['application/vnd.openxmlformats-officedocument.presentationml.presentation'],
+            
+            # Images
+            'jpg': ['image/jpeg'],
+            'jpeg': ['image/jpeg'],
+            'png': ['image/png'],
+            'gif': ['image/gif'],
+            'bmp': ['image/bmp'],
+            
+            # Code files
+            'py': ['text/x-python'],
+            'java': ['text/x-java-source'],
+            'cpp': ['text/x-c++'],
+            'c': ['text/x-c'],
+            'js': ['application/javascript'],
+            'html': ['text/html'],
+            'css': ['text/css'],
+            
+            # Archives
+            'zip': ['application/zip'],
+            'rar': ['application/x-rar-compressed'],
+            '7z': ['application/x-7z-compressed'],
+            
+            # Audio
+            'mp3': ['audio/mpeg'],
+            'wav': ['audio/wav'],
+            'ogg': ['audio/ogg'],
+            
+            # Video
+            'mp4': ['video/mp4'],
+            'avi': ['video/x-msvideo'],
+            'mov': ['video/quicktime'],
+            
+            # Other
+            'json': ['application/json'],
+            'xml': ['application/xml'],
+            'yaml': ['text/yaml'],
+            'yml': ['text/yaml']
+        }
+        
+        self.max_file_size = 100 * 1024 * 1024  # 100MB in bytes
+
+    async def save_file(self, file: UploadFile, user_id: int) -> Tuple[str, str]:
         """
-        Save an uploaded file and return its path
+        Save an uploaded file securely
+        Returns (file_path, file_id)
         """
         try:
-            # Create uploads directory if it doesn't exist
-            os.makedirs(cls.UPLOAD_DIR, exist_ok=True)
+            # Validate file size
+            if file.size > self.max_file_size:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"File size exceeds maximum limit of 100MB"
+                )
+
+            # Validate filename
+            if not security_service.validate_filename(file.filename):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Invalid filename"
+                )
+
+            # Get file extension
+            extension = file.filename.lower().split('.')[-1]
             
+            # Validate file type
+            if extension not in self.allowed_types:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"File type not allowed. Allowed types: {', '.join(self.allowed_types.keys())}"
+                )
+
+            # Read file content
+            content = await file.read()
+            
+            # Detect MIME type using mimetypes
+            mime_type, _ = mimetypes.guess_type(file.filename)
+            if mime_type is None:
+                mime_type = 'application/octet-stream'
+            
+            # Validate MIME type
+            if mime_type not in self.allowed_types[extension]:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Invalid file type"
+                )
+
             # Generate unique filename
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"{user_id}_{timestamp}_{file.filename}"
-            filepath = os.path.join(cls.UPLOAD_DIR, filename)
+            file_id = str(uuid.uuid4())
+            timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+            safe_filename = f"{timestamp}_{file_id}.{extension}"
+            
+            # Create user directory if it doesn't exist
+            user_dir = self.upload_dir / str(user_id)
+            user_dir.mkdir(exist_ok=True)
             
             # Save file
-            async with aiofiles.open(filepath, 'wb') as out_file:
-                content = await file.read()
-                await out_file.write(content)
-            
-            return filepath
+            file_path = user_dir / safe_filename
+            async with aiofiles.open(file_path, 'wb') as f:
+                await f.write(content)
+
+            # Log file upload
+            logger.info(f"File uploaded: {file_path} by user {user_id}")
+
+            return str(file_path), file_id
+
         except Exception as e:
-            print(f"Error saving file: {str(e)}")
-            return None
-    
-    @classmethod
-    def delete_file(cls, filepath: str) -> bool:
-        """
-        Delete a file from the filesystem
-        """
+            logger.error(f"Error saving file: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail="Error saving file"
+            )
+
+    async def delete_file(self, file_path: str, user_id: int) -> bool:
+        """Delete a file securely"""
         try:
-            if os.path.exists(filepath):
-                os.remove(filepath)
-                return True
-            return False
+            path = Path(file_path)
+            
+            # Validate file path
+            if not path.is_file() or str(path.parent) != str(self.upload_dir / str(user_id)):
+                return False
+            
+            # Delete file
+            path.unlink()
+            
+            # Log file deletion
+            logger.info(f"File deleted: {file_path} by user {user_id}")
+            
+            return True
+            
         except Exception as e:
-            print(f"Error deleting file: {str(e)}")
+            logger.error(f"Error deleting file: {str(e)}")
             return False
-    
-    @classmethod
-    def get_file_url(cls, filepath: str) -> str:
-        """
-        Get the URL for a file
-        """
-        if not filepath:
-            return ""
-        return f"{settings.BACKEND_URL}/{filepath}" 
+
+    def get_file_info(self, file_path: str) -> Optional[dict]:
+        """Get file information"""
+        try:
+            path = Path(file_path)
+            if not path.is_file():
+                return None
+                
+            return {
+                "filename": path.name,
+                "size": path.stat().st_size,
+                "created_at": datetime.fromtimestamp(path.stat().st_ctime),
+                "modified_at": datetime.fromtimestamp(path.stat().st_mtime),
+                "extension": path.suffix[1:].lower()
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting file info: {str(e)}")
+            return None
+
+# Create a global file service instance
+file_service = FileService() 

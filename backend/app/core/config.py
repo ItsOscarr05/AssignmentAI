@@ -17,53 +17,148 @@ class Settings(BaseSettings):
     SERVER_HOST: str = "0.0.0.0"
     SERVER_PORT: int = 8000
     DEBUG: bool = False
-    BACKEND_URL: str = "http://localhost:8000"
-    ENVIRONMENT: str = "development"  # development, staging, production
+    BACKEND_URL: str = os.getenv("BACKEND_URL", "https://api.assignmentai.com")
+    ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")  # development, staging, production
+    
+    # Stripe Configuration
+    STRIPE_SECRET_KEY: str = os.getenv("STRIPE_SECRET_KEY", "")
+    STRIPE_WEBHOOK_SECRET: str = os.getenv("STRIPE_WEBHOOK_SECRET", "")
+    STRIPE_PRICE_FREE: str = os.getenv("STRIPE_PRICE_FREE", "price_free")
+    STRIPE_PRICE_PLUS: str = os.getenv("STRIPE_PRICE_PLUS", "price_plus")
+    STRIPE_PRICE_PRO: str = os.getenv("STRIPE_PRICE_PRO", "price_pro")
+    STRIPE_PRICE_MAX: str = os.getenv("STRIPE_PRICE_MAX", "price_max")
     
     # Database
-    DATABASE_URL: str = None
-    POSTGRES_SERVER: str = os.getenv("POSTGRES_SERVER", "localhost")
-    POSTGRES_USER: str = os.getenv("POSTGRES_USER", "postgres")
-    POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD", "postgres")
-    POSTGRES_DB: str = os.getenv("POSTGRES_DB", "assignmentai")
-    SQLALCHEMY_DATABASE_URI: Optional[PostgresDsn] = None
+    DB_HOST: str = "localhost"
+    DB_PORT: int = 5432
+    DB_USER: str = "postgres"
+    DB_PASSWORD: str = "postgres"
+    DB_NAME: str = "assignmentai"
+    SQLALCHEMY_DATABASE_URI: str = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    SSL_ENABLED: bool = True
+    SSL_CERTFILE: Optional[str] = None
+    SSL_KEYFILE: Optional[str] = None
+    BACKUP_DIR: str = "backups"
     
-    @validator("SQLALCHEMY_DATABASE_URI", pre=True)
-    def assemble_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
-        if isinstance(v, str):
-            return v
-        return PostgresDsn.build(
-            scheme="postgresql",
-            user=values.get("POSTGRES_USER"),
-            password=values.get("POSTGRES_PASSWORD"),
-            host=values.get("POSTGRES_SERVER"),
-            path=f"/{values.get('POSTGRES_DB') or ''}",
-        )
+    # Email Settings
+    SMTP_SERVER: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM: str = "noreply@assignmentai.com"
+    SMTP_FROM_NAME: str = "AssignmentAI"
+    SMTP_STARTTLS: bool = True
+    SMTP_SSL_ENABLED: bool = True
+    SMTP_SSL_CERTFILE: Optional[str] = None
+    SMTP_SSL_KEYFILE: Optional[str] = None
+    EMAIL_TOKEN_EXPIRE_HOURS: int = 24
+    PASSWORD_RESET_TOKEN_EXPIRE_HOURS: int = 1
+    
+    # File Upload Settings
+    MAX_FILE_SIZE: int = 100 * 1024 * 1024  # 100MB
+    UPLOAD_DIR: str = "uploads"
+    ALLOWED_FILE_TYPES: List[str] = [
+        # Documents
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        # Spreadsheets
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        # Presentations
+        "application/vnd.ms-powerpoint",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        # Images
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+        # Code files
+        "text/plain",
+        "text/x-python",
+        "text/javascript",
+        "text/html",
+        "text/css",
+        # Archives
+        "application/zip",
+        "application/x-rar-compressed",
+        "application/x-7z-compressed",
+        # Audio
+        "audio/mpeg",
+        "audio/wav",
+        "audio/ogg",
+        # Video
+        "video/mp4",
+        "video/webm",
+        "video/ogg",
+        # Other
+        "application/json",
+        "text/csv",
+        "application/xml"
+    ]
     
     # Security
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-here")
-    ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
-    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
-    PASSWORD_MIN_LENGTH: int = 8
-    PASSWORD_REQUIRE_SPECIAL: bool = True
-    PASSWORD_REQUIRE_NUMBERS: bool = True
-    PASSWORD_REQUIRE_UPPERCASE: bool = True
-    PASSWORD_REQUIRE_LOWERCASE: bool = True
-    MAX_LOGIN_ATTEMPTS: int = 5
-    LOGIN_TIMEOUT_MINUTES: int = 15
+    SECRET_KEY: str = os.getenv("SECRET_KEY", secrets.token_urlsafe(32))
+    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", secrets.token_urlsafe(32))
+    JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
+    ALGORITHM: str = os.getenv("ALGORITHM", "HS256")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
+    REFRESH_TOKEN_EXPIRE_DAYS: int = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
+    
+    # Password Security
+    PASSWORD_MIN_LENGTH: int = int(os.getenv("PASSWORD_MIN_LENGTH", "12"))
+    PASSWORD_REQUIRE_SPECIAL_CHARS: bool = os.getenv("PASSWORD_REQUIRE_SPECIAL_CHARS", "true").lower() == "true"
+    PASSWORD_REQUIRE_NUMBERS: bool = os.getenv("PASSWORD_REQUIRE_NUMBERS", "true").lower() == "true"
+    PASSWORD_REQUIRE_UPPERCASE: bool = os.getenv("PASSWORD_REQUIRE_UPPERCASE", "true").lower() == "true"
+    PASSWORD_REQUIRE_LOWERCASE: bool = os.getenv("PASSWORD_REQUIRE_LOWERCASE", "true").lower() == "true"
+    PASSWORD_HISTORY_SIZE: int = int(os.getenv("PASSWORD_HISTORY_SIZE", "5"))  # Number of previous passwords to remember
+    PASSWORD_REUSE_DAYS: int = int(os.getenv("PASSWORD_REUSE_DAYS", "365"))  # Days before a password can be reused
+    HAVEIBEENPWNED_API_KEY: str = os.getenv("HAVEIBEENPWNED_API_KEY", "")  # API key for HaveIBeenPwned service
+    
+    # Authentication Security
+    MAX_LOGIN_ATTEMPTS: int = int(os.getenv("MAX_LOGIN_ATTEMPTS", "5"))
+    LOGIN_TIMEOUT_MINUTES: int = int(os.getenv("LOGIN_TIMEOUT_MINUTES", "15"))
+    SESSION_TIMEOUT_MINUTES: int = int(os.getenv("SESSION_TIMEOUT_MINUTES", "30"))
+    ENABLE_2FA: bool = os.getenv("ENABLE_2FA", "false").lower() == "true"
+    ENABLE_EMAIL_VERIFICATION: bool = os.getenv("ENABLE_EMAIL_VERIFICATION", "true").lower() == "true"
+    ENABLE_PASSWORD_RESET: bool = os.getenv("ENABLE_PASSWORD_RESET", "true").lower() == "true"
+    ENABLE_SOCIAL_LOGIN: bool = os.getenv("ENABLE_SOCIAL_LOGIN", "false").lower() == "true"
     
     # SSL/TLS settings
-    SSL_ENABLED: bool = True
-    SSL_KEYFILE: Optional[str] = None
-    SSL_CERTFILE: Optional[str] = None
+    SSL_ENABLED: bool = os.getenv("SSL_ENABLED", "true").lower() == "true"
+    SSL_KEYFILE: Optional[str] = os.getenv("SSL_KEYFILE")
+    SSL_CERTFILE: Optional[str] = os.getenv("SSL_CERTFILE")
     
     # CORS
-    FRONTEND_URL: str = "http://localhost:3000"
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "https://assignmentai.com")
     
     # CORS Configuration
-    CORS_ORIGINS: List[AnyHttpUrl] = ["http://localhost:3000"]
-    CORS_HEADERS: List[str] = ["*"]
+    CORS_ORIGINS: List[AnyHttpUrl] = [
+        "https://assignmentai.com",
+        "https://www.assignmentai.com",
+        "http://localhost:3000"  # Keep localhost for development
+    ]
+    CORS_HEADERS: List[str] = [
+        "Content-Type",
+        "Authorization",
+        "X-CSRF-Token",
+        "X-Requested-With",
+        "Accept",
+        "Origin",
+        "Access-Control-Request-Method",
+        "Access-Control-Request-Headers"
+    ]
+    CORS_METHODS: List[str] = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    CORS_EXPOSE_HEADERS: List[str] = [
+        "Content-Range",
+        "X-Content-Range",
+        "X-RateLimit-Limit",
+        "X-RateLimit-Remaining",
+        "X-RateLimit-Reset"
+    ]
+    CORS_MAX_AGE: int = 86400  # 24 hours
+    CORS_CREDENTIALS: bool = True
+    CORS_PREFLIGHT_MAX_AGE: int = 86400  # 24 hours
     
     @validator("CORS_ORIGINS", pre=True)
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
@@ -78,6 +173,16 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = "your-app-specific-password"
     SMTP_FROM_EMAIL: EmailStr = "your-email@gmail.com"
     
+    # OAuth Provider Settings
+    GOOGLE_CLIENT_ID: Optional[str] = os.getenv("GOOGLE_CLIENT_ID")
+    GOOGLE_CLIENT_SECRET: Optional[str] = os.getenv("GOOGLE_CLIENT_SECRET")
+    GITHUB_CLIENT_ID: Optional[str] = os.getenv("GITHUB_CLIENT_ID")
+    GITHUB_CLIENT_SECRET: Optional[str] = os.getenv("GITHUB_CLIENT_SECRET")
+    FACEBOOK_CLIENT_ID: Optional[str] = os.getenv("FACEBOOK_CLIENT_ID")
+    FACEBOOK_CLIENT_SECRET: Optional[str] = os.getenv("FACEBOOK_CLIENT_SECRET")
+    APPLE_CLIENT_ID: Optional[str] = os.getenv("APPLE_CLIENT_ID")
+    APPLE_CLIENT_SECRET: Optional[str] = os.getenv("APPLE_CLIENT_SECRET")
+    
     # AI settings
     AI_MODEL_VERSION: str = "1.0.0"
     AI_MAX_TOKENS: int = 2000
@@ -86,11 +191,16 @@ class Settings(BaseSettings):
     AI_FREQUENCY_PENALTY: float = 0.0
     AI_PRESENCE_PENALTY: float = 0.0
     
-    # Rate limiting
-    RATE_LIMIT_REQUESTS: int = 100
-    RATE_LIMIT_PERIOD: int = 60
-    AI_RATE_LIMIT_REQUESTS: int = 10
-    AI_RATE_LIMIT_PERIOD: int = 60
+    # Rate Limiting
+    RATE_LIMIT_REQUESTS: int = 100  # requests per minute
+    RATE_LIMIT_PERIOD: int = 1  # minutes
+    AUTH_RATE_LIMIT_REQUESTS: int = int(os.getenv("AUTH_RATE_LIMIT_REQUESTS", "5"))
+    AUTH_RATE_LIMIT_PERIOD: int = int(os.getenv("AUTH_RATE_LIMIT_PERIOD", "60"))
+    MAX_LOGIN_ATTEMPTS: int = 5  # maximum login attempts before lockout
+    LOGIN_TIMEOUT_MINUTES: int = 15  # lockout duration in minutes
+    MAX_2FA_ATTEMPTS: int = 3  # maximum 2FA attempts before backoff
+    INITIAL_2FA_BACKOFF_MINUTES: int = 1  # initial backoff period in minutes
+    MAX_2FA_BACKOFF_MINUTES: int = 16  # maximum backoff period in minutes
     
     # Cache settings
     CACHE_TTL: int = 3600  # 1 hour
@@ -107,8 +217,14 @@ class Settings(BaseSettings):
     
     # File upload settings
     UPLOAD_DIR: str = "uploads"
-    MAX_FILE_SIZE: int = 10 * 1024 * 1024  # 10MB
-    ALLOWED_FILE_TYPES: list = ["pdf", "doc", "docx", "txt"]
+    MAX_FILE_SIZE: int = 50 * 1024 * 1024  # 50MB
+    ALLOWED_EXTENSIONS: set = {
+        "pdf", "doc", "docx", "txt", "rtf", "odt",
+        "jpg", "jpeg", "png", "gif",
+        "zip", "rar", "7z",
+        "mp3", "mp4", "wav", "avi",
+        "py", "java", "cpp", "c", "js", "html", "css"
+    }
     
     # Redis settings
     REDIS_HOST: str = "localhost"
@@ -123,11 +239,6 @@ class Settings(BaseSettings):
     OPENAI_MODEL: str = "gpt-4"
     OPENAI_TEMPERATURE: float = 0.7
     OPENAI_MAX_TOKENS: int = 2000
-    
-    # Sentry Configuration
-    SENTRY_DSN: Optional[str] = None
-    SENTRY_ENVIRONMENT: str = "development"
-    SENTRY_TRACES_SAMPLE_RATE: float = 1.0
     
     # Monitoring Settings
     METRICS_PORT: int = 9090
@@ -153,10 +264,53 @@ class Settings(BaseSettings):
     }
     
     # Backup Settings
-    BACKUP_DIR: str = "backups"
     MAX_BACKUPS: int = 10
     BACKUP_RETENTION_DAYS: int = 30
     BACKUP_SCHEDULE: str = "0 0 * * *"  # Daily at midnight
+    
+    # Canvas LMS Integration
+    CANVAS_API_URL: str = os.getenv("CANVAS_API_URL", "https://canvas.instructure.com")
+    CANVAS_CLIENT_ID: Optional[str] = os.getenv("CANVAS_CLIENT_ID")
+    CANVAS_CLIENT_SECRET: Optional[str] = os.getenv("CANVAS_CLIENT_SECRET")
+    CANVAS_REDIRECT_URI: str = os.getenv("CANVAS_REDIRECT_URI", "http://localhost:8000/api/v1/canvas/callback")
+    
+    # CORS Security
+    ALLOWED_ORIGINS: List[str] = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+    
+    @validator("ALLOWED_ORIGINS", pre=True)
+    def validate_allowed_origins(cls, v: Union[str, List[str]]) -> List[str]:
+        if isinstance(v, str):
+            return [i.strip() for i in v.split(",")]
+        return v
+    
+    # Session Management
+    MAX_CONCURRENT_SESSIONS: int = int(os.getenv("MAX_CONCURRENT_SESSIONS", "5"))  # Maximum number of concurrent sessions per user
+    REMEMBER_ME_DAYS: int = int(os.getenv("REMEMBER_ME_DAYS", "30"))  # Remember me duration in days
+    
+    # Audit Logging
+    AUDIT_LOG_ENABLED: bool = os.getenv("AUDIT_LOG_ENABLED", "true").lower() == "true"
+    AUDIT_LOG_RETENTION_DAYS: int = int(os.getenv("AUDIT_LOG_RETENTION_DAYS", "90"))  # Days to keep audit logs
+    AUDIT_LOG_ROTATION_SIZE: int = int(os.getenv("AUDIT_LOG_ROTATION_SIZE", "100"))  # MB before rotating audit logs
+    
+    # Security Headers
+    SECURITY_HEADERS: Dict[str, str] = {
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "X-XSS-Protection": "1; mode=block",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
+        "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.assignmentai.com;",
+        "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+        "Cross-Origin-Embedder-Policy": "require-corp",
+        "Cross-Origin-Opener-Policy": "same-origin",
+        "Cross-Origin-Resource-Policy": "same-site"
+    }
+    
+    # Redis settings
+    REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379")
+    
+    # Rate Limiting Settings
+    RATE_LIMIT_PER_MINUTE: int = int(os.getenv("RATE_LIMIT_PER_MINUTE", "60"))
     
     class Config:
         env_file = ".env"

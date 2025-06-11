@@ -1,60 +1,64 @@
-import { createTheme } from "@mui/material/styles";
+import {
+  createTheme,
+  ThemeProvider as MuiThemeProvider,
+  useTheme as useMuiTheme,
+} from '@mui/material/styles';
 
 export const theme = createTheme({
   palette: {
     primary: {
-      main: "#FF0000",
-      light: "#FF3333",
-      dark: "#CC0000",
-      contrastText: "#FFFFFF",
+      main: '#FF0000',
+      light: '#FF3333',
+      dark: '#CC0000',
+      contrastText: '#FFFFFF',
     },
     secondary: {
-      main: "#FF4081",
-      light: "#FF80AB",
-      dark: "#F50057",
-      contrastText: "#FFFFFF",
+      main: '#FF4081',
+      light: '#FF80AB',
+      dark: '#F50057',
+      contrastText: '#FFFFFF',
     },
     background: {
-      default: "#FFFFFF",
-      paper: "#FFFFFF",
+      default: '#FFFFFF',
+      paper: '#FFFFFF',
     },
     text: {
-      primary: "#212121",
-      secondary: "#757575",
+      primary: '#212121',
+      secondary: '#757575',
     },
   },
   typography: {
     fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
     h1: {
-      fontSize: "2.5rem",
+      fontSize: '2.5rem',
       fontWeight: 500,
     },
     h2: {
-      fontSize: "2rem",
+      fontSize: '2rem',
       fontWeight: 500,
     },
     h3: {
-      fontSize: "1.75rem",
+      fontSize: '1.75rem',
       fontWeight: 500,
     },
     h4: {
-      fontSize: "1.5rem",
+      fontSize: '1.5rem',
       fontWeight: 500,
     },
     h5: {
-      fontSize: "1.25rem",
+      fontSize: '1.25rem',
       fontWeight: 500,
     },
     h6: {
-      fontSize: "1rem",
+      fontSize: '1rem',
       fontWeight: 500,
     },
     body1: {
-      fontSize: "1rem",
+      fontSize: '1rem',
       lineHeight: 1.5,
     },
     body2: {
-      fontSize: "0.875rem",
+      fontSize: '0.875rem',
       lineHeight: 1.43,
     },
   },
@@ -66,9 +70,9 @@ export const theme = createTheme({
     MuiButton: {
       styleOverrides: {
         root: {
-          textTransform: "none",
+          textTransform: 'none',
           borderRadius: 8,
-          padding: "8px 16px",
+          padding: '8px 16px',
         },
       },
     },
@@ -76,14 +80,14 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 12,
-          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
         },
       },
     },
     MuiTextField: {
       styleOverrides: {
         root: {
-          "& .MuiOutlinedInput-root": {
+          '& .MuiOutlinedInput-root': {
             borderRadius: 8,
           },
         },
@@ -91,3 +95,10 @@ export const theme = createTheme({
     },
   },
 });
+
+export const useTheme = () => {
+  const theme = useMuiTheme();
+  return theme;
+};
+
+export { MuiThemeProvider };

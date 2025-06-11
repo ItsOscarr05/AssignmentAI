@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Security Alert</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .container {
+        background-color: #f9f9f9;
+        border-radius: 5px;
+        padding: 20px;
+        margin-top: 20px;
+      }
+      .alert {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 20px 0;
+      }
+      .details {
+        background-color: #e9ecef;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 15px;
+        margin: 20px 0;
+        font-family: monospace;
+        font-size: 14px;
+      }
+      .footer {
+        margin-top: 30px;
+        font-size: 12px;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Security Alert: {{ alert_type }}</h1>
+      <p>We detected a potential security event on your account. Here are the details:</p>
+
+      <div class="alert">
+        <p><strong>Alert Type:</strong> {{ alert_type }}</p>
+        <p><strong>Time:</strong> {{ timestamp }}</p>
+      </div>
+
+      <div class="details">
+        {% for key, value in details.items() %}
+        <p><strong>{{ key }}:</strong> {{ value }}</p>
+        {% endfor %}
+      </div>
+
+      <p>If you did not perform this action, please:</p>
+      <ol>
+        <li>Change your password immediately</li>
+        <li>Enable two-factor authentication if not already enabled</li>
+        <li>Contact our support team</li>
+      </ol>
+
+      <div class="footer">
+        <p>This is an automated message, please do not reply to this email.</p>
+      </div>
+    </div>
+  </body>
+</html>

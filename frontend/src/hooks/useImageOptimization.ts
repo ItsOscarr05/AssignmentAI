@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
 interface ImageOptimizationOptions {
   width?: number;
   height?: number;
   quality?: number;
-  format?: "webp" | "jpeg" | "png";
+  format?: 'webp' | 'jpeg' | 'png';
 }
 
 interface ImageState {
@@ -13,10 +13,7 @@ interface ImageState {
   error: Error | null;
 }
 
-export function useImageOptimization(
-  originalSrc: string,
-  options: ImageOptimizationOptions = {}
-) {
+export function useImageOptimization(originalSrc: string, options: ImageOptimizationOptions = {}) {
   const [state, setState] = useState<ImageState>({
     src: originalSrc,
     loading: true,
@@ -26,7 +23,7 @@ export function useImageOptimization(
   useEffect(() => {
     const optimizeImage = async () => {
       try {
-        setState((prev) => ({ ...prev, loading: true }));
+        setState(prev => ({ ...prev, loading: true }));
 
         // Check if the image is already cached
         const cacheKey = `img_${originalSrc}_${options.width}_${options.height}_${options.quality}_${options.format}`;
@@ -51,9 +48,9 @@ export function useImageOptimization(
         });
 
         // Create a canvas for image optimization
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-        if (!ctx) throw new Error("Could not get canvas context");
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Could not get canvas context');
 
         // Calculate dimensions maintaining aspect ratio
         const aspectRatio = img.width / img.height;
@@ -68,7 +65,7 @@ export function useImageOptimization(
 
         // Convert to optimized format
         const quality = options.quality || 0.8;
-        const format = options.format || "webp";
+        const format = options.format || 'webp';
         const optimizedSrc = canvas.toDataURL(`image/${format}`, quality);
 
         // Cache the optimized image
@@ -89,13 +86,7 @@ export function useImageOptimization(
     };
 
     optimizeImage();
-  }, [
-    originalSrc,
-    options.width,
-    options.height,
-    options.quality,
-    options.format,
-  ]);
+  }, [originalSrc, options.width, options.height, options.quality, options.format]);
 
   return state;
 }

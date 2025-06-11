@@ -12,8 +12,7 @@ class AdminStats(BaseModel):
 
 class UserStatusUpdate(BaseModel):
     is_active: bool
-    is_verified: bool
-    role: Optional[str] = None
+    is_superuser: Optional[bool] = None
 
 class SystemHealth(BaseModel):
     database: bool
@@ -23,7 +22,9 @@ class SystemHealth(BaseModel):
 
 class SystemLog(BaseModel):
     id: int
-    timestamp: datetime
     level: str
     message: str
-    details: Optional[dict] = None 
+    timestamp: datetime
+    user_id: Optional[int] = None
+    ip_address: Optional[str] = None
+    user_agent: Optional[str] = None 

@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
-import { usePerformanceMonitoring } from "../utils/performance";
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { usePerformanceMonitoring } from '../utils/performance';
 
 interface OptimizedRenderOptions {
   componentName: string;

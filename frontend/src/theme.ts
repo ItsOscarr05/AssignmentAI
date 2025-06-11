@@ -1,82 +1,144 @@
-import { Theme } from "@emotion/react";
+import { createTheme, ThemeOptions } from '@mui/material/styles';
 
-export const theme: Theme = {
-  colors: {
-    primary: "#2563EB", // Blue 600
-    primaryDark: "#1D4ED8", // Blue 700
-    primaryLight: "#60A5FA", // Blue 400
-    background: "#FFFFFF",
-    backgroundHover: "#F3F4F6", // Gray 100
-    text: "#111827", // Gray 900
-    textSecondary: "#4B5563", // Gray 600
-    border: "#E5E7EB", // Gray 200
-    error: "#DC2626", // Red 600
-    errorLight: "#FEE2E2", // Red 100
-    errorDark: "#B91C1C", // Red 700
-    success: "#059669", // Green 600
-    warning: "#D97706", // Yellow 600
-    info: "#3B82F6", // Blue 500
-  },
-  spacing: {
-    xs: "0.25rem",
-    sm: "0.5rem",
-    md: "1rem",
-    lg: "1.5rem",
-    xl: "2rem",
-    xxl: "3rem",
-  },
+// Base theme configuration
+const baseTheme: ThemeOptions = {
   typography: {
-    fontFamily: {
-      sans: "Inter, system-ui, -apple-system, sans-serif",
-      mono: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-    },
-    fontSize: {
-      xs: "0.75rem",
-      sm: "0.875rem",
-      base: "1rem",
-      lg: "1.125rem",
-      xl: "1.25rem",
-      "2xl": "1.5rem",
-      "3xl": "1.875rem",
-      "4xl": "2.25rem",
-    },
-    fontWeight: {
-      normal: "400",
-      medium: "500",
-      semibold: "600",
-      bold: "700",
-    },
-    lineHeight: {
-      none: "1",
-      tight: "1.25",
-      snug: "1.375",
-      normal: "1.5",
-      relaxed: "1.625",
-      loose: "2",
-    },
+    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    h1: { fontWeight: 500 },
+    h2: { fontWeight: 500 },
+    h3: { fontWeight: 500 },
+    h4: { fontWeight: 500 },
+    h5: { fontWeight: 500 },
+    h6: { fontWeight: 500 },
   },
-  breakpoints: {
-    sm: "640px",
-    md: "768px",
-    lg: "1024px",
-    xl: "1280px",
-    "2xl": "1536px",
-  },
-  shadows: {
-    sm: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
-    md: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-    lg: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-    xl: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
-  },
-  transitions: {
-    default: "0.2s ease-in-out",
-    fast: "0.1s ease-in-out",
-    slow: "0.3s ease-in-out",
-  },
-  zIndex: {
-    dropdown: 1000,
-    modal: 1100,
-    tooltip: 1200,
-    toast: 1300,
+  components: {
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          backgroundColor: '#ffffff',
+          color: '#1a1a1a',
+        },
+      },
+    },
+    MuiDrawer: {
+      styleOverrides: {
+        paper: {
+          backgroundColor: '#d32f2f',
+          borderRight: '1px solid rgba(0, 0, 0, 0.12)',
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none',
+          borderRadius: 8,
+          variants: [],
+        },
+        contained: {
+          boxShadow: 'none',
+          '&:hover': {
+            boxShadow: 'none',
+          },
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+        },
+      },
+    },
+    MuiListItem: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+          '&.Mui-selected': {
+            backgroundColor: 'rgba(211, 47, 47, 0.08)',
+            '&:hover': {
+              backgroundColor: 'rgba(211, 47, 47, 0.12)',
+            },
+          },
+        },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+        },
+      },
+    },
   },
 };
+
+// Light theme palette
+const lightPalette = {
+  primary: {
+    main: '#d32f2f',
+    light: '#ff6659',
+    dark: '#9a0007',
+    contrastText: '#ffffff',
+  },
+  secondary: {
+    main: '#f44336',
+    light: '#ff7961',
+    dark: '#ba000d',
+    contrastText: '#ffffff',
+  },
+  background: {
+    default: '#ffffff',
+    paper: '#ffffff',
+  },
+  text: {
+    primary: '#1a1a1a',
+    secondary: '#666666',
+  },
+  error: {
+    main: '#d32f2f',
+  },
+  warning: {
+    main: '#ffa000',
+  },
+  info: {
+    main: '#1976d2',
+  },
+  success: {
+    main: '#2e7d32',
+  },
+};
+
+// Create and export light theme
+export const lightTheme = createTheme({
+  ...baseTheme,
+  palette: lightPalette,
+});
+
+// Export theme as default (light theme)
+export const theme = lightTheme;
+
+// Export dark theme as a separate chunk
+export const darkTheme = createTheme({
+  ...baseTheme,
+  palette: {
+    mode: 'dark',
+    ...lightPalette,
+    background: {
+      default: '#121212',
+      paper: '#1E1E1E',
+    },
+    text: {
+      primary: '#FFFFFF',
+      secondary: '#B0B0B0',
+    },
+  },
+});

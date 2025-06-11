@@ -1,20 +1,22 @@
 from datetime import datetime
-from typing import Optional, Dict, Any
-from pydantic import BaseModel, Field, validator
+from typing import Optional, Dict, Any, List
+from pydantic import BaseModel, Field, field_validator
 import re
 
 class FeedbackBase(BaseModel):
     content: str = Field(..., min_length=10, max_length=5000)
     feedback_type: str = Field(..., pattern=r'^(general|grammar|content|structure|technical)$')
     confidence_score: float = Field(..., ge=0.0, le=1.0)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    feedback_metadata: Dict[str, Any] = Field(default_factory=dict)
 
-    @validator('content')
+    @field_validator('content')
+    @classmethod
     def sanitize_content(cls, v):
         """Sanitize content by removing HTML and limiting length."""
         return re.sub(r'<[^>]+>', '', v)[:5000]
 
-    @validator('metadata')
+    @field_validator('feedback_metadata')
+    @classmethod
     def sanitize_metadata(cls, v):
         """Sanitize metadata values."""
         return {
@@ -26,7 +28,10 @@ class FeedbackCreate(FeedbackBase):
     submission_id: int
 
 class FeedbackUpdate(FeedbackBase):
-    pass
+    content: Optional[str] = Field(None, min_length=10, max_length=5000)
+    feedback_type: Optional[str] = Field(None, pattern=r'^(general|grammar|content|structure|technical)$')
+    confidence_score: Optional[float] = Field(None, ge=0.0, le=1.0)
+    feedback_metadata: Optional[Dict[str, Any]] = Field(None)
 
 class FeedbackInDB(FeedbackBase):
     id: int
@@ -34,8 +39,16 @@ class FeedbackInDB(FeedbackBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True
+    }
 
 class Feedback(FeedbackInDB):
-    pass 
+    pass
+
+class FeedbackResponse(FeedbackInDB):
+    pass
+
+class FeedbackList(BaseModel):
+    total: int
+    items: List[FeedbackResponse] 

@@ -3,7 +3,7 @@ export interface Submission {
   title: string;
   description: string | null;
   file_path: string | null;
-  status: "pending" | "submitted" | "graded" | "late";
+  status: 'pending' | 'submitted' | 'graded' | 'late';
   score: number | null;
   max_score: number | null;
   feedback: string | null;
@@ -28,7 +28,7 @@ export interface SubmissionUpdate {
   title?: string;
   description?: string;
   file?: File;
-  status?: "pending" | "submitted" | "graded" | "late";
+  status?: 'pending' | 'submitted' | 'graded' | 'late';
   score?: number;
   feedback?: string;
 }

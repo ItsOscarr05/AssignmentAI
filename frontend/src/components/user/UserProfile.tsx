@@ -1,6 +1,6 @@
 import {
   Assignment as AssignmentIcon,
-  Department as DepartmentIcon,
+  Apartment as DepartmentIcon,
   Description as DescriptionIcon,
   Edit as EditIcon,
   Feedback as FeedbackIcon,
@@ -8,7 +8,7 @@ import {
   Login as LoginIcon,
   Save as SaveIcon,
   School as SchoolIcon,
-} from "@mui/icons-material";
+} from '@mui/icons-material';
 import {
   Avatar,
   Box,
@@ -22,17 +22,14 @@ import {
   Paper,
   TextField,
   Typography,
-} from "@mui/material";
-import { format } from "date-fns";
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import {
-  UserProfile as UserProfileType,
-  UserProfileUpdate,
-} from "../../types/user";
-import { FileUpload } from "../common/FileUpload";
-import { LoadingSpinner } from "../common/LoadingSpinner";
-import { Toast } from "../common/Toast";
+} from '@mui/material';
+import { format } from 'date-fns';
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { UserProfile as UserProfileType, UserProfileUpdate } from '../../types/user';
+import { FileUpload } from '../common/FileUpload';
+import LoadingSpinner from '../common/LoadingSpinner';
+import { Toast } from '../common/Toast';
 
 const UserProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -44,11 +41,11 @@ const UserProfile: React.FC = () => {
   const [toast, setToast] = useState<{
     open: boolean;
     message: string;
-    severity: "success" | "error" | "info" | "warning";
+    severity: 'success' | 'error' | 'info' | 'warning';
   }>({
     open: false,
-    message: "",
-    severity: "info",
+    message: '',
+    severity: 'info',
   });
 
   useEffect(() => {
@@ -58,11 +55,10 @@ const UserProfile: React.FC = () => {
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      // TODO: Replace with actual API call
       const response = await fetch(`/api/users/${id}`);
 
       if (!response.ok) {
-        throw new Error("Failed to fetch profile");
+        throw new Error('Failed to fetch profile');
       }
 
       const data = await response.json();
@@ -70,8 +66,8 @@ const UserProfile: React.FC = () => {
     } catch (error) {
       setToast({
         open: true,
-        message: "Failed to load profile",
-        severity: "error",
+        message: 'Failed to load profile',
+        severity: 'error',
       });
     } finally {
       setLoading(false);
@@ -79,20 +75,15 @@ const UserProfile: React.FC = () => {
   };
 
   const handleEdit = () => {
+    if (!profile) return;
     setEditForm({
-      firstName: profile?.firstName,
-      lastName: profile?.lastName,
-      bio: profile?.bio,
-      institution: profile?.institution,
-      department: profile?.department,
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+      bio: profile.bio,
+      institution: profile.institution,
+      department: profile.department,
     });
     setEditing(true);
-  };
-
-  const handleCancel = () => {
-    setEditForm({});
-    setEditing(false);
-    setAvatarFile(null);
   };
 
   const handleSave = async () => {
@@ -108,21 +99,20 @@ const UserProfile: React.FC = () => {
         institution: editForm.institution,
         department: editForm.department,
       };
-      formData.append("profile", JSON.stringify(updateData));
+      formData.append('profile', JSON.stringify(updateData));
 
       // Add avatar if changed
       if (avatarFile) {
-        formData.append("avatar", avatarFile);
+        formData.append('avatar', avatarFile);
       }
 
-      // TODO: Replace with actual API call
       const response = await fetch(`/api/users/${id}`, {
-        method: "PUT",
+        method: 'PUT',
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error("Failed to update profile");
+        throw new Error('Failed to update profile');
       }
 
       const updatedProfile = await response.json();
@@ -132,35 +122,33 @@ const UserProfile: React.FC = () => {
       setAvatarFile(null);
       setToast({
         open: true,
-        message: "Profile updated successfully",
-        severity: "success",
+        message: 'Profile updated successfully',
+        severity: 'success',
       });
     } catch (error) {
       setToast({
         open: true,
-        message: "Failed to update profile",
-        severity: "error",
+        message: 'Failed to update profile',
+        severity: 'error',
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAvatarUpload = (files: File[]) => {
-    if (files.length > 0) {
-      setAvatarFile(files[0]);
-    }
+  const handleAvatarUpload = (file: File) => {
+    setAvatarFile(file);
   };
 
   const getActivityIcon = (type: string) => {
     switch (type) {
-      case "submission":
+      case 'submission':
         return <AssignmentIcon />;
-      case "grade":
+      case 'grade':
         return <GradeIcon />;
-      case "feedback":
+      case 'feedback':
         return <FeedbackIcon />;
-      case "login":
+      case 'login':
         return <LoginIcon />;
       default:
         return <AssignmentIcon />;
@@ -173,12 +161,7 @@ const UserProfile: React.FC = () => {
 
   if (!profile) {
     return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="400px"
-      >
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <Typography variant="h6">Profile not found</Typography>
       </Box>
     );
@@ -186,12 +169,7 @@ const UserProfile: React.FC = () => {
 
   return (
     <Box>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={3}
-      >
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4">Profile</Typography>
         <Button
           variant="contained"
@@ -199,31 +177,26 @@ const UserProfile: React.FC = () => {
           onClick={editing ? handleSave : handleEdit}
           disabled={loading}
         >
-          {editing ? "Save Changes" : "Edit Profile"}
+          {editing ? 'Save Changes' : 'Edit Profile'}
         </Button>
       </Box>
 
       <Grid container spacing={3}>
         {/* Profile Information */}
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 3, textAlign: "center" }}>
+          <Paper sx={{ p: 3, textAlign: 'center' }}>
             <Box position="relative" display="inline-block">
               <Avatar
-                src={
-                  editing
-                    ? URL.createObjectURL(avatarFile || new Blob())
-                    : profile.avatar
-                }
+                src={editing ? URL.createObjectURL(avatarFile || new Blob()) : profile.avatar}
                 sx={{ width: 120, height: 120, mb: 2 }}
               />
               {editing && (
                 <Box position="absolute" bottom={0} right={0}>
                   <FileUpload
-                    onUpload={handleAvatarUpload}
+                    onFileSelect={handleAvatarUpload}
                     accept="image/*"
                     maxSize={5 * 1024 * 1024} // 5MB
-                    single
-                    hideButton
+                    multiple={false}
                   />
                 </Box>
               )}
@@ -232,12 +205,12 @@ const UserProfile: React.FC = () => {
               {editing ? (
                 <TextField
                   fullWidth
-                  value={editForm.firstName || ""}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, firstName: e.target.value })
-                  }
+                  value={editForm.firstName || ''}
+                  onChange={e => setEditForm({ ...editForm, firstName: e.target.value })}
                   placeholder="First Name"
                   size="small"
+                  label="First Name"
+                  inputProps={{ 'data-testid': 'first-name-input' }}
                 />
               ) : (
                 `${profile.firstName} ${profile.lastName}`
@@ -249,11 +222,11 @@ const UserProfile: React.FC = () => {
             <Chip
               label={profile.role}
               color={
-                profile.role === "admin"
-                  ? "error"
-                  : profile.role === "teacher"
-                  ? "primary"
-                  : "success"
+                profile.role === 'admin'
+                  ? 'error'
+                  : profile.role === 'teacher'
+                  ? 'primary'
+                  : 'success'
               }
               size="small"
               sx={{ mb: 2 }}
@@ -263,13 +236,13 @@ const UserProfile: React.FC = () => {
                 fullWidth
                 multiline
                 rows={3}
-                value={editForm.bio || ""}
-                onChange={(e) =>
-                  setEditForm({ ...editForm, bio: e.target.value })
-                }
+                value={editForm.bio || ''}
+                onChange={e => setEditForm({ ...editForm, bio: e.target.value })}
                 placeholder="Bio"
                 size="small"
                 sx={{ mb: 2 }}
+                label="Bio"
+                inputProps={{ 'data-testid': 'bio-input' }}
               />
             ) : (
               profile.bio && (
@@ -289,40 +262,32 @@ const UserProfile: React.FC = () => {
             </Typography>
             <Grid container spacing={2}>
               <Grid item xs={6} sm={3}>
-                <Paper variant="outlined" sx={{ p: 2, textAlign: "center" }}>
-                  <Typography variant="h4">
-                    {profile.statistics.totalAssignments}
-                  </Typography>
+                <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
+                  <Typography variant="h4">{profile.statistics.totalAssignments}</Typography>
                   <Typography variant="body2" color="text.secondary">
                     Total Assignments
                   </Typography>
                 </Paper>
               </Grid>
               <Grid item xs={6} sm={3}>
-                <Paper variant="outlined" sx={{ p: 2, textAlign: "center" }}>
-                  <Typography variant="h4">
-                    {profile.statistics.averageGrade}%
-                  </Typography>
+                <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
+                  <Typography variant="h4">{profile.statistics.averageGrade}%</Typography>
                   <Typography variant="body2" color="text.secondary">
                     Average Grade
                   </Typography>
                 </Paper>
               </Grid>
               <Grid item xs={6} sm={3}>
-                <Paper variant="outlined" sx={{ p: 2, textAlign: "center" }}>
-                  <Typography variant="h4">
-                    {profile.statistics.submissionRate}%
-                  </Typography>
+                <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
+                  <Typography variant="h4">{profile.statistics.submissionRate}%</Typography>
                   <Typography variant="body2" color="text.secondary">
                     Submission Rate
                   </Typography>
                 </Paper>
               </Grid>
               <Grid item xs={6} sm={3}>
-                <Paper variant="outlined" sx={{ p: 2, textAlign: "center" }}>
-                  <Typography variant="h4">
-                    {profile.statistics.feedbackReceived}
-                  </Typography>
+                <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
+                  <Typography variant="h4">{profile.statistics.feedbackReceived}</Typography>
                   <Typography variant="body2" color="text.secondary">
                     Feedback Received
                   </Typography>
@@ -349,8 +314,8 @@ const UserProfile: React.FC = () => {
                       primary={
                         <TextField
                           fullWidth
-                          value={editForm.institution || ""}
-                          onChange={(e) =>
+                          value={editForm.institution || ''}
+                          onChange={e =>
                             setEditForm({
                               ...editForm,
                               institution: e.target.value,
@@ -358,6 +323,8 @@ const UserProfile: React.FC = () => {
                           }
                           placeholder="Institution"
                           size="small"
+                          label="Institution"
+                          inputProps={{ 'data-testid': 'institution-input' }}
                         />
                       }
                     />
@@ -370,8 +337,8 @@ const UserProfile: React.FC = () => {
                       primary={
                         <TextField
                           fullWidth
-                          value={editForm.department || ""}
-                          onChange={(e) =>
+                          value={editForm.department || ''}
+                          onChange={e =>
                             setEditForm({
                               ...editForm,
                               department: e.target.value,
@@ -379,6 +346,8 @@ const UserProfile: React.FC = () => {
                           }
                           placeholder="Department"
                           size="small"
+                          label="Department"
+                          inputProps={{ 'data-testid': 'department-input' }}
                         />
                       }
                     />
@@ -410,7 +379,7 @@ const UserProfile: React.FC = () => {
                 </ListItemIcon>
                 <ListItemText
                   primary="Member Since"
-                  secondary={format(new Date(profile.createdAt), "MMM d, yyyy")}
+                  secondary={format(new Date(profile.createdAt), 'MMM d, yyyy')}
                 />
               </ListItem>
               <ListItem>
@@ -419,10 +388,7 @@ const UserProfile: React.FC = () => {
                 </ListItemIcon>
                 <ListItemText
                   primary="Last Login"
-                  secondary={format(
-                    new Date(profile.lastLogin),
-                    "MMM d, yyyy h:mm a"
-                  )}
+                  secondary={format(new Date(profile.lastLogin), 'MMM d, yyyy h:mm a')}
                 />
               </ListItem>
             </List>
@@ -436,7 +402,7 @@ const UserProfile: React.FC = () => {
               Recent Activity
             </Typography>
             <List>
-              {profile.recentActivity.map((activity) => (
+              {profile.recentActivity.map(activity => (
                 <ListItem key={activity.id}>
                   <ListItemIcon>{getActivityIcon(activity.type)}</ListItemIcon>
                   <ListItemText
@@ -447,15 +413,8 @@ const UserProfile: React.FC = () => {
                           {activity.description}
                         </Typography>
                         <br />
-                        <Typography
-                          component="span"
-                          variant="caption"
-                          color="text.secondary"
-                        >
-                          {format(
-                            new Date(activity.timestamp),
-                            "MMM d, yyyy h:mm a"
-                          )}
+                        <Typography component="span" variant="caption" color="text.secondary">
+                          {format(new Date(activity.timestamp), 'MMM d, yyyy h:mm a')}
                         </Typography>
                       </>
                     }

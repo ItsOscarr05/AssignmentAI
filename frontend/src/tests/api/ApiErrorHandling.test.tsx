@@ -1,0 +1,221 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react';
+import axios, { AxiosError, AxiosResponse } from 'axios';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ToastProvider } from '../../contexts/ToastContext';
+import { useApi } from '../../hooks/useApi';
+
+// Mock axios
+vi.mock('axios');
+const mockedAxios = {
+  get: vi.fn(),
+  post: vi.fn(),
+  put: vi.fn(),
+  delete: vi.fn(),
+  Cancel: axios.Cancel,
+  isAxiosError: vi.fn(),
+} as {
+  get: ReturnType<typeof vi.fn>;
+  post: ReturnType<typeof vi.fn>;
+  put: ReturnType<typeof vi.fn>;
+  delete: ReturnType<typeof vi.fn>;
+  Cancel: typeof axios.Cancel;
+  isAxiosError: ReturnType<typeof vi.fn>;
+};
+
+// Mock axios.isAxiosError
+vi.mocked(axios.isAxiosError).mockImplementation((error): error is AxiosError => {
+  return error && typeof error === 'object' && 'isAxiosError' in error;
+});
+
+describe('API Error Handling', () => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
+
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>
+      <ToastProvider>{children}</ToastProvider>
+    </QueryClientProvider>
+  );
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    queryClient.clear();
+  });
+
+  describe('Network Errors', () => {
+    it('should handle network connection errors', async () => {
+      const networkError = new Error('Network Error') as AxiosError;
+      networkError.isAxiosError = true;
+      networkError.code = 'ERR_NETWORK';
+      mockedAxios.get.mockRejectedValueOnce(networkError);
+
+      const { result } = renderHook(() => useApi(() => axios.get('/test-endpoint')), { wrapper });
+
+      await result.current.execute();
+      await waitFor(() => {
+        expect(result.current.error).toBe(
+          'Unable to connect to the server. Please check your internet connection.'
+        );
+      });
+    });
+
+    it('should handle timeout errors', async () => {
+      const timeoutError = new Error('timeout of 5000ms exceeded') as AxiosError;
+      timeoutError.isAxiosError = true;
+      timeoutError.code = 'ECONNABORTED';
+      mockedAxios.get.mockRejectedValueOnce(timeoutError);
+
+      const { result } = renderHook(() => useApi(() => axios.get('/test-endpoint')), { wrapper });
+
+      await result.current.execute();
+      await waitFor(() => {
+        expect(result.current.error).toBe('Request timed out. Please try again.');
+      });
+    });
+  });
+
+  describe('API Response Errors', () => {
+    it('should handle 400 Bad Request errors', async () => {
+      const badRequestError = new Error('Invalid input') as AxiosError;
+      badRequestError.isAxiosError = true;
+      badRequestError.response = {
+        status: 400,
+        statusText: 'Bad Request',
+        data: { message: 'Invalid input' },
+        headers: {},
+        config: {} as any,
+      } as AxiosResponse;
+      mockedAxios.post.mockRejectedValueOnce(badRequestError);
+
+      const { result } = renderHook(
+        () => useApi(() => axios.post('/test-endpoint', { data: 'invalid' })),
+        { wrapper }
+      );
+
+      await result.current.execute();
+      await waitFor(() => {
+        expect(result.current.error).toBe('Invalid input');
+      });
+    });
+
+    it('should handle 401 Unauthorized errors', async () => {
+      const unauthorizedError = new Error('Unauthorized access') as AxiosError;
+      unauthorizedError.isAxiosError = true;
+      unauthorizedError.response = {
+        status: 401,
+        statusText: 'Unauthorized',
+        data: { message: 'Unauthorized access' },
+        headers: {},
+        config: {} as any,
+      } as AxiosResponse;
+      mockedAxios.get.mockRejectedValueOnce(unauthorizedError);
+
+      const { result } = renderHook(() => useApi(() => axios.get('/test-endpoint')), { wrapper });
+
+      await result.current.execute();
+      await waitFor(() => {
+        expect(result.current.error).toBe('Unauthorized access');
+      });
+    });
+
+    it('should handle 404 Not Found errors', async () => {
+      const notFoundError = new Error('Resource not found') as AxiosError;
+      notFoundError.isAxiosError = true;
+      notFoundError.response = {
+        status: 404,
+        statusText: 'Not Found',
+        data: { message: 'Resource not found' },
+        headers: {},
+        config: {} as any,
+      } as AxiosResponse;
+      mockedAxios.get.mockRejectedValueOnce(notFoundError);
+
+      const { result } = renderHook(() => useApi(() => axios.get('/test-endpoint')), { wrapper });
+
+      await result.current.execute();
+      await waitFor(() => {
+        expect(result.current.error).toBe('Resource not found');
+      });
+    });
+
+    it('should handle 500 Internal Server errors', async () => {
+      const serverError = new Error('Internal server error') as AxiosError;
+      serverError.isAxiosError = true;
+      serverError.response = {
+        status: 500,
+        statusText: 'Internal Server Error',
+        data: { message: 'Internal server error' },
+        headers: {},
+        config: {} as any,
+      } as AxiosResponse;
+      mockedAxios.get.mockRejectedValueOnce(serverError);
+
+      const { result } = renderHook(() => useApi(() => axios.get('/test-endpoint')), { wrapper });
+
+      await result.current.execute();
+      await waitFor(() => {
+        expect(result.current.error).toBe('Internal server error');
+      });
+    });
+  });
+
+  describe('Error Recovery', () => {
+    it('should clear error state on successful request', async () => {
+      const successResponse = { data: { message: 'Success' } };
+      mockedAxios.get.mockResolvedValueOnce(successResponse);
+
+      const { result } = renderHook(() => useApi(() => axios.get('/test-endpoint')), { wrapper });
+
+      // Set initial error state
+      result.current.error = 'Previous error';
+      expect(result.current.error).toBe('Previous error');
+
+      // Make successful request
+      await result.current.execute();
+      await waitFor(() => {
+        expect(result.current.error).toBeNull();
+      });
+    });
+
+    it('should handle retry logic for failed requests', async () => {
+      const networkError = new Error('Network Error') as AxiosError;
+      networkError.isAxiosError = true;
+      networkError.code = 'ERR_NETWORK';
+      const successResponse = { data: { message: 'Success' } };
+
+      mockedAxios.get
+        .mockRejectedValueOnce(networkError)
+        .mockRejectedValueOnce(networkError)
+        .mockResolvedValueOnce(successResponse);
+
+      const { result } = renderHook(() => useApi(() => axios.get('/test-endpoint')), { wrapper });
+
+      await result.current.execute();
+      await waitFor(() => {
+        expect(result.current.data).toEqual(successResponse);
+        expect(mockedAxios.get).toHaveBeenCalledTimes(3);
+      });
+    });
+  });
+
+  describe('Request Cancellation', () => {
+    it('should handle request cancellation', async () => {
+      const cancelError = new axios.Cancel('Request cancelled') as AxiosError;
+      cancelError.isAxiosError = true;
+      mockedAxios.get.mockRejectedValueOnce(cancelError);
+
+      const { result } = renderHook(() => useApi(() => axios.get('/test-endpoint')), { wrapper });
+
+      await result.current.execute();
+      await waitFor(() => {
+        expect(result.current.error).toBe('Request was cancelled');
+      });
+    });
+  });
+});

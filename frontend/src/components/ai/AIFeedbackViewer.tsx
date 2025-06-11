@@ -6,7 +6,7 @@ import {
   Print as PrintIcon,
   Share as ShareIcon,
   Warning as WarningIcon,
-} from "@mui/icons-material";
+} from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -24,51 +24,55 @@ import {
   ListItemText,
   Paper,
   Typography,
-} from "@mui/material";
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { SubmissionAnalysis } from "../../types/ai";
-import { LoadingSpinner } from "../common/LoadingSpinner";
-import { Toast } from "../common/Toast";
+} from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { SubmissionAnalysis } from '../../types/ai';
+import LoadingSpinner from '../common/LoadingSpinner';
+import { Toast } from '../common/Toast';
 
 const AIFeedbackViewer: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [loading, setLoading] = useState(true);
   const [analysis, setAnalysis] = useState<SubmissionAnalysis | null>(null);
-  const [feedback, setFeedback] = useState("");
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
   const [toast, setToast] = useState<{
     open: boolean;
     message: string;
-    severity: "success" | "error" | "info" | "warning";
+    severity: 'success' | 'error' | 'info' | 'warning';
   }>({
     open: false,
-    message: "",
-    severity: "info",
+    message: '',
+    severity: 'info',
   });
 
   useEffect(() => {
-    fetchFeedback();
-  }, [id]);
-
-  const fetchFeedback = async () => {
-    try {
-      setLoading(true);
-      // TODO: Replace with actual API call
-      const response = await fetch(`/api/submissions/${id}/feedback`);
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch feedback");
-      }
-
-      const data = await response.json();
-      setAnalysis(data.analysis);
-      setFeedback(data.feedback);
-    } catch (error) {
+    if (id) {
+      fetchFeedback(id);
+    } else {
       setToast({
         open: true,
-        message: "Failed to load feedback",
-        severity: "error",
+        message: 'Invalid submission ID',
+        severity: 'error',
+      });
+      setLoading(false);
+    }
+  }, [id]);
+
+  const fetchFeedback = async (submissionId: string) => {
+    try {
+      const response = await fetch(`/api/ai/feedback/${submissionId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch feedback');
+      }
+      const data = await response.json();
+      setAnalysis(data);
+    } catch (error) {
+      console.error('Error fetching feedback:', error);
+      setToast({
+        open: true,
+        message: 'Failed to load feedback',
+        severity: 'error',
       });
     } finally {
       setLoading(false);
@@ -80,17 +84,19 @@ const AIFeedbackViewer: React.FC = () => {
   };
 
   const handleDownload = async () => {
+    if (!id) return;
+
     try {
       // TODO: Replace with actual API call
       const response = await fetch(`/api/submissions/${id}/download-feedback`);
 
       if (!response.ok) {
-        throw new Error("Failed to download feedback");
+        throw new Error('Failed to download feedback');
       }
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
+      const a = document.createElement('a');
       a.href = url;
       a.download = `feedback-${id}.pdf`;
       document.body.appendChild(a);
@@ -100,17 +106,19 @@ const AIFeedbackViewer: React.FC = () => {
     } catch (error) {
       setToast({
         open: true,
-        message: "Failed to download feedback",
-        severity: "error",
+        message: 'Failed to download feedback',
+        severity: 'error',
       });
     }
   };
 
   const handleShare = async () => {
+    if (!id) return;
+
     try {
       if (navigator.share) {
         await navigator.share({
-          title: "Assignment Feedback",
+          title: 'Assignment Feedback',
           text: `View your feedback for submission ${id}`,
           url: window.location.href,
         });
@@ -119,15 +127,15 @@ const AIFeedbackViewer: React.FC = () => {
         await navigator.clipboard.writeText(window.location.href);
         setToast({
           open: true,
-          message: "Link copied to clipboard",
-          severity: "success",
+          message: 'Link copied to clipboard',
+          severity: 'success',
         });
       }
     } catch (error) {
       setToast({
         open: true,
-        message: "Failed to share feedback",
-        severity: "error",
+        message: 'Failed to share feedback',
+        severity: 'error',
       });
     }
   };
@@ -138,12 +146,7 @@ const AIFeedbackViewer: React.FC = () => {
 
   if (!analysis) {
     return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="400px"
-      >
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <Typography variant="h6">No feedback available</Typography>
       </Box>
     );
@@ -151,12 +154,7 @@ const AIFeedbackViewer: React.FC = () => {
 
   return (
     <Box>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={3}
-      >
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4">Your Feedback</Typography>
         <Box>
           <IconButton onClick={handlePrint} title="Print Feedback">
@@ -174,15 +172,15 @@ const AIFeedbackViewer: React.FC = () => {
       <Grid container spacing={3}>
         {/* Score and Overall Feedback */}
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 2, height: "100%" }}>
+          <Paper sx={{ p: 2, height: '100%' }}>
             <Typography variant="h6" gutterBottom>
               Your Score
             </Typography>
             <Box display="flex" alignItems="center" gap={1}>
               <Typography variant="h3">{analysis.score}%</Typography>
               <Chip
-                label={analysis.score >= 70 ? "Pass" : "Needs Improvement"}
-                color={analysis.score >= 70 ? "success" : "warning"}
+                label={analysis.score >= 70 ? 'Pass' : 'Needs Improvement'}
+                color={analysis.score >= 70 ? 'success' : 'warning'}
                 size="small"
               />
             </Box>
@@ -191,9 +189,9 @@ const AIFeedbackViewer: React.FC = () => {
 
         {/* Strengths */}
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 2, height: "100%" }}>
+          <Paper sx={{ p: 2, height: '100%' }}>
             <Typography variant="h6" gutterBottom>
-              Your Strengths
+              Strengths
             </Typography>
             <List>
               {analysis.strengths.map((strength, index) => (
@@ -210,7 +208,7 @@ const AIFeedbackViewer: React.FC = () => {
 
         {/* Areas for Improvement */}
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 2, height: "100%" }}>
+          <Paper sx={{ p: 2, height: '100%' }}>
             <Typography variant="h6" gutterBottom>
               Areas for Improvement
             </Typography>
@@ -227,9 +225,19 @@ const AIFeedbackViewer: React.FC = () => {
           </Paper>
         </Grid>
 
+        {/* Detailed Feedback */}
+        <Grid item xs={12}>
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Detailed Feedback
+            </Typography>
+            <Typography paragraph>{analysis.feedback}</Typography>
+          </Paper>
+        </Grid>
+
         {/* Suggestions */}
         <Grid item xs={12}>
-          <Paper sx={{ p: 2 }}>
+          <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
               Suggestions for Improvement
             </Typography>
@@ -245,32 +253,6 @@ const AIFeedbackViewer: React.FC = () => {
             </List>
           </Paper>
         </Grid>
-
-        {/* Detailed Analysis */}
-        <Grid item xs={12}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>
-              Detailed Analysis
-            </Typography>
-            <Typography variant="body1" paragraph>
-              {analysis.detailed_analysis}
-            </Typography>
-          </Paper>
-        </Grid>
-
-        {/* Teacher's Feedback */}
-        {feedback && (
-          <Grid item xs={12}>
-            <Paper sx={{ p: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                Teacher's Feedback
-              </Typography>
-              <Typography variant="body1" paragraph>
-                {feedback}
-              </Typography>
-            </Paper>
-          </Grid>
-        )}
       </Grid>
 
       {/* Print Dialog */}
@@ -281,11 +263,7 @@ const AIFeedbackViewer: React.FC = () => {
         fullWidth
       >
         <DialogTitle>
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-          >
+          <Box display="flex" justifyContent="space-between" alignItems="center">
             <Typography variant="h6">Print Feedback</Typography>
             <IconButton onClick={() => setPrintDialogOpen(false)}>
               <CloseIcon />
@@ -293,15 +271,17 @@ const AIFeedbackViewer: React.FC = () => {
           </Box>
         </DialogTitle>
         <DialogContent>
-          <Box>
+          <Box sx={{ p: 2 }}>
             <Typography variant="h5" gutterBottom>
-              Assignment Feedback
-            </Typography>
-            <Typography variant="subtitle1" gutterBottom>
-              Score: {analysis.score}%
+              Your Feedback
             </Typography>
             <Divider sx={{ my: 2 }} />
+
             <Typography variant="h6" gutterBottom>
+              Score: {analysis.score}%
+            </Typography>
+
+            <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
               Strengths
             </Typography>
             <List>
@@ -314,8 +294,8 @@ const AIFeedbackViewer: React.FC = () => {
                 </ListItem>
               ))}
             </List>
-            <Divider sx={{ my: 2 }} />
-            <Typography variant="h6" gutterBottom>
+
+            <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
               Areas for Improvement
             </Typography>
             <List>
@@ -328,9 +308,14 @@ const AIFeedbackViewer: React.FC = () => {
                 </ListItem>
               ))}
             </List>
-            <Divider sx={{ my: 2 }} />
-            <Typography variant="h6" gutterBottom>
-              Suggestions
+
+            <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
+              Detailed Feedback
+            </Typography>
+            <Typography paragraph>{analysis.feedback}</Typography>
+
+            <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
+              Suggestions for Improvement
             </Typography>
             <List>
               {analysis.suggestions.map((suggestion, index) => (
@@ -342,24 +327,6 @@ const AIFeedbackViewer: React.FC = () => {
                 </ListItem>
               ))}
             </List>
-            <Divider sx={{ my: 2 }} />
-            <Typography variant="h6" gutterBottom>
-              Detailed Analysis
-            </Typography>
-            <Typography variant="body1" paragraph>
-              {analysis.detailed_analysis}
-            </Typography>
-            {feedback && (
-              <>
-                <Divider sx={{ my: 2 }} />
-                <Typography variant="h6" gutterBottom>
-                  Teacher's Feedback
-                </Typography>
-                <Typography variant="body1" paragraph>
-                  {feedback}
-                </Typography>
-              </>
-            )}
           </Box>
         </DialogContent>
         <DialogActions>

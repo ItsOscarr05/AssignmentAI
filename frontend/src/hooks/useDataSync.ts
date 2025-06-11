@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { usePerformanceMonitoring } from "../utils/performance";
-import { useErrorTracking } from "./useErrorTracking";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { usePerformanceMonitoring } from '../utils/performance';
+import { useErrorTracking } from './useErrorTracking';
 
 interface SyncOptions<T> {
   endpoint: string;
   syncInterval?: number;
   retryAttempts?: number;
   retryDelay?: number;
-  conflictResolution?: "server" | "client" | "merge";
+  conflictResolution?: 'server' | 'client' | 'merge';
   onSyncStart?: () => void;
   onSyncComplete?: (data: T) => void;
   onSyncError?: (error: Error) => void;
@@ -33,7 +33,7 @@ export const useDataSync = <T extends { id: string; version?: number }>(
     syncInterval = 30000, // 30 seconds
     retryAttempts = 3,
     retryDelay = 1000,
-    conflictResolution = "server",
+    conflictResolution = 'server',
     onSyncStart,
     onSyncComplete,
     onSyncError,
@@ -50,12 +50,12 @@ export const useDataSync = <T extends { id: string; version?: number }>(
 
   const syncTimeout = useRef<NodeJS.Timeout>();
   const { trackError } = useErrorTracking();
-  usePerformanceMonitoring("DataSync");
+  usePerformanceMonitoring('DataSync');
 
   // Queue for offline changes
   const offlineQueue = useRef<
     Array<{
-      type: "create" | "update" | "delete";
+      type: 'create' | 'update' | 'delete';
       data: T;
       timestamp: number;
     }>
@@ -66,31 +66,34 @@ export const useDataSync = <T extends { id: string; version?: number }>(
 
   // Initialize IndexedDB
   useEffect(() => {
-    const request = indexedDB.open("AssignmentAI", 1);
+    const request = indexedDB.open('AssignmentAI', 1);
 
-    request.onerror = (event) => {
-      trackError("IndexedDB initialization failed", {
-        error: event,
-        context: "DataSync",
-      });
+    request.onerror = event => {
+      trackError(
+        {
+          message: 'IndexedDB initialization failed',
+          error: event as unknown as Error,
+        },
+        'useDataSync'
+      );
     };
 
-    request.onupgradeneeded = (event) => {
+    request.onupgradeneeded = event => {
       const db = (event.target as IDBOpenDBRequest).result;
 
       // Create stores for different data types
-      if (!db.objectStoreNames.contains("assignments")) {
-        db.createObjectStore("assignments", { keyPath: "id" });
+      if (!db.objectStoreNames.contains('assignments')) {
+        db.createObjectStore('assignments', { keyPath: 'id' });
       }
-      if (!db.objectStoreNames.contains("submissions")) {
-        db.createObjectStore("submissions", { keyPath: "id" });
+      if (!db.objectStoreNames.contains('submissions')) {
+        db.createObjectStore('submissions', { keyPath: 'id' });
       }
-      if (!db.objectStoreNames.contains("syncQueue")) {
-        db.createObjectStore("syncQueue", { keyPath: "timestamp" });
+      if (!db.objectStoreNames.contains('syncQueue')) {
+        db.createObjectStore('syncQueue', { keyPath: 'timestamp' });
       }
     };
 
-    request.onsuccess = (event) => {
+    request.onsuccess = event => {
       db.current = (event.target as IDBOpenDBRequest).result;
     };
 
@@ -106,7 +109,7 @@ export const useDataSync = <T extends { id: string; version?: number }>(
     if (!db.current) return;
 
     return new Promise<void>((resolve, reject) => {
-      const transaction = db.current!.transaction(storeName, "readwrite");
+      const transaction = db.current!.transaction(storeName, 'readwrite');
       const store = transaction.objectStore(storeName);
       const request = store.put(data);
 
@@ -116,25 +119,22 @@ export const useDataSync = <T extends { id: string; version?: number }>(
   }, []);
 
   // Get data from IndexedDB
-  const getFromIndexedDB = useCallback(
-    async (storeName: string, id: string): Promise<T | null> => {
-      if (!db.current) return null;
+  const getFromIndexedDB = useCallback(async (storeName: string, id: string): Promise<T | null> => {
+    if (!db.current) return null;
 
-      return new Promise((resolve, reject) => {
-        const transaction = db.current!.transaction(storeName, "readonly");
-        const store = transaction.objectStore(storeName);
-        const request = store.get(id);
+    return new Promise((resolve, reject) => {
+      const transaction = db.current!.transaction(storeName, 'readonly');
+      const store = transaction.objectStore(storeName);
+      const request = store.get(id);
 
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-      });
-    },
-    []
-  );
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }, []);
 
   // Queue change for sync
   const queueChange = useCallback(
-    async (type: "create" | "update" | "delete", data: T) => {
+    async (type: 'create' | 'update' | 'delete', data: T) => {
       const change = {
         type,
         data,
@@ -142,11 +142,11 @@ export const useDataSync = <T extends { id: string; version?: number }>(
       };
 
       offlineQueue.current.push(change);
-      setState((prev) => ({ ...prev, pendingChanges: true }));
+      setState(prev => ({ ...prev, pendingChanges: true }));
 
       // Save to IndexedDB sync queue
       if (db.current) {
-        await saveToIndexedDB("syncQueue", change as any);
+        await saveToIndexedDB('syncQueue', change as any);
       }
     },
     [saveToIndexedDB]
@@ -156,16 +156,15 @@ export const useDataSync = <T extends { id: string; version?: number }>(
   const resolveConflict = useCallback(
     (localData: T, serverData: T): T => {
       switch (conflictResolution) {
-        case "server":
+        case 'server':
           return serverData;
-        case "client":
+        case 'client':
           return localData;
-        case "merge":
+        case 'merge':
           return {
             ...localData,
             ...serverData,
-            version:
-              Math.max(localData.version || 0, serverData.version || 0) + 1,
+            version: Math.max(localData.version || 0, serverData.version || 0) + 1,
           };
         default:
           return serverData;
@@ -178,7 +177,7 @@ export const useDataSync = <T extends { id: string; version?: number }>(
   const sync = useCallback(async () => {
     if (state.isSyncing) return;
 
-    setState((prev) => ({ ...prev, isSyncing: true, error: null }));
+    setState(prev => ({ ...prev, isSyncing: true, error: null }));
     onSyncStart?.();
 
     try {
@@ -190,44 +189,44 @@ export const useDataSync = <T extends { id: string; version?: number }>(
 
         try {
           switch (change.type) {
-            case "create":
+            case 'create':
               await fetch(endpoint, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(transformedData),
               });
               break;
-            case "update":
+            case 'update':
               await fetch(`${endpoint}/${change.data.id}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(transformedData),
               });
               break;
-            case "delete":
+            case 'delete':
               await fetch(`${endpoint}/${change.data.id}`, {
-                method: "DELETE",
+                method: 'DELETE',
               });
               break;
           }
 
           // Remove from queue after successful sync
-          offlineQueue.current = offlineQueue.current.filter(
-            (c) => c.timestamp !== change.timestamp
-          );
+          offlineQueue.current = offlineQueue.current.filter(c => c.timestamp !== change.timestamp);
         } catch (error) {
-          trackError("Failed to sync change", {
-            error,
-            context: "DataSync",
-            change,
-          });
+          trackError(
+            {
+              message: 'Failed to sync change',
+              error: error as Error,
+            },
+            'useDataSync'
+          );
           throw error;
         }
       }
 
       // Fetch latest data from server
       const response = await fetch(endpoint);
-      if (!response.ok) throw new Error("Failed to fetch data");
+      if (!response.ok) throw new Error('Failed to fetch data');
 
       const serverData = await response.json();
       const transformedData = transformData?.fromServer
@@ -236,23 +235,17 @@ export const useDataSync = <T extends { id: string; version?: number }>(
 
       // Update local storage
       for (const item of transformedData) {
-        const localData = await getFromIndexedDB(
-          endpoint.split("/").pop() || "data",
-          item.id
-        );
+        const localData = await getFromIndexedDB(endpoint.split('/').pop() || 'data', item.id);
 
         if (localData) {
           const resolvedData = resolveConflict(localData, item);
-          await saveToIndexedDB(
-            endpoint.split("/").pop() || "data",
-            resolvedData
-          );
+          await saveToIndexedDB(endpoint.split('/').pop() || 'data', resolvedData);
         } else {
-          await saveToIndexedDB(endpoint.split("/").pop() || "data", item);
+          await saveToIndexedDB(endpoint.split('/').pop() || 'data', item);
         }
       }
 
-      setState((prev) => ({
+      setState(prev => ({
         ...prev,
         isSyncing: false,
         lastSyncTime: Date.now(),
@@ -263,7 +256,7 @@ export const useDataSync = <T extends { id: string; version?: number }>(
       onSyncComplete?.(transformedData);
     } catch (error) {
       const newRetryCount = state.retryCount + 1;
-      setState((prev) => ({
+      setState(prev => ({
         ...prev,
         isSyncing: false,
         error: error as Error,
@@ -316,8 +309,8 @@ export const useDataSync = <T extends { id: string; version?: number }>(
       }
     };
 
-    window.addEventListener("online", handleOnline);
-    return () => window.removeEventListener("online", handleOnline);
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
   }, [state.pendingChanges, sync]);
 
   return {

@@ -2,7 +2,7 @@ from typing import Any, Optional, Union
 import json
 from datetime import datetime, timedelta
 from app.core.cache import RedisCache
-from app.services.logging_service import logger
+from app.services.logging_service import logging_service
 
 class CacheService:
     def __init__(self):
@@ -17,7 +17,10 @@ class CacheService:
                 return json.loads(value)
             return None
         except Exception as e:
-            logger.error("Error getting value from cache", error=e)
+            logging_service.error(
+                "Error getting value from cache",
+                extra={"error": str(e)}
+            )
             return None
     
     async def set(
@@ -46,7 +49,10 @@ class CacheService:
             
             return success
         except Exception as e:
-            logger.error("Error setting value in cache", error=e)
+            logging_service.error(
+                "Error setting value in cache",
+                extra={"error": str(e)}
+            )
             return False
     
     async def delete(self, key: str) -> bool:
@@ -54,7 +60,10 @@ class CacheService:
         try:
             return await self.redis.delete(key)
         except Exception as e:
-            logger.error("Error deleting value from cache", error=e)
+            logging_service.error(
+                "Error deleting value from cache",
+                extra={"error": str(e)}
+            )
             return False
     
     async def invalidate_by_tag(self, tag: str) -> bool:
@@ -75,7 +84,10 @@ class CacheService:
             
             return True
         except Exception as e:
-            logger.error("Error invalidating cache by tag", error=e)
+            logging_service.error(
+                "Error invalidating cache by tag",
+                extra={"error": str(e)}
+            )
             return False
     
     async def get_or_set(
@@ -99,7 +111,7 @@ class CacheService:
         try:
             return await self.redis.clear_pattern(pattern)
         except Exception as e:
-            logger.error("Error clearing cache pattern", error=e)
+            logging_service.error("Error clearing cache pattern", extra={"error": str(e)})
             return False
     
     async def get_many(self, keys: list) -> dict:
@@ -112,7 +124,7 @@ class CacheService:
                     values[key] = value
             return values
         except Exception as e:
-            logger.error("Error getting multiple values from cache", error=e)
+            logging_service.error("Error getting multiple values from cache", extra={"error": str(e)})
             return {}
     
     async def set_many(
@@ -130,7 +142,7 @@ class CacheService:
                     break
             return success
         except Exception as e:
-            logger.error("Error setting multiple values in cache", error=e)
+            logging_service.error("Error setting multiple values in cache", extra={"error": str(e)})
             return False
     
     async def delete_many(self, keys: list) -> bool:
@@ -143,7 +155,7 @@ class CacheService:
                     break
             return success
         except Exception as e:
-            logger.error("Error deleting multiple values from cache", error=e)
+            logging_service.error("Error deleting multiple values from cache", extra={"error": str(e)})
             return False
 
 # Create global instance

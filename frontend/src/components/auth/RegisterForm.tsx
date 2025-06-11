@@ -1,163 +1,189 @@
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Grid,
-  Link,
-  Paper,
-  TextField,
-  Typography,
-} from "@mui/material";
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { auth } from "../../services/api";
+import { Alert, Box, Button, TextField } from '@mui/material';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../../services/auth/authStore';
 
-export const RegisterForm: React.FC = () => {
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+const RegisterForm: React.FC = () => {
   const [formData, setFormData] = useState({
-    email: "",
-    full_name: "",
-    password: "",
-    confirm_password: "",
+    email: '',
+    password: '',
+    confirmPassword: '',
+    firstName: '',
+    lastName: '',
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+  const { register, error: authError } = useAuthStore();
+  const navigate = useNavigate();
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.firstName) newErrors.firstName = 'First name is required';
+    if (!formData.lastName) newErrors.lastName = 'Last name is required';
+    if (!formData.email) newErrors.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Invalid email address';
+    if (!formData.password) newErrors.password = 'Password is required';
+    else if (formData.password.length < 8)
+      newErrors.password = 'Password must be at least 8 characters long';
+    if (!formData.confirmPassword) newErrors.confirmPassword = 'Please confirm your password';
+    else if (formData.password !== formData.confirmPassword)
+      newErrors.confirmPassword = 'Passwords do not match';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [name]: value,
     }));
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: '',
+      }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
+    setLoading(true);
 
-    if (formData.password !== formData.confirm_password) {
-      setError("Passwords do not match");
+    if (!validateForm()) {
+      setLoading(false);
       return;
     }
 
     try {
-      setLoading(true);
-      setError(null);
-      await auth.register(
-        {
-          email: formData.email,
-          full_name: formData.full_name,
-        },
-        formData.password
+      await register(
+        formData.email,
+        formData.password,
+        `${formData.firstName} ${formData.lastName}`
       );
-      navigate("/login");
-    } catch (error) {
-      setError("Error creating account. Please try again.");
+      navigate('/dashboard');
+    } catch (err) {
+      setErrors({
+        submit: err instanceof Error ? err.message : 'Registration failed',
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Box
-      sx={{
-        height: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        bgcolor: "background.default",
-      }}
-    >
-      <Paper
-        elevation={3}
-        sx={{
-          p: 4,
-          width: "100%",
-          maxWidth: 500,
+    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
+      <TextField
+        margin="normal"
+        required
+        fullWidth
+        id="firstName"
+        label="First Name"
+        name="firstName"
+        autoComplete="given-name"
+        autoFocus
+        value={formData.firstName}
+        onChange={handleChange}
+        error={!!errors.firstName}
+        helperText={errors.firstName}
+      />
+      <TextField
+        margin="normal"
+        required
+        fullWidth
+        id="lastName"
+        label="Last Name"
+        name="lastName"
+        autoComplete="family-name"
+        value={formData.lastName}
+        onChange={handleChange}
+        error={!!errors.lastName}
+        helperText={errors.lastName}
+      />
+      <TextField
+        margin="normal"
+        required
+        fullWidth
+        id="email"
+        label="Email"
+        name="email"
+        autoComplete="email"
+        value={formData.email}
+        onChange={handleChange}
+        error={!!errors.email}
+        helperText={errors.email}
+      />
+      <TextField
+        margin="normal"
+        required
+        fullWidth
+        name="password"
+        label="password"
+        type="password"
+        id="password"
+        autoComplete="new-password"
+        value={formData.password}
+        onChange={handleChange}
+        error={!!errors.password}
+        helperText={errors.password}
+        InputLabelProps={{
+          shrink: true,
+          required: false,
+          style: { textTransform: 'none' },
+          'data-testid': 'password-label',
         }}
+      />
+      <TextField
+        margin="normal"
+        required
+        fullWidth
+        name="confirmPassword"
+        label="confirm password"
+        type="password"
+        id="confirmPassword"
+        autoComplete="new-password"
+        value={formData.confirmPassword}
+        onChange={handleChange}
+        error={!!errors.confirmPassword}
+        helperText={errors.confirmPassword}
+        InputLabelProps={{
+          shrink: true,
+          required: false,
+          style: { textTransform: 'none' },
+          'data-testid': 'confirm-password-label',
+        }}
+      />
+      {Object.keys(errors).length > 0 && (
+        <Alert severity="error" role="alert" sx={{ mt: 2 }} data-testid="form-error">
+          {Object.values(errors)[0]}
+        </Alert>
+      )}
+      {errors.submit && (
+        <Alert severity="error" role="alert" sx={{ mt: 2 }} data-testid="submit-error">
+          {errors.submit}
+        </Alert>
+      )}
+      {authError && (
+        <Alert severity="error" role="alert" sx={{ mt: 2 }} data-testid="auth-error">
+          {authError}
+        </Alert>
+      )}
+      <Button
+        type="submit"
+        fullWidth
+        variant="contained"
+        sx={{ mt: 3, mb: 2 }}
+        disabled={loading}
+        data-testid="submit-button"
       >
-        <Typography variant="h5" component="h1" gutterBottom align="center">
-          Create Account
-        </Typography>
-
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Full Name"
-                name="full_name"
-                value={formData.full_name}
-                onChange={handleChange}
-                required
-                autoComplete="name"
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                autoComplete="email"
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Password"
-                name="password"
-                type="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                autoComplete="new-password"
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Confirm Password"
-                name="confirm_password"
-                type="password"
-                value={formData.confirm_password}
-                onChange={handleChange}
-                required
-                autoComplete="new-password"
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                disabled={loading}
-              >
-                {loading ? <CircularProgress size={24} /> : "Sign Up"}
-              </Button>
-            </Grid>
-          </Grid>
-        </form>
-
-        <Box sx={{ mt: 3, textAlign: "center" }}>
-          <Typography variant="body2">
-            Already have an account? <Link href="/login">Sign in</Link>
-          </Typography>
-        </Box>
-      </Paper>
+        {loading ? 'Registering...' : 'Register'}
+      </Button>
     </Box>
   );
 };
+
+export default RegisterForm;

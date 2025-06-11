@@ -9,10 +9,10 @@ import {
   Paper,
   TextField,
   Typography,
-} from "@mui/material";
-import React, { useEffect, useState } from "react";
-import { useAuth } from "../../hooks/useAuth";
-import { api } from "../../services/api";
+} from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '../../hooks/useAuth';
+import { api } from '../../services/api';
 
 interface ProfileData {
   full_name: string;
@@ -28,18 +28,18 @@ export const Profile: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [formData, setFormData] = useState<ProfileData>({
-    full_name: "",
-    email: "",
-    current_password: "",
-    new_password: "",
-    confirm_password: "",
+    full_name: '',
+    email: '',
+    current_password: '',
+    new_password: '',
+    confirm_password: '',
   });
 
   useEffect(() => {
     if (user) {
-      setFormData((prev) => ({
+      setFormData(prev => ({
         ...prev,
-        full_name: user.full_name,
+        full_name: user.fullName,
         email: user.email,
       }));
     }
@@ -47,7 +47,7 @@ export const Profile: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [name]: value,
     }));
@@ -62,50 +62,73 @@ export const Profile: React.FC = () => {
     try {
       if (formData.new_password) {
         if (formData.new_password !== formData.confirm_password) {
-          throw new Error("New passwords do not match");
+          throw new Error('New passwords do not match');
         }
       }
 
-      await api.put("/users/profile", {
+      await api.put('/users/profile', {
         full_name: formData.full_name,
         email: formData.email,
         current_password: formData.current_password,
         new_password: formData.new_password,
       });
 
-      setSuccess("Profile updated successfully");
-      setFormData((prev) => ({
+      setSuccess('Profile updated successfully');
+      setFormData(prev => ({
         ...prev,
-        current_password: "",
-        new_password: "",
-        confirm_password: "",
+        current_password: '',
+        new_password: '',
+        confirm_password: '',
       }));
     } catch (error: any) {
-      setError(error.response?.data?.message || "Failed to update profile");
+      setError(error.response?.data?.message || 'Failed to update profile');
     } finally {
       setLoading(false);
     }
   };
 
+  if (!user) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error">Please log in to view your profile.</Alert>
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ p: 3 }}>
       <Paper sx={{ p: 3 }}>
-        <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4 }}>
           <Avatar
-            sx={{ width: 100, height: 100, mr: 3 }}
-            src={user?.avatar_url}
-          >
-            {user?.full_name?.charAt(0)}
-          </Avatar>
+            src={user.avatarUrl || '/default-avatar.png'}
+            alt={`${user.fullName}'s avatar`}
+            sx={{ width: 100, height: 100 }}
+          />
           <Box>
-            <Typography variant="h4" gutterBottom>
-              Profile Settings
-            </Typography>
-            <Typography color="textSecondary">
-              Manage your account information and password
+            <Typography variant="h4">{user.fullName}</Typography>
+            <Typography variant="body1" color="text.secondary">
+              {user.email}
             </Typography>
           </Box>
         </Box>
+
+        <Typography variant="h6" gutterBottom>
+          {user.fullName}'s Profile
+        </Typography>
+
+        <div className="profile-info">
+          <p>
+            <strong>Name:</strong> {user.fullName}
+          </p>
+          <p>
+            <strong>Email:</strong> {user.email}
+          </p>
+          {user.institution && (
+            <p>
+              <strong>Institution:</strong> {user.institution}
+            </p>
+          )}
+        </div>
 
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -185,14 +208,14 @@ export const Profile: React.FC = () => {
             </Grid>
 
             <Grid item xs={12}>
-              <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
+              <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
                 <Button
                   variant="contained"
                   type="submit"
                   disabled={loading}
                   startIcon={loading ? <CircularProgress size={20} /> : null}
                 >
-                  {loading ? "Saving..." : "Save Changes"}
+                  {loading ? 'Saving...' : 'Save Changes'}
                 </Button>
               </Box>
             </Grid>

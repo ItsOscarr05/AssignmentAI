@@ -1,33 +1,36 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from sqlalchemy.exc import SQLAlchemyError
 from pydantic import ValidationError
 from app.core.config import settings
 from app.db.database import engine, Base
 from app.api.v1.api import api_router
-from app.core.middleware import rate_limit_middleware, logging_middleware
+from app.core.rate_limit import rate_limit_middleware
 from app.core.error_handlers import (
     http_exception_handler,
     validation_exception_handler,
-    sqlalchemy_exception_handler,
-    general_exception_handler,
     database_error_handler,
+    general_exception_handler,
     validation_error_handler
 )
-from app.services.logging_service import LoggingService, logger
+from app.services.logging_service import logging_service
 from app.api.deps import get_db
 from app.api.middleware import file_size_limit_middleware
 from datetime import datetime
-from app.middleware.security import SecurityMiddleware
+from app.middleware.security import SecurityHeadersMiddleware
 from app.middleware.error_handler import ErrorHandlerMiddleware
-from app.middleware.rate_limit import RateLimitMiddleware
 from app.middleware.logging import LoggingMiddleware
 from app.middleware.performance import PerformanceMiddleware, QueryOptimizationMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.security import SecurityMiddleware
+from app.middleware.rate_limit import RateLimitMiddleware
 import uvicorn
 
 # Initialize logging
-LoggingService.setup_logging()
+logging_service.info("Initializing logging service")
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -53,6 +56,8 @@ app = FastAPI(
         * Secure JWT-based authentication
         * Role-based access control
         * Email verification
+        * Two-factor authentication
+        * Password reset functionality
 
     * 📊 Administration
         * User management
@@ -72,11 +77,27 @@ app = FastAPI(
     Authorization: Bearer <your_token>
     ```
 
-    ## Rate Limiting
+    ## Security Features
 
-    The API implements rate limiting to ensure fair usage:
-    * 100 requests per minute per IP address
-    * Endpoints have individual rate limits based on their resource intensity
+    * Rate Limiting
+        * 100 requests per minute per IP address
+        * 5 login attempts per minute
+        * Account lockout after 5 failed attempts
+        * 15-minute lockout period
+
+    * Password Requirements
+        * Minimum 12 characters
+        * Must contain uppercase and lowercase letters
+        * Must contain numbers and special characters
+        * Password hashing with bcrypt
+
+    * Additional Security
+        * CSRF protection
+        * XSS protection
+        * SQL injection prevention
+        * Input validation and sanitization
+        * Secure headers
+        * CORS protection
 
     ## Error Handling
 
@@ -105,22 +126,31 @@ app = FastAPI(
     }
 )
 
-# Add security middleware first
-app.add_middleware(SecurityMiddleware)
+# Setup error handling
+app.add_exception_handler(HTTPException, http_exception_handler)
+app.add_exception_handler(ValidationError, validation_exception_handler)
+app.add_exception_handler(SQLAlchemyError, database_error_handler)
+app.add_exception_handler(Exception, general_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_error_handler)
 
-# Set all CORS enabled origins
-if settings.BACKEND_CORS_ORIGINS:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    max_age=3600,
+)
+
+# Add security headers middleware
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Add rate limiting middleware
+app.add_middleware(RateLimitMiddleware, requests_per_minute=60)
 
 # Add other middleware
 app.add_middleware(ErrorHandlerMiddleware)
-app.add_middleware(RateLimitMiddleware)
 app.add_middleware(LoggingMiddleware)
 
 # Add performance middleware
@@ -140,47 +170,57 @@ app.add_middleware(
 # Add file size limit middleware
 app.middleware("http")(file_size_limit_middleware)
 
+# Add compression middleware
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+# Add security headers
+app.add_middleware(
+    SecurityMiddleware,
+    headers={
+        "X-Frame-Options": "DENY",
+        "X-Content-Type-Options": "nosniff",
+        "X-XSS-Protection": "1; mode=block",
+        "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+        "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';",
+        "Referrer-Policy": "strict-origin-when-cross-origin"
+    }
+)
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 # Include API router
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 @app.on_event("startup")
 async def startup_event():
     """Initialize services on startup"""
-    logger.info("Starting up AssignmentAI application")
+    logging_service.info("Starting up AssignmentAI application")
     # Add any additional startup initialization here
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup on shutdown"""
-    logger.info("Shutting down AssignmentAI application")
-    # Add any additional cleanup here
+    logging_service.info("Shutting down AssignmentAI application")
+    # Add any cleanup code here
 
 @app.get("/")
 async def root():
-    """
-    Root endpoint that provides basic API information.
-    """
+    """Root endpoint"""
     return {
-        "name": settings.PROJECT_NAME,
+        "message": "Welcome to AssignmentAI API",
         "version": settings.VERSION,
-        "description": settings.DESCRIPTION,
         "docs_url": "/docs",
-        "redoc_url": "/redoc"
+        "redoc_url": "/redoc",
     }
 
 @app.get("/health")
 async def health_check():
-    """
-    Health check endpoint for monitoring the API status.
-    
-    Returns:
-        dict: A simple status response indicating the API is healthy
-    """
+    """Health check endpoint"""
     return {
         "status": "healthy",
         "version": settings.VERSION,
-        "timestamp": datetime.utcnow().isoformat(),
-        "environment": settings.ENVIRONMENT
+        "environment": settings.ENVIRONMENT,
     }
 
 if __name__ == "__main__":

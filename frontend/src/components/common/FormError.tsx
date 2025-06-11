@@ -1,5 +1,5 @@
-import styled from "@emotion/styled";
-import React from "react";
+import styled from '@emotion/styled';
+import React from 'react';
 
 const ErrorContainer = styled.div`
   display: flex;
@@ -22,7 +22,7 @@ interface FormErrorProps {
 
 const FormError: React.FC<FormErrorProps> = ({ message, className }) => {
   return (
-    <ErrorContainer className={className}>
+    <ErrorContainer className={className} data-testid="form-error">
       <ErrorIcon>⚠</ErrorIcon>
       {message}
     </ErrorContainer>
