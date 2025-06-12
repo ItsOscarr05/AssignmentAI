@@ -1,14 +1,19 @@
 import {
   Add as AddIcon,
-  Assignment as AssignmentIcon,
-  CalendarToday as CalendarTodayIcon,
+  CheckCircle as CheckCircleIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
+  ExpandMore as ExpandMoreIcon,
+  HourglassEmpty as HourglassIcon,
   MoreVert as MoreVertIcon,
+  Refresh as RefreshIcon,
   Search as SearchIcon,
-  Timeline as TimelineIcon,
+  Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Box,
   Button,
   Card,
@@ -19,7 +24,6 @@ import {
   IconButton,
   InputAdornment,
   InputLabel,
-  LinearProgress,
   Menu,
   MenuItem,
   Paper,
@@ -37,16 +41,13 @@ import {
 } from '@mui/material';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
 
 interface Assignment {
   id: string;
   title: string;
   subject: string;
-  dueDate: string;
-  status: 'Completed' | 'In Progress' | 'Overdue' | 'Not Started';
+  status: 'Completed' | 'Not Started';
   priority: 'High' | 'Medium' | 'Low';
-  progress: number;
   description: string;
 }
 
@@ -67,9 +68,18 @@ const Assignments: React.FC = () => {
     boxShadow: '0 2px 12px rgba(0, 0, 0, 0.1)',
     borderRadius: '12px',
     transition: 'all 0.2s ease-in-out',
+    border: '2px solid red',
     '&:hover': {
       boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
     },
+  };
+
+  const tableStyle = {
+    border: '2px solid red',
+  };
+
+  const searchBarStyle = {
+    border: '2px solid red',
   };
 
   const assignments: Assignment[] = [
@@ -77,40 +87,32 @@ const Assignments: React.FC = () => {
       id: '1',
       title: 'Math Homework',
       subject: 'Mathematics',
-      dueDate: '2024-03-15',
-      status: 'In Progress',
+      status: 'Not Started',
       priority: 'High',
-      progress: 65,
       description: 'Complete exercises 1-10 from Chapter 5',
     },
     {
       id: '2',
       title: 'Science Project',
       subject: 'Science',
-      dueDate: '2024-03-20',
       status: 'Completed',
       priority: 'Medium',
-      progress: 100,
       description: 'Research and present findings on renewable energy',
     },
     {
       id: '3',
       title: 'History Essay',
       subject: 'History',
-      dueDate: '2024-03-10',
-      status: 'Overdue',
-      priority: 'High',
-      progress: 30,
+      status: 'Not Started',
+      priority: 'Low',
       description: 'Write a 2000-word essay on World War II',
     },
     {
       id: '4',
       title: 'Literature Review',
       subject: 'English',
-      dueDate: '2024-03-25',
       status: 'Not Started',
       priority: 'Low',
-      progress: 0,
       description: 'Review and analyze "To Kill a Mockingbird"',
     },
   ];
@@ -134,18 +136,14 @@ const Assignments: React.FC = () => {
     setSelectedAssignment(null);
   };
 
-  const getStatusColor = (status: Assignment['status']) => {
+  const getStatusIcon = (status: Assignment['status']) => {
     switch (status) {
       case 'Completed':
-        return 'success';
-      case 'In Progress':
-        return 'warning';
-      case 'Overdue':
-        return 'error';
+        return <CheckCircleIcon sx={{ color: 'success.main' }} />;
       case 'Not Started':
-        return 'default';
+        return <HourglassIcon sx={{ color: 'warning.main' }} />;
       default:
-        return 'default';
+        return null;
     }
   };
 
@@ -162,6 +160,23 @@ const Assignments: React.FC = () => {
     }
   };
 
+  const getSubjectColor = (subject: string) => {
+    switch (subject.toLowerCase()) {
+      case 'mathematics':
+      case 'math':
+        return 'red';
+      case 'science':
+        return 'green';
+      case 'history':
+        return 'blue';
+      case 'english':
+      case 'literature':
+        return '#FFA500'; // orange-yellow
+      default:
+        return 'inherit';
+    }
+  };
+
   const filteredAssignments = assignments.filter(assignment => {
     const matchesSearch =
       assignment.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -174,156 +189,307 @@ const Assignments: React.FC = () => {
   const getAssignmentStats = () => {
     const total = assignments.length;
     const completed = assignments.filter(a => a.status === 'Completed').length;
-    const inProgress = assignments.filter(a => a.status === 'In Progress').length;
-    const overdue = assignments.filter(a => a.status === 'Overdue').length;
-    const notStarted = assignments.filter(a => a.status === 'Not Started').length;
-
-    return { total, completed, inProgress, overdue, notStarted };
+    const subjectDistribution = assignments.reduce((acc, curr) => {
+      acc[curr.subject] = (acc[curr.subject] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    const priorityDistribution = assignments.reduce((acc, curr) => {
+      acc[curr.priority] = (acc[curr.priority] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    return { total, completed, subjectDistribution, priorityDistribution };
   };
 
   const stats = getAssignmentStats();
 
   return (
     <Box sx={{ p: 3, backgroundColor: '#fafafa', minHeight: '100vh' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Typography
-          variant="h4"
-          sx={{
-            color: theme.palette.primary.main,
-            fontWeight: 400,
-            borderBottom: 'none',
-            pb: 0,
-            display: 'inline-block',
-          }}
-        >
-          Assignments
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => navigate('/dashboard/assignments/create')}
-          sx={{
-            backgroundColor: theme.palette.primary.main,
-            '&:hover': {
-              backgroundColor: theme.palette.primary.dark,
-            },
-            fontFamily: "'Inter', sans-serif",
-            fontWeight: 500,
-            letterSpacing: '0.02em',
-          }}
-        >
-          Create Assignment
-        </Button>
-      </Box>
+      {/* Header Section */}
+      <Card sx={{ ...cardStyle, mb: 4 }}>
+        <CardContent>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box>
+              <Typography
+                variant="h4"
+                sx={{
+                  color: theme.palette.primary.main,
+                  fontWeight: 400,
+                  borderBottom: 'none',
+                  pb: 0,
+                  display: 'inline-block',
+                }}
+              >
+                Assignments
+              </Typography>
+              <Typography variant="subtitle1" color="text.secondary" sx={{ mt: 1 }}>
+                Organize and manage your saved AI-generated work.
+              </Typography>
+            </Box>
+            <Box sx={{ textAlign: 'right' }}>
+              <Typography variant="body2" color="text.secondary">
+                Total Assignments: {stats.total}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Completed Assignments: {stats.completed}
+              </Typography>
+            </Box>
+          </Box>
+        </CardContent>
+      </Card>
 
-      {/* Stats Cards */}
+      {/* Cards Section */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        {[
-          { label: 'Total', value: stats.total, icon: AssignmentIcon },
-          { label: 'Completed', value: stats.completed, icon: TimelineIcon },
-          { label: 'In Progress', value: stats.inProgress, icon: TimelineIcon },
-          { label: 'Overdue', value: stats.overdue, icon: CalendarTodayIcon },
-        ].map((stat, index) => (
-          <Grid item xs={12} sm={6} md={3} key={index}>
-            <Card sx={cardStyle}>
-              <CardContent sx={{ p: 3 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <stat.icon sx={{ color: theme.palette.primary.main, mr: 1 }} />
-                  <Typography
-                    variant="h6"
-                    sx={{ color: theme.palette.primary.main, fontWeight: 600 }}
-                  >
-                    {stat.label}
-                  </Typography>
+        {/* Recent Activity Card */}
+        <Grid item xs={12} md={4}>
+          <Card sx={cardStyle}>
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 2, color: theme.palette.primary.main }}>
+                Recent Activity
+              </Typography>
+              {assignments.slice(0, 3).map(assignment => (
+                <Box
+                  key={assignment.id}
+                  sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}
+                >
+                  {getStatusIcon(assignment.status)}
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {assignment.title}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {assignment.subject}
+                    </Typography>
+                  </Box>
                 </Box>
-                <Typography variant="h4" sx={{ fontWeight: 600 }}>
-                  {stat.value}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
+              ))}
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Quick Stats Card */}
+        <Grid item xs={12} md={4}>
+          <Card sx={cardStyle}>
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 2, color: theme.palette.primary.main }}>
+                Quick Stats
+              </Typography>
+              <Accordion sx={{ mb: 1, boxShadow: 'none', border: '1px solid rgba(0, 0, 0, 0.12)' }}>
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  sx={{
+                    '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
+                    minHeight: '48px',
+                  }}
+                >
+                  <Typography variant="subtitle2">By Subject</Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                  {Object.entries(stats.subjectDistribution)
+                    .sort(([a], [b]) => {
+                      // Custom sort order: Mathematics, English, Science, then others alphabetically
+                      if (a.toLowerCase() === 'mathematics') return -1;
+                      if (b.toLowerCase() === 'mathematics') return 1;
+                      if (a.toLowerCase() === 'english') return -1;
+                      if (b.toLowerCase() === 'english') return 1;
+                      if (a.toLowerCase() === 'science') return -1;
+                      if (b.toLowerCase() === 'science') return 1;
+                      return a.localeCompare(b);
+                    })
+                    .map(([subject, count]) => (
+                      <Box
+                        key={subject}
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          mb: 0.5,
+                          p: 0.5,
+                          borderRadius: 1,
+                          '&:hover': {
+                            backgroundColor: 'rgba(0, 0, 0, 0.02)',
+                          },
+                        }}
+                      >
+                        <Typography variant="body2" sx={{ color: getSubjectColor(subject) }}>
+                          {subject}
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {count}
+                        </Typography>
+                      </Box>
+                    ))}
+                </AccordionDetails>
+              </Accordion>
+              <Accordion sx={{ boxShadow: 'none', border: '1px solid rgba(0, 0, 0, 0.12)' }}>
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  sx={{
+                    '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
+                    minHeight: '48px',
+                  }}
+                >
+                  <Typography variant="subtitle2">By Priority</Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                  {Object.entries(stats.priorityDistribution).map(([priority, count]) => (
+                    <Box
+                      key={priority}
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        mb: 0.5,
+                        p: 0.5,
+                        borderRadius: 1,
+                        '&:hover': {
+                          backgroundColor: 'rgba(0, 0, 0, 0.02)',
+                        },
+                      }}
+                    >
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color:
+                            priority === 'High'
+                              ? 'red'
+                              : priority === 'Medium'
+                              ? '#FFD700'
+                              : priority === 'Low'
+                              ? 'green'
+                              : 'inherit',
+                        }}
+                      >
+                        {priority}
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {count}
+                      </Typography>
+                    </Box>
+                  ))}
+                </AccordionDetails>
+              </Accordion>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Workshop Integration Card */}
+        <Grid item xs={12} md={4}>
+          <Card sx={cardStyle}>
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 2, color: theme.palette.primary.main }}>
+                Workshop
+              </Typography>
+              <Typography variant="body2" sx={{ mb: 2 }}>
+                Create and manage your assignments with AI assistance in the Workshop.
+              </Typography>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => navigate('/workshop')}
+                fullWidth
+                sx={{
+                  backgroundColor: theme.palette.primary.main,
+                  '&:hover': {
+                    backgroundColor: theme.palette.primary.dark,
+                  },
+                }}
+              >
+                Go to Workshop
+              </Button>
+            </CardContent>
+          </Card>
+        </Grid>
       </Grid>
 
-      {/* Search and Filters */}
+      {/* Filters and Search */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={12} md={6}>
           <TextField
-            fullWidth
-            variant="outlined"
             placeholder="Search assignments..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
+            sx={{ ...searchBarStyle, width: '100%', mb: 2 }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon sx={{ color: theme.palette.primary.main }} />
+                  <SearchIcon />
                 </InputAdornment>
               ),
-            }}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                '&:hover fieldset': {
-                  borderColor: theme.palette.primary.main,
-                },
-              },
             }}
           />
         </Grid>
         <Grid item xs={12} md={3}>
           <FormControl fullWidth>
-            <InputLabel>Status</InputLabel>
+            <InputLabel sx={{ color: 'red' }}>Status</InputLabel>
             <Select
               value={filterStatus}
               label="Status"
               onChange={e => setFilterStatus(e.target.value)}
               sx={{
                 '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: theme.palette.primary.main,
+                  borderColor: 'red',
+                  borderWidth: '2px',
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'red',
+                  borderWidth: '2px',
+                },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'red',
+                  borderWidth: '2px',
                 },
               }}
             >
               <MenuItem value="all">All</MenuItem>
-              <MenuItem value="Completed">Completed</MenuItem>
-              <MenuItem value="In Progress">In Progress</MenuItem>
-              <MenuItem value="Overdue">Overdue</MenuItem>
               <MenuItem value="Not Started">Not Started</MenuItem>
+              <MenuItem value="Completed">Completed</MenuItem>
             </Select>
           </FormControl>
         </Grid>
         <Grid item xs={12} md={3}>
           <FormControl fullWidth>
-            <InputLabel>Priority</InputLabel>
+            <InputLabel sx={{ color: 'red' }}>Priority</InputLabel>
             <Select
               value={filterPriority}
               label="Priority"
               onChange={e => setFilterPriority(e.target.value)}
               sx={{
                 '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: theme.palette.primary.main,
+                  borderColor: 'red',
+                  borderWidth: '2px',
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'red',
+                  borderWidth: '2px',
+                },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'red',
+                  borderWidth: '2px',
                 },
               }}
             >
               <MenuItem value="all">All</MenuItem>
-              <MenuItem value="High">High</MenuItem>
-              <MenuItem value="Medium">Medium</MenuItem>
-              <MenuItem value="Low">Low</MenuItem>
+              <MenuItem value="High" sx={{ color: 'error.main' }}>
+                High
+              </MenuItem>
+              <MenuItem value="Medium" sx={{ color: 'warning.main' }}>
+                Medium
+              </MenuItem>
+              <MenuItem value="Low" sx={{ color: 'success.main' }}>
+                Low
+              </MenuItem>
             </Select>
           </FormControl>
         </Grid>
       </Grid>
 
       {/* Assignments Table */}
-      <TableContainer component={Paper} sx={{ boxShadow: 3, borderRadius: 2 }}>
+      <TableContainer component={Paper} sx={tableStyle}>
         <Table>
           <TableHead>
             <TableRow>
               <TableCell>Title</TableCell>
               <TableCell>Subject</TableCell>
-              <TableCell>Due Date</TableCell>
               <TableCell>Status</TableCell>
               <TableCell>Priority</TableCell>
-              <TableCell>Progress</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -332,34 +498,17 @@ const Assignments: React.FC = () => {
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
               .map(assignment => (
                 <TableRow key={assignment.id}>
+                  <TableCell>{assignment.title}</TableCell>
                   <TableCell>
-                    <Typography
-                      component="a"
-                      href={`/dashboard/assignments/${assignment.id}`}
-                      onClick={e => {
-                        e.preventDefault();
-                        navigate(`/dashboard/assignments/${assignment.id}`);
-                      }}
-                      sx={{
-                        color: theme.palette.primary.main,
-                        textDecoration: 'none',
-                        '&:hover': {
-                          textDecoration: 'underline',
-                        },
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {assignment.title}
+                    <Typography sx={{ color: getSubjectColor(assignment.subject) }}>
+                      {assignment.subject}
                     </Typography>
                   </TableCell>
-                  <TableCell>{assignment.subject}</TableCell>
-                  <TableCell>{assignment.dueDate}</TableCell>
                   <TableCell>
-                    <Chip
-                      label={assignment.status}
-                      color={getStatusColor(assignment.status)}
-                      size="small"
-                    />
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {getStatusIcon(assignment.status)}
+                      {assignment.status}
+                    </Box>
                   </TableCell>
                   <TableCell>
                     <Chip
@@ -369,92 +518,44 @@ const Assignments: React.FC = () => {
                     />
                   </TableCell>
                   <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Box sx={{ width: '100%', mr: 1 }}>
-                        <LinearProgress
-                          variant="determinate"
-                          value={assignment.progress}
-                          sx={{
-                            height: 8,
-                            borderRadius: 4,
-                            backgroundColor: theme.palette.grey[200],
-                            '& .MuiLinearProgress-bar': {
-                              backgroundColor: theme.palette.primary.main,
-                            },
-                          }}
-                        />
-                      </Box>
-                      <Typography variant="body2" color="text.secondary">
-                        {assignment.progress}%
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
                     <IconButton onClick={e => handleMenuClick(e, assignment.id)} size="small">
                       <MoreVertIcon />
                     </IconButton>
+                    <Menu
+                      anchorEl={anchorEl}
+                      open={Boolean(anchorEl) && selectedAssignment === assignment.id}
+                      onClose={handleMenuClose}
+                    >
+                      <MenuItem onClick={handleMenuClose}>
+                        <VisibilityIcon sx={{ mr: 1 }} /> View Assignment
+                      </MenuItem>
+                      <MenuItem onClick={handleMenuClose}>
+                        <RefreshIcon sx={{ mr: 1 }} /> Reopen in Workshop
+                      </MenuItem>
+                      <MenuItem onClick={handleMenuClose}>
+                        <EditIcon sx={{ mr: 1 }} /> Edit Title/Metadata
+                      </MenuItem>
+                      <MenuItem onClick={handleMenuClose} sx={{ color: 'error.main' }}>
+                        <DeleteIcon sx={{ mr: 1 }} /> Delete
+                      </MenuItem>
+                    </Menu>
                   </TableCell>
                 </TableRow>
               ))}
           </TableBody>
         </Table>
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
-          component="div"
-          count={filteredAssignments.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
       </TableContainer>
 
-      {/* Action Menu */}
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
-        PaperProps={{
-          sx: {
-            boxShadow: 3,
-            borderRadius: 2,
-          },
-        }}
-      >
-        <MenuItem
-          onClick={() => {
-            handleMenuClose();
-            if (selectedAssignment) {
-              navigate(`/dashboard/assignments/${selectedAssignment}/edit`);
-            }
-          }}
-        >
-          <EditIcon sx={{ mr: 1 }} /> Edit
-        </MenuItem>
-        <MenuItem
-          onClick={async () => {
-            handleMenuClose();
-            if (selectedAssignment) {
-              if (window.confirm('Are you sure you want to delete this assignment?')) {
-                try {
-                  const response = await fetch(`/api/assignments/${selectedAssignment}`, {
-                    method: 'DELETE',
-                  });
-                  if (!response.ok) {
-                    throw new Error('Failed to delete assignment');
-                  }
-                  toast.success('Assignment deleted successfully!');
-                  window.location.reload(); // Simple way to refresh
-                } catch (error) {
-                  toast.error('Failed to delete assignment.');
-                }
-              }
-            }
-          }}
-        >
-          <DeleteIcon sx={{ mr: 1 }} /> Delete
-        </MenuItem>
-      </Menu>
+      {/* Pagination */}
+      <TablePagination
+        rowsPerPageOptions={[5, 10, 25]}
+        component="div"
+        count={filteredAssignments.length}
+        rowsPerPage={rowsPerPage}
+        page={page}
+        onPageChange={handleChangePage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+      />
     </Box>
   );
 };

@@ -1,9 +1,9 @@
 'use client';
 
 import { styled } from '@mui/material/styles';
-import React, { lazy, useCallback, useEffect, useState } from 'react';
+import React, { lazy, useEffect, useState } from 'react';
 import { useInView } from 'react-intersection-observer';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 import { getAdminStats } from '../services/AdminService';
 
 // Remove the Next.js Link wrapper and use MUI's styled directly
@@ -29,19 +29,15 @@ import Chip from '@mui/material/Chip';
 import Container from '@mui/material/Container';
 import Divider from '@mui/material/Divider';
 import Fade from '@mui/material/Fade';
-import IconButton from '@mui/material/IconButton';
 import MuiLink from '@mui/material/Link';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
-import useMediaQuery from '@mui/material/useMediaQuery';
 
 // Lazy load icons
 const AccessTime = lazy(() =>
@@ -86,11 +82,6 @@ const HelpOutline = lazy(() =>
 );
 const LocalOffer = lazy(() =>
   import('@mui/icons-material/LocalOffer').then(module => ({
-    default: module.default,
-  }))
-);
-const MenuIcon = lazy(() =>
-  import('@mui/icons-material/Menu').then(module => ({
     default: module.default,
   }))
 );
@@ -237,27 +228,9 @@ const blogPosts = [
 ];
 
 const Landing: React.FC = () => {
-  const navigate = useNavigate();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [] = useState<null | HTMLElement>(null);
   const [totalUsers, setTotalUsers] = useState<number>(0);
-
-  const handleMenu = useCallback((event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  }, []);
-
-  const handleClose = useCallback(() => {
-    setAnchorEl(null);
-  }, []);
-
-  const handleGetStarted = () => {
-    navigate('/register');
-  };
-
-  const handleLogin = () => {
-    navigate('/login');
-  };
 
   // Fade-in hooks for each section
   const [] = useInView({ threshold: 0.15, triggerOnce: true });
@@ -335,341 +308,260 @@ const Landing: React.FC = () => {
         <Box
           sx={{
             width: '100%',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            px: { xs: 2, sm: 3, md: 4, lg: 10 },
+            pt: 3,
+            position: 'absolute',
+            top: 0,
+            left: 0,
             zIndex: 10,
-            background: 'transparent',
-            py: 2,
           }}
         >
-          <Container maxWidth="lg" sx={{ background: 'transparent' }}>
+          {/* Brand/Logo on the left */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <Box
+              component="img"
+              src="/AssignmentAI_Logo-transparent-white.png"
+              alt="AI Logo"
               sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
+                height: { xs: '3.5rem', md: '3.5rem' },
+                width: 'auto',
+                display: 'block',
+              }}
+            />
+            <Typography
+              variant="h4"
+              sx={{
+                fontWeight: 800,
+                color: 'common.white',
+                letterSpacing: 1,
+                fontSize: { xs: '1.7rem', md: '2.4rem' },
+                textShadow: '0 0 32px rgba(255,255,255,0.25), 0 0 64px rgba(255,255,255,0.18)',
+                userSelect: 'none',
+                textDecoration: 'none',
               }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0 }}>
-                <Typography
-                  variant="h4"
-                  sx={{
-                    fontWeight: 800,
-                    color: 'common.white',
-                    letterSpacing: 1,
-                    fontSize: { xs: '1rem', md: '2.5rem' },
-                    textShadow: '0 0 32px rgba(255,255,255,0.25), 0 0 64px rgba(255,255,255,0.18)',
-                  }}
-                >
-                  AssignmentAI
-                </Typography>
-              </Box>
-              {isMobile ? (
-                <>
-                  <IconButton edge="end" color="inherit" aria-label="menu" onClick={handleMenu}>
-                    <MenuIcon sx={{ fontSize: 32 }} />
-                  </IconButton>
-                  <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleClose}>
-                    <MenuItem
-                      onClick={() => {
-                        handleClose();
-                        document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
-                      }}
-                    >
-                      <span
-                        style={{
-                          color: '#fff',
-                          fontSize: '1.15rem',
-                          fontWeight: 600,
-                        }}
-                      >
-                        Features
-                      </span>
-                    </MenuItem>
-                    <MenuItem
-                      onClick={() => {
-                        handleClose();
-                        document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
-                      }}
-                    >
-                      <span
-                        style={{
-                          color: '#fff',
-                          fontSize: '1.75rem',
-                          fontWeight: 600,
-                        }}
-                      >
-                        Pricing
-                      </span>
-                    </MenuItem>
-                    <MenuItem
-                      onClick={() => {
-                        handleClose();
-                        document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' });
-                      }}
-                    >
-                      <span
-                        style={{
-                          color: '#fff',
-                          fontSize: '1.25rem',
-                          fontWeight: 600,
-                        }}
-                      >
-                        FAQ
-                      </span>
-                    </MenuItem>
-                    <MenuItem onClick={handleLogin}>
-                      <span
-                        style={{
-                          color: '#fff',
-                          fontSize: '1.55rem',
-                          fontWeight: 600,
-                        }}
-                      >
-                        Login
-                      </span>
-                    </MenuItem>
-                    <MenuItem onClick={handleGetStarted}>
-                      <span
-                        style={{
-                          color: '#fff',
-                          fontSize: '1.55rem',
-                          fontWeight: 600,
-                        }}
-                      >
-                        Register
-                      </span>
-                    </MenuItem>
-                  </Menu>
-                </>
-              ) : (
-                <Stack direction="row" spacing={4} alignItems="center">
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <MuiLink
-                      href="#features"
-                      onClick={e => {
-                        e.preventDefault();
-                        document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
-                      }}
-                      sx={{
-                        fontSize: '1.5rem',
-                        fontWeight: 600,
-                        color: 'white',
-                        textDecoration: 'none',
-                        transition: 'all 0.2s ease-in-out',
-                        '&:hover': {
-                          transform: 'translateY(-2px)',
-                          color: '#FFFFFF',
-                        },
-                      }}
-                    >
-                      Features
-                    </MuiLink>
-                    <MuiLink
-                      href="#pricing"
-                      onClick={e => {
-                        e.preventDefault();
-                        document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
-                      }}
-                      sx={{
-                        fontSize: '1.5rem',
-                        fontWeight: 600,
-                        color: 'white',
-                        textDecoration: 'none',
-                        transition: 'all 0.2s ease-in-out',
-                        '&:hover': {
-                          transform: 'translateY(-2px)',
-                          color: '#FFFFFF',
-                        },
-                      }}
-                    >
-                      Pricing
-                    </MuiLink>
-                    <MuiLink
-                      href="#faq"
-                      onClick={e => {
-                        e.preventDefault();
-                        document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' });
-                      }}
-                      sx={{
-                        fontSize: '1.5rem',
-                        fontWeight: 600,
-                        color: 'white',
-                        textDecoration: 'none',
-                        transition: 'all 0.2s ease-in-out',
-                        '&:hover': {
-                          transform: 'translateY(-2px)',
-                          color: '#FFFFFF',
-                        },
-                      }}
-                    >
-                      FAQ
-                    </MuiLink>
-                    <MuiLink
-                      href="#resources-tips"
-                      onClick={e => {
-                        e.preventDefault();
-                        document
-                          .getElementById('resources-tips')
-                          ?.scrollIntoView({ behavior: 'smooth' });
-                      }}
-                      sx={{
-                        fontSize: '1.5rem',
-                        fontWeight: 600,
-                        color: 'white',
-                        textDecoration: 'none',
-                        transition: 'all 0.2s ease-in-out',
-                        '&:hover': {
-                          transform: 'translateY(-2px)',
-                          color: '#FFFFFF',
-                        },
-                      }}
-                    >
-                      Resources
-                    </MuiLink>
-                  </Box>
-                </Stack>
-              )}
-            </Box>
-          </Container>
+              AssignmentAI
+            </Typography>
+          </Box>
+          {/* Navigation links on the right */}
+          <Stack direction="row" spacing={{ xs: 3, md: 4 }} alignItems="center">
+            <MuiLink
+              href="#features"
+              onClick={e => {
+                e.preventDefault();
+                document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              sx={{
+                fontSize: { xs: '1.5rem', md: '1.5rem' },
+                fontWeight: 600,
+                color: 'white',
+                textDecoration: 'none',
+                transition: 'all 0.2s ease-in-out',
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  color: '#FFFFFF',
+                },
+              }}
+            >
+              Features
+            </MuiLink>
+            <MuiLink
+              href="#pricing"
+              onClick={e => {
+                e.preventDefault();
+                document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              sx={{
+                fontSize: { xs: '1.5rem', md: '1.5rem' },
+                fontWeight: 600,
+                color: 'white',
+                textDecoration: 'none',
+                transition: 'all 0.2s ease-in-out',
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  color: '#FFFFFF',
+                },
+              }}
+            >
+              Pricing
+            </MuiLink>
+            <MuiLink
+              href="#faq"
+              onClick={e => {
+                e.preventDefault();
+                document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              sx={{
+                fontSize: { xs: '1.5rem', md: '1.5rem' },
+                fontWeight: 600,
+                color: 'white',
+                textDecoration: 'none',
+                transition: 'all 0.2s ease-in-out',
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  color: '#FFFFFF',
+                },
+              }}
+            >
+              FAQ
+            </MuiLink>
+            <MuiLink
+              href="#resources-tips"
+              onClick={e => {
+                e.preventDefault();
+                document.getElementById('resources-tips')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              sx={{
+                fontSize: { xs: '1.5rem', md: '1.5rem' },
+                fontWeight: 600,
+                color: 'white',
+                textDecoration: 'none',
+                transition: 'all 0.2s ease-in-out',
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  color: '#FFFFFF',
+                },
+              }}
+            >
+              Resources
+            </MuiLink>
+          </Stack>
         </Box>
-        <Container
-          maxWidth="lg"
+        <Box
           sx={{
             flex: 1,
+            width: '100%',
             display: 'flex',
-            alignItems: 'center',
-            background: 'transparent',
+            flexDirection: { xs: 'column', md: 'row' },
+            alignItems: 'stretch',
+            justifyContent: 'space-between',
+            px: { xs: 2, sm: 4, md: 8, lg: 16 },
+            pt: { xs: 10, md: 12 },
+            pb: { xs: 6, md: 8 },
+            minHeight: '80vh',
           }}
         >
-          <Grid container spacing={8} alignItems="center" sx={{ flex: 1 }}>
-            <Grid item xs={12} md={6} sx={{ pl: { md: 8 } }}>
-              <Typography
-                variant="h2"
-                component="h1"
+          {/* Left Side: Text Content */}
+          <Box
+            sx={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'flex-start',
+              textAlign: 'left',
+              pl: 0, // Hug left edge
+              pr: { xs: 0, md: 4 },
+              minWidth: 0,
+            }}
+          >
+            <Typography
+              variant="h2"
+              component="h1"
+              sx={{
+                fontWeight: 700,
+                mb: 2,
+                fontSize: {
+                  xs: '2.0rem',
+                  md: '2.5rem',
+                  lg: '3.0rem',
+                  xl: '3.2rem',
+                },
+                letterSpacing: '-0.02em',
+                textShadow: '0 0 32px rgba(255,255,255,0.25), 0 0 64px rgba(255,255,255,0.18)',
+              }}
+            >
+              Transform Your
+              <br />
+              Academic Journey
+            </Typography>
+            <Box
+              sx={{
+                display: 'inline-block',
+                bgcolor: 'white',
+                color: '#D32F2F',
+                px: 3,
+                py: 1.2,
+                borderRadius: 12,
+                fontWeight: 700,
+                fontSize: '1.0rem',
+                mb: 2,
+                fontFamily: '"Mike Sans", "Audiowide", Arial, sans-serif',
+                boxShadow: '0 0 24px rgba(255,255,255,0.12)',
+                letterSpacing: 0.2,
+              }}
+            >
+              AI-Powered Assignment Creation & Completion
+            </Box>
+            <Typography variant="h6" sx={{ mb: 3, color: 'white', opacity: 0.92, fontWeight: 400 }}>
+              Get AI–powered assistance for your assignments
+              <br />
+              and optimize your academic time.
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button
+                variant="contained"
+                color="primary"
+                size="large"
                 sx={{
-                  fontWeight: 700,
-                  mb: 2,
-                  fontSize: {
-                    xs: '2.0rem',
-                    md: '2.5rem',
-                    lg: '3.0rem',
-                    xl: '3.2rem',
-                  },
-                  letterSpacing: '-0.02em',
-                  textShadow: '0 0 32px rgba(255,255,255,0.25), 0 0 64px rgba(255,255,255,0.18)',
-                }}
-              >
-                Transform Your
-                <br />
-                Academic Journey
-              </Typography>
-              <Box
-                sx={{
-                  display: 'inline-block',
-                  bgcolor: 'white',
-                  color: '#D32F2F',
-                  px: 3,
-                  py: 1.2,
-                  borderRadius: 12,
+                  px: 3.5,
+                  py: 1.8,
                   fontWeight: 700,
                   fontSize: '1.0rem',
-                  mb: 2,
-                  fontFamily: '"Mike Sans", "Audiowide", Arial, sans-serif',
-                  boxShadow: '0 0 24px rgba(255,255,255,0.12)',
-                  letterSpacing: 0.2,
+                  borderRadius: 3,
+                  bgcolor: 'white',
+                  color: '#D32F2F',
+                  textTransform: 'none',
+                  boxShadow: 'none',
+                  '&:hover': {
+                    bgcolor: '#F5F5F5',
+                    color: '#B71C1C',
+                    boxShadow: 'none',
+                  },
                 }}
+                component="a"
+                href="/register"
+                target="_blank"
+                rel="noopener noreferrer"
               >
-                AI-Powered Assignment Creation & Completion
-              </Box>
-              <Typography
-                variant="h5"
+                Get Started
+              </Button>
+              <Button
+                variant="outlined"
+                color="primary"
+                size="large"
                 sx={{
-                  mb: 4,
-                  opacity: 0.9,
-                  textShadow: '0 0 32px rgba(255,255,255,0.18)',
-                  fontSize: { xs: '1.155rem', md: '1.25rem' },
+                  px: 3.5,
+                  py: 1.8,
+                  fontWeight: 700,
+                  fontSize: '1.0rem',
+                  borderRadius: 2,
+                  borderColor: 'white',
+                  color: 'white',
+                  backgroundColor: 'transparent',
+                  borderWidth: 1.5,
+                  textTransform: 'none',
+                  boxShadow: 'none',
+                  '&:hover': {
+                    borderColor: '#F5F5F5',
+                    bgcolor: 'rgba(255,255,255,0.08)',
+                    color: '#F5F5F5',
+                    boxShadow: 'none',
+                  },
                 }}
+                component="a"
+                href="/login"
+                target="_blank"
+                rel="noopener noreferrer"
               >
-                Get AI-powered assistance for your assignments and optimize your academic time.
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <Button
-                  variant="contained"
-                  onClick={() => navigate('/register')}
-                  sx={{
-                    px: 3.5,
-                    py: 1.8,
-                    borderRadius: 2,
-                    textTransform: 'none',
-                    fontSize: '1.1rem',
-                    fontWeight: 600,
-                    backgroundColor: 'white',
-                    color: '#D32F2F',
-                    '&:hover': {
-                      backgroundColor: '#F5F5F5',
-                      color: '#B71C1C',
-                      transform: 'translateY(-2px)',
-                    },
-                  }}
-                >
-                  Get Started
-                </Button>
-                <Button
-                  variant="outlined"
-                  onClick={() => navigate('/login')}
-                  sx={{
-                    px: 3.5,
-                    py: 1.8,
-                    borderRadius: 2,
-                    textTransform: 'none',
-                    fontSize: '1.1rem',
-                    fontWeight: 600,
-                    borderWidth: 2,
-                    borderColor: 'white',
-                    color: 'white',
-                    '&:hover': {
-                      borderWidth: 2,
-                      borderColor: 'white',
-                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                      transform: 'translateY(-2px)',
-                    },
-                  }}
-                >
-                  Sign In
-                </Button>
-              </Box>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              {/* Transparent/white logo centered */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'right',
-                  alignItems: 'center',
-                  height: { xs: '100%', md: '100%' },
-                  width: '100%',
-                  position: 'relative',
-                  flex: 1,
-                  mt: -11,
-                }}
-              >
-                <img
-                  src="/AssignmentAI_Logo-transparent-white.png"
-                  alt="Landing Page Logo"
-                  style={{
-                    width: '2000px',
-                    maxWidth: '100%',
-                    height: 'auto',
-                    borderRadius: 0,
-                    filter:
-                      'drop-shadow(0 0 48px rgba(255,255,255,0.22)) drop-shadow(0 0 96px rgba(255,255,255,0.12))',
-                    transform: 'scale(1.5)',
-                    objectFit: 'contain',
-                  }}
-                />
-              </Box>
-            </Grid>
-          </Grid>
-        </Container>
+                Sign In
+              </Button>
+            </Box>
+          </Box>
+        </Box>
       </Box>
 
       {/* All main content sections go here, e.g. features, pricing, faq, etc. */}
@@ -1453,7 +1345,7 @@ const Landing: React.FC = () => {
                             ))}
                           </Stack>
                           <Button
-                            variant="contained"
+                            variant={plan.popular ? 'contained' : 'outlined'}
                             color="primary"
                             size="large"
                             component={RouterMuiLink}
@@ -1464,10 +1356,21 @@ const Landing: React.FC = () => {
                               fontWeight: 700,
                               fontSize: '1.0rem',
                               borderRadius: 2,
-                              bgcolor: '#D32F2F',
-                              color: 'white',
+                              ...(plan.popular
+                                ? {
+                                    bgcolor: '#D32F2F',
+                                    color: 'white',
+                                    '&:hover': { bgcolor: '#B71C1C' },
+                                  }
+                                : {
+                                    borderColor: '#D32F2F',
+                                    color: '#D32F2F',
+                                    '&:hover': {
+                                      borderColor: '#B71C1C',
+                                      bgcolor: 'rgba(211, 47, 47, 0.04)',
+                                    },
+                                  }),
                               textTransform: 'none',
-                              '&:hover': { bgcolor: '#B71C1C' },
                             }}
                           >
                             {plan.price === 0 ? 'Get Started Free' : 'Choose Plan'}

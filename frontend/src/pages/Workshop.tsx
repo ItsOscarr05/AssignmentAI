@@ -1,27 +1,53 @@
 import {
-  CloudUpload as CloudUploadIcon,
+  Add as AddIcon,
+  Chat as ChatIcon,
+  ContentCopy as ContentCopyIcon,
+  Delete as DeleteIcon,
+  FormatListBulleted as FormatListBulletedIcon,
   History as HistoryIcon,
   Link as LinkIcon,
+  Refresh as RefreshIcon,
   Send as SendIcon,
+  StarBorder as StarBorderIcon,
+  Star as StarIcon,
+  ThumbDown as ThumbDownIcon,
+  ThumbUp as ThumbUpIcon,
+  Title as TitleIcon,
   Upload as UploadIcon,
 } from '@mui/icons-material';
 import {
   Box,
   Button,
-  Chip,
+  Card,
+  CardContent,
   CircularProgress,
+  Divider,
+  Drawer,
   Grid,
-  InputAdornment,
+  IconButton,
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
   Paper,
+  Tab,
+  Tabs,
   TextField,
+  Tooltip,
   Typography,
   useTheme,
 } from '@mui/material';
 import React, { useState } from 'react';
+import {
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { useWorkshopStore } from '../services/WorkshopService';
 
 interface FileUpload {
@@ -30,6 +56,7 @@ interface FileUpload {
   size: number;
   type: string;
   progress: number;
+  preview?: string;
 }
 
 interface LinkSubmission {
@@ -39,16 +66,88 @@ interface LinkSubmission {
   description: string;
 }
 
+interface HistoryItem {
+  id: string;
+  title: string;
+  date: Date;
+  type: 'file' | 'link' | 'chat';
+  isPinned: boolean;
+}
+
+interface ActivityData {
+  date: string;
+  chats: number;
+  files: number;
+  links: number;
+}
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`simple-tabpanel-${index}`}
+      aria-labelledby={`simple-tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
+    </div>
+  );
+}
+
 const Workshop: React.FC = () => {
   const theme = useTheme();
-  const { generateContent, addFile, addLink, error, isLoading } = useWorkshopStore();
+  useWorkshopStore();
   const [input, setInput] = useState('');
-  const [files, setFiles] = useState<FileUpload[]>([]);
-  const [links, setLinks] = useState<LinkSubmission[]>([]);
+  const [] = useState<FileUpload[]>([]);
+  const [] = useState<LinkSubmission[]>([]);
   const [messages, setMessages] = useState<
     Array<{ text: string; isUser: boolean; timestamp: Date }>
   >([]);
-  const [activeTab, setActiveTab] = useState<'chat' | 'files' | 'links'>('chat');
+  const [activeTab, setActiveTab] = useState(0);
+  const [history, setHistory] = useState<HistoryItem[]>([
+    {
+      id: '1',
+      title: 'Math Problem Solving',
+      date: new Date('2024-03-15'),
+      type: 'file',
+      isPinned: true,
+    },
+    {
+      id: '2',
+      title: 'History Essay Outline',
+      date: new Date('2024-03-14'),
+      type: 'link',
+      isPinned: false,
+    },
+    {
+      id: '3',
+      title: 'Science Project Research',
+      date: new Date('2024-03-13'),
+      type: 'chat',
+      isPinned: false,
+    },
+  ]);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  // Sample activity data - in a real app, this would come from your backend
+  const activityData: ActivityData[] = [
+    { date: 'Mon', chats: 4, files: 2, links: 1 },
+    { date: 'Tue', chats: 3, files: 1, links: 2 },
+    { date: 'Wed', chats: 5, files: 3, links: 0 },
+    { date: 'Thu', chats: 2, files: 2, links: 1 },
+    { date: 'Fri', chats: 6, files: 1, links: 3 },
+    { date: 'Sat', chats: 4, files: 0, links: 2 },
+    { date: 'Sun', chats: 3, files: 2, links: 1 },
+  ];
 
   // Custom styles
   const cardStyle = {
@@ -56,381 +155,557 @@ const Workshop: React.FC = () => {
     boxShadow: '0 2px 12px rgba(0, 0, 0, 0.1)',
     borderRadius: '12px',
     transition: 'all 0.2s ease-in-out',
+    border: '2px solid red',
     '&:hover': {
       boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
     },
   };
 
-  const tabButtonStyle = (isActive: boolean) => ({
-    backgroundColor: isActive ? theme.palette.error.main : 'transparent',
-    color: isActive ? '#fff' : theme.palette.error.main,
-    '&:hover': {
-      backgroundColor: isActive ? theme.palette.error.dark : 'rgba(211, 47, 47, 0.04)',
-    },
-    borderRadius: '8px',
-    textTransform: 'none',
-    fontWeight: 600,
-  });
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const uploadedFiles = Array.from(event.target.files || []);
-    for (const file of uploadedFiles) {
-      await addFile(file);
-      const newFile = {
-        id: Math.random().toString(36).substr(2, 9),
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        progress: 0,
-      };
-      setFiles(prev => [...prev, newFile]);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (input.trim()) {
+      setMessages([...messages, { text: input, isUser: true, timestamp: new Date() }]);
+      setInput('');
     }
   };
 
-  const handleLinkSubmit = async (url: string) => {
-    const newLink = {
-      url,
-      title: url,
-      description: `Link to ${url}`,
-    };
-    await addLink(newLink);
-    setLinks(prev => [...prev, { ...newLink, id: Math.random().toString(36).substr(2, 9) }]);
+  const handlePinHistory = (id: string) => {
+    setHistory(prev =>
+      prev.map(item => (item.id === id ? { ...item, isPinned: !item.isPinned } : item))
+    );
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() && files.length === 0 && links.length === 0) return;
-
-    // Add user message
-    const userMessage = { text: input, isUser: true, timestamp: new Date() };
-    setMessages(prev => [...prev, userMessage]);
-    await generateContent(input);
-    setInput('');
+  const getHistoryIcon = (type: HistoryItem['type']) => {
+    switch (type) {
+      case 'file':
+        return <AddIcon />;
+      case 'link':
+        return <LinkIcon />;
+      case 'chat':
+        return <ChatIcon />;
+    }
   };
 
-  const recentHistory = [
-    { title: 'Math Problem Solving', date: '2024-03-15', type: 'file' },
-    { title: 'History Essay Outline', date: '2024-03-14', type: 'link' },
-    { title: 'Science Project Research', date: '2024-03-13', type: 'chat' },
-  ];
+  const handleFileUpload = () => {
+    // Handle file upload logic here
+  };
 
-  return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom className="page-title">
-        AI Workshop
-      </Typography>
-
-      {isLoading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-          <CircularProgress role="progressbar" />
-        </Box>
-      )}
-
-      {error && (
-        <Typography color="error" role="alert" sx={{ mb: 2 }}>
-          {error}
-        </Typography>
-      )}
-
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={8}>
-          <Paper sx={{ ...cardStyle, p: 3 }}>
-            <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+  const renderInputSection = () => {
+    switch (activeTab) {
+      case 0:
+        return (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              fullWidth
+              multiline
+              rows={4}
+              placeholder="Type your message here..."
+              variant="outlined"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': {
+                    borderColor: 'red',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: 'red',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: 'red',
+                  },
+                },
+              }}
+            />
+            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
               <Button
-                variant={activeTab === 'chat' ? 'contained' : 'outlined'}
-                color="primary"
-                onClick={() => setActiveTab('chat')}
-                sx={tabButtonStyle(activeTab === 'chat')}
+                variant="contained"
+                startIcon={<SendIcon />}
+                onClick={handleSubmit}
+                sx={{
+                  backgroundColor: 'red',
+                  '&:hover': {
+                    backgroundColor: '#d32f2f',
+                  },
+                }}
               >
-                Chat
+                Send Message
               </Button>
               <Button
-                variant={activeTab === 'files' ? 'contained' : 'outlined'}
-                color="primary"
-                onClick={() => setActiveTab('files')}
-                startIcon={<UploadIcon />}
-                sx={tabButtonStyle(activeTab === 'files')}
+                variant="outlined"
+                startIcon={<DeleteIcon />}
+                onClick={() => setInput('')}
+                sx={{
+                  borderColor: 'red',
+                  color: 'red',
+                  '&:hover': {
+                    borderColor: 'red',
+                    backgroundColor: 'rgba(255, 0, 0, 0.04)',
+                  },
+                }}
               >
-                Files
-              </Button>
-              <Button
-                variant={activeTab === 'links' ? 'contained' : 'outlined'}
-                color="primary"
-                onClick={() => setActiveTab('links')}
-                startIcon={<LinkIcon />}
-                sx={tabButtonStyle(activeTab === 'links')}
-              >
-                Links
+                Clear
               </Button>
             </Box>
+          </Box>
+        );
+      case 1:
+        return (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box
+              sx={{
+                p: 3,
+                border: '2px dashed #8884d8',
+                borderRadius: 2,
+                textAlign: 'center',
+                backgroundColor: 'rgba(136, 132, 216, 0.02)',
+                cursor: 'pointer',
+                '&:hover': {
+                  backgroundColor: 'rgba(136, 132, 216, 0.04)',
+                },
+              }}
+            >
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx,.txt,.rtf"
+                onChange={handleFileUpload}
+                style={{ display: 'none' }}
+                id="file-upload"
+              />
+              <label htmlFor="file-upload">
+                <Box
+                  sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}
+                >
+                  <UploadIcon sx={{ fontSize: 48, color: '#8884d8', opacity: 0.7 }} />
+                  <Typography variant="h6" color="text.secondary">
+                    Drag and drop your file here
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    or click to browse files
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                    Supported formats: PDF, DOCX, TXT, RTF
+                  </Typography>
+                </Box>
+              </label>
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
+              <Button
+                variant="outlined"
+                startIcon={<DeleteIcon />}
+                sx={{
+                  borderColor: 'red',
+                  color: 'red',
+                  '&:hover': {
+                    borderColor: 'red',
+                    backgroundColor: 'rgba(255, 0, 0, 0.04)',
+                  },
+                }}
+              >
+                Clear
+              </Button>
+            </Box>
+          </Box>
+        );
+      case 2:
+        return (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              fullWidth
+              placeholder="Paste your link here..."
+              variant="outlined"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': {
+                    borderColor: '#82ca9d',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: '#82ca9d',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#82ca9d',
+                  },
+                },
+              }}
+            />
+            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
+              <Button
+                variant="outlined"
+                startIcon={<DeleteIcon />}
+                sx={{
+                  borderColor: 'red',
+                  color: 'red',
+                  '&:hover': {
+                    borderColor: 'red',
+                    backgroundColor: 'rgba(255, 0, 0, 0.04)',
+                  },
+                }}
+              >
+                Clear
+              </Button>
+            </Box>
+          </Box>
+        );
+      default:
+        return null;
+    }
+  };
 
-            {activeTab === 'chat' && (
-              <>
-                <Box sx={{ mb: 3 }}>
-                  {messages.map((message, index) => (
-                    <Paper
-                      key={index}
-                      sx={{
-                        p: 2,
-                        mb: 2,
-                        backgroundColor: message.isUser ? 'rgba(211, 47, 47, 0.04)' : '#fff',
-                        borderRadius: '8px',
-                      }}
-                    >
-                      <Typography variant="body1">{message.text}</Typography>
+  return (
+    <Box sx={{ p: 3, backgroundColor: 'white', minHeight: '100vh' }}>
+      {/* Header */}
+      <Card sx={{ ...cardStyle, mb: 4 }}>
+        <CardContent>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h4" sx={{ color: theme.palette.primary.main }}>
+              AI Workshop
+            </Typography>
+            <Button
+              variant="outlined"
+              startIcon={<HistoryIcon />}
+              onClick={() => setIsDrawerOpen(true)}
+              sx={{ borderColor: 'red', color: 'red', '&:hover': { borderColor: 'red' } }}
+            >
+              History
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
+
+      <Grid container spacing={3}>
+        {/* Main Content */}
+        <Grid item xs={12} md={9}>
+          {/* Activity Chart */}
+          <Paper sx={{ ...cardStyle, p: 3, mb: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Weekly Activity
+            </Typography>
+            <Box sx={{ height: 300 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={activityData}
+                  margin={{
+                    top: 5,
+                    right: 30,
+                    left: 20,
+                    bottom: 5,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <RechartsTooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="chats"
+                    stroke="red"
+                    activeDot={{ r: 8 }}
+                    name="Chats"
+                  />
+                  <Line type="monotone" dataKey="files" stroke="#8884d8" name="Files" />
+                  <Line type="monotone" dataKey="links" stroke="#82ca9d" name="Links" />
+                </LineChart>
+              </ResponsiveContainer>
+            </Box>
+          </Paper>
+
+          {/* Upload Content and Input Section */}
+          <Paper sx={{ ...cardStyle, mb: 3 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 3,
+                borderBottom: '1px solid #e0e0e0',
+              }}
+            >
+              <Typography variant="h6" sx={{ color: 'black', pl: 2 }}>
+                Upload Content
+              </Typography>
+              <Tabs
+                value={activeTab}
+                onChange={(_e, newValue) => setActiveTab(newValue)}
+                sx={{
+                  '& .MuiTabs-indicator': {
+                    backgroundColor:
+                      activeTab === 0 ? 'red' : activeTab === 1 ? '#8884d8' : '#82ca9d',
+                  },
+                }}
+              >
+                <Tab
+                  label="Chat"
+                  icon={<ChatIcon sx={{ color: 'red' }} />}
+                  iconPosition="start"
+                  sx={{
+                    color: 'red',
+                    '&.Mui-selected': {
+                      color: 'red',
+                    },
+                  }}
+                />
+                <Tab
+                  label="Files"
+                  icon={<UploadIcon sx={{ color: '#8884d8' }} />}
+                  iconPosition="start"
+                  sx={{
+                    color: '#8884d8',
+                    '&.Mui-selected': {
+                      color: '#8884d8',
+                    },
+                  }}
+                />
+                <Tab
+                  label="Links"
+                  icon={<LinkIcon sx={{ color: '#82ca9d' }} />}
+                  iconPosition="start"
+                  sx={{
+                    color: '#82ca9d',
+                    '&.Mui-selected': {
+                      color: '#82ca9d',
+                    },
+                  }}
+                />
+              </Tabs>
+            </Box>
+            <Divider />
+            <Box sx={{ p: 2 }}>
+              <TabPanel value={activeTab} index={0}>
+                {renderInputSection()}
+              </TabPanel>
+              <TabPanel value={activeTab} index={1}>
+                {renderInputSection()}
+              </TabPanel>
+              <TabPanel value={activeTab} index={2}>
+                {renderInputSection()}
+              </TabPanel>
+            </Box>
+          </Paper>
+
+          {/* AI Response Area */}
+          <Paper sx={{ ...cardStyle, p: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+              <Typography variant="h6">AI Response</Typography>
+              <Box>
+                <Tooltip title="Copy">
+                  <IconButton size="small" sx={{ color: 'red' }}>
+                    <ContentCopyIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Regenerate">
+                  <IconButton size="small" sx={{ color: 'red' }}>
+                    <RefreshIcon />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            </Box>
+            <Divider sx={{ mb: 2 }} />
+            <Box sx={{ minHeight: '200px' }}>
+              {messages.length > 0 ? (
+                messages.map((message, index) => (
+                  <Paper
+                    key={index}
+                    sx={{
+                      p: 2,
+                      mb: 2,
+                      backgroundColor: message.isUser ? 'rgba(25, 118, 210, 0.04)' : '#fff',
+                      borderRadius: '8px',
+                      border: '1px solid red',
+                    }}
+                  >
+                    <Typography variant="body1">{message.text}</Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
                       <Typography variant="caption" color="text.secondary">
                         {message.timestamp.toLocaleTimeString()}
                       </Typography>
-                    </Paper>
-                  ))}
-                </Box>
-
-                <form onSubmit={handleSubmit}>
-                  <Grid container spacing={2}>
-                    <Grid item xs>
-                      <TextField
-                        fullWidth
-                        variant="outlined"
-                        placeholder="Type your assignment or question here..."
-                        value={input}
-                        onChange={e => setInput(e.target.value)}
-                        multiline
-                        rows={3}
-                        sx={{
-                          '& .MuiOutlinedInput-root': {
-                            '&:hover fieldset': {
-                              borderColor: theme.palette.error.main,
-                            },
-                            '&.Mui-focused fieldset': {
-                              borderColor: theme.palette.error.main,
-                            },
-                          },
-                        }}
-                      />
-                    </Grid>
-                    <Grid item>
-                      <Button
-                        type="submit"
-                        variant="contained"
-                        color="error"
-                        size="large"
-                        sx={{
-                          height: '100%',
-                          px: 4,
-                          borderRadius: '8px',
-                        }}
-                        startIcon={<SendIcon />}
-                        disabled={isLoading}
-                      >
-                        Send
-                      </Button>
-                    </Grid>
-                  </Grid>
-                </form>
-
-                {/* Quick Actions Card */}
-                <Paper sx={{ ...cardStyle, p: 3, mt: 3 }}>
-                  <Typography variant="h6" gutterBottom>
-                    Quick Actions
-                  </Typography>
-                  <List>
-                    <ListItem button onClick={() => setActiveTab('files')}>
-                      <ListItemIcon>
-                        <UploadIcon color="primary" />
-                      </ListItemIcon>
-                      <ListItemText primary="Upload Document" />
-                    </ListItem>
-                    <ListItem button onClick={() => setActiveTab('links')}>
-                      <ListItemIcon>
-                        <LinkIcon color="primary" />
-                      </ListItemIcon>
-                      <ListItemText primary="Add Link" />
-                    </ListItem>
-                    <ListItem button>
-                      <ListItemIcon>
-                        <HistoryIcon color="primary" />
-                      </ListItemIcon>
-                      <ListItemText primary="View History" />
-                    </ListItem>
-                  </List>
-                </Paper>
-
-                {/* AI Suggestions Card */}
-                <Paper sx={{ ...cardStyle, p: 3, mt: 3 }}>
-                  <Typography variant="h6" gutterBottom>
-                    AI Suggestions
-                  </Typography>
-                  <List>
-                    <ListItem>
-                      <ListItemText
-                        primary="Analyze your document"
-                        secondary="Get AI-powered insights and suggestions"
-                      />
-                    </ListItem>
-                    <ListItem>
-                      <ListItemText
-                        primary="Improve your writing"
-                        secondary="Get grammar and style suggestions"
-                      />
-                    </ListItem>
-                    <ListItem>
-                      <ListItemText
-                        primary="Generate summaries"
-                        secondary="Get concise summaries of your content"
-                      />
-                    </ListItem>
-                  </List>
-                </Paper>
-              </>
-            )}
-
-            {activeTab === 'files' && (
-              <Box>
-                <Grid container spacing={3}>
-                  <Grid item xs={12} md={8}>
-                    <Box>
-                      <input
-                        type="file"
-                        multiple
-                        onChange={handleFileUpload}
-                        style={{ display: 'none' }}
-                        id="file-upload"
-                        aria-label="Upload Files"
-                      />
-                      <label htmlFor="file-upload">
-                        <Button
-                          variant="contained"
-                          component="span"
-                          startIcon={<CloudUploadIcon />}
-                          sx={{ mb: 3 }}
-                        >
-                          Upload Files
-                        </Button>
-                      </label>
-                      <List>
-                        {files.map(file => (
-                          <ListItem
-                            key={file.id}
-                            sx={{
-                              bgcolor: 'background.paper',
-                              borderRadius: 1,
-                              mb: 1,
-                            }}
-                          >
-                            <ListItemIcon>
-                              <UploadIcon />
-                            </ListItemIcon>
-                            <ListItemText
-                              primary={file.name}
-                              secondary={`${(file.size / 1024).toFixed(1)} KB`}
-                            />
-                            <Chip
-                              label={`${file.progress}%`}
-                              color={file.progress === 100 ? 'success' : 'primary'}
-                            />
-                          </ListItem>
-                        ))}
-                      </List>
+                      {!message.isUser && (
+                        <Box>
+                          <IconButton size="small">
+                            <ThumbUpIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton size="small">
+                            <ThumbDownIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      )}
                     </Box>
-                  </Grid>
-                </Grid>
-              </Box>
-            )}
-
-            {activeTab === 'links' && (
-              <Box>
-                <Grid container spacing={3}>
-                  <Grid item xs={12} md={8}>
-                    <form
-                      onSubmit={e => {
-                        e.preventDefault();
-                        const form = e.target as HTMLFormElement;
-                        const url = form.url.value;
-                        if (url) {
-                          handleLinkSubmit(url);
-                          form.reset();
-                        }
-                      }}
-                    >
-                      <Grid container spacing={2}>
-                        <Grid item xs>
-                          <TextField
-                            fullWidth
-                            name="url"
-                            variant="outlined"
-                            placeholder="Enter URL..."
-                            InputProps={{
-                              startAdornment: (
-                                <InputAdornment position="start">
-                                  <LinkIcon />
-                                </InputAdornment>
-                              ),
-                            }}
-                          />
-                        </Grid>
-                        <Grid item>
-                          <Button type="submit" variant="contained" color="primary">
-                            Add Link
-                          </Button>
-                        </Grid>
-                      </Grid>
-                    </form>
-                  </Grid>
-                </Grid>
-              </Box>
-            )}
+                  </Paper>
+                ))
+              ) : (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '200px',
+                    color: 'text.secondary',
+                    textAlign: 'center',
+                    p: 3,
+                  }}
+                >
+                  <ChatIcon sx={{ fontSize: 48, color: 'red', mb: 2, opacity: 0.5 }} />
+                  <Typography variant="h6" color="text.secondary" gutterBottom>
+                    No Responses Yet
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Start a conversation by typing a message or uploading a document
+                  </Typography>
+                </Box>
+              )}
+            </Box>
           </Paper>
         </Grid>
 
-        <Grid item xs={12} md={4}>
+        {/* Sidebar */}
+        <Grid item xs={12} md={3}>
           <Paper sx={{ ...cardStyle, p: 3, mb: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Recent History
+              Quick Actions
             </Typography>
             <List>
-              {recentHistory.map((item, index) => (
-                <ListItem key={index}>
-                  <ListItemIcon>
-                    {item.type === 'file' ? (
-                      <UploadIcon color="primary" />
-                    ) : item.type === 'link' ? (
-                      <LinkIcon color="primary" />
-                    ) : (
-                      <HistoryIcon color="primary" />
-                    )}
-                  </ListItemIcon>
-                  <ListItemText primary={item.title} secondary={item.date} />
-                </ListItem>
-              ))}
+              <ListItem button onClick={() => setActiveTab(1)}>
+                <ListItemIcon>
+                  <UploadIcon color="primary" />
+                </ListItemIcon>
+                <ListItemText primary="Upload New Document" />
+              </ListItem>
+              <ListItem button onClick={() => setActiveTab(2)}>
+                <ListItemIcon>
+                  <LinkIcon color="primary" />
+                </ListItemIcon>
+                <ListItemText primary="Add External Link" />
+              </ListItem>
+              <ListItem button>
+                <ListItemIcon>
+                  <HistoryIcon color="primary" />
+                </ListItemIcon>
+                <ListItemText primary="View Saved Assignments" />
+              </ListItem>
             </List>
           </Paper>
 
-          {/* Supported Documents Card */}
+          {/* AI Suggestions */}
+          <Paper sx={{ ...cardStyle, p: 3, mb: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Try These
+            </Typography>
+            <List>
+              <ListItem button onClick={() => setInput('Summarize this document.')}>
+                <ListItemIcon>
+                  <ContentCopyIcon sx={{ color: 'red' }} />
+                </ListItemIcon>
+                <ListItemText primary="Summarize this document." />
+              </ListItem>
+              <ListItem button onClick={() => setInput('Extract key points from this essay.')}>
+                <ListItemIcon>
+                  <FormatListBulletedIcon sx={{ color: 'red' }} />
+                </ListItemIcon>
+                <ListItemText primary="Extract key points from this essay." />
+              </ListItem>
+              <ListItem button onClick={() => setInput('Rewrite in more academic tone.')}>
+                <ListItemIcon>
+                  <TitleIcon sx={{ color: 'red' }} />
+                </ListItemIcon>
+                <ListItemText primary="Rewrite in more academic tone." />
+              </ListItem>
+            </List>
+          </Paper>
+
+          {/* Assignment Tokens */}
           <Paper sx={{ ...cardStyle, p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Supported Documents
+              Assignment Tokens
             </Typography>
-            <Grid container spacing={1}>
-              {['PDF', 'DOCX', 'TXT', 'RTF'].map((type, index) => (
-                <Grid item xs={6} key={index}>
-                  <Chip
-                    label={type}
-                    sx={{
-                      m: 0.5,
-                      backgroundColor: 'rgba(211, 47, 47, 0.04)',
-                      color: theme.palette.error.main,
-                      fontWeight: 500,
-                      '&:hover': {
-                        backgroundColor: 'rgba(211, 47, 47, 0.08)',
-                      },
-                    }}
-                  />
-                </Grid>
-              ))}
-            </Grid>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+              <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+                <CircularProgress
+                  variant="determinate"
+                  value={75}
+                  size={120}
+                  thickness={4}
+                  sx={{ color: 'red' }}
+                />
+                <Box
+                  sx={{
+                    top: 0,
+                    left: 0,
+                    bottom: 0,
+                    right: 0,
+                    position: 'absolute',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Typography variant="h4" component="div" color="text.secondary">
+                    75%
+                  </Typography>
+                </Box>
+              </Box>
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant="body2" color="text.secondary">
+                  Tokens Used: 1,500 / 2,000
+                </Typography>
+              </Box>
+            </Box>
           </Paper>
         </Grid>
       </Grid>
+
+      {/* History Drawer */}
+      <Drawer
+        anchor="right"
+        open={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        sx={{
+          '& .MuiDrawer-paper': {
+            backgroundColor: 'white',
+          },
+        }}
+      >
+        <Box sx={{ width: 350, p: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            Recent History
+          </Typography>
+          <Card sx={{ ...cardStyle, mb: 3, backgroundColor: 'white' }}>
+            <CardContent>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  mb: 2,
+                }}
+              >
+                <Typography variant="h6">Recent History</Typography>
+                <IconButton size="small">
+                  <RefreshIcon sx={{ color: 'red' }} />
+                </IconButton>
+              </Box>
+              <List>
+                {history.map(item => (
+                  <ListItem key={item.id} button onClick={() => handlePinHistory(item.id)}>
+                    <ListItemIcon>
+                      {React.cloneElement(getHistoryIcon(item.type), { sx: { color: 'red' } })}
+                    </ListItemIcon>
+                    <ListItemText primary={item.title} secondary={item.date.toLocaleString()} />
+                    <IconButton
+                      size="small"
+                      onClick={e => {
+                        e.stopPropagation();
+                        handlePinHistory(item.id);
+                      }}
+                    >
+                      {item.isPinned ? <StarIcon color="primary" /> : <StarBorderIcon />}
+                    </IconButton>
+                  </ListItem>
+                ))}
+              </List>
+            </CardContent>
+          </Card>
+        </Box>
+      </Drawer>
     </Box>
   );
 };

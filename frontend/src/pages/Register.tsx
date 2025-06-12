@@ -14,7 +14,7 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -29,9 +29,14 @@ const Register: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
-  const { register, isLoading } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const { register, user } = useAuth();
   const navigate = useNavigate();
   const theme = useTheme();
+
+  useEffect(() => {
+    console.log('Current user state:', user);
+  }, [user]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -70,6 +75,7 @@ const Register: React.FC = () => {
       return;
     }
 
+    setIsLoading(true);
     try {
       await register(
         formData.email,
@@ -79,15 +85,19 @@ const Register: React.FC = () => {
       navigate('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred during registration');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        minHeight: { xs: 'auto', sm: 'auto', md: '100vh' },
+        height: { xs: 'auto', sm: 'auto', md: '100vh' },
         display: 'flex',
         background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.dark} 90%)`,
+        overflowX: 'hidden',
       }}
     >
       <Container
@@ -96,16 +106,18 @@ const Register: React.FC = () => {
         sx={{
           display: 'flex',
           alignItems: 'stretch',
-          height: '100vh',
-          width: '100vw',
+          minHeight: { xs: 'auto', sm: 'auto', md: '100vh' },
+          height: { xs: 'auto', sm: 'auto', md: '100vh' },
+          width: '100%',
         }}
       >
         <Grid
           container
           component={Paper}
+          direction={{ xs: 'column', md: 'row' }}
           sx={{
             borderRadius: 0,
-            overflow: 'hidden',
+            overflow: { xs: 'visible', md: 'hidden' },
             flex: 1,
           }}
         >
@@ -121,18 +133,19 @@ const Register: React.FC = () => {
               justifyContent: 'center',
               alignItems: 'center',
               color: 'white',
-              minHeight: '100vh',
-              height: '100%',
+              minHeight: { xs: 'auto', sm: 'auto', md: '100vh' },
+              height: { xs: 'auto', sm: 'auto', md: '100%' },
               width: '100%',
             }}
           >
-            <Box sx={{ width: '100%', maxWidth: 480 }}>
-              <img
+            <Box sx={{ width: '100%', maxWidth: 480, textAlign: 'center' }}>
+              <Box
+                component="img"
                 src="/AssignmentAI_Logo-transparent-white.png"
                 alt="Logo"
-                style={{
-                  height: 320,
-                  marginBottom: 32,
+                sx={{
+                  height: { xs: 160, sm: 160, md: 320 },
+                  marginBottom: 4,
                   width: 'auto',
                   maxWidth: '100%',
                   objectFit: 'contain',
@@ -192,6 +205,7 @@ const Register: React.FC = () => {
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'flex-start',
+              mt: { xs: 2, sm: 2, md: 0 },
             }}
           >
             <Box

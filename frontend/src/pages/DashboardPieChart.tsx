@@ -6,7 +6,7 @@ interface DashboardPieChartProps {
   stats: { value: string }[];
 }
 
-const DashboardPieChart: React.FC<DashboardPieChartProps> = ({ data, stats }) => (
+const DashboardPieChart: React.FC<DashboardPieChartProps> = ({ data }) => (
   <ResponsiveContainer width="100%" height={240}>
     <PieChart>
       <text
@@ -14,30 +14,27 @@ const DashboardPieChart: React.FC<DashboardPieChartProps> = ({ data, stats }) =>
         y="45%"
         textAnchor="middle"
         dominantBaseline="middle"
-        style={{ fontSize: '16px', fontWeight: 'bold' }}
+        style={{ fontSize: '18px', fontWeight: 'bold' }}
       >
-        Total Assignments:
+        Total Subjects:
       </text>
       <text
         x="50%"
         y="55%"
         textAnchor="middle"
         dominantBaseline="middle"
-        style={{ fontSize: '16px', fontWeight: 'bold' }}
+        style={{ fontSize: '18px', fontWeight: 'bold' }}
       >
-        {stats[0].value}
+        {data.length}
       </text>
       <Pie
         data={data}
         cx="50%"
         cy="50%"
-        innerRadius={55}
-        outerRadius={80}
+        innerRadius={80}
+        outerRadius={110}
         paddingAngle={4}
         dataKey="value"
-        label={({ name, percent }: { name: string; percent: number }) =>
-          `${name}: ${(percent * 100).toFixed(0)}%`
-        }
       >
         {data.map((entry, index) => (
           <Cell key={`cell-${index}`} fill={entry.color} />

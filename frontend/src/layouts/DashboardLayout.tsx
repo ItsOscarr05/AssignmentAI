@@ -2,7 +2,6 @@ import {
   Assignment as AssignmentIcon,
   ChevronLeft as ChevronLeftIcon,
   Dashboard as DashboardIcon,
-  Event as EventIcon,
   Grade as GradeIcon,
   Menu as MenuIcon,
   Message as MessageIcon,
@@ -120,7 +119,6 @@ const StyledDrawer = styled(Drawer)(() => ({
 const menuItems = [
   { text: 'Overview', icon: <DashboardIcon />, path: '/dashboard' },
   { text: 'Assignments', icon: <AssignmentIcon />, path: '/dashboard/assignments' },
-  { text: 'Calendar', icon: <EventIcon />, path: '/dashboard/calendar' },
   { text: 'Messages', icon: <MessageIcon />, path: '/dashboard/messages' },
   { text: 'Grades', icon: <GradeIcon />, path: '/dashboard/grades' },
   { text: 'Students', icon: <PeopleIcon />, path: '/dashboard/students' },

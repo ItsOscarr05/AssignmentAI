@@ -29,10 +29,10 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
-  const { login } = useAuth();
+  const { login, mockLogin } = useAuth();
   const navigate = useNavigate();
   const theme = useTheme();
 
@@ -55,25 +55,21 @@ const Login: React.FC = () => {
     return true;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-
+  const validateForm = () => {
     const isEmailValid = validateEmail(email);
     const isPasswordValid = validatePassword(password);
+    return isEmailValid && isPasswordValid;
+  };
 
-    if (!isEmailValid || !isPasswordValid) {
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      await login(email, password);
-      navigate('/dashboard');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred during login');
-    } finally {
-      setIsLoading(false);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (validateForm()) {
+      try {
+        await login('credentials');
+        navigate('/dashboard');
+      } catch (error) {
+        setError('Invalid email or password');
+      }
     }
   };
 
@@ -353,6 +349,16 @@ const Login: React.FC = () => {
                   }}
                 >
                   {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
+                </Button>
+
+                <Button
+                  variant="contained"
+                  color="primary"
+                  fullWidth
+                  onClick={mockLogin}
+                  sx={{ mt: 2 }}
+                >
+                  Mock Login
                 </Button>
 
                 <Divider sx={{ my: 3 }}>

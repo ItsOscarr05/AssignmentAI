@@ -5,39 +5,33 @@ import enum
 from backend.src.database import Base
 
 class AssignmentStatus(str, enum.Enum):
-    DRAFT = "draft"
-    PUBLISHED = "published"
-    SUBMITTED = "submitted"
-    GRADED = "graded"
-    LATE = "late"
-    OVERDUE = "overdue"
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+
+class AssignmentPriority(str, enum.Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
 
 class Assignment(Base):
     __tablename__ = "assignments"
 
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String(255), nullable=False)
+    id = Column(String(36), primary_key=True)
+    title = Column(String(200), nullable=False)
     description = Column(Text)
-    due_date = Column(DateTime, nullable=False)
-    created_at = Column(DateTime, default=func.now())
-    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
-    
-    # Foreign keys
-    teacher_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
-    
-    # Status and metadata
-    status = Column(Enum(AssignmentStatus), default=AssignmentStatus.DRAFT)
-    max_score = Column(Integer, default=100)
-    current_score = Column(Integer, nullable=True)
-    feedback = Column(Text, nullable=True)
-    
+    subject = Column(String(100), nullable=False)
+    status = Column(Enum(AssignmentStatus), nullable=False, default=AssignmentStatus.PENDING)
+    priority = Column(Enum(AssignmentPriority), nullable=False, default=AssignmentPriority.MEDIUM)
+    progress = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False)
+
     # Relationships
-    teacher = relationship("User", back_populates="assignments")
-    course = relationship("Course", back_populates="assignments")
-    submissions = relationship("Submission", back_populates="assignment")
-    attachments = relationship("Attachment", back_populates="assignment")
-    feedback = relationship("Feedback", back_populates="assignment")
+    user = relationship("User", back_populates="assignments")
+    attachments = relationship("Attachment", back_populates="assignment", cascade="all, delete-orphan")
+    submissions = relationship("Submission", back_populates="assignment", cascade="all, delete-orphan")
 
 class AssignmentSubmission(Base):
     __tablename__ = "assignment_submissions"

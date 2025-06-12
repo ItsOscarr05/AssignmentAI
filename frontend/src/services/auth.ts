@@ -155,6 +155,10 @@ class AuthService {
 
     return response.data;
   }
+
+  async register(data: { email: string; password: string; firstName: string; lastName: string }) {
+    return api.post('/auth/register', data);
+  }
 }
 
 export { AuthService };
