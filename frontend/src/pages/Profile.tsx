@@ -1,15 +1,15 @@
 import {
-  AccountCircle,
-  Assignment,
-  Badge,
-  CalendarMonth,
-  Edit,
-  Email,
-  Language,
-  LocationOn,
-  School,
-  Timeline,
-  Verified,
+  AccountCircleOutlined,
+  AssignmentOutlined,
+  BadgeOutlined,
+  CalendarMonthOutlined,
+  EditOutlined,
+  EmailOutlined,
+  LanguageOutlined,
+  LocationOnOutlined,
+  SchoolOutlined,
+  TimelineOutlined,
+  VerifiedOutlined,
 } from '@mui/icons-material';
 import {
   Avatar,
@@ -56,8 +56,8 @@ const ProfileSection = ({ title, icon, children }: any) => {
       sx={{
         p: 4,
         mb: 4,
-        border: '1px solid',
-        borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+        border: '2px solid',
+        borderColor: 'error.main',
         borderRadius: 3,
         background:
           theme.palette.mode === 'dark'
@@ -68,7 +68,7 @@ const ProfileSection = ({ title, icon, children }: any) => {
         '&:hover': {
           transform: 'translateY(-4px)',
           boxShadow: theme.shadows[8],
-          borderColor: theme.palette.primary.main,
+          borderColor: 'error.dark',
         },
       }}
     >
@@ -90,7 +90,7 @@ const ProfileSection = ({ title, icon, children }: any) => {
         >
           {icon}
         </Box>
-        <Typography variant="h5" fontWeight="normal">
+        <Typography variant="h5" fontWeight="400">
           {title}
         </Typography>
       </Stack>
@@ -179,6 +179,196 @@ const ActivityItem = ({ title, date, status, icon }: any) => {
   );
 };
 
+const ActivityTimelineItem = ({ date, title, description, icon, status }: any) => {
+  const theme = useTheme();
+  return (
+    <Box sx={{ display: 'flex', mb: 4, position: 'relative' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          mr: 2,
+        }}
+      >
+        <Box
+          sx={{
+            p: 1.5,
+            borderRadius: 2,
+            background: '#ffffff',
+            color: theme.palette.primary.main,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            border: '1px solid',
+            borderColor:
+              theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+            zIndex: 1,
+          }}
+        >
+          {icon}
+        </Box>
+        <Box
+          sx={{
+            width: 2,
+            flexGrow: 1,
+            bgcolor: 'divider',
+            my: 1,
+          }}
+        />
+      </Box>
+      <Box
+        sx={{
+          flexGrow: 1,
+          p: 2,
+          borderRadius: 2,
+          bgcolor: 'rgba(0,0,0,0.02)',
+          border: '1px solid',
+          borderColor: 'divider',
+          position: 'relative',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            left: -8,
+            top: 20,
+            width: 16,
+            height: 16,
+            bgcolor: 'background.paper',
+            border: '1px solid',
+            borderColor: 'divider',
+            transform: 'rotate(45deg)',
+          },
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+          <Typography variant="subtitle1" fontWeight="500">
+            {title}
+          </Typography>
+          <Chip
+            label={status}
+            size="small"
+            color={
+              status === 'Completed'
+                ? 'success'
+                : status === 'In Progress'
+                ? 'warning'
+                : status === 'Overdue'
+                ? 'error'
+                : 'default'
+            }
+            sx={{ borderRadius: 1 }}
+          />
+        </Box>
+        <Typography variant="body2" color="text.secondary" gutterBottom>
+          {date}
+        </Typography>
+        <Typography variant="body2">{description}</Typography>
+      </Box>
+    </Box>
+  );
+};
+
+const AchievementCard = ({ title, description, icon, progress, total, unlocked }: any) => {
+  const theme = useTheme();
+  return (
+    <Paper
+      sx={{
+        p: 3,
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        background: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+        borderRadius: 2,
+        border: '1px solid',
+        borderColor: unlocked ? 'success.main' : 'divider',
+        position: 'relative',
+        overflow: 'hidden',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 4,
+          background: unlocked
+            ? `linear-gradient(90deg, ${theme.palette.success.main}, ${theme.palette.success.light})`
+            : 'transparent',
+        },
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          mb: 2,
+          gap: 2,
+        }}
+      >
+        <Box
+          sx={{
+            p: 1.5,
+            borderRadius: 2,
+            background: '#ffffff',
+            color: unlocked ? 'success.main' : theme.palette.primary.main,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            border: '1px solid',
+            borderColor:
+              theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+          }}
+        >
+          {icon}
+        </Box>
+        <Box sx={{ flexGrow: 1 }}>
+          <Typography variant="h6" gutterBottom>
+            {title}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {description}
+          </Typography>
+        </Box>
+        {unlocked && (
+          <Box
+            sx={{
+              p: 1,
+              borderRadius: '50%',
+              background: 'success.main',
+              color: 'white',
+            }}
+          >
+            <VerifiedOutlined fontSize="small" />
+          </Box>
+        )}
+      </Box>
+      <Box sx={{ mt: 'auto' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+          <Typography variant="body2" color="text.secondary">
+            Progress
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {progress}/{total}
+          </Typography>
+        </Box>
+        <Box
+          sx={{
+            height: 6,
+            bgcolor: 'rgba(0,0,0,0.1)',
+            borderRadius: 3,
+            overflow: 'hidden',
+          }}
+        >
+          <Box
+            sx={{
+              height: '100%',
+              width: `${(progress / total) * 100}%`,
+              bgcolor: unlocked ? 'success.main' : 'primary.main',
+              borderRadius: 3,
+              transition: 'width 0.3s ease',
+            }}
+          />
+        </Box>
+      </Box>
+    </Paper>
+  );
+};
+
 const Profile: React.FC = () => {
   const theme = useTheme();
   const [tabValue, setTabValue] = useState(0);
@@ -188,30 +378,119 @@ const Profile: React.FC = () => {
   };
 
   const stats = [
-    { icon: <Assignment />, title: 'Total Assignments', value: '156' },
-    { icon: <Verified />, title: 'Completed', value: '134' },
-    { icon: <Timeline />, title: 'In Progress', value: '12' },
-    { icon: <CalendarMonth />, title: 'Overdue', value: '10' },
+    { icon: <AssignmentOutlined />, title: 'Total Assignments', value: '156' },
+    { icon: <VerifiedOutlined />, title: 'Completed', value: '134' },
+    { icon: <TimelineOutlined />, title: 'In Progress', value: '12' },
+    { icon: <CalendarMonthOutlined />, title: 'Overdue', value: '10' },
   ];
 
-  const recentActivity = [
+  const skills = [
+    { name: 'Python', level: 90 },
+    { name: 'JavaScript', level: 85 },
+    { name: 'Machine Learning', level: 80 },
+    { name: 'Data Analysis', level: 75 },
+    { name: 'Web Development', level: 85 },
+    { name: 'Database Design', level: 70 },
+  ];
+
+  const education = [
     {
+      degree: 'Bachelor of Science in Computer Science',
+      school: 'University of Technology',
+      year: '2020 - 2024',
+      gpa: '3.8/4.0',
+    },
+    {
+      degree: 'Associate Degree in Programming',
+      school: 'Community College',
+      year: '2018 - 2020',
+      gpa: '3.9/4.0',
+    },
+  ];
+
+  const activityTimeline = [
+    {
+      date: 'February 15, 2024',
       title: 'Research Paper: Machine Learning',
-      date: '2 hours ago',
+      description:
+        'Working on a comprehensive analysis of machine learning algorithms and their applications in real-world scenarios.',
+      icon: <AssignmentOutlined />,
       status: 'In Progress',
-      icon: <Assignment />,
     },
     {
+      date: 'February 14, 2024',
       title: 'Math Assignment: Calculus II',
-      date: 'Yesterday',
+      description:
+        'Completed the advanced calculus assignment focusing on multivariable calculus and vector analysis.',
+      icon: <AssignmentOutlined />,
       status: 'Completed',
-      icon: <Assignment />,
     },
     {
+      date: 'February 12, 2024',
       title: 'Physics Lab Report',
-      date: '3 days ago',
+      description:
+        'Conducted experiments on wave mechanics and prepared a detailed lab report with data analysis.',
+      icon: <AssignmentOutlined />,
       status: 'Overdue',
-      icon: <Assignment />,
+    },
+    {
+      date: 'February 10, 2024',
+      title: 'Programming Project: Web Application',
+      description:
+        'Developed a full-stack web application using React and Node.js for the software engineering course.',
+      icon: <AssignmentOutlined />,
+      status: 'Completed',
+    },
+  ];
+
+  const achievements = [
+    {
+      title: 'Assignment Master',
+      description: 'Complete 100 assignments with a grade of A or higher',
+      icon: <AssignmentOutlined />,
+      progress: 85,
+      total: 100,
+      unlocked: false,
+    },
+    {
+      title: 'Perfect Streak',
+      description: 'Submit 10 assignments on time in a row',
+      icon: <TimelineOutlined />,
+      progress: 10,
+      total: 10,
+      unlocked: true,
+    },
+    {
+      title: 'Early Bird',
+      description: 'Submit 5 assignments before the deadline',
+      icon: <CalendarMonthOutlined />,
+      progress: 3,
+      total: 5,
+      unlocked: false,
+    },
+    {
+      title: 'Research Scholar',
+      description: 'Complete 5 research papers',
+      icon: <SchoolOutlined />,
+      progress: 5,
+      total: 5,
+      unlocked: true,
+    },
+    {
+      title: 'Team Player',
+      description: 'Participate in 10 group projects',
+      icon: <BadgeOutlined />,
+      progress: 7,
+      total: 10,
+      unlocked: false,
+    },
+    {
+      title: 'Perfect Score',
+      description: 'Get 100% on any assignment',
+      icon: <VerifiedOutlined />,
+      progress: 1,
+      total: 1,
+      unlocked: true,
     },
   ];
 
@@ -249,7 +528,7 @@ const Profile: React.FC = () => {
         </Typography>
         <Button
           variant="contained"
-          startIcon={<Edit />}
+          startIcon={<EditOutlined />}
           sx={{
             ml: 'auto',
             px: 4,
@@ -324,15 +603,15 @@ const Profile: React.FC = () => {
               },
             }}
           >
-            <Tab icon={<AccountCircle />} label="Overview" sx={{ gap: 1 }} />
-            <Tab icon={<Timeline />} label="Activity" sx={{ gap: 1 }} />
-            <Tab icon={<Badge />} label="Achievements" sx={{ gap: 1 }} />
+            <Tab icon={<AccountCircleOutlined />} label="Overview" sx={{ gap: 1 }} />
+            <Tab icon={<TimelineOutlined />} label="Activity" sx={{ gap: 1 }} />
+            <Tab icon={<BadgeOutlined />} label="Achievements" sx={{ gap: 1 }} />
           </Tabs>
         </Box>
 
         <Box sx={{ p: 4 }}>
           <TabPanel value={tabValue} index={0}>
-            <ProfileSection title="Personal Information" icon={<AccountCircle />}>
+            <ProfileSection title="Personal Information" icon={<AccountCircleOutlined />}>
               <Box sx={{ position: 'relative', mb: 4, textAlign: 'center' }}>
                 <Avatar
                   sx={{
@@ -343,10 +622,10 @@ const Profile: React.FC = () => {
                     border: '4px solid',
                     borderColor: theme.palette.primary.main,
                     boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                    background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
+                    background: '#fff',
                   }}
                 >
-                  JD
+                  <AccountCircleOutlined sx={{ fontSize: 80, color: theme.palette.error.main }} />
                 </Avatar>
                 <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
                   John Doe
@@ -365,7 +644,7 @@ const Profile: React.FC = () => {
                   }}
                 >
                   <Chip
-                    icon={<Email />}
+                    icon={<EmailOutlined />}
                     label="john.doe@example.com"
                     sx={{
                       background: 'rgba(255,255,255,0.9)',
@@ -377,7 +656,7 @@ const Profile: React.FC = () => {
                     }}
                   />
                   <Chip
-                    icon={<LocationOn />}
+                    icon={<LocationOnOutlined />}
                     label="New York, USA"
                     sx={{
                       background: 'rgba(255,255,255,0.9)',
@@ -389,7 +668,7 @@ const Profile: React.FC = () => {
                     }}
                   />
                   <Chip
-                    icon={<Language />}
+                    icon={<LanguageOutlined />}
                     label="English"
                     sx={{
                       background: 'rgba(255,255,255,0.9)',
@@ -401,7 +680,7 @@ const Profile: React.FC = () => {
                     }}
                   />
                   <Chip
-                    icon={<School />}
+                    icon={<SchoolOutlined />}
                     label="University of Technology"
                     sx={{
                       background: 'rgba(255,255,255,0.9)',
@@ -426,9 +705,76 @@ const Profile: React.FC = () => {
               </Grid>
             </ProfileSection>
 
-            <ProfileSection title="Recent Activity" icon={<Timeline />}>
+            <ProfileSection title="Skills & Expertise" icon={<TimelineOutlined />}>
+              <Grid container spacing={3}>
+                {skills.map((skill, index) => (
+                  <Grid item xs={12} md={6} key={index}>
+                    <Box sx={{ mb: 2 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                        <Typography variant="subtitle1">{skill.name}</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {skill.level}%
+                        </Typography>
+                      </Box>
+                      <Box
+                        sx={{
+                          height: 8,
+                          bgcolor: 'rgba(0,0,0,0.1)',
+                          borderRadius: 4,
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            height: '100%',
+                            width: `${skill.level}%`,
+                            bgcolor: theme.palette.primary.main,
+                            borderRadius: 4,
+                            transition: 'width 0.3s ease',
+                          }}
+                        />
+                      </Box>
+                    </Box>
+                  </Grid>
+                ))}
+              </Grid>
+            </ProfileSection>
+
+            <ProfileSection title="Education" icon={<SchoolOutlined />}>
+              <Stack spacing={3}>
+                {education.map((edu, index) => (
+                  <Box
+                    key={index}
+                    sx={{
+                      p: 3,
+                      borderRadius: 2,
+                      bgcolor: 'rgba(0,0,0,0.02)',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                    }}
+                  >
+                    <Typography variant="h6" gutterBottom>
+                      {edu.degree}
+                    </Typography>
+                    <Typography color="text.secondary" gutterBottom>
+                      {edu.school}
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
+                      <Chip size="small" label={edu.year} sx={{ bgcolor: 'rgba(0,0,0,0.05)' }} />
+                      <Chip
+                        size="small"
+                        label={`GPA: ${edu.gpa}`}
+                        sx={{ bgcolor: 'rgba(0,0,0,0.05)' }}
+                      />
+                    </Box>
+                  </Box>
+                ))}
+              </Stack>
+            </ProfileSection>
+
+            <ProfileSection title="Recent Activity" icon={<TimelineOutlined />}>
               <Stack spacing={2}>
-                {recentActivity.map((activity, index) => (
+                {activityTimeline.map((activity, index) => (
                   <ActivityItem key={index} {...activity} />
                 ))}
               </Stack>
@@ -436,24 +782,199 @@ const Profile: React.FC = () => {
           </TabPanel>
 
           <TabPanel value={tabValue} index={1}>
-            <ProfileSection title="Activity Timeline" icon={<Timeline />}>
-              <Typography variant="h6" gutterBottom>
-                Coming Soon
-              </Typography>
-              <Typography color="text.secondary">
-                Detailed activity timeline will be available in the next update.
-              </Typography>
+            <ProfileSection title="Activity Timeline" icon={<TimelineOutlined />}>
+              <Box sx={{ position: 'relative' }}>
+                {activityTimeline.map((activity, index) => (
+                  <ActivityTimelineItem key={index} {...activity} />
+                ))}
+              </Box>
+            </ProfileSection>
+
+            <ProfileSection title="Activity Statistics" icon={<TimelineOutlined />}>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <Paper
+                    sx={{
+                      p: 3,
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-start',
+                      background:
+                        theme.palette.mode === 'dark'
+                          ? 'rgba(255,255,255,0.05)'
+                          : 'rgba(0,0,0,0.02)',
+                      borderRadius: 2,
+                    }}
+                  >
+                    <Typography variant="h6" gutterBottom>
+                      Assignment Completion Rate
+                    </Typography>
+                    <Box sx={{ width: '100%', mt: 2 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                        <Typography variant="body2" color="text.secondary">
+                          Completed
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          85%
+                        </Typography>
+                      </Box>
+                      <Box
+                        sx={{
+                          height: 8,
+                          bgcolor: 'rgba(0,0,0,0.1)',
+                          borderRadius: 4,
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            height: '100%',
+                            width: '85%',
+                            bgcolor: 'success.main',
+                            borderRadius: 4,
+                          }}
+                        />
+                      </Box>
+                    </Box>
+                  </Paper>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Paper
+                    sx={{
+                      p: 3,
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-start',
+                      background:
+                        theme.palette.mode === 'dark'
+                          ? 'rgba(255,255,255,0.05)'
+                          : 'rgba(0,0,0,0.02)',
+                      borderRadius: 2,
+                    }}
+                  >
+                    <Typography variant="h6" gutterBottom>
+                      Average Completion Time
+                    </Typography>
+                    <Box sx={{ width: '100%', mt: 2 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                        <Typography variant="body2" color="text.secondary">
+                          Last 30 Days
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          3.2 days
+                        </Typography>
+                      </Box>
+                      <Box
+                        sx={{
+                          height: 8,
+                          bgcolor: 'rgba(0,0,0,0.1)',
+                          borderRadius: 4,
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            height: '100%',
+                            width: '65%',
+                            bgcolor: 'info.main',
+                            borderRadius: 4,
+                          }}
+                        />
+                      </Box>
+                    </Box>
+                  </Paper>
+                </Grid>
+              </Grid>
             </ProfileSection>
           </TabPanel>
 
           <TabPanel value={tabValue} index={2}>
-            <ProfileSection title="Achievements & Badges" icon={<Badge />}>
-              <Typography variant="h6" gutterBottom>
-                Coming Soon
-              </Typography>
-              <Typography color="text.secondary">
-                Achievement system will be available in the next update.
-              </Typography>
+            <ProfileSection title="Achievements & Badges" icon={<BadgeOutlined />}>
+              <Box sx={{ mb: 4 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6" sx={{ mr: 2 }}>
+                    Achievement Progress
+                  </Typography>
+                  <Typography
+                    variant="h4"
+                    sx={{
+                      color: 'success.main',
+                    }}
+                  >
+                    {achievements.filter(a => a.unlocked).length}/{achievements.length}
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    height: 8,
+                    bgcolor: 'rgba(0,0,0,0.1)',
+                    borderRadius: 4,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <Box
+                    sx={{
+                      height: '100%',
+                      width: `${
+                        (achievements.filter(a => a.unlocked).length / achievements.length) * 100
+                      }%`,
+                      bgcolor: 'success.main',
+                      borderRadius: 4,
+                      transition: 'width 0.3s ease',
+                    }}
+                  />
+                </Box>
+              </Box>
+
+              <Grid container spacing={3}>
+                {achievements.map((achievement, index) => (
+                  <Grid item xs={12} md={6} key={index}>
+                    <AchievementCard {...achievement} />
+                  </Grid>
+                ))}
+              </Grid>
+            </ProfileSection>
+
+            <ProfileSection title="Recent Achievements" icon={<VerifiedOutlined />}>
+              <Stack spacing={2}>
+                {achievements
+                  .filter(a => a.unlocked)
+                  .slice(0, 3)
+                  .map((achievement, index) => (
+                    <Box
+                      key={index}
+                      sx={{
+                        p: 2,
+                        borderRadius: 2,
+                        bgcolor: 'rgba(0,0,0,0.02)',
+                        border: '1px solid',
+                        borderColor: 'success.main',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 2,
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          p: 1,
+                          borderRadius: '50%',
+                          background: 'success.main',
+                          color: 'white',
+                        }}
+                      >
+                        <VerifiedOutlined fontSize="small" />
+                      </Box>
+                      <Box>
+                        <Typography variant="subtitle1">{achievement.title}</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {achievement.description}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  ))}
+              </Stack>
             </ProfileSection>
           </TabPanel>
         </Box>

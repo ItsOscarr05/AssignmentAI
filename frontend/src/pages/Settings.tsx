@@ -25,6 +25,7 @@ import {
   Save,
   Search,
   SecurityOutlined,
+  SecurityUpdateOutlined,
   ShieldOutlined,
   Tune,
   UpdateOutlined,
@@ -64,21 +65,12 @@ import {
   Stack,
   Switch,
   Tab,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   Tabs,
   TextField,
   Typography,
   useTheme,
 } from '@mui/material';
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AI_MODELS, MODEL_COMPARISON } from '../config';
-import { useAuth } from '../contexts/AuthContext';
-import { useSettings } from '../contexts/SettingsContext';
+import React, { useState } from 'react';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -109,41 +101,14 @@ interface SubscriptionConfig {
   label: string;
 }
 
-interface ModelComparison {
-  model: string;
-  speed: string;
-  accuracy: string;
-  cost: string;
-  bestFor: string[];
-}
-
 const Settings: React.FC = () => {
   const theme = useTheme();
-  const navigate = useNavigate();
-  const { logout } = useAuth();
-  const {
-    settings,
-    loading,
-    error,
-    updateGeneralSettings,
-    updateAISettings,
-    updateNotificationSettings,
-    updatePrivacySettings,
-    changePassword,
-    toggle2FA,
-    setupBiometricLogin,
-    downloadUserData,
-    deleteAccount,
-    getActiveSessions,
-    revokeSession,
-  } = useSettings();
   const [tabValue, setTabValue] = useState(0);
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showModelComparison, setShowModelComparison] = useState(false);
+  const [, setShowModelComparison] = useState(false);
   const [showNotificationPreview, setShowNotificationPreview] = useState(false);
-  const [showSecurityScore, setShowSecurityScore] = useState(false);
-  const [activeSessions, setActiveSessions] = useState<any[]>([]);
+  const [] = useState(false);
 
   // General Settings
   const [darkMode, setDarkMode] = useState(false);
@@ -171,7 +136,7 @@ const Settings: React.FC = () => {
   const [completionSounds, setCompletionSounds] = useState(true);
 
   // AI Settings
-  const [aiModel, setAiModel] = useState('gpt-4');
+  const [] = useState('gpt-4');
   const [maxTokens, setMaxTokens] = useState<number>(1000);
   const [temperature, setTemperature] = useState('0.7');
   const [contextLength, setContextLength] = useState(10);
@@ -222,7 +187,7 @@ const Settings: React.FC = () => {
   });
 
   const [securitySettings] = useState({
-    passwordStrength: 'strong',
+    passwordStrength: 'strong', // 'weak', 'medium', 'strong'
     lastPasswordChange: '2024-01-15',
     lastSecurityAudit: '2024-02-01',
     failedLoginAttempts: 0,
@@ -237,13 +202,77 @@ const Settings: React.FC = () => {
     tokenLimit: 30000,
   });
 
-  // Update subscription config to use AI_MODELS from config
+  // Map subscription plans to their respective models and token limits
   const subscriptionConfig: Record<SubscriptionPlan, SubscriptionConfig> = {
-    free: AI_MODELS.FREE,
-    plus: AI_MODELS.PLUS,
-    pro: AI_MODELS.PRO,
-    max: AI_MODELS.MAX,
+    free: {
+      model: 'gpt-4-0125-preview',
+      tokenLimit: 30000,
+      label: 'GPT-4.1 Nano',
+    },
+    plus: {
+      model: 'gpt-3.5-turbo-0125',
+      tokenLimit: 50000,
+      label: 'GPT-3.5 Turbo',
+    },
+    pro: {
+      model: 'gpt-4-turbo-preview',
+      tokenLimit: 75000,
+      label: 'GPT-4 Turbo',
+    },
+    max: {
+      model: 'gpt-4',
+      tokenLimit: 100000,
+      label: 'GPT-4',
+    },
   };
+
+  // Model comparison data
+
+  // Security checklist data
+  const securityChecklist = [
+    {
+      id: 'password',
+      title: 'Strong Password',
+      description: 'Use a password with at least 6 characters (symbols optional)',
+      status: 'warning',
+      action: 'Change Password',
+      icon: <VpnKeyOutlined />,
+    },
+    {
+      id: '2fa',
+      title: 'Two-Factor Authentication',
+      description: 'Add an extra layer of security to your account',
+      status: privacySettings.twoFactorAuth ? 'success' : 'error',
+      action: 'Enable 2FA',
+      icon: <ShieldOutlined />,
+    },
+    {
+      id: 'biometric',
+      title: 'Biometric Login',
+      description: 'Use fingerprint or face recognition for quick and secure login',
+      status: privacySettings.biometricLogin ? 'success' : 'warning',
+      action: 'Setup Biometric',
+      icon: <FingerprintOutlined />,
+    },
+    {
+      id: 'sessions',
+      title: 'Active Sessions',
+      description: 'Review and manage your active login sessions',
+      status: 'info',
+      action: 'View Sessions',
+      icon: <HistoryOutlined />,
+    },
+    {
+      id: 'updates',
+      title: 'Security Updates',
+      description: 'Keep your security settings up to date',
+      status: 'success',
+      action: 'Check Updates',
+      icon: <SecurityUpdateOutlined />,
+    },
+  ];
+
+  // Calculate security score
 
   // Notification preview data
   const notificationPreview = {
@@ -253,163 +282,15 @@ const Settings: React.FC = () => {
     time: '2 minutes ago',
   };
 
-  // Security checklist data
-  const securityChecklist = [
-    {
-      id: 'password',
-      title: 'Strong Password',
-      description: 'Use a password with at least 6 characters (symbols optional)',
-      status: 'warning' as const,
-      action: 'Change Password',
-      icon: <VpnKeyOutlined />,
-    },
-    {
-      id: '2fa',
-      title: 'Two-Factor Authentication',
-      description: 'Add an extra layer of security to your account',
-      status: privacySettings.twoFactorAuth ? ('success' as const) : ('error' as const),
-      action: 'Enable 2FA',
-      icon: <ShieldOutlined />,
-    },
-    {
-      id: 'biometric',
-      title: 'Biometric Login',
-      description: 'Use fingerprint or face recognition for quick and secure login',
-      status: privacySettings.biometricLogin ? ('success' as const) : ('warning' as const),
-      action: 'Setup Biometric',
-      icon: <FingerprintOutlined />,
-    },
-    {
-      id: 'sessions',
-      title: 'Active Sessions',
-      description: 'Review and manage your active login sessions',
-      status: 'info' as const,
-      action: 'View Sessions',
-      icon: <HistoryOutlined />,
-    },
-    {
-      id: 'updates',
-      title: 'Security Updates',
-      description: 'Keep your security settings up to date',
-      status: 'success' as const,
-      action: 'Check Updates',
-      icon: <SecurityOutlined />,
-    },
-  ];
-
-  // Calculate security score
-  const securityScore = Math.round(
-    (securityChecklist.filter((item: { status: string }) => item.status === 'success').length /
-      securityChecklist.length) *
-      100
-  );
+  // Filter settings based on search query
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 
-  const handleSave = async () => {
-    try {
-      const generalSettings = {
-        darkMode,
-        language,
-        fontSize,
-        animations,
-        compactMode,
-        soundEffects,
-        volume,
-        quietHoursStart,
-        quietHoursEnd,
-        timeZone,
-        dateFormat,
-        autoTranslate,
-        showOriginalText,
-        useMetricSystem,
-        use24HourFormat,
-        hapticFeedback,
-        notificationSounds,
-        typingSounds,
-        completionSounds,
-      };
-
-      const aiSettings = {
-        aiModel,
-        maxTokens,
-        temperature: parseFloat(temperature),
-        contextLength,
-        autoComplete,
-        codeSnippets,
-        aiSuggestions,
-        realTimeAnalysis,
-      };
-
-      const notificationSettings = {
-        notifications,
-        quietHoursStart,
-        quietHoursEnd,
-      };
-
-      const privacySettingsData = {
-        twoFactorAuth: privacySettings.twoFactorAuth,
-        biometricLogin: privacySettings.biometricLogin,
-        dataCollection: privacySettings.dataCollection,
-        shareAnalytics: privacySettings.shareAnalytics,
-        showOnlineStatus: privacySettings.showOnlineStatus,
-        allowTracking: privacySettings.allowTracking,
-        autoLock: privacySettings.autoLock,
-        lockTimeout: privacySettings.lockTimeout,
-        passwordExpiry: privacySettings.passwordExpiry,
-        sessionTimeout: privacySettings.sessionTimeout,
-      };
-
-      await Promise.all([
-        updateGeneralSettings(generalSettings),
-        updateAISettings(aiSettings),
-        updateNotificationSettings(notificationSettings),
-        updatePrivacySettings(privacySettingsData),
-      ]);
-
-      setShowSaveSuccess(true);
-      setTimeout(() => setShowSaveSuccess(false), 3000);
-    } catch (error) {
-      console.error('Error saving settings:', error);
-    }
-  };
-
-  const handleSecurityAction = async (action: string, data?: any) => {
-    try {
-      switch (action) {
-        case 'changePassword':
-          await changePassword(data.currentPassword, data.newPassword);
-          break;
-        case 'toggle2FA':
-          await toggle2FA(data.enable);
-          break;
-        case 'setupBiometric':
-          await setupBiometricLogin(data.enable);
-          break;
-        case 'downloadData':
-          await downloadUserData();
-          break;
-        case 'deleteAccount':
-          await deleteAccount(data.password);
-          await logout();
-          navigate('/login');
-          break;
-        case 'revokeSession':
-          await revokeSession(data.sessionId);
-          break;
-        case 'viewSessions':
-          const sessions = await getActiveSessions();
-          setActiveSessions(sessions);
-          setShowSecurityScore(true);
-          break;
-        default:
-          console.error('Unknown security action:', action);
-      }
-    } catch (error) {
-      console.error('Error performing security action:', error);
-    }
+  const handleSave = () => {
+    setShowSaveSuccess(true);
+    setTimeout(() => setShowSaveSuccess(false), 3000);
   };
 
   const SettingsSection = ({ title, icon, children }: any) => (
@@ -460,41 +341,6 @@ const Settings: React.FC = () => {
     </Paper>
   );
 
-  // Update state when settings are loaded
-  useEffect(() => {
-    if (settings) {
-      setDarkMode(settings.darkMode);
-      setLanguage(settings.language);
-      setFontSize(settings.fontSize);
-      setAnimations(settings.animations);
-      setCompactMode(settings.compactMode);
-      setSoundEffects(settings.soundEffects);
-      setVolume(settings.volume);
-      setQuietHoursStart(settings.quietHoursStart);
-      setQuietHoursEnd(settings.quietHoursEnd);
-      setTimeZone(settings.timeZone);
-      setDateFormat(settings.dateFormat);
-      setAutoTranslate(settings.autoTranslate);
-      setShowOriginalText(settings.showOriginalText);
-      setUseMetricSystem(settings.useMetricSystem);
-      setUse24HourFormat(settings.use24HourFormat);
-      setHapticFeedback(settings.hapticFeedback);
-      setNotificationSounds(settings.notificationSounds);
-      setTypingSounds(settings.typingSounds);
-      setCompletionSounds(settings.completionSounds);
-      setAiModel(settings.aiModel);
-      setMaxTokens(settings.maxTokens);
-      setTemperature(settings.temperature.toString());
-      setContextLength(settings.contextLength);
-      setAutoComplete(settings.autoComplete);
-      setCodeSnippets(settings.codeSnippets);
-      setAiSuggestions(settings.aiSuggestions);
-      setRealTimeAnalysis(settings.realTimeAnalysis);
-      setNotifications(settings.notifications);
-      setPrivacySettings(settings.privacySettings);
-    }
-  }, [settings]);
-
   return (
     <Box
       sx={{
@@ -504,41 +350,6 @@ const Settings: React.FC = () => {
         pb: 4,
       }}
     >
-      {loading && (
-        <Box
-          sx={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            zIndex: 9999,
-          }}
-        >
-          <LinearProgress />
-        </Box>
-      )}
-
-      {error && (
-        <Alert
-          severity="error"
-          sx={{
-            position: 'fixed',
-            top: 20,
-            right: 20,
-            zIndex: 9999,
-            borderRadius: 2,
-            boxShadow: theme.shadows[4],
-            animation: 'slideIn 0.3s ease-out',
-            '@keyframes slideIn': {
-              from: { transform: 'translateX(100%)', opacity: 0 },
-              to: { transform: 'translateX(0)', opacity: 1 },
-            },
-          }}
-        >
-          {error}
-        </Alert>
-      )}
-
       {showSaveSuccess && (
         <Alert
           severity="success"
@@ -1858,7 +1669,6 @@ const Settings: React.FC = () => {
                       color="primary"
                       startIcon={<DownloadOutlined />}
                       fullWidth
-                      onClick={() => handleSecurityAction('downloadData')}
                     >
                       Download My Data
                     </Button>
@@ -1867,14 +1677,6 @@ const Settings: React.FC = () => {
                       color="error"
                       startIcon={<DeleteForeverOutlined />}
                       fullWidth
-                      onClick={() => {
-                        const password = prompt(
-                          'Please enter your password to confirm account deletion:'
-                        );
-                        if (password) {
-                          handleSecurityAction('deleteAccount', { password });
-                        }
-                      }}
                       sx={{
                         bgcolor: 'error.main',
                         color: 'white',
@@ -1963,122 +1765,6 @@ const Settings: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowNotificationPreview(false)}>Close</Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Model Comparison Dialog */}
-      <Dialog
-        open={showModelComparison}
-        onClose={() => setShowModelComparison(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>Model Comparison</DialogTitle>
-        <DialogContent>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Model</TableCell>
-                <TableCell>Speed</TableCell>
-                <TableCell>Accuracy</TableCell>
-                <TableCell>Cost</TableCell>
-                <TableCell>Best For</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {MODEL_COMPARISON.map((model: ModelComparison) => (
-                <TableRow key={model.model}>
-                  <TableCell>{model.model}</TableCell>
-                  <TableCell>{model.speed}</TableCell>
-                  <TableCell>{model.accuracy}</TableCell>
-                  <TableCell>{model.cost}</TableCell>
-                  <TableCell>
-                    <List dense>
-                      {model.bestFor.map((useCase: string) => (
-                        <ListItem key={useCase}>
-                          <ListItemText primary={useCase} />
-                        </ListItem>
-                      ))}
-                    </List>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowModelComparison(false)}>Close</Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Security Score Dialog */}
-      <Dialog
-        open={showSecurityScore}
-        onClose={() => setShowSecurityScore(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>Security Score & Active Sessions</DialogTitle>
-        <DialogContent>
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h6" gutterBottom>
-              Security Score: {securityScore}%
-            </Typography>
-            <LinearProgress
-              variant="determinate"
-              value={securityScore}
-              sx={{
-                height: 10,
-                borderRadius: 5,
-                backgroundColor: 'rgba(0,0,0,0.1)',
-                '& .MuiLinearProgress-bar': {
-                  backgroundColor:
-                    securityScore >= 80
-                      ? 'success.main'
-                      : securityScore >= 50
-                      ? 'warning.main'
-                      : 'error.main',
-                },
-              }}
-            />
-          </Box>
-
-          <Typography variant="h6" gutterBottom>
-            Active Sessions
-          </Typography>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Device</TableCell>
-                <TableCell>Location</TableCell>
-                <TableCell>Last Active</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {activeSessions.map(session => (
-                <TableRow key={session.id}>
-                  <TableCell>{session.device}</TableCell>
-                  <TableCell>{session.location}</TableCell>
-                  <TableCell>{session.lastActive}</TableCell>
-                  <TableCell>
-                    <Button
-                      size="small"
-                      color="error"
-                      onClick={() =>
-                        handleSecurityAction('revokeSession', { sessionId: session.id })
-                      }
-                    >
-                      Revoke
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowSecurityScore(false)}>Close</Button>
         </DialogActions>
       </Dialog>
 

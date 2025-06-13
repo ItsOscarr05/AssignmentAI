@@ -1,39 +1,49 @@
-import { Box } from '@mui/material';
-import CssBaseline from '@mui/material/CssBaseline';
-import { ThemeProvider } from '@mui/material/styles';
+import { Box, CssBaseline } from '@mui/material';
 import { SnackbarProvider } from 'notistack';
-import { BrowserRouter } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter, Routes } from 'react-router-dom';
+import AdComponent from './components/ads/AdComponent';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import Navbar from './components/Navbar';
 import { SecurityProvider } from './components/security/SecurityProvider';
 import { AdProvider } from './contexts/AdContext';
 import { AuthProvider } from './contexts/AuthContext';
-import { SettingsProvider } from './contexts/SettingsContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { AppRouter } from './routes';
-import { theme } from './theme';
+import { ThemeProvider } from './theme/ThemeProvider';
 
 const App: React.FC = () => {
   return (
     <ErrorBoundary>
       <SecurityProvider>
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
-          <BrowserRouter>
+        <BrowserRouter>
+          <ThemeProvider>
             <AuthProvider>
-              <SettingsProvider>
-                <ToastProvider>
-                  <AdProvider>
-                    <SnackbarProvider maxSnack={3}>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-                        <AppRouter />
+              <ToastProvider>
+                <AdProvider>
+                  <CssBaseline />
+                  <SnackbarProvider maxSnack={3}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+                      <Navbar />
+                      <Box sx={{ display: 'flex', flex: 1 }}>
+                        <Box sx={{ flex: 1 }}>
+                          <AdComponent position="top" />
+                          <Routes>
+                            <AppRouter />
+                          </Routes>
+                          <AdComponent position="bottom" />
+                        </Box>
+                        <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+                          <AdComponent position="sidebar" />
+                        </Box>
                       </Box>
-                    </SnackbarProvider>
-                  </AdProvider>
-                </ToastProvider>
-              </SettingsProvider>
+                    </Box>
+                  </SnackbarProvider>
+                </AdProvider>
+              </ToastProvider>
             </AuthProvider>
-          </BrowserRouter>
-        </ThemeProvider>
+          </ThemeProvider>
+        </BrowserRouter>
       </SecurityProvider>
     </ErrorBoundary>
   );
