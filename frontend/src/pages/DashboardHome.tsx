@@ -105,6 +105,12 @@ const DashboardHome: React.FC = () => {
       progress: 30,
       status: 'In Progress',
     },
+    {
+      title: 'English Presentation',
+      dueDate: new Date('2024-03-22'),
+      progress: 0,
+      status: 'In Progress',
+    },
   ];
 
   const upcomingDeadlines = [
@@ -123,15 +129,25 @@ const DashboardHome: React.FC = () => {
       dueDate: new Date('2024-03-10'),
       subject: 'History',
     },
+    {
+      title: 'English Presentation',
+      dueDate: new Date('2024-03-22'),
+      subject: 'English',
+    },
   ];
 
   const [] = useState(false);
   const [] = useState<Date>(new Date());
 
   // Gather all subjects from recentAssignments and upcomingDeadlines
+  const normalizeSubject = (subject: string) => {
+    if (subject.toLowerCase() === 'math') return 'Mathematics';
+    if (subject.toLowerCase() === 'mathematics') return 'Mathematics';
+    return subject;
+  };
   const allAssignments = [
-    ...recentAssignments.map(a => ({ subject: a.title.split(' ')[0] })),
-    ...upcomingDeadlines.map(a => ({ subject: a.subject })),
+    ...recentAssignments.map(a => ({ subject: normalizeSubject(a.title.split(' ')[0]) })),
+    ...upcomingDeadlines.map(a => ({ subject: normalizeSubject(a.subject) })),
   ];
   const subjectCounts: { [subject: string]: number } = {};
   allAssignments.forEach(a => {
@@ -191,8 +207,12 @@ const DashboardHome: React.FC = () => {
               >
                 Start New Assignment
               </Button>
-              <Button variant="outlined" color="primary">
-                Upload PDF / Paste Text
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={() => navigate('/dashboard/workshop')}
+              >
+                Upload Content
               </Button>
               <Button variant="outlined" color="secondary">
                 Ask AI About an Assignment
@@ -214,7 +234,7 @@ const DashboardHome: React.FC = () => {
             }}
           >
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-              <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#D32F2F' }}>
+              <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'black' }}>
                 Recent & Active Assignments
               </Typography>
               <Stack direction="row" spacing={1}>
@@ -298,7 +318,7 @@ const DashboardHome: React.FC = () => {
               minHeight: 370,
             }}
           >
-            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2, color: '#D32F2F' }}>
+            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2, color: 'black' }}>
               Assignment Distribution
             </Typography>
             <Box sx={{ height: 200, width: '100%' }}>
@@ -321,7 +341,7 @@ const DashboardHome: React.FC = () => {
               border: '2px solid #D32F2F',
             }}
           >
-            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2, color: '#D32F2F' }}>
+            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2, color: 'black' }}>
               AI Activity & Insights
             </Typography>
             <Grid container spacing={2}>
@@ -422,7 +442,7 @@ const DashboardHome: React.FC = () => {
               minHeight: 220,
             }}
           >
-            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2, color: '#D32F2F' }}>
+            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2, color: 'black' }}>
               AssignmentAI Suggestions
             </Typography>
             <List>

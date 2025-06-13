@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { AuthService } from '../services/auth';
 import { User } from '../types';
+import { useSettings } from './SettingsContext';
 
 interface AuthContextType {
   user: User | null;
@@ -29,13 +30,30 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const authService = AuthService.getInstance();
+  const { loadSettings } = useSettings();
 
   useEffect(() => {
-    // Remove the checkAuth() call to prevent overriding the stored user
-    // checkAuth();
-  }, []);
+    // Check if user is logged in on mount
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/me');
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+          await loadSettings(); // Load settings when user is authenticated
+        }
+      } catch (err) {
+        console.error('Auth check failed:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [loadSettings]);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');

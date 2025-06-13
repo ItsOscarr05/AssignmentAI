@@ -1,29 +1,62 @@
 import {
+  AnalyticsOutlined,
+  AssignmentOutlined,
   Brush,
-  Fingerprint,
-  Help,
+  CheckCircle,
+  CompareArrows,
+  DataUsageOutlined,
+  DeleteForeverOutlined,
+  DesktopWindowsOutlined,
+  DownloadOutlined,
+  EmailOutlined,
+  Error,
+  EventOutlined,
+  FeedbackOutlined,
+  FingerprintOutlined,
+  HistoryOutlined,
+  Info,
   Language,
-  Lock,
+  LockOutlined,
   Notifications,
+  NotificationsActiveOutlined,
+  NotificationsOutlined,
+  PrivacyTipOutlined,
   Psychology,
   Save,
-  Schedule,
-  Security,
+  Search,
+  SecurityOutlined,
+  ShieldOutlined,
   Tune,
+  UpdateOutlined,
+  VerifiedUserOutlined,
+  VisibilityOffOutlined,
+  VisibilityOutlined,
   VolumeUp,
+  VolumeUpOutlined,
+  VpnKeyOutlined,
+  Warning,
   Widgets,
 } from '@mui/icons-material';
 import {
   Alert,
   Box,
   Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
   FormControl,
   FormControlLabel,
   FormGroup,
   Grid,
-  IconButton,
   InputAdornment,
   InputLabel,
+  LinearProgress,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
   MenuItem,
   Paper,
   Select,
@@ -31,13 +64,21 @@ import {
   Stack,
   Switch,
   Tab,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
   Tabs,
   TextField,
-  Tooltip,
   Typography,
   useTheme,
 } from '@mui/material';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { AI_MODELS, MODEL_COMPARISON } from '../config';
+import { useAuth } from '../contexts/AuthContext';
+import { useSettings } from '../contexts/SettingsContext';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -60,10 +101,49 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
+type SubscriptionPlan = 'free' | 'plus' | 'pro' | 'max';
+
+interface SubscriptionConfig {
+  model: string;
+  tokenLimit: number;
+  label: string;
+}
+
+interface ModelComparison {
+  model: string;
+  speed: string;
+  accuracy: string;
+  cost: string;
+  bestFor: string[];
+}
+
 const Settings: React.FC = () => {
   const theme = useTheme();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+  const {
+    settings,
+    loading,
+    error,
+    updateGeneralSettings,
+    updateAISettings,
+    updateNotificationSettings,
+    updatePrivacySettings,
+    changePassword,
+    toggle2FA,
+    setupBiometricLogin,
+    downloadUserData,
+    deleteAccount,
+    getActiveSessions,
+    revokeSession,
+  } = useSettings();
   const [tabValue, setTabValue] = useState(0);
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showModelComparison, setShowModelComparison] = useState(false);
+  const [showNotificationPreview, setShowNotificationPreview] = useState(false);
+  const [showSecurityScore, setShowSecurityScore] = useState(false);
+  const [activeSessions, setActiveSessions] = useState<any[]>([]);
 
   // General Settings
   const [darkMode, setDarkMode] = useState(false);
@@ -71,15 +151,28 @@ const Settings: React.FC = () => {
   const [fontSize, setFontSize] = useState(14);
   const [animations, setAnimations] = useState(true);
   const [compactMode, setCompactMode] = useState(false);
-  const [] = useState(true);
   const [soundEffects, setSoundEffects] = useState(true);
   const [volume, setVolume] = useState(70);
-  const [quietHoursStart, setQuietHoursStart] = useState(22); // 10 PM default
-  const [quietHoursEnd, setQuietHoursEnd] = useState(7); // 7 AM default
+  const [quietHoursStart, setQuietHoursStart] = useState(22);
+  const [quietHoursEnd, setQuietHoursEnd] = useState(7);
+
+  // Language & Region Settings
+  const [timeZone, setTimeZone] = useState('UTC');
+  const [dateFormat, setDateFormat] = useState('MM/DD/YYYY');
+  const [autoTranslate, setAutoTranslate] = useState(false);
+  const [showOriginalText, setShowOriginalText] = useState(true);
+  const [useMetricSystem, setUseMetricSystem] = useState(false);
+  const [use24HourFormat, setUse24HourFormat] = useState(false);
+
+  // Sound & Feedback Settings
+  const [hapticFeedback, setHapticFeedback] = useState(true);
+  const [notificationSounds, setNotificationSounds] = useState(true);
+  const [typingSounds, setTypingSounds] = useState(false);
+  const [completionSounds, setCompletionSounds] = useState(true);
 
   // AI Settings
   const [aiModel, setAiModel] = useState('gpt-4');
-  const [maxTokens, setMaxTokens] = useState('4000');
+  const [maxTokens, setMaxTokens] = useState<number>(1000);
   const [temperature, setTemperature] = useState('0.7');
   const [contextLength, setContextLength] = useState(10);
   const [autoComplete, setAutoComplete] = useState(true);
@@ -98,19 +191,225 @@ const Settings: React.FC = () => {
     updates: true,
   });
 
+  const [notificationPreferences, setNotificationPreferences] = useState({
+    priorityLevel: 'medium', // 'low', 'medium', 'high'
+    groupNotifications: true,
+    showPreview: true,
+    showBadge: true,
+    showInTaskbar: true,
+  });
+
+  const [notificationSchedule, setNotificationSchedule] = useState({
+    quietHoursStart: 22,
+    quietHoursEnd: 7,
+    workDays: [1, 2, 3, 4, 5], // Monday to Friday
+    workHoursStart: 9,
+    workHoursEnd: 17,
+  });
+
   // Privacy & Security
-  const [twoFactorAuth, setTwoFactorAuth] = useState(false);
-  const [dataCollection, setDataCollection] = useState(true);
-  const [shareAnalytics, setShareAnalytics] = useState(true);
-  const [biometricLogin, setBiometricLogin] = useState(false);
+  const [privacySettings, setPrivacySettings] = useState({
+    twoFactorAuth: false,
+    biometricLogin: false,
+    dataCollection: true,
+    shareAnalytics: true,
+    showOnlineStatus: true,
+    allowTracking: false,
+    autoLock: true,
+    lockTimeout: 5, // minutes
+    passwordExpiry: 90, // days
+    sessionTimeout: 30, // minutes
+  });
+
+  const [securitySettings] = useState({
+    passwordStrength: 'strong',
+    lastPasswordChange: '2024-01-15',
+    lastSecurityAudit: '2024-02-01',
+    failedLoginAttempts: 0,
+    activeSessions: 2,
+    securityScore: 85,
+  });
+
+  // Subscription Settings
+  const [subscription, setSubscription] = useState({
+    plan: 'free' as SubscriptionPlan,
+    model: 'gpt-4-0125-preview',
+    tokenLimit: 30000,
+  });
+
+  // Update subscription config to use AI_MODELS from config
+  const subscriptionConfig: Record<SubscriptionPlan, SubscriptionConfig> = {
+    free: AI_MODELS.FREE,
+    plus: AI_MODELS.PLUS,
+    pro: AI_MODELS.PRO,
+    max: AI_MODELS.MAX,
+  };
+
+  // Notification preview data
+  const notificationPreview = {
+    title: 'Assignment Feedback Ready',
+    message: 'Your AI analysis for "Research Paper" is now available',
+    type: 'feedback',
+    time: '2 minutes ago',
+  };
+
+  // Security checklist data
+  const securityChecklist = [
+    {
+      id: 'password',
+      title: 'Strong Password',
+      description: 'Use a password with at least 6 characters (symbols optional)',
+      status: 'warning' as const,
+      action: 'Change Password',
+      icon: <VpnKeyOutlined />,
+    },
+    {
+      id: '2fa',
+      title: 'Two-Factor Authentication',
+      description: 'Add an extra layer of security to your account',
+      status: privacySettings.twoFactorAuth ? ('success' as const) : ('error' as const),
+      action: 'Enable 2FA',
+      icon: <ShieldOutlined />,
+    },
+    {
+      id: 'biometric',
+      title: 'Biometric Login',
+      description: 'Use fingerprint or face recognition for quick and secure login',
+      status: privacySettings.biometricLogin ? ('success' as const) : ('warning' as const),
+      action: 'Setup Biometric',
+      icon: <FingerprintOutlined />,
+    },
+    {
+      id: 'sessions',
+      title: 'Active Sessions',
+      description: 'Review and manage your active login sessions',
+      status: 'info' as const,
+      action: 'View Sessions',
+      icon: <HistoryOutlined />,
+    },
+    {
+      id: 'updates',
+      title: 'Security Updates',
+      description: 'Keep your security settings up to date',
+      status: 'success' as const,
+      action: 'Check Updates',
+      icon: <SecurityOutlined />,
+    },
+  ];
+
+  // Calculate security score
+  const securityScore = Math.round(
+    (securityChecklist.filter((item: { status: string }) => item.status === 'success').length /
+      securityChecklist.length) *
+      100
+  );
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 
-  const handleSave = () => {
-    setShowSaveSuccess(true);
-    setTimeout(() => setShowSaveSuccess(false), 3000);
+  const handleSave = async () => {
+    try {
+      const generalSettings = {
+        darkMode,
+        language,
+        fontSize,
+        animations,
+        compactMode,
+        soundEffects,
+        volume,
+        quietHoursStart,
+        quietHoursEnd,
+        timeZone,
+        dateFormat,
+        autoTranslate,
+        showOriginalText,
+        useMetricSystem,
+        use24HourFormat,
+        hapticFeedback,
+        notificationSounds,
+        typingSounds,
+        completionSounds,
+      };
+
+      const aiSettings = {
+        aiModel,
+        maxTokens,
+        temperature: parseFloat(temperature),
+        contextLength,
+        autoComplete,
+        codeSnippets,
+        aiSuggestions,
+        realTimeAnalysis,
+      };
+
+      const notificationSettings = {
+        notifications,
+        quietHoursStart,
+        quietHoursEnd,
+      };
+
+      const privacySettingsData = {
+        twoFactorAuth: privacySettings.twoFactorAuth,
+        biometricLogin: privacySettings.biometricLogin,
+        dataCollection: privacySettings.dataCollection,
+        shareAnalytics: privacySettings.shareAnalytics,
+        showOnlineStatus: privacySettings.showOnlineStatus,
+        allowTracking: privacySettings.allowTracking,
+        autoLock: privacySettings.autoLock,
+        lockTimeout: privacySettings.lockTimeout,
+        passwordExpiry: privacySettings.passwordExpiry,
+        sessionTimeout: privacySettings.sessionTimeout,
+      };
+
+      await Promise.all([
+        updateGeneralSettings(generalSettings),
+        updateAISettings(aiSettings),
+        updateNotificationSettings(notificationSettings),
+        updatePrivacySettings(privacySettingsData),
+      ]);
+
+      setShowSaveSuccess(true);
+      setTimeout(() => setShowSaveSuccess(false), 3000);
+    } catch (error) {
+      console.error('Error saving settings:', error);
+    }
+  };
+
+  const handleSecurityAction = async (action: string, data?: any) => {
+    try {
+      switch (action) {
+        case 'changePassword':
+          await changePassword(data.currentPassword, data.newPassword);
+          break;
+        case 'toggle2FA':
+          await toggle2FA(data.enable);
+          break;
+        case 'setupBiometric':
+          await setupBiometricLogin(data.enable);
+          break;
+        case 'downloadData':
+          await downloadUserData();
+          break;
+        case 'deleteAccount':
+          await deleteAccount(data.password);
+          await logout();
+          navigate('/login');
+          break;
+        case 'revokeSession':
+          await revokeSession(data.sessionId);
+          break;
+        case 'viewSessions':
+          const sessions = await getActiveSessions();
+          setActiveSessions(sessions);
+          setShowSecurityScore(true);
+          break;
+        default:
+          console.error('Unknown security action:', action);
+      }
+    } catch (error) {
+      console.error('Error performing security action:', error);
+    }
   };
 
   const SettingsSection = ({ title, icon, children }: any) => (
@@ -119,8 +418,8 @@ const Settings: React.FC = () => {
       sx={{
         p: 4,
         mb: 4,
-        border: '1px solid',
-        borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+        border: '2px solid',
+        borderColor: 'error.main',
         borderRadius: 3,
         background:
           theme.palette.mode === 'dark'
@@ -131,7 +430,7 @@ const Settings: React.FC = () => {
         '&:hover': {
           transform: 'translateY(-4px)',
           boxShadow: theme.shadows[8],
-          borderColor: theme.palette.primary.main,
+          borderColor: 'error.dark',
         },
       }}
     >
@@ -161,6 +460,41 @@ const Settings: React.FC = () => {
     </Paper>
   );
 
+  // Update state when settings are loaded
+  useEffect(() => {
+    if (settings) {
+      setDarkMode(settings.darkMode);
+      setLanguage(settings.language);
+      setFontSize(settings.fontSize);
+      setAnimations(settings.animations);
+      setCompactMode(settings.compactMode);
+      setSoundEffects(settings.soundEffects);
+      setVolume(settings.volume);
+      setQuietHoursStart(settings.quietHoursStart);
+      setQuietHoursEnd(settings.quietHoursEnd);
+      setTimeZone(settings.timeZone);
+      setDateFormat(settings.dateFormat);
+      setAutoTranslate(settings.autoTranslate);
+      setShowOriginalText(settings.showOriginalText);
+      setUseMetricSystem(settings.useMetricSystem);
+      setUse24HourFormat(settings.use24HourFormat);
+      setHapticFeedback(settings.hapticFeedback);
+      setNotificationSounds(settings.notificationSounds);
+      setTypingSounds(settings.typingSounds);
+      setCompletionSounds(settings.completionSounds);
+      setAiModel(settings.aiModel);
+      setMaxTokens(settings.maxTokens);
+      setTemperature(settings.temperature.toString());
+      setContextLength(settings.contextLength);
+      setAutoComplete(settings.autoComplete);
+      setCodeSnippets(settings.codeSnippets);
+      setAiSuggestions(settings.aiSuggestions);
+      setRealTimeAnalysis(settings.realTimeAnalysis);
+      setNotifications(settings.notifications);
+      setPrivacySettings(settings.privacySettings);
+    }
+  }, [settings]);
+
   return (
     <Box
       sx={{
@@ -170,6 +504,41 @@ const Settings: React.FC = () => {
         pb: 4,
       }}
     >
+      {loading && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 9999,
+          }}
+        >
+          <LinearProgress />
+        </Box>
+      )}
+
+      {error && (
+        <Alert
+          severity="error"
+          sx={{
+            position: 'fixed',
+            top: 20,
+            right: 20,
+            zIndex: 9999,
+            borderRadius: 2,
+            boxShadow: theme.shadows[4],
+            animation: 'slideIn 0.3s ease-out',
+            '@keyframes slideIn': {
+              from: { transform: 'translateX(100%)', opacity: 0 },
+              to: { transform: 'translateX(0)', opacity: 1 },
+            },
+          }}
+        >
+          {error}
+        </Alert>
+      )}
+
       {showSaveSuccess && (
         <Alert
           severity="success"
@@ -221,22 +590,35 @@ const Settings: React.FC = () => {
         >
           Settings
         </Typography>
+
+        {/* Search Bar */}
+        <TextField
+          placeholder="Search settings..."
+          variant="outlined"
+          size="small"
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          sx={{
+            flex: 1,
+            maxWidth: 400,
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 3,
+              backgroundColor:
+                theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+            },
+          }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Search />
+              </InputAdornment>
+            ),
+          }}
+        />
+
         <Button
           variant="contained"
-          startIcon={
-            <Box
-              component="span"
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                '& > svg': {
-                  color: '#ffffff',
-                },
-              }}
-            >
-              <Save />
-            </Box>
-          }
+          startIcon={<Save />}
           onClick={handleSave}
           sx={{
             ml: 'auto',
@@ -336,7 +718,7 @@ const Settings: React.FC = () => {
               }}
             />
             <Tab
-              icon={<Security />}
+              icon={<SecurityOutlined />}
               label="Privacy & Security"
               sx={{
                 gap: 1,
@@ -387,8 +769,10 @@ const Settings: React.FC = () => {
                     onChange={(_e, value) => setFontSize(value as number)}
                     min={12}
                     max={20}
+                    step={1}
                     marks
                     valueLabelDisplay="auto"
+                    disableSwap
                   />
                 </Grid>
               </Grid>
@@ -398,25 +782,111 @@ const Settings: React.FC = () => {
               title="Language & Region"
               icon={<Language sx={{ color: theme.palette.primary.main }} />}
             >
-              <FormControl fullWidth>
-                <InputLabel>Language</InputLabel>
-                <Select
-                  value={language}
-                  label="Language"
-                  onChange={e => setLanguage(e.target.value)}
-                >
-                  <MenuItem value="en">English</MenuItem>
-                  <MenuItem value="es">Español</MenuItem>
-                  <MenuItem value="fr">Français</MenuItem>
-                  <MenuItem value="de">Deutsch</MenuItem>
-                  <MenuItem value="it">Italiano</MenuItem>
-                  <MenuItem value="pt">Português</MenuItem>
-                  <MenuItem value="ru">Русский</MenuItem>
-                  <MenuItem value="zh">中文</MenuItem>
-                  <MenuItem value="ja">日本語</MenuItem>
-                  <MenuItem value="ko">한국어</MenuItem>
-                </Select>
-              </FormControl>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <FormControl fullWidth sx={{ mb: 2 }}>
+                    <InputLabel>Language</InputLabel>
+                    <Select
+                      value={language}
+                      label="Language"
+                      onChange={e => setLanguage(e.target.value)}
+                    >
+                      <MenuItem value="en">English</MenuItem>
+                      <MenuItem value="es">Español</MenuItem>
+                      <MenuItem value="fr">Français</MenuItem>
+                      <MenuItem value="de">Deutsch</MenuItem>
+                      <MenuItem value="it">Italiano</MenuItem>
+                      <MenuItem value="pt">Português</MenuItem>
+                      <MenuItem value="ru">Русский</MenuItem>
+                      <MenuItem value="zh">中文</MenuItem>
+                      <MenuItem value="ja">日本語</MenuItem>
+                      <MenuItem value="ko">한국어</MenuItem>
+                    </Select>
+                  </FormControl>
+
+                  <FormControl fullWidth sx={{ mb: 2 }}>
+                    <InputLabel>Time Zone</InputLabel>
+                    <Select
+                      value={timeZone}
+                      label="Time Zone"
+                      onChange={e => setTimeZone(e.target.value)}
+                    >
+                      <MenuItem value="UTC">UTC</MenuItem>
+                      <MenuItem value="EST">Eastern Time (EST)</MenuItem>
+                      <MenuItem value="CST">Central Time (CST)</MenuItem>
+                      <MenuItem value="PST">Pacific Time (PST)</MenuItem>
+                      <MenuItem value="GMT">Greenwich Mean Time (GMT)</MenuItem>
+                      <MenuItem value="CET">Central European Time (CET)</MenuItem>
+                      <MenuItem value="IST">Indian Standard Time (IST)</MenuItem>
+                      <MenuItem value="JST">Japan Standard Time (JST)</MenuItem>
+                    </Select>
+                  </FormControl>
+
+                  <FormControl fullWidth>
+                    <InputLabel>Date Format</InputLabel>
+                    <Select
+                      value={dateFormat}
+                      label="Date Format"
+                      onChange={e => setDateFormat(e.target.value)}
+                    >
+                      <MenuItem value="MM/DD/YYYY">MM/DD/YYYY</MenuItem>
+                      <MenuItem value="DD/MM/YYYY">DD/MM/YYYY</MenuItem>
+                      <MenuItem value="YYYY-MM-DD">YYYY-MM-DD</MenuItem>
+                      <MenuItem value="DD.MM.YYYY">DD.MM.YYYY</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Translation Preferences
+                  </Typography>
+                  <FormGroup>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={autoTranslate}
+                          onChange={e => setAutoTranslate(e.target.checked)}
+                        />
+                      }
+                      label="Auto-translate content"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={showOriginalText}
+                          onChange={e => setShowOriginalText(e.target.checked)}
+                        />
+                      }
+                      label="Show original text alongside translation"
+                    />
+                  </FormGroup>
+
+                  <Typography variant="subtitle1" sx={{ mt: 3 }} gutterBottom>
+                    Regional Settings
+                  </Typography>
+                  <FormGroup>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={useMetricSystem}
+                          onChange={e => setUseMetricSystem(e.target.checked)}
+                        />
+                      }
+                      label="Use metric system"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={use24HourFormat}
+                          onChange={e => setUse24HourFormat(e.target.checked)}
+                        />
+                      }
+                      label="Use 24-hour time format"
+                    />
+                  </FormGroup>
+                </Grid>
+              </Grid>
             </SettingsSection>
 
             <SettingsSection
@@ -425,6 +895,9 @@ const Settings: React.FC = () => {
             >
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Sound Settings
+                  </Typography>
                   <FormGroup>
                     <FormControlLabel
                       control={
@@ -435,16 +908,106 @@ const Settings: React.FC = () => {
                       }
                       label="Sound Effects"
                     />
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={hapticFeedback}
+                          onChange={e => setHapticFeedback(e.target.checked)}
+                        />
+                      }
+                      label="Haptic Feedback"
+                    />
                   </FormGroup>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Typography gutterBottom>Volume</Typography>
+
+                  <Typography gutterBottom sx={{ mt: 3 }}>
+                    Volume
+                  </Typography>
                   <Slider
                     value={volume}
                     onChange={(_e, value) => setVolume(value as number)}
                     disabled={!soundEffects}
                     valueLabelDisplay="auto"
+                    step={5}
+                    marks={[
+                      { value: 0, label: 'Mute' },
+                      { value: 50, label: '50%' },
+                      { value: 100, label: '100%' },
+                    ]}
+                    disableSwap
                   />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Notification Sounds
+                  </Typography>
+                  <FormGroup>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={notificationSounds}
+                          onChange={e => setNotificationSounds(e.target.checked)}
+                        />
+                      }
+                      label="Enable Notification Sounds"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={typingSounds}
+                          onChange={e => setTypingSounds(e.target.checked)}
+                        />
+                      }
+                      label="Typing Sounds"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={completionSounds}
+                          onChange={e => setCompletionSounds(e.target.checked)}
+                        />
+                      }
+                      label="Task Completion Sounds"
+                    />
+                  </FormGroup>
+
+                  <Typography variant="subtitle1" sx={{ mt: 3 }} gutterBottom>
+                    Quiet Hours
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid item xs={6}>
+                      <FormControl fullWidth>
+                        <InputLabel>Start Time</InputLabel>
+                        <Select
+                          value={quietHoursStart}
+                          label="Start Time"
+                          onChange={e => setQuietHoursStart(Number(e.target.value))}
+                        >
+                          {Array.from({ length: 24 }, (_, i) => (
+                            <MenuItem key={i} value={i}>
+                              {i.toString().padStart(2, '0')}:00
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <FormControl fullWidth>
+                        <InputLabel>End Time</InputLabel>
+                        <Select
+                          value={quietHoursEnd}
+                          label="End Time"
+                          onChange={e => setQuietHoursEnd(Number(e.target.value))}
+                        >
+                          {Array.from({ length: 24 }, (_, i) => (
+                            <MenuItem key={i} value={i}>
+                              {i.toString().padStart(2, '0')}:00
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                  </Grid>
                 </Grid>
               </Grid>
             </SettingsSection>
@@ -460,36 +1023,109 @@ const Settings: React.FC = () => {
                   <FormControl fullWidth>
                     <InputLabel>AI Model</InputLabel>
                     <Select
-                      value={aiModel}
+                      value={subscription.model}
                       label="AI Model"
-                      onChange={e => setAiModel(e.target.value)}
+                      onChange={e => {
+                        // Only allow changing to models within the current plan
+                        const newModel = e.target.value;
+                        const currentPlanConfig = subscriptionConfig[subscription.plan];
+                        if (newModel === currentPlanConfig.model) {
+                          setSubscription({
+                            ...subscription,
+                            model: newModel,
+                          });
+                        }
+                      }}
                     >
-                      <MenuItem value="gpt-4">GPT-4 (Recommended)</MenuItem>
-                      <MenuItem value="gpt-3.5-turbo">GPT-3.5 Turbo (Faster)</MenuItem>
-                      <MenuItem value="claude-3">Claude 3 (Experimental)</MenuItem>
-                      <MenuItem value="custom">Custom Model</MenuItem>
+                      {Object.entries(subscriptionConfig).map(([plan, config]) => (
+                        <MenuItem
+                          key={plan}
+                          value={config.model}
+                          disabled={plan !== subscription.plan}
+                          sx={{
+                            color: plan === subscription.plan ? 'text.primary' : 'text.disabled',
+                            '&.Mui-disabled': {
+                              opacity: 0.7,
+                            },
+                          }}
+                        >
+                          {config.label}
+                          {plan !== subscription.plan && (
+                            <Typography
+                              component="span"
+                              variant="caption"
+                              sx={{ ml: 1, color: 'text.secondary' }}
+                            >
+                              ({plan.charAt(0).toUpperCase() + plan.slice(1)} plan)
+                            </Typography>
+                          )}
+                        </MenuItem>
+                      ))}
                     </Select>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ mt: 1, display: 'block' }}
+                    >
+                      Model is determined by your subscription plan
+                    </Typography>
                   </FormControl>
+                  <Box sx={{ mt: 2 }}>
+                    <Button
+                      variant="outlined"
+                      startIcon={<CompareArrows />}
+                      onClick={() => setShowModelComparison(true)}
+                      size="small"
+                    >
+                      Compare Models
+                    </Button>
+                  </Box>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Max Tokens"
-                    type="number"
+                  <Typography gutterBottom>
+                    Token Limit (Max: {subscription.tokenLimit.toLocaleString()})
+                  </Typography>
+                  <Slider
                     value={maxTokens}
-                    onChange={e => setMaxTokens(e.target.value)}
-                    InputProps={{
-                      endAdornment: (
-                        <Tooltip title="Maximum number of tokens the AI can generate">
-                          <InputAdornment position="end">
-                            <IconButton edge="end" size="small">
-                              <Help />
-                            </IconButton>
-                          </InputAdornment>
-                        </Tooltip>
-                      ),
+                    onChange={(_e, value) => setMaxTokens(value as number)}
+                    min={1000}
+                    max={subscription.tokenLimit}
+                    step={1000}
+                    valueLabelDisplay="auto"
+                    valueLabelFormat={value => value.toLocaleString()}
+                    marks={[
+                      { value: 1000, label: '1,000' },
+                      {
+                        value: Math.floor(subscription.tokenLimit * 0.25),
+                        label: Math.floor(subscription.tokenLimit * 0.25).toLocaleString(),
+                      },
+                      {
+                        value: Math.floor(subscription.tokenLimit * 0.5),
+                        label: Math.floor(subscription.tokenLimit * 0.5).toLocaleString(),
+                      },
+                      {
+                        value: Math.floor(subscription.tokenLimit * 0.75),
+                        label: Math.floor(subscription.tokenLimit * 0.75).toLocaleString(),
+                      },
+                      {
+                        value: subscription.tokenLimit,
+                        label: subscription.tokenLimit.toLocaleString(),
+                      },
+                    ]}
+                    disableSwap
+                    sx={{
+                      '& .MuiSlider-markLabel': {
+                        fontSize: '0.75rem',
+                      },
                     }}
                   />
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ mt: 1, display: 'block' }}
+                  >
+                    Maximum token limit is determined by your subscription plan
+                  </Typography>
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <Typography gutterBottom>Temperature (Creativity)</Typography>
@@ -501,6 +1137,7 @@ const Settings: React.FC = () => {
                     step={0.1}
                     marks
                     valueLabelDisplay="auto"
+                    disableSwap
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -510,8 +1147,10 @@ const Settings: React.FC = () => {
                     onChange={(_e, value) => setContextLength(value as number)}
                     min={1}
                     max={20}
+                    step={1}
                     marks
                     valueLabelDisplay="auto"
+                    disableSwap
                   />
                 </Grid>
               </Grid>
@@ -573,10 +1212,13 @@ const Settings: React.FC = () => {
           <TabPanel value={tabValue} index={2}>
             <SettingsSection
               title="Notification Preferences"
-              icon={<Notifications sx={{ color: theme.palette.primary.main }} />}
+              icon={<NotificationsOutlined sx={{ color: theme.palette.primary.main }} />}
             >
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Notification Channels
+                  </Typography>
                   <FormGroup>
                     <FormControlLabel
                       control={
@@ -587,7 +1229,12 @@ const Settings: React.FC = () => {
                           }
                         />
                       }
-                      label="Email Notifications"
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <EmailOutlined fontSize="small" />
+                          <Typography>Email Notifications</Typography>
+                        </Box>
+                      }
                     />
                     <FormControlLabel
                       control={
@@ -598,7 +1245,12 @@ const Settings: React.FC = () => {
                           }
                         />
                       }
-                      label="Desktop Notifications"
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <DesktopWindowsOutlined fontSize="small" />
+                          <Typography>Desktop Notifications</Typography>
+                        </Box>
+                      }
                     />
                     <FormControlLabel
                       control={
@@ -609,11 +1261,20 @@ const Settings: React.FC = () => {
                           }
                         />
                       }
-                      label="Sound Notifications"
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <VolumeUpOutlined fontSize="small" />
+                          <Typography>Sound Notifications</Typography>
+                        </Box>
+                      }
                     />
                   </FormGroup>
                 </Grid>
+
                 <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Notification Types
+                  </Typography>
                   <FormGroup>
                     <FormControlLabel
                       control={
@@ -624,7 +1285,12 @@ const Settings: React.FC = () => {
                           }
                         />
                       }
-                      label="Assignment Updates"
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <AssignmentOutlined fontSize="small" />
+                          <Typography>Assignment Updates</Typography>
+                        </Box>
+                      }
                     />
                     <FormControlLabel
                       control={
@@ -635,7 +1301,12 @@ const Settings: React.FC = () => {
                           }
                         />
                       }
-                      label="Deadline Reminders"
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <EventOutlined fontSize="small" />
+                          <Typography>Deadline Reminders</Typography>
+                        </Box>
+                      }
                     />
                     <FormControlLabel
                       control={
@@ -646,49 +1317,255 @@ const Settings: React.FC = () => {
                           }
                         />
                       }
-                      label="Feedback Notifications"
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <FeedbackOutlined fontSize="small" />
+                          <Typography>Feedback Notifications</Typography>
+                        </Box>
+                      }
+                    />
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={notifications.updates}
+                          onChange={e =>
+                            setNotifications({ ...notifications, updates: e.target.checked })
+                          }
+                        />
+                      }
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <UpdateOutlined fontSize="small" />
+                          <Typography>System Updates</Typography>
+                        </Box>
+                      }
                     />
                   </FormGroup>
                 </Grid>
-              </Grid>
-            </SettingsSection>
 
-            <SettingsSection
-              title="Notification Schedule"
-              icon={<Schedule sx={{ color: theme.palette.primary.main }} />}
-            >
-              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <Divider sx={{ my: 2 }} />
+                </Grid>
+
                 <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Display Preferences
+                  </Typography>
+                  <FormGroup>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={notificationPreferences.showPreview}
+                          onChange={e =>
+                            setNotificationPreferences({
+                              ...notificationPreferences,
+                              showPreview: e.target.checked,
+                            })
+                          }
+                        />
+                      }
+                      label="Show notification preview"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={notificationPreferences.showBadge}
+                          onChange={e =>
+                            setNotificationPreferences({
+                              ...notificationPreferences,
+                              showBadge: e.target.checked,
+                            })
+                          }
+                        />
+                      }
+                      label="Show notification badge"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={notificationPreferences.groupNotifications}
+                          onChange={e =>
+                            setNotificationPreferences({
+                              ...notificationPreferences,
+                              groupNotifications: e.target.checked,
+                            })
+                          }
+                        />
+                      }
+                      label="Group similar notifications"
+                    />
+                  </FormGroup>
+
+                  <Typography variant="subtitle1" sx={{ mt: 3 }} gutterBottom>
+                    Priority Level
+                  </Typography>
                   <FormControl fullWidth>
-                    <InputLabel>Quiet Hours Start</InputLabel>
                     <Select
-                      value={quietHoursStart}
-                      label="Quiet Hours Start"
-                      onChange={e => setQuietHoursStart(Number(e.target.value))}
+                      value={notificationPreferences.priorityLevel}
+                      onChange={e =>
+                        setNotificationPreferences({
+                          ...notificationPreferences,
+                          priorityLevel: e.target.value,
+                        })
+                      }
                     >
-                      {Array.from({ length: 24 }, (_, i) => (
-                        <MenuItem key={i} value={i}>
-                          {i.toString().padStart(2, '0')}:00
-                        </MenuItem>
-                      ))}
+                      <MenuItem value="low">Low Priority</MenuItem>
+                      <MenuItem value="medium">Medium Priority</MenuItem>
+                      <MenuItem value="high">High Priority</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
+
                 <Grid item xs={12} md={6}>
-                  <FormControl fullWidth>
-                    <InputLabel>Quiet Hours End</InputLabel>
-                    <Select
-                      value={quietHoursEnd}
-                      label="Quiet Hours End"
-                      onChange={e => setQuietHoursEnd(Number(e.target.value))}
+                  <Typography variant="subtitle1" gutterBottom>
+                    Work Hours
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid item xs={6}>
+                      <FormControl fullWidth>
+                        <InputLabel>Start Time</InputLabel>
+                        <Select
+                          value={notificationSchedule.workHoursStart}
+                          label="Start Time"
+                          onChange={e =>
+                            setNotificationSchedule({
+                              ...notificationSchedule,
+                              workHoursStart: Number(e.target.value),
+                            })
+                          }
+                        >
+                          {Array.from({ length: 24 }, (_, i) => (
+                            <MenuItem key={i} value={i}>
+                              {i.toString().padStart(2, '0')}:00
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <FormControl fullWidth>
+                        <InputLabel>End Time</InputLabel>
+                        <Select
+                          value={notificationSchedule.workHoursEnd}
+                          label="End Time"
+                          onChange={e =>
+                            setNotificationSchedule({
+                              ...notificationSchedule,
+                              workHoursEnd: Number(e.target.value),
+                            })
+                          }
+                        >
+                          {Array.from({ length: 24 }, (_, i) => (
+                            <MenuItem key={i} value={i}>
+                              {i.toString().padStart(2, '0')}:00
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                  </Grid>
+
+                  <Typography variant="subtitle1" sx={{ mt: 3 }} gutterBottom>
+                    Work Days
+                  </Typography>
+                  <FormGroup row>
+                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, index) => (
+                      <FormControlLabel
+                        key={day}
+                        control={
+                          <Switch
+                            checked={notificationSchedule.workDays.includes(index)}
+                            onChange={e => {
+                              const newWorkDays = e.target.checked
+                                ? [...notificationSchedule.workDays, index]
+                                : notificationSchedule.workDays.filter(d => d !== index);
+                              setNotificationSchedule({
+                                ...notificationSchedule,
+                                workDays: newWorkDays,
+                              });
+                            }}
+                            size="small"
+                          />
+                        }
+                        label={day}
+                        sx={{ minWidth: 80 }}
+                      />
+                    ))}
+                  </FormGroup>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Divider sx={{ my: 2 }} />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Quiet Hours
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} md={6}>
+                      <FormControl fullWidth>
+                        <InputLabel>Start Time</InputLabel>
+                        <Select
+                          value={notificationSchedule.quietHoursStart}
+                          label="Start Time"
+                          onChange={e =>
+                            setNotificationSchedule({
+                              ...notificationSchedule,
+                              quietHoursStart: Number(e.target.value),
+                            })
+                          }
+                        >
+                          {Array.from({ length: 24 }, (_, i) => (
+                            <MenuItem key={i} value={i}>
+                              {i.toString().padStart(2, '0')}:00
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <FormControl fullWidth>
+                        <InputLabel>End Time</InputLabel>
+                        <Select
+                          value={notificationSchedule.quietHoursEnd}
+                          label="End Time"
+                          onChange={e =>
+                            setNotificationSchedule({
+                              ...notificationSchedule,
+                              quietHoursEnd: Number(e.target.value),
+                            })
+                          }
+                        >
+                          {Array.from({ length: 24 }, (_, i) => (
+                            <MenuItem key={i} value={i}>
+                              {i.toString().padStart(2, '0')}:00
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                  </Grid>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ mt: 1, display: 'block' }}
+                  >
+                    Notifications will be silenced during quiet hours, except for high-priority
+                    alerts
+                  </Typography>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+                    <Button
+                      variant="outlined"
+                      startIcon={<NotificationsActiveOutlined />}
+                      onClick={() => setShowNotificationPreview(true)}
                     >
-                      {Array.from({ length: 24 }, (_, i) => (
-                        <MenuItem key={i} value={i}>
-                          {i.toString().padStart(2, '0')}:00
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+                      Preview Notifications
+                    </Button>
+                  </Box>
                 </Grid>
               </Grid>
             </SettingsSection>
@@ -696,95 +1573,514 @@ const Settings: React.FC = () => {
 
           <TabPanel value={tabValue} index={3}>
             <SettingsSection
-              title="Security Settings"
-              icon={<Security sx={{ color: theme.palette.primary.main }} />}
+              title="Security Score"
+              icon={<SecurityOutlined sx={{ color: theme.palette.primary.main }} />}
             >
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <FormGroup>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={twoFactorAuth}
-                          onChange={e => setTwoFactorAuth(e.target.checked)}
-                        />
-                      }
-                      label="Two-Factor Authentication"
-                    />
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={biometricLogin}
-                          onChange={e => setBiometricLogin(e.target.checked)}
-                        />
-                      }
-                      label="Biometric Login"
-                    />
-                  </FormGroup>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    startIcon={<Lock />}
-                    fullWidth
-                    sx={{ mb: 2 }}
+              <Box sx={{ mb: 4 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6" sx={{ mr: 2 }}>
+                    Security Score
+                  </Typography>
+                  <Typography
+                    variant="h4"
+                    sx={{
+                      color:
+                        securitySettings.securityScore >= 80
+                          ? 'success.main'
+                          : securitySettings.securityScore >= 50
+                          ? 'warning.main'
+                          : 'error.main',
+                    }}
                   >
-                    Change Password
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    startIcon={<Fingerprint />}
-                    fullWidth
-                    disabled={!biometricLogin}
-                  >
-                    Setup Biometric Login
-                  </Button>
-                </Grid>
-              </Grid>
+                    {securitySettings.securityScore}%
+                  </Typography>
+                </Box>
+                <LinearProgress
+                  variant="determinate"
+                  value={securitySettings.securityScore}
+                  sx={{
+                    height: 10,
+                    borderRadius: 5,
+                    backgroundColor: 'rgba(0,0,0,0.1)',
+                    '& .MuiLinearProgress-bar': {
+                      backgroundColor:
+                        securitySettings.securityScore >= 80
+                          ? 'success.main'
+                          : securitySettings.securityScore >= 50
+                          ? 'warning.main'
+                          : 'error.main',
+                    },
+                  }}
+                />
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ mt: 1, display: 'block' }}
+                >
+                  Last security audit: {securitySettings.lastSecurityAudit}
+                </Typography>
+              </Box>
+
+              <List>
+                {securityChecklist.map(item => (
+                  <React.Fragment key={item.id}>
+                    <ListItem>
+                      <ListItemIcon>{item.icon}</ListItemIcon>
+                      <ListItemText
+                        primary={item.title}
+                        secondary={item.description}
+                        primaryTypographyProps={{
+                          sx: {
+                            color:
+                              item.status === 'success'
+                                ? 'success.main'
+                                : item.status === 'warning'
+                                ? 'warning.main'
+                                : item.status === 'error'
+                                ? 'error.main'
+                                : 'text.primary',
+                          },
+                        }}
+                      />
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => {
+                          // Handle action based on item.id
+                        }}
+                        startIcon={
+                          item.status === 'success' ? (
+                            <CheckCircle color="success" />
+                          ) : item.status === 'warning' ? (
+                            <Warning color="warning" />
+                          ) : item.status === 'error' ? (
+                            <Error color="error" />
+                          ) : (
+                            <Info color="info" />
+                          )
+                        }
+                      >
+                        {item.action}
+                      </Button>
+                    </ListItem>
+                    <Divider />
+                  </React.Fragment>
+                ))}
+              </List>
             </SettingsSection>
 
             <SettingsSection
-              title="Privacy"
-              icon={<Lock sx={{ color: theme.palette.primary.main }} />}
+              title="Privacy Settings"
+              icon={<PrivacyTipOutlined sx={{ color: theme.palette.primary.main }} />}
             >
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Data & Privacy
+                  </Typography>
                   <FormGroup>
                     <FormControlLabel
                       control={
                         <Switch
-                          checked={dataCollection}
-                          onChange={e => setDataCollection(e.target.checked)}
+                          checked={privacySettings.dataCollection}
+                          onChange={e =>
+                            setPrivacySettings({
+                              ...privacySettings,
+                              dataCollection: e.target.checked,
+                            })
+                          }
                         />
                       }
-                      label="Allow Data Collection"
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <DataUsageOutlined fontSize="small" />
+                          <Typography>Allow Data Collection</Typography>
+                        </Box>
+                      }
                     />
                     <FormControlLabel
                       control={
                         <Switch
-                          checked={shareAnalytics}
-                          onChange={e => setShareAnalytics(e.target.checked)}
+                          checked={privacySettings.shareAnalytics}
+                          onChange={e =>
+                            setPrivacySettings({
+                              ...privacySettings,
+                              shareAnalytics: e.target.checked,
+                            })
+                          }
                         />
                       }
-                      label="Share Analytics"
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <AnalyticsOutlined fontSize="small" />
+                          <Typography>Share Analytics</Typography>
+                        </Box>
+                      }
+                    />
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={privacySettings.showOnlineStatus}
+                          onChange={e =>
+                            setPrivacySettings({
+                              ...privacySettings,
+                              showOnlineStatus: e.target.checked,
+                            })
+                          }
+                        />
+                      }
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <VisibilityOutlined fontSize="small" />
+                          <Typography>Show Online Status</Typography>
+                        </Box>
+                      }
+                    />
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={privacySettings.allowTracking}
+                          onChange={e =>
+                            setPrivacySettings({
+                              ...privacySettings,
+                              allowTracking: e.target.checked,
+                            })
+                          }
+                        />
+                      }
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <VisibilityOffOutlined fontSize="small" />
+                          <Typography>Allow Activity Tracking</Typography>
+                        </Box>
+                      }
                     />
                   </FormGroup>
                 </Grid>
+
                 <Grid item xs={12} md={6}>
-                  <Button variant="outlined" color="error" fullWidth sx={{ mb: 2 }}>
-                    Delete Account
-                  </Button>
-                  <Button variant="outlined" color="primary" fullWidth>
-                    Download My Data
-                  </Button>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Account Security
+                  </Typography>
+                  <FormGroup>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={privacySettings.twoFactorAuth}
+                          onChange={e =>
+                            setPrivacySettings({
+                              ...privacySettings,
+                              twoFactorAuth: e.target.checked,
+                            })
+                          }
+                        />
+                      }
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <ShieldOutlined fontSize="small" />
+                          <Typography>Two-Factor Authentication</Typography>
+                        </Box>
+                      }
+                    />
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={privacySettings.biometricLogin}
+                          onChange={e =>
+                            setPrivacySettings({
+                              ...privacySettings,
+                              biometricLogin: e.target.checked,
+                            })
+                          }
+                        />
+                      }
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <FingerprintOutlined fontSize="small" />
+                          <Typography>Biometric Login</Typography>
+                        </Box>
+                      }
+                    />
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={privacySettings.autoLock}
+                          onChange={e =>
+                            setPrivacySettings({
+                              ...privacySettings,
+                              autoLock: e.target.checked,
+                            })
+                          }
+                        />
+                      }
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <LockOutlined fontSize="small" />
+                          <Typography>Auto-Lock Account</Typography>
+                        </Box>
+                      }
+                    />
+                  </FormGroup>
+
+                  <Typography variant="subtitle1" sx={{ mt: 3 }} gutterBottom>
+                    Auto-Lock Timeout
+                  </Typography>
+                  <FormControl fullWidth>
+                    <Select
+                      value={privacySettings.lockTimeout}
+                      onChange={e =>
+                        setPrivacySettings({
+                          ...privacySettings,
+                          lockTimeout: Number(e.target.value),
+                        })
+                      }
+                      disabled={!privacySettings.autoLock}
+                    >
+                      <MenuItem value={5}>5 minutes</MenuItem>
+                      <MenuItem value={15}>15 minutes</MenuItem>
+                      <MenuItem value={30}>30 minutes</MenuItem>
+                      <MenuItem value={60}>1 hour</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Divider sx={{ my: 2 }} />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Account Management
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      startIcon={<DownloadOutlined />}
+                      fullWidth
+                      onClick={() => handleSecurityAction('downloadData')}
+                    >
+                      Download My Data
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="error"
+                      startIcon={<DeleteForeverOutlined />}
+                      fullWidth
+                      onClick={() => {
+                        const password = prompt(
+                          'Please enter your password to confirm account deletion:'
+                        );
+                        if (password) {
+                          handleSecurityAction('deleteAccount', { password });
+                        }
+                      }}
+                      sx={{
+                        bgcolor: 'error.main',
+                        color: 'white',
+                        '&:hover': {
+                          bgcolor: 'error.dark',
+                        },
+                      }}
+                    >
+                      Delete Account
+                    </Button>
+                  </Box>
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Security Information
+                  </Typography>
+                  <List dense>
+                    <ListItem>
+                      <ListItemIcon>
+                        <VpnKeyOutlined />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Password Strength"
+                        secondary={securitySettings.passwordStrength}
+                      />
+                    </ListItem>
+                    <ListItem>
+                      <ListItemIcon>
+                        <HistoryOutlined />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Last Password Change"
+                        secondary={securitySettings.lastPasswordChange}
+                      />
+                    </ListItem>
+                    <ListItem>
+                      <ListItemIcon>
+                        <VerifiedUserOutlined />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Active Sessions"
+                        secondary={`${securitySettings.activeSessions} devices`}
+                      />
+                    </ListItem>
+                  </List>
                 </Grid>
               </Grid>
             </SettingsSection>
           </TabPanel>
         </Box>
       </Box>
+
+      {/* Notification Preview Dialog */}
+      <Dialog
+        open={showNotificationPreview}
+        onClose={() => setShowNotificationPreview(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Notification Preview</DialogTitle>
+        <DialogContent>
+          <Box
+            sx={{
+              p: 2,
+              borderRadius: 2,
+              bgcolor: 'background.paper',
+              boxShadow: theme.shadows[1],
+              mb: 2,
+            }}
+          >
+            <Typography variant="subtitle1" fontWeight="bold">
+              {notificationPreview.title}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {notificationPreview.message}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+              {notificationPreview.time}
+            </Typography>
+          </Box>
+          <Typography variant="body2" color="text.secondary">
+            This is how your notifications will appear when enabled. You can customize the
+            appearance and behavior in the settings above.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowNotificationPreview(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Model Comparison Dialog */}
+      <Dialog
+        open={showModelComparison}
+        onClose={() => setShowModelComparison(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Model Comparison</DialogTitle>
+        <DialogContent>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Model</TableCell>
+                <TableCell>Speed</TableCell>
+                <TableCell>Accuracy</TableCell>
+                <TableCell>Cost</TableCell>
+                <TableCell>Best For</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {MODEL_COMPARISON.map((model: ModelComparison) => (
+                <TableRow key={model.model}>
+                  <TableCell>{model.model}</TableCell>
+                  <TableCell>{model.speed}</TableCell>
+                  <TableCell>{model.accuracy}</TableCell>
+                  <TableCell>{model.cost}</TableCell>
+                  <TableCell>
+                    <List dense>
+                      {model.bestFor.map((useCase: string) => (
+                        <ListItem key={useCase}>
+                          <ListItemText primary={useCase} />
+                        </ListItem>
+                      ))}
+                    </List>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowModelComparison(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Security Score Dialog */}
+      <Dialog
+        open={showSecurityScore}
+        onClose={() => setShowSecurityScore(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Security Score & Active Sessions</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h6" gutterBottom>
+              Security Score: {securityScore}%
+            </Typography>
+            <LinearProgress
+              variant="determinate"
+              value={securityScore}
+              sx={{
+                height: 10,
+                borderRadius: 5,
+                backgroundColor: 'rgba(0,0,0,0.1)',
+                '& .MuiLinearProgress-bar': {
+                  backgroundColor:
+                    securityScore >= 80
+                      ? 'success.main'
+                      : securityScore >= 50
+                      ? 'warning.main'
+                      : 'error.main',
+                },
+              }}
+            />
+          </Box>
+
+          <Typography variant="h6" gutterBottom>
+            Active Sessions
+          </Typography>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Device</TableCell>
+                <TableCell>Location</TableCell>
+                <TableCell>Last Active</TableCell>
+                <TableCell>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {activeSessions.map(session => (
+                <TableRow key={session.id}>
+                  <TableCell>{session.device}</TableCell>
+                  <TableCell>{session.location}</TableCell>
+                  <TableCell>{session.lastActive}</TableCell>
+                  <TableCell>
+                    <Button
+                      size="small"
+                      color="error"
+                      onClick={() =>
+                        handleSecurityAction('revokeSession', { sessionId: session.id })
+                      }
+                    >
+                      Revoke
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowSecurityScore(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
 
       <style>{`
         .MuiSlider-thumb {
@@ -804,6 +2100,21 @@ const Settings: React.FC = () => {
             ${theme.palette.primary.light}
           ) !important;
           opacity: 1;
+        }
+        .MuiSlider-track {
+          transition: all 0.3s ease;
+        }
+        .MuiSlider-rail {
+          transition: all 0.3s ease;
+        }
+        .MuiSlider-valueLabel {
+          transition: all 0.3s ease;
+        }
+        .MuiSlider-mark {
+          transition: all 0.3s ease;
+        }
+        .MuiSlider-markLabel {
+          transition: all 0.3s ease;
         }
       `}</style>
     </Box>

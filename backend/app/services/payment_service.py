@@ -60,12 +60,39 @@ class PaymentService:
                 expand=["latest_invoice.payment_intent"]
             )
 
+            # Map price_id to AI model and token limit
+            model_mapping = {
+                'price_free': {
+                    'model': 'gpt-4.1-nano',  # GPT-4.1 Nano model
+                    'token_limit': 30000
+                },
+                'price_plus': {
+                    'model': 'gpt-3.5-turbo-0125',  # Latest GPT-3.5 Turbo model
+                    'token_limit': 50000
+                },
+                'price_pro': {
+                    'model': 'gpt-4-turbo-preview',  # Latest GPT-4 Turbo model
+                    'token_limit': 75000
+                },
+                'price_max': {
+                    'model': 'gpt-4',  # Standard GPT-4 model
+                    'token_limit': 100000
+                }
+            }
+
+            plan_config = model_mapping.get(price_id, {
+                'model': 'gpt-4.1-nano',  # Default fallback to free plan model
+                'token_limit': 5000
+            })
+
             # Create subscription record in database
             db_subscription = Subscription(
                 user_id=user.id,
                 stripe_subscription_id=subscription.id,
                 status=SubscriptionStatus.PENDING,
-                plan_id=price_id
+                plan_id=price_id,
+                ai_model=plan_config['model'],
+                token_limit=plan_config['token_limit']
             )
             self.db.add(db_subscription)
             self.db.commit()

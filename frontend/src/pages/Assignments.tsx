@@ -243,7 +243,7 @@ const Assignments: React.FC = () => {
         <Grid item xs={12} md={4}>
           <Card sx={cardStyle}>
             <CardContent>
-              <Typography variant="h6" sx={{ mb: 2, color: theme.palette.primary.main }}>
+              <Typography variant="h6" sx={{ mb: 2, color: 'black' }}>
                 Recent Activity
               </Typography>
               {assignments.slice(0, 3).map(assignment => (
@@ -270,7 +270,7 @@ const Assignments: React.FC = () => {
         <Grid item xs={12} md={4}>
           <Card sx={cardStyle}>
             <CardContent>
-              <Typography variant="h6" sx={{ mb: 2, color: theme.palette.primary.main }}>
+              <Typography variant="h6" sx={{ mb: 2, color: 'black' }}>
                 Quick Stats
               </Typography>
               <Accordion sx={{ mb: 1, boxShadow: 'none', border: '1px solid rgba(0, 0, 0, 0.12)' }}>
@@ -374,7 +374,7 @@ const Assignments: React.FC = () => {
         <Grid item xs={12} md={4}>
           <Card sx={cardStyle}>
             <CardContent>
-              <Typography variant="h6" sx={{ mb: 2, color: theme.palette.primary.main }}>
+              <Typography variant="h6" sx={{ mb: 2, color: 'black' }}>
                 Workshop
               </Typography>
               <Typography variant="body2" sx={{ mb: 2 }}>
@@ -383,7 +383,7 @@ const Assignments: React.FC = () => {
               <Button
                 variant="contained"
                 startIcon={<AddIcon />}
-                onClick={() => navigate('/workshop')}
+                onClick={() => navigate('/dashboard/workshop')}
                 fullWidth
                 sx={{
                   backgroundColor: theme.palette.primary.main,

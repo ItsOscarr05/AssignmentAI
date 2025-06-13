@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from openai import AsyncOpenAI
 from app.crud import ai_assignment as ai_assignment_crud
 from app.crud import feedback as feedback_crud
+from app.models.subscription import Subscription, SubscriptionStatus
 from app.schemas.ai_assignment import (
     AssignmentGenerationRequest,
     AssignmentContent,
@@ -23,6 +24,18 @@ class AIService:
         self.model_version = settings.AI_MODEL_VERSION
         self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
         self.model = settings.OPENAI_MODEL
+
+    async def get_user_model(self, user_id: int) -> str:
+        """Get the AI model assigned to a user's subscription"""
+        subscription = self.db.query(Subscription).filter(
+            Subscription.user_id == user_id,
+            Subscription.status == SubscriptionStatus.ACTIVE
+        ).first()
+        
+        if not subscription:
+            return "gpt-4.1-nano"  # Default model for users without subscription (Free plan model)
+        
+        return subscription.ai_model
 
     async def generate_assignment(self, request: AssignmentGenerationRequest) -> AssignmentGenerationResponse:
         """
@@ -85,17 +98,20 @@ class AIService:
                 error=f"Failed to generate assignment: {str(e)}"
             )
 
-    async def generate_feedback(self, submission_content: str, feedback_type: str) -> Optional[FeedbackCreate]:
+    async def generate_feedback(self, user_id: int, submission_content: str, feedback_type: str) -> Optional[FeedbackCreate]:
         """
         Generate feedback for a submission using AI.
         """
         try:
+            # Get the user's assigned model
+            model = await self.get_user_model(user_id)
+            
             # Construct the prompt for the AI model
             prompt = self._construct_feedback_prompt(submission_content, feedback_type)
             
             # Call OpenAI API
             response = await self.client.chat.completions.create(
-                model=self.model,
+                model=model,
                 messages=[
                     {"role": "system", "content": "You are a helpful teacher's assistant that provides constructive feedback on student submissions."},
                     {"role": "user", "content": prompt}
@@ -116,6 +132,7 @@ class AIService:
                 confidence_score=0.8,  # TODO: Get actual confidence score from AI model
                 feedback_metadata={
                     "model_version": self.model_version,
+                    "model_used": model,
                     "generated_at": datetime.utcnow().isoformat()
                 }
             )

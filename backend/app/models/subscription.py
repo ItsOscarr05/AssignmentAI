@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Enum
+from sqlalchemy import Column, Integer, String, ForeignKey, Enum, JSON
 from sqlalchemy.orm import relationship
 from app.db.base_class import Base
 import enum
@@ -20,6 +20,9 @@ class Subscription(Base):
     stripe_customer_id = Column(String, index=True)
     plan_id = Column(String, nullable=False)
     status = Column(Enum(SubscriptionStatus), default=SubscriptionStatus.PENDING)
+    ai_model = Column(String, nullable=False)  # The AI model assigned to this subscription
+    token_limit = Column(Integer, nullable=False)  # Monthly token limit
+    metadata = Column(JSON)  # Additional subscription data
     
     # Relationships
     user = relationship("User", back_populates="subscription") 

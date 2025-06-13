@@ -3,8 +3,10 @@ import {
   Chat as ChatIcon,
   ContentCopy as ContentCopyIcon,
   Delete as DeleteIcon,
+  Download as DownloadIcon,
   FormatListBulleted as FormatListBulletedIcon,
   History as HistoryIcon,
+  InfoOutlined as InfoOutlinedIcon,
   Link as LinkIcon,
   Refresh as RefreshIcon,
   Send as SendIcon,
@@ -38,6 +40,7 @@ import {
   useTheme,
 } from '@mui/material';
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   CartesianGrid,
   Legend,
@@ -79,6 +82,9 @@ interface ActivityData {
   chats: number;
   files: number;
   links: number;
+  summarize: number;
+  extract: number;
+  rewrite: number;
 }
 
 interface TabPanelProps {
@@ -105,6 +111,7 @@ function TabPanel(props: TabPanelProps) {
 
 const Workshop: React.FC = () => {
   const theme = useTheme();
+  const navigate = useNavigate();
   useWorkshopStore();
   const [input, setInput] = useState('');
   const [] = useState<FileUpload[]>([]);
@@ -113,6 +120,7 @@ const Workshop: React.FC = () => {
     Array<{ text: string; isUser: boolean; timestamp: Date }>
   >([]);
   const [activeTab, setActiveTab] = useState(0);
+  const [responseTab, setResponseTab] = useState(3);
   const [history, setHistory] = useState<HistoryItem[]>([
     {
       id: '1',
@@ -137,16 +145,17 @@ const Workshop: React.FC = () => {
     },
   ]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selectedLine, setSelectedLine] = useState<string | null>(null);
 
   // Sample activity data - in a real app, this would come from your backend
   const activityData: ActivityData[] = [
-    { date: 'Mon', chats: 4, files: 2, links: 1 },
-    { date: 'Tue', chats: 3, files: 1, links: 2 },
-    { date: 'Wed', chats: 5, files: 3, links: 0 },
-    { date: 'Thu', chats: 2, files: 2, links: 1 },
-    { date: 'Fri', chats: 6, files: 1, links: 3 },
-    { date: 'Sat', chats: 4, files: 0, links: 2 },
-    { date: 'Sun', chats: 3, files: 2, links: 1 },
+    { date: 'Mon', chats: 4, files: 2, links: 1, summarize: 3, extract: 2, rewrite: 1 },
+    { date: 'Tue', chats: 3, files: 1, links: 2, summarize: 2, extract: 1, rewrite: 2 },
+    { date: 'Wed', chats: 5, files: 3, links: 0, summarize: 4, extract: 2, rewrite: 1 },
+    { date: 'Thu', chats: 2, files: 2, links: 1, summarize: 1, extract: 2, rewrite: 1 },
+    { date: 'Fri', chats: 6, files: 1, links: 3, summarize: 5, extract: 1, rewrite: 2 },
+    { date: 'Sat', chats: 4, files: 0, links: 2, summarize: 3, extract: 0, rewrite: 1 },
+    { date: 'Sun', chats: 3, files: 2, links: 1, summarize: 2, extract: 1, rewrite: 1 },
   ];
 
   // Custom styles
@@ -351,6 +360,35 @@ const Workshop: React.FC = () => {
     }
   };
 
+  // Custom tooltip for the activity graph
+  const CustomActivityTooltip = ({ active, payload, label }: any) => {
+    if (!active || !payload || !payload.length) return null;
+    const point = payload[0].payload;
+    const allKeys = [
+      { key: 'chats', label: 'Chats', color: 'red' },
+      { key: 'summarize', label: 'Summarize', color: '#ff9800' },
+      { key: 'extract', label: 'Extract', color: '#ffc107' },
+      { key: 'links', label: 'Links', color: '#82ca9d' },
+      { key: 'rewrite', label: 'Rewrite', color: '#2196f3' },
+      { key: 'files', label: 'Files', color: '#8884d8' },
+    ];
+    return (
+      <Paper sx={{ p: 2 }}>
+        <Typography variant="subtitle2">{label}</Typography>
+        <Box>
+          {allKeys.map(({ key, label, color }) => {
+            if (selectedLine && selectedLine !== key) return null;
+            return (
+              <Typography key={key} variant="body2" sx={{ color }}>
+                {label}: {point[key]}
+              </Typography>
+            );
+          })}
+        </Box>
+      </Paper>
+    );
+  };
+
   return (
     <Box sx={{ p: 3, backgroundColor: 'white', minHeight: '100vh' }}>
       {/* Header */}
@@ -377,9 +415,25 @@ const Workshop: React.FC = () => {
         <Grid item xs={12} md={9}>
           {/* Activity Chart */}
           <Paper sx={{ ...cardStyle, p: 3, mb: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Weekly Activity
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              <Typography variant="h6" gutterBottom>
+                Weekly Activity
+              </Typography>
+              <Tooltip
+                title="You can select an item from the legend to highlight a graph, and click the legend item again to view all graphs again."
+                arrow
+              >
+                <InfoOutlinedIcon
+                  sx={{
+                    color: 'gray',
+                    fontSize: 20,
+                    cursor: 'pointer',
+                    position: 'relative',
+                    top: '-5px',
+                  }}
+                />
+              </Tooltip>
+            </Box>
             <Box sx={{ height: 300 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
@@ -394,17 +448,64 @@ const Workshop: React.FC = () => {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis />
-                  <RechartsTooltip />
-                  <Legend />
+                  <RechartsTooltip content={CustomActivityTooltip} />
+                  <Legend
+                    onClick={e => {
+                      if (!e || !e.dataKey) return;
+                      const key = String(e.dataKey);
+                      setSelectedLine(prev => (prev === key ? null : key));
+                    }}
+                  />
                   <Line
                     type="monotone"
                     dataKey="chats"
                     stroke="red"
                     activeDot={{ r: 8 }}
                     name="Chats"
+                    strokeOpacity={selectedLine && selectedLine !== 'chats' ? 0.2 : 1}
+                    strokeWidth={selectedLine === 'chats' ? 3 : 1}
                   />
-                  <Line type="monotone" dataKey="files" stroke="#8884d8" name="Files" />
-                  <Line type="monotone" dataKey="links" stroke="#82ca9d" name="Links" />
+                  <Line
+                    type="monotone"
+                    dataKey="summarize"
+                    stroke="#ff9800"
+                    activeDot={{ r: 8 }}
+                    name="Summarize"
+                    strokeOpacity={selectedLine && selectedLine !== 'summarize' ? 0.2 : 1}
+                    strokeWidth={selectedLine === 'summarize' ? 3 : 1}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="extract"
+                    stroke="#ffc107"
+                    name="Extract"
+                    strokeOpacity={selectedLine && selectedLine !== 'extract' ? 0.2 : 1}
+                    strokeWidth={selectedLine === 'extract' ? 3 : 1}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="links"
+                    stroke="#82ca9d"
+                    name="Links"
+                    strokeOpacity={selectedLine && selectedLine !== 'links' ? 0.2 : 1}
+                    strokeWidth={selectedLine === 'links' ? 3 : 1}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="rewrite"
+                    stroke="#2196f3"
+                    name="Rewrite"
+                    strokeOpacity={selectedLine && selectedLine !== 'rewrite' ? 0.2 : 1}
+                    strokeWidth={selectedLine === 'rewrite' ? 3 : 1}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="files"
+                    stroke="#8884d8"
+                    name="Files"
+                    strokeOpacity={selectedLine && selectedLine !== 'files' ? 0.2 : 1}
+                    strokeWidth={selectedLine === 'files' ? 3 : 1}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </Box>
@@ -484,9 +585,101 @@ const Workshop: React.FC = () => {
 
           {/* AI Response Area */}
           <Paper sx={{ ...cardStyle, p: 3 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-              <Typography variant="h6">AI Response</Typography>
-              <Box>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                justifyContent: 'space-between',
+                alignItems: { xs: 'stretch', sm: 'center' },
+                mb: 2,
+                width: '100%',
+                gap: 2,
+              }}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  width: { xs: '100%', sm: 'auto' },
+                  overflowX: { xs: 'auto', sm: 'visible' },
+                  flexWrap: { xs: 'nowrap', sm: 'wrap' },
+                  pb: { xs: 1, sm: 0 },
+                }}
+              >
+                <Typography variant="h6" sx={{ whiteSpace: 'nowrap', mr: 2 }}>
+                  AI Response
+                </Typography>
+                <Tabs
+                  value={responseTab}
+                  onChange={(_e, newValue) => setResponseTab(newValue)}
+                  variant="scrollable"
+                  scrollButtons="auto"
+                  sx={{
+                    minHeight: 40,
+                    '& .MuiTabs-indicator': {
+                      backgroundColor:
+                        responseTab === 0
+                          ? '#ff9800'
+                          : responseTab === 1
+                          ? '#ffc107'
+                          : responseTab === 2
+                          ? '#2196f3'
+                          : '#9c27b0',
+                    },
+                  }}
+                >
+                  <Tab
+                    label="Summarize"
+                    icon={<ContentCopyIcon sx={{ color: '#ff9800' }} />}
+                    iconPosition="start"
+                    sx={{
+                      color: '#ff9800',
+                      '&.Mui-selected': {
+                        color: '#ff9800',
+                      },
+                      minWidth: 120,
+                    }}
+                  />
+                  <Tab
+                    label="Extract"
+                    icon={<FormatListBulletedIcon sx={{ color: '#ffc107' }} />}
+                    iconPosition="start"
+                    sx={{
+                      color: '#ffc107',
+                      '&.Mui-selected': {
+                        color: '#ffc107',
+                      },
+                      minWidth: 120,
+                    }}
+                  />
+                  <Tab
+                    label="Rewrite"
+                    icon={<TitleIcon sx={{ color: '#2196f3' }} />}
+                    iconPosition="start"
+                    sx={{
+                      color: '#2196f3',
+                      '&.Mui-selected': {
+                        color: '#2196f3',
+                      },
+                      minWidth: 120,
+                    }}
+                  />
+                  <Tab
+                    label="Download"
+                    icon={<DownloadIcon sx={{ color: '#9c27b0' }} />}
+                    iconPosition="start"
+                    sx={{
+                      color: '#9c27b0',
+                      '&.Mui-selected': {
+                        color: '#9c27b0',
+                      },
+                      minWidth: 120,
+                    }}
+                  />
+                </Tabs>
+              </Box>
+              <Box sx={{ flexShrink: 0, mt: { xs: 1, sm: 0 } }}>
                 <Tooltip title="Copy">
                   <IconButton size="small" sx={{ color: 'red' }}>
                     <ContentCopyIcon />
@@ -500,7 +693,7 @@ const Workshop: React.FC = () => {
               </Box>
             </Box>
             <Divider sx={{ mb: 2 }} />
-            <Box sx={{ minHeight: '200px' }}>
+            <Box sx={{ minHeight: '200px', width: '100%', px: { xs: 0, sm: 2 } }}>
               {messages.length > 0 ? (
                 messages.map((message, index) => (
                   <Paper
@@ -564,23 +757,23 @@ const Workshop: React.FC = () => {
               Quick Actions
             </Typography>
             <List>
+              <ListItem button onClick={() => setActiveTab(0)}>
+                <ListItemIcon>
+                  <ChatIcon sx={{ color: 'red' }} />
+                </ListItemIcon>
+                <ListItemText primary="Start New Chat" />
+              </ListItem>
               <ListItem button onClick={() => setActiveTab(1)}>
                 <ListItemIcon>
-                  <UploadIcon color="primary" />
+                  <UploadIcon sx={{ color: '#8884d8' }} />
                 </ListItemIcon>
                 <ListItemText primary="Upload New Document" />
               </ListItem>
               <ListItem button onClick={() => setActiveTab(2)}>
                 <ListItemIcon>
-                  <LinkIcon color="primary" />
+                  <LinkIcon sx={{ color: '#82ca9d' }} />
                 </ListItemIcon>
                 <ListItemText primary="Add External Link" />
-              </ListItem>
-              <ListItem button>
-                <ListItemIcon>
-                  <HistoryIcon color="primary" />
-                </ListItemIcon>
-                <ListItemText primary="View Saved Assignments" />
               </ListItem>
             </List>
           </Paper>
@@ -593,19 +786,19 @@ const Workshop: React.FC = () => {
             <List>
               <ListItem button onClick={() => setInput('Summarize this document.')}>
                 <ListItemIcon>
-                  <ContentCopyIcon sx={{ color: 'red' }} />
+                  <ContentCopyIcon sx={{ color: '#ff9800' }} />
                 </ListItemIcon>
                 <ListItemText primary="Summarize this document." />
               </ListItem>
               <ListItem button onClick={() => setInput('Extract key points from this essay.')}>
                 <ListItemIcon>
-                  <FormatListBulletedIcon sx={{ color: 'red' }} />
+                  <FormatListBulletedIcon sx={{ color: '#ffc107' }} />
                 </ListItemIcon>
                 <ListItemText primary="Extract key points from this essay." />
               </ListItem>
               <ListItem button onClick={() => setInput('Rewrite in more academic tone.')}>
                 <ListItemIcon>
-                  <TitleIcon sx={{ color: 'red' }} />
+                  <TitleIcon sx={{ color: '#2196f3' }} />
                 </ListItemIcon>
                 <ListItemText primary="Rewrite in more academic tone." />
               </ListItem>
@@ -648,6 +841,23 @@ const Workshop: React.FC = () => {
                   Tokens Used: 1,500 / 2,000
                 </Typography>
               </Box>
+              <Button
+                variant="outlined"
+                color="error"
+                fullWidth
+                sx={{
+                  mt: 2,
+                  borderColor: 'red',
+                  color: 'red',
+                  '&:hover': {
+                    borderColor: 'red',
+                    backgroundColor: 'rgba(255, 0, 0, 0.04)',
+                  },
+                }}
+                onClick={() => navigate('/dashboard/ai-tokens')}
+              >
+                See More Info
+              </Button>
             </Box>
           </Paper>
         </Grid>

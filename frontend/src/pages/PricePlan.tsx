@@ -1,9 +1,32 @@
 import {
+  AccessTimeOutlined,
+  AllInclusive,
+  AutoAwesomeOutlined,
+  AutoFixHighOutlined,
+  BuildOutlined,
   CheckCircle,
+  CodeOutlined,
+  CreditCard,
   Diamond,
   EmojiEvents,
+  FormatQuoteOutlined,
+  GppGoodOutlined,
+  HelpOutline,
+  LibraryBooksOutlined,
   LocalOffer,
+  PaletteOutlined,
+  PersonOutlined,
+  PsychologyOutlined,
+  RocketLaunchOutlined,
+  SchoolOutlined,
+  ScienceOutlined,
+  Search,
+  SmartToyOutlined,
+  Speed,
+  Spellcheck,
   Star,
+  StyleOutlined,
+  TextSnippetOutlined,
   WorkspacePremium,
 } from '@mui/icons-material';
 import {
@@ -17,8 +40,12 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
+  FormControlLabel,
   Grid,
+  IconButton,
   Stack,
+  Switch,
+  Tooltip,
   Typography,
   useTheme,
 } from '@mui/material';
@@ -32,6 +59,7 @@ interface Feature {
   plus: boolean;
   pro: boolean;
   max: boolean;
+  description?: string;
 }
 
 interface Plan {
@@ -43,27 +71,156 @@ interface Plan {
   features: string[];
   popular?: boolean;
   priceId: string;
+  bestFor: string;
+  tokenBoost?: number;
+  isCurrentPlan?: boolean;
 }
 
 const features: Feature[] = [
-  { name: 'Basic Assignment Analysis', free: true, plus: true, pro: true, max: true },
-  { name: 'Grammar & Spelling Check', free: true, plus: true, pro: true, max: true },
-  { name: 'Basic Writing Suggestions', free: true, plus: true, pro: true, max: true },
-  { name: 'Standard Response Time', free: true, plus: true, pro: true, max: true },
-  { name: 'Basic Templates', free: true, plus: true, pro: true, max: true },
-  { name: 'Advanced Writing Analysis', free: false, plus: true, pro: true, max: true },
-  { name: 'Style & Tone Suggestions', free: false, plus: true, pro: true, max: true },
-  { name: 'Priority Response Time', free: false, plus: true, pro: true, max: true },
-  { name: 'Extended Templates Library', free: false, plus: true, pro: true, max: true },
-  { name: 'AI-Powered Research Assistance', free: false, plus: false, pro: true, max: true },
-  { name: 'Citation & Reference Check', free: false, plus: false, pro: true, max: true },
-  { name: 'Custom Writing Style Guide', free: false, plus: false, pro: true, max: true },
-  { name: 'Advanced Plagiarism Detection', free: false, plus: false, pro: true, max: true },
-  { name: '24/7 Priority Support', free: false, plus: false, pro: true, max: true },
-  { name: 'Unlimited Assignment Analysis', free: false, plus: false, pro: false, max: true },
-  { name: 'Custom AI Model Training', free: false, plus: false, pro: false, max: true },
-  { name: 'API Access', free: false, plus: false, pro: false, max: true },
-  { name: 'Dedicated Account Manager', free: false, plus: false, pro: false, max: true },
+  {
+    name: 'Basic Assignment Analysis',
+    free: true,
+    plus: true,
+    pro: true,
+    max: true,
+    description: 'Get basic feedback on your assignments',
+  },
+  {
+    name: 'Grammar & Spelling Check',
+    free: true,
+    plus: true,
+    pro: true,
+    max: true,
+    description: 'Check for common grammar and spelling errors',
+  },
+  {
+    name: 'Basic Writing Suggestions',
+    free: true,
+    plus: true,
+    pro: true,
+    max: true,
+    description: 'Receive basic suggestions to improve your writing',
+  },
+  {
+    name: 'Standard Response Time',
+    free: true,
+    plus: true,
+    pro: true,
+    max: true,
+    description: 'Get responses within standard timeframes',
+  },
+  {
+    name: 'Basic Templates',
+    free: true,
+    plus: true,
+    pro: true,
+    max: true,
+    description: 'Access to basic writing templates',
+  },
+  {
+    name: 'Advanced Writing Analysis',
+    free: false,
+    plus: true,
+    pro: true,
+    max: true,
+    description: 'Deep analysis of writing structure, coherence, and argument strength',
+  },
+  {
+    name: 'Style & Tone Suggestions',
+    free: false,
+    plus: true,
+    pro: true,
+    max: true,
+    description: 'Get suggestions to improve writing style and tone',
+  },
+  {
+    name: 'Priority Response Time',
+    free: false,
+    plus: true,
+    pro: true,
+    max: true,
+    description: 'Faster response times for your requests',
+  },
+  {
+    name: 'Extended Templates Library',
+    free: false,
+    plus: true,
+    pro: true,
+    max: true,
+    description: 'Access to an expanded library of writing templates',
+  },
+  {
+    name: 'AI-Powered Research Assistance',
+    free: false,
+    plus: false,
+    pro: true,
+    max: true,
+    description: 'AI helps you find and analyze research materials',
+  },
+  {
+    name: 'Citation & Reference Check',
+    free: false,
+    plus: false,
+    pro: true,
+    max: true,
+    description: 'Automated checking of citations and references',
+  },
+  {
+    name: 'Custom Writing Style Guide',
+    free: false,
+    plus: false,
+    pro: true,
+    max: true,
+    description: 'Create and maintain your own writing style guide',
+  },
+  {
+    name: 'Advanced Plagiarism Detection',
+    free: false,
+    plus: false,
+    pro: true,
+    max: true,
+    description: 'Comprehensive plagiarism checking across multiple sources',
+  },
+  {
+    name: '24/7 Priority Support',
+    free: false,
+    plus: false,
+    pro: true,
+    max: true,
+    description: 'Round-the-clock priority customer support',
+  },
+  {
+    name: 'Unlimited Assignment Analysis',
+    free: false,
+    plus: false,
+    pro: false,
+    max: true,
+    description: 'No limits on the number of assignments you can analyze',
+  },
+  {
+    name: 'Custom AI Model Training',
+    free: false,
+    plus: false,
+    pro: false,
+    max: true,
+    description: 'Train custom AI models for your specific needs',
+  },
+  {
+    name: 'API Access',
+    free: false,
+    plus: false,
+    pro: false,
+    max: true,
+    description: 'Programmatic access to our AI services',
+  },
+  {
+    name: 'Dedicated Account Manager',
+    free: false,
+    plus: false,
+    pro: false,
+    max: true,
+    description: 'Personal account manager for enterprise needs',
+  },
 ];
 
 const plans: Plan[] = [
@@ -75,6 +232,9 @@ const plans: Plan[] = [
     color: '#2196f3',
     features: features.filter(f => f.free).map(f => f.name),
     priceId: 'price_free',
+    bestFor: 'Perfect for beginners and occasional users',
+    tokenBoost: 30000,
+    isCurrentPlan: false,
   },
   {
     name: 'Plus',
@@ -82,9 +242,12 @@ const plans: Plan[] = [
     description: 'Enhanced features for more serious students',
     icon: <Star />,
     color: '#4caf50',
-    features: features.filter(f => f.plus).map(f => f.name),
+    features: features.filter(f => f.plus && !f.free).map(f => f.name),
     popular: true,
     priceId: 'price_plus',
+    bestFor: 'Best for casual students who want better grades with less stress',
+    tokenBoost: 50000,
+    isCurrentPlan: false,
   },
   {
     name: 'Pro',
@@ -92,8 +255,11 @@ const plans: Plan[] = [
     description: 'Advanced features for professional students',
     icon: <Diamond />,
     color: '#9c27b0',
-    features: features.filter(f => f.pro).map(f => f.name),
+    features: features.filter(f => f.pro && !f.plus).map(f => f.name),
     priceId: 'price_pro',
+    bestFor: 'Great for college students and essay-heavy courses',
+    tokenBoost: 75000,
+    isCurrentPlan: false,
   },
   {
     name: 'Max',
@@ -101,20 +267,66 @@ const plans: Plan[] = [
     description: 'Ultimate package for power users',
     icon: <EmojiEvents />,
     color: '#ff9800',
-    features: features.filter(f => f.max).map(f => f.name),
+    features: features.filter(f => f.max && !f.pro).map(f => f.name),
     priceId: 'price_max',
+    bestFor: 'Built for power users, grad students, and automation nerds',
+    tokenBoost: 100000,
+    isCurrentPlan: false,
   },
 ];
+
+const getFeatureIcon = (featureName: string, color: string) => {
+  switch (featureName) {
+    case 'Basic Assignment Analysis':
+      return <SchoolOutlined sx={{ color }} />;
+    case 'Grammar & Spelling Check':
+      return <Spellcheck sx={{ color }} />;
+    case 'Basic Writing Suggestions':
+      return <AutoFixHighOutlined sx={{ color }} />;
+    case 'Standard Response Time':
+      return <Speed sx={{ color }} />;
+    case 'Basic Templates':
+      return <TextSnippetOutlined sx={{ color }} />;
+    case 'Advanced Writing Analysis':
+      return <ScienceOutlined sx={{ color }} />;
+    case 'Style & Tone Suggestions':
+      return <PaletteOutlined sx={{ color }} />;
+    case 'Priority Response Time':
+      return <Speed sx={{ color }} />;
+    case 'Extended Templates Library':
+      return <LibraryBooksOutlined sx={{ color }} />;
+    case 'AI-Powered Research Assistance':
+      return <Search sx={{ color }} />;
+    case 'Citation & Reference Check':
+      return <FormatQuoteOutlined sx={{ color }} />;
+    case 'Custom Writing Style Guide':
+      return <StyleOutlined sx={{ color }} />;
+    case 'Advanced Plagiarism Detection':
+      return <GppGoodOutlined sx={{ color }} />;
+    case '24/7 Priority Support':
+      return <AccessTimeOutlined sx={{ color }} />;
+    case 'Unlimited Assignment Analysis':
+      return <AllInclusive sx={{ color }} />;
+    case 'Custom AI Model Training':
+      return <BuildOutlined sx={{ color }} />;
+    case 'API Access':
+      return <CodeOutlined sx={{ color }} />;
+    case 'Dedicated Account Manager':
+      return <PersonOutlined sx={{ color }} />;
+    default:
+      return <CheckCircle sx={{ color }} />;
+  }
+};
 
 const PricePlan: React.FC = () => {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [showDetailedComparison, setShowDetailedComparison] = useState(false);
 
   const handlePlanSelect = (plan: Plan) => {
     if (plan.price === 0) {
-      // Handle free plan selection
       enqueueSnackbar('Free plan activated!', { variant: 'success' });
       return;
     }
@@ -131,13 +343,80 @@ const PricePlan: React.FC = () => {
     enqueueSnackbar(`Payment failed: ${error}`, { variant: 'error' });
   };
 
+  const renderDetailedComparison = () => {
+    return (
+      <Dialog
+        open={showDetailedComparison}
+        onClose={() => setShowDetailedComparison(false)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle>Detailed Feature Comparison</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2 }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <Box sx={{ display: 'flex', mb: 2 }}>
+                  <Box sx={{ flex: 1 }} /> {/* Empty space for feature names */}
+                  {plans.map(plan => (
+                    <Box key={plan.name} sx={{ flex: 1, textAlign: 'center' }}>
+                      <Typography variant="h6" sx={{ color: plan.color }}>
+                        {plan.name}
+                      </Typography>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        ${plan.price}/month
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </Grid>
+              {features.map(feature => (
+                <Grid item xs={12} key={feature.name}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <Box sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+                      <Typography>{feature.name}</Typography>
+                      {feature.description && (
+                        <Tooltip title={feature.description} arrow placement="top">
+                          <IconButton size="small" sx={{ ml: 0.5 }}>
+                            <HelpOutline fontSize="small" sx={{ color: 'error.main' }} />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </Box>
+                    {plans.map((plan, index) => {
+                      // Check if this plan or any previous plan includes this feature
+                      const isIncluded = plans
+                        .slice(0, index + 1)
+                        .some(p => p.features.includes(feature.name));
+
+                      return (
+                        <Box key={plan.name} sx={{ flex: 1, textAlign: 'center' }}>
+                          {isIncluded ? (
+                            <CheckCircle sx={{ color: plan.color }} />
+                          ) : (
+                            <Typography color="text.disabled">—</Typography>
+                          )}
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
   return (
     <Box sx={{ width: '100%', position: 'relative', px: 2, pb: 4 }}>
       <Box
         sx={{
-          mb: 5,
+          mb: 3,
           display: 'flex',
           alignItems: 'center',
+          justifyContent: 'space-between',
           gap: 3,
           position: 'sticky',
           top: 0,
@@ -154,6 +433,15 @@ const PricePlan: React.FC = () => {
         <Typography variant="h4" fontWeight="normal" className="page-title">
           Pricing Plans
         </Typography>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={showDetailedComparison}
+              onChange={e => setShowDetailedComparison(e.target.checked)}
+            />
+          }
+          label="Detailed Comparison View"
+        />
       </Box>
 
       <Container>
@@ -168,17 +456,15 @@ const PricePlan: React.FC = () => {
                     flexDirection: 'column',
                     position: 'relative',
                     transition: 'all 0.3s ease',
-                    border: '1px solid',
-                    borderColor: plan.popular
-                      ? theme.palette.primary.main
-                      : theme.palette.mode === 'dark'
-                      ? 'rgba(255,255,255,0.1)'
-                      : 'rgba(0,0,0,0.06)',
+                    border: '2.5px solid',
+                    borderColor: plan.color,
                     '&:hover': {
                       transform: 'translateY(-8px)',
-                      boxShadow: theme.shadows[8],
+                      boxShadow: `0 8px 24px ${plan.color}40`,
+                      borderColor: plan.color,
                     },
                     minWidth: '280px',
+                    opacity: plan.isCurrentPlan ? 0.7 : 1,
                   }}
                 >
                   {plan.popular && (
@@ -190,6 +476,19 @@ const PricePlan: React.FC = () => {
                         position: 'absolute',
                         top: 16,
                         right: 16,
+                        borderRadius: 2,
+                        mt: 2,
+                      }}
+                    />
+                  )}
+                  {plan.isCurrentPlan && (
+                    <Chip
+                      label="Current Plan"
+                      color="secondary"
+                      sx={{
+                        position: 'absolute',
+                        top: 16,
+                        left: 16,
                         borderRadius: 2,
                         mt: 2,
                       }}
@@ -210,6 +509,9 @@ const PricePlan: React.FC = () => {
                           {plan.name}
                         </Typography>
                       </Box>
+                      <Typography variant="subtitle1" color="text.secondary">
+                        {plan.bestFor}
+                      </Typography>
                       <Box>
                         <Typography variant="h3" fontWeight="bold" gutterBottom>
                           ${plan.price}
@@ -217,21 +519,110 @@ const PricePlan: React.FC = () => {
                             /month
                           </Typography>
                         </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                          {plan.name === 'Free' && (
+                            <Chip
+                              icon={<SmartToyOutlined />}
+                              label="GPT-4.1 Nano"
+                              size="small"
+                              sx={{
+                                backgroundColor: `${plan.color}15`,
+                                color: plan.color,
+                                border: `1px solid ${plan.color}40`,
+                                '& .MuiChip-icon': { color: plan.color },
+                              }}
+                            />
+                          )}
+                          {plan.name === 'Plus' && (
+                            <Chip
+                              icon={<PsychologyOutlined />}
+                              label="GPT-3.5 Turbo"
+                              size="small"
+                              sx={{
+                                backgroundColor: `${plan.color}15`,
+                                color: plan.color,
+                                border: `1px solid ${plan.color}40`,
+                                '& .MuiChip-icon': { color: plan.color },
+                              }}
+                            />
+                          )}
+                          {plan.name === 'Pro' && (
+                            <Chip
+                              icon={<AutoAwesomeOutlined />}
+                              label="GPT-4 Turbo"
+                              size="small"
+                              sx={{
+                                backgroundColor: `${plan.color}15`,
+                                color: plan.color,
+                                border: `1px solid ${plan.color}40`,
+                                '& .MuiChip-icon': { color: plan.color },
+                              }}
+                            />
+                          )}
+                          {plan.name === 'Max' && (
+                            <Chip
+                              icon={<RocketLaunchOutlined />}
+                              label="GPT-4"
+                              size="small"
+                              sx={{
+                                backgroundColor: `${plan.color}15`,
+                                color: plan.color,
+                                border: `1px solid ${plan.color}40`,
+                                '& .MuiChip-icon': { color: plan.color },
+                              }}
+                            />
+                          )}
+                        </Box>
                         <Typography color="text.secondary">{plan.description}</Typography>
+                        <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
+                          {plan.tokenBoost?.toLocaleString()} tokens/month
+                        </Typography>
                       </Box>
                       <Divider />
                       <Stack spacing={2}>
-                        {plan.features.map(feature => (
-                          <Stack key={feature} direction="row" spacing={1} alignItems="center">
-                            <CheckCircle sx={{ color: plan.color }} />
-                            <Typography>{feature}</Typography>
-                          </Stack>
-                        ))}
+                        {plan.name === 'Free' ? (
+                          <>
+                            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                              Everything you get:
+                            </Typography>
+                            {plan.features.map(featureName => (
+                              <Stack
+                                key={featureName}
+                                direction="row"
+                                spacing={1}
+                                alignItems="center"
+                              >
+                                {getFeatureIcon(featureName, plan.color)}
+                                <Typography>{featureName}</Typography>
+                              </Stack>
+                            ))}
+                          </>
+                        ) : (
+                          <>
+                            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                              Plus everything from{' '}
+                              {plan.name === 'Plus' ? 'Free' : plan.name === 'Pro' ? 'Plus' : 'Pro'}
+                              :
+                            </Typography>
+                            {plan.features.map(featureName => (
+                              <Stack
+                                key={featureName}
+                                direction="row"
+                                spacing={1}
+                                alignItems="center"
+                              >
+                                {getFeatureIcon(featureName, plan.color)}
+                                <Typography>{featureName}</Typography>
+                              </Stack>
+                            ))}
+                          </>
+                        )}
                       </Stack>
                       <Button
                         variant={plan.popular ? 'contained' : 'outlined'}
                         fullWidth
                         onClick={() => handlePlanSelect(plan)}
+                        disabled={plan.isCurrentPlan}
                         sx={{
                           mt: 'auto',
                           py: 1.5,
@@ -244,8 +635,28 @@ const PricePlan: React.FC = () => {
                           }),
                         }}
                       >
-                        {plan.price === 0 ? 'Get Started Free' : 'Choose Plan'}
+                        {plan.isCurrentPlan
+                          ? '✓ Your Current Plan'
+                          : plan.price === 0
+                          ? 'Get Started Free'
+                          : 'Choose Plan'}
                       </Button>
+                      {!plan.isCurrentPlan && plan.price > 0 && (
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          alignItems="center"
+                          justifyContent="center"
+                        >
+                          <CreditCard fontSize="small" color="action" />
+                          <Typography variant="caption" color="text.secondary">
+                            Secure checkout via Stripe
+                          </Typography>
+                        </Stack>
+                      )}
+                      <Typography variant="caption" color="text.secondary" textAlign="center">
+                        No commitment. Cancel anytime.
+                      </Typography>
                     </Stack>
                   </CardContent>
                 </Card>
@@ -272,6 +683,8 @@ const PricePlan: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {renderDetailedComparison()}
     </Box>
   );
 };
