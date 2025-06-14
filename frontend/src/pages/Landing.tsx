@@ -20,6 +20,33 @@ const RouterMuiLink = styled(RouterLink)({
 });
 
 // Optimize imports
+import {
+  AccessTimeOutlined,
+  AllInclusive,
+  AutoAwesomeOutlined,
+  AutoFixHighOutlined,
+  BlockOutlined,
+  BuildOutlined,
+  CheckCircle,
+  CodeOutlined,
+  Diamond,
+  FormatQuoteOutlined,
+  GppGoodOutlined,
+  InsightsOutlined,
+  LibraryBooksOutlined,
+  PaletteOutlined,
+  PersonOutlined,
+  PsychologyOutlined,
+  RocketLaunchOutlined,
+  SchoolOutlined,
+  ScienceOutlined,
+  Search,
+  SmartToyOutlined,
+  Speed,
+  Spellcheck,
+  StyleOutlined,
+  TextSnippetOutlined,
+} from '@mui/icons-material';
 import { Grid } from '@mui/material';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -36,7 +63,6 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
-import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 
 // Lazy load icons
@@ -57,11 +83,6 @@ const BoltIcon = lazy(() =>
 );
 const CheckCircleIcon = lazy(() =>
   import('@mui/icons-material/CheckCircle').then(module => ({
-    default: module.default,
-  }))
-);
-const Diamond = lazy(() =>
-  import('@mui/icons-material/Diamond').then(module => ({
     default: module.default,
   }))
 );
@@ -106,11 +127,58 @@ const WorkspacePremiumIcon = lazy(() =>
   }))
 );
 
+const getFeatureIcon = (featureName: string, color: string) => {
+  switch (featureName) {
+    case 'Basic Assignment Analysis':
+      return <SchoolOutlined sx={{ color }} />;
+    case 'Grammar & Spelling Check':
+      return <Spellcheck sx={{ color }} />;
+    case 'Basic Writing Suggestions':
+      return <AutoFixHighOutlined sx={{ color }} />;
+    case 'Standard Response Time':
+      return <Speed sx={{ color }} />;
+    case 'Basic Templates':
+      return <TextSnippetOutlined sx={{ color }} />;
+    case 'Advanced Writing Analysis':
+      return <ScienceOutlined sx={{ color }} />;
+    case 'Style & Tone Suggestions':
+      return <PaletteOutlined sx={{ color }} />;
+    case 'Priority Response Time':
+      return <Speed sx={{ color }} />;
+    case 'Extended Templates Library':
+      return <LibraryBooksOutlined sx={{ color }} />;
+    case 'AI-Powered Research Assistance':
+      return <Search sx={{ color }} />;
+    case 'Citation & Reference Check':
+      return <FormatQuoteOutlined sx={{ color }} />;
+    case 'Custom Writing Style Guide':
+      return <StyleOutlined sx={{ color }} />;
+    case 'Advanced Plagiarism Detection':
+      return <GppGoodOutlined sx={{ color }} />;
+    case '24/7 Priority Support':
+      return <AccessTimeOutlined sx={{ color }} />;
+    case 'Unlimited Assignment Analysis':
+      return <AllInclusive sx={{ color }} />;
+    case 'Custom AI Model Training':
+      return <BuildOutlined sx={{ color }} />;
+    case 'API Access':
+      return <CodeOutlined sx={{ color }} />;
+    case 'Dedicated Account Manager':
+      return <PersonOutlined sx={{ color }} />;
+    case 'Ad-Free Experience':
+      return <BlockOutlined sx={{ color }} />;
+    case 'Personalized Study Insights':
+      return <InsightsOutlined sx={{ color }} />;
+    default:
+      return <CheckCircle sx={{ color }} />;
+  }
+};
+
 const plans = [
   {
     name: 'Free',
     price: 0,
-    description: 'Perfect for getting started with basic writing assistance',
+    description: 'Perfect starting tool with basic writing assistance',
     icon: <LocalOffer sx={{ color: '#2196f3' }} />,
     color: '#2196f3',
     features: [
@@ -147,7 +215,6 @@ const plans = [
       'Everything in Plus',
       'AI-Powered Research Assistance',
       'Citation & Reference Check',
-      'Custom Writing Style Guide',
       'Advanced Plagiarism Detection',
       '24/7 Priority Support',
       'Ad-Free Experience',
@@ -163,7 +230,7 @@ const plans = [
       'Everything in Pro',
       'Unlimited Assignment Analysis',
       'Custom AI Model Training',
-      'API Access',
+      'Personalized Study Insights',
       'Dedicated Account Manager',
       'Ad-Free Experience',
     ],
@@ -228,7 +295,6 @@ const blogPosts = [
 ];
 
 const Landing: React.FC = () => {
-  const theme = useTheme();
   const [] = useState<null | HTMLElement>(null);
   const [totalUsers, setTotalUsers] = useState<number>(0);
 
@@ -651,11 +717,14 @@ const Landing: React.FC = () => {
                           flexDirection: 'column',
                           alignItems: 'center',
                           textAlign: 'center',
-                          transition: 'transform 0.2s, box-shadow 0.2s',
+                          border: '2.25px solid #D32F2F',
+                          borderRadius: 3,
+                          transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
                           '&:hover': {
                             transform: 'translateY(-6px) scale(1.03)',
                             boxShadow:
                               '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
+                            borderColor: '#B71C1C',
                           },
                         }}
                       >
@@ -723,11 +792,13 @@ const Landing: React.FC = () => {
                         height: '100%',
                         borderRadius: 2,
                         boxShadow: 3,
-                        transition: 'transform 0.2s, box-shadow 0.2s',
+                        border: '2.25px solid #D32F2F',
+                        transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
                         '&:hover': {
                           transform: 'translateY(-6px) scale(1.03)',
                           boxShadow:
                             '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
+                          borderColor: '#B71C1C',
                         },
                       }}
                     >
@@ -752,7 +823,6 @@ const Landing: React.FC = () => {
                             primary="Designed for Students & Academia"
                             primaryTypographyProps={{
                               fontSize: { xs: '1.0rem', md: '1.15rem' },
-                              fontWeight: 500,
                             }}
                           />
                         </ListItem>
@@ -764,7 +834,6 @@ const Landing: React.FC = () => {
                             primary="Superior AI Model Built for Students & Academia"
                             primaryTypographyProps={{
                               fontSize: { xs: '1.0rem', md: '1.15rem' },
-                              fontWeight: 500,
                             }}
                           />
                         </ListItem>
@@ -776,7 +845,6 @@ const Landing: React.FC = () => {
                             primary="Enriched with 20+ Academia Use Cases"
                             primaryTypographyProps={{
                               fontSize: { xs: '1.0rem', md: '1.15rem' },
-                              fontWeight: 500,
                             }}
                           />
                         </ListItem>
@@ -788,7 +856,6 @@ const Landing: React.FC = () => {
                             primary="Specialized Tools: AI Diagram Maker, Code Generation/Programming, Math Solver"
                             primaryTypographyProps={{
                               fontSize: { xs: '1.0rem', md: '1.15rem' },
-                              fontWeight: 500,
                             }}
                           />
                         </ListItem>
@@ -800,7 +867,6 @@ const Landing: React.FC = () => {
                             primary="Real-Time Reference: Answers with Real-Time References"
                             primaryTypographyProps={{
                               fontSize: { xs: '1.0rem', md: '1.15rem' },
-                              fontWeight: 500,
                             }}
                           />
                         </ListItem>
@@ -814,11 +880,13 @@ const Landing: React.FC = () => {
                         height: '100%',
                         borderRadius: 2,
                         boxShadow: 3,
-                        transition: 'transform 0.2s, box-shadow 0.2s',
+                        border: '2.25px solid #D32F2F',
+                        transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
                         '&:hover': {
                           transform: 'translateY(-6px) scale(1.03)',
                           boxShadow:
                             '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
+                          borderColor: '#B71C1C',
                         },
                       }}
                     >
@@ -843,7 +911,6 @@ const Landing: React.FC = () => {
                             primary="Designed for General-Purpose"
                             primaryTypographyProps={{
                               fontSize: { xs: '1.0rem', md: '1.15rem' },
-                              fontWeight: 500,
                             }}
                           />
                         </ListItem>
@@ -855,7 +922,6 @@ const Landing: React.FC = () => {
                             primary="General-Purpose AI Model"
                             primaryTypographyProps={{
                               fontSize: { xs: '1.0rem', md: '1.15rem' },
-                              fontWeight: 500,
                             }}
                           />
                         </ListItem>
@@ -867,7 +933,6 @@ const Landing: React.FC = () => {
                             primary="Limited Academic Focus"
                             primaryTypographyProps={{
                               fontSize: { xs: '1.0rem', md: '1.15rem' },
-                              fontWeight: 500,
                             }}
                           />
                         </ListItem>
@@ -879,7 +944,6 @@ const Landing: React.FC = () => {
                             primary="Specialized Tools: N/A"
                             primaryTypographyProps={{
                               fontSize: { xs: '1.0rem', md: '1.15rem' },
-                              fontWeight: 500,
                             }}
                           />
                         </ListItem>
@@ -891,7 +955,6 @@ const Landing: React.FC = () => {
                             primary="References may not be real-time"
                             primaryTypographyProps={{
                               fontSize: { xs: '1.0rem', md: '1.15rem' },
-                              fontWeight: 500,
                             }}
                           />
                         </ListItem>
@@ -962,11 +1025,14 @@ const Landing: React.FC = () => {
                           flexDirection: 'column',
                           alignItems: 'center',
                           textAlign: 'center',
-                          transition: 'transform 0.2s, box-shadow 0.2s',
+                          border: '2.25px solid #D32F2F',
+                          borderRadius: 3,
+                          transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
                           '&:hover': {
                             transform: 'translateY(-6px) scale(1.03)',
                             boxShadow:
                               '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
+                            borderColor: '#B71C1C',
                           },
                         }}
                       >
@@ -1060,7 +1126,7 @@ const Landing: React.FC = () => {
                   },
                 ].map((feature, idx) => (
                   <Grid item xs={12} sm={6} md={4} key={idx}>
-                    <Card
+                    <Paper
                       sx={{
                         height: '100%',
                         display: 'flex',
@@ -1070,11 +1136,13 @@ const Landing: React.FC = () => {
                         borderRadius: 4,
                         boxShadow: 3,
                         textAlign: 'center',
-                        transition: 'transform 0.2s, box-shadow 0.2s',
+                        border: '2.25px solid #D32F2F',
+                        transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
                         '&:hover': {
                           transform: 'translateY(-6px) scale(1.03)',
                           boxShadow:
                             '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
+                          borderColor: '#B71C1C',
                         },
                       }}
                     >
@@ -1100,7 +1168,7 @@ const Landing: React.FC = () => {
                       >
                         {feature.desc}
                       </Typography>
-                    </Card>
+                    </Paper>
                   </Grid>
                 ))}
               </Grid>
@@ -1159,7 +1227,7 @@ const Landing: React.FC = () => {
                   },
                 ].map((stat, index) => (
                   <Grid item xs={6} sm={3} key={index}>
-                    <Card
+                    <Paper
                       elevation={2}
                       sx={{
                         p: 5,
@@ -1168,6 +1236,8 @@ const Landing: React.FC = () => {
                         backgroundColor: 'white',
                         boxShadow: 3,
                         transition: 'transform 0.2s, box-shadow 0.2s',
+                        border: '2.25px solid #D32F2F',
+                        borderRadius: 4,
                         '&:hover': {
                           transform: 'translateY(-4px)',
                           boxShadow:
@@ -1205,7 +1275,7 @@ const Landing: React.FC = () => {
                       >
                         {stat.label}
                       </Typography>
-                    </Card>
+                    </Paper>
                   </Grid>
                 ))}
               </Grid>
@@ -1243,18 +1313,18 @@ const Landing: React.FC = () => {
                         display: 'flex',
                         flexDirection: 'column',
                         position: 'relative',
-                        transition: 'all 0.3s ease',
-                        border: '1px solid',
-                        borderColor: plan.popular ? theme.palette.primary.main : '#eee',
+                        border: '2.25px solid',
+                        borderColor: plan.color,
+                        borderRadius: 3.5,
                         boxShadow: 3,
+                        transition: 'all 0.3s ease',
                         '&:hover': {
                           transform: 'translateY(-8px)',
-                          boxShadow:
-                            '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
+                          boxShadow: `0 8px 24px ${plan.color}40`,
+                          borderColor: plan.color,
                         },
                         minWidth: '240px',
                         overflow: 'visible',
-                        borderRadius: 3.5,
                       }}
                     >
                       {plan.popular && (
@@ -1271,7 +1341,6 @@ const Landing: React.FC = () => {
                             width: 'fit-content',
                             borderRadius: 2,
                             zIndex: 2,
-                            fontWeight: 700,
                             fontSize: '1.05rem',
                             boxShadow: 2,
                             bgcolor: '#D32F2F',
@@ -1321,28 +1390,181 @@ const Landing: React.FC = () => {
                             </Typography>
                             <Typography
                               color="text.secondary"
-                              sx={{
-                                fontSize: { xs: '1.0rem', md: '1.15rem' },
-                              }}
+                              sx={{ fontSize: { xs: '1.0rem', md: '1.15rem' } }}
                             >
                               {plan.description}
                             </Typography>
                           </Box>
+                          <Box
+                            sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, mt: -1 }}
+                          >
+                            {plan.name === 'Free' && (
+                              <Chip
+                                icon={<SmartToyOutlined />}
+                                label="GPT-4.1 Nano"
+                                size="small"
+                                sx={{
+                                  backgroundColor: '#e3f2fd',
+                                  color: '#1976d2',
+                                  border: '1.25px solid #90caf9',
+                                  fontSize: '0.85rem',
+                                  px: 0.5,
+                                  height: 24,
+                                  minHeight: 20,
+                                  '& .MuiChip-icon': { color: '#1976d2', fontSize: 18 },
+                                }}
+                              />
+                            )}
+                            {plan.name === 'Plus' && (
+                              <Chip
+                                icon={<PsychologyOutlined />}
+                                label="GPT-3.5 Turbo"
+                                size="small"
+                                sx={{
+                                  backgroundColor: '#e8f5e9',
+                                  color: '#388e3c',
+                                  border: '1.25px solid #81c784',
+                                  fontSize: '0.85rem',
+                                  px: 0.5,
+                                  height: 24,
+                                  minHeight: 20,
+                                  '& .MuiChip-icon': { color: '#388e3c', fontSize: 18 },
+                                }}
+                              />
+                            )}
+                            {plan.name === 'Pro' && (
+                              <Chip
+                                icon={<AutoAwesomeOutlined />}
+                                label="GPT-4 Turbo"
+                                size="small"
+                                sx={{
+                                  backgroundColor: '#f3e5f5',
+                                  color: '#8e24aa',
+                                  border: '1.25px solid #ce93d8',
+                                  fontSize: '0.85rem',
+                                  px: 0.5,
+                                  height: 24,
+                                  minHeight: 20,
+                                  '& .MuiChip-icon': { color: '#8e24aa', fontSize: 18 },
+                                }}
+                              />
+                            )}
+                            {plan.name === 'Max' && (
+                              <Chip
+                                icon={<RocketLaunchOutlined />}
+                                label="GPT-4"
+                                size="small"
+                                sx={{
+                                  backgroundColor: '#fff3e0',
+                                  color: '#f57c00',
+                                  border: '1.25px solid #ffb74d',
+                                  fontSize: '0.85rem',
+                                  px: 0.5,
+                                  height: 24,
+                                  minHeight: 20,
+                                  '& .MuiChip-icon': { color: '#f57c00', fontSize: 18 },
+                                }}
+                              />
+                            )}
+                          </Box>
+                          {plan.name === 'Free' && (
+                            <Typography
+                              variant="caption"
+                              color="error.main"
+                              sx={{
+                                fontSize: { xs: '0.85rem', md: '0.95rem' },
+                                fontWeight: 400,
+                                mt: 0.5,
+                                mb: 0,
+                              }}
+                            >
+                              30,000 tokens/month
+                            </Typography>
+                          )}
+                          {plan.name === 'Plus' && (
+                            <Typography
+                              variant="caption"
+                              color="error.main"
+                              sx={{
+                                fontSize: { xs: '0.85rem', md: '0.95rem' },
+                                fontWeight: 400,
+                                mt: 0.5,
+                                mb: 0,
+                              }}
+                            >
+                              50,000 tokens/month
+                            </Typography>
+                          )}
+                          {plan.name === 'Pro' && (
+                            <Typography
+                              variant="caption"
+                              color="error.main"
+                              sx={{
+                                fontSize: { xs: '0.85rem', md: '0.95rem' },
+                                fontWeight: 400,
+                                mt: 0.5,
+                                mb: 0,
+                              }}
+                            >
+                              75,000 tokens/month
+                            </Typography>
+                          )}
+                          {plan.name === 'Max' && (
+                            <Typography
+                              variant="caption"
+                              color="error.main"
+                              sx={{
+                                fontSize: { xs: '0.85rem', md: '0.95rem' },
+                                fontWeight: 400,
+                                mt: 0.5,
+                                mb: 0,
+                              }}
+                            >
+                              100,000 tokens/month
+                            </Typography>
+                          )}
                           <Divider />
                           <Stack spacing={1.5}>
-                            {plan.features.map(feature => (
-                              <Stack key={feature} direction="row" spacing={1} alignItems="center">
-                                <CheckCircleIcon sx={{ color: plan.color, fontSize: 18 }} />
+                            {plan.name === 'Free' && (
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{ fontSize: { xs: '0.95rem', md: '1.05rem' }, pl: 0.5 }}
+                              >
+                                Free Features
+                              </Typography>
+                            )}
+                            {plan.features.map(feature =>
+                              feature.startsWith('Everything in') ? (
                                 <Typography
-                                  variant="body2"
+                                  key={feature}
+                                  variant="caption"
+                                  color="text.secondary"
                                   sx={{
-                                    fontSize: { xs: '1.0rem', md: '1.1rem' },
+                                    fontSize: { xs: '0.95rem', md: '1.05rem' },
+                                    fontWeight: 500,
+                                    pl: 0.5,
                                   }}
                                 >
                                   {feature}
                                 </Typography>
-                              </Stack>
-                            ))}
+                              ) : (
+                                <Stack
+                                  key={feature}
+                                  direction="row"
+                                  spacing={1}
+                                  alignItems="center"
+                                >
+                                  {getFeatureIcon(feature, plan.color)}
+                                  <Typography
+                                    variant="body2"
+                                    sx={{ fontSize: { xs: '1.0rem', md: '1.1rem' } }}
+                                  >
+                                    {feature}
+                                  </Typography>
+                                </Stack>
+                              )
+                            )}
                           </Stack>
                           <Button
                             variant={plan.popular ? 'contained' : 'outlined'}
@@ -1419,11 +1641,13 @@ const Landing: React.FC = () => {
                           backgroundColor: 'grey.50',
                           boxShadow: 3,
                           textAlign: 'center',
-                          transition: 'transform 0.2s, box-shadow 0.2s',
+                          border: '2.25px solid #D32F2F',
+                          transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
                           '&:hover': {
                             transform: 'translateY(-6px) scale(1.03)',
                             boxShadow:
                               '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
+                            borderColor: '#B71C1C',
                           },
                         }}
                       >
@@ -1487,16 +1711,18 @@ const Landing: React.FC = () => {
                       sx={{
                         p: { xs: 2, md: 3 },
                         borderRadius: 4,
-                        maxWidth: 900,
+                        maxWidth: 700,
                         mx: 'auto',
                         backgroundColor: 'grey.50',
                         boxShadow: 3,
                         textAlign: 'center',
-                        transition: 'transform 0.2s, box-shadow 0.2s',
+                        border: '2.25px solid #D32F2F',
+                        transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
                         '&:hover': {
                           transform: 'translateY(-6px) scale(1.03)',
                           boxShadow:
                             '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
+                          borderColor: '#B71C1C',
                         },
                       }}
                     >
@@ -1556,10 +1782,12 @@ const Landing: React.FC = () => {
               backgroundColor: 'grey.50',
               boxShadow: 3,
               textAlign: 'center',
-              transition: 'transform 0.2s, box-shadow 0.2s',
+              border: '2.25px solid #D32F2F',
+              transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
               '&:hover': {
                 transform: 'translateY(-6px) scale(1.03)',
                 boxShadow: '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
+                borderColor: '#B71C1C',
               },
             }}
           >

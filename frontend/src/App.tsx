@@ -29,7 +29,7 @@ const App: React.FC = () => {
                         <Box sx={{ flex: 1 }}>
                           <AdComponent position="top" />
                           <Routes>
-                            <AppRouter />
+                  <AppRouter />
                           </Routes>
                           <AdComponent position="bottom" />
                         </Box>

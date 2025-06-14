@@ -3,15 +3,16 @@ import {
   AllInclusive,
   AutoAwesomeOutlined,
   AutoFixHighOutlined,
+  BlockOutlined,
   BuildOutlined,
   CheckCircle,
-  CodeOutlined,
   CreditCard,
   Diamond,
   EmojiEvents,
   FormatQuoteOutlined,
   GppGoodOutlined,
   HelpOutline,
+  InsightsOutlined,
   LibraryBooksOutlined,
   LocalOffer,
   PaletteOutlined,
@@ -25,7 +26,6 @@ import {
   Speed,
   Spellcheck,
   Star,
-  StyleOutlined,
   TextSnippetOutlined,
   WorkspacePremium,
 } from '@mui/icons-material';
@@ -150,6 +150,14 @@ const features: Feature[] = [
     description: 'Access to an expanded library of writing templates',
   },
   {
+    name: 'Ad-Free Experience',
+    free: false,
+    plus: true,
+    pro: true,
+    max: true,
+    description: 'Enjoy an ad-free experience',
+  },
+  {
     name: 'AI-Powered Research Assistance',
     free: false,
     plus: false,
@@ -164,14 +172,6 @@ const features: Feature[] = [
     pro: true,
     max: true,
     description: 'Automated checking of citations and references',
-  },
-  {
-    name: 'Custom Writing Style Guide',
-    free: false,
-    plus: false,
-    pro: true,
-    max: true,
-    description: 'Create and maintain your own writing style guide',
   },
   {
     name: 'Advanced Plagiarism Detection',
@@ -206,14 +206,6 @@ const features: Feature[] = [
     description: 'Train custom AI models for your specific needs',
   },
   {
-    name: 'API Access',
-    free: false,
-    plus: false,
-    pro: false,
-    max: true,
-    description: 'Programmatic access to our AI services',
-  },
-  {
     name: 'Dedicated Account Manager',
     free: false,
     plus: false,
@@ -221,18 +213,32 @@ const features: Feature[] = [
     max: true,
     description: 'Personal account manager for enterprise needs',
   },
+  {
+    name: 'Personalized Study Insights',
+    free: false,
+    plus: false,
+    pro: false,
+    max: true,
+    description: 'Receive personalized study insights',
+  },
 ];
 
 const plans: Plan[] = [
   {
     name: 'Free',
     price: 0,
-    description: 'Perfect for getting started with basic writing assistance',
+    description: 'Perfect starting tool with basic writing assistance',
     icon: <LocalOffer />,
     color: '#2196f3',
-    features: features.filter(f => f.free).map(f => f.name),
+    features: [
+      'Basic Assignment Analysis',
+      'Grammar & Spelling Check',
+      'Basic Writing Suggestions',
+      'Standard Response Time',
+      'Basic Templates',
+    ],
     priceId: 'price_free',
-    bestFor: 'Perfect for beginners and occasional users',
+    bestFor: 'Perfect starting tool with basic writing assistance',
     tokenBoost: 30000,
     isCurrentPlan: false,
   },
@@ -242,10 +248,16 @@ const plans: Plan[] = [
     description: 'Enhanced features for more serious students',
     icon: <Star />,
     color: '#4caf50',
-    features: features.filter(f => f.plus && !f.free).map(f => f.name),
+    features: [
+      'Advanced Writing Analysis',
+      'Style & Tone Suggestions',
+      'Priority Response Time',
+      'Extended Templates Library',
+      'Ad-Free Experience',
+    ],
     popular: true,
     priceId: 'price_plus',
-    bestFor: 'Best for casual students who want better grades with less stress',
+    bestFor: 'Enhanced features for more serious students',
     tokenBoost: 50000,
     isCurrentPlan: false,
   },
@@ -255,9 +267,15 @@ const plans: Plan[] = [
     description: 'Advanced features for professional students',
     icon: <Diamond />,
     color: '#9c27b0',
-    features: features.filter(f => f.pro && !f.plus).map(f => f.name),
+    features: [
+      'AI-Powered Research Assistance',
+      'Citation & Reference Check',
+      'Advanced Plagiarism Detection',
+      '24/7 Priority Support',
+      'Ad-Free Experience',
+    ],
     priceId: 'price_pro',
-    bestFor: 'Great for college students and essay-heavy courses',
+    bestFor: 'Advanced features for professional students',
     tokenBoost: 75000,
     isCurrentPlan: false,
   },
@@ -267,9 +285,15 @@ const plans: Plan[] = [
     description: 'Ultimate package for power users',
     icon: <EmojiEvents />,
     color: '#ff9800',
-    features: features.filter(f => f.max && !f.pro).map(f => f.name),
+    features: [
+      'Unlimited Assignment Analysis',
+      'Custom AI Model Training',
+      'Personalized Study Insights',
+      'Dedicated Account Manager',
+      'Ad-Free Experience',
+    ],
     priceId: 'price_max',
-    bestFor: 'Built for power users, grad students, and automation nerds',
+    bestFor: 'Ultimate package for power users',
     tokenBoost: 100000,
     isCurrentPlan: false,
   },
@@ -299,8 +323,6 @@ const getFeatureIcon = (featureName: string, color: string) => {
       return <Search sx={{ color }} />;
     case 'Citation & Reference Check':
       return <FormatQuoteOutlined sx={{ color }} />;
-    case 'Custom Writing Style Guide':
-      return <StyleOutlined sx={{ color }} />;
     case 'Advanced Plagiarism Detection':
       return <GppGoodOutlined sx={{ color }} />;
     case '24/7 Priority Support':
@@ -309,10 +331,12 @@ const getFeatureIcon = (featureName: string, color: string) => {
       return <AllInclusive sx={{ color }} />;
     case 'Custom AI Model Training':
       return <BuildOutlined sx={{ color }} />;
-    case 'API Access':
-      return <CodeOutlined sx={{ color }} />;
     case 'Dedicated Account Manager':
       return <PersonOutlined sx={{ color }} />;
+    case 'Ad-Free Experience':
+      return <BlockOutlined sx={{ color }} />;
+    case 'Personalized Study Insights':
+      return <InsightsOutlined sx={{ color }} />;
     default:
       return <CheckCircle sx={{ color }} />;
   }
@@ -458,6 +482,7 @@ const PricePlan: React.FC = () => {
                     transition: 'all 0.3s ease',
                     border: '2.5px solid',
                     borderColor: plan.color,
+                    overflow: 'visible',
                     '&:hover': {
                       transform: 'translateY(-8px)',
                       boxShadow: `0 8px 24px ${plan.color}40`,
@@ -469,15 +494,33 @@ const PricePlan: React.FC = () => {
                 >
                   {plan.popular && (
                     <Chip
-                      icon={<WorkspacePremium />}
-                      label="Most Popular"
-                      color="primary"
+                      icon={<WorkspacePremium sx={{ color: 'white' }} />}
+                      label={
+                        <span style={{ fontWeight: 700, fontSize: '1.15rem' }}>Most Popular</span>
+                      }
                       sx={{
                         position: 'absolute',
-                        top: 16,
-                        right: 16,
+                        top: -18,
+                        left: 0,
+                        right: 0,
+                        mx: 'auto',
+                        width: 'fit-content',
                         borderRadius: 2,
-                        mt: 2,
+                        zIndex: 2,
+                        fontSize: '1.15rem',
+                        fontWeight: 700,
+                        bgcolor: '#D32F2F',
+                        color: 'white',
+                        px: 2.5,
+                        py: 0.6,
+                        boxShadow: '0 2px 8px 0 rgba(211,47,47,0.15)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        '.MuiChip-icon': {
+                          color: 'white',
+                          fontSize: 22,
+                          ml: 0.5,
+                        },
                       }}
                     />
                   )}
@@ -494,8 +537,8 @@ const PricePlan: React.FC = () => {
                       }}
                     />
                   )}
-                  <CardContent sx={{ flexGrow: 1, p: 3 }}>
-                    <Stack spacing={3}>
+                  <CardContent sx={{ flexGrow: 1, p: 3, display: 'flex', flexDirection: 'column' }}>
+                    <Stack spacing={3} sx={{ flexGrow: 0 }}>
                       <Box
                         sx={{
                           display: 'flex',
@@ -580,84 +623,67 @@ const PricePlan: React.FC = () => {
                       </Box>
                       <Divider />
                       <Stack spacing={2}>
-                        {plan.name === 'Free' ? (
-                          <>
-                            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                              Everything you get:
-                            </Typography>
-                            {plan.features.map(featureName => (
-                              <Stack
-                                key={featureName}
-                                direction="row"
-                                spacing={1}
-                                alignItems="center"
-                              >
-                                {getFeatureIcon(featureName, plan.color)}
-                                <Typography>{featureName}</Typography>
-                              </Stack>
-                            ))}
-                          </>
-                        ) : (
-                          <>
-                            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                              Plus everything from{' '}
-                              {plan.name === 'Plus' ? 'Free' : plan.name === 'Pro' ? 'Plus' : 'Pro'}
-                              :
-                            </Typography>
-                            {plan.features.map(featureName => (
-                              <Stack
-                                key={featureName}
-                                direction="row"
-                                spacing={1}
-                                alignItems="center"
-                              >
-                                {getFeatureIcon(featureName, plan.color)}
-                                <Typography>{featureName}</Typography>
-                              </Stack>
-                            ))}
-                          </>
-                        )}
-                      </Stack>
-                      <Button
-                        variant={plan.popular ? 'contained' : 'outlined'}
-                        fullWidth
-                        onClick={() => handlePlanSelect(plan)}
-                        disabled={plan.isCurrentPlan}
-                        sx={{
-                          mt: 'auto',
-                          py: 1.5,
-                          borderRadius: 2,
-                          ...(plan.popular && {
-                            background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
-                            '&:hover': {
-                              background: `linear-gradient(45deg, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`,
-                            },
-                          }),
-                        }}
-                      >
-                        {plan.isCurrentPlan
-                          ? '✓ Your Current Plan'
-                          : plan.price === 0
-                          ? 'Get Started Free'
-                          : 'Choose Plan'}
-                      </Button>
-                      {!plan.isCurrentPlan && plan.price > 0 && (
-                        <Stack
-                          direction="row"
-                          spacing={1}
-                          alignItems="center"
-                          justifyContent="center"
+                        <Typography
+                          variant="subtitle2"
+                          color="text.secondary"
+                          sx={{ mt: 1, mb: 1 }}
                         >
-                          <CreditCard fontSize="small" color="action" />
-                          <Typography variant="caption" color="text.secondary">
-                            Secure checkout via Stripe
-                          </Typography>
-                        </Stack>
-                      )}
-                      <Typography variant="caption" color="text.secondary" textAlign="center">
-                        No commitment. Cancel anytime.
-                      </Typography>
+                          {plan.name === 'Free'
+                            ? 'Free Features'
+                            : plan.name === 'Plus'
+                            ? 'Plus everything in Free'
+                            : plan.name === 'Pro'
+                            ? 'Plus everything in Plus'
+                            : 'Plus everything in Pro'}
+                        </Typography>
+                        {plan.features.map(featureName => (
+                          <Stack key={featureName} direction="row" spacing={1} alignItems="center">
+                            {getFeatureIcon(featureName, plan.color)}
+                            <Typography>{featureName}</Typography>
+                          </Stack>
+                        ))}
+                      </Stack>
                     </Stack>
+                    <Box flexGrow={1} />
+                    <Button
+                      variant={plan.popular ? 'contained' : 'outlined'}
+                      fullWidth
+                      onClick={() => handlePlanSelect(plan)}
+                      disabled={plan.isCurrentPlan}
+                      sx={{
+                        mt: 'auto',
+                        py: 1.5,
+                        borderRadius: 2,
+                        ...(plan.popular && {
+                          background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
+                          '&:hover': {
+                            background: `linear-gradient(45deg, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`,
+                          },
+                        }),
+                      }}
+                    >
+                      {plan.isCurrentPlan
+                        ? '✓ Your Current Plan'
+                        : plan.price === 0
+                        ? 'Get Started Free'
+                        : 'Choose Plan'}
+                    </Button>
+                    {!plan.isCurrentPlan && plan.price > 0 && (
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        alignItems="center"
+                        justifyContent="center"
+                      >
+                        <CreditCard fontSize="small" color="action" />
+                        <Typography variant="caption" color="text.secondary">
+                          Secure checkout via Stripe
+                        </Typography>
+                      </Stack>
+                    )}
+                    <Typography variant="caption" color="text.secondary" textAlign="center">
+                      No commitment. Cancel anytime.
+                    </Typography>
                   </CardContent>
                 </Card>
               </Grid>
