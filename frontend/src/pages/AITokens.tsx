@@ -41,7 +41,7 @@ import {
   Typography,
 } from '@mui/material';
 import { formatDistanceToNow, parseISO } from 'date-fns';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   CartesianGrid,
   Line,
@@ -51,51 +51,80 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { useTokenUsage } from '../hooks/useTokenUsage';
+import { api } from '../services/api';
+
+interface Subscription {
+  id: string;
+  status: 'active' | 'canceled' | 'past_due' | 'trialing';
+  plan_id: string;
+  current_period_end: string;
+  cancel_at_period_end: boolean;
+  token_limit: number;
+}
 
 const AITokens: React.FC = () => {
-  const tokenUsage = {
-    total: 1000,
-    used: 350,
-    remaining: 650,
+  const [, setSubscription] = useState<Subscription | null>(null);
+  const [, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchSubscriptionData();
+  }, []);
+
+  const fetchSubscriptionData = async () => {
+    try {
+      const response = await api.get<Subscription>('/subscriptions/current');
+      setSubscription(response.data);
+    } catch (error) {
+      console.error('Failed to fetch subscription data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  // Recent transactions based on actual usage
   const recentTransactions = [
     {
-      date: '2024-03-15',
-      description: 'Assignment Analysis',
-      tokens: -50,
+      date: '2024-03-13',
+      description: 'Essay Analysis - English Literature',
+      tokens: -8791,
+      assignment: 'Macbeth Analysis',
+      summary: 'Analyzed themes, character development, and historical context',
     },
     {
       date: '2024-03-14',
-      description: 'Token Purchase',
-      tokens: 1000,
-    },
-    {
-      date: '2024-03-13',
-      description: 'Essay Review',
-      tokens: -100,
+      description: 'Math Problem Set - Algebra',
+      tokens: -1254,
+      assignment: 'Quadratic Equations',
+      summary: 'Step-by-step solutions and formula explanations for 10 problems',
     },
     {
       date: '2024-03-12',
-      description: 'Token Purchase',
-      tokens: 500,
+      description: 'Science Lab Report',
+      tokens: -3544,
+      assignment: 'Chemistry Experiment',
+      summary: 'Comprehensive analysis of titration experiment data and conclusions',
     },
     {
       date: '2024-03-10',
-      description: 'Token Purchase',
-      tokens: 2000,
+      description: 'Token Purchase - Free Tier',
+      tokens: 30000,
+      summary: 'Monthly free token allocation',
     },
   ];
 
+  // Usage data showing token consumption over time
   const usageData = [
-    { date: 'Mar 10', tokens: 1000 },
-    { date: 'Mar 11', tokens: 950 },
-    { date: 'Mar 12', tokens: 850 },
-    { date: 'Mar 13', tokens: 750 },
-    { date: 'Mar 14', tokens: 1750 },
-    { date: 'Mar 15', tokens: 1700 },
+    { date: 'Mar 10', tokens: 30000, description: 'Free tier tokens allocated' },
+    { date: 'Mar 11', tokens: 29876, description: 'Small math problem (-124 tokens)' },
+    { date: 'Mar 12', tokens: 26456, description: 'Science lab report (-3,544 tokens)' },
+    { date: 'Mar 13', tokens: 17665, description: 'Essay analysis (-8,791 tokens)' },
+    { date: 'Mar 14', tokens: 16411, description: 'Math problem set (-1,254 tokens)' },
+    { date: 'Mar 15', tokens: 16345, description: 'Quick grammar check (-66 tokens)' },
+    { date: 'Mar 16', tokens: 16289, description: 'Small research query (-56 tokens)' },
   ];
 
+  // Token usage info for free tier features
   const tokenUsageInfo = [
     {
       title: 'Assignment Analysis',
@@ -110,34 +139,34 @@ const AITokens: React.FC = () => {
       features: ['Grammar and style check', 'Content analysis', 'Improvement suggestions'],
     },
     {
-      title: 'Code Review',
-      tokens: '150 tokens',
-      description: 'Detailed review of your code with optimization suggestions',
-      features: ['Code quality check', 'Performance optimization', 'Best practices review'],
-    },
-    {
-      title: 'Research Assistance',
-      tokens: '200 tokens',
-      description: 'AI-powered research help with sources and citations',
-      features: ['Source finding', 'Citation generation', 'Literature review'],
-    },
-    {
       title: 'Math Problem Solving',
       tokens: '75 tokens',
       description: 'Step-by-step solutions for mathematical problems',
       features: ['Solution steps', 'Formula explanations', 'Alternative methods'],
     },
     {
-      title: 'Plagiarism Check',
-      tokens: '120 tokens',
-      description: 'Scan your document for originality and detect potential plagiarism issues.',
-      features: ['Similarity report', 'Source links', 'Highlight matches'],
+      title: 'Research Assistance',
+      tokens: '100 tokens',
+      description: 'AI-powered research help with sources and citations',
+      features: ['Source finding', 'Citation generation', 'Literature review'],
+    },
+    {
+      title: 'Science Lab Report',
+      tokens: '75 tokens',
+      description: 'Analysis and formatting of lab experiment data',
+      features: ['Data analysis', 'Conclusion generation', 'Format assistance'],
+    },
+    {
+      title: 'History Timeline',
+      tokens: '100 tokens',
+      description: 'Create and analyze historical timelines',
+      features: ['Event sequencing', 'Source verification', 'Context analysis'],
     },
   ];
 
   const [plan] = React.useState<'Free' | 'Pro'>('Free');
-  const tokenPlanLabel =
-    plan === 'Free' ? 'Current Plan: Free (1,000 tokens/mo)' : 'Current Plan: Pro (Unlimited)';
+  const tokenUsage = useTokenUsage();
+  const tokenPlanLabel = tokenUsage.label;
   const guideRef = React.useRef<HTMLDivElement>(null);
   const handleProgressBarClick = () => {
     if (guideRef.current) {
@@ -218,6 +247,10 @@ const AITokens: React.FC = () => {
     if (type === 'Refund') return 'info.main';
     return 'error.main';
   };
+
+  // Calculate total used tokens from recent transactions
+
+  // Token usage based on subscription
 
   return (
     <Box>
@@ -423,18 +456,20 @@ const AITokens: React.FC = () => {
                 }}
               >
                 <Tooltip title="Tokens remaining in your plan for this month">
-                  <Typography variant="body1">Remaining Tokens: {tokenUsage.remaining}</Typography>
+                  <Typography variant="body1">
+                    Remaining Tokens: {tokenUsage.remaining.toLocaleString()}
+                  </Typography>
                 </Tooltip>
                 <Tooltip title="Percentage of tokens used this month">
                   <Typography variant="body1" color="text.secondary">
-                    {Math.round((tokenUsage.used / tokenUsage.total) * 100)}% Used
+                    {tokenUsage.percentUsed}% Used
                   </Typography>
                 </Tooltip>
               </Box>
               <Box onClick={handleProgressBarClick} sx={{ cursor: 'pointer' }}>
                 <LinearProgress
                   variant="determinate"
-                  value={(tokenUsage.used / tokenUsage.total) * 100}
+                  value={tokenUsage.percentUsed}
                   sx={{
                     height: 10,
                     borderRadius: 5,
@@ -458,7 +493,7 @@ const AITokens: React.FC = () => {
                           Total Tokens
                         </Typography>
                       </Tooltip>
-                      <Typography variant="h5">{tokenUsage.total}</Typography>
+                      <Typography variant="h5">{tokenUsage.total.toLocaleString()}</Typography>
                     </Box>
                   </CardContent>
                 </Card>
@@ -473,7 +508,7 @@ const AITokens: React.FC = () => {
                           Used Tokens
                         </Typography>
                       </Tooltip>
-                      <Typography variant="h5">{tokenUsage.used}</Typography>
+                      <Typography variant="h5">{tokenUsage.used.toLocaleString()}</Typography>
                     </Box>
                   </CardContent>
                 </Card>
@@ -488,7 +523,7 @@ const AITokens: React.FC = () => {
                           Remaining
                         </Typography>
                       </Tooltip>
-                      <Typography variant="h5">{tokenUsage.remaining}</Typography>
+                      <Typography variant="h5">{tokenUsage.remaining.toLocaleString()}</Typography>
                     </Box>
                   </CardContent>
                 </Card>

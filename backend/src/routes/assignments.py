@@ -433,4 +433,30 @@ async def apply_late_penalty(
     return {
         "message": "Late penalty applied successfully",
         "submission": updated_submission
-    } 
+    }
+
+@router.get("/recent", response_model=List[AssignmentResponse])
+async def get_recent_assignments(
+    limit: int = 5,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get recent assignments for the current user.
+    For students: returns their recent assignments
+    For teachers: returns their recently created assignments
+    """
+    query = db.query(Assignment)
+    
+    if current_user.role == "student":
+        query = query.filter(Assignment.student_id == current_user.id)
+    elif current_user.role == "teacher":
+        query = query.filter(Assignment.teacher_id == current_user.id)
+    
+    # Order by creation date, most recent first
+    query = query.order_by(Assignment.created_at.desc())
+    
+    # Limit the number of results
+    assignments = query.limit(limit).all()
+    
+    return assignments 

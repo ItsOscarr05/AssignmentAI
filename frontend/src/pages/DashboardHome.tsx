@@ -1,14 +1,15 @@
 import {
   AccessTime as AccessTimeIcon,
-  Add as AddIcon,
-  Assignment as AssignmentIcon,
+  AssignmentOutlined as AssignmentIcon,
   CheckCircle as CheckCircleIcon,
   Pending as PendingIcon,
+  TextFieldsOutlined as TextIcon,
   TrendingUp as TrendingUpIcon,
 } from '@mui/icons-material';
 import {
   Box,
   Button,
+  CircularProgress,
   Grid,
   List,
   ListItem,
@@ -22,48 +23,54 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import React, { Suspense, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { Suspense, useEffect, useState } from 'react';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { assignments } from '../services/api';
 
 const DashboardPieChart = React.lazy(() => import('./DashboardPieChart'));
+
+interface Assignment {
+  id: string;
+  title: string;
+  status: string;
+  createdAt: string;
+}
 
 const DashboardHome: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [recentAssignments, setRecentAssignments] = useState<Assignment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<'all' | 'in progress' | 'completed'>('all');
 
-  // --- Notification Logic ---
-  const [] = useState([
-    {
-      id: 1,
-      message: 'Math Homework is due soon!',
-      type: 'deadline',
-      read: false,
-      timestamp: '2h ago',
-    },
-    {
-      id: 2,
-      message: 'Science Project marked as completed.',
-      type: 'success',
-      read: false,
-      timestamp: '5h ago',
-    },
-    {
-      id: 3,
-      message: 'History Essay progress updated.',
-      type: 'info',
-      read: true,
-      timestamp: '1d ago',
-    },
-    {
-      id: 4,
-      message: 'New assignment added: English Presentation.',
-      type: 'new',
-      read: false,
-      timestamp: '1d ago',
-    },
-  ]);
-  const [] = useState<null | HTMLElement>(null);
+  useEffect(() => {
+    const fetchRecentAssignments = async () => {
+      try {
+        setLoading(true);
+        const data = await assignments.getRecent();
+        console.log('API Response:', data); // Debug log
+        // Ensure data is an array and has createdAt
+        const assignmentsArray = Array.isArray(data)
+          ? data.map((a: any) => ({
+              ...a,
+              createdAt: a.createdAt || a.dueDate || new Date().toISOString(),
+            }))
+          : [];
+        setRecentAssignments(assignmentsArray);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching assignments:', err);
+        setError('Failed to fetch recent assignments');
+        setRecentAssignments([]); // Set empty array on error
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecentAssignments();
+  }, []);
 
   const stats = [
     {
@@ -83,33 +90,6 @@ const DashboardHome: React.FC = () => {
       value: '4',
       icon: <PendingIcon />,
       color: 'linear-gradient(135deg, #FFC107 0%, #FFA000 100%)',
-    },
-  ];
-
-  const recentAssignments = [
-    {
-      title: 'Math Homework',
-      dueDate: new Date('2024-03-15'),
-      progress: 75,
-      status: 'In Progress',
-    },
-    {
-      title: 'Science Project',
-      dueDate: new Date('2024-03-20'),
-      progress: 100,
-      status: 'Completed',
-    },
-    {
-      title: 'History Essay',
-      dueDate: new Date('2024-03-10'),
-      progress: 30,
-      status: 'In Progress',
-    },
-    {
-      title: 'English Presentation',
-      dueDate: new Date('2024-03-22'),
-      progress: 0,
-      status: 'In Progress',
     },
   ];
 
@@ -136,8 +116,13 @@ const DashboardHome: React.FC = () => {
     },
   ];
 
-  const [] = useState(false);
-  const [] = useState<Date>(new Date());
+  // Mock data for activity & insights
+  const mockActivity = {
+    assignmentsGenerated: 5,
+    wordCountProcessed: 18400,
+    aiTimeSaved: 2.8, // in hours
+    tokenUsage: 13589, // mock tokens used
+  };
 
   // Gather all subjects from recentAssignments and upcomingDeadlines
   const normalizeSubject = (subject: string) => {
@@ -170,6 +155,30 @@ const DashboardHome: React.FC = () => {
     color: subjectColors[idx % subjectColors.length],
   }));
 
+  // Filter assignments based on selected filter
+  const filteredAssignments = recentAssignments.filter(assignment => {
+    if (filter === 'all') return true;
+    if (filter === 'in progress') return assignment.status.toLowerCase() === 'in progress';
+    if (filter === 'completed') return assignment.status.toLowerCase() === 'completed';
+    return true;
+  });
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+        <Typography color="error">{error}</Typography>
+      </Box>
+    );
+  }
+
   return (
     <Box>
       {/* Top Section: Welcome & Quick Start */}
@@ -201,13 +210,6 @@ const DashboardHome: React.FC = () => {
             </Box>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
               <Button
-                variant="contained"
-                color="primary"
-                onClick={() => navigate('/dashboard/assignments/create')}
-              >
-                Start New Assignment
-              </Button>
-              <Button
                 variant="outlined"
                 color="primary"
                 onClick={() => navigate('/dashboard/workshop')}
@@ -238,32 +240,71 @@ const DashboardHome: React.FC = () => {
                 Recent & Active Assignments
               </Typography>
               <Stack direction="row" spacing={1}>
-                <Button size="small" variant="outlined">
+                <Button
+                  size="small"
+                  variant={filter === 'all' ? 'contained' : 'outlined'}
+                  color={filter === 'all' ? 'error' : 'inherit'}
+                  onClick={() => setFilter('all')}
+                  sx={
+                    filter === 'all'
+                      ? {}
+                      : {
+                          borderColor: '#D32F2F',
+                          color: '#D32F2F',
+                          fontWeight: 700,
+                        }
+                  }
+                >
                   All
                 </Button>
-                <Button size="small" variant="outlined">
+                <Button
+                  size="small"
+                  variant={filter === 'in progress' ? 'contained' : 'outlined'}
+                  color={filter === 'in progress' ? 'error' : 'inherit'}
+                  onClick={() => setFilter('in progress')}
+                  sx={
+                    filter === 'in progress'
+                      ? {}
+                      : {
+                          borderColor: '#D32F2F',
+                          color: '#D32F2F',
+                          fontWeight: 700,
+                        }
+                  }
+                >
                   In Progress
                 </Button>
-                <Button size="small" variant="outlined">
+                <Button
+                  size="small"
+                  variant={filter === 'completed' ? 'contained' : 'outlined'}
+                  color={filter === 'completed' ? 'error' : 'inherit'}
+                  onClick={() => setFilter('completed')}
+                  sx={
+                    filter === 'completed'
+                      ? {}
+                      : {
+                          borderColor: '#D32F2F',
+                          color: '#D32F2F',
+                          fontWeight: 700,
+                        }
+                  }
+                >
                   Completed
-                </Button>
-                <Button size="small" variant="outlined">
-                  Saved
                 </Button>
               </Stack>
             </Box>
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Assignment</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Last Used</TableCell>
-                  <TableCell>Actions</TableCell>
+                  <TableCell sx={{ color: '#D32F2F', fontWeight: 700 }}>Assignment</TableCell>
+                  <TableCell sx={{ color: '#D32F2F', fontWeight: 700 }}>Status</TableCell>
+                  <TableCell sx={{ color: '#D32F2F', fontWeight: 700 }}>Last Used</TableCell>
+                  <TableCell sx={{ color: '#D32F2F', fontWeight: 700 }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {recentAssignments.map(assignment => (
-                  <TableRow key={assignment.title}>
+                {filteredAssignments.map(assignment => (
+                  <TableRow key={assignment.id}>
                     <TableCell>{assignment.title}</TableCell>
                     <TableCell>
                       <span
@@ -273,6 +314,8 @@ const DashboardHome: React.FC = () => {
                               ? '#388E3C'
                               : assignment.status === 'In Progress'
                               ? '#D32F2F'
+                              : assignment.status === 'Not Started'
+                              ? '#FFA000'
                               : assignment.status === 'Draft Generated'
                               ? '#1976D2'
                               : '#8E24AA',
@@ -282,7 +325,7 @@ const DashboardHome: React.FC = () => {
                         {assignment.status}
                       </span>
                     </TableCell>
-                    <TableCell>{assignment.dueDate.toLocaleDateString()}</TableCell>
+                    <TableCell>{new Date(assignment.createdAt).toLocaleDateString()}</TableCell>
                     <TableCell>
                       <Button size="small" sx={{ color: '#1976D2' }}>
                         📝 View
@@ -315,13 +358,22 @@ const DashboardHome: React.FC = () => {
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
               background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)',
               border: '2px solid #D32F2F',
-              minHeight: 370,
+              minHeight: 450,
+              height: 500,
             }}
           >
             <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2, color: 'black' }}>
               Assignment Distribution
             </Typography>
-            <Box sx={{ height: 200, width: '100%' }}>
+            <Box
+              sx={{
+                height: 350,
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
               <Suspense fallback={<div>Loading chart...</div>}>
                 <DashboardPieChart data={pieChartData} stats={stats} />
               </Suspense>
@@ -356,12 +408,12 @@ const DashboardHome: React.FC = () => {
                   }}
                 >
                   <Box display="flex" flexDirection="column" alignItems="center">
-                    <AddIcon sx={{ color: '#1976D2', mb: 1 }} />
+                    <AssignmentIcon sx={{ color: '#1976D2', mb: 1 }} />
                     <Typography variant="subtitle2" color="text.secondary">
                       Assignments generated
                     </Typography>
                     <Typography variant="h5" sx={{ color: '#1976D2', fontWeight: 700 }}>
-                      7
+                      {mockActivity.assignmentsGenerated}
                     </Typography>
                   </Box>
                 </Paper>
@@ -377,12 +429,12 @@ const DashboardHome: React.FC = () => {
                   }}
                 >
                   <Box display="flex" flexDirection="column" alignItems="center">
-                    <AssignmentIcon sx={{ color: '#388E3C', mb: 1 }} />
+                    <TextIcon sx={{ color: '#388E3C', mb: 1 }} />
                     <Typography variant="subtitle2" color="text.secondary">
                       Word count processed
                     </Typography>
                     <Typography variant="h5" sx={{ color: '#388E3C', fontWeight: 700 }}>
-                      12,500
+                      {mockActivity.wordCountProcessed.toLocaleString()}
                     </Typography>
                   </Box>
                 </Paper>
@@ -403,7 +455,7 @@ const DashboardHome: React.FC = () => {
                       AI time saved
                     </Typography>
                     <Typography variant="h5" sx={{ color: '#8E24AA', fontWeight: 700 }}>
-                      3.5 hrs
+                      {mockActivity.aiTimeSaved} hrs
                     </Typography>
                   </Box>
                 </Paper>
@@ -421,10 +473,10 @@ const DashboardHome: React.FC = () => {
                   <Box display="flex" flexDirection="column" alignItems="center">
                     <TrendingUpIcon sx={{ color: '#FFA000', mb: 1 }} />
                     <Typography variant="subtitle2" color="text.secondary">
-                      Plan usage
+                      Token usage
                     </Typography>
                     <Typography variant="h5" sx={{ color: '#FFA000', fontWeight: 700 }}>
-                      3/10
+                      {mockActivity.tokenUsage.toLocaleString()}
                     </Typography>
                   </Box>
                 </Paper>
@@ -451,7 +503,30 @@ const DashboardHome: React.FC = () => {
                   primary={
                     <span>
                       🪄 Continue where you left off: You started "PHIL 120 Essay" yesterday.{' '}
-                      <span style={{ color: '#8E24AA', fontWeight: 600 }}>Resume now?</span>
+                      <RouterLink
+                        to="/dashboard/workshop"
+                        style={{
+                          color: '#8E24AA',
+                          fontWeight: 600,
+                          textDecoration: 'none',
+                          borderBottom: '2px solid transparent',
+                          transition: 'border-color 0.2s',
+                        }}
+                        onMouseOver={e =>
+                          (e.currentTarget.style.borderBottom = '2px solid #8E24AA')
+                        }
+                        onMouseOut={e =>
+                          (e.currentTarget.style.borderBottom = '2px solid transparent')
+                        }
+                        onTouchStart={e =>
+                          (e.currentTarget.style.borderBottom = '2px solid #8E24AA')
+                        }
+                        onTouchEnd={e =>
+                          (e.currentTarget.style.borderBottom = '2px solid transparent')
+                        }
+                      >
+                        Resume now?
+                      </RouterLink>
                     </span>
                   }
                 />
@@ -461,7 +536,30 @@ const DashboardHome: React.FC = () => {
                   primary={
                     <span>
                       📄 Summarize your latest upload: Your recent PDF upload is ready.{' '}
-                      <span style={{ color: '#1976D2', fontWeight: 600 }}>Generate summary?</span>
+                      <RouterLink
+                        to="/dashboard/workshop?summarize=1"
+                        style={{
+                          color: '#1976D2',
+                          fontWeight: 600,
+                          textDecoration: 'none',
+                          borderBottom: '2px solid transparent',
+                          transition: 'border-color 0.2s',
+                        }}
+                        onMouseOver={e =>
+                          (e.currentTarget.style.borderBottom = '2px solid #1976D2')
+                        }
+                        onMouseOut={e =>
+                          (e.currentTarget.style.borderBottom = '2px solid transparent')
+                        }
+                        onTouchStart={e =>
+                          (e.currentTarget.style.borderBottom = '2px solid #1976D2')
+                        }
+                        onTouchEnd={e =>
+                          (e.currentTarget.style.borderBottom = '2px solid transparent')
+                        }
+                      >
+                        Generate summary?
+                      </RouterLink>
                     </span>
                   }
                 />

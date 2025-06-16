@@ -1,6 +1,5 @@
 import { http, HttpResponse } from 'msw';
 import API_BASE_URL from '../../config/api';
-import { mockSubmissions } from './data';
 
 export const handlers = [
   // Auth endpoints
@@ -73,6 +72,28 @@ export const handlers = [
     return new HttpResponse(null, { status: 200 });
   }),
 
+  // Mock token usage endpoint for development/testing
+  http.get(`${API_BASE_URL}/user/token-usage`, () => {
+    return HttpResponse.json({
+      plan: 'Free',
+      total: 30000,
+      used: 13589,
+    });
+  }),
+
+  // Mock weekly activity endpoint for development/testing
+  http.get(`${API_BASE_URL}/user/activity`, () => {
+    return HttpResponse.json([
+      { date: 'Mon', chats: 2, files: 1, links: 0, summarize: 0, extract: 0, rewrite: 0 },
+      { date: 'Tue', chats: 1, files: 1, links: 0, summarize: 1, extract: 0, rewrite: 0 },
+      { date: 'Wed', chats: 0, files: 1, links: 0, summarize: 0, extract: 1, rewrite: 0 },
+      { date: 'Thu', chats: 0, files: 1, links: 1, summarize: 0, extract: 0, rewrite: 1 },
+      { date: 'Fri', chats: 0, files: 1, links: 0, summarize: 0, extract: 0, rewrite: 1 },
+      { date: 'Sat', chats: 0, files: 0, links: 0, summarize: 0, extract: 0, rewrite: 0 },
+      { date: 'Sun', chats: 0, files: 0, links: 0, summarize: 0, extract: 0, rewrite: 0 },
+    ]);
+  }),
+
   // Assignment endpoints
   http.get(`${API_BASE_URL}/assignments`, () => {
     return HttpResponse.json([
@@ -111,98 +132,6 @@ export const handlers = [
   }),
 
   http.delete(`${API_BASE_URL}/assignments/:id`, () => {
-    return new HttpResponse(null, { status: 200 });
-  }),
-
-  // Submission endpoints
-  http.get(`${API_BASE_URL}/submissions`, () => {
-    return HttpResponse.json(mockSubmissions);
-  }),
-
-  http.get(`${API_BASE_URL}/submissions/:id`, () => {
-    return HttpResponse.json(mockSubmissions[0]);
-  }),
-
-  http.post(`${API_BASE_URL}/submissions`, () => {
-    return HttpResponse.json(mockSubmissions[0]);
-  }),
-
-  http.put(`${API_BASE_URL}/submissions/:id`, () => {
-    return new HttpResponse(null, { status: 200 });
-  }),
-
-  // Feedback endpoints
-  http.get(`${API_BASE_URL}/feedback/:id`, () => {
-    return HttpResponse.json({
-      id: 1,
-      submission_id: 1,
-      content: 'Test feedback',
-      created_at: new Date().toISOString(),
-    });
-  }),
-
-  http.post(`${API_BASE_URL}/feedback`, () => {
-    return HttpResponse.json({
-      id: 1,
-      submission_id: 1,
-      content: 'New feedback',
-      created_at: new Date().toISOString(),
-    });
-  }),
-
-  // Rubric endpoints
-  http.get(`${API_BASE_URL}/rubrics`, () => {
-    return HttpResponse.json([
-      {
-        id: 1,
-        name: 'Test Rubric',
-        criteria: [
-          {
-            id: 1,
-            name: 'Test Criterion',
-            weight: 1,
-            description: 'Test Description',
-          },
-        ],
-      },
-    ]);
-  }),
-
-  http.get(`${API_BASE_URL}/rubrics/:id`, () => {
-    return HttpResponse.json({
-      id: 1,
-      name: 'Test Rubric',
-      criteria: [
-        {
-          id: 1,
-          name: 'Test Criterion',
-          weight: 1,
-          description: 'Test Description',
-        },
-      ],
-    });
-  }),
-
-  http.post(`${API_BASE_URL}/rubrics`, () => {
-    return HttpResponse.json({
-      id: 1,
-      name: 'New Rubric',
-      criteria: [
-        {
-          id: 1,
-          name: 'New Criterion',
-          weight: 1,
-          description: 'New Description',
-        },
-      ],
-    });
-  }),
-
-  http.put(`${API_BASE_URL}/rubrics/:id`, () => {
-    return new HttpResponse(null, { status: 200 });
-  }),
-
-  http.delete(`${API_BASE_URL}/rubrics/:id`, () => {
     return new HttpResponse(null, { status: 200 });
   }),
 ];

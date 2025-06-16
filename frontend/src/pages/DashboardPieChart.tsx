@@ -7,14 +7,14 @@ interface DashboardPieChartProps {
 }
 
 const DashboardPieChart: React.FC<DashboardPieChartProps> = ({ data }) => (
-  <ResponsiveContainer width="100%" height={240}>
+  <ResponsiveContainer width="100%" height="100%">
     <PieChart>
       <text
         x="50%"
         y="45%"
         textAnchor="middle"
         dominantBaseline="middle"
-        style={{ fontSize: '18px', fontWeight: 'bold' }}
+        style={{ fontSize: '28px', fontWeight: 'bold' }}
       >
         Total Subjects:
       </text>
@@ -23,7 +23,7 @@ const DashboardPieChart: React.FC<DashboardPieChartProps> = ({ data }) => (
         y="55%"
         textAnchor="middle"
         dominantBaseline="middle"
-        style={{ fontSize: '18px', fontWeight: 'bold' }}
+        style={{ fontSize: '28px', fontWeight: 'bold' }}
       >
         {data.length}
       </text>
@@ -31,8 +31,8 @@ const DashboardPieChart: React.FC<DashboardPieChartProps> = ({ data }) => (
         data={data}
         cx="50%"
         cy="50%"
-        innerRadius={80}
-        outerRadius={110}
+        innerRadius={115}
+        outerRadius={160}
         paddingAngle={4}
         dataKey="value"
       >

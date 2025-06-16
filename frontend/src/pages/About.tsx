@@ -1,35 +1,42 @@
-import { AutoAwesome, EmojiObjects, Group, School, Security, Speed } from '@mui/icons-material';
+import {
+  AutoAwesomeOutlined,
+  EmojiObjectsOutlined,
+  GroupOutlined,
+  SchoolOutlined,
+  SecurityOutlined,
+  SpeedOutlined,
+} from '@mui/icons-material';
 import { Box, Container, Divider, Grid, Paper, Typography } from '@mui/material';
 
 const About = () => {
   const values = [
     {
-      icon: <School sx={{ fontSize: 40, color: 'primary.main' }} />,
+      icon: <SchoolOutlined sx={{ fontSize: 40, color: 'primary.main' }} />,
       title: 'Educational Excellence',
       description: `We're committed to enhancing the learning experience through innovative AI technology. We believe that education is the foundation of personal and societal growth. Our platform is designed to support students and educators in achieving their highest potential, fostering curiosity, critical thinking, and a lifelong love of learning.`,
     },
     {
-      icon: <AutoAwesome sx={{ fontSize: 40, color: 'primary.main' }} />,
+      icon: <AutoAwesomeOutlined sx={{ fontSize: 40, color: 'primary.main' }} />,
       title: 'AI Innovation',
       description: `Leveraging cutting-edge artificial intelligence to provide intelligent assistance. Our team is dedicated to staying at the forefront of AI research and development, ensuring that AssignmentAI delivers the most advanced, reliable, and ethical solutions to real academic challenges.`,
     },
     {
-      icon: <Security sx={{ fontSize: 40, color: 'primary.main' }} />,
+      icon: <SecurityOutlined sx={{ fontSize: 40, color: 'primary.main' }} />,
       title: 'Privacy & Security',
       description: `Ensuring the highest standards of data protection and user privacy. We implement robust security protocols and are transparent about our data practices, so users can trust that their information is safe and handled with care.`,
     },
     {
-      icon: <Speed sx={{ fontSize: 40, color: 'primary.main' }} />,
+      icon: <SpeedOutlined sx={{ fontSize: 40, color: 'primary.main' }} />,
       title: 'Efficiency',
       description: `Streamlining academic workflows to save time and boost productivity. AssignmentAI automates repetitive tasks, organizes assignments, and provides instant feedback, allowing users to focus on what truly matters: learning and growth.`,
     },
     {
-      icon: <Group sx={{ fontSize: 40, color: 'primary.main' }} />,
+      icon: <GroupOutlined sx={{ fontSize: 40, color: 'primary.main' }} />,
       title: 'Community',
       description: `Building a supportive network of students and educators. We believe in the power of collaboration and shared knowledge, and we strive to create a welcoming environment where everyone can contribute, learn, and succeed together.`,
     },
     {
-      icon: <EmojiObjects sx={{ fontSize: 40, color: 'primary.main' }} />,
+      icon: <EmojiObjectsOutlined sx={{ fontSize: 40, color: 'primary.main' }} />,
       title: 'Continuous Improvement',
       description: `Constantly evolving our platform based on user feedback and needs. We listen to our community and are committed to refining and expanding our features to better serve the ever-changing landscape of education.`,
     },
@@ -46,6 +53,8 @@ const About = () => {
           textAlign: 'left',
           backgroundColor: 'grey.50',
           boxShadow: '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
+          border: '2px solid',
+          borderColor: 'primary.main',
         }}
       >
         <Typography

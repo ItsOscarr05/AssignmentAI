@@ -18,7 +18,7 @@ import {
   Button,
   Card,
   CardContent,
-  Chip,
+  CircularProgress,
   FormControl,
   Grid,
   IconButton,
@@ -39,16 +39,23 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { assignments } from '../services/api';
 
 interface Assignment {
   id: string;
   title: string;
   subject: string;
-  status: 'Completed' | 'Not Started';
-  priority: 'High' | 'Medium' | 'Low';
+  status: string;
   description: string;
+  createdAt: string;
+  attachments: Array<{
+    id: string;
+    name: string;
+    type: string;
+    size: string;
+  }>;
 }
 
 const Assignments: React.FC = () => {
@@ -60,7 +67,30 @@ const Assignments: React.FC = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedAssignment, setSelectedAssignment] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filterPriority, setFilterPriority] = useState<string>('all');
+  const [assignmentsList, setAssignmentsList] = useState<Assignment[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAssignments = async () => {
+      try {
+        const data = await assignments.getRecent(50); // Get more assignments for the full list
+        setAssignmentsList(
+          data.map((a: any) => ({
+            ...a,
+            description: a.description || '',
+            createdAt: a.createdAt || a.dueDate || new Date().toISOString(),
+            attachments: a.attachments || [],
+          }))
+        );
+      } catch (error) {
+        console.error('Error fetching assignments:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAssignments();
+  }, []);
 
   // Custom styles
   const cardStyle = {
@@ -81,41 +111,6 @@ const Assignments: React.FC = () => {
   const searchBarStyle = {
     border: '2px solid red',
   };
-
-  const assignments: Assignment[] = [
-    {
-      id: '1',
-      title: 'Math Homework',
-      subject: 'Mathematics',
-      status: 'Not Started',
-      priority: 'High',
-      description: 'Complete exercises 1-10 from Chapter 5',
-    },
-    {
-      id: '2',
-      title: 'Science Project',
-      subject: 'Science',
-      status: 'Completed',
-      priority: 'Medium',
-      description: 'Research and present findings on renewable energy',
-    },
-    {
-      id: '3',
-      title: 'History Essay',
-      subject: 'History',
-      status: 'Not Started',
-      priority: 'Low',
-      description: 'Write a 2000-word essay on World War II',
-    },
-    {
-      id: '4',
-      title: 'Literature Review',
-      subject: 'English',
-      status: 'Not Started',
-      priority: 'Low',
-      description: 'Review and analyze "To Kill a Mockingbird"',
-    },
-  ];
 
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
@@ -147,19 +142,6 @@ const Assignments: React.FC = () => {
     }
   };
 
-  const getPriorityColor = (priority: Assignment['priority']) => {
-    switch (priority) {
-      case 'High':
-        return 'error';
-      case 'Medium':
-        return 'warning';
-      case 'Low':
-        return 'success';
-      default:
-        return 'default';
-    }
-  };
-
   const getSubjectColor = (subject: string) => {
     switch (subject.toLowerCase()) {
       case 'mathematics':
@@ -177,30 +159,41 @@ const Assignments: React.FC = () => {
     }
   };
 
-  const filteredAssignments = assignments.filter(assignment => {
+  const filteredAssignments = assignmentsList.filter(assignment => {
     const matchesSearch =
       assignment.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       assignment.subject.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || assignment.status === filterStatus;
-    const matchesPriority = filterPriority === 'all' || assignment.priority === filterPriority;
-    return matchesSearch && matchesStatus && matchesPriority;
+    return matchesSearch && matchesStatus;
   });
 
   const getAssignmentStats = () => {
-    const total = assignments.length;
-    const completed = assignments.filter(a => a.status === 'Completed').length;
-    const subjectDistribution = assignments.reduce((acc, curr) => {
+    const total = assignmentsList.length;
+    const completed = assignmentsList.filter(a => a.status === 'Completed').length;
+    const subjectDistribution = assignmentsList.reduce((acc, curr) => {
       acc[curr.subject] = (acc[curr.subject] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
-    const priorityDistribution = assignments.reduce((acc, curr) => {
-      acc[curr.priority] = (acc[curr.priority] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    return { total, completed, subjectDistribution, priorityDistribution };
+    return { total, completed, subjectDistribution };
   };
 
   const stats = getAssignmentStats();
+
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          p: 3,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '100vh',
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 3, backgroundColor: '#fafafa', minHeight: '100vh' }}>
@@ -246,7 +239,7 @@ const Assignments: React.FC = () => {
               <Typography variant="h6" sx={{ mb: 2, color: 'black' }}>
                 Recent Activity
               </Typography>
-              {assignments.slice(0, 3).map(assignment => (
+              {assignmentsList.slice(0, 3).map(assignment => (
                 <Box
                   key={assignment.id}
                   sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}
@@ -317,53 +310,6 @@ const Assignments: React.FC = () => {
                         </Typography>
                       </Box>
                     ))}
-                </AccordionDetails>
-              </Accordion>
-              <Accordion sx={{ boxShadow: 'none', border: '1px solid rgba(0, 0, 0, 0.12)' }}>
-                <AccordionSummary
-                  expandIcon={<ExpandMoreIcon />}
-                  sx={{
-                    '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
-                    minHeight: '48px',
-                  }}
-                >
-                  <Typography variant="subtitle2">By Priority</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                  {Object.entries(stats.priorityDistribution).map(([priority, count]) => (
-                    <Box
-                      key={priority}
-                      sx={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        mb: 0.5,
-                        p: 0.5,
-                        borderRadius: 1,
-                        '&:hover': {
-                          backgroundColor: 'rgba(0, 0, 0, 0.02)',
-                        },
-                      }}
-                    >
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color:
-                            priority === 'High'
-                              ? 'red'
-                              : priority === 'Medium'
-                              ? '#FFD700'
-                              : priority === 'Low'
-                              ? 'green'
-                              : 'inherit',
-                        }}
-                      >
-                        {priority}
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {count}
-                      </Typography>
-                    </Box>
-                  ))}
                 </AccordionDetails>
               </Accordion>
             </CardContent>
@@ -444,41 +390,6 @@ const Assignments: React.FC = () => {
             </Select>
           </FormControl>
         </Grid>
-        <Grid item xs={12} md={3}>
-          <FormControl fullWidth>
-            <InputLabel sx={{ color: 'red' }}>Priority</InputLabel>
-            <Select
-              value={filterPriority}
-              label="Priority"
-              onChange={e => setFilterPriority(e.target.value)}
-              sx={{
-                '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'red',
-                  borderWidth: '2px',
-                },
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'red',
-                  borderWidth: '2px',
-                },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'red',
-                  borderWidth: '2px',
-                },
-              }}
-            >
-              <MenuItem value="all">All</MenuItem>
-              <MenuItem value="High" sx={{ color: 'error.main' }}>
-                High
-              </MenuItem>
-              <MenuItem value="Medium" sx={{ color: 'warning.main' }}>
-                Medium
-              </MenuItem>
-              <MenuItem value="Low" sx={{ color: 'success.main' }}>
-                Low
-              </MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
       </Grid>
 
       {/* Assignments Table */}
@@ -489,7 +400,7 @@ const Assignments: React.FC = () => {
               <TableCell>Title</TableCell>
               <TableCell>Subject</TableCell>
               <TableCell>Status</TableCell>
-              <TableCell>Priority</TableCell>
+              <TableCell>Date Created</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -498,7 +409,14 @@ const Assignments: React.FC = () => {
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
               .map(assignment => (
                 <TableRow key={assignment.id}>
-                  <TableCell>{assignment.title}</TableCell>
+                  <TableCell>
+                    <Box>
+                      <Typography variant="body1">{assignment.title}</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {assignment.description}
+                      </Typography>
+                    </Box>
+                  </TableCell>
                   <TableCell>
                     <Typography sx={{ color: getSubjectColor(assignment.subject) }}>
                       {assignment.subject}
@@ -510,13 +428,7 @@ const Assignments: React.FC = () => {
                       {assignment.status}
                     </Box>
                   </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={assignment.priority}
-                      color={getPriorityColor(assignment.priority)}
-                      size="small"
-                    />
-                  </TableCell>
+                  <TableCell>{new Date(assignment.createdAt).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <IconButton onClick={e => handleMenuClick(e, assignment.id)} size="small">
                       <MoreVertIcon />

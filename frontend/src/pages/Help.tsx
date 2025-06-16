@@ -1,18 +1,15 @@
 import {
   ArrowForward,
   ArticleOutlined,
-  BookOutlined,
   ContactSupportOutlined,
   ExpandMore,
   FeedbackOutlined,
   ForumOutlined,
   HelpOutlineOutlined,
-  LiveHelpOutlined,
   QuestionAnswerOutlined,
   RateReviewOutlined,
   SearchOutlined,
   SendOutlined,
-  VideoLibraryOutlined,
 } from '@mui/icons-material';
 import {
   Accordion,
@@ -22,7 +19,6 @@ import {
   Button,
   Card,
   CardContent,
-  Chip,
   Grid,
   InputAdornment,
   Paper,
@@ -336,8 +332,6 @@ const Help: React.FC = () => {
             }}
           >
             <Tab icon={<QuestionAnswerOutlined />} label="FAQ" sx={{ gap: 1 }} />
-            <Tab icon={<BookOutlined />} label="Tutorials" sx={{ gap: 1 }} />
-            <Tab icon={<LiveHelpOutlined />} label="Live Help" sx={{ gap: 1 }} />
             <Tab icon={<ContactSupportOutlined />} label="Contact" sx={{ gap: 1 }} />
           </Tabs>
         </Box>
@@ -526,120 +520,6 @@ const Help: React.FC = () => {
           </TabPanel>
 
           <TabPanel value={tabValue} index={1}>
-            <HelpSection title="Video Tutorials" icon={<VideoLibraryOutlined />}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  py: 8,
-                  textAlign: 'center',
-                }}
-              >
-                <VideoLibraryOutlined
-                  sx={{
-                    fontSize: 64,
-                    color: theme.palette.primary.main,
-                    mb: 2,
-                  }}
-                />
-                <Typography variant="h5" color="black" gutterBottom>
-                  Coming Soon
-                </Typography>
-                <Typography color="text.secondary" sx={{ maxWidth: 400 }}>
-                  We're working on creating comprehensive video tutorials to help you get the most
-                  out of AssignmentAI. Stay tuned for updates!
-                </Typography>
-              </Box>
-            </HelpSection>
-          </TabPanel>
-
-          <TabPanel value={tabValue} index={2}>
-            <HelpSection title="Live Help" icon={<LiveHelpOutlined />}>
-              <Grid container spacing={4}>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="h6" gutterBottom>
-                    Chat with our Support Team
-                  </Typography>
-                  <Typography color="text.secondary" paragraph>
-                    Get real-time assistance from our expert support team. We're here to help you
-                    24/7.
-                  </Typography>
-                  <Stack spacing={2}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Chip
-                        size="small"
-                        label="Available 24/7"
-                        color="success"
-                        sx={{ borderRadius: 1 }}
-                      />
-                      <Chip
-                        size="small"
-                        label="Average response time: 2 min"
-                        sx={{ borderRadius: 1 }}
-                      />
-                    </Box>
-                    <Button
-                      variant="contained"
-                      startIcon={<SendOutlined />}
-                      sx={{
-                        mt: 2,
-                        borderRadius: 3,
-                        background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
-                        boxShadow:
-                          '0 4px 20px 0px rgba(0,0,0,0.14), 0 7px 10px -5px rgba(33,150,243,0.4)',
-                        transition: 'all 0.3s ease',
-                        '&:hover': {
-                          transform: 'translateY(-2px)',
-                          boxShadow: '0 7px 30px -10px rgba(33,150,243,0.6)',
-                        },
-                      }}
-                    >
-                      Start Chat
-                    </Button>
-                  </Stack>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Paper
-                    sx={{
-                      p: 3,
-                      background:
-                        theme.palette.mode === 'dark'
-                          ? 'rgba(255,255,255,0.05)'
-                          : 'rgba(0,0,0,0.02)',
-                      borderRadius: 2,
-                      border: '2px solid',
-                      borderColor: 'error.main',
-                      '&:hover': {
-                        borderColor: 'error.dark',
-                      },
-                    }}
-                  >
-                    <Typography variant="h6" gutterBottom color="black">
-                      Support Hours
-                    </Typography>
-                    <Stack spacing={1}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Typography>Monday - Friday</Typography>
-                        <Typography>24/7</Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Typography>Saturday - Sunday</Typography>
-                        <Typography>24/7</Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Typography>Holidays</Typography>
-                        <Typography>24/7</Typography>
-                      </Box>
-                    </Stack>
-                  </Paper>
-                </Grid>
-              </Grid>
-            </HelpSection>
-          </TabPanel>
-
-          <TabPanel value={tabValue} index={3}>
             <HelpSection title="Contact Support" icon={<ContactSupportOutlined />}>
               <Grid container spacing={4}>
                 <Grid item xs={12} md={6}>

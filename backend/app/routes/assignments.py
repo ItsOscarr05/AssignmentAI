@@ -172,4 +172,20 @@ async def list_submissions(
         raise HTTPException(status_code=404, detail="Assignment not found")
 
     submissions = db.query(Submission).filter(Submission.assignment_id == assignment_id).all()
-    return submissions 
+    return submissions
+
+@router.get("/recent", response_model=List[AssignmentResponse])
+async def get_recent_assignments(
+    limit: int = 5,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Get recent assignments for the dashboard"""
+    assignments = (
+        db.query(Assignment)
+        .filter(Assignment.user_id == current_user.id)
+        .order_by(Assignment.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+    return assignments 

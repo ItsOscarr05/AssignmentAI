@@ -29,6 +29,7 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const authService = AuthService.getInstance();
 
@@ -92,12 +93,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const mockLogin = () => {
     console.log('Mock login called');
-    const mockUser = {
-      id: 'mock-id',
-      email: 'mock@example.com',
-      firstName: 'Mock',
-      lastName: 'User',
-      role: 'user',
+    const mockUser: User = {
+      id: '1',
+      email: 'test@example.com',
+      name: 'Test User',
+      role: 'student',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      preferences: {
+        theme: 'light',
+        notifications: true,
+        language: 'en',
+      },
+      profile: {
+        avatar: 'https://via.placeholder.com/150',
+        bio: 'Student at Example University',
+        location: 'New York, USA',
+        education: 'Bachelor of Science',
+        interests: ['Computer Science', 'Mathematics', 'Physics'],
+      },
     };
     setUser(mockUser);
     localStorage.setItem('user', JSON.stringify(mockUser));

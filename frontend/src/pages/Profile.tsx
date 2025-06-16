@@ -782,200 +782,59 @@ const Profile: React.FC = () => {
           </TabPanel>
 
           <TabPanel value={tabValue} index={1}>
-            <ProfileSection title="Activity Timeline" icon={<TimelineOutlined />}>
-              <Box sx={{ position: 'relative' }}>
-                {activityTimeline.map((activity, index) => (
-                  <ActivityTimelineItem key={index} {...activity} />
-                ))}
-              </Box>
-            </ProfileSection>
-
-            <ProfileSection title="Activity Statistics" icon={<TimelineOutlined />}>
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <Paper
-                    sx={{
-                      p: 3,
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'flex-start',
-                      background:
-                        theme.palette.mode === 'dark'
-                          ? 'rgba(255,255,255,0.05)'
-                          : 'rgba(0,0,0,0.02)',
-                      borderRadius: 2,
-                    }}
-                  >
-                    <Typography variant="h6" gutterBottom>
-                      Assignment Completion Rate
-                    </Typography>
-                    <Box sx={{ width: '100%', mt: 2 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                        <Typography variant="body2" color="text.secondary">
-                          Completed
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          85%
-                        </Typography>
-                      </Box>
-                      <Box
-                        sx={{
-                          height: 8,
-                          bgcolor: 'rgba(0,0,0,0.1)',
-                          borderRadius: 4,
-                          overflow: 'hidden',
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            height: '100%',
-                            width: '85%',
-                            bgcolor: 'success.main',
-                            borderRadius: 4,
-                          }}
-                        />
-                      </Box>
-                    </Box>
-                  </Paper>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Paper
-                    sx={{
-                      p: 3,
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'flex-start',
-                      background:
-                        theme.palette.mode === 'dark'
-                          ? 'rgba(255,255,255,0.05)'
-                          : 'rgba(0,0,0,0.02)',
-                      borderRadius: 2,
-                    }}
-                  >
-                    <Typography variant="h6" gutterBottom>
-                      Average Completion Time
-                    </Typography>
-                    <Box sx={{ width: '100%', mt: 2 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                        <Typography variant="body2" color="text.secondary">
-                          Last 30 Days
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          3.2 days
-                        </Typography>
-                      </Box>
-                      <Box
-                        sx={{
-                          height: 8,
-                          bgcolor: 'rgba(0,0,0,0.1)',
-                          borderRadius: 4,
-                          overflow: 'hidden',
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            height: '100%',
-                            width: '65%',
-                            bgcolor: 'info.main',
-                            borderRadius: 4,
-                          }}
-                        />
-                      </Box>
-                    </Box>
-                  </Paper>
-                </Grid>
-              </Grid>
-            </ProfileSection>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                py: 8,
+                textAlign: 'center',
+              }}
+            >
+              <TimelineOutlined
+                sx={{
+                  fontSize: 64,
+                  color: theme.palette.primary.main,
+                  mb: 2,
+                }}
+              />
+              <Typography variant="h5" color="black" gutterBottom>
+                Coming Soon
+              </Typography>
+              <Typography color="text.secondary" sx={{ maxWidth: 400 }}>
+                We're working on creating a comprehensive activity tracking system to help you
+                monitor your progress and achievements. Stay tuned for updates!
+              </Typography>
+            </Box>
           </TabPanel>
 
           <TabPanel value={tabValue} index={2}>
-            <ProfileSection title="Achievements & Badges" icon={<BadgeOutlined />}>
-              <Box sx={{ mb: 4 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <Typography variant="h6" sx={{ mr: 2 }}>
-                    Achievement Progress
-                  </Typography>
-                  <Typography
-                    variant="h4"
-                    sx={{
-                      color: 'success.main',
-                    }}
-                  >
-                    {achievements.filter(a => a.unlocked).length}/{achievements.length}
-                  </Typography>
-                </Box>
-                <Box
-                  sx={{
-                    height: 8,
-                    bgcolor: 'rgba(0,0,0,0.1)',
-                    borderRadius: 4,
-                    overflow: 'hidden',
-                  }}
-                >
-                  <Box
-                    sx={{
-                      height: '100%',
-                      width: `${
-                        (achievements.filter(a => a.unlocked).length / achievements.length) * 100
-                      }%`,
-                      bgcolor: 'success.main',
-                      borderRadius: 4,
-                      transition: 'width 0.3s ease',
-                    }}
-                  />
-                </Box>
-              </Box>
-
-              <Grid container spacing={3}>
-                {achievements.map((achievement, index) => (
-                  <Grid item xs={12} md={6} key={index}>
-                    <AchievementCard {...achievement} />
-                  </Grid>
-                ))}
-              </Grid>
-            </ProfileSection>
-
-            <ProfileSection title="Recent Achievements" icon={<VerifiedOutlined />}>
-              <Stack spacing={2}>
-                {achievements
-                  .filter(a => a.unlocked)
-                  .slice(0, 3)
-                  .map((achievement, index) => (
-                    <Box
-                      key={index}
-                      sx={{
-                        p: 2,
-                        borderRadius: 2,
-                        bgcolor: 'rgba(0,0,0,0.02)',
-                        border: '1px solid',
-                        borderColor: 'success.main',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 2,
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          p: 1,
-                          borderRadius: '50%',
-                          background: 'success.main',
-                          color: 'white',
-                        }}
-                      >
-                        <VerifiedOutlined fontSize="small" />
-                      </Box>
-                      <Box>
-                        <Typography variant="subtitle1">{achievement.title}</Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {achievement.description}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  ))}
-              </Stack>
-            </ProfileSection>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                py: 8,
+                textAlign: 'center',
+              }}
+            >
+              <BadgeOutlined
+                sx={{
+                  fontSize: 64,
+                  color: theme.palette.primary.main,
+                  mb: 2,
+                }}
+              />
+              <Typography variant="h5" color="black" gutterBottom>
+                Coming Soon
+              </Typography>
+              <Typography color="text.secondary" sx={{ maxWidth: 400 }}>
+                We're developing an exciting achievements system to reward your progress and
+                milestones. Get ready to earn badges and unlock special features!
+              </Typography>
+            </Box>
           </TabPanel>
         </Box>
       </Box>

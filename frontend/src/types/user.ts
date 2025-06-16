@@ -1,9 +1,30 @@
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: 'student' | 'teacher' | 'admin';
+  createdAt: string;
+  updatedAt: string;
+  preferences: {
+    theme: 'light' | 'dark';
+    notifications: boolean;
+    language: string;
+  };
+  profile: {
+    avatar: string;
+    bio: string;
+    location: string;
+    education: string;
+    interests: string[];
+  };
+}
+
 export interface UserProfile {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
-  role: "student" | "teacher" | "admin";
+  role: 'student' | 'teacher' | 'admin';
   avatar?: string;
   bio?: string;
   institution?: string;
@@ -17,7 +38,7 @@ export interface UserProfile {
 }
 
 export interface UserPreferences {
-  theme: "light" | "dark" | "system";
+  theme: 'light' | 'dark' | 'system';
   notifications: {
     email: boolean;
     push: boolean;
@@ -47,7 +68,7 @@ export interface UserStatistics {
 
 export interface UserActivity {
   id: string;
-  type: "submission" | "grade" | "feedback" | "assignment" | "login";
+  type: 'submission' | 'grade' | 'feedback' | 'assignment' | 'login';
   title: string;
   description: string;
   timestamp: string;

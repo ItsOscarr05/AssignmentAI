@@ -11,6 +11,8 @@ const Privacy = () => (
         textAlign: 'left',
         backgroundColor: 'grey.50',
         boxShadow: '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
+        border: '2px solid',
+        borderColor: 'primary.main',
       }}
     >
       <Typography

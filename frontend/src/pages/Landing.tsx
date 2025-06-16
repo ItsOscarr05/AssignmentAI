@@ -23,13 +23,17 @@ const RouterMuiLink = styled(RouterLink)({
 import {
   AccessTimeOutlined,
   AllInclusive,
+  AssignmentOutlined,
   AutoAwesomeOutlined,
   AutoFixHighOutlined,
   BlockOutlined,
+  BoltOutlined,
   BuildOutlined,
   CheckCircle,
+  CheckCircleOutlineOutlined,
   CodeOutlined,
   Diamond,
+  DiamondOutlined,
   FormatQuoteOutlined,
   GppGoodOutlined,
   InsightsOutlined,
@@ -41,6 +45,7 @@ import {
   SchoolOutlined,
   ScienceOutlined,
   Search,
+  SecurityOutlined,
   SmartToyOutlined,
   Speed,
   Spellcheck,
@@ -66,26 +71,6 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
 // Lazy load icons
-const AccessTime = lazy(() =>
-  import('@mui/icons-material/AccessTime').then(module => ({
-    default: module.default,
-  }))
-);
-const AssignmentIcon = lazy(() =>
-  import('@mui/icons-material/Assignment').then(module => ({
-    default: module.default,
-  }))
-);
-const BoltIcon = lazy(() =>
-  import('@mui/icons-material/Bolt').then(module => ({
-    default: module.default,
-  }))
-);
-const CheckCircleIcon = lazy(() =>
-  import('@mui/icons-material/CheckCircle').then(module => ({
-    default: module.default,
-  }))
-);
 const EmailIcon = lazy(() =>
   import('@mui/icons-material/Email').then(module => ({
     default: module.default,
@@ -103,16 +88,6 @@ const HelpOutline = lazy(() =>
 );
 const LocalOffer = lazy(() =>
   import('@mui/icons-material/LocalOffer').then(module => ({
-    default: module.default,
-  }))
-);
-const PsychologyIcon = lazy(() =>
-  import('@mui/icons-material/Psychology').then(module => ({
-    default: module.default,
-  }))
-);
-const SecurityIcon = lazy(() =>
-  import('@mui/icons-material/Security').then(module => ({
     default: module.default,
   }))
 );
@@ -784,7 +759,7 @@ const Landing: React.FC = () => {
                 >
                   Why AssignmentAI is Better than ChatGPT?
                 </Typography>
-                <Grid container spacing={4} component="div">
+                <Grid container spacing={4} component="div" alignItems="stretch">
                   <Grid item xs={12} md={6} sx={{ pl: { md: 4 } }} component="div">
                     <Card
                       sx={{
@@ -1095,32 +1070,38 @@ const Landing: React.FC = () => {
               <Grid container spacing={4} justifyContent="center">
                 {[
                   {
-                    icon: <AssignmentIcon sx={{ fontSize: 48, color: '#D32F2F' }} />,
+                    icon: <AssignmentOutlined sx={{ fontSize: 48, color: '#D32F2F' }} />,
+                    color: '#D32F2F',
                     title: 'Instant Assignment Solutions',
                     desc: 'Get accurate, AI-powered answers to your homework and study questions in seconds.',
                   },
                   {
-                    icon: <Diamond sx={{ fontSize: 48, color: 'warning.main' }} />,
+                    icon: <DiamondOutlined sx={{ fontSize: 48, color: '#FFA000' }} />,
+                    color: '#FFA000',
                     title: 'Premium Features',
                     desc: 'Unlock advanced tools like AI diagram maker, code generator, and more.',
                   },
                   {
-                    icon: <BoltIcon sx={{ fontSize: 48, color: '#FFD600' }} />,
+                    icon: <BoltOutlined sx={{ fontSize: 48, color: '#FFD600' }} />,
+                    color: '#FFD600',
                     title: 'Lightning Fast Feedback',
                     desc: 'Receive instant feedback and suggestions to boost your academic performance.',
                   },
                   {
-                    icon: <PsychologyIcon sx={{ fontSize: 48, color: '#e91e63' }} />,
+                    icon: <PsychologyOutlined sx={{ fontSize: 48, color: '#e91e63' }} />,
+                    color: '#e91e63',
                     title: 'Smart Writing Assistance',
                     desc: 'Improve your essays and reports with advanced grammar, style, and structure suggestions.',
                   },
                   {
-                    icon: <SecurityIcon sx={{ fontSize: 48, color: 'info.main' }} />,
+                    icon: <SecurityOutlined sx={{ fontSize: 48, color: '#0288d1' }} />,
+                    color: '#0288d1',
                     title: 'Secure & Private',
                     desc: 'Your data and assignments are protected with enterprise-grade security.',
                   },
                   {
-                    icon: <CheckCircleIcon sx={{ fontSize: 48, color: '#43a047' }} />,
+                    icon: <CheckCircleOutlineOutlined sx={{ fontSize: 48, color: '#43a047' }} />,
+                    color: '#43a047',
                     title: 'Trusted by Students & Teachers',
                     desc: 'Join thousands of students and teachers who rely on AssignmentAI for academic success.',
                   },
@@ -1136,38 +1117,21 @@ const Landing: React.FC = () => {
                         borderRadius: 4,
                         boxShadow: 3,
                         textAlign: 'center',
-                        border: '2.25px solid #D32F2F',
+                        border: '2.25px solid',
+                        borderColor: feature.color,
                         transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
                         '&:hover': {
                           transform: 'translateY(-6px) scale(1.03)',
-                          boxShadow:
-                            '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
-                          borderColor: '#B71C1C',
+                          boxShadow: `0 0 32px ${feature.color}40, 0 0 64px ${feature.color}30`,
+                          borderColor: feature.color,
                         },
                       }}
                     >
                       <Box sx={{ mb: 1.5 }}>{feature.icon}</Box>
-                      <Typography
-                        variant="h5"
-                        component="h3"
-                        sx={{
-                          mb: 1.5,
-                          fontWeight: 600,
-                          fontSize: { xs: '1.2rem', md: '1.4rem' },
-                          color: 'text.primary',
-                        }}
-                      >
+                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
                         {feature.title}
                       </Typography>
-                      <Typography
-                        color="text.secondary"
-                        sx={{
-                          fontSize: { xs: '1.0rem', md: '1.1rem' },
-                          lineHeight: 1.5,
-                        }}
-                      >
-                        {feature.desc}
-                      </Typography>
+                      <Typography color="text.secondary">{feature.desc}</Typography>
                     </Paper>
                   </Grid>
                 ))}
@@ -1226,22 +1190,25 @@ const Landing: React.FC = () => {
                     color: '#ff9800',
                   },
                 ].map((stat, index) => (
-                  <Grid item xs={6} sm={3} key={index}>
+                  <Grid item xs={6} sm={6} md={3} key={index}>
                     <Paper
                       elevation={2}
                       sx={{
-                        p: 5,
-                        minHeight: 220,
+                        p: { xs: 2, sm: 3, md: 5 },
+                        minHeight: { xs: 160, sm: 180, md: 220 },
                         textAlign: 'center',
                         backgroundColor: 'white',
                         boxShadow: 3,
                         transition: 'transform 0.2s, box-shadow 0.2s',
-                        border: '2.25px solid #D32F2F',
+                        border: '2.25px solid',
+                        borderColor: stat.color,
                         borderRadius: 4,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
                         '&:hover': {
                           transform: 'translateY(-4px)',
-                          boxShadow:
-                            '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
+                          boxShadow: `0 0 32px ${stat.color}40, 0 0 64px ${stat.color}30`,
                         },
                       }}
                     >
@@ -1251,8 +1218,9 @@ const Landing: React.FC = () => {
                         sx={{
                           fontWeight: 700,
                           color: stat.color,
-                          mb: 2,
-                          fontSize: { xs: '3rem', md: '3.5rem' },
+                          mb: 1,
+                          fontSize: { xs: '2rem', sm: '2.5rem', md: '3.5rem' },
+                          lineHeight: 1.2,
                         }}
                       >
                         {stat.number}
@@ -1260,8 +1228,9 @@ const Landing: React.FC = () => {
                       <Typography
                         variant="h3"
                         sx={{
-                          mb: 2,
-                          fontSize: { xs: '2.5rem', md: '3rem' },
+                          mb: 1,
+                          fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
+                          lineHeight: 1.2,
                         }}
                       >
                         {stat.icon}
@@ -1271,6 +1240,9 @@ const Landing: React.FC = () => {
                         sx={{
                           color: 'text.secondary',
                           fontWeight: 600,
+                          fontSize: { xs: '1rem', sm: '1.1rem', md: '1.25rem' },
+                          lineHeight: 1.2,
+                          px: 1,
                         }}
                       >
                         {stat.label}
@@ -1629,9 +1601,9 @@ const Landing: React.FC = () => {
                 >
                   Frequently Asked Questions
                 </Typography>
-                <Grid container spacing={4} justifyContent="center">
+                <Grid container spacing={4} justifyContent="center" alignItems="stretch">
                   {faqs.map((faq, idx) => (
-                    <Grid item xs={12} sm={6} md={4} key={idx}>
+                    <Grid item xs={12} sm={6} md={4} key={idx} sx={{ height: '100%' }}>
                       <Paper
                         sx={{
                           p: { xs: 2, md: 3 },
@@ -1643,6 +1615,9 @@ const Landing: React.FC = () => {
                           textAlign: 'center',
                           border: '2.25px solid #D32F2F',
                           transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
+                          height: '100%',
+                          display: 'flex',
+                          flexDirection: 'column',
                           '&:hover': {
                             transform: 'translateY(-6px) scale(1.03)',
                             boxShadow:
@@ -1787,7 +1762,6 @@ const Landing: React.FC = () => {
               '&:hover': {
                 transform: 'translateY(-6px) scale(1.03)',
                 boxShadow: '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
-                borderColor: '#B71C1C',
               },
             }}
           >
@@ -1834,7 +1808,7 @@ const Landing: React.FC = () => {
                 </Typography>
               </Stack>
               <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
-                <AccessTime sx={{ color: '#D32F2F' }} />
+                <AccessTimeOutlined sx={{ color: '#D32F2F' }} />
                 <Typography
                   variant="h6"
                   color="text.secondary"

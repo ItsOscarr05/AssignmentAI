@@ -10,8 +10,7 @@ const AISettings = lazy(() => import('./pages/AISettings'));
 const AITokens = lazy(() => import('./pages/AITokens'));
 const Assignments = lazy(() => import('./pages/Assignments'));
 const Contact = lazy(() => import('./pages/Contact'));
-const CreateAssignment = lazy(() => import('./pages/CreateAssignment'));
-const Dashboard = lazy(() => import('./pages/Dashboard'));
+const DashboardLayout = lazy(() => import('./pages/DashboardSidebar'));
 const DashboardHome = lazy(() => import('./pages/DashboardHome'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const Help = lazy(() => import('./pages/Help'));
@@ -141,7 +140,7 @@ export const AppRouter = () => (
               <PrivateRoute>
                 <Suspense fallback={suspenseFallback}>
                   <PageTransition>
-                    <Dashboard />
+                    <DashboardLayout />
                   </PageTransition>
                 </Suspense>
               </PrivateRoute>
@@ -168,31 +167,11 @@ export const AppRouter = () => (
               }
             />
             <Route
-              path="assignments/create"
-              element={
-                <Suspense fallback={suspenseFallback}>
-                  <PageTransition>
-                    <CreateAssignment />
-                  </PageTransition>
-                </Suspense>
-              }
-            />
-            <Route
               path="assignments/:id"
               element={
                 <Suspense fallback={suspenseFallback}>
                   <PageTransition>
                     <AssignmentDetail />
-                  </PageTransition>
-                </Suspense>
-              }
-            />
-            <Route
-              path="assignments/:id/edit"
-              element={
-                <Suspense fallback={suspenseFallback}>
-                  <PageTransition>
-                    <CreateAssignment />
                   </PageTransition>
                 </Suspense>
               }

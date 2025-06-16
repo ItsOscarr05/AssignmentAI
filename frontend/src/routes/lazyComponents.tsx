@@ -2,7 +2,7 @@ import { lazy } from 'react';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 // Lazy load all page components
-export const LazyDashboard = lazy(() => import('../pages/Dashboard'));
+export const LazyDashboard = lazy(() => import('../pages/DashboardSidebar'));
 export const LazyAssignments = lazy(() => import('../pages/Assignments'));
 export const LazyHelp = lazy(() => import('../pages/Help'));
 export const LazyLogin = lazy(() => import('../pages/Login'));

@@ -1,4 +1,4 @@
-import { AccessTime, Email, HelpOutline, SupportAgent } from '@mui/icons-material';
+import { AccessTime, EmailOutlined, HelpOutline, SupportAgent } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -26,6 +26,8 @@ const Contact = () => {
           textAlign: 'left',
           backgroundColor: 'grey.50',
           boxShadow: '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
+          border: '2px solid',
+          borderColor: 'primary.main',
         }}
       >
         <Typography
@@ -103,7 +105,7 @@ const Contact = () => {
               </Typography>
               <Stack spacing={2}>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Email sx={{ mr: 2, color: 'primary.main' }} />
+                  <EmailOutlined sx={{ mr: 2, color: 'primary.main' }} />
                   <Typography variant="body1">support@assignmentai.app</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -119,22 +121,28 @@ const Contact = () => {
               <Typography variant="h6" sx={{ mb: 1, fontWeight: 600, color: 'primary.main' }}>
                 Frequently Asked
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                <b>How quickly will I get a response?</b>
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                <b style={{ color: 'black' }}>How quickly will I get a response?</b>
                 <br />
-                We aim to respond to all inquiries within 24 hours during business days.
+                <Typography variant="body2" color="text.secondary">
+                  We aim to respond to all inquiries within 24 hours during business days.
+                </Typography>
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                <b>Can I request a feature?</b>
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                <b style={{ color: 'black' }}>Can I request a feature?</b>
                 <br />
-                Absolutely! We welcome suggestions and feedback—just use the form or email us
-                directly.
+                <Typography variant="body2" color="text.secondary">
+                  Absolutely! We welcome suggestions and feedback—just use the form or email us
+                  directly.
+                </Typography>
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                <b>Is my information safe?</b>
+              <Typography variant="body2">
+                <b style={{ color: 'black' }}>Is my information safe?</b>
                 <br />
-                Yes. We take privacy and security seriously. Your contact details and messages are
-                handled with strict confidentiality.
+                <Typography variant="body2" color="text.secondary">
+                  Yes. We take privacy and security seriously. Your contact details and messages are
+                  handled with strict confidentiality.
+                </Typography>
               </Typography>
             </Box>
           </Grid>

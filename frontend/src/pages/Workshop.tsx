@@ -39,7 +39,7 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   CartesianGrid,
@@ -51,7 +51,9 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { useTokenUsage } from '../hooks/useTokenUsage';
 import { useWorkshopStore } from '../services/WorkshopService';
+import { assignments } from '../services/api';
 
 interface FileUpload {
   id: string;
@@ -114,49 +116,67 @@ const Workshop: React.FC = () => {
   const navigate = useNavigate();
   useWorkshopStore();
   const [input, setInput] = useState('');
-  const [] = useState<FileUpload[]>([]);
-  const [] = useState<LinkSubmission[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<FileUpload[]>([]);
+  const [linkSubmissions, setLinkSubmissions] = useState<LinkSubmission[]>([]);
   const [messages, setMessages] = useState<
     Array<{ text: string; isUser: boolean; timestamp: Date }>
   >([]);
   const [activeTab, setActiveTab] = useState(0);
   const [responseTab, setResponseTab] = useState(3);
-  const [history, setHistory] = useState<HistoryItem[]>([
-    {
-      id: '1',
-      title: 'Math Problem Solving',
-      date: new Date('2024-03-15'),
-      type: 'file',
-      isPinned: true,
-    },
-    {
-      id: '2',
-      title: 'History Essay Outline',
-      date: new Date('2024-03-14'),
-      type: 'link',
-      isPinned: false,
-    },
-    {
-      id: '3',
-      title: 'Science Project Research',
-      date: new Date('2024-03-13'),
-      type: 'chat',
-      isPinned: false,
-    },
-  ]);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedLine, setSelectedLine] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [activityData, setActivityData] = useState<ActivityData[]>([]);
+  const tokenUsage = useTokenUsage();
 
-  // Sample activity data - in a real app, this would come from your backend
-  const activityData: ActivityData[] = [
-    { date: 'Mon', chats: 4, files: 2, links: 1, summarize: 3, extract: 2, rewrite: 1 },
-    { date: 'Tue', chats: 3, files: 1, links: 2, summarize: 2, extract: 1, rewrite: 2 },
-    { date: 'Wed', chats: 5, files: 3, links: 0, summarize: 4, extract: 2, rewrite: 1 },
-    { date: 'Thu', chats: 2, files: 2, links: 1, summarize: 1, extract: 2, rewrite: 1 },
-    { date: 'Fri', chats: 6, files: 1, links: 3, summarize: 5, extract: 1, rewrite: 2 },
-    { date: 'Sat', chats: 4, files: 0, links: 2, summarize: 3, extract: 0, rewrite: 1 },
-    { date: 'Sun', chats: 3, files: 2, links: 1, summarize: 2, extract: 1, rewrite: 1 },
-  ];
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const data = await assignments.getRecent(5);
+        const historyItems: HistoryItem[] = data.map(assignment => ({
+          id: assignment.id,
+          title: assignment.title,
+          date: new Date(assignment.createdAt),
+          type: 'file',
+          isPinned: false,
+        }));
+        setHistory(historyItems);
+      } catch (error) {
+        console.error('Error fetching history:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHistory();
+  }, []);
+
+  useEffect(() => {
+    const fetchActivityData = async () => {
+      try {
+        // Fetch from the mock or real API
+        const response = await fetch('/user/activity');
+        if (!response.ok) throw new Error('Failed to fetch activity data');
+        const data = await response.json();
+        setActivityData(data);
+      } catch (error) {
+        console.error('Error fetching activity data:', error);
+        // Fallback to sample data if there's an error
+        setActivityData([
+          { date: 'Mon', chats: 2, files: 1, links: 0, summarize: 0, extract: 0, rewrite: 0 },
+          { date: 'Tue', chats: 1, files: 1, links: 0, summarize: 1, extract: 0, rewrite: 0 },
+          { date: 'Wed', chats: 0, files: 1, links: 0, summarize: 0, extract: 1, rewrite: 0 },
+          { date: 'Thu', chats: 0, files: 1, links: 1, summarize: 0, extract: 0, rewrite: 1 },
+          { date: 'Fri', chats: 0, files: 1, links: 0, summarize: 0, extract: 0, rewrite: 1 },
+          { date: 'Sat', chats: 0, files: 0, links: 0, summarize: 0, extract: 0, rewrite: 0 },
+          { date: 'Sun', chats: 0, files: 0, links: 0, summarize: 0, extract: 0, rewrite: 0 },
+        ]);
+      }
+    };
+
+    fetchActivityData();
+  }, []);
 
   // Custom styles
   const cardStyle = {
@@ -195,8 +215,19 @@ const Workshop: React.FC = () => {
     }
   };
 
-  const handleFileUpload = () => {
-    // Handle file upload logic here
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    const newFiles: FileUpload[] = Array.from(files).map(file => ({
+      id: Math.random().toString(36).substr(2, 9),
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      progress: 0,
+    }));
+
+    setUploadedFiles(prev => [...prev, ...newFiles]);
   };
 
   const renderInputSection = () => {
@@ -419,10 +450,7 @@ const Workshop: React.FC = () => {
               <Typography variant="h6" gutterBottom>
                 Weekly Activity
               </Typography>
-              <Tooltip
-                title="You can select an item from the legend to highlight a graph, and click the legend item again to view all graphs again."
-                arrow
-              >
+              <Tooltip title="Activity based on your assignments and interactions" arrow>
                 <InfoOutlinedIcon
                   sx={{
                     color: 'gray',
@@ -620,35 +648,23 @@ const Workshop: React.FC = () => {
                     '& .MuiTabs-indicator': {
                       backgroundColor:
                         responseTab === 0
-                          ? '#ff9800'
+                          ? '#9c27b0'
                           : responseTab === 1
-                          ? '#ffc107'
-                          : responseTab === 2
                           ? '#2196f3'
-                          : '#9c27b0',
+                          : responseTab === 2
+                          ? '#ffc107'
+                          : '#ff9800',
                     },
                   }}
                 >
                   <Tab
-                    label="Summarize"
-                    icon={<ContentCopyIcon sx={{ color: '#ff9800' }} />}
+                    label="Download"
+                    icon={<DownloadIcon sx={{ color: '#9c27b0' }} />}
                     iconPosition="start"
                     sx={{
-                      color: '#ff9800',
+                      color: '#9c27b0',
                       '&.Mui-selected': {
-                        color: '#ff9800',
-                      },
-                      minWidth: 120,
-                    }}
-                  />
-                  <Tab
-                    label="Extract"
-                    icon={<FormatListBulletedIcon sx={{ color: '#ffc107' }} />}
-                    iconPosition="start"
-                    sx={{
-                      color: '#ffc107',
-                      '&.Mui-selected': {
-                        color: '#ffc107',
+                        color: '#9c27b0',
                       },
                       minWidth: 120,
                     }}
@@ -666,13 +682,25 @@ const Workshop: React.FC = () => {
                     }}
                   />
                   <Tab
-                    label="Download"
-                    icon={<DownloadIcon sx={{ color: '#9c27b0' }} />}
+                    label="Extract"
+                    icon={<FormatListBulletedIcon sx={{ color: '#ffc107' }} />}
                     iconPosition="start"
                     sx={{
-                      color: '#9c27b0',
+                      color: '#ffc107',
                       '&.Mui-selected': {
-                        color: '#9c27b0',
+                        color: '#ffc107',
+                      },
+                      minWidth: 120,
+                    }}
+                  />
+                  <Tab
+                    label="Summarize"
+                    icon={<ContentCopyIcon sx={{ color: '#ff9800' }} />}
+                    iconPosition="start"
+                    sx={{
+                      color: '#ff9800',
+                      '&.Mui-selected': {
+                        color: '#ff9800',
                       },
                       minWidth: 120,
                     }}
@@ -814,7 +842,7 @@ const Workshop: React.FC = () => {
               <Box sx={{ position: 'relative', display: 'inline-flex' }}>
                 <CircularProgress
                   variant="determinate"
-                  value={75}
+                  value={tokenUsage.percentUsed}
                   size={120}
                   thickness={4}
                   sx={{ color: 'red' }}
@@ -832,13 +860,14 @@ const Workshop: React.FC = () => {
                   }}
                 >
                   <Typography variant="h4" component="div" color="text.secondary">
-                    75%
+                    {tokenUsage.percentUsed}%
                   </Typography>
                 </Box>
               </Box>
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="body2" color="text.secondary">
-                  Tokens Used: 1,500 / 2,000
+                  Tokens Used: {tokenUsage.used.toLocaleString()} /{' '}
+                  {tokenUsage.total.toLocaleString()}
                 </Typography>
               </Box>
               <Button
