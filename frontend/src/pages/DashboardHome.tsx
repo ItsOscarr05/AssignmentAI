@@ -9,7 +9,6 @@ import {
 import {
   Box,
   Button,
-  CircularProgress,
   Grid,
   List,
   ListItem,
@@ -20,57 +19,199 @@ import {
   TableBody,
   TableCell,
   TableHead,
+  TablePagination,
   TableRow,
   Typography,
 } from '@mui/material';
-import React, { Suspense, useEffect, useState } from 'react';
+import React, { Suspense, useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { assignments } from '../services/api';
+import DashboardPieChart from './DashboardPieChart';
 
-const DashboardPieChart = React.lazy(() => import('./DashboardPieChart'));
-
-interface Assignment {
-  id: string;
-  title: string;
-  status: string;
-  createdAt: string;
+// Helper for random selection
+function randomFrom<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
 }
+
+// Core and mapped subjects for variety
+const allSubjects = [
+  'Math',
+  'Fitness',
+  'Literature',
+  'Business',
+  'Science',
+  'Career & Technical Ed',
+  'Language',
+  'History',
+  'Technology',
+  'Arts',
+  'Algebra',
+  'Geometry',
+  'Biology',
+  'Chemistry',
+  'Physics',
+  'Economics',
+  'Accounting',
+  'Spanish',
+  'French',
+  'Music',
+  'Art',
+  'PE',
+  'Health',
+  'Programming',
+  'Robotics',
+  'World History',
+  'Civics',
+  'Drama',
+  'Band',
+  'Dance',
+  'Photography',
+  'Engineering',
+  'Culinary',
+  'Marketing',
+  'Finance',
+  'IT',
+  'Visual Arts',
+  'Government',
+  'Geography',
+  'Astronomy',
+  'Earth Science',
+  'Writing',
+  'Composition',
+  'Reading',
+  'Entrepreneurship',
+  'Manufacturing',
+  'Computer Science',
+  'Choir',
+  'Painting',
+  'Drawing',
+  'Mandarin',
+  'Latin',
+  'Japanese',
+  'German',
+  'Italian',
+];
+const statuses = ['Completed', 'In Progress', 'Not Started'];
+
+// Generate 20 more mock assignments
+const extraAssignments = Array.from({ length: 20 }, (_, i) => {
+  const subject = randomFrom(allSubjects);
+  const status = randomFrom(statuses);
+  const daysAgo = Math.floor(Math.random() * 60) + 1;
+  // Realistic word count: 400-2000, tokens: 200-2000
+  const wordCount = Math.floor(Math.random() * 1601) + 400;
+  const tokensUsed = Math.floor(Math.random() * 1801) + 200;
+  return {
+    id: `mock-extra-${i}`,
+    title: `${subject} Assignment #${i + 1}`,
+    status,
+    createdAt: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000).toISOString(),
+    wordCount,
+    tokensUsed,
+  };
+});
+
+// Existing assignments (for demo)
+const baseAssignments = [
+  {
+    id: '1',
+    title: 'Math Homework',
+    status: 'Completed',
+    createdAt: '2024-03-15T10:00:00Z',
+    wordCount: 1200,
+    tokensUsed: 800,
+  },
+  {
+    id: '2',
+    title: 'Literature Essay',
+    status: 'In Progress',
+    createdAt: '2024-03-16T12:00:00Z',
+    wordCount: 1800,
+    tokensUsed: 1200,
+  },
+  {
+    id: '3',
+    title: 'Science Project',
+    status: 'Not Started',
+    createdAt: '2024-03-17T09:00:00Z',
+    wordCount: 950,
+    tokensUsed: 600,
+  },
+  {
+    id: '4',
+    title: 'History Paper',
+    status: 'Completed',
+    createdAt: '2024-03-18T14:00:00Z',
+    wordCount: 1400,
+    tokensUsed: 900,
+  },
+  {
+    id: '5',
+    title: 'Language Presentation',
+    status: 'Completed',
+    createdAt: '2024-03-19T11:00:00Z',
+    wordCount: 700,
+    tokensUsed: 400,
+  },
+  {
+    id: '6',
+    title: 'Tech Lab',
+    status: 'In Progress',
+    createdAt: '2024-03-20T13:00:00Z',
+    wordCount: 1100,
+    tokensUsed: 700,
+  },
+  {
+    id: '7',
+    title: 'Business Plan',
+    status: 'Completed',
+    createdAt: '2024-03-21T15:00:00Z',
+    wordCount: 1600,
+    tokensUsed: 1000,
+  },
+  {
+    id: '8',
+    title: 'Art Portfolio',
+    status: 'Not Started',
+    createdAt: '2024-03-22T16:00:00Z',
+    wordCount: 800,
+    tokensUsed: 500,
+  },
+  {
+    id: '9',
+    title: 'Fitness Report',
+    status: 'Completed',
+    createdAt: '2024-03-23T08:00:00Z',
+    wordCount: 600,
+    tokensUsed: 350,
+  },
+  {
+    id: '10',
+    title: 'Career Project',
+    status: 'In Progress',
+    createdAt: '2024-03-24T17:00:00Z',
+    wordCount: 1300,
+    tokensUsed: 850,
+  },
+];
+
+// Combine base and extra assignments for a seasoned user
+export const recentAssignments = [...baseAssignments, ...extraAssignments];
+
+// Calculate AI Activity & Insights stats from mock data
+const assignmentsGenerated = recentAssignments.length;
+const wordCountProcessed = recentAssignments.reduce((sum, a) => sum + (a.wordCount || 0), 0);
+const aiTimeSaved = (assignmentsGenerated * 0.12).toFixed(1); // still estimate 0.12 hours per assignment
+const tokenUsage = recentAssignments.reduce((sum, a) => sum + (a.tokensUsed || 0), 0);
 
 const DashboardHome: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [recentAssignments, setRecentAssignments] = useState<Assignment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [] = useState(false);
+  const [error] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'in progress' | 'completed'>('all');
-
-  useEffect(() => {
-    const fetchRecentAssignments = async () => {
-      try {
-        setLoading(true);
-        const data = await assignments.getRecent();
-        console.log('API Response:', data); // Debug log
-        // Ensure data is an array and has createdAt
-        const assignmentsArray = Array.isArray(data)
-          ? data.map((a: any) => ({
-              ...a,
-              createdAt: a.createdAt || a.dueDate || new Date().toISOString(),
-            }))
-          : [];
-        setRecentAssignments(assignmentsArray);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching assignments:', err);
-        setError('Failed to fetch recent assignments');
-        setRecentAssignments([]); // Set empty array on error
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRecentAssignments();
-  }, []);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
 
   const stats = [
     {
@@ -97,31 +238,61 @@ const DashboardHome: React.FC = () => {
     {
       title: 'Math Homework',
       dueDate: new Date('2024-03-15'),
-      subject: 'Mathematics',
+      subject: 'Math',
+    },
+    {
+      title: 'Literature Essay',
+      dueDate: new Date('2024-03-16'),
+      subject: 'Literature',
     },
     {
       title: 'Science Project',
-      dueDate: new Date('2024-03-20'),
+      dueDate: new Date('2024-03-17'),
       subject: 'Science',
     },
     {
-      title: 'History Essay',
-      dueDate: new Date('2024-03-10'),
+      title: 'History Paper',
+      dueDate: new Date('2024-03-18'),
       subject: 'History',
     },
     {
-      title: 'English Presentation',
+      title: 'Language Presentation',
+      dueDate: new Date('2024-03-19'),
+      subject: 'Language',
+    },
+    {
+      title: 'Tech Lab',
+      dueDate: new Date('2024-03-20'),
+      subject: 'Technology',
+    },
+    {
+      title: 'Business Plan',
+      dueDate: new Date('2024-03-21'),
+      subject: 'Business',
+    },
+    {
+      title: 'Art Portfolio',
       dueDate: new Date('2024-03-22'),
-      subject: 'English',
+      subject: 'Arts',
+    },
+    {
+      title: 'Fitness Report',
+      dueDate: new Date('2024-03-23'),
+      subject: 'Fitness',
+    },
+    {
+      title: 'Career Project',
+      dueDate: new Date('2024-03-24'),
+      subject: 'Career & Technical Ed',
     },
   ];
 
-  // Mock data for activity & insights
+  // Use calculated stats for activity & insights
   const mockActivity = {
-    assignmentsGenerated: 5,
-    wordCountProcessed: 18400,
-    aiTimeSaved: 2.8, // in hours
-    tokenUsage: 13589, // mock tokens used
+    assignmentsGenerated,
+    wordCountProcessed,
+    aiTimeSaved,
+    tokenUsage,
   };
 
   // Gather all subjects from recentAssignments and upcomingDeadlines
@@ -142,34 +313,168 @@ const DashboardHome: React.FC = () => {
       subjectCounts[a.subject] = 1;
     }
   });
-  const subjectColors = [
-    '#1976D2', // Math
-    '#388E3C', // Science
-    '#FBC02D', // History
-    '#8E24AA', // English
-    '#D32F2F', // Other
-  ];
-  const pieChartData = Object.entries(subjectCounts).map(([subject, value], idx) => ({
-    name: subject,
-    value,
-    color: subjectColors[idx % subjectColors.length],
-  }));
 
-  // Filter assignments based on selected filter
-  const filteredAssignments = recentAssignments.filter(assignment => {
+  // Core subjects and their canonical names
+  const coreSubjects = [
+    'Math',
+    'Fitness',
+    'Literature',
+    'Business',
+    'Science',
+    'Career & Technical Ed',
+    'Language',
+    'History',
+    'Technology',
+    'Arts',
+  ];
+
+  // Map any subject to its core subject
+  const mapToCoreSubject = (subject: string): string => {
+    const s = subject.toLowerCase();
+    if (['math', 'mathematics', 'algebra', 'geometry', 'calculus', 'statistics'].includes(s))
+      return 'Math';
+    if (['fitness', 'health', 'pe', 'health / pe', 'physical education', 'wellness'].includes(s))
+      return 'Fitness';
+    if (['literature', 'english', 'writing', 'composition', 'reading'].includes(s))
+      return 'Literature';
+    if (
+      ['business', 'economics', 'accounting', 'finance', 'entrepreneurship', 'marketing'].includes(
+        s
+      )
+    )
+      return 'Business';
+    if (
+      [
+        'science',
+        'biology',
+        'chemistry',
+        'physics',
+        'earth science',
+        'astronomy',
+        'environmental science',
+      ].includes(s)
+    )
+      return 'Science';
+    if (
+      [
+        'career & technical ed',
+        'cte',
+        'vocational',
+        'engineering',
+        'manufacturing',
+        'culinary',
+      ].includes(s)
+    )
+      return 'Career & Technical Ed';
+    if (
+      [
+        'language',
+        'foreign language',
+        'spanish',
+        'french',
+        'german',
+        'latin',
+        'mandarin',
+        'japanese',
+        'italian',
+      ].includes(s)
+    )
+      return 'Language';
+    if (
+      [
+        'history',
+        'social studies',
+        'civics',
+        'government',
+        'geography',
+        'politics',
+        'world history',
+        'us history',
+      ].includes(s)
+    )
+      return 'History';
+    if (
+      [
+        'technology',
+        'computer science',
+        'computers',
+        'coding',
+        'programming',
+        'it',
+        'information technology',
+        'robotics',
+      ].includes(s)
+    )
+      return 'Technology';
+    if (
+      [
+        'arts',
+        'art',
+        'music',
+        'theater',
+        'drama',
+        'visual arts',
+        'painting',
+        'drawing',
+        'choir',
+        'band',
+        'dance',
+        'photography',
+      ].includes(s)
+    )
+      return 'Arts';
+    // Default: try to match by partial string
+    for (const core of coreSubjects) {
+      if (s.includes(core.toLowerCase())) return core;
+    }
+    return 'Other';
+  };
+
+  // Aggregate subject counts into core categories
+  const coreSubjectCounts: Record<string, number> = {};
+  Object.entries(subjectCounts).forEach(([subject, count]) => {
+    const core = mapToCoreSubject(subject);
+    if (!coreSubjects.includes(core)) return; // skip 'Other'
+    coreSubjectCounts[core] = (coreSubjectCounts[core] || 0) + count;
+  });
+
+  // Rainbow order for pie chart (counterclockwise, starting with red)
+  const rainbowOrder = [
+    'Math',
+    'Fitness',
+    'Literature',
+    'Business',
+    'Science',
+    'Career & Technical Ed',
+    'Language',
+    'History',
+    'Technology',
+    'Arts',
+  ];
+
+  const pieChartData = rainbowOrder
+    .filter(core => coreSubjectCounts[core])
+    .map(core => ({ name: core, value: coreSubjectCounts[core] }));
+
+  // Sort assignments newest to oldest
+  const sortedAssignments = [...recentAssignments].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+  const filteredAssignments = sortedAssignments.filter(assignment => {
     if (filter === 'all') return true;
     if (filter === 'in progress') return assignment.status.toLowerCase() === 'in progress';
     if (filter === 'completed') return assignment.status.toLowerCase() === 'completed';
     return true;
   });
 
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-        <CircularProgress />
-      </Box>
-    );
-  }
+  const handleChangePage = (_event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
 
   if (error) {
     return (
@@ -216,7 +521,11 @@ const DashboardHome: React.FC = () => {
               >
                 Upload Content
               </Button>
-              <Button variant="outlined" color="secondary">
+              <Button
+                variant="outlined"
+                color="secondary"
+                onClick={() => navigate('/dashboard/workshop?summarize=1')}
+              >
                 Ask AI About an Assignment
               </Button>
             </Stack>
@@ -303,51 +612,61 @@ const DashboardHome: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredAssignments.map(assignment => (
-                  <TableRow key={assignment.id}>
-                    <TableCell>{assignment.title}</TableCell>
-                    <TableCell>
-                      <span
-                        style={{
-                          color:
-                            assignment.status === 'Completed'
-                              ? '#388E3C'
-                              : assignment.status === 'In Progress'
-                              ? '#D32F2F'
-                              : assignment.status === 'Not Started'
-                              ? '#FFA000'
-                              : assignment.status === 'Draft Generated'
-                              ? '#1976D2'
-                              : '#8E24AA',
-                          fontWeight: 600,
-                        }}
-                      >
-                        {assignment.status}
-                      </span>
-                    </TableCell>
-                    <TableCell>{new Date(assignment.createdAt).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      <Button size="small" sx={{ color: '#1976D2' }}>
-                        📝 View
-                      </Button>
-                      {assignment.status === 'Completed' && (
-                        <Button size="small" sx={{ color: '#8E24AA' }}>
-                          🔄 Regenerate
+                {filteredAssignments
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  .map(assignment => (
+                    <TableRow key={assignment.id}>
+                      <TableCell>{assignment.title}</TableCell>
+                      <TableCell>
+                        <span
+                          style={{
+                            color:
+                              assignment.status === 'Completed'
+                                ? '#388E3C'
+                                : assignment.status === 'In Progress'
+                                ? '#D32F2F'
+                                : assignment.status === 'Not Started'
+                                ? '#FFA000'
+                                : assignment.status === 'Draft Generated'
+                                ? '#1976D2'
+                                : '#8E24AA',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {assignment.status}
+                        </span>
+                      </TableCell>
+                      <TableCell>{new Date(assignment.createdAt).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <Button size="small" sx={{ color: '#1976D2' }}>
+                          📝 View
                         </Button>
-                      )}
-                      {assignment.status === 'In Progress' && (
-                        <Button size="small" sx={{ color: '#388E3C' }}>
-                          ⏳ Resume
+                        {assignment.status === 'Completed' && (
+                          <Button size="small" sx={{ color: '#8E24AA' }}>
+                            🔄 Regenerate
+                          </Button>
+                        )}
+                        {assignment.status === 'In Progress' && (
+                          <Button size="small" sx={{ color: '#388E3C' }}>
+                            ⏳ Resume
+                          </Button>
+                        )}
+                        <Button size="small" sx={{ color: '#D32F2F' }}>
+                          🗑️ Delete
                         </Button>
-                      )}
-                      <Button size="small" sx={{ color: '#D32F2F' }}>
-                        🗑️ Delete
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                    </TableRow>
+                  ))}
               </TableBody>
             </Table>
+            <TablePagination
+              rowsPerPageOptions={[5, 10, 25]}
+              count={filteredAssignments.length}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={handleChangePage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+            />
           </Paper>
         </Grid>
         <Grid item xs={12} md={4}>

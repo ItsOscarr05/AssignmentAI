@@ -1,9 +1,8 @@
 import {
-  Add as AddIcon,
-  CheckCircle as CheckCircleIcon,
+  AutorenewOutlined as AutorenewIcon,
+  CheckCircleOutline as CheckCircleIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
-  ExpandMore as ExpandMoreIcon,
   HourglassEmpty as HourglassIcon,
   MoreVert as MoreVertIcon,
   Refresh as RefreshIcon,
@@ -11,11 +10,7 @@ import {
   Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
   Box,
-  Button,
   Card,
   CardContent,
   CircularProgress,
@@ -39,9 +34,13 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import React, { useEffect, useState } from 'react';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import dayjs, { Dayjs } from 'dayjs';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { assignments } from '../services/api';
+import { recentAssignments } from './DashboardHome';
 
 interface Assignment {
   id: string;
@@ -67,30 +66,18 @@ const Assignments: React.FC = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedAssignment, setSelectedAssignment] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [assignmentsList, setAssignmentsList] = useState<Assignment[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchAssignments = async () => {
-      try {
-        const data = await assignments.getRecent(50); // Get more assignments for the full list
-        setAssignmentsList(
-          data.map((a: any) => ({
-            ...a,
-            description: a.description || '',
-            createdAt: a.createdAt || a.dueDate || new Date().toISOString(),
-            attachments: a.attachments || [],
-          }))
-        );
-      } catch (error) {
-        console.error('Error fetching assignments:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAssignments();
-  }, []);
+  const [filterName, setFilterName] = useState('');
+  const [filterSubject, setFilterSubject] = useState('all');
+  const [filterDate, setFilterDate] = useState<Dayjs | null>(null);
+  const [assignmentsList] = useState<Assignment[]>(
+    recentAssignments.map((a: any) => ({
+      ...a,
+      subject: a.subject || (a.title ? a.title.split(' ')[0] : 'Unknown'),
+      description: a.description || '',
+      attachments: a.attachments || [],
+    }))
+  );
+  const [loading] = useState(false);
 
   // Custom styles
   const cardStyle = {
@@ -137,34 +124,103 @@ const Assignments: React.FC = () => {
         return <CheckCircleIcon sx={{ color: 'success.main' }} />;
       case 'Not Started':
         return <HourglassIcon sx={{ color: 'warning.main' }} />;
+      case 'In Progress':
+        return <AutorenewIcon sx={{ color: 'info.main' }} />;
       default:
         return null;
     }
   };
 
-  const getSubjectColor = (subject: string) => {
-    switch (subject.toLowerCase()) {
-      case 'mathematics':
-      case 'math':
-        return 'red';
-      case 'science':
-        return 'green';
-      case 'history':
-        return 'blue';
-      case 'english':
-      case 'literature':
-        return '#FFA500'; // orange-yellow
-      default:
-        return 'inherit';
-    }
+  // Subject to color mapping (same as DashboardPieChart)
+  const subjectColorMap: Record<string, string> = {
+    Math: '#D32F2F',
+    Mathematics: '#D32F2F',
+    English: '#FFD600',
+    Literature: '#FFD600',
+    Science: '#388E3C',
+    Biology: '#388E3C',
+    Chemistry: '#388E3C',
+    Physics: '#388E3C',
+    History: '#1976D2',
+    'Social Studies': '#1976D2',
+    Language: '#4FC3F7',
+    'Foreign Language': '#4FC3F7',
+    Spanish: '#4FC3F7',
+    French: '#4FC3F7',
+    Technology: '#B39DDB',
+    Tech: '#B39DDB',
+    'Computer Science': '#B39DDB',
+    IT: '#B39DDB',
+    Business: '#81C784',
+    Economics: '#81C784',
+    Accounting: '#81C784',
+    Arts: '#8E24AA',
+    Art: '#8E24AA',
+    Music: '#8E24AA',
+    Fitness: '#FFA000',
+    Health: '#FFA000',
+    PE: '#FFA000',
+    'Health / PE': '#FFA000',
+    'Career & Technical Ed': '#16A3A6',
+    Career: '#16A3A6',
+    CTE: '#16A3A6',
+    Engineering: '#009688',
+    Culinary: '#009688',
+    Marketing: '#81C784',
+    Finance: '#81C784',
+    Drama: '#8E24AA',
+    Band: '#8E24AA',
+    Dance: '#8E24AA',
+    Photography: '#8E24AA',
+    Choir: '#8E24AA',
+    Painting: '#8E24AA',
+    Drawing: '#8E24AA',
+    Mandarin: '#4FC3F7',
+    Latin: '#4FC3F7',
+    Japanese: '#4FC3F7',
+    German: '#4FC3F7',
+    Italian: '#4FC3F7',
+    Algebra: '#D32F2F',
+    Geometry: '#D32F2F',
+    Civics: '#1976D2',
+    Government: '#1976D2',
+    Geography: '#1976D2',
+    Astronomy: '#388E3C',
+    Earth: '#388E3C',
+    Writing: '#FFD600',
+    Composition: '#FFD600',
+    Reading: '#FFD600',
+    Robotics: '#B39DDB',
+    Visual: '#8E24AA',
+    World: '#1976D2',
   };
 
+  const getSubjectColor = (subject: string | undefined) => {
+    if (!subject || typeof subject !== 'string') return 'inherit';
+    // Try direct match
+    if (subjectColorMap[subject]) return subjectColorMap[subject];
+    // Try case-insensitive match
+    const found = Object.keys(subjectColorMap).find(
+      key => key.toLowerCase() === subject.toLowerCase()
+    );
+    if (found) return subjectColorMap[found];
+    // Try partial match
+    for (const key of Object.keys(subjectColorMap)) {
+      if (subject.toLowerCase().includes(key.toLowerCase())) return subjectColorMap[key];
+    }
+    return 'inherit';
+  };
+
+  // Get unique subjects for dropdown
+  const uniqueSubjects = Array.from(new Set(assignmentsList.map(a => a.subject))).sort();
+
   const filteredAssignments = assignmentsList.filter(assignment => {
-    const matchesSearch =
-      assignment.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      assignment.subject.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || assignment.status === filterStatus;
-    return matchesSearch && matchesStatus;
+    const matchesName =
+      filterName.trim() === '' || assignment.title.toLowerCase().includes(filterName.toLowerCase());
+    const matchesSubject = filterSubject === 'all' || assignment.subject === filterSubject;
+    const matchesDate = !filterDate || dayjs(assignment.createdAt).isSame(filterDate, 'day');
+    return matchesStatus && matchesName && matchesSubject && matchesDate;
   });
 
   const getAssignmentStats = () => {
@@ -196,279 +252,209 @@ const Assignments: React.FC = () => {
   }
 
   return (
-    <Box sx={{ p: 3, backgroundColor: '#fafafa', minHeight: '100vh' }}>
-      {/* Header Section */}
-      <Card sx={{ ...cardStyle, mb: 4 }}>
-        <CardContent>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Box>
-              <Typography
-                variant="h4"
-                sx={{
-                  color: theme.palette.primary.main,
-                  fontWeight: 400,
-                  borderBottom: 'none',
-                  pb: 0,
-                  display: 'inline-block',
-                }}
-              >
-                Assignments
-              </Typography>
-              <Typography variant="subtitle1" color="text.secondary" sx={{ mt: 1 }}>
-                Organize and manage your saved AI-generated work.
-              </Typography>
-            </Box>
-            <Box sx={{ textAlign: 'right' }}>
-              <Typography variant="body2" color="text.secondary">
-                Total Assignments: {stats.total}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Completed Assignments: {stats.completed}
-              </Typography>
-            </Box>
-          </Box>
-        </CardContent>
-      </Card>
-
-      {/* Cards Section */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        {/* Recent Activity Card */}
-        <Grid item xs={12} md={4}>
-          <Card sx={cardStyle}>
-            <CardContent>
-              <Typography variant="h6" sx={{ mb: 2, color: 'black' }}>
-                Recent Activity
-              </Typography>
-              {assignmentsList.slice(0, 3).map(assignment => (
-                <Box
-                  key={assignment.id}
-                  sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}
-                >
-                  {getStatusIcon(assignment.status)}
-                  <Box>
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      {assignment.title}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {assignment.subject}
-                    </Typography>
-                  </Box>
-                </Box>
-              ))}
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Quick Stats Card */}
-        <Grid item xs={12} md={4}>
-          <Card sx={cardStyle}>
-            <CardContent>
-              <Typography variant="h6" sx={{ mb: 2, color: 'black' }}>
-                Quick Stats
-              </Typography>
-              <Accordion sx={{ mb: 1, boxShadow: 'none', border: '1px solid rgba(0, 0, 0, 0.12)' }}>
-                <AccordionSummary
-                  expandIcon={<ExpandMoreIcon />}
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <Box sx={{ p: 3, backgroundColor: '#fafafa', minHeight: '100vh' }}>
+        {/* Header Section */}
+        <Card sx={{ ...cardStyle, mb: 4 }}>
+          <CardContent>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box>
+                <Typography
+                  variant="h4"
                   sx={{
-                    '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
-                    minHeight: '48px',
+                    color: theme.palette.primary.main,
+                    fontWeight: 400,
+                    borderBottom: 'none',
+                    pb: 0,
+                    display: 'inline-block',
                   }}
                 >
-                  <Typography variant="subtitle2">By Subject</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                  {Object.entries(stats.subjectDistribution)
-                    .sort(([a], [b]) => {
-                      // Custom sort order: Mathematics, English, Science, then others alphabetically
-                      if (a.toLowerCase() === 'mathematics') return -1;
-                      if (b.toLowerCase() === 'mathematics') return 1;
-                      if (a.toLowerCase() === 'english') return -1;
-                      if (b.toLowerCase() === 'english') return 1;
-                      if (a.toLowerCase() === 'science') return -1;
-                      if (b.toLowerCase() === 'science') return 1;
-                      return a.localeCompare(b);
-                    })
-                    .map(([subject, count]) => (
-                      <Box
-                        key={subject}
-                        sx={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          mb: 0.5,
-                          p: 0.5,
-                          borderRadius: 1,
-                          '&:hover': {
-                            backgroundColor: 'rgba(0, 0, 0, 0.02)',
-                          },
-                        }}
-                      >
-                        <Typography variant="body2" sx={{ color: getSubjectColor(subject) }}>
-                          {subject}
-                        </Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          {count}
-                        </Typography>
-                      </Box>
-                    ))}
-                </AccordionDetails>
-              </Accordion>
-            </CardContent>
-          </Card>
-        </Grid>
+                  Assignments
+                </Typography>
+                <Typography variant="subtitle1" color="text.secondary" sx={{ mt: 1 }}>
+                  Organize and manage your saved AI-generated work.
+                </Typography>
+              </Box>
+              <Box sx={{ textAlign: 'right' }}>
+                <Typography variant="body2" color="text.secondary">
+                  Total Assignments: {stats.total}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Completed Assignments: {stats.completed}
+                </Typography>
+              </Box>
+            </Box>
+          </CardContent>
+        </Card>
 
-        {/* Workshop Integration Card */}
-        <Grid item xs={12} md={4}>
-          <Card sx={cardStyle}>
-            <CardContent>
-              <Typography variant="h6" sx={{ mb: 2, color: 'black' }}>
-                Workshop
-              </Typography>
-              <Typography variant="body2" sx={{ mb: 2 }}>
-                Create and manage your assignments with AI assistance in the Workshop.
-              </Typography>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => navigate('/dashboard/workshop')}
-                fullWidth
+        {/* Filters and Search */}
+        <Grid container spacing={2} sx={{ mb: 3, alignItems: 'center' }}>
+          <Grid item xs={12} md={3}>
+            <FormControl fullWidth>
+              <InputLabel sx={{ color: 'red' }}>Status</InputLabel>
+              <Select
+                value={filterStatus}
+                label="Status"
+                onChange={e => setFilterStatus(e.target.value)}
                 sx={{
-                  backgroundColor: theme.palette.primary.main,
-                  '&:hover': {
-                    backgroundColor: theme.palette.primary.dark,
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'red',
+                    borderWidth: '2px',
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'red',
+                    borderWidth: '2px',
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'red',
+                    borderWidth: '2px',
                   },
                 }}
               >
-                Go to Workshop
-              </Button>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Filters and Search */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={6}>
-          <TextField
-            placeholder="Search assignments..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            sx={{ ...searchBarStyle, width: '100%', mb: 2 }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }}
-          />
-        </Grid>
-        <Grid item xs={12} md={3}>
-          <FormControl fullWidth>
-            <InputLabel sx={{ color: 'red' }}>Status</InputLabel>
-            <Select
-              value={filterStatus}
-              label="Status"
-              onChange={e => setFilterStatus(e.target.value)}
-              sx={{
-                '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'red',
-                  borderWidth: '2px',
-                },
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'red',
-                  borderWidth: '2px',
-                },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'red',
-                  borderWidth: '2px',
+                <MenuItem value="all">All</MenuItem>
+                <MenuItem value="Not Started">Not Started</MenuItem>
+                <MenuItem value="Completed">Completed</MenuItem>
+                <MenuItem value="In Progress">In Progress</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <TextField
+              placeholder="Filter by name..."
+              value={filterName}
+              onChange={e => setFilterName(e.target.value)}
+              sx={{ ...searchBarStyle, width: '100%' }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <FormControl fullWidth>
+              <InputLabel sx={{ color: 'red' }}>Subject</InputLabel>
+              <Select
+                value={filterSubject}
+                label="Subject"
+                onChange={e => setFilterSubject(e.target.value)}
+                sx={{
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'red',
+                    borderWidth: '2px',
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'red',
+                    borderWidth: '2px',
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'red',
+                    borderWidth: '2px',
+                  },
+                }}
+              >
+                <MenuItem value="all">All</MenuItem>
+                {uniqueSubjects.map(subject => (
+                  <MenuItem key={subject} value={subject}>
+                    {subject}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <DatePicker
+              label="Filter by date"
+              value={filterDate}
+              onChange={setFilterDate}
+              slotProps={{
+                textField: {
+                  fullWidth: true,
+                  sx: { ...searchBarStyle },
                 },
               }}
-            >
-              <MenuItem value="all">All</MenuItem>
-              <MenuItem value="Not Started">Not Started</MenuItem>
-              <MenuItem value="Completed">Completed</MenuItem>
-            </Select>
-          </FormControl>
+            />
+          </Grid>
         </Grid>
-      </Grid>
 
-      {/* Assignments Table */}
-      <TableContainer component={Paper} sx={tableStyle}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Title</TableCell>
-              <TableCell>Subject</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Date Created</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredAssignments
-              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map(assignment => (
-                <TableRow key={assignment.id}>
-                  <TableCell>
-                    <Box>
-                      <Typography variant="body1">{assignment.title}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {assignment.description}
+        {/* Assignments Table */}
+        <TableContainer component={Paper} sx={tableStyle}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Title</TableCell>
+                <TableCell>Subject</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Date Created</TableCell>
+                <TableCell>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filteredAssignments
+                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                .map(assignment => (
+                  <TableRow key={assignment.id}>
+                    <TableCell>
+                      <Box>
+                        <Typography variant="body1">{assignment.title}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {assignment.description}
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Typography sx={{ color: getSubjectColor(assignment.subject) }}>
+                        {assignment.subject}
                       </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Typography sx={{ color: getSubjectColor(assignment.subject) }}>
-                      {assignment.subject}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {getStatusIcon(assignment.status)}
-                      {assignment.status}
-                    </Box>
-                  </TableCell>
-                  <TableCell>{new Date(assignment.createdAt).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <IconButton onClick={e => handleMenuClick(e, assignment.id)} size="small">
-                      <MoreVertIcon />
-                    </IconButton>
-                    <Menu
-                      anchorEl={anchorEl}
-                      open={Boolean(anchorEl) && selectedAssignment === assignment.id}
-                      onClose={handleMenuClose}
-                    >
-                      <MenuItem onClick={handleMenuClose}>
-                        <VisibilityIcon sx={{ mr: 1 }} /> View Assignment
-                      </MenuItem>
-                      <MenuItem onClick={handleMenuClose}>
-                        <RefreshIcon sx={{ mr: 1 }} /> Reopen in Workshop
-                      </MenuItem>
-                      <MenuItem onClick={handleMenuClose}>
-                        <EditIcon sx={{ mr: 1 }} /> Edit Title/Metadata
-                      </MenuItem>
-                      <MenuItem onClick={handleMenuClose} sx={{ color: 'error.main' }}>
-                        <DeleteIcon sx={{ mr: 1 }} /> Delete
-                      </MenuItem>
-                    </Menu>
-                  </TableCell>
-                </TableRow>
-              ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      {/* Pagination */}
-      <TablePagination
-        rowsPerPageOptions={[5, 10, 25]}
-        component="div"
-        count={filteredAssignments.length}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-      />
-    </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {getStatusIcon(assignment.status)}
+                        {assignment.status}
+                      </Box>
+                    </TableCell>
+                    <TableCell>{new Date(assignment.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <IconButton onClick={e => handleMenuClick(e, assignment.id)} size="small">
+                        <MoreVertIcon />
+                      </IconButton>
+                      <Menu
+                        anchorEl={anchorEl}
+                        open={Boolean(anchorEl) && selectedAssignment === assignment.id}
+                        onClose={handleMenuClose}
+                      >
+                        <MenuItem onClick={handleMenuClose}>
+                          <VisibilityIcon sx={{ mr: 1 }} /> View Assignment
+                        </MenuItem>
+                        <MenuItem onClick={handleMenuClose}>
+                          <RefreshIcon sx={{ mr: 1 }} /> Reopen in Workshop
+                        </MenuItem>
+                        <MenuItem onClick={handleMenuClose}>
+                          <EditIcon sx={{ mr: 1 }} /> Edit Title/Metadata
+                        </MenuItem>
+                        <MenuItem onClick={handleMenuClose} sx={{ color: 'error.main' }}>
+                          <DeleteIcon sx={{ mr: 1 }} /> Delete
+                        </MenuItem>
+                      </Menu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+          <TablePagination
+            rowsPerPageOptions={[5, 10, 25]}
+            component="div"
+            count={filteredAssignments.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+          />
+        </TableContainer>
+      </Box>
+    </LocalizationProvider>
   );
 };
 

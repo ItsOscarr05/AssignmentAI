@@ -51,8 +51,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { useTokenUsage } from '../hooks/useTokenUsage';
 import { api } from '../services/api';
+import { recentAssignments } from './DashboardHome';
 
 interface Subscription {
   id: string;
@@ -82,46 +82,66 @@ const AITokens: React.FC = () => {
     }
   };
 
-  // Recent transactions based on actual usage
+  // Calculate used tokens from tokensUsed field
+  const usedTokens = recentAssignments.reduce((sum, a) => sum + (a.tokensUsed || 500), 0);
+  const totalTokens = 30000;
+  const remainingTokens = totalTokens - usedTokens;
+  const tokenUsage = {
+    label: 'Free Plan (30,000 tokens/month)',
+    total: totalTokens,
+    used: usedTokens,
+    remaining: remainingTokens,
+    percentUsed: Math.round((usedTokens / totalTokens) * 100),
+  };
+
+  // Build accurate usage history for the graph
+  const sortedAssignments = [...recentAssignments].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  );
+  function buildUsageHistory(
+    assignments: { tokensUsed?: number; title: string }[],
+    total: number,
+    range: number
+  ) {
+    const points: { date: string; tokens: number; description: string }[] = [];
+    let runningTotal = total;
+    // Only use the last N assignments for the graph
+    const recent = assignments.slice(-range);
+    // Add initial point (before any usage)
+    points.push({ date: `Day 0`, tokens: total, description: 'Starting balance' });
+    recent.forEach((a, i) => {
+      runningTotal -= a.tokensUsed || 500;
+      points.push({
+        date: `Day ${i + 1}`,
+        tokens: runningTotal,
+        description: `Used for: ${a.title}`,
+      });
+    });
+    return points;
+  }
+  const usageData30 = buildUsageHistory(sortedAssignments, totalTokens, 30);
+  const usageData7 = usageData30.slice(-7);
+  const [range, setRange] = React.useState<'7' | '30'>('7');
+  const handleRangeChange = (_: any, newRange: '7' | '30') => {
+    if (newRange) setRange(newRange);
+  };
+  const displayedUsageData = range === '7' ? usageData7 : usageData30;
+
+  // Generate recent transactions from assignments
   const recentTransactions = [
     {
-      date: '2024-03-13',
-      description: 'Essay Analysis - English Literature',
-      tokens: -8791,
-      assignment: 'Macbeth Analysis',
-      summary: 'Analyzed themes, character development, and historical context',
-    },
-    {
-      date: '2024-03-14',
-      description: 'Math Problem Set - Algebra',
-      tokens: -1254,
-      assignment: 'Quadratic Equations',
-      summary: 'Step-by-step solutions and formula explanations for 10 problems',
-    },
-    {
-      date: '2024-03-12',
-      description: 'Science Lab Report',
-      tokens: -3544,
-      assignment: 'Chemistry Experiment',
-      summary: 'Comprehensive analysis of titration experiment data and conclusions',
-    },
-    {
-      date: '2024-03-10',
+      date: new Date().toISOString().slice(0, 10),
       description: 'Token Purchase - Free Tier',
-      tokens: 30000,
+      tokens: totalTokens,
       summary: 'Monthly free token allocation',
     },
-  ];
-
-  // Usage data showing token consumption over time
-  const usageData = [
-    { date: 'Mar 10', tokens: 30000, description: 'Free tier tokens allocated' },
-    { date: 'Mar 11', tokens: 29876, description: 'Small math problem (-124 tokens)' },
-    { date: 'Mar 12', tokens: 26456, description: 'Science lab report (-3,544 tokens)' },
-    { date: 'Mar 13', tokens: 17665, description: 'Essay analysis (-8,791 tokens)' },
-    { date: 'Mar 14', tokens: 16411, description: 'Math problem set (-1,254 tokens)' },
-    { date: 'Mar 15', tokens: 16345, description: 'Quick grammar check (-66 tokens)' },
-    { date: 'Mar 16', tokens: 16289, description: 'Small research query (-56 tokens)' },
+    ...recentAssignments.slice(-3).map(a => ({
+      date: a.createdAt.slice(0, 10),
+      description: `${a.title} - ${a.status}`,
+      tokens: -(a.tokensUsed || 500),
+      assignment: a.title,
+      summary: `AI service for assignment: ${a.title}`,
+    })),
   ];
 
   // Token usage info for free tier features
@@ -165,22 +185,12 @@ const AITokens: React.FC = () => {
   ];
 
   const [plan] = React.useState<'Free' | 'Pro'>('Free');
-  const tokenUsage = useTokenUsage();
-  const tokenPlanLabel = tokenUsage.label;
   const guideRef = React.useRef<HTMLDivElement>(null);
   const handleProgressBarClick = () => {
     if (guideRef.current) {
       guideRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   };
-
-  const [range, setRange] = React.useState<'7' | '30'>('7');
-  const handleRangeChange = (_: any, newRange: '7' | '30') => {
-    if (newRange) setRange(newRange);
-  };
-  const usageData7 = usageData.slice(-7);
-  const usageData30 = usageData;
-  const displayedUsageData = range === '7' ? usageData7 : usageData30;
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [popoverContent, setPopoverContent] = React.useState<any>(null);
@@ -444,7 +454,7 @@ const AITokens: React.FC = () => {
               Token Usage
             </Typography>
             <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>
-              {tokenPlanLabel}
+              {tokenUsage.label}
             </Typography>
             <Box sx={{ mb: 2 }}>
               <Box
@@ -546,35 +556,39 @@ const AITokens: React.FC = () => {
                 value="7"
                 sx={{
                   border: '2px solid red',
-                  color: 'red',
+                  color: range === '7' ? '#fff' : 'red',
+                  backgroundColor: range === '7' ? 'red' : 'transparent',
+                  fontWeight: 700,
                   '&.Mui-selected': {
-                    backgroundColor: 'rgba(211, 47, 47, 0.08)',
-                    color: 'red',
+                    backgroundColor: 'red',
+                    color: '#fff',
                     borderColor: 'red',
                   },
                   '&:hover': {
-                    backgroundColor: 'rgba(211, 47, 47, 0.04)',
+                    backgroundColor: range === '7' ? 'red' : 'rgba(211, 47, 47, 0.04)',
                   },
                 }}
               >
-                Last 7 Days
+                LAST 7 DAYS
               </ToggleButton>
               <ToggleButton
                 value="30"
                 sx={{
                   border: '2px solid red',
-                  color: 'red',
+                  color: range === '30' ? '#fff' : 'red',
+                  backgroundColor: range === '30' ? 'red' : 'transparent',
+                  fontWeight: 700,
                   '&.Mui-selected': {
-                    backgroundColor: 'rgba(211, 47, 47, 0.08)',
-                    color: 'red',
+                    backgroundColor: 'red',
+                    color: '#fff',
                     borderColor: 'red',
                   },
                   '&:hover': {
-                    backgroundColor: 'rgba(211, 47, 47, 0.04)',
+                    backgroundColor: range === '30' ? 'red' : 'rgba(211, 47, 47, 0.04)',
                   },
                 }}
               >
-                Last 30 Days
+                LAST 30 DAYS
               </ToggleButton>
             </ToggleButtonGroup>
             <Box sx={{ height: 300, width: '100%' }}>

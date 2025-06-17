@@ -51,9 +51,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { useTokenUsage } from '../hooks/useTokenUsage';
 import { useWorkshopStore } from '../services/WorkshopService';
-import { assignments } from '../services/api';
+import { recentAssignments } from './DashboardHome';
 
 interface FileUpload {
   id: string;
@@ -128,54 +127,44 @@ const Workshop: React.FC = () => {
   const [selectedLine, setSelectedLine] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [activityData, setActivityData] = useState<ActivityData[]>([]);
-  const tokenUsage = useTokenUsage();
+  const usedTokens = recentAssignments.reduce((sum, a) => sum + (a.tokensUsed || 500), 0);
+  const totalTokens = 30000;
+  const remainingTokens = totalTokens - usedTokens;
+  const tokenUsage = {
+    label: 'Free Plan (30,000 tokens/month)',
+    total: totalTokens,
+    used: usedTokens,
+    remaining: remainingTokens,
+    percentUsed: Math.round((usedTokens / totalTokens) * 100),
+  };
 
   useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const data = await assignments.getRecent(5);
-        const historyItems: HistoryItem[] = data.map(assignment => ({
-          id: assignment.id,
-          title: assignment.title,
-          date: new Date(assignment.createdAt),
-          type: 'file',
-          isPinned: false,
-        }));
-        setHistory(historyItems);
-      } catch (error) {
-        console.error('Error fetching history:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchHistory();
+    // Use the 5 most recent assignments from mock data for history
+    const sorted = [...recentAssignments].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    const historyItems: HistoryItem[] = sorted.slice(0, 5).map(assignment => ({
+      id: assignment.id,
+      title: assignment.title,
+      date: new Date(assignment.createdAt),
+      type: 'file',
+      isPinned: false,
+    }));
+    setHistory(historyItems);
+    setLoading(false);
   }, []);
 
   useEffect(() => {
-    const fetchActivityData = async () => {
-      try {
-        // Fetch from the mock or real API
-        const response = await fetch('/user/activity');
-        if (!response.ok) throw new Error('Failed to fetch activity data');
-        const data = await response.json();
-        setActivityData(data);
-      } catch (error) {
-        console.error('Error fetching activity data:', error);
-        // Fallback to sample data if there's an error
-        setActivityData([
-          { date: 'Mon', chats: 2, files: 1, links: 0, summarize: 0, extract: 0, rewrite: 0 },
-          { date: 'Tue', chats: 1, files: 1, links: 0, summarize: 1, extract: 0, rewrite: 0 },
-          { date: 'Wed', chats: 0, files: 1, links: 0, summarize: 0, extract: 1, rewrite: 0 },
-          { date: 'Thu', chats: 0, files: 1, links: 1, summarize: 0, extract: 0, rewrite: 1 },
-          { date: 'Fri', chats: 0, files: 1, links: 0, summarize: 0, extract: 0, rewrite: 1 },
-          { date: 'Sat', chats: 0, files: 0, links: 0, summarize: 0, extract: 0, rewrite: 0 },
-          { date: 'Sun', chats: 0, files: 0, links: 0, summarize: 0, extract: 0, rewrite: 0 },
-        ]);
-      }
-    };
-
-    fetchActivityData();
+    // Use local mock data for activity
+    setActivityData([
+      { date: 'Mon', chats: 4, files: 2, links: 1, summarize: 3, extract: 2, rewrite: 1 },
+      { date: 'Tue', chats: 3, files: 1, links: 2, summarize: 2, extract: 1, rewrite: 2 },
+      { date: 'Wed', chats: 5, files: 3, links: 0, summarize: 4, extract: 2, rewrite: 1 },
+      { date: 'Thu', chats: 2, files: 2, links: 1, summarize: 1, extract: 2, rewrite: 1 },
+      { date: 'Fri', chats: 6, files: 1, links: 3, summarize: 5, extract: 1, rewrite: 2 },
+      { date: 'Sat', chats: 4, files: 0, links: 2, summarize: 3, extract: 0, rewrite: 1 },
+      { date: 'Sun', chats: 3, files: 2, links: 1, summarize: 2, extract: 1, rewrite: 1 },
+    ]);
   }, []);
 
   // Custom styles

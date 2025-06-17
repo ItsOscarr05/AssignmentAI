@@ -25,14 +25,12 @@ def upgrade() -> None:
     sa.Column('email', sa.String(), nullable=False),
     sa.Column('hashed_password', sa.String(), nullable=False),
     sa.Column('full_name', sa.String(), nullable=True),
-    sa.Column('role', sa.Enum('STUDENT', 'TEACHER', 'ADMIN', name='userrole'), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=True),
     sa.Column('is_superuser', sa.Boolean(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index('idx_user_role_active', 'users', ['role', 'is_active'], unique=False)
     op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
     op.create_index(op.f('ix_users_id'), 'users', ['id'], unique=False)
     op.create_table('assignments',
@@ -43,27 +41,21 @@ def upgrade() -> None:
     sa.Column('due_date', sa.DateTime(), nullable=False),
     sa.Column('max_score', sa.Float(), nullable=True),
     sa.Column('status', sa.Enum('DRAFT', 'PUBLISHED', 'CLOSED', name='assignmentstatus'), nullable=True),
-    sa.Column('teacher_id', sa.Integer(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
-    sa.ForeignKeyConstraint(['teacher_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index('idx_assignment_due_date', 'assignments', ['due_date'], unique=False)
     op.create_index('idx_assignment_status', 'assignments', ['status'], unique=False)
-    op.create_index('idx_assignment_teacher', 'assignments', ['teacher_id'], unique=False)
     op.create_index(op.f('ix_assignments_id'), 'assignments', ['id'], unique=False)
     op.create_table('classes',
     sa.Column('name', sa.String(), nullable=False),
     sa.Column('description', sa.String(), nullable=True),
-    sa.Column('teacher_id', sa.Integer(), nullable=False),
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
-    sa.ForeignKeyConstraint(['teacher_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index('idx_class_name', 'classes', ['name'], unique=False)
-    op.create_index('idx_class_teacher', 'classes', ['teacher_id'], unique=False)
     op.create_index(op.f('ix_classes_id'), 'classes', ['id'], unique=False)
     op.create_table('class_members',
     sa.Column('class_id', sa.Integer(), nullable=True),
@@ -104,16 +96,13 @@ def downgrade() -> None:
     op.drop_index('idx_class_members', table_name='class_members')
     op.drop_table('class_members')
     op.drop_index(op.f('ix_classes_id'), table_name='classes')
-    op.drop_index('idx_class_teacher', table_name='classes')
     op.drop_index('idx_class_name', table_name='classes')
     op.drop_table('classes')
     op.drop_index(op.f('ix_assignments_id'), table_name='assignments')
-    op.drop_index('idx_assignment_teacher', table_name='assignments')
     op.drop_index('idx_assignment_status', table_name='assignments')
     op.drop_index('idx_assignment_due_date', table_name='assignments')
     op.drop_table('assignments')
     op.drop_index(op.f('ix_users_id'), table_name='users')
     op.drop_index(op.f('ix_users_email'), table_name='users')
-    op.drop_index('idx_user_role_active', table_name='users')
     op.drop_table('users')
     # ### end Alembic commands ###

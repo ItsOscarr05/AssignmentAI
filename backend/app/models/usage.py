@@ -11,6 +11,7 @@ class Usage(Base):
     feature = Column(String, nullable=False)  # e.g., 'template', 'ai_generation', 'file_upload'
     action = Column(String, nullable=False)  # e.g., 'create', 'use', 'delete'
     timestamp = Column(DateTime, default=datetime.utcnow)
+    tokens_used = Column(Integer, default=0)  # NEW FIELD
     metadata = Column(JSON)  # Additional usage data like size, duration, etc.
     
     # Relationships

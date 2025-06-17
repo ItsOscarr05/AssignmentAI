@@ -932,7 +932,7 @@
     prop-types "^15.8.1"
     react-is "^19.0.0"
 
-"@mui/x-date-pickers@^6.19.4":
+"@mui/x-date-pickers@^6.20.2":
   version "6.20.2"
   resolved "https://registry.npmjs.org/@mui/x-date-pickers/-/x-date-pickers-6.20.2.tgz"
   integrity sha512-x1jLg8R+WhvkmUETRfX2wC+xJreMii78EXKLl6r3G+ggcAZlPyt0myID1Amf6hvJb9CtR7CgUo8BwR+1Vx9Ggw==
@@ -2661,7 +2661,7 @@ date-fns@^2.30.0:
   dependencies:
     "@babel/runtime" "^7.21.0"
 
-dayjs@^1.10.4:
+dayjs@^1.10.4, dayjs@^1.11.13:
   version "1.11.13"
   resolved "https://registry.npmjs.org/dayjs/-/dayjs-1.11.13.tgz"
   integrity sha512-oaMBel6gjolK862uaPQOVTA7q3TZhuSvuMQAAglQDOWYO9A91IrAOUJEyKVlqJlHE0vq5p5UXxzdPfMH/x6xNg==
