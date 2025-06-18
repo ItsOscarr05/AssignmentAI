@@ -110,38 +110,40 @@ async def logout(
 @router.post("/logout-all")
 async def logout_all(
     request: Request,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
-    """Logout user from all sessions"""
-    session_service.revoke_all_sessions(current_user.id)
-    return {"message": "Successfully logged out from all sessions"}
+    """
+    Logout from all devices
+    """
+    # Invalidate all sessions for the user
+    session_service = get_session_service(db)
+    await session_service.invalidate_all_sessions(current_user.id)
+    return {"message": "Logged out from all devices"}
 
 @router.get("/sessions")
 async def get_active_sessions(
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
-    """Get list of active sessions for current user"""
-    if not current_user.sessions:
-        return []
-    
-    # Filter out expired sessions
-    active_sessions = [
-        session for session in current_user.sessions
-        if datetime.fromisoformat(session["expires_at"]) > datetime.utcnow()
-    ]
-    
-    # Update user's sessions list
-    current_user.sessions = active_sessions
-    
-    return active_sessions
+    """
+    Get all active sessions for the user
+    """
+    session_service = get_session_service(db)
+    sessions = await session_service.get_user_sessions(current_user.id)
+    return sessions
 
 @router.delete("/sessions/{session_id}")
 async def revoke_session(
     session_id: str,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
-    """Revoke a specific session"""
-    session_service.revoke_session(session_id)
+    """
+    Revoke a specific session
+    """
+    session_service = get_session_service(db)
+    await session_service.revoke_session(current_user.id, session_id)
     return {"message": "Session revoked successfully"}
 
 @router.get("/sessions/{session_id}/analytics")
@@ -617,20 +619,20 @@ async def forgot_password(
     """
     user = crud.user.get_by_email(email)
     if not user:
-        # Don't reveal if user exists
-        return {"message": "If an account exists, a password reset email has been sent"}
+        # Don't reveal if user exists or not
+        return {"message": "If the email exists, a password reset link has been sent"}
     
-    # Generate reset token
+    # Generate password reset token
     reset_token = create_access_token(
-        data={"sub": user.email},
+        data={"email": user.email, "type": "password_reset"},
         expires_delta=timedelta(hours=1)
     )
     
-    # Send reset email
+    # Send password reset email
     reset_link = f"{settings.FRONTEND_URL}/reset-password?token={reset_token}"
     await auth_service.send_password_reset_email(user.email, reset_link)
     
-    return {"message": "Password reset email sent"}
+    return {"message": "If the email exists, a password reset link has been sent"}
 
 @router.post("/reset-password")
 async def reset_password(
@@ -638,17 +640,17 @@ async def reset_password(
     new_password: str,
 ):
     """
-    Reset user's password
+    Reset password using token
     """
     try:
         payload = verify_token(token)
-        if not payload or "sub" not in payload:
+        if not payload or "email" not in payload or payload.get("type") != "password_reset":
             raise HTTPException(
                 status_code=400,
-                detail="Invalid reset token"
+                detail="Invalid or expired reset token"
             )
         
-        user = crud.user.get_by_email(payload["sub"])
+        user = crud.user.get_by_email(payload["email"])
         if not user:
             raise HTTPException(
                 status_code=404,
@@ -657,11 +659,32 @@ async def reset_password(
         
         # Update password
         user.hashed_password = get_password_hash(new_password)
-        # TODO: Save updated user to MongoDB/Beanie
+        # TODO: Save updated user to database
         
-        return {"message": "Password reset successful"}
+        return {"message": "Password reset successfully"}
     except Exception as e:
         raise HTTPException(
             status_code=400,
             detail=str(e)
-        ) 
+        )
+
+@router.post("/change-password")
+async def change_password(
+    current_password: str,
+    new_password: str,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Change password for authenticated user
+    """
+    if not verify_password(current_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=400,
+            detail="Current password is incorrect"
+        )
+    
+    # Update password
+    current_user.hashed_password = get_password_hash(new_password)
+    # TODO: Save updated user to database
+    
+    return {"message": "Password changed successfully"} 

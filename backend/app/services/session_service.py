@@ -1,165 +1,177 @@
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
-#from sqlalchemy.orm import Session  # Removed
+from typing import Dict, List, Optional, Any
+from sqlalchemy.orm import Session
 from app.models.user import User
+from app.models.session import UserSession
 from app.core.config import settings
 from app.services.security_monitoring import security_monitoring
 import json
 import uuid
 
 class SessionService:
-    def __init__(self):
+    def __init__(self, db: Session):
+        self.db = db
         self.active_sessions: Dict[str, Dict] = {}
         self.session_analytics: Dict[str, List[Dict]] = {}
 
-    def create_session(
-        self,
-        user: User,
-        ip_address: str,
-        user_agent: str,
-        remember_me: bool = False
-    ) -> str:
+    async def create_session(self, user_id: int, device_info: Dict[str, Any] = None) -> str:
         """Create a new session for a user"""
         session_id = str(uuid.uuid4())
-        expires_at = datetime.utcnow() + timedelta(
-            days=settings.REMEMBER_ME_DAYS if remember_me else 1
+        
+        session = UserSession(
+            id=session_id,
+            user_id=user_id,
+            device_info=device_info or {},
+            created_at=datetime.utcnow(),
+            expires_at=datetime.utcnow() + timedelta(days=30),  # 30 days
+            is_active=True
         )
-
-        session_data = {
-            "user_id": user.id,
-            "ip_address": ip_address,
-            "user_agent": user_agent,
-            "created_at": datetime.utcnow().isoformat(),
-            "expires_at": expires_at.isoformat(),
-            "remember_me": remember_me,
-            "last_activity": datetime.utcnow().isoformat(),
-            "session_metrics": {
-                "page_views": 0,
-                "api_calls": 0,
-                "errors": 0,
-                "total_duration": 0,
-                "last_interaction": datetime.utcnow().isoformat()
-            }
-        }
-
-        # Initialize session analytics
-        self.session_analytics[session_id] = []
-
-        # Store session in user's sessions list
-        if not user.sessions:
-            user.sessions = []
-        user.sessions.append(session_data)
-
-        # Keep only the most recent N sessions
-        if len(user.sessions) > settings.MAX_CONCURRENT_SESSIONS:
-            user.sessions = user.sessions[-settings.MAX_CONCURRENT_SESSIONS:]
-
-        self.active_sessions[session_id] = session_data
-
-        # Log session creation
-        security_monitoring.log_security_alert(
-            "SESSION_CREATED",
-            "INFO",
-            {
-                "session_id": session_id,
-                "remember_me": remember_me,
-                "ip_address": ip_address,
-                "user_agent": user_agent
-            },
-            user.id,
-            ip_address
-        )
-
+        
+        self.db.add(session)
+        self.db.commit()
+        
         return session_id
 
-    def validate_session(
-        self,
-        session_id: str,
-        ip_address: str,
-        user_agent: str
-    ) -> Optional[User]:
-        """Validate a session and return the associated user"""
-        session_data = self.active_sessions.get(session_id)
-        if not session_data:
-            return None
+    async def validate_session(self, session_id: str) -> Optional[UserSession]:
+        """Validate a session and return the session object if valid"""
+        session = self.db.query(UserSession).filter(
+            UserSession.id == session_id,
+            UserSession.is_active == True,
+            UserSession.expires_at > datetime.utcnow()
+        ).first()
+        
+        if session:
+            # Update last accessed time
+            session.last_accessed = datetime.utcnow()
+            self.db.commit()
+        
+        return session
 
-        # Check if session has expired
-        expires_at = datetime.fromisoformat(session_data["expires_at"])
-        if datetime.utcnow() > expires_at:
-            self.revoke_session(session_id)
-            return None
+    async def invalidate_session(self, session_id: str) -> bool:
+        """Invalidate a specific session"""
+        session = self.db.query(UserSession).filter(
+            UserSession.id == session_id
+        ).first()
+        
+        if session:
+            session.is_active = False
+            session.invalidated_at = datetime.utcnow()
+            self.db.commit()
+            return True
+        
+        return False
 
-        # Check if IP or user agent has changed
-        if session_data["ip_address"] != ip_address or session_data["user_agent"] != user_agent:
-            self.revoke_session(session_id)
-            return None
+    async def invalidate_all_sessions(self, user_id: int) -> bool:
+        """Invalidate all sessions for a user"""
+        sessions = self.db.query(UserSession).filter(
+            UserSession.user_id == user_id,
+            UserSession.is_active == True
+        ).all()
+        
+        for session in sessions:
+            session.is_active = False
+            session.invalidated_at = datetime.utcnow()
+        
+        self.db.commit()
+        return True
 
-        # Update last activity
-        session_data["last_activity"] = datetime.utcnow().isoformat()
-        self.active_sessions[session_id] = session_data
+    async def get_user_sessions(self, user_id: int) -> List[Dict[str, Any]]:
+        """Get all active sessions for a user"""
+        sessions = self.db.query(UserSession).filter(
+            UserSession.user_id == user_id,
+            UserSession.is_active == True,
+            UserSession.expires_at > datetime.utcnow()
+        ).order_by(UserSession.created_at.desc()).all()
+        
+        session_list = []
+        for session in sessions:
+            session_data = {
+                "id": session.id,
+                "device_info": session.device_info,
+                "created_at": session.created_at.isoformat(),
+                "last_accessed": session.last_accessed.isoformat() if session.last_accessed else None,
+                "expires_at": session.expires_at.isoformat(),
+                "is_current": False  # Will be set by caller
+            }
+            session_list.append(session_data)
+        
+        return session_list
 
-        # TODO: Get user from MongoDB/Beanie
-        # user = ...
-        user = None
-        if not user:
-            self.revoke_session(session_id)
-            return None
+    async def revoke_session(self, user_id: int, session_id: str) -> bool:
+        """Revoke a specific session for a user"""
+        session = self.db.query(UserSession).filter(
+            UserSession.id == session_id,
+            UserSession.user_id == user_id
+        ).first()
+        
+        if session:
+            session.is_active = False
+            session.invalidated_at = datetime.utcnow()
+            self.db.commit()
+            return True
+        
+        return False
 
-        return user
+    async def cleanup_expired_sessions(self) -> int:
+        """Clean up expired sessions and return count of cleaned sessions"""
+        expired_sessions = self.db.query(UserSession).filter(
+            UserSession.expires_at <= datetime.utcnow(),
+            UserSession.is_active == True
+        ).all()
+        
+        count = len(expired_sessions)
+        for session in expired_sessions:
+            session.is_active = False
+            session.invalidated_at = datetime.utcnow()
+        
+        self.db.commit()
+        return count
 
-    def revoke_session(self, session_id: str) -> None:
-        """Revoke a specific session"""
-        session_data = self.active_sessions.pop(session_id, None)
-        if not session_data:
-            return
+    async def get_session_analytics(self, user_id: int) -> Dict[str, Any]:
+        """Get session analytics for a user"""
+        # Get total sessions
+        total_sessions = self.db.query(UserSession).filter(
+            UserSession.user_id == user_id
+        ).count()
+        
+        # Get active sessions
+        active_sessions = self.db.query(UserSession).filter(
+            UserSession.user_id == user_id,
+            UserSession.is_active == True,
+            UserSession.expires_at > datetime.utcnow()
+        ).count()
+        
+        # Get sessions created in last 30 days
+        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+        recent_sessions = self.db.query(UserSession).filter(
+            UserSession.user_id == user_id,
+            UserSession.created_at >= thirty_days_ago
+        ).count()
+        
+        # Get most common device types
+        device_types = {}
+        sessions = self.db.query(UserSession).filter(
+            UserSession.user_id == user_id
+        ).all()
+        
+        for session in sessions:
+            device_type = session.device_info.get('type', 'unknown')
+            device_types[device_type] = device_types.get(device_type, 0) + 1
+        
+        return {
+            "total_sessions": total_sessions,
+            "active_sessions": active_sessions,
+            "recent_sessions": recent_sessions,
+            "device_types": device_types,
+        }
 
-        # TODO: Remove session from user's sessions list in MongoDB/Beanie
+# Global session service instance
+session_service = SessionService(None)
 
-        # Log session revocation
-        security_monitoring.log_security_alert(
-            "SESSION_REVOKED",
-            "INFO",
-            {
-                "session_id": session_id,
-                "reason": "expired_or_invalid"
-            },
-            session_data["user_id"],
-            session_data["ip_address"]
-        )
-
-    def revoke_all_sessions(self, user_id: int) -> None:
-        """Revoke all sessions for a user"""
-        # TODO: Remove all sessions for user in MongoDB/Beanie
-        # Remove all sessions from active sessions
-        for session_id, session_data in list(self.active_sessions.items()):
-            if session_data["user_id"] == user_id:
-                self.active_sessions.pop(session_id)
-
-        # Log all sessions revoked
-        security_monitoring.log_security_alert(
-            "ALL_SESSIONS_REVOKED",
-            "INFO",
-            {
-                "user_id": user_id,
-                "reason": "user_requested"
-            },
-            user_id
-        )
-
-    def cleanup_expired_sessions(self) -> None:
-        """Clean up expired sessions"""
-        current_time = datetime.utcnow()
-        expired_sessions = []
-
-        # Find expired sessions
-        for session_id, session_data in self.active_sessions.items():
-            expires_at = datetime.fromisoformat(session_data["expires_at"])
-            if current_time > expires_at:
-                expired_sessions.append(session_id)
-
-        # Revoke expired sessions
-        for session_id in expired_sessions:
-            self.revoke_session(session_id)
+def get_session_service(db: Session) -> SessionService:
+    """Get session service instance with database session"""
+    session_service.db = db
+    return session_service
 
     def track_session_activity(
         self,
@@ -244,7 +256,4 @@ class SessionService:
         return [
             self.get_session_analytics(session_id)
             for session_id in user_sessions
-        ]
-
-# Create a global session service instance
-session_service = SessionService() 
+        ] 

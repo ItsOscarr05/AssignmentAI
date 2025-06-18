@@ -6,7 +6,7 @@ interface Subscription {
   current_period_end?: string;
 }
 
-export function useTokenUsage(subscription?: Subscription) {
+export function useTokenUsage(subscription?: Subscription | null) {
   // Billing cycle always starts on the 1st of the current month
   const now = new Date();
   const billingStart = new Date(now.getFullYear(), now.getMonth(), 1);

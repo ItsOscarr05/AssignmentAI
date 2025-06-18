@@ -1,20 +1,18 @@
-from sqlalchemy import Column, String, DateTime, JSON, ForeignKey
-from sqlalchemy.sql import func
+from sqlalchemy import Column, String, Integer, DateTime, JSON, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from app.db.base_class import Base
+from datetime import datetime
 
-class UserActivity(Base):
-    __tablename__ = "user_activities"
+class Activity(Base):
+    __tablename__ = "activities"
 
-    id = Column(String, primary_key=True, index=True)
-    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    action = Column(String, nullable=False)  # e.g., "login", "logout", "create_assignment", etc.
-    resource_type = Column(String)  # e.g., "assignment", "submission", "comment", etc.
-    resource_id = Column(String)  # ID of the affected resource
-    activity_metadata = Column(JSON)  # Additional context about the activity
-    ip_address = Column(String)
-    user_agent = Column(String)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    type = Column(String, nullable=False, index=True)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    metadata = Column(JSON, default={})
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
     # Relationships
     user = relationship("User", back_populates="activities") 

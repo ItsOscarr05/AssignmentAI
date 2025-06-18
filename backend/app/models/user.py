@@ -63,6 +63,11 @@ class User(Base):
     classes_teaching = relationship("Class", back_populates="teacher")
     enrolled_classes = relationship("Class", secondary="class_members", back_populates="students")
     tokens = relationship("Token", back_populates="user")
+    subscription = relationship("Subscription", back_populates="user", uselist=False)
+    assignments = relationship("Assignment", back_populates="user")
+    files = relationship("File", back_populates="user")
+    sessions = relationship("UserSession", back_populates="user")
+    activities = relationship("Activity", back_populates="user")
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
