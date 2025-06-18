@@ -12,7 +12,7 @@ class Usage(Base):
     action = Column(String, nullable=False)  # e.g., 'create', 'use', 'delete'
     timestamp = Column(DateTime, default=datetime.utcnow)
     tokens_used = Column(Integer, default=0)  # NEW FIELD
-    metadata = Column(JSON)  # Additional usage data like size, duration, etc.
+    usage_metadata = Column(JSON)  # Additional usage data like size, duration, etc.
     
     # Relationships
     user = relationship("User", back_populates="usage_records")
@@ -25,4 +25,4 @@ class UsageLimit(Base):
     feature = Column(String, nullable=False)
     limit_type = Column(String, nullable=False)  # e.g., 'daily', 'monthly', 'total'
     limit_value = Column(Integer, nullable=False)
-    metadata = Column(JSON)  # Additional limit configuration 
+    limit_metadata = Column(JSON)  # Additional limit configuration 

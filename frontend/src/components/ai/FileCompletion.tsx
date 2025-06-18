@@ -11,8 +11,10 @@ import {
   Typography,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
+import { useTokenLimitContext } from '../../contexts/TokenLimitContext';
 import { useDebounce } from '../../hooks/useDebounce';
 import { api } from '../../services/api';
+import { TokenLimitWarning } from '../common/TokenLimitWarning';
 
 interface FileCompletionProps {
   filePath: string;
@@ -32,6 +34,12 @@ const FileCompletion: React.FC<FileCompletionProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [showCompletion, setShowCompletion] = useState(false);
   const [, setEditorInstance] = useState<any>(null);
+
+  const { hasEnoughTokens, loading: tokenLoading } = useTokenLimitContext();
+
+  // Estimate tokens needed for code completion
+  const tokensNeeded = 200; // Conservative estimate for code completion
+  const canGetCompletion = hasEnoughTokens(tokensNeeded);
 
   const debouncedContent = useDebounce(content, 1000);
 
@@ -64,6 +72,10 @@ const FileCompletion: React.FC<FileCompletionProps> = ({
     editor.onKeyDown((event: any) => {
       if (event.ctrlKey && event.key === 'Enter') {
         event.preventDefault();
+        if (!canGetCompletion) {
+          setError('Insufficient tokens for code completion. Please upgrade your plan.');
+          return;
+        }
         editor.trigger('keyboard', 'editor.action.triggerSuggest', {});
       }
     });
@@ -72,6 +84,11 @@ const FileCompletion: React.FC<FileCompletionProps> = ({
     monaco.languages.registerCompletionItemProvider(language || 'plaintext', {
       triggerCharacters: ['.', ':', '@', '"', "'", '`', '/', '\\'],
       provideCompletionItems: async (model: any, position: any) => {
+        if (!canGetCompletion) {
+          setError('Insufficient tokens for code completion. Please upgrade your plan.');
+          return { suggestions: [] };
+        }
+
         try {
           setIsLoading(true);
           setError(null);
@@ -137,6 +154,9 @@ const FileCompletion: React.FC<FileCompletionProps> = ({
         </Box>
       </Box>
 
+      {/* Token Limit Warning */}
+      <TokenLimitWarning tokensNeeded={tokensNeeded} />
+
       <Box sx={{ flex: 1, position: 'relative' }}>
         <Editor
           height="100%"
@@ -155,8 +175,8 @@ const FileCompletion: React.FC<FileCompletionProps> = ({
             readOnly: false,
             cursorStyle: 'line',
             contextmenu: true,
-            suggestOnTriggerCharacters: true,
-            quickSuggestions: true,
+            suggestOnTriggerCharacters: canGetCompletion,
+            quickSuggestions: canGetCompletion,
             wordBasedSuggestions: true,
           }}
         />

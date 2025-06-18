@@ -214,14 +214,17 @@ const Assignments: React.FC = () => {
   // Get unique subjects for dropdown
   const uniqueSubjects = Array.from(new Set(assignmentsList.map(a => a.subject))).sort();
 
-  const filteredAssignments = assignmentsList.filter(assignment => {
-    const matchesStatus = filterStatus === 'all' || assignment.status === filterStatus;
-    const matchesName =
-      filterName.trim() === '' || assignment.title.toLowerCase().includes(filterName.toLowerCase());
-    const matchesSubject = filterSubject === 'all' || assignment.subject === filterSubject;
-    const matchesDate = !filterDate || dayjs(assignment.createdAt).isSame(filterDate, 'day');
-    return matchesStatus && matchesName && matchesSubject && matchesDate;
-  });
+  const filteredAssignments = assignmentsList
+    .filter(assignment => {
+      const matchesStatus = filterStatus === 'all' || assignment.status === filterStatus;
+      const matchesName =
+        filterName.trim() === '' ||
+        assignment.title.toLowerCase().includes(filterName.toLowerCase());
+      const matchesSubject = filterSubject === 'all' || assignment.subject === filterSubject;
+      const matchesDate = !filterDate || dayjs(assignment.createdAt).isSame(filterDate, 'day');
+      return matchesStatus && matchesName && matchesSubject && matchesDate;
+    })
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const getAssignmentStats = () => {
     const total = assignmentsList.length;
@@ -234,6 +237,158 @@ const Assignments: React.FC = () => {
   };
 
   const stats = getAssignmentStats();
+
+  // Map any subject to its core subject
+  const mapToCoreSubject = (subject: string): string => {
+    const s = subject.toLowerCase();
+    // Direct and synonym matches
+    if (['math', 'mathematics', 'algebra', 'geometry', 'calculus', 'statistics'].includes(s))
+      return 'Math';
+    if (['fitness', 'health', 'pe', 'health / pe', 'physical education', 'wellness'].includes(s))
+      return 'Fitness';
+    if (['literature', 'english', 'writing', 'composition', 'reading'].includes(s))
+      return 'Literature';
+    if (
+      ['business', 'economics', 'accounting', 'finance', 'entrepreneurship', 'marketing'].includes(
+        s
+      )
+    )
+      return 'Business';
+    if (
+      [
+        'science',
+        'biology',
+        'chemistry',
+        'physics',
+        'earth science',
+        'astronomy',
+        'environmental science',
+      ].includes(s)
+    )
+      return 'Science';
+    if (
+      [
+        'career & technical ed',
+        'cte',
+        'vocational',
+        'engineering',
+        'manufacturing',
+        'culinary',
+      ].includes(s)
+    )
+      return 'Career & Technical Ed';
+    if (
+      [
+        'language',
+        'foreign language',
+        'spanish',
+        'french',
+        'german',
+        'latin',
+        'mandarin',
+        'japanese',
+        'italian',
+      ].includes(s)
+    )
+      return 'Language';
+    if (
+      [
+        'history',
+        'social studies',
+        'civics',
+        'government',
+        'geography',
+        'politics',
+        'world history',
+        'us history',
+      ].includes(s)
+    )
+      return 'History';
+    if (
+      [
+        'technology',
+        'computer science',
+        'computers',
+        'coding',
+        'programming',
+        'it',
+        'information technology',
+        'robotics',
+      ].includes(s)
+    )
+      return 'Technology';
+    if (
+      [
+        'arts',
+        'art',
+        'music',
+        'theater',
+        'drama',
+        'visual arts',
+        'painting',
+        'drawing',
+        'choir',
+        'band',
+        'dance',
+        'photography',
+      ].includes(s)
+    )
+      return 'Arts';
+
+    // Always map 'computer science' to Technology
+    if (s.includes('computer science')) return 'Technology';
+
+    // Keyword-based matching
+    if (s.includes('career')) return 'Career & Technical Ed';
+    if (s.includes('project')) return 'Career & Technical Ed';
+    if (s.includes('tech') || s.includes('lab')) return 'Technology';
+    if (s.includes('robotics')) return 'Technology';
+    if (s.includes('business') || s.includes('finance') || s.includes('accounting'))
+      return 'Business';
+    if (s.includes('science')) return 'Science';
+    if (s.includes('math')) return 'Math';
+    if (s.includes('history') || s.includes('civics') || s.includes('government')) return 'History';
+    if (
+      s.includes('language') ||
+      s.includes('spanish') ||
+      s.includes('french') ||
+      s.includes('german') ||
+      s.includes('latin') ||
+      s.includes('mandarin') ||
+      s.includes('japanese') ||
+      s.includes('italian')
+    )
+      return 'Language';
+    if (
+      s.includes('art') ||
+      s.includes('music') ||
+      s.includes('drama') ||
+      s.includes('choir') ||
+      s.includes('band') ||
+      s.includes('dance') ||
+      s.includes('painting') ||
+      s.includes('drawing') ||
+      s.includes('photography')
+    )
+      return 'Arts';
+    if (s.includes('fitness') || s.includes('health') || s.includes('pe') || s.includes('wellness'))
+      return 'Fitness';
+    if (
+      s.includes('writing') ||
+      s.includes('composition') ||
+      s.includes('reading') ||
+      s.includes('literature') ||
+      s.includes('english')
+    )
+      return 'Literature';
+
+    // As a last resort, use the first word capitalized or 'General'
+    if (subject && typeof subject === 'string') {
+      const firstWord = subject.split(' ')[0];
+      return firstWord.charAt(0).toUpperCase() + firstWord.slice(1);
+    }
+    return 'General';
+  };
 
   if (loading) {
     return (
@@ -405,8 +560,10 @@ const Assignments: React.FC = () => {
                       </Box>
                     </TableCell>
                     <TableCell>
-                      <Typography sx={{ color: getSubjectColor(assignment.subject) }}>
-                        {assignment.subject}
+                      <Typography
+                        sx={{ color: getSubjectColor(mapToCoreSubject(assignment.subject)) }}
+                      >
+                        {mapToCoreSubject(assignment.subject)}
                       </Typography>
                     </TableCell>
                     <TableCell>

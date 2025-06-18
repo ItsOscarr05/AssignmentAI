@@ -51,6 +51,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { useTokenUsage } from '../hooks/useTokenUsage';
 import { useWorkshopStore } from '../services/WorkshopService';
 import { recentAssignments } from './DashboardHome';
 
@@ -127,15 +128,13 @@ const Workshop: React.FC = () => {
   const [selectedLine, setSelectedLine] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [activityData, setActivityData] = useState<ActivityData[]>([]);
-  const usedTokens = recentAssignments.reduce((sum, a) => sum + (a.tokensUsed || 500), 0);
-  const totalTokens = 30000;
-  const remainingTokens = totalTokens - usedTokens;
+  const { totalTokens, usedTokens, remainingTokens, percentUsed } = useTokenUsage();
   const tokenUsage = {
     label: 'Free Plan (30,000 tokens/month)',
     total: totalTokens,
     used: usedTokens,
     remaining: remainingTokens,
-    percentUsed: Math.round((usedTokens / totalTokens) * 100),
+    percentUsed,
   };
 
   useEffect(() => {
@@ -834,7 +833,13 @@ const Workshop: React.FC = () => {
                   value={tokenUsage.percentUsed}
                   size={120}
                   thickness={4}
-                  sx={{ color: 'red' }}
+                  sx={{
+                    color: 'red',
+                    '& .MuiCircularProgress-track': {
+                      stroke: 'red',
+                      opacity: 0.2,
+                    },
+                  }}
                 />
                 <Box
                   sx={{

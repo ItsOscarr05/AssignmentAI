@@ -2,8 +2,10 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from app.services.file_completion import FileCompletionService
-from app.core.deps import get_current_user
+from app.core.deps import get_current_user, get_db
 from app.models.user import User
+from app.services.ai_service import AIService
+from sqlalchemy.orm import Session
 
 router = APIRouter()
 
@@ -23,12 +25,18 @@ class CompletionResponse(BaseModel):
 @router.post("/completion", response_model=CompletionResponse)
 async def get_completion(
     request: CompletionRequest,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ) -> CompletionResponse:
     """
     Get code completion suggestions based on file content and cursor position.
     """
     try:
+        ai_service = AIService(db)
+        # Estimate tokens needed (can be improved with actual calculation)
+        tokens_needed = 1000
+        await ai_service.enforce_token_limit(current_user.id, tokens_needed)
+
         completion_service = FileCompletionService()
         result = await completion_service.get_completion(
             file_path=request.file_path,

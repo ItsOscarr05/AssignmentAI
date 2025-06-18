@@ -23,9 +23,10 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import React, { Suspense, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { api } from '../services/api';
 import DashboardPieChart from './DashboardPieChart';
 
 // Helper for random selection
@@ -202,7 +203,6 @@ export const recentAssignments = [...baseAssignments, ...extraAssignments];
 const assignmentsGenerated = recentAssignments.length;
 const wordCountProcessed = recentAssignments.reduce((sum, a) => sum + (a.wordCount || 0), 0);
 const aiTimeSaved = (assignmentsGenerated * 0.12).toFixed(1); // still estimate 0.12 hours per assignment
-const tokenUsage = recentAssignments.reduce((sum, a) => sum + (a.tokensUsed || 0), 0);
 
 const DashboardHome: React.FC = () => {
   const { user } = useAuth();
@@ -212,6 +212,24 @@ const DashboardHome: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'in progress' | 'completed'>('all');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
+
+  // Fetch subscription token limit from backend
+  const [subscriptionTokenLimit, setSubscriptionTokenLimit] = useState<number>(30000); // default
+  useEffect(() => {
+    async function fetchTokenLimit() {
+      try {
+        const response = await api.get('/subscriptions/current');
+        setSubscriptionTokenLimit(response.data.token_limit);
+      } catch (e) {
+        setSubscriptionTokenLimit(30000); // fallback
+      }
+    }
+    fetchTokenLimit();
+  }, []);
+
+  // Calculate token usage based on mock assignments
+  const tokenUsage = recentAssignments.reduce((sum, a) => sum + (a.tokensUsed || 0), 0);
+  const usedTokens = tokenUsage;
 
   const stats = [
     {
@@ -660,6 +678,7 @@ const DashboardHome: React.FC = () => {
               </TableBody>
             </Table>
             <TablePagination
+              component="div"
               rowsPerPageOptions={[5, 10, 25]}
               count={filteredAssignments.length}
               rowsPerPage={rowsPerPage}
@@ -753,7 +772,7 @@ const DashboardHome: React.FC = () => {
                       Word count processed
                     </Typography>
                     <Typography variant="h5" sx={{ color: '#388E3C', fontWeight: 700 }}>
-                      {mockActivity.wordCountProcessed.toLocaleString()}
+                      {(mockActivity.wordCountProcessed ?? 0).toLocaleString()}
                     </Typography>
                   </Box>
                 </Paper>
@@ -795,7 +814,10 @@ const DashboardHome: React.FC = () => {
                       Token usage
                     </Typography>
                     <Typography variant="h5" sx={{ color: '#FFA000', fontWeight: 700 }}>
-                      {mockActivity.tokenUsage.toLocaleString()}
+                      {(usedTokens ?? 0).toLocaleString()}
+                      {subscriptionTokenLimit
+                        ? ` / ${(subscriptionTokenLimit ?? 0).toLocaleString()}`
+                        : ''}
                     </Typography>
                   </Box>
                 </Paper>

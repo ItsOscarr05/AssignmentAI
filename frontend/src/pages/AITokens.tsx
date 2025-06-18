@@ -40,7 +40,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { formatDistanceToNow, parseISO } from 'date-fns';
+import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import React, { useEffect, useState } from 'react';
 import {
   CartesianGrid,
@@ -51,6 +51,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { useTokenUsage } from '../hooks/useTokenUsage';
 import { api } from '../services/api';
 import { recentAssignments } from './DashboardHome';
 
@@ -64,8 +65,19 @@ interface Subscription {
 }
 
 const AITokens: React.FC = () => {
-  const [, setSubscription] = useState<Subscription | null>(null);
-  const [, setLoading] = useState(true);
+  // All hooks at the top
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [range, setRange] = React.useState<'7' | '30'>('7');
+  const guideRef = React.useRef<HTMLDivElement>(null);
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [popoverContent, setPopoverContent] = React.useState<any>(null);
+  const [plan] = React.useState<'Free' | 'Pro'>('Free');
+  const [calcTokens, setCalcTokens] = React.useState(0);
+  const [calcCost, setCalcCost] = React.useState(0);
+
+  const { totalTokens, usedTokens, remainingTokens, percentUsed, assignmentsInCycle } =
+    useTokenUsage(subscription);
 
   useEffect(() => {
     fetchSubscriptionData();
@@ -82,46 +94,159 @@ const AITokens: React.FC = () => {
     }
   };
 
-  // Calculate used tokens from tokensUsed field
-  const usedTokens = recentAssignments.reduce((sum, a) => sum + (a.tokensUsed || 500), 0);
-  const totalTokens = 30000;
-  const remainingTokens = totalTokens - usedTokens;
-  const tokenUsage = {
-    label: 'Free Plan (30,000 tokens/month)',
-    total: totalTokens,
-    used: usedTokens,
-    remaining: remainingTokens,
-    percentUsed: Math.round((usedTokens / totalTokens) * 100),
-  };
+  // For 30-day graph, show last 30 days, but only add usage from billing start onward
+  function buildLast30DaysChart(
+    assignments: { tokensUsed?: number; title: string; createdAt?: string }[],
+    _total: number
+  ) {
+    if (!assignments.length) return [];
+    const today = new Date();
+    const endDate = new Date(today);
+    const startDate = new Date(endDate);
+    startDate.setDate(endDate.getDate() - 29);
 
-  // Build accurate usage history for the graph
-  const sortedAssignments = [...recentAssignments].sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  );
+    // Find the start of the current and previous billing cycles
+    const currentCycleStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    const prevCycleStart = new Date(currentCycleStart);
+    prevCycleStart.setMonth(prevCycleStart.getMonth() - 1);
+
+    // Calculate cumulative tokens used from prevCycleStart up to startDate
+    const initialTokens = assignments
+      .filter(a => {
+        const created = new Date(a.createdAt!);
+        return created >= prevCycleStart && created < startDate;
+      })
+      .reduce((sum, a) => sum + (a.tokensUsed || 500), 0);
+
+    // Build a map of date (yyyy-MM-dd) to tokens used that day
+    const usageByDate: Record<string, { used: number; titles: string[] }> = {};
+    assignments.forEach(a => {
+      if (!a.createdAt) return;
+      const dateStr = format(new Date(a.createdAt), 'yyyy-MM-dd');
+      if (!usageByDate[dateStr]) usageByDate[dateStr] = { used: 0, titles: [] };
+      usageByDate[dateStr].used += a.tokensUsed || 500;
+      usageByDate[dateStr].titles.push(a.title);
+    });
+
+    let runningTotalPrev = initialTokens;
+    let runningTotalCurrent = 0;
+    const points: { date: string; tokens: number; used: number; description: string }[] = [];
+
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      const key = format(d, 'yyyy-MM-dd');
+      let used = usageByDate[key]?.used || 0;
+      let description = used > 0 ? `Used for: ${usageByDate[key].titles.join(', ')}` : '';
+
+      if (d < currentCycleStart) {
+        runningTotalPrev += used;
+        points.push({
+          date: format(d, 'MMM d'),
+          tokens: runningTotalPrev,
+          used,
+          description,
+        });
+      } else if (d.getTime() === currentCycleStart.getTime()) {
+        // Reset on the first day of the current cycle
+        runningTotalCurrent = 0;
+        points.push({
+          date: format(d, 'MMM d'),
+          tokens: 0,
+          used,
+          description,
+        });
+        runningTotalCurrent += used;
+        // If there is usage on the reset day, add a second point for that day
+        if (used > 0) {
+          points[points.length - 1].used = 0; // The reset point
+          points.push({
+            date: format(d, 'MMM d'),
+            tokens: runningTotalCurrent,
+            used,
+            description,
+          });
+        }
+      } else {
+        runningTotalCurrent += used;
+        points.push({
+          date: format(d, 'MMM d'),
+          tokens: runningTotalCurrent,
+          used,
+          description,
+        });
+      }
+    }
+
+    // Add initial point (before any usage)
+    const initialDate = new Date(startDate);
+    initialDate.setDate(initialDate.getDate() - 1);
+    points.unshift({
+      date: format(initialDate, 'MMM d'),
+      tokens: initialTokens,
+      used: 0,
+      description: 'Starting balance',
+    });
+
+    return points;
+  }
+
+  // For 7-day chart: show last 7 assignments as a running total
   function buildUsageHistory(
-    assignments: { tokensUsed?: number; title: string }[],
-    total: number,
+    assignments: { tokensUsed?: number; title: string; createdAt?: string }[],
+    _total: number,
     range: number
   ) {
-    const points: { date: string; tokens: number; description: string }[] = [];
-    let runningTotal = total;
-    // Only use the last N assignments for the graph
+    const points: { date: string; tokens: number; used: number; description: string }[] = [];
+    let runningTotal = 0;
     const recent = assignments.slice(-range);
-    // Add initial point (before any usage)
-    points.push({ date: `Day 0`, tokens: total, description: 'Starting balance' });
+    // Determine the date for the initial point
+    let initialDate = 'Start';
+    if (recent.length > 0 && recent[0].createdAt) {
+      const firstDate = new Date(recent[0].createdAt);
+      firstDate.setDate(firstDate.getDate() - 1);
+      initialDate = format(firstDate, 'MMM d');
+    }
+    points.push({ date: initialDate, tokens: 0, used: 0, description: 'Starting balance' });
     recent.forEach((a, i) => {
-      runningTotal -= a.tokensUsed || 500;
+      const used = a.tokensUsed || 500;
+      runningTotal += used;
+      const dateLabel = a.createdAt ? format(new Date(a.createdAt), 'MMM d') : `Entry ${i + 1}`;
       points.push({
-        date: `Day ${i + 1}`,
+        date: dateLabel,
         tokens: runningTotal,
+        used,
         description: `Used for: ${a.title}`,
       });
     });
     return points;
   }
-  const usageData30 = buildUsageHistory(sortedAssignments, totalTokens, 30);
-  const usageData7 = usageData30.slice(-7);
-  const [range, setRange] = React.useState<'7' | '30'>('7');
+
+  const tokenUsage = {
+    label: subscription
+      ? `Plan (${totalTokens.toLocaleString()} tokens/month)`
+      : 'Free Plan (30,000 tokens/month)',
+    total: totalTokens,
+    used: usedTokens,
+    remaining: remainingTokens,
+    percentUsed,
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 300 }}>
+        <LinearProgress sx={{ width: '100%' }} />
+      </Box>
+    );
+  }
+
+  // Build accurate usage history for the graph
+  const sortedAssignmentsAll = [...recentAssignments].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  );
+
+  // For 30-day chart, use buildLast30DaysChart with all assignments
+  const usageData30 = buildLast30DaysChart(sortedAssignmentsAll, totalTokens);
+  // For 7-day chart, keep using buildUsageHistory for last 7 assignments (current cycle only)
+  const usageData7 = buildUsageHistory(assignmentsInCycle, totalTokens, 7);
   const handleRangeChange = (_: any, newRange: '7' | '30') => {
     if (newRange) setRange(newRange);
   };
@@ -135,7 +260,7 @@ const AITokens: React.FC = () => {
       tokens: totalTokens,
       summary: 'Monthly free token allocation',
     },
-    ...recentAssignments.slice(-3).map(a => ({
+    ...assignmentsInCycle.slice(-3).map(a => ({
       date: a.createdAt.slice(0, 10),
       description: `${a.title} - ${a.status}`,
       tokens: -(a.tokensUsed || 500),
@@ -184,16 +309,12 @@ const AITokens: React.FC = () => {
     },
   ];
 
-  const [plan] = React.useState<'Free' | 'Pro'>('Free');
-  const guideRef = React.useRef<HTMLDivElement>(null);
   const handleProgressBarClick = () => {
     if (guideRef.current) {
       guideRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-  const [popoverContent, setPopoverContent] = React.useState<any>(null);
   const handleTransactionClick = (event: React.MouseEvent<HTMLElement>, transaction: any) => {
     setAnchorEl(event.currentTarget);
     setPopoverContent(transaction);
@@ -225,8 +346,6 @@ const AITokens: React.FC = () => {
     window.open('https://assignmentai.com/docs/features', '_blank');
   };
 
-  const [calcTokens, setCalcTokens] = React.useState(0);
-  const [calcCost, setCalcCost] = React.useState(0);
   const costPerToken = 1 / 2000; // $1 per 2,000 tokens
   const handleCalcChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value, 10) || 0;
@@ -257,10 +376,6 @@ const AITokens: React.FC = () => {
     if (type === 'Refund') return 'info.main';
     return 'error.main';
   };
-
-  // Calculate total used tokens from recent transactions
-
-  // Token usage based on subscription
 
   return (
     <Box>
@@ -596,7 +711,10 @@ const AITokens: React.FC = () => {
                 <LineChart data={displayedUsageData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                   <XAxis dataKey="date" stroke="#d32f2f" />
-                  <YAxis stroke="#d32f2f" />
+                  <YAxis
+                    stroke="#d32f2f"
+                    domain={range === '30' ? [0, tokenUsage.total] : undefined}
+                  />
                   <RechartsTooltip
                     content={({ active, payload, label }) => {
                       if (active && payload && payload.length) {
@@ -605,8 +723,7 @@ const AITokens: React.FC = () => {
                           <Paper sx={{ p: 2 }}>
                             <Typography variant="subtitle2">{label}</Typography>
                             <Typography variant="body2">
-                              {point.tokens > 0 ? '+' : ''}
-                              {point.tokens} tokens
+                              +{point.used} tokens
                               <br />
                               {point.description ? point.description : ''}
                             </Typography>

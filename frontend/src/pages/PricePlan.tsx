@@ -174,7 +174,7 @@ const features: Feature[] = [
     description: 'Automated checking of citations and references',
   },
   {
-    name: 'Advanced Plagiarism Detection',
+    name: 'Plagiarism Detection',
     free: false,
     plus: false,
     pro: true,
@@ -270,7 +270,7 @@ const plans: Plan[] = [
     features: [
       'AI-Powered Research Assistance',
       'Citation & Reference Check',
-      'Advanced Plagiarism Detection',
+      'Plagiarism Detection',
       '24/7 Priority Support',
       'Ad-Free Experience',
     ],
@@ -323,7 +323,7 @@ const getFeatureIcon = (featureName: string, color: string) => {
       return <Search sx={{ color }} />;
     case 'Citation & Reference Check':
       return <FormatQuoteOutlined sx={{ color }} />;
-    case 'Advanced Plagiarism Detection':
+    case 'Plagiarism Detection':
       return <GppGoodOutlined sx={{ color }} />;
     case '24/7 Priority Support':
       return <AccessTimeOutlined sx={{ color }} />;
@@ -384,9 +384,21 @@ const PricePlan: React.FC = () => {
                   <Box sx={{ flex: 1 }} /> {/* Empty space for feature names */}
                   {plans.map(plan => (
                     <Box key={plan.name} sx={{ flex: 1, textAlign: 'center' }}>
-                      <Typography variant="h6" sx={{ color: plan.color }}>
-                        {plan.name}
-                      </Typography>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 1,
+                        }}
+                      >
+                        {React.cloneElement(plan.icon as React.ReactElement, {
+                          sx: { color: plan.color },
+                        })}
+                        <Typography variant="h6" sx={{ color: plan.color }}>
+                          {plan.name}
+                        </Typography>
+                      </Box>
                       <Typography variant="subtitle2" color="text.secondary">
                         ${plan.price}/month
                       </Typography>
@@ -470,7 +482,7 @@ const PricePlan: React.FC = () => {
 
       <Container>
         <Stack spacing={6}>
-          <Grid container spacing={3}>
+          <Grid container spacing={6}>
             {plans.map(plan => (
               <Grid item xs={12} md={6} lg={3} key={plan.name}>
                 <Card
@@ -622,7 +634,7 @@ const PricePlan: React.FC = () => {
                         </Typography>
                       </Box>
                       <Divider />
-                      <Stack spacing={2}>
+                      <Stack spacing={2} sx={{ mb: 3 }}>
                         <Typography
                           variant="subtitle2"
                           color="text.secondary"

@@ -10,7 +10,9 @@ import {
 } from '@mui/material';
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useTokenLimitContext } from '../../contexts/TokenLimitContext';
 import { ai } from '../../services/ai';
+import { TokenLimitWarning } from '../common/TokenLimitWarning';
 
 export const AIFeedback: React.FC = () => {
   useParams<{ id: string }>();
@@ -21,7 +23,18 @@ export const AIFeedback: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
 
+  const { hasEnoughTokens, loading: tokenLoading } = useTokenLimitContext();
+
+  // Estimate tokens needed for feedback generation
+  const tokensNeeded = 500; // Conservative estimate for feedback generation
+  const canGenerateFeedback = hasEnoughTokens(tokensNeeded);
+
   const handleGenerateFeedback = async () => {
+    if (!canGenerateFeedback) {
+      setError('Insufficient tokens to generate feedback. Please upgrade your plan.');
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -45,6 +58,10 @@ export const AIFeedback: React.FC = () => {
           <Typography component="h1" variant="h4" align="center" gutterBottom>
             AI Feedback Generator
           </Typography>
+
+          {/* Token Limit Warning */}
+          <TokenLimitWarning tokensNeeded={tokensNeeded} />
+
           {error && (
             <Alert severity="error" sx={{ mb: 3 }}>
               {error}
@@ -86,11 +103,12 @@ export const AIFeedback: React.FC = () => {
           <Button
             variant="contained"
             onClick={handleGenerateFeedback}
-            disabled={loading || !submission}
+            disabled={loading || !submission || !canGenerateFeedback || tokenLoading}
             fullWidth
           >
             {loading ? <CircularProgress size={24} /> : 'Generate Feedback'}
           </Button>
+
           {feedback && (
             <Box sx={{ mt: 4 }}>
               <Typography variant="h6" gutterBottom>

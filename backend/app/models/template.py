@@ -18,7 +18,7 @@ class Template(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Template metadata
-    metadata = Column(JSON)  # Stores additional template metadata like tags, difficulty, etc.
+    template_metadata = Column(JSON)  # Stores additional template metadata like tags, difficulty, etc.
     
     # Relationships
     creator = relationship("User", back_populates="templates")

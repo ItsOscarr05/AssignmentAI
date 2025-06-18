@@ -9,6 +9,8 @@ from .class_model import Class
 from .security import SecurityAlert, AuditLog, TwoFactorSetup
 from .log import SystemLog
 from .notification import Notification
+from .subscription import Subscription
+from .usage import Usage, UsageLimit
 
 __all__ = [
     "Base",
@@ -24,4 +26,7 @@ __all__ = [
     "TwoFactorSetup",
     "SystemLog",
     "Notification",
+    "Subscription",
+    "Usage",
+    "UsageLimit",
 ] 

@@ -17,6 +17,9 @@ from app.core.config import settings
 from app.core.logger import logger
 import re
 import asyncio
+from fastapi import HTTPException
+from sqlalchemy import func
+from app.models.usage import Usage
 
 class AIService:
     def __init__(self, db: AsyncSession):
@@ -390,4 +393,31 @@ class AIService:
             "medium": 60,
             "hard": 120
         }
-        return time_estimates.get(difficulty.lower(), 60) 
+        return time_estimates.get(difficulty.lower(), 60)
+
+    async def enforce_token_limit(self, user_id: int, tokens_needed: int) -> None:
+        """
+        Enforce the user's monthly token limit. Raise HTTPException if exceeded.
+        """
+        # Get active subscription
+        subscription = self.db.query(Subscription).filter(
+            Subscription.user_id == user_id,
+            Subscription.status == SubscriptionStatus.ACTIVE
+        ).first()
+        token_limit = subscription.token_limit if subscription else 30000  # Default to free plan
+
+        # Calculate start of current month
+        now = datetime.utcnow()
+        start_of_month = datetime(now.year, now.month, 1)
+
+        # Sum tokens used this month
+        tokens_used = self.db.query(func.coalesce(func.sum(Usage.tokens_used), 0)).filter(
+            Usage.user_id == user_id,
+            Usage.timestamp >= start_of_month
+        ).scalar()
+
+        if tokens_used + tokens_needed > token_limit:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Token limit exceeded: {tokens_used + tokens_needed} / {token_limit}"
+            ) 

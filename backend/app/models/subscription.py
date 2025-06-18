@@ -22,7 +22,7 @@ class Subscription(Base):
     status = Column(Enum(SubscriptionStatus), default=SubscriptionStatus.PENDING)
     ai_model = Column(String, nullable=False)  # The AI model assigned to this subscription
     token_limit = Column(Integer, nullable=False)  # Monthly token limit
-    metadata = Column(JSON)  # Additional subscription data
+    subscription_metadata = Column(JSON)  # Additional subscription data
     
     # Relationships
     user = relationship("User", back_populates="subscription") 

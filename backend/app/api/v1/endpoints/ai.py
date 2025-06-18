@@ -30,6 +30,9 @@ async def generate_assignment(
     Generate a new assignment using AI.
     """
     try:
+        ai_service = AIService(db)
+        tokens_needed = 1000
+        await ai_service.enforce_token_limit(current_user.id, tokens_needed)
         # Generate assignment content using AI
         content = await ai_service.generate_assignment_content(assignment_in)
         
@@ -73,6 +76,8 @@ async def generate_assignment_old(
     
     try:
         ai_service = AIService(db)
+        tokens_needed = 1000
+        await ai_service.enforce_token_limit(current_user.id, tokens_needed)
         response = await ai_service.generate_assignment(assignment_request)
         
         if response.success and response.assignment:
@@ -120,6 +125,8 @@ async def generate_feedback(
     
     try:
         ai_service = AIService(db)
+        tokens_needed = 500
+        await ai_service.enforce_token_limit(current_user.id, tokens_needed)
         feedback = await ai_service.generate_feedback(submission_content, feedback_type)
         
         if not feedback:
@@ -221,6 +228,8 @@ async def analyze_submission(
     
     try:
         ai_service = AIService(db)
+        tokens_needed = 1000
+        await ai_service.enforce_token_limit(current_user.id, tokens_needed)
         analysis = await ai_service.analyze_submission(
             submission_content=submission.content,
             assignment_requirements=submission.assignment.content

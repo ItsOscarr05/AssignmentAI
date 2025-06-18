@@ -9,6 +9,7 @@ import { SecurityProvider } from './components/security/SecurityProvider';
 import { AdProvider } from './contexts/AdContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { TokenLimitProvider } from './contexts/TokenLimitContext';
 import { AppRouter } from './routes';
 import { ThemeProvider } from './theme/ThemeProvider';
 
@@ -21,24 +22,26 @@ const App: React.FC = () => {
             <AuthProvider>
               <ToastProvider>
                 <AdProvider>
-                  <CssBaseline />
-                  <SnackbarProvider maxSnack={3}>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-                      <Navbar />
-                      <Box sx={{ display: 'flex', flex: 1 }}>
-                        <Box sx={{ flex: 1 }}>
-                          <AdComponent position="top" />
-                          <Routes>
-                  <AppRouter />
-                          </Routes>
-                          <AdComponent position="bottom" />
-                        </Box>
-                        <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-                          <AdComponent position="sidebar" />
+                  <TokenLimitProvider>
+                    <CssBaseline />
+                    <SnackbarProvider maxSnack={3}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+                        <Navbar />
+                        <Box sx={{ display: 'flex', flex: 1 }}>
+                          <Box sx={{ flex: 1 }}>
+                            <AdComponent position="top" />
+                            <Routes>
+                              <AppRouter />
+                            </Routes>
+                            <AdComponent position="bottom" />
+                          </Box>
+                          <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+                            <AdComponent position="sidebar" />
+                          </Box>
                         </Box>
                       </Box>
-                    </Box>
-                  </SnackbarProvider>
+                    </SnackbarProvider>
+                  </TokenLimitProvider>
                 </AdProvider>
               </ToastProvider>
             </AuthProvider>

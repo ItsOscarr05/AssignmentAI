@@ -1,43 +1,37 @@
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
+import { recentAssignments } from '../pages/DashboardHome';
 
-export type PlanType = 'Free' | 'Plus' | 'Pro' | 'Max';
-
-interface TokenUsage {
-  plan: PlanType;
-  total: number;
-  used: number;
-  remaining: number;
-  percentUsed: number;
-  label: string;
+interface Subscription {
+  token_limit?: number;
+  current_period_end?: string;
 }
 
-// Mock data for demonstration; in a real app, fetch from API or context
-const PLAN_LIMITS: Record<PlanType, number> = {
-  Free: 30000,
-  Plus: 50000,
-  Pro: 75000,
-  Max: 100000,
-};
+export function useTokenUsage(subscription?: Subscription) {
+  // Billing cycle always starts on the 1st of the current month
+  const now = new Date();
+  const billingStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const billingEnd = now;
 
-const MOCK_USER = {
-  plan: 'Free' as PlanType,
-  used: 13589,
-};
+  // Filter assignments to only those in the current billing cycle
+  const assignmentsInCycle = useMemo(
+    () =>
+      recentAssignments.filter(a => {
+        const created = new Date(a.createdAt);
+        return created >= billingStart && created < billingEnd;
+      }),
+    [billingStart, billingEnd]
+  );
 
-export function useTokenUsage(): TokenUsage {
-  const [tokenUsage] = useState<TokenUsage>(() => {
-    const total = PLAN_LIMITS[MOCK_USER.plan];
-    const used = MOCK_USER.used;
-    const remaining = total - used;
-    const percentUsed = Math.round((used / total) * 100);
-    const label = `Current Plan: ${MOCK_USER.plan} (${total.toLocaleString()} tokens/mo)`;
-    return { plan: MOCK_USER.plan, total, used, remaining, percentUsed, label };
-  });
+  const totalTokens = subscription?.token_limit ?? 30000;
+  const usedTokens = assignmentsInCycle.reduce((sum, a) => sum + (a.tokensUsed || 500), 0);
+  const remainingTokens = totalTokens - usedTokens;
+  const percentUsed = Math.round((usedTokens / totalTokens) * 100);
 
-  // In a real app, fetch and update token usage here
-  useEffect(() => {
-    // Fetch logic here if needed
-  }, []);
-
-  return tokenUsage;
+  return {
+    totalTokens,
+    usedTokens,
+    remainingTokens,
+    percentUsed,
+    assignmentsInCycle,
+  };
 }

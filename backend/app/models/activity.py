@@ -11,7 +11,7 @@ class UserActivity(Base):
     action = Column(String, nullable=False)  # e.g., "login", "logout", "create_assignment", etc.
     resource_type = Column(String)  # e.g., "assignment", "submission", "comment", etc.
     resource_id = Column(String)  # ID of the affected resource
-    metadata = Column(JSON)  # Additional context about the activity
+    activity_metadata = Column(JSON)  # Additional context about the activity
     ip_address = Column(String)
     user_agent = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
