@@ -68,6 +68,8 @@ class User(Base):
     files = relationship("File", back_populates="user")
     sessions = relationship("UserSession", back_populates="user")
     activities = relationship("Activity", back_populates="user")
+    citations = relationship("Citation", back_populates="user")
+    templates = relationship("Template", back_populates="creator")
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

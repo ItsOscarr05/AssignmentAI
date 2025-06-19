@@ -69,10 +69,87 @@ const Assignments: React.FC = () => {
   const [filterName, setFilterName] = useState('');
   const [filterSubject, setFilterSubject] = useState('all');
   const [filterDate, setFilterDate] = useState<Dayjs | null>(null);
+  const knownSubjects = [
+    'Math',
+    'Mathematics',
+    'English',
+    'Literature',
+    'Science',
+    'Biology',
+    'Chemistry',
+    'Physics',
+    'History',
+    'World History',
+    'Social Studies',
+    'Language',
+    'Foreign Language',
+    'Spanish',
+    'French',
+    'Technology',
+    'Tech',
+    'Computer Science',
+    'IT',
+    'Business',
+    'Economics',
+    'Accounting',
+    'Arts',
+    'Art',
+    'Music',
+    'Fitness',
+    'Health',
+    'PE',
+    'Career & Technical Ed',
+    'Career',
+    'CTE',
+    'Engineering',
+    'Culinary',
+    'Marketing',
+    'Finance',
+    'Drama',
+    'Band',
+    'Dance',
+    'Photography',
+    'Choir',
+    'Painting',
+    'Drawing',
+    'Mandarin',
+    'Latin',
+    'Japanese',
+    'German',
+    'Italian',
+    'Algebra',
+    'Geometry',
+    'Civics',
+    'Government',
+    'Geography',
+    'Astronomy',
+    'Earth',
+    'Writing',
+    'Composition',
+    'Reading',
+    'Robotics',
+    'Visual',
+    'World',
+  ];
+
+  function extractSubjectFromTitle(title: string): string {
+    if (!title) return 'Unknown';
+    // Sort subjects by length descending to match longest first
+    const sortedSubjects = [...knownSubjects].sort((a, b) => b.length - a.length);
+    for (const subject of sortedSubjects) {
+      if (title.toLowerCase().startsWith(subject.toLowerCase())) {
+        return subject;
+      }
+    }
+    // Try to match first word as fallback
+    const firstWord = title.split(' ')[0];
+    return firstWord.charAt(0).toUpperCase() + firstWord.slice(1);
+  }
+
   const [assignmentsList] = useState<Assignment[]>(
     recentAssignments.map((a: any) => ({
       ...a,
-      subject: a.subject || (a.title ? a.title.split(' ')[0] : 'Unknown'),
+      subject: a.subject || (a.title ? extractSubjectFromTitle(a.title) : 'Unknown'),
       description: a.description || '',
       attachments: a.attachments || [],
     }))
@@ -333,7 +410,7 @@ const Assignments: React.FC = () => {
         'photography',
       ].includes(s)
     )
-      return 'Arts';
+      return 'Music & Arts';
 
     // Always map 'computer science' to Technology
     if (s.includes('computer science')) return 'Technology';
@@ -370,7 +447,7 @@ const Assignments: React.FC = () => {
       s.includes('drawing') ||
       s.includes('photography')
     )
-      return 'Arts';
+      return 'Music & Arts';
     if (s.includes('fitness') || s.includes('health') || s.includes('pe') || s.includes('wellness'))
       return 'Fitness';
     if (

@@ -20,7 +20,7 @@ const subjectColorMap: Record<string, string> = {
   Technology: '#B39DDB', // Lavender
   Business: '#81C784', // Light Green
   Economics: '#81C784', // Light Green (alias)
-  Arts: '#8E24AA', // Purple / Violet
+  'Music & Arts': '#8E24AA', // Purple / Violet
   Health: '#FFA000', // Orange (alias)
   PE: '#FFA000', // Orange (alias)
   'Health / PE': '#FFA000', // Orange (alias)

@@ -343,7 +343,7 @@ const DashboardHome: React.FC = () => {
     'Language',
     'History',
     'Technology',
-    'Arts',
+    'Music & Arts',
   ];
 
   // Map any subject to its core subject
@@ -440,7 +440,7 @@ const DashboardHome: React.FC = () => {
         'photography',
       ].includes(s)
     )
-      return 'Arts';
+      return 'Music & Arts';
     // Default: try to match by partial string
     for (const core of coreSubjects) {
       if (s.includes(core.toLowerCase())) return core;
@@ -467,7 +467,7 @@ const DashboardHome: React.FC = () => {
     'Language',
     'History',
     'Technology',
-    'Arts',
+    'Music & Arts',
   ];
 
   const pieChartData = rainbowOrder

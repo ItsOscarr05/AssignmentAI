@@ -42,6 +42,7 @@ import {
 } from '@mui/material';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   CartesianGrid,
   Line,
@@ -75,6 +76,7 @@ const AITokens: React.FC = () => {
   const [plan] = React.useState<'Free' | 'Pro'>('Free');
   const [calcTokens, setCalcTokens] = React.useState(0);
   const [calcCost, setCalcCost] = React.useState(0);
+  const navigate = useNavigate();
 
   const { totalTokens, usedTokens, remainingTokens, percentUsed, assignmentsInCycle } =
     useTokenUsage(subscription);
@@ -189,32 +191,48 @@ const AITokens: React.FC = () => {
     return points;
   }
 
-  // For 7-day chart: show last 7 assignments as a running total
+  // For 7-day chart: show last 7 days ending with today, with usage per day
   function buildUsageHistory(
     assignments: { tokensUsed?: number; title: string; createdAt?: string }[],
     _total: number,
     range: number
   ) {
-    const points: { date: string; tokens: number; used: number; description: string }[] = [];
-    let runningTotal = 0;
-    const recent = assignments.slice(-range);
-    // Determine the date for the initial point
-    let initialDate = 'Start';
-    if (recent.length > 0 && recent[0].createdAt) {
-      const firstDate = new Date(recent[0].createdAt);
-      firstDate.setDate(firstDate.getDate() - 1);
-      initialDate = format(firstDate, 'MMM d');
+    const today = new Date();
+    const days: string[] = [];
+    for (let i = range - 1; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      days.push(format(d, 'yyyy-MM-dd'));
     }
-    points.push({ date: initialDate, tokens: 0, used: 0, description: 'Starting balance' });
-    recent.forEach((a, i) => {
-      const used = a.tokensUsed || 500;
+    // Map date to assignments
+    const usageByDate: Record<string, { used: number; titles: string[] }> = {};
+    assignments.forEach(a => {
+      if (!a.createdAt) return;
+      const dateStr = format(new Date(a.createdAt), 'yyyy-MM-dd');
+      if (!usageByDate[dateStr]) usageByDate[dateStr] = { used: 0, titles: [] };
+      usageByDate[dateStr].used += a.tokensUsed || 500;
+      usageByDate[dateStr].titles.push(a.title);
+    });
+    let runningTotal = 0;
+    const points: { date: string; tokens: number; used: number; description: string }[] = [];
+    // Initial point (day before the range)
+    const initialDate = new Date(today);
+    initialDate.setDate(today.getDate() - range);
+    points.push({
+      date: format(initialDate, 'MMM d'),
+      tokens: 0,
+      used: 0,
+      description: 'Starting balance',
+    });
+    days.forEach(dateStr => {
+      const used = usageByDate[dateStr]?.used || 0;
       runningTotal += used;
-      const dateLabel = a.createdAt ? format(new Date(a.createdAt), 'MMM d') : `Entry ${i + 1}`;
+      const description = used > 0 ? `Used for: ${usageByDate[dateStr]?.titles.join(', ')}` : '';
       points.push({
-        date: dateLabel,
+        date: format(parseISO(dateStr), 'MMM d'),
         tokens: runningTotal,
         used,
-        description: `Used for: ${a.title}`,
+        description,
       });
     });
     return points;
@@ -434,6 +452,7 @@ const AITokens: React.FC = () => {
                         pointerEvents: 'none',
                         opacity: 1,
                       }}
+                      disabled
                     >
                       Current Plan
                     </Button>
@@ -473,7 +492,7 @@ const AITokens: React.FC = () => {
                       variant="outlined"
                       color="success"
                       size="small"
-                      href="/dashboard/price-plan#plus"
+                      onClick={() => navigate('/dashboard/price-plan#plus')}
                     >
                       Upgrade
                     </Button>
@@ -512,7 +531,7 @@ const AITokens: React.FC = () => {
                     <Button
                       variant="outlined"
                       size="small"
-                      href="/dashboard/price-plan#pro"
+                      onClick={() => navigate('/dashboard/price-plan#pro')}
                       sx={{ borderColor: '#9c27b0', color: '#9c27b0', fontWeight: 700 }}
                     >
                       Upgrade
@@ -555,7 +574,7 @@ const AITokens: React.FC = () => {
                       variant="outlined"
                       color="warning"
                       size="small"
-                      href="/dashboard/price-plan#max"
+                      onClick={() => navigate('/dashboard/price-plan#max')}
                     >
                       Upgrade
                     </Button>

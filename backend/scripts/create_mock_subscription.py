@@ -28,18 +28,18 @@ async def create_mock_subscription():
                 print("Mock subscription already exists!")
                 return existing_subscription
 
-            # Create mock subscription (Free plan with 30,000 tokens)
+            # Create mock subscription (Plus plan with 50,000 tokens)
             mock_subscription = Subscription(
                 user_id=mock_user.id,
                 stripe_subscription_id="sub_mock_123456",
                 stripe_customer_id="cus_mock_123456",
-                plan_id="free",
+                plan_id="price_plus",
                 status=SubscriptionStatus.ACTIVE,
                 ai_model="gpt-4-0125-preview",
-                token_limit=30000,  # Free plan limit
+                token_limit=50000,  # Plus plan limit
                 subscription_metadata={
-                    "plan_name": "Free",
-                    "price": 0,
+                    "plan_name": "Plus",
+                    "price": 4.99,
                     "billing_cycle": "monthly"
                 }
             )
@@ -101,10 +101,10 @@ async def create_mock_subscription():
             
             print("Mock subscription and usage data created successfully!")
             print(f"User: {mock_user.email}")
-            print(f"Plan: Free (30,000 tokens/month)")
+            print(f"Plan: Plus (50,000 tokens/month)")
             print(f"Status: Active")
             print(f"Tokens Used: ~15,000")
-            print(f"Tokens Remaining: ~15,000")
+            print(f"Tokens Remaining: ~35,000")
             
             return mock_subscription
             

@@ -20,6 +20,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAI } from '../../contexts/AIContext';
 import { assignments } from '../../services/api';
+import RichTextEditor from '../editor/RichTextEditor';
 
 interface AssignmentFormData {
   title: string;
@@ -46,20 +47,15 @@ const AssignmentCreate: React.FC = () => {
     gradeLevel: '',
     dueDate: '',
     points: 100,
-    allowLateSubmissions: true,
+    allowLateSubmissions: false,
     latePenalty: 10,
     aiGenerated: false,
+    aiPrompt: '',
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
-  };
-
-  const handleSelectChange = (e: SelectChangeEvent) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent<string>
+  ) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -67,25 +63,50 @@ const AssignmentCreate: React.FC = () => {
     }));
   };
 
-  const handleAIGenerate = async () => {
+  const handleSwitchChange = (name: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [name]: event.target.checked,
+    }));
+  };
+
+  const handleDescriptionChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      description: value,
+    }));
+  };
+
+  const handleAIGeneration = async () => {
+    if (!formData.aiPrompt) {
+      setError('Please provide a prompt for AI generation');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setIsProcessing(true);
+
     try {
-      setLoading(true);
-      setError(null);
-      setIsProcessing(true);
-
-      const prompt = `Generate an assignment for ${formData.subject} at ${formData.gradeLevel} level worth ${formData.points} points.`;
-      setGeneratedText(prompt);
-
-      // Simulate AI generation
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const response = await assignments.generateAssignment({
+        title: formData.title || 'AI Generated Assignment',
+        description: formData.aiPrompt,
+        subject: formData.subject,
+        difficulty: 'medium',
+        type: 'essay',
+        additionalContext: formData.aiPrompt,
+      });
 
       setFormData(prev => ({
         ...prev,
-        title: `AI Generated ${formData.subject} Assignment`,
-        description: `This is an AI-generated assignment for ${formData.gradeLevel} ${formData.subject} worth ${formData.points} points.`,
+        description: response.content || '',
+        aiGenerated: true,
       }));
-    } catch (err: any) {
-      setError(err.message || 'Failed to generate assignment');
+
+      setGeneratedText(response.content || '');
+    } catch (err) {
+      setError('Failed to generate assignment content');
+      console.error('AI generation error:', err);
     } finally {
       setLoading(false);
       setIsProcessing(false);
@@ -94,10 +115,11 @@ const AssignmentCreate: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
+
     try {
-      setLoading(true);
-      setError(null);
-      await assignments.create({
+      const assignmentData = {
         title: formData.title,
         description: formData.description,
         subject: formData.subject,
@@ -106,173 +128,211 @@ const AssignmentCreate: React.FC = () => {
         points: formData.points,
         allow_late_submissions: formData.allowLateSubmissions,
         late_penalty: formData.latePenalty,
-      });
+      };
+
+      await assignments.create(assignmentData);
       navigate('/assignments');
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to create assignment');
+    } catch (err) {
+      setError('Failed to create assignment');
+      console.error('Assignment creation error:', err);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Container maxWidth="md">
-      <Box sx={{ mt: 4, mb: 4 }}>
-        <Paper elevation={3} sx={{ p: 4 }}>
-          <Typography component="h1" variant="h4" align="center" gutterBottom>
-            Create New Assignment
-          </Typography>
-          {error && (
-            <Alert severity="error" sx={{ mb: 3 }}>
-              {error}
-            </Alert>
-          )}
-          <form onSubmit={handleSubmit}>
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={formData.aiGenerated}
-                      onChange={handleChange}
-                      name="aiGenerated"
-                    />
-                  }
-                  label="Use AI to generate assignment"
-                />
-              </Grid>
-              {formData.aiGenerated && (
-                <Grid item xs={12}>
-                  <Button
-                    variant="outlined"
-                    onClick={handleAIGenerate}
-                    disabled={loading || isProcessing || !formData.subject || !formData.gradeLevel}
-                    fullWidth
-                  >
-                    {isProcessing ? 'Generating...' : 'Generate with AI'}
-                  </Button>
-                </Grid>
-              )}
-              <Grid item xs={12}>
-                <TextField
-                  required
-                  fullWidth
-                  label="Title"
-                  name="title"
-                  value={formData.title}
+    <Container maxWidth="lg">
+      <Paper sx={{ p: 4, mt: 4 }}>
+        <Typography variant="h4" component="h1" gutterBottom>
+          Create New Assignment
+        </Typography>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <TextField
+                required
+                fullWidth
+                label="Assignment Title"
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                placeholder="Enter assignment title"
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth required>
+                <InputLabel>Subject</InputLabel>
+                <Select
+                  name="subject"
+                  value={formData.subject}
                   onChange={handleChange}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  required
-                  fullWidth
-                  multiline
-                  rows={4}
-                  label="Description"
-                  name="description"
-                  value={formData.description}
+                  label="Subject"
+                >
+                  <MenuItem value="math">Mathematics</MenuItem>
+                  <MenuItem value="science">Science</MenuItem>
+                  <MenuItem value="english">English</MenuItem>
+                  <MenuItem value="history">History</MenuItem>
+                  <MenuItem value="computer_science">Computer Science</MenuItem>
+                  <MenuItem value="art">Art</MenuItem>
+                  <MenuItem value="music">Music</MenuItem>
+                  <MenuItem value="physical_education">Physical Education</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth required>
+                <InputLabel>Grade Level</InputLabel>
+                <Select
+                  name="gradeLevel"
+                  value={formData.gradeLevel}
                   onChange={handleChange}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth required>
-                  <InputLabel>Subject</InputLabel>
-                  <Select
-                    name="subject"
-                    value={formData.subject}
-                    onChange={handleSelectChange}
-                    label="Subject"
-                  >
-                    <MenuItem value="math">Mathematics</MenuItem>
-                    <MenuItem value="science">Science</MenuItem>
-                    <MenuItem value="english">English</MenuItem>
-                    <MenuItem value="history">History</MenuItem>
-                    <MenuItem value="computer_science">Computer Science</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth required>
-                  <InputLabel>Grade Level</InputLabel>
-                  <Select
-                    name="gradeLevel"
-                    value={formData.gradeLevel}
-                    onChange={handleSelectChange}
-                    label="Grade Level"
-                  >
-                    <MenuItem value="elementary">Elementary</MenuItem>
-                    <MenuItem value="middle">Middle School</MenuItem>
-                    <MenuItem value="high">High School</MenuItem>
-                    <MenuItem value="college">College</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
+                  label="Grade Level"
+                >
+                  <MenuItem value="elementary">Elementary (K-5)</MenuItem>
+                  <MenuItem value="middle">Middle School (6-8)</MenuItem>
+                  <MenuItem value="high">High School (9-12)</MenuItem>
+                  <MenuItem value="college">College/University</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                required
+                fullWidth
+                type="datetime-local"
+                label="Due Date"
+                name="dueDate"
+                value={formData.dueDate}
+                onChange={handleChange}
+                InputLabelProps={{
+                  shrink: true,
+                }}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                type="number"
+                label="Points"
+                name="points"
+                value={formData.points}
+                onChange={handleChange}
+                inputProps={{ min: 1, max: 1000 }}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={formData.allowLateSubmissions}
+                    onChange={handleSwitchChange('allowLateSubmissions')}
+                  />
+                }
+                label="Allow Late Submissions"
+              />
+            </Grid>
+
+            {formData.allowLateSubmissions && (
               <Grid item xs={12} sm={6}>
                 <TextField
-                  required
-                  fullWidth
-                  type="datetime-local"
-                  label="Due Date"
-                  name="dueDate"
-                  value={formData.dueDate}
-                  onChange={handleChange}
-                  InputLabelProps={{ shrink: true }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  required
                   fullWidth
                   type="number"
-                  label="Points"
-                  name="points"
-                  value={formData.points}
+                  label="Late Penalty (%)"
+                  name="latePenalty"
+                  value={formData.latePenalty}
                   onChange={handleChange}
-                  inputProps={{ min: 0, max: 1000 }}
+                  inputProps={{ min: 0, max: 100 }}
+                  helperText="Percentage of points deducted for late submissions"
                 />
               </Grid>
-              <Grid item xs={12}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={formData.allowLateSubmissions}
-                      onChange={handleChange}
-                      name="allowLateSubmissions"
-                    />
-                  }
-                  label="Allow late submissions"
-                />
-              </Grid>
-              {formData.allowLateSubmissions && (
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label="Late Penalty (%)"
-                    name="latePenalty"
-                    value={formData.latePenalty}
-                    onChange={handleChange}
-                    inputProps={{ min: 0, max: 100 }}
-                    helperText="Percentage of points deducted per day late"
+            )}
+
+            <Grid item xs={12}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={formData.aiGenerated}
+                    onChange={handleSwitchChange('aiGenerated')}
                   />
-                </Grid>
-              )}
+                }
+                label="Use AI to Generate Content"
+              />
+            </Grid>
+
+            {formData.aiGenerated && (
               <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={3}
+                  label="AI Prompt"
+                  name="aiPrompt"
+                  value={formData.aiPrompt}
+                  onChange={handleChange}
+                  placeholder="Describe what you want the AI to generate..."
+                  helperText="Provide a detailed description of the assignment you want to create"
+                />
+                <Button
+                  variant="outlined"
+                  onClick={handleAIGeneration}
+                  disabled={loading || isProcessing || !formData.aiPrompt}
+                  sx={{ mt: 1 }}
+                >
+                  {loading || isProcessing ? <CircularProgress size={20} /> : 'Generate Content'}
+                </Button>
+              </Grid>
+            )}
+
+            <Grid item xs={12}>
+              <Typography variant="h6" gutterBottom>
+                Assignment Description
+              </Typography>
+              <RichTextEditor
+                value={formData.description}
+                onChange={handleDescriptionChange}
+                placeholder="Enter detailed assignment description, requirements, and instructions..."
+                collaborative={false}
+                onSave={() => {
+                  // Auto-save functionality can be implemented here
+                  console.log('Content saved');
+                }}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                <Button
+                  variant="outlined"
+                  onClick={() => navigate('/assignments')}
+                  disabled={loading}
+                >
+                  Cancel
+                </Button>
                 <Button
                   type="submit"
                   variant="contained"
-                  color="primary"
-                  fullWidth
                   disabled={loading}
+                  startIcon={loading ? <CircularProgress size={20} /> : null}
                 >
-                  {loading ? <CircularProgress size={24} /> : 'Create Assignment'}
+                  {loading ? 'Creating...' : 'Create Assignment'}
                 </Button>
-              </Grid>
+              </Box>
             </Grid>
-          </form>
-        </Paper>
-      </Box>
+          </Grid>
+        </form>
+      </Paper>
     </Container>
   );
 };

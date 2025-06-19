@@ -11,7 +11,9 @@ from app.api.v1.endpoints import (
     feedback,
     ai_assignment,
     payments,
-    dashboard
+    dashboard,
+    citations,
+    templates
 )
 
 api_router = APIRouter()
@@ -28,4 +30,6 @@ api_router.include_router(files.router, prefix="/files", tags=["files"])
 api_router.include_router(feedback.router, prefix="/feedback", tags=["Feedback"])
 api_router.include_router(ai_assignment.router, prefix="/ai-assignments", tags=["AI Assignments"])
 api_router.include_router(payments.router, prefix="/payments", tags=["payments"])
-api_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"]) 
+api_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
+api_router.include_router(citations.router, prefix="/citations", tags=["citations"])
+api_router.include_router(templates.router, prefix="/templates", tags=["templates"]) 
