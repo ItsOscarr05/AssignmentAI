@@ -198,24 +198,24 @@ const Settings: React.FC = () => {
   // Subscription Settings
   const [subscription, setSubscription] = useState({
     plan: 'free' as SubscriptionPlan,
-    model: 'gpt-4-0125-preview',
+    model: 'gpt-4o-mini',
     tokenLimit: 30000,
   });
 
   // Map subscription plans to their respective models and token limits
   const subscriptionConfig: Record<SubscriptionPlan, SubscriptionConfig> = {
     free: {
-      model: 'gpt-4-0125-preview',
+      model: 'gpt-4.1-nano',
       tokenLimit: 30000,
       label: 'GPT-4.1 Nano',
     },
     plus: {
-      model: 'gpt-3.5-turbo-0125',
+      model: 'gpt-3.5-turbo',
       tokenLimit: 50000,
       label: 'GPT-3.5 Turbo',
     },
     pro: {
-      model: 'gpt-4-turbo-preview',
+      model: 'gpt-4-turbo',
       tokenLimit: 75000,
       label: 'GPT-4 Turbo',
     },
