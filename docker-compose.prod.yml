@@ -6,101 +6,138 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - NODE_ENV=production
     restart: always
+    environment:
+      - NODE_ENV=production
+      - VITE_API_URL=https://api.assignmentai.app
+      - VITE_STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
+      - VITE_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - VITE_SENTRY_DSN=${SENTRY_DSN}
+      - VITE_GA_TRACKING_ID=${GA_TRACKING_ID}
     networks:
       - app-network
     depends_on:
       - backend
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`assignmentai.com`)"
-      - "traefik.http.routers.frontend.entrypoints=websecure"
-      - "traefik.http.routers.frontend.tls=true"
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.frontend.rule=Host(`assignmentai.app`)'
+      - 'traefik.http.routers.frontend.entrypoints=websecure'
+      - 'traefik.http.routers.frontend.tls=true'
+      - 'traefik.http.routers.frontend.tls.certresolver=myresolver'
 
   # Backend Service
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      args:
+        - NODE_ENV=production
     restart: always
+    env_file:
+      - ./backend/.env.production
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
-      - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=${JWT_SECRET}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      - SECRET_KEY=${SECRET_KEY}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - AWS_BUCKET_NAME=${AWS_BUCKET_NAME}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
+      - FACEBOOK_CLIENT_SECRET=${FACEBOOK_CLIENT_SECRET}
+      - APPLE_CLIENT_SECRET=${APPLE_CLIENT_SECRET}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SENTRY_DSN=${SENTRY_DSN}
     networks:
       - app-network
     depends_on:
       - db
       - redis
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`api.assignmentai.com`)"
-      - "traefik.http.routers.backend.entrypoints=websecure"
-      - "traefik.http.routers.backend.tls=true"
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.backend.rule=Host(`api.assignmentai.app`)'
+      - 'traefik.http.routers.backend.entrypoints=websecure'
+      - 'traefik.http.routers.backend.tls=true'
+      - 'traefik.http.routers.backend.tls.certresolver=myresolver'
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8000/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # Database Service
   db:
     image: postgres:14-alpine
     restart: always
     environment:
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./backups:/backups
     networks:
       - app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
       interval: 10s
       timeout: 5s
       retries: 5
+    labels:
+      - 'traefik.enable=false'
 
   # Redis Service
   redis:
     image: redis:6-alpine
     restart: always
-    command: redis-server --requirepass ${REDIS_PASSWORD}
+    command: redis-server --requirepass ${REDIS_PASSWORD} --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD}', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
+    labels:
+      - 'traefik.enable=false'
 
   # Traefik Load Balancer
   traefik:
-    image: traefik:v2.5
+    image: traefik:v2.10
     restart: always
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik:/etc/traefik
+      - ./ssl:/ssl
     networks:
       - app-network
     command:
-      - "--api.insecure=false"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
-      - "--certificatesresolvers.myresolver.acme.email=your-email@example.com"
-      - "--certificatesresolvers.myresolver.acme.storage=/etc/traefik/acme.json"
+      - '--api.insecure=false'
+      - '--providers.docker=true'
+      - '--providers.docker.exposedbydefault=false'
+      - '--entrypoints.web.address=:80'
+      - '--entrypoints.websecure.address=:443'
+      - '--certificatesresolvers.myresolver.acme.tlschallenge=true'
+      - '--certificatesresolvers.myresolver.acme.email=${ACME_EMAIL}'
+      - '--certificatesresolvers.myresolver.acme.storage=/etc/traefik/acme.json'
+      - '--log.level=INFO'
+    labels:
+      - 'traefik.enable=false'
 
   # Prometheus Monitoring
   prometheus:
-    image: prom/prometheus
+    image: prom/prometheus:latest
     restart: always
     volumes:
       - ./prometheus:/etc/prometheus
@@ -110,21 +147,62 @@ services:
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/usr/share/prometheus/console_libraries'
       - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
     networks:
       - app-network
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.prometheus.rule=Host(`monitoring.assignmentai.app`)'
+      - 'traefik.http.routers.prometheus.entrypoints=websecure'
+      - 'traefik.http.routers.prometheus.tls=true'
+      - 'traefik.http.routers.prometheus.tls.certresolver=myresolver'
+      - 'traefik.http.routers.prometheus.middlewares=auth'
 
   # Grafana Dashboard
   grafana:
-    image: grafana/grafana
+    image: grafana/grafana:latest
     restart: always
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - GF_SERVER_ROOT_URL=https://monitoring.assignmentai.app
+      - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
     networks:
       - app-network
     depends_on:
       - prometheus
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.grafana.rule=Host(`monitoring.assignmentai.app`) && PathPrefix(`/grafana`)'
+      - 'traefik.http.routers.grafana.entrypoints=websecure'
+      - 'traefik.http.routers.grafana.tls=true'
+      - 'traefik.http.routers.grafana.tls.certresolver=myresolver'
+      - 'traefik.http.routers.grafana.middlewares=auth'
+
+  # Backup Service
+  backup:
+    image: postgres:14-alpine
+    restart: 'no'
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - ./backups:/backups
+    networks:
+      - app-network
+    command: |
+      sh -c '
+        pg_dump -h db -U $${POSTGRES_USER} -d $${POSTGRES_DB} > /backups/backup_$$(date +%Y%m%d_%H%M%S).sql
+        aws s3 sync /backups s3://${BACKUP_BUCKET}/database-backups/
+        find /backups -name "*.sql" -mtime +${BACKUP_RETENTION_DAYS} -delete
+      '
+    depends_on:
+      - db
+    labels:
+      - 'traefik.enable=false'
 
 networks:
   app-network:
@@ -132,6 +210,10 @@ networks:
 
 volumes:
   postgres_data:
+    driver: local
   redis_data:
+    driver: local
   prometheus_data:
-  grafana_data: 
+    driver: local
+  grafana_data:
+    driver: local

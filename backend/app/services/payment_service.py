@@ -63,26 +63,26 @@ class PaymentService:
             # Map price_id to AI model and token limit
             model_mapping = {
                 'price_free': {
-                    'model': 'gpt-4.1-nano',  # GPT-4.1 Nano model
+                    'model': 'gpt-4.1-nano',  # GPT-4.1 Nano (30K tokens)
                     'token_limit': 30000
                 },
                 'price_plus': {
-                    'model': 'gpt-3.5-turbo-0125',  # Latest GPT-3.5 Turbo model
+                    'model': 'gpt-3.5-turbo',  # GPT-3.5 Turbo (50K tokens)
                     'token_limit': 50000
                 },
                 'price_pro': {
-                    'model': 'gpt-4-turbo-preview',  # Latest GPT-4 Turbo model
+                    'model': 'gpt-4-turbo',  # GPT-4 Turbo (75K tokens)
                     'token_limit': 75000
                 },
                 'price_max': {
-                    'model': 'gpt-4',  # Standard GPT-4 model
+                    'model': 'gpt-4',  # Standard GPT-4 (100K tokens)
                     'token_limit': 100000
                 }
             }
 
             plan_config = model_mapping.get(price_id, {
                 'model': 'gpt-4.1-nano',  # Default fallback to free plan model
-                'token_limit': 5000
+                'token_limit': 30000
             })
 
             # Create subscription record in database

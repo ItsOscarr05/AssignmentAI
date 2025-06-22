@@ -1,6 +1,7 @@
 import {
   AutorenewOutlined as AutorenewIcon,
   CheckCircleOutline as CheckCircleIcon,
+  Clear as ClearIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
   HourglassEmpty as HourglassIcon,
@@ -38,8 +39,9 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import dayjs, { Dayjs } from 'dayjs';
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { mapToCoreSubject } from '../services/subjectService';
 import { recentAssignments } from './DashboardHome';
 
 interface Assignment {
@@ -59,97 +61,33 @@ interface Assignment {
 
 const Assignments: React.FC = () => {
   const theme = useTheme();
-  const navigate = useNavigate();
+  const location = useLocation();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [searchTerm, setSearchTerm] = useState('');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedAssignment, setSelectedAssignment] = useState<string | null>(null);
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filterName, setFilterName] = useState('');
-  const [filterSubject, setFilterSubject] = useState('all');
+  const [filterStatus, setFilterStatus] = useState<string>(location.state?.status || 'all');
+  const [filterName, setFilterName] = useState(location.state?.name || '');
+  const [filterSubject, setFilterSubject] = useState(location.state?.subject || 'all');
+  const [filterTimeframe, setFilterTimeframe] = useState(location.state?.timeframe || 'total');
   const [filterDate, setFilterDate] = useState<Dayjs | null>(null);
-  const knownSubjects = [
-    'Math',
-    'Mathematics',
-    'English',
-    'Literature',
-    'Science',
-    'Biology',
-    'Chemistry',
-    'Physics',
-    'History',
-    'World History',
-    'Social Studies',
-    'Language',
-    'Foreign Language',
-    'Spanish',
-    'French',
-    'Technology',
-    'Tech',
-    'Computer Science',
-    'IT',
-    'Business',
-    'Economics',
-    'Accounting',
-    'Arts',
-    'Art',
-    'Music',
-    'Fitness',
-    'Health',
-    'PE',
-    'Career & Technical Ed',
-    'Career',
-    'CTE',
-    'Engineering',
-    'Culinary',
-    'Marketing',
-    'Finance',
-    'Drama',
-    'Band',
-    'Dance',
-    'Photography',
-    'Choir',
-    'Painting',
-    'Drawing',
-    'Mandarin',
-    'Latin',
-    'Japanese',
-    'German',
-    'Italian',
-    'Algebra',
-    'Geometry',
-    'Civics',
-    'Government',
-    'Geography',
-    'Astronomy',
-    'Earth',
-    'Writing',
-    'Composition',
-    'Reading',
-    'Robotics',
-    'Visual',
-    'World',
-  ];
 
-  function extractSubjectFromTitle(title: string): string {
-    if (!title) return 'Unknown';
-    // Sort subjects by length descending to match longest first
-    const sortedSubjects = [...knownSubjects].sort((a, b) => b.length - a.length);
-    for (const subject of sortedSubjects) {
-      if (title.toLowerCase().startsWith(subject.toLowerCase())) {
-        return subject;
-      }
+  useEffect(() => {
+    if (filterTimeframe !== 'total') {
+      setFilterDate(null);
     }
-    // Try to match first word as fallback
-    const firstWord = title.split(' ')[0];
-    return firstWord.charAt(0).toUpperCase() + firstWord.slice(1);
-  }
+  }, [filterTimeframe]);
+
+  useEffect(() => {
+    if (filterDate) {
+      setFilterTimeframe('total');
+    }
+  }, [filterDate]);
 
   const [assignmentsList] = useState<Assignment[]>(
     recentAssignments.map((a: any) => ({
       ...a,
-      subject: a.subject || (a.title ? extractSubjectFromTitle(a.title) : 'Unknown'),
+      subject: a.subject || (a.title ? mapToCoreSubject(a.title) : 'Unknown'),
       description: a.description || '',
       attachments: a.attachments || [],
     }))
@@ -169,10 +107,6 @@ const Assignments: React.FC = () => {
   };
 
   const tableStyle = {
-    border: '2px solid red',
-  };
-
-  const searchBarStyle = {
     border: '2px solid red',
   };
 
@@ -298,8 +232,21 @@ const Assignments: React.FC = () => {
         filterName.trim() === '' ||
         assignment.title.toLowerCase().includes(filterName.toLowerCase());
       const matchesSubject = filterSubject === 'all' || assignment.subject === filterSubject;
-      const matchesDate = !filterDate || dayjs(assignment.createdAt).isSame(filterDate, 'day');
-      return matchesStatus && matchesName && matchesSubject && matchesDate;
+
+      const assignmentDate = dayjs(assignment.createdAt);
+      const matchesTimeframe = (() => {
+        if (filterTimeframe === 'total') return true;
+        const now = dayjs();
+        if (filterTimeframe === 'daily') return now.isSame(assignmentDate, 'day');
+        if (filterTimeframe === 'weekly') return now.isSame(assignmentDate, 'week');
+        if (filterTimeframe === 'monthly') return now.isSame(assignmentDate, 'month');
+        if (filterTimeframe === 'yearly') return now.isSame(assignmentDate, 'year');
+        return true;
+      })();
+
+      const matchesDate = !filterDate || assignmentDate.isSame(filterDate, 'day');
+
+      return matchesStatus && matchesName && matchesSubject && matchesDate && matchesTimeframe;
     })
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
@@ -314,158 +261,6 @@ const Assignments: React.FC = () => {
   };
 
   const stats = getAssignmentStats();
-
-  // Map any subject to its core subject
-  const mapToCoreSubject = (subject: string): string => {
-    const s = subject.toLowerCase();
-    // Direct and synonym matches
-    if (['math', 'mathematics', 'algebra', 'geometry', 'calculus', 'statistics'].includes(s))
-      return 'Math';
-    if (['fitness', 'health', 'pe', 'health / pe', 'physical education', 'wellness'].includes(s))
-      return 'Fitness';
-    if (['literature', 'english', 'writing', 'composition', 'reading'].includes(s))
-      return 'Literature';
-    if (
-      ['business', 'economics', 'accounting', 'finance', 'entrepreneurship', 'marketing'].includes(
-        s
-      )
-    )
-      return 'Business';
-    if (
-      [
-        'science',
-        'biology',
-        'chemistry',
-        'physics',
-        'earth science',
-        'astronomy',
-        'environmental science',
-      ].includes(s)
-    )
-      return 'Science';
-    if (
-      [
-        'career & technical ed',
-        'cte',
-        'vocational',
-        'engineering',
-        'manufacturing',
-        'culinary',
-      ].includes(s)
-    )
-      return 'Career & Technical Ed';
-    if (
-      [
-        'language',
-        'foreign language',
-        'spanish',
-        'french',
-        'german',
-        'latin',
-        'mandarin',
-        'japanese',
-        'italian',
-      ].includes(s)
-    )
-      return 'Language';
-    if (
-      [
-        'history',
-        'social studies',
-        'civics',
-        'government',
-        'geography',
-        'politics',
-        'world history',
-        'us history',
-      ].includes(s)
-    )
-      return 'History';
-    if (
-      [
-        'technology',
-        'computer science',
-        'computers',
-        'coding',
-        'programming',
-        'it',
-        'information technology',
-        'robotics',
-      ].includes(s)
-    )
-      return 'Technology';
-    if (
-      [
-        'arts',
-        'art',
-        'music',
-        'theater',
-        'drama',
-        'visual arts',
-        'painting',
-        'drawing',
-        'choir',
-        'band',
-        'dance',
-        'photography',
-      ].includes(s)
-    )
-      return 'Music & Arts';
-
-    // Always map 'computer science' to Technology
-    if (s.includes('computer science')) return 'Technology';
-
-    // Keyword-based matching
-    if (s.includes('career')) return 'Career & Technical Ed';
-    if (s.includes('project')) return 'Career & Technical Ed';
-    if (s.includes('tech') || s.includes('lab')) return 'Technology';
-    if (s.includes('robotics')) return 'Technology';
-    if (s.includes('business') || s.includes('finance') || s.includes('accounting'))
-      return 'Business';
-    if (s.includes('science')) return 'Science';
-    if (s.includes('math')) return 'Math';
-    if (s.includes('history') || s.includes('civics') || s.includes('government')) return 'History';
-    if (
-      s.includes('language') ||
-      s.includes('spanish') ||
-      s.includes('french') ||
-      s.includes('german') ||
-      s.includes('latin') ||
-      s.includes('mandarin') ||
-      s.includes('japanese') ||
-      s.includes('italian')
-    )
-      return 'Language';
-    if (
-      s.includes('art') ||
-      s.includes('music') ||
-      s.includes('drama') ||
-      s.includes('choir') ||
-      s.includes('band') ||
-      s.includes('dance') ||
-      s.includes('painting') ||
-      s.includes('drawing') ||
-      s.includes('photography')
-    )
-      return 'Music & Arts';
-    if (s.includes('fitness') || s.includes('health') || s.includes('pe') || s.includes('wellness'))
-      return 'Fitness';
-    if (
-      s.includes('writing') ||
-      s.includes('composition') ||
-      s.includes('reading') ||
-      s.includes('literature') ||
-      s.includes('english')
-    )
-      return 'Literature';
-
-    // As a last resort, use the first word capitalized or 'General'
-    if (subject && typeof subject === 'string') {
-      const firstWord = subject.split(' ')[0];
-      return firstWord.charAt(0).toUpperCase() + firstWord.slice(1);
-    }
-    return 'General';
-  };
 
   if (loading) {
     return (
@@ -508,10 +303,10 @@ const Assignments: React.FC = () => {
                 </Typography>
               </Box>
               <Box sx={{ textAlign: 'right' }}>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="text.primary">
                   Total Assignments: {stats.total}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="text.primary">
                   Completed Assignments: {stats.completed}
                 </Typography>
               </Box>
@@ -521,7 +316,7 @@ const Assignments: React.FC = () => {
 
         {/* Filters and Search */}
         <Grid container spacing={2} sx={{ mb: 3, alignItems: 'center' }}>
-          <Grid item xs={12} md={3}>
+          <Grid item xs={12} md={2}>
             <FormControl fullWidth>
               <InputLabel sx={{ color: 'red' }}>Status</InputLabel>
               <Select
@@ -555,17 +350,45 @@ const Assignments: React.FC = () => {
               placeholder="Filter by name..."
               value={filterName}
               onChange={e => setFilterName(e.target.value)}
-              sx={{ ...searchBarStyle, width: '100%' }}
+              fullWidth
+              sx={{
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'red',
+                  borderWidth: '2px',
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'red',
+                  borderWidth: '2px',
+                },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'red',
+                  borderWidth: '2px',
+                },
+              }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
                     <SearchIcon />
                   </InputAdornment>
                 ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    {filterName && (
+                      <IconButton
+                        aria-label="clear filter"
+                        onClick={() => setFilterName('')}
+                        edge="end"
+                        size="small"
+                      >
+                        <ClearIcon />
+                      </IconButton>
+                    )}
+                  </InputAdornment>
+                ),
               }}
             />
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid item xs={12} md={2}>
             <FormControl fullWidth>
               <InputLabel sx={{ color: 'red' }}>Subject</InputLabel>
               <Select
@@ -596,15 +419,67 @@ const Assignments: React.FC = () => {
               </Select>
             </FormControl>
           </Grid>
+          <Grid item xs={12} md={2}>
+            <FormControl fullWidth>
+              <InputLabel sx={{ color: 'red' }}>Timeframe</InputLabel>
+              <Select
+                value={filterTimeframe}
+                label="Timeframe"
+                onChange={e => setFilterTimeframe(e.target.value)}
+                sx={{
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'red',
+                    borderWidth: '2px',
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'red',
+                    borderWidth: '2px',
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'red',
+                    borderWidth: '2px',
+                  },
+                }}
+              >
+                <MenuItem value="total">Lifetime</MenuItem>
+                <MenuItem value="yearly">This Year</MenuItem>
+                <MenuItem value="monthly">This Month</MenuItem>
+                <MenuItem value="weekly">This Week</MenuItem>
+                <MenuItem value="daily">Today</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
           <Grid item xs={12} md={3}>
             <DatePicker
               label="Filter by date"
               value={filterDate}
               onChange={setFilterDate}
               slotProps={{
+                field: { clearable: true, onClear: () => setFilterDate(null) },
                 textField: {
                   fullWidth: true,
-                  sx: { ...searchBarStyle },
+                  sx: {
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'red',
+                      borderWidth: '2px',
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'red',
+                      borderWidth: '2px',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'red',
+                      borderWidth: '2px',
+                    },
+                  },
+                  InputLabelProps: {
+                    sx: {
+                      color: 'red',
+                      '&.Mui-focused': {
+                        color: 'red',
+                      },
+                    },
+                  },
                 },
               }}
             />
@@ -637,10 +512,8 @@ const Assignments: React.FC = () => {
                       </Box>
                     </TableCell>
                     <TableCell>
-                      <Typography
-                        sx={{ color: getSubjectColor(mapToCoreSubject(assignment.subject)) }}
-                      >
-                        {mapToCoreSubject(assignment.subject)}
+                      <Typography sx={{ color: getSubjectColor(assignment.subject) }}>
+                        {assignment.subject}
                       </Typography>
                     </TableCell>
                     <TableCell>

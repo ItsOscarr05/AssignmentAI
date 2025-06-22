@@ -1,23 +1,26 @@
 import {
-  Add as AddIcon,
   Chat as ChatIcon,
+  ChatOutlined as ChatOutlinedIcon,
   ContentCopy as ContentCopyIcon,
-  Delete as DeleteIcon,
-  Download as DownloadIcon,
+  DeleteOutlined,
+  DownloadOutlined as DownloadOutlinedIcon,
+  EditOutlined as EditOutlinedIcon,
   FormatListBulleted as FormatListBulletedIcon,
   History as HistoryIcon,
   InfoOutlined as InfoOutlinedIcon,
-  Link as LinkIcon,
+  LinkOutlined as LinkOutlinedIcon,
+  PushPin as PushPinIcon,
+  PushPinOutlined as PushPinOutlinedIcon,
+  RecordVoiceOverOutlined,
   Refresh as RefreshIcon,
   Send as SendIcon,
-  StarBorder as StarBorderIcon,
-  Star as StarIcon,
   ThumbDown as ThumbDownIcon,
   ThumbUp as ThumbUpIcon,
-  Title as TitleIcon,
   Upload as UploadIcon,
+  UploadOutlined as UploadOutlinedIcon,
 } from '@mui/icons-material';
 import {
+  alpha,
   Box,
   Button,
   Card,
@@ -39,13 +42,15 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { animate, motion } from 'framer-motion';
+import React, { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
+  Bar,
+  BarChart,
   CartesianGrid,
+  Customized,
   Legend,
-  Line,
-  LineChart,
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
   XAxis,
@@ -62,13 +67,6 @@ interface FileUpload {
   type: string;
   progress: number;
   preview?: string;
-}
-
-interface LinkSubmission {
-  id: string;
-  url: string;
-  title: string;
-  description: string;
 }
 
 interface HistoryItem {
@@ -88,6 +86,35 @@ interface ActivityData {
   extract: number;
   rewrite: number;
 }
+
+const generateWeeklyActivityData = (): ActivityData[] => {
+  const today = new Date();
+  const weekData = [];
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - i);
+    const dayStr = date.toISOString().split('T')[0];
+    const dayName = dayNames[date.getDay()];
+
+    const files = recentAssignments.filter(a => a.createdAt.split('T')[0] === dayStr).length;
+
+    // Simulate other activities for a more dynamic chart
+    weekData.push({
+      date: dayName,
+      chats: Math.floor(Math.random() * 5) + files,
+      files: files,
+      links: Math.floor(Math.random() * 3),
+      summarize: Math.floor(Math.random() * 4),
+      extract: Math.floor(Math.random() * 3),
+      rewrite: Math.floor(Math.random() * 2),
+    });
+  }
+  return weekData;
+};
+
+const initialActivityData = generateWeeklyActivityData();
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -111,23 +138,63 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
+const VerticalDividers = ({ xAxisMap, yAxisMap }: any) => {
+  // Guard against missing maps
+  if (!xAxisMap || !yAxisMap) {
+    return null;
+  }
+  const xAxis = Object.values(xAxisMap)[0] as any;
+  const yAxis = Object.values(yAxisMap)[0] as any;
+
+  // Guard against missing axes
+  if (!xAxis || !yAxis) {
+    return null;
+  }
+
+  const { scale } = xAxis;
+  const ticks = scale.domain();
+
+  // We don't need a divider after the last group of bars
+  const relevantTicks = ticks.slice(0, ticks.length - 1);
+
+  return (
+    <g>
+      {relevantTicks.map((tick: any) => {
+        // Position the line at the end of the band for each tick
+        const x = scale(tick) + scale.bandwidth();
+
+        return (
+          <line
+            key={`divider-for-${tick}`}
+            x1={x}
+            y1={yAxis.y}
+            x2={x}
+            y2={yAxis.y + yAxis.height}
+            stroke="#e0e0e0" // A subtle color for the divider
+            strokeWidth={1}
+          />
+        );
+      })}
+    </g>
+  );
+};
+
 const Workshop: React.FC = () => {
   const theme = useTheme();
-  const navigate = useNavigate();
-  useWorkshopStore();
+  const location = useLocation();
+  const { generateContent, history: workshopHistory, isLoading } = useWorkshopStore();
   const [input, setInput] = useState('');
-  const [uploadedFiles, setUploadedFiles] = useState<FileUpload[]>([]);
-  const [linkSubmissions, setLinkSubmissions] = useState<LinkSubmission[]>([]);
-  const [messages, setMessages] = useState<
-    Array<{ text: string; isUser: boolean; timestamp: Date }>
-  >([]);
+  const [, setUploadedFiles] = useState<FileUpload[]>([]);
+  const [linkInput, setLinkInput] = useState('');
   const [activeTab, setActiveTab] = useState(0);
-  const [responseTab, setResponseTab] = useState(3);
+  const [responseTab, setResponseTab] = useState(0);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [selectedLine, setSelectedLine] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [activityData, setActivityData] = useState<ActivityData[]>([]);
+  const [isCopied, setIsCopied] = useState(false);
+  const [activityData] = useState<ActivityData[]>(initialActivityData);
+  const [selectedArea, setSelectedArea] = useState<string | null>(null);
+  const [animatedPercent, setAnimatedPercent] = useState(0);
+  const [isTokenChartHovered, setIsTokenChartHovered] = useState(false);
   const { totalTokens, usedTokens, remainingTokens, percentUsed } = useTokenUsage();
   const tokenUsage = {
     label: 'Free Plan (30,000 tokens/month)',
@@ -136,6 +203,31 @@ const Workshop: React.FC = () => {
     remaining: remainingTokens,
     percentUsed,
   };
+  const uploadContentRef = useRef<HTMLDivElement>(null);
+  const aiResponseRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (location.hash === '#upload-content-card' && uploadContentRef.current) {
+      uploadContentRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }
+    if (location.state?.responseTab) {
+      setResponseTab(location.state.responseTab);
+    }
+  }, [location]);
+
+  useEffect(() => {
+    const animation = animate(0, tokenUsage.percentUsed, {
+      duration: 1.2,
+      ease: 'circOut',
+      onUpdate: latest => {
+        setAnimatedPercent(latest);
+      },
+    });
+    return () => animation.stop();
+  }, [tokenUsage.percentUsed]);
 
   useEffect(() => {
     // Use the 5 most recent assignments from mock data for history
@@ -150,20 +242,6 @@ const Workshop: React.FC = () => {
       isPinned: false,
     }));
     setHistory(historyItems);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    // Use local mock data for activity
-    setActivityData([
-      { date: 'Mon', chats: 4, files: 2, links: 1, summarize: 3, extract: 2, rewrite: 1 },
-      { date: 'Tue', chats: 3, files: 1, links: 2, summarize: 2, extract: 1, rewrite: 2 },
-      { date: 'Wed', chats: 5, files: 3, links: 0, summarize: 4, extract: 2, rewrite: 1 },
-      { date: 'Thu', chats: 2, files: 2, links: 1, summarize: 1, extract: 2, rewrite: 1 },
-      { date: 'Fri', chats: 6, files: 1, links: 3, summarize: 5, extract: 1, rewrite: 2 },
-      { date: 'Sat', chats: 4, files: 0, links: 2, summarize: 3, extract: 0, rewrite: 1 },
-      { date: 'Sun', chats: 3, files: 2, links: 1, summarize: 2, extract: 1, rewrite: 1 },
-    ]);
   }, []);
 
   // Custom styles
@@ -178,11 +256,27 @@ const Workshop: React.FC = () => {
     },
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim()) {
-      setMessages([...messages, { text: input, isUser: true, timestamp: new Date() }]);
+      await generateContent(input);
       setInput('');
+    }
+  };
+
+  const handleQuickActionClick = (tabIndex: number) => {
+    setActiveTab(tabIndex);
+    if (uploadContentRef.current) {
+      uploadContentRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
+  const handleSuggestionClick = (text: string, tabIndex: number) => {
+    setInput(text);
+    setActiveTab(0);
+    setResponseTab(tabIndex);
+    if (aiResponseRef.current) {
+      aiResponseRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   };
 
@@ -195,11 +289,11 @@ const Workshop: React.FC = () => {
   const getHistoryIcon = (type: HistoryItem['type']) => {
     switch (type) {
       case 'file':
-        return <AddIcon />;
+        return <UploadOutlinedIcon />;
       case 'link':
-        return <LinkIcon />;
+        return <LinkOutlinedIcon />;
       case 'chat':
-        return <ChatIcon />;
+        return <ChatOutlinedIcon />;
     }
   };
 
@@ -216,6 +310,22 @@ const Workshop: React.FC = () => {
     }));
 
     setUploadedFiles(prev => [...prev, ...newFiles]);
+  };
+
+  const handleCopy = () => {
+    if (workshopHistory.length > 0) {
+      const lastResponse = workshopHistory[workshopHistory.length - 1].content;
+      navigator.clipboard.writeText(lastResponse);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    }
+  };
+
+  const handleRegenerate = () => {
+    if (workshopHistory.length > 0) {
+      const lastPrompt = workshopHistory[workshopHistory.length - 1].prompt;
+      generateContent(lastPrompt);
+    }
   };
 
   const renderInputSection = () => {
@@ -261,7 +371,7 @@ const Workshop: React.FC = () => {
               </Button>
               <Button
                 variant="outlined"
-                startIcon={<DeleteIcon />}
+                startIcon={<DeleteOutlined />}
                 onClick={() => setInput('')}
                 sx={{
                   borderColor: 'red',
@@ -320,7 +430,7 @@ const Workshop: React.FC = () => {
             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
               <Button
                 variant="outlined"
-                startIcon={<DeleteIcon />}
+                startIcon={<DeleteOutlined />}
                 sx={{
                   borderColor: 'red',
                   color: 'red',
@@ -342,6 +452,8 @@ const Workshop: React.FC = () => {
               fullWidth
               placeholder="Paste your link here..."
               variant="outlined"
+              value={linkInput}
+              onChange={e => setLinkInput(e.target.value)}
               sx={{
                 '& .MuiOutlinedInput-root': {
                   '& fieldset': {
@@ -359,7 +471,8 @@ const Workshop: React.FC = () => {
             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
               <Button
                 variant="outlined"
-                startIcon={<DeleteIcon />}
+                startIcon={<DeleteOutlined />}
+                onClick={() => setLinkInput('')}
                 sx={{
                   borderColor: 'red',
                   color: 'red',
@@ -384,29 +497,69 @@ const Workshop: React.FC = () => {
     if (!active || !payload || !payload.length) return null;
     const point = payload[0].payload;
     const allKeys = [
-      { key: 'chats', label: 'Chats', color: 'red' },
-      { key: 'summarize', label: 'Summarize', color: '#ff9800' },
-      { key: 'extract', label: 'Extract', color: '#ffc107' },
-      { key: 'links', label: 'Links', color: '#82ca9d' },
-      { key: 'rewrite', label: 'Rewrite', color: '#2196f3' },
-      { key: 'files', label: 'Files', color: '#8884d8' },
+      { key: 'chats', label: 'Chats', color: '#E53935' },
+      { key: 'summarize', label: 'Summarize', color: '#FB8C00' },
+      { key: 'extract', label: 'Extract', color: '#FDD835' },
+      { key: 'links', label: 'Links', color: '#43A047' },
+      { key: 'rewrite', label: 'Rewrite', color: '#1E88E5' },
+      { key: 'files', label: 'Files', color: '#8E24AA' },
     ];
     return (
-      <Paper sx={{ p: 2 }}>
-        <Typography variant="subtitle2">{label}</Typography>
-        <Box>
+      <Paper sx={{ p: 2, boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+          {label}
+        </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
           {allKeys.map(({ key, label, color }) => {
-            if (selectedLine && selectedLine !== key) return null;
+            if (selectedArea && selectedArea !== key) return null;
             return (
-              <Typography key={key} variant="body2" sx={{ color }}>
-                {label}: {point[key]}
-              </Typography>
+              <Box key={key} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box
+                  sx={{
+                    width: 12,
+                    height: 12,
+                    backgroundColor: color,
+                    borderRadius: '2px',
+                  }}
+                />
+                <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 500 }}>
+                  {label}:
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 'bold' }}>
+                  {point[key]}
+                </Typography>
+              </Box>
             );
           })}
         </Box>
       </Paper>
     );
   };
+
+  const renderLegendText = (value: string, entry: any) => {
+    const { color, dataKey } = entry;
+    const keyAsString = String(dataKey);
+    const isSelected = selectedArea === keyAsString;
+    return (
+      <span
+        style={{
+          color,
+          fontWeight: 500,
+          textDecoration: isSelected ? 'underline' : 'none',
+          cursor: 'pointer',
+        }}
+      >
+        {value}
+      </span>
+    );
+  };
+
+  const getProgressColor = (percent: number) => {
+    if (percent > 85) return theme.palette.error.main;
+    if (percent > 60) return theme.palette.warning.main;
+    return theme.palette.primary.main;
+  };
+  const progressColor = getProgressColor(tokenUsage.percentUsed);
 
   return (
     <Box sx={{ p: 3, backgroundColor: 'white', minHeight: '100vh' }}>
@@ -434,9 +587,9 @@ const Workshop: React.FC = () => {
         <Grid item xs={12} md={9}>
           {/* Activity Chart */}
           <Paper sx={{ ...cardStyle, p: 3, mb: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-              <Typography variant="h6" gutterBottom>
-                Weekly Activity
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+                Weekly Activity Overview
               </Typography>
               <Tooltip title="Activity based on your assignments and interactions" arrow>
                 <InfoOutlinedIcon
@@ -450,94 +603,130 @@ const Workshop: React.FC = () => {
                 />
               </Tooltip>
             </Box>
-            <Box sx={{ height: 300 }}>
+            <Box sx={{ height: 350 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart
+                <BarChart
                   data={activityData}
                   margin={{
-                    top: 5,
+                    top: 20,
                     right: 30,
                     left: 20,
-                    bottom: 5,
+                    bottom: 20,
                   }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <RechartsTooltip content={CustomActivityTooltip} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis
+                    dataKey="date"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12, fontWeight: 500 }}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12, fontWeight: 500 }}
+                  />
+                  <RechartsTooltip
+                    content={CustomActivityTooltip}
+                    cursor={{ fill: 'rgba(0,0,0,0.05)' }}
+                  />
                   <Legend
                     onClick={e => {
-                      if (!e || !e.dataKey) return;
-                      const key = String(e.dataKey);
-                      setSelectedLine(prev => (prev === key ? null : key));
+                      if (e.dataKey) {
+                        const keyAsString = String(e.dataKey);
+                        setSelectedArea(prev => (prev === keyAsString ? null : keyAsString));
+                      }
                     }}
+                    wrapperStyle={{ paddingTop: 10 }}
+                    formatter={renderLegendText}
                   />
-                  <Line
-                    type="monotone"
+                  <Customized component={VerticalDividers} />
+                  <Bar
                     dataKey="chats"
-                    stroke="red"
-                    activeDot={{ r: 8 }}
+                    stroke="#E53935"
+                    strokeWidth={2}
+                    fill="#E53935"
+                    fillOpacity={selectedArea ? (selectedArea === 'chats' ? 0.8 : 0.15) : 0.4}
+                    strokeOpacity={selectedArea ? (selectedArea === 'chats' ? 1 : 0.3) : 1}
                     name="Chats"
-                    strokeOpacity={selectedLine && selectedLine !== 'chats' ? 0.2 : 1}
-                    strokeWidth={selectedLine === 'chats' ? 3 : 1}
+                    radius={[4, 4, 0, 0]}
                   />
-                  <Line
-                    type="monotone"
+                  <Bar
                     dataKey="summarize"
-                    stroke="#ff9800"
-                    activeDot={{ r: 8 }}
+                    stroke="#FB8C00"
+                    strokeWidth={2}
+                    fill="#FB8C00"
+                    fillOpacity={selectedArea ? (selectedArea === 'summarize' ? 0.8 : 0.15) : 0.4}
+                    strokeOpacity={selectedArea ? (selectedArea === 'summarize' ? 1 : 0.3) : 1}
                     name="Summarize"
-                    strokeOpacity={selectedLine && selectedLine !== 'summarize' ? 0.2 : 1}
-                    strokeWidth={selectedLine === 'summarize' ? 3 : 1}
+                    radius={[4, 4, 0, 0]}
                   />
-                  <Line
-                    type="monotone"
+                  <Bar
                     dataKey="extract"
-                    stroke="#ffc107"
+                    stroke="#FDD835"
+                    strokeWidth={2}
+                    fill="#FDD835"
+                    fillOpacity={selectedArea ? (selectedArea === 'extract' ? 0.8 : 0.15) : 0.4}
+                    strokeOpacity={selectedArea ? (selectedArea === 'extract' ? 1 : 0.3) : 1}
                     name="Extract"
-                    strokeOpacity={selectedLine && selectedLine !== 'extract' ? 0.2 : 1}
-                    strokeWidth={selectedLine === 'extract' ? 3 : 1}
+                    radius={[4, 4, 0, 0]}
                   />
-                  <Line
-                    type="monotone"
+                  <Bar
                     dataKey="links"
-                    stroke="#82ca9d"
+                    stroke="#43A047"
+                    strokeWidth={2}
+                    fill="#43A047"
+                    fillOpacity={selectedArea ? (selectedArea === 'links' ? 0.8 : 0.15) : 0.4}
+                    strokeOpacity={selectedArea ? (selectedArea === 'links' ? 1 : 0.3) : 1}
                     name="Links"
-                    strokeOpacity={selectedLine && selectedLine !== 'links' ? 0.2 : 1}
-                    strokeWidth={selectedLine === 'links' ? 3 : 1}
+                    radius={[4, 4, 0, 0]}
                   />
-                  <Line
-                    type="monotone"
+                  <Bar
                     dataKey="rewrite"
-                    stroke="#2196f3"
+                    stroke="#1E88E5"
+                    strokeWidth={2}
+                    fill="#1E88E5"
+                    fillOpacity={selectedArea ? (selectedArea === 'rewrite' ? 0.8 : 0.15) : 0.4}
+                    strokeOpacity={selectedArea ? (selectedArea === 'rewrite' ? 1 : 0.3) : 1}
                     name="Rewrite"
-                    strokeOpacity={selectedLine && selectedLine !== 'rewrite' ? 0.2 : 1}
-                    strokeWidth={selectedLine === 'rewrite' ? 3 : 1}
+                    radius={[4, 4, 0, 0]}
                   />
-                  <Line
-                    type="monotone"
+                  <Bar
                     dataKey="files"
-                    stroke="#8884d8"
+                    stroke="#8E24AA"
+                    strokeWidth={2}
+                    fill="#8E24AA"
+                    fillOpacity={selectedArea ? (selectedArea === 'files' ? 0.8 : 0.15) : 0.4}
+                    strokeOpacity={selectedArea ? (selectedArea === 'files' ? 1 : 0.3) : 1}
                     name="Files"
-                    strokeOpacity={selectedLine && selectedLine !== 'files' ? 0.2 : 1}
-                    strokeWidth={selectedLine === 'files' ? 3 : 1}
+                    radius={[4, 4, 0, 0]}
                   />
-                </LineChart>
+                </BarChart>
               </ResponsiveContainer>
             </Box>
           </Paper>
 
           {/* Upload Content and Input Section */}
-          <Paper sx={{ ...cardStyle, mb: 3 }}>
+          <Paper
+            ref={uploadContentRef}
+            id="upload-content-card"
+            sx={{
+              p: 3,
+              mb: 3,
+              border: '2px solid #D32F2F',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            }}
+          >
             <Box
               sx={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 3,
+                gap: 2,
                 borderBottom: '1px solid #e0e0e0',
+                pb: 1,
               }}
             >
-              <Typography variant="h6" sx={{ color: 'black', pl: 2 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
                 Upload Content
               </Typography>
               <Tabs
@@ -552,7 +741,7 @@ const Workshop: React.FC = () => {
               >
                 <Tab
                   label="Chat"
-                  icon={<ChatIcon sx={{ color: 'red' }} />}
+                  icon={<ChatOutlinedIcon sx={{ color: 'red' }} />}
                   iconPosition="start"
                   sx={{
                     color: 'red',
@@ -563,7 +752,7 @@ const Workshop: React.FC = () => {
                 />
                 <Tab
                   label="Files"
-                  icon={<UploadIcon sx={{ color: '#8884d8' }} />}
+                  icon={<UploadOutlinedIcon sx={{ color: '#8884d8' }} />}
                   iconPosition="start"
                   sx={{
                     color: '#8884d8',
@@ -574,7 +763,7 @@ const Workshop: React.FC = () => {
                 />
                 <Tab
                   label="Links"
-                  icon={<LinkIcon sx={{ color: '#82ca9d' }} />}
+                  icon={<LinkOutlinedIcon sx={{ color: '#82ca9d' }} />}
                   iconPosition="start"
                   sx={{
                     color: '#82ca9d',
@@ -585,7 +774,6 @@ const Workshop: React.FC = () => {
                 />
               </Tabs>
             </Box>
-            <Divider />
             <Box sx={{ p: 2 }}>
               <TabPanel value={activeTab} index={0}>
                 {renderInputSection()}
@@ -600,7 +788,7 @@ const Workshop: React.FC = () => {
           </Paper>
 
           {/* AI Response Area */}
-          <Paper sx={{ ...cardStyle, p: 3 }}>
+          <Paper ref={aiResponseRef} sx={{ ...cardStyle, p: 3 }}>
             <Box
               sx={{
                 display: 'flex',
@@ -647,7 +835,7 @@ const Workshop: React.FC = () => {
                 >
                   <Tab
                     label="Download"
-                    icon={<DownloadIcon sx={{ color: '#9c27b0' }} />}
+                    icon={<DownloadOutlinedIcon sx={{ color: '#9c27b0' }} />}
                     iconPosition="start"
                     sx={{
                       color: '#9c27b0',
@@ -659,7 +847,7 @@ const Workshop: React.FC = () => {
                   />
                   <Tab
                     label="Rewrite"
-                    icon={<TitleIcon sx={{ color: '#2196f3' }} />}
+                    icon={<EditOutlinedIcon sx={{ color: '#2196f3' }} />}
                     iconPosition="start"
                     sx={{
                       color: '#2196f3',
@@ -683,7 +871,7 @@ const Workshop: React.FC = () => {
                   />
                   <Tab
                     label="Summarize"
-                    icon={<ContentCopyIcon sx={{ color: '#ff9800' }} />}
+                    icon={<RecordVoiceOverOutlined sx={{ color: '#ff9800' }} />}
                     iconPosition="start"
                     sx={{
                       color: '#ff9800',
@@ -696,13 +884,13 @@ const Workshop: React.FC = () => {
                 </Tabs>
               </Box>
               <Box sx={{ flexShrink: 0, mt: { xs: 1, sm: 0 } }}>
-                <Tooltip title="Copy">
-                  <IconButton size="small" sx={{ color: 'red' }}>
+                <Tooltip title={isCopied ? 'Copied!' : 'Copy'}>
+                  <IconButton size="small" sx={{ color: 'red' }} onClick={handleCopy}>
                     <ContentCopyIcon />
                   </IconButton>
                 </Tooltip>
                 <Tooltip title="Regenerate">
-                  <IconButton size="small" sx={{ color: 'red' }}>
+                  <IconButton size="small" sx={{ color: 'red' }} onClick={handleRegenerate}>
                     <RefreshIcon />
                   </IconButton>
                 </Tooltip>
@@ -710,24 +898,42 @@ const Workshop: React.FC = () => {
             </Box>
             <Divider sx={{ mb: 2 }} />
             <Box sx={{ minHeight: '200px', width: '100%', px: { xs: 0, sm: 2 } }}>
-              {messages.length > 0 ? (
-                messages.map((message, index) => (
-                  <Paper
-                    key={index}
-                    sx={{
-                      p: 2,
-                      mb: 2,
-                      backgroundColor: message.isUser ? 'rgba(25, 118, 210, 0.04)' : '#fff',
-                      borderRadius: '8px',
-                      border: '1px solid red',
-                    }}
-                  >
-                    <Typography variant="body1">{message.text}</Typography>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-                      <Typography variant="caption" color="text.secondary">
-                        {message.timestamp.toLocaleTimeString()}
-                      </Typography>
-                      {!message.isUser && (
+              {workshopHistory.length > 0 ? (
+                workshopHistory.map(item => (
+                  <React.Fragment key={item.id}>
+                    {/* User Prompt */}
+                    <Paper
+                      sx={{
+                        p: 2,
+                        mb: 2,
+                        backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                        borderRadius: '8px',
+                        border: '1px solid red',
+                      }}
+                    >
+                      <Typography variant="body1">{item.prompt}</Typography>
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                        <Typography variant="caption" color="text.secondary">
+                          {new Date(item.timestamp).toLocaleTimeString()}
+                        </Typography>
+                      </Box>
+                    </Paper>
+
+                    {/* AI Content */}
+                    <Paper
+                      sx={{
+                        p: 2,
+                        mb: 2,
+                        backgroundColor: '#fff',
+                        borderRadius: '8px',
+                        border: '1px solid red',
+                      }}
+                    >
+                      <Typography variant="body1">{item.content}</Typography>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+                        <Typography variant="caption" color="text.secondary">
+                          {new Date(item.timestamp).toLocaleTimeString()}
+                        </Typography>
                         <Box>
                           <IconButton size="small">
                             <ThumbUpIcon fontSize="small" />
@@ -736,9 +942,9 @@ const Workshop: React.FC = () => {
                             <ThumbDownIcon fontSize="small" />
                           </IconButton>
                         </Box>
-                      )}
-                    </Box>
-                  </Paper>
+                      </Box>
+                    </Paper>
+                  </React.Fragment>
                 ))
               ) : (
                 <Box
@@ -762,6 +968,11 @@ const Workshop: React.FC = () => {
                   </Typography>
                 </Box>
               )}
+              {isLoading && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+                  <CircularProgress sx={{ color: 'red' }} />
+                </Box>
+              )}
             </Box>
           </Paper>
         </Grid>
@@ -773,21 +984,21 @@ const Workshop: React.FC = () => {
               Quick Actions
             </Typography>
             <List>
-              <ListItem button onClick={() => setActiveTab(0)}>
+              <ListItem button onClick={() => handleQuickActionClick(0)}>
                 <ListItemIcon>
-                  <ChatIcon sx={{ color: 'red' }} />
+                  <ChatOutlinedIcon sx={{ color: 'red' }} />
                 </ListItemIcon>
                 <ListItemText primary="Start New Chat" />
               </ListItem>
-              <ListItem button onClick={() => setActiveTab(1)}>
+              <ListItem button onClick={() => handleQuickActionClick(1)}>
                 <ListItemIcon>
-                  <UploadIcon sx={{ color: '#8884d8' }} />
+                  <UploadOutlinedIcon sx={{ color: '#8884d8' }} />
                 </ListItemIcon>
                 <ListItemText primary="Upload New Document" />
               </ListItem>
-              <ListItem button onClick={() => setActiveTab(2)}>
+              <ListItem button onClick={() => handleQuickActionClick(2)}>
                 <ListItemIcon>
-                  <LinkIcon sx={{ color: '#82ca9d' }} />
+                  <LinkOutlinedIcon sx={{ color: '#82ca9d' }} />
                 </ListItemIcon>
                 <ListItemText primary="Add External Link" />
               </ListItem>
@@ -800,21 +1011,27 @@ const Workshop: React.FC = () => {
               Try These
             </Typography>
             <List>
-              <ListItem button onClick={() => setInput('Summarize this document.')}>
+              <ListItem button onClick={() => handleSuggestionClick('Summarize this document.', 3)}>
                 <ListItemIcon>
-                  <ContentCopyIcon sx={{ color: '#ff9800' }} />
+                  <RecordVoiceOverOutlined sx={{ color: '#ff9800' }} />
                 </ListItemIcon>
                 <ListItemText primary="Summarize this document." />
               </ListItem>
-              <ListItem button onClick={() => setInput('Extract key points from this essay.')}>
+              <ListItem
+                button
+                onClick={() => handleSuggestionClick('Extract key points from this essay.', 2)}
+              >
                 <ListItemIcon>
                   <FormatListBulletedIcon sx={{ color: '#ffc107' }} />
                 </ListItemIcon>
                 <ListItemText primary="Extract key points from this essay." />
               </ListItem>
-              <ListItem button onClick={() => setInput('Rewrite in more academic tone.')}>
+              <ListItem
+                button
+                onClick={() => handleSuggestionClick('Rewrite in more academic tone.', 1)}
+              >
                 <ListItemIcon>
-                  <TitleIcon sx={{ color: '#2196f3' }} />
+                  <EditOutlinedIcon sx={{ color: '#2196f3' }} />
                 </ListItemIcon>
                 <ListItemText primary="Rewrite in more academic tone." />
               </ListItem>
@@ -826,18 +1043,40 @@ const Workshop: React.FC = () => {
             <Typography variant="h6" gutterBottom>
               Assignment Tokens
             </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-              <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+            <Box
+              sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, pt: 2 }}
+            >
+              <Box
+                sx={{ position: 'relative', width: 160, height: 160, cursor: 'pointer' }}
+                onMouseEnter={() => setIsTokenChartHovered(true)}
+                onMouseLeave={() => setIsTokenChartHovered(false)}
+              >
+                {/* Background Track */}
                 <CircularProgress
                   variant="determinate"
-                  value={tokenUsage.percentUsed}
-                  size={120}
-                  thickness={4}
+                  value={100}
+                  size={160}
+                  thickness={7}
                   sx={{
-                    color: 'red',
-                    '& .MuiCircularProgress-track': {
-                      stroke: 'red',
-                      opacity: 0.2,
+                    color: alpha(progressColor, 0.2),
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                  }}
+                />
+                {/* Actual progress */}
+                <CircularProgress
+                  variant="determinate"
+                  value={animatedPercent}
+                  size={160}
+                  thickness={7}
+                  sx={{
+                    color: progressColor,
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    [`& .MuiCircularProgress-circle`]: {
+                      strokeLinecap: 'round',
                     },
                   }}
                 />
@@ -849,38 +1088,34 @@ const Workshop: React.FC = () => {
                     right: 0,
                     position: 'absolute',
                     display: 'flex',
+                    flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    transition: 'opacity 0.3s ease-in-out',
                   }}
                 >
-                  <Typography variant="h4" component="div" color="text.secondary">
-                    {tokenUsage.percentUsed}%
-                  </Typography>
+                  {isTokenChartHovered ? (
+                    <Box sx={{ textAlign: 'center' }}>
+                      <Typography variant="h6" component="div" color={progressColor}>
+                        {tokenUsage.used.toLocaleString()}
+                      </Typography>
+                      <Divider sx={{ my: 0.5, width: '50%', mx: 'auto' }} />
+                      <Typography variant="body2" color="text.secondary">
+                        {tokenUsage.total.toLocaleString()}
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <Typography variant="h4" component="div" color="text.secondary">
+                      {Math.round(animatedPercent)}%
+                    </Typography>
+                  )}
                 </Box>
               </Box>
-              <Box sx={{ textAlign: 'center' }}>
+              <Box sx={{ textAlign: 'center', mt: 2 }}>
                 <Typography variant="body2" color="text.secondary">
-                  Tokens Used: {tokenUsage.used.toLocaleString()} /{' '}
-                  {tokenUsage.total.toLocaleString()}
+                  {tokenUsage.label}
                 </Typography>
               </Box>
-              <Button
-                variant="outlined"
-                color="error"
-                fullWidth
-                sx={{
-                  mt: 2,
-                  borderColor: 'red',
-                  color: 'red',
-                  '&:hover': {
-                    borderColor: 'red',
-                    backgroundColor: 'rgba(255, 0, 0, 0.04)',
-                  },
-                }}
-                onClick={() => navigate('/dashboard/ai-tokens')}
-              >
-                See More Info
-              </Button>
             </Box>
           </Paper>
         </Grid>
@@ -898,45 +1133,52 @@ const Workshop: React.FC = () => {
         }}
       >
         <Box sx={{ width: 350, p: 3 }}>
-          <Typography variant="h6" gutterBottom>
-            Recent History
-          </Typography>
-          <Card sx={{ ...cardStyle, mb: 3, backgroundColor: 'white' }}>
-            <CardContent>
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  mb: 2,
-                }}
-              >
-                <Typography variant="h6">Recent History</Typography>
-                <IconButton size="small">
-                  <RefreshIcon sx={{ color: 'red' }} />
-                </IconButton>
-              </Box>
-              <List>
-                {history.map(item => (
-                  <ListItem key={item.id} button onClick={() => handlePinHistory(item.id)}>
-                    <ListItemIcon>
-                      {React.cloneElement(getHistoryIcon(item.type), { sx: { color: 'red' } })}
-                    </ListItemIcon>
-                    <ListItemText primary={item.title} secondary={item.date.toLocaleString()} />
-                    <IconButton
-                      size="small"
-                      onClick={e => {
-                        e.stopPropagation();
-                        handlePinHistory(item.id);
-                      }}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+            <Typography variant="h6">Recent History</Typography>
+            <Tooltip title="Pin items to keep them at the top of the list" arrow>
+              <InfoOutlinedIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
+            </Tooltip>
+          </Box>
+          <motion.div layout>
+            <List>
+              {history
+                .slice()
+                .sort((a, b) => Number(b.isPinned) - Number(a.isPinned))
+                .map(item => (
+                  <motion.div layout key={item.id}>
+                    <ListItem
+                      button
+                      onClick={() => handlePinHistory(item.id)}
+                      sx={{ border: '1px solid red', borderRadius: '8px', mb: 1 }}
                     >
-                      {item.isPinned ? <StarIcon color="primary" /> : <StarBorderIcon />}
-                    </IconButton>
-                  </ListItem>
+                      <ListItemIcon>
+                        {React.cloneElement(getHistoryIcon(item.type), { sx: { color: 'red' } })}
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={item.title}
+                        secondary={item.date.toLocaleString()}
+                        primaryTypographyProps={{
+                          style: {
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          },
+                        }}
+                      />
+                      <IconButton
+                        size="small"
+                        onClick={e => {
+                          e.stopPropagation();
+                          handlePinHistory(item.id);
+                        }}
+                      >
+                        {item.isPinned ? <PushPinIcon color="primary" /> : <PushPinOutlinedIcon />}
+                      </IconButton>
+                    </ListItem>
+                  </motion.div>
                 ))}
-              </List>
-            </CardContent>
-          </Card>
+            </List>
+          </motion.div>
         </Box>
       </Drawer>
     </Box>

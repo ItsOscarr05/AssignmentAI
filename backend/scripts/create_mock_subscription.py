@@ -35,7 +35,7 @@ async def create_mock_subscription():
                 stripe_customer_id="cus_mock_123456",
                 plan_id="price_plus",
                 status=SubscriptionStatus.ACTIVE,
-                ai_model="gpt-4-0125-preview",
+                ai_model="gpt-3.5-turbo",
                 token_limit=50000,  # Plus plan limit
                 subscription_metadata={
                     "plan_name": "Plus",
