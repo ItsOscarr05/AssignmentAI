@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
-from app.api import deps
+from app.core.deps import get_current_user, get_db
 from app.services.canvas_service import canvas_service
 from app.models.user import User
 from app.core.config import settings
@@ -23,8 +23,8 @@ async def canvas_auth():
 @router.get("/callback")
 async def canvas_callback(
     code: str,
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Handle Canvas OAuth2 callback"""
     try:
@@ -39,8 +39,8 @@ async def canvas_callback(
 
 @router.get("/courses")
 async def get_canvas_courses(
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Get all Canvas courses for the current user"""
     if not current_user.canvas_access_token:
@@ -55,8 +55,8 @@ async def get_canvas_courses(
 @router.get("/courses/{course_id}/assignments")
 async def get_canvas_assignments(
     course_id: str,
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Get all assignments for a specific Canvas course"""
     if not current_user.canvas_access_token:
@@ -77,8 +77,8 @@ async def submit_to_canvas(
     assignment_id: str,
     files: List[dict],
     comment: Optional[str] = None,
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Submit an assignment to Canvas"""
     if not current_user.canvas_access_token:

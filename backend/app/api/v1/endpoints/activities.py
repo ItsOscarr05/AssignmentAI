@@ -1,10 +1,10 @@
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.core.auth import get_current_user
-from app.db.session import get_db
+from app.database import get_db
 from app.models.user import User
-from app.schemas.activity import Activity, ActivityFilter
+from app.schemas.activity import Activity, ActivityFilter, ActivityResponse
 from app.crud import activity as activity_crud
 
 router = APIRouter()

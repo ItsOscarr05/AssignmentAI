@@ -7,7 +7,7 @@ from pathlib import Path
 backend_dir = Path(__file__).parent.parent / 'backend'
 sys.path.append(str(backend_dir))
 
-from app.db.database import SessionLocal
+from app.database import SessionLocal
 from app.models.user import User
 from app.models.assignment import Assignment
 from app.models.submission import Submission

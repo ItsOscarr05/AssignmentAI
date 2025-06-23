@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, 
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
-from app.api import deps
+from app.core.deps import get_current_user, get_db
 from app.services.ai_service import AIService
 from app.schemas.ai_assignment import (
     AssignmentGenerationRequest,
@@ -22,9 +22,9 @@ router = APIRouter()
 @router.post("/generate", response_model=schemas.Assignment)
 async def generate_assignment(
     *,
-    db: Session = Depends(deps.get_db),
+    db: Session = Depends(get_db),
     assignment_in: schemas.AssignmentCreate,
-    current_user: models.User = Depends(deps.get_current_active_user),
+    current_user: models.User = Depends(get_current_user),
 ) -> Any:
     """
     Generate a new assignment using AI.
@@ -56,8 +56,8 @@ async def generate_assignment_old(
     request: Request,
     assignment_request: AssignmentGenerationRequest,
     background_tasks: BackgroundTasks,
-    db: Session = Depends(deps.get_db),
-    current_user: models.User = Depends(deps.get_current_user),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Generate an assignment using AI.
@@ -105,8 +105,8 @@ async def generate_feedback(
     submission_content: str,
     feedback_type: str,
     background_tasks: BackgroundTasks,
-    db: Session = Depends(deps.get_db),
-    current_user: models.User = Depends(deps.get_current_user),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Generate feedback for a submission using AI.
@@ -207,9 +207,9 @@ async def _store_generated_feedback(
 @router.post("/analyze/{submission_id}", response_model=Dict[str, Any])
 async def analyze_submission(
     *,
-    db: Session = Depends(deps.get_db),
+    db: Session = Depends(get_db),
     submission_id: int,
-    current_user: models.User = Depends(deps.get_current_user),
+    current_user: models.User = Depends(get_current_user),
 ) -> Any:
     """
     Analyze a submission using AI and provide feedback.

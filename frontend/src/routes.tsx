@@ -25,6 +25,7 @@ const Settings = lazy(() => import('./pages/Settings'));
 const Terms = lazy(() => import('./pages/Terms'));
 const Workshop = lazy(() => import('./pages/Workshop'));
 const AssignmentDetail = lazy(() => import('./components/assignments/AssignmentDetail'));
+const AssignmentEdit = lazy(() => import('./components/assignments/AssignmentEdit'));
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -172,6 +173,16 @@ export const AppRouter = () => (
                 <Suspense fallback={suspenseFallback}>
                   <PageTransition>
                     <AssignmentDetail />
+                  </PageTransition>
+                </Suspense>
+              }
+            />
+            <Route
+              path="assignments/:id/edit"
+              element={
+                <Suspense fallback={suspenseFallback}>
+                  <PageTransition>
+                    <AssignmentEdit />
                   </PageTransition>
                 </Suspense>
               }

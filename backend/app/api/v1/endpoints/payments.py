@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Header
 from sqlalchemy.orm import Session
 from typing import Optional, List
-from app.api import deps
+from app.core.deps import get_current_user, get_db
 from app.services.payment_service import PaymentService
 from app.models.user import User
 from app.core.config import settings
@@ -11,9 +11,9 @@ router = APIRouter()
 @router.post("/create-subscription")
 async def create_subscription(
     price_id: str,
-    payment_method_id: Optional[str] = None,
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    payment_method_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Create a new subscription"""
     payment_service = PaymentService(db)
@@ -25,8 +25,8 @@ async def create_subscription(
 
 @router.post("/cancel-subscription")
 async def cancel_subscription(
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Cancel the current subscription"""
     payment_service = PaymentService(db)
@@ -98,8 +98,8 @@ async def get_plans():
 
 @router.get("/plans/current")
 async def get_current_plan(
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Get current user's plan"""
     payment_service = PaymentService(db)
@@ -107,8 +107,8 @@ async def get_current_plan(
 
 @router.get("/subscriptions/current")
 async def get_current_subscription(
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Get current user's subscription"""
     payment_service = PaymentService(db)
@@ -117,8 +117,8 @@ async def get_current_subscription(
 @router.post("/payment-methods")
 async def create_payment_method(
     payment_method_data: dict,
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Create a new payment method"""
     payment_service = PaymentService(db)
@@ -126,8 +126,8 @@ async def create_payment_method(
 
 @router.get("/payment-methods")
 async def get_payment_methods(
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Get user's payment methods"""
     payment_service = PaymentService(db)
@@ -137,8 +137,8 @@ async def get_payment_methods(
 async def update_payment_method(
     payment_method_id: str,
     payment_method_data: dict,
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Update a payment method"""
     payment_service = PaymentService(db)
@@ -147,8 +147,8 @@ async def update_payment_method(
 @router.delete("/payment-methods/{payment_method_id}")
 async def delete_payment_method(
     payment_method_id: str,
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Delete a payment method"""
     payment_service = PaymentService(db)
@@ -156,23 +156,20 @@ async def delete_payment_method(
 
 @router.get("/invoices")
 async def get_invoices(
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Get user's invoices"""
     payment_service = PaymentService(db)
     return await payment_service.get_invoices(current_user)
 
-@router.post("/webhook")
+@router.post("/stripe/webhook")
 async def stripe_webhook(
     request: Request,
-    stripe_signature: str = Header(None),
-    db: Session = Depends(deps.get_db)
+    stripe_signature: str = Header(..., alias='Stripe-Signature'),
+    db: Session = Depends(get_db)
 ):
-    """Handle Stripe webhook events"""
-    if not stripe_signature:
-        raise HTTPException(status_code=400, detail="Missing Stripe signature")
-    
+    """Stripe webhook endpoint"""
     payload = await request.body()
     payment_service = PaymentService(db)
     return await payment_service.handle_webhook(payload, stripe_signature) 

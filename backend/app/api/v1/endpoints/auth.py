@@ -1,46 +1,33 @@
 from datetime import timedelta, datetime
 from typing import Any, Optional
-from fastapi import APIRouter, Body, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Body, Depends, HTTPException, status, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from sqlalchemy.orm import Session
+from jose import jwt, JWTError
+from passlib.context import CryptContext
+from pydantic import EmailStr, ValidationError
 
 from app import crud, schemas, models
-from app.api import deps
-from app.core import security
 from app.core.config import settings
 from app.models.user import User
-from app.schemas.user import UserCreate, User as UserSchema
-from app.schemas.token import Token
-from app.core.security import get_password_hash
+from app.schemas.user import UserCreate, User as UserSchema, UserResponse, UserUpdate
+from app.schemas.auth import UserLogin, LoginRequest, RegisterRequest, PasswordResetRequest, PasswordResetConfirm, TwoFactorSetup, TwoFactorVerify, TwoFactorBackup, PasswordCheck
+from app.schemas.token import Token, TokenPayload
+from app.core.security import get_password_hash, verify_password, create_access_token, verify_token
 from app.services import auth_service
-from app.services.two_factor import TwoFactorAuthService
-from app.services.password_service import password_service
-from app.core.oauth import oauth_config
-from requests_oauthlib import OAuth2Session
-from app.core.security import (
-    verify_password,
-    get_password_hash,
-    create_access_token,
-    verify_token,
-    is_token_expired,
-)
-from app.core.rate_limit import rate_limiter
-from app.db.session import get_db
-from app.schemas.auth import (
-    LoginRequest,
-    RegisterRequest,
-    PasswordResetRequest,
-    PasswordResetConfirm,
-    TwoFactorSetup,
-    TwoFactorVerify,
-    TwoFactorBackup,
-    PasswordCheck,
-)
-from app.services.session_service import session_service
+from app.services.email_service import email_service
 from app.services.security_monitoring import security_monitoring
+from app.core.rate_limit import rate_limiter
+from app.database import get_db
+from app.services.session_service import session_service, get_session_service
+from app.core.rate_limit import rate_limit_middleware
+from app.middleware.security import SecurityHeadersMiddleware
+from app.services.session_service import SessionService
+from app.models.session import UserSession
+from app.services.two_factor import TwoFactorAuthService
 
 # Import get_current_user from deps
-from app.api.deps import get_current_user
+from app.core.deps import get_current_user
 
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
@@ -198,7 +185,7 @@ async def track_session_activity(
     return {"status": "success"}
 
 @router.post("/test-token", response_model=schemas.User)
-def test_token(current_user: models.User = Depends(deps.get_current_user)) -> Any:
+def test_token(current_user: models.User = Depends(get_current_user)) -> Any:
     """
     Test access token
     """

@@ -37,6 +37,7 @@ class User(Base):
     sessions = Column(JSON, nullable=True)  # Store active sessions
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    stripe_customer_id = Column(String, unique=True, index=True, nullable=True)
 
     # Canvas Integration
     canvas_access_token = Column(String, nullable=True)
@@ -70,6 +71,8 @@ class User(Base):
     activities = relationship("Activity", back_populates="user")
     citations = relationship("Citation", back_populates="user")
     templates = relationship("Template", back_populates="creator")
+    prompts = relationship('Prompt', back_populates='owner')
+    usage = relationship('Usage', back_populates='user')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

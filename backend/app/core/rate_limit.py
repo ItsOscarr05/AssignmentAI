@@ -5,6 +5,9 @@ from fastapi.responses import JSONResponse
 from app.core.config import settings
 import time
 from redis import asyncio as aioredis
+import logging
+
+logger = logging.getLogger(__name__)
 
 class RateLimitExceeded(HTTPException):
     def __init__(self, detail: str):
@@ -188,28 +191,54 @@ class RateLimiter:
             ttl = int((reset_time - datetime.utcnow()).total_seconds())
         return remaining, ttl
 
-# Create a global rate limiter instance
-rate_limiter = RateLimiter()
+# Global variables for redis and rate limiter
+redis_client = None
+rate_limiter = None
+
+async def init_rate_limiter():
+    global redis_client, rate_limiter
+    try:
+        redis_client = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
+        rate_limiter = RateLimiter(redis_client)
+    except Exception as e:
+        logger.warning(f"Redis rate limiter initialization failed: {str(e)}")
+        logger.info("Continuing without rate limiting")
+
+async def close_rate_limiter():
+    global redis_client
+    if redis_client:
+        await redis_client.close()
+
+def get_rate_limiter():
+    """Get the rate limiter instance, creating it if necessary."""
+    global rate_limiter
+    if rate_limiter is None:
+        # Create a fallback rate limiter without Redis
+        class FallbackRateLimiter:
+            def is_rate_limited(self, client_id: str, path: str) -> bool:
+                return False
+            def check_rate_limit(self, request: Request) -> bool:
+                return True
+        rate_limiter = FallbackRateLimiter()
+    return rate_limiter
 
 def check_rate_limit(client_id: str) -> None:
     """
     Check if a client has exceeded the rate limit.
     Raises HTTPException if rate limit is exceeded.
     """
-    if rate_limiter.is_rate_limited(client_id, ""):
-        reset_time = rate_limiter.get_reset_time(client_id)
+    limiter = get_rate_limiter()
+    if limiter.is_rate_limited(client_id, ""):
         raise HTTPException(
             status_code=429,
-            detail=f"Too many requests. Try again after {reset_time}"
+            detail="Too many requests. Please try again later."
         )
 
 async def rate_limit_middleware(request: Request, call_next):
     """Middleware to handle rate limiting."""
-    if not hasattr(request.app.state, "rate_limiter"):
-        redis_client = aioredis.from_url(settings.REDIS_URL)
-        request.app.state.rate_limiter = RateLimiter(redis_client)
+    limiter = get_rate_limiter()
     
-    if not await request.app.state.rate_limiter.check_rate_limit(request):
+    if not await limiter.check_rate_limit(request):
         return JSONResponse(
             status_code=429,
             content={"detail": "Too many requests. Please try again later."}

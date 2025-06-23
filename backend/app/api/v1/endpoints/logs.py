@@ -1,7 +1,7 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from app.api import deps
+from app.core.deps import get_current_active_superuser, get_db
 from app.crud import get_logs, get_log, delete_log
 from app.schemas.log import SystemLog
 
@@ -9,11 +9,11 @@ router = APIRouter()
 
 @router.get("/", response_model=List[SystemLog])
 def read_logs(
-    db: Session = Depends(deps.get_db),
+    db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
     level: Optional[str] = None,
-    current_user: dict = Depends(deps.get_current_active_superuser)
+    current_user: dict = Depends(get_current_active_superuser)
 ):
     """
     Retrieve logs. Only superusers can access this endpoint.
@@ -24,8 +24,8 @@ def read_logs(
 @router.get("/{log_id}", response_model=SystemLog)
 def read_log(
     log_id: int,
-    db: Session = Depends(deps.get_db),
-    current_user: dict = Depends(deps.get_current_active_superuser)
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_active_superuser)
 ):
     """
     Get a specific log by ID. Only superusers can access this endpoint.
@@ -38,8 +38,8 @@ def read_log(
 @router.delete("/{log_id}")
 def delete_log_endpoint(
     log_id: int,
-    db: Session = Depends(deps.get_db),
-    current_user: dict = Depends(deps.get_current_active_superuser)
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_active_superuser)
 ):
     """
     Delete a log. Only superusers can access this endpoint.

@@ -2,6 +2,7 @@ import { Box, CssBaseline } from '@mui/material';
 import { SnackbarProvider } from 'notistack';
 import React from 'react';
 import { BrowserRouter, Routes } from 'react-router-dom';
+import { Toaster } from 'sonner';
 import AdComponent from './components/ads/AdComponent';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import Navbar from './components/Navbar';
@@ -41,6 +42,7 @@ const App: React.FC = () => {
                         </Box>
                       </Box>
                     </SnackbarProvider>
+                    <Toaster position="top-right" richColors />
                   </TokenLimitProvider>
                 </AdProvider>
               </ToastProvider>

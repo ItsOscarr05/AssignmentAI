@@ -1,7 +1,7 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from app.api import deps
+from app.core.deps import get_current_user, get_db
 from app.crud import notification as notification_crud
 from app.schemas.notification import (
     Notification,
@@ -15,7 +15,7 @@ router = APIRouter()
 
 @router.get("/", response_model=List[Notification])
 def get_notifications(
-    db: Session = Depends(deps.get_db),
+    db: Session = Depends(get_db),
     current_user = Depends(get_current_user),
     filter_params: NotificationFilter = Depends(),
     skip: int = Query(0, ge=0),
@@ -34,7 +34,7 @@ def get_notifications(
 
 @router.get("/unread/count")
 def get_unread_count(
-    db: Session = Depends(deps.get_db),
+    db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
     """
@@ -45,7 +45,7 @@ def get_unread_count(
 @router.get("/{notification_id}", response_model=Notification)
 def get_notification(
     notification_id: str,
-    db: Session = Depends(deps.get_db),
+    db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
     """
@@ -59,7 +59,7 @@ def get_notification(
 @router.post("/", response_model=Notification)
 def create_notification(
     notification: NotificationCreate,
-    db: Session = Depends(deps.get_db),
+    db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
     """
@@ -73,7 +73,7 @@ def create_notification(
 def update_notification(
     notification_id: str,
     notification_update: NotificationUpdate,
-    db: Session = Depends(deps.get_db),
+    db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
     """
@@ -87,7 +87,7 @@ def update_notification(
 @router.delete("/{notification_id}")
 def delete_notification(
     notification_id: str,
-    db: Session = Depends(deps.get_db),
+    db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
     """
@@ -102,7 +102,7 @@ def delete_notification(
 
 @router.post("/mark-all-read")
 def mark_all_as_read(
-    db: Session = Depends(deps.get_db),
+    db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
     """
@@ -113,7 +113,7 @@ def mark_all_as_read(
 
 @router.post("/archive-read")
 def archive_read_notifications(
-    db: Session = Depends(deps.get_db),
+    db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
     """
@@ -125,7 +125,7 @@ def archive_read_notifications(
 @router.delete("/cleanup")
 def cleanup_notifications(
     days: int = Query(30, ge=1, le=365),
-    db: Session = Depends(deps.get_db),
+    db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
     """

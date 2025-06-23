@@ -106,7 +106,7 @@ const statuses = ['Completed', 'In Progress', 'Not Started'];
 const extraAssignments = Array.from({ length: 20 }, (_, i) => {
   const subject = randomFrom(allSubjects);
   const status = randomFrom(statuses);
-  const daysAgo = Math.floor(Math.random() * 60) + 1;
+  const daysAgo = Math.floor(Math.random() * 60);
   // Realistic word count: 400-2000, tokens: 200-2000
   const wordCount = Math.floor(Math.random() * 1601) + 400;
   const tokensUsed = Math.floor(Math.random() * 1801) + 200;

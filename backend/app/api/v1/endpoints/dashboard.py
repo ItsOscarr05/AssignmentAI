@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any
-from app.api import deps
+from app.core.deps import get_current_user, get_db
 from app.models.user import User
 from app.models.assignment import Assignment
 from app.models.file import File
@@ -13,8 +13,8 @@ router = APIRouter()
 
 @router.get("/stats")
 async def get_dashboard_stats(
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Get dashboard statistics for the current user"""
     try:
@@ -74,8 +74,8 @@ async def get_dashboard_stats(
 
 @router.get("/activity")
 async def get_recent_activity(
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
     limit: int = 10
 ):
     """Get recent activity for the current user"""
@@ -102,8 +102,8 @@ async def get_recent_activity(
 
 @router.get("/assignments/recent")
 async def get_recent_assignments(
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
     limit: int = 5
 ):
     """Get recent assignments for the current user"""
@@ -129,8 +129,8 @@ async def get_recent_assignments(
 
 @router.get("/files/recent")
 async def get_recent_files(
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
     limit: int = 5
 ):
     """Get recent files for the current user"""
@@ -156,8 +156,8 @@ async def get_recent_files(
 
 @router.get("/usage/analytics")
 async def get_usage_analytics(
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
     period: str = "month"  # week, month, year
 ):
     """Get usage analytics for the current user"""

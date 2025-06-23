@@ -1,57 +1,63 @@
 import {
-  AccessTimeOutlined,
-  AllInclusive,
-  AutoAwesomeOutlined,
-  AutoFixHighOutlined,
-  BlockOutlined,
-  BuildOutlined,
-  CheckCircle,
-  CreditCard,
-  Diamond,
-  EmojiEvents,
-  FormatQuoteOutlined,
-  GppGoodOutlined,
-  HelpOutline,
-  InsightsOutlined,
-  LibraryBooksOutlined,
-  LocalOffer,
-  PaletteOutlined,
-  PersonOutlined,
-  PsychologyOutlined,
-  RocketLaunchOutlined,
-  SchoolOutlined,
-  ScienceOutlined,
-  Search,
-  SmartToyOutlined,
-  Speed,
-  Spellcheck,
-  Star,
-  TextSnippetOutlined,
-  WorkspacePremium,
+    AccessTimeOutlined,
+    AllInclusive,
+    AutoAwesomeOutlined,
+    AutoFixHighOutlined,
+    BlockOutlined,
+    BuildOutlined,
+    CheckCircle,
+    Close as CloseIcon,
+    CreditCard,
+    Diamond,
+    EmojiEvents,
+    FormatQuoteOutlined,
+    GppGoodOutlined,
+    HelpOutline,
+    InsightsOutlined,
+    LibraryBooksOutlined,
+    LocalOffer,
+    PaletteOutlined,
+    PersonOutlined,
+    PsychologyOutlined,
+    RocketLaunchOutlined,
+    SchoolOutlined,
+    ScienceOutlined,
+    Search,
+    SmartToyOutlined,
+    Speed,
+    Spellcheck,
+    Star,
+    TextSnippetOutlined,
+    WorkspacePremium,
 } from '@mui/icons-material';
 import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  Container,
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  Divider,
-  FormControlLabel,
-  Grid,
-  IconButton,
-  Stack,
-  Switch,
-  Tooltip,
-  Typography,
-  useTheme,
+    Box,
+    Button,
+    Card,
+    CardContent,
+    Chip,
+    Container,
+    Dialog,
+    DialogContent,
+    DialogTitle,
+    Divider,
+    FormControlLabel,
+    Grid,
+    IconButton,
+    Stack,
+    Switch,
+    Tooltip,
+    Typography,
+    useTheme,
 } from '@mui/material';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
 import { useSnackbar } from 'notistack';
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import PaymentForm from '../components/payment/PaymentForm';
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 interface Feature {
   name: string;
@@ -345,6 +351,7 @@ const getFeatureIcon = (featureName: string, color: string) => {
 const PricePlan: React.FC = () => {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
+  const navigate = useNavigate();
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [showDetailedComparison, setShowDetailedComparison] = useState(false);
@@ -352,6 +359,7 @@ const PricePlan: React.FC = () => {
   const handlePlanSelect = (plan: Plan) => {
     if (plan.price === 0) {
       enqueueSnackbar('Free plan activated!', { variant: 'success' });
+      navigate('/dashboard');
       return;
     }
     setSelectedPlan(plan);
@@ -361,6 +369,7 @@ const PricePlan: React.FC = () => {
   const handlePaymentSuccess = () => {
     setPaymentDialogOpen(false);
     enqueueSnackbar('Subscription successful!', { variant: 'success' });
+    navigate('/dashboard');
   };
 
   const handlePaymentError = (error: string) => {
@@ -710,14 +719,32 @@ const PricePlan: React.FC = () => {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Subscribe to {selectedPlan?.name} Plan</DialogTitle>
+        <DialogTitle>
+          Subscribe to {selectedPlan?.name} Plan
+          <IconButton
+            aria-label="close"
+            onClick={() => setPaymentDialogOpen(false)}
+            sx={{
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              color: theme => theme.palette.grey[500],
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
         <DialogContent>
           {selectedPlan && (
-            <PaymentForm
-              priceId={selectedPlan.priceId}
-              onSuccess={handlePaymentSuccess}
-              onError={handlePaymentError}
-            />
+            <Elements stripe={stripePromise}>
+              <PaymentForm
+                priceId={selectedPlan.priceId}
+                planName={selectedPlan.name}
+                planPrice={selectedPlan.price}
+                onSuccess={handlePaymentSuccess}
+                onError={handlePaymentError}
+              />
+            </Elements>
           )}
         </DialogContent>
       </Dialog>

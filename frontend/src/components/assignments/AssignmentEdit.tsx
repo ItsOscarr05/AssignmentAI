@@ -3,67 +3,70 @@ import {
   Box,
   Button,
   CircularProgress,
-  Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   FormControl,
-  FormControlLabel,
   Grid,
   InputLabel,
   MenuItem,
-  Paper,
   Select,
-  SelectChangeEvent,
-  Switch,
   TextField,
-  Typography,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
 import { assignments } from '../../services/api';
+
+interface AssignmentEditDialogProps {
+  open: boolean;
+  onClose: () => void;
+  assignmentId: string;
+}
 
 interface AssignmentFormData {
   title: string;
   description: string;
   subject: string;
-  gradeLevel: string;
   dueDate: string;
-  type: 'essay' | 'quiz' | 'project' | 'homework';
-  allowLateSubmissions: boolean;
-  lateSubmissionPenalty: number;
 }
 
-const assignmentTypes = ['essay', 'quiz', 'project', 'homework'] as const;
-type AssignmentType = (typeof assignmentTypes)[number];
+const subjectOptions = [
+  'Mathematics',
+  'English',
+  'Science',
+  'History',
+  'Art',
+  'Music',
+  'Technology',
+  'Business',
+  'Other',
+];
 
-const AssignmentEdit: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+const AssignmentEditDialog: React.FC<AssignmentEditDialogProps> = ({
+  open,
+  onClose,
+  assignmentId,
+}) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<AssignmentFormData>({
     title: '',
     description: '',
     subject: '',
-    gradeLevel: '',
     dueDate: '',
-    type: 'homework',
-    allowLateSubmissions: true,
-    lateSubmissionPenalty: 10,
   });
 
   useEffect(() => {
+    if (!open) return;
     const fetchAssignment = async () => {
       try {
         setLoading(true);
-        const assignment = await assignments.getById(id!);
+        const assignment = await assignments.getById(assignmentId);
         setFormData({
           title: assignment.title,
           description: assignment.description,
           subject: assignment.subject || '',
-          gradeLevel: assignment.gradeLevel || '',
-          dueDate: assignment.dueDate,
-          type: assignment.type,
-          allowLateSubmissions: assignment.allowLateSubmissions ?? true,
-          lateSubmissionPenalty: assignment.lateSubmissionPenalty ?? 10,
+          dueDate: assignment.dueDate ? assignment.dueDate.split('T')[0] : '',
         });
       } catch (err: any) {
         setError(err.response?.data?.detail || 'Failed to load assignment');
@@ -71,24 +74,20 @@ const AssignmentEdit: React.FC = () => {
         setLoading(false);
       }
     };
-
     fetchAssignment();
-  }, [id]);
+  }, [assignmentId, open]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSelectChange = (e: SelectChangeEvent<string>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name as string]: value,
-    }));
+  const handleSelectChange = (e: React.ChangeEvent<{ value: unknown }>) => {
+    setFormData(prev => ({ ...prev, subject: e.target.value as string }));
+  };
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, dueDate: e.target.value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -96,11 +95,10 @@ const AssignmentEdit: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      await assignments.update(id!, {
+      await assignments.update(assignmentId, {
         ...formData,
-        type: formData.type as AssignmentType,
       });
-      navigate('/assignments');
+      onClose();
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to update assignment');
     } finally {
@@ -108,29 +106,23 @@ const AssignmentEdit: React.FC = () => {
     }
   };
 
-  if (loading && !formData.title) {
-    return (
-      <Container maxWidth="sm">
-        <Box sx={{ mt: 8, display: 'flex', justifyContent: 'center' }}>
-          <CircularProgress />
-        </Box>
-      </Container>
-    );
-  }
-
   return (
-    <Container maxWidth="md">
-      <Box sx={{ mt: 4, mb: 4 }}>
-        <Paper elevation={3} sx={{ p: 4 }}>
-          <Typography component="h1" variant="h4" align="center" gutterBottom>
-            Edit Assignment
-          </Typography>
-          {error && (
-            <Alert severity="error" sx={{ mb: 3 }}>
-              {error}
-            </Alert>
-          )}
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle sx={{ fontWeight: 700, textAlign: 'center' }}>Edit Assignment</DialogTitle>
+      <DialogContent sx={{ p: 4 }}>
+        {loading ? (
+          <Box
+            sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}
+          >
+            <CircularProgress />
+          </Box>
+        ) : (
           <form onSubmit={handleSubmit}>
+            {error && (
+              <Alert severity="error" sx={{ mb: 3 }}>
+                {error}
+              </Alert>
+            )}
             <Grid container spacing={3}>
               <Grid item xs={12}>
                 <TextField
@@ -140,6 +132,8 @@ const AssignmentEdit: React.FC = () => {
                   name="title"
                   value={formData.title}
                   onChange={handleChange}
+                  variant="outlined"
+                  sx={{ fontSize: 18 }}
                 />
               </Grid>
               <Grid item xs={12}>
@@ -152,54 +146,19 @@ const AssignmentEdit: React.FC = () => {
                   name="description"
                   value={formData.description}
                   onChange={handleChange}
+                  variant="outlined"
+                  sx={{ fontSize: 16 }}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
                 <FormControl fullWidth required>
                   <InputLabel>Subject</InputLabel>
-                  <Select
-                    name="subject"
-                    value={formData.subject}
-                    onChange={handleSelectChange}
-                    label="Subject"
-                  >
-                    <MenuItem value="math">Mathematics</MenuItem>
-                    <MenuItem value="science">Science</MenuItem>
-                    <MenuItem value="english">English</MenuItem>
-                    <MenuItem value="history">History</MenuItem>
-                    <MenuItem value="computer_science">Computer Science</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth required>
-                  <InputLabel>Grade Level</InputLabel>
-                  <Select
-                    name="gradeLevel"
-                    value={formData.gradeLevel}
-                    onChange={handleSelectChange}
-                    label="Grade Level"
-                  >
-                    <MenuItem value="elementary">Elementary</MenuItem>
-                    <MenuItem value="middle">Middle School</MenuItem>
-                    <MenuItem value="high">High School</MenuItem>
-                    <MenuItem value="college">College</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth required>
-                  <InputLabel>Type</InputLabel>
-                  <Select
-                    name="type"
-                    value={formData.type}
-                    onChange={handleSelectChange}
-                    label="Type"
-                  >
-                    <MenuItem value="essay">Essay</MenuItem>
-                    <MenuItem value="quiz">Quiz</MenuItem>
-                    <MenuItem value="project">Project</MenuItem>
-                    <MenuItem value="homework">Homework</MenuItem>
+                  <Select value={formData.subject} label="Subject" onChange={handleSelectChange}>
+                    {subjectOptions.map(subject => (
+                      <MenuItem key={subject} value={subject}>
+                        {subject}
+                      </MenuItem>
+                    ))}
                   </Select>
                 </FormControl>
               </Grid>
@@ -207,62 +166,41 @@ const AssignmentEdit: React.FC = () => {
                 <TextField
                   required
                   fullWidth
-                  type="datetime-local"
                   label="Due Date"
                   name="dueDate"
+                  type="date"
                   value={formData.dueDate}
-                  onChange={handleChange}
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
+                  onChange={handleDateChange}
+                  InputLabelProps={{ shrink: true }}
                 />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={formData.allowLateSubmissions}
-                      onChange={handleChange}
-                      name="allowLateSubmissions"
-                    />
-                  }
-                  label="Allow Late Submissions"
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  type="number"
-                  label="Late Submission Penalty (%)"
-                  name="lateSubmissionPenalty"
-                  value={formData.lateSubmissionPenalty}
-                  onChange={handleChange}
-                  disabled={!formData.allowLateSubmissions}
-                  InputProps={{
-                    inputProps: { min: 0, max: 100 },
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-                  <Button
-                    variant="outlined"
-                    onClick={() => navigate('/assignments')}
-                    disabled={loading}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" variant="contained" color="primary" disabled={loading}>
-                    {loading ? <CircularProgress size={24} /> : 'Save Changes'}
-                  </Button>
-                </Box>
               </Grid>
             </Grid>
           </form>
-        </Paper>
-      </Box>
-    </Container>
+        )}
+      </DialogContent>
+      <DialogActions sx={{ justifyContent: 'flex-end', p: 3 }}>
+        <Button
+          variant="outlined"
+          color="inherit"
+          onClick={onClose}
+          sx={{ borderColor: 'red', color: 'red', fontWeight: 600, minWidth: 120 }}
+          disabled={loading}
+        >
+          Cancel
+        </Button>
+        <Button
+          variant="contained"
+          color="error"
+          type="submit"
+          sx={{ fontWeight: 600, minWidth: 140 }}
+          disabled={loading}
+          onClick={handleSubmit}
+        >
+          Save Changes
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 };
 
-export default AssignmentEdit;
+export default AssignmentEditDialog;

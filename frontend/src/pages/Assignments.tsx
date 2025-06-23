@@ -12,9 +12,15 @@ import {
 } from '@mui/icons-material';
 import {
   Box,
+  Button,
   Card,
   CardContent,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   FormControl,
   Grid,
   IconButton,
@@ -40,7 +46,10 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import dayjs, { Dayjs } from 'dayjs';
 import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import AssignmentEditDialog from '../components/assignments/AssignmentEdit';
+import { assignments } from '../services/api/assignments';
 import { mapToCoreSubject } from '../services/subjectService';
 import { recentAssignments } from './DashboardHome';
 
@@ -62,6 +71,7 @@ interface Assignment {
 const Assignments: React.FC = () => {
   const theme = useTheme();
   const location = useLocation();
+  const navigate = useNavigate();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -71,6 +81,11 @@ const Assignments: React.FC = () => {
   const [filterSubject, setFilterSubject] = useState(location.state?.subject || 'all');
   const [filterTimeframe, setFilterTimeframe] = useState(location.state?.timeframe || 'total');
   const [filterDate, setFilterDate] = useState<Dayjs | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [assignmentToDelete, setAssignmentToDelete] = useState<Assignment | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editAssignmentId, setEditAssignmentId] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     if (filterTimeframe !== 'total') {
@@ -84,7 +99,7 @@ const Assignments: React.FC = () => {
     }
   }, [filterDate]);
 
-  const [assignmentsList] = useState<Assignment[]>(
+  const [assignmentsList, setAssignmentsList] = useState<Assignment[]>(
     recentAssignments.map((a: any) => ({
       ...a,
       subject: a.subject || (a.title ? mapToCoreSubject(a.title) : 'Unknown'),
@@ -127,6 +142,90 @@ const Assignments: React.FC = () => {
   const handleMenuClose = () => {
     setAnchorEl(null);
     setSelectedAssignment(null);
+  };
+
+  const handleViewAssignment = (assignmentId: string) => {
+    handleMenuClose();
+    navigate(`/dashboard/assignments/${assignmentId}`);
+    toast.success('Opening assignment details...');
+  };
+
+  const handleReopenInWorkshop = (assignmentId: string) => {
+    handleMenuClose();
+    const assignment = assignmentsList.find(a => a.id === assignmentId);
+    if (assignment) {
+      navigate('/dashboard/workshop', {
+        state: {
+          assignment: assignment,
+          reopen: true,
+        },
+      });
+      toast.success(`Reopening "${assignment.title}" in Workshop...`);
+    }
+  };
+
+  const handleEditAssignment = (assignmentId: string) => {
+    handleMenuClose();
+    setEditAssignmentId(assignmentId);
+    setEditDialogOpen(true);
+    toast.success('Opening assignment editor...');
+  };
+
+  const handleDeleteClick = (assignmentId: string) => {
+    handleMenuClose();
+    const assignment = assignmentsList.find(a => a.id === assignmentId);
+    if (assignment) {
+      setAssignmentToDelete(assignment);
+      setDeleteDialogOpen(true);
+    }
+  };
+
+  const fetchAssignments = async () => {
+    try {
+      const data = await assignments.getAll();
+      setAssignmentsList(
+        data.map((a: any) => ({
+          ...a,
+          subject: a.subject || (a.title ? mapToCoreSubject(a.title) : 'Unknown'),
+          description: a.description || '',
+          attachments: a.attachments || [],
+        }))
+      );
+    } catch (error) {
+      toast.error('Failed to fetch assignments.');
+    }
+  };
+
+  useEffect(() => {
+    fetchAssignments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleDeleteConfirm = async () => {
+    if (!assignmentToDelete) return;
+    setDeleteLoading(true);
+    try {
+      await assignments.delete(assignmentToDelete.id);
+      setDeleteDialogOpen(false);
+      setAssignmentToDelete(null);
+      toast.success(`Assignment "${assignmentToDelete.title}" deleted successfully`);
+      await fetchAssignments();
+    } catch (error) {
+      console.error('Error deleting assignment:', error);
+      toast.error('Failed to delete assignment. Please try again.');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setAssignmentToDelete(null);
+  };
+
+  const handleEditDialogClose = () => {
+    setEditDialogOpen(false);
+    setEditAssignmentId(null);
   };
 
   const getStatusIcon = (status: Assignment['status']) => {
@@ -532,16 +631,19 @@ const Assignments: React.FC = () => {
                         open={Boolean(anchorEl) && selectedAssignment === assignment.id}
                         onClose={handleMenuClose}
                       >
-                        <MenuItem onClick={handleMenuClose}>
+                        <MenuItem onClick={() => handleViewAssignment(assignment.id)}>
                           <VisibilityIcon sx={{ mr: 1 }} /> View Assignment
                         </MenuItem>
-                        <MenuItem onClick={handleMenuClose}>
+                        <MenuItem onClick={() => handleReopenInWorkshop(assignment.id)}>
                           <RefreshIcon sx={{ mr: 1 }} /> Reopen in Workshop
                         </MenuItem>
-                        <MenuItem onClick={handleMenuClose}>
+                        <MenuItem onClick={() => handleEditAssignment(assignment.id)}>
                           <EditIcon sx={{ mr: 1 }} /> Edit Title/Metadata
                         </MenuItem>
-                        <MenuItem onClick={handleMenuClose} sx={{ color: 'error.main' }}>
+                        <MenuItem
+                          onClick={() => handleDeleteClick(assignment.id)}
+                          sx={{ color: 'error.main' }}
+                        >
                           <DeleteIcon sx={{ mr: 1 }} /> Delete
                         </MenuItem>
                       </Menu>
@@ -560,6 +662,41 @@ const Assignments: React.FC = () => {
             onRowsPerPageChange={handleChangeRowsPerPage}
           />
         </TableContainer>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog
+          open={deleteDialogOpen}
+          onClose={handleDeleteCancel}
+          aria-labelledby="delete-dialog-title"
+          aria-describedby="delete-dialog-description"
+        >
+          <DialogTitle id="delete-dialog-title">Delete Assignment</DialogTitle>
+          <DialogContent>
+            <DialogContentText id="delete-dialog-description">
+              Are you sure you want to delete "{assignmentToDelete?.title}"? This action cannot be
+              undone.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleDeleteCancel} color="primary" disabled={deleteLoading}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDeleteConfirm}
+              color="error"
+              variant="contained"
+              disabled={deleteLoading}
+            >
+              {deleteLoading ? <CircularProgress size={22} color="inherit" /> : 'Delete'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        <AssignmentEditDialog
+          open={editDialogOpen}
+          onClose={handleEditDialogClose}
+          assignmentId={editAssignmentId || ''}
+        />
       </Box>
     </LocalizationProvider>
   );

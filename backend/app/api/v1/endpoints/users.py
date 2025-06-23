@@ -1,69 +1,68 @@
-from typing import Any, List
-from fastapi import APIRouter, Body, Depends, HTTPException, status, UploadFile, File, Form
+from typing import Any, List, Optional
+from fastapi import APIRouter, Body, Depends, HTTPException, status, UploadFile, File, Form, Query
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
-
-from app import crud, models, schemas
-from app.api import deps
-from app.core.auth import get_current_user
-from app.core.storage import upload_file, delete_file
-from app.db.session import get_db
+from app.core.deps import get_current_user, get_current_active_teacher
+from app.services.storage_service import StorageService
+from app.database import get_db
 from app.models.user import User
-from app.schemas.user import UserProfile, UserPreferences, UserResponse
+from app.schemas.user import UserProfile, UserPreferences, UserResponse, UserCreate, UserUpdate
+from app.crud import user as user_crud
+from app.services.security_monitoring import security_monitoring
 
 router = APIRouter()
 
-@router.get("/users", response_model=List[schemas.User])
+@router.get("/users", response_model=List[UserResponse])
 def read_users(
-    db: Session = Depends(deps.get_db),
+    db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
-    current_user: models.User = Depends(deps.get_current_active_superuser),
+    current_user: User = Depends(get_current_active_teacher),
 ) -> Any:
     """
     Retrieve users.
     """
-    users = crud.user.get_multi(db, skip=skip, limit=limit)
+    users = user_crud.get_multi(db, skip=skip, limit=limit)
     return users
 
-@router.post("/users", response_model=schemas.User)
+@router.post("/users", response_model=UserResponse)
 def create_user(
     *,
-    db: Session = Depends(deps.get_db),
-    user_in: schemas.UserCreate,
-    current_user: models.User = Depends(deps.get_current_active_superuser),
+    db: Session = Depends(get_db),
+    user_in: UserCreate,
+    current_user: User = Depends(get_current_active_teacher),
 ) -> Any:
     """
     Create new user.
     """
-    user = crud.user.get_by_email(db, email=user_in.email)
+    user = user_crud.get_by_email(db, email=user_in.email)
     if user:
         raise HTTPException(
             status_code=400,
             detail="The user with this email already exists in the system.",
         )
-    user = crud.user.create(db, obj_in=user_in)
+    user = user_crud.create(db, obj_in=user_in)
     return user
 
-@router.put("/me", response_model=schemas.User)
+@router.put("/me", response_model=UserResponse)
 def update_user_me(
     *,
-    db: Session = Depends(deps.get_db),
-    user_in: schemas.UserUpdate,
-    current_user: models.User = Depends(deps.get_current_active_user),
+    db: Session = Depends(get_db),
+    user_in: UserUpdate,
+    current_user: User = Depends(get_current_user),
 ) -> Any:
     """
     Update own user.
     """
     if user_in.password is not None:
         current_user_data = jsonable_encoder(current_user)
-        user_in = schemas.UserUpdate(**current_user_data)
-    user = crud.user.update(db, db_obj=current_user, obj_in=user_in)
+        user_in = UserUpdate(**current_user_data)
+    user = user_crud.update(db, db_obj=current_user, obj_in=user_in)
     return user
 
-@router.get("/me", response_model=schemas.User)
+@router.get("/me", response_model=UserResponse)
 def read_user_me(
-    current_user: models.User = Depends(deps.get_current_active_user),
+    current_user: User = Depends(get_current_user),
 ) -> Any:
     """
     Get current user.
@@ -106,17 +105,20 @@ async def upload_avatar(
     if not file.content_type.startswith('image/'):
         raise HTTPException(status_code=400, detail="File must be an image")
     
+    # Create storage service
+    storage_service = StorageService(db)
+    
     # Delete old avatar if exists
     if current_user.avatar:
-        delete_file(current_user.avatar)
+        storage_service.delete_file(current_user.avatar)
     
     # Upload new avatar
-    avatar_url = upload_file(file, f"avatars/{current_user.id}")
+    avatar_path = await storage_service.save_file(file, f"avatars/{current_user.id}")
     
     # Update user profile
-    user_crud.update_avatar(db, current_user.id, avatar_url)
+    user_crud.update_avatar(db, current_user.id, avatar_path)
     
-    return {"avatarUrl": avatar_url}
+    return {"avatarUrl": avatar_path}
 
 @router.delete("/account")
 async def delete_account(
@@ -124,9 +126,12 @@ async def delete_account(
     db: Session = Depends(get_db)
 ):
     """Delete current user's account"""
+    # Create storage service
+    storage_service = StorageService(db)
+    
     # Delete avatar if exists
     if current_user.avatar:
-        delete_file(current_user.avatar)
+        storage_service.delete_file(current_user.avatar)
     
     # Delete user
     user_crud.delete_user(db, current_user.id)

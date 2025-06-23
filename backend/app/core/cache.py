@@ -4,31 +4,34 @@ import json
 import redis
 from app.core.config import settings
 from app.core.logger import logger
-from fastapi_cache import FastAPICache
-from fastapi_cache.backends.redis import RedisBackend
 from redis import asyncio as aioredis
 
 class RedisCache:
     def __init__(self):
-        self.redis_client = redis.Redis(
-            host=settings.REDIS_HOST,
-            port=settings.REDIS_PORT,
-            db=settings.REDIS_DB,
-            password=settings.REDIS_PASSWORD,
-            decode_responses=True
-        )
+        try:
+            self.redis_client = redis.Redis(
+                host=settings.REDIS_HOST,
+                port=settings.REDIS_PORT,
+                db=settings.REDIS_DB,
+                password=settings.REDIS_PASSWORD,
+                decode_responses=True
+            )
+            # Test connection
+            self.redis_client.ping()
+            self.available = True
+        except Exception:
+            self.redis_client = None
+            self.available = False
 
     def get(self, key: str) -> Optional[Any]:
-        """
-        Get a value from cache.
-        """
+        if not self.available:
+            return None
         try:
             value = self.redis_client.get(key)
             if value:
                 return json.loads(value)
             return None
-        except Exception as e:
-            logger.error(f"Error getting from cache: {str(e)}")
+        except Exception:
             return None
 
     def set(
@@ -37,9 +40,8 @@ class RedisCache:
         value: Any,
         expire: Optional[Union[int, timedelta]] = None
     ) -> bool:
-        """
-        Set a value in cache with optional expiration.
-        """
+        if not self.available:
+            return False
         try:
             serialized_value = json.dumps(value)
             if expire:
@@ -47,42 +49,35 @@ class RedisCache:
             else:
                 self.redis_client.set(key, serialized_value)
             return True
-        except Exception as e:
-            logger.error(f"Error setting cache: {str(e)}")
+        except Exception:
             return False
 
     def delete(self, key: str) -> bool:
-        """
-        Delete a key from cache.
-        """
+        if not self.available:
+            return False
         try:
             self.redis_client.delete(key)
             return True
-        except Exception as e:
-            logger.error(f"Error deleting from cache: {str(e)}")
+        except Exception:
             return False
 
     def exists(self, key: str) -> bool:
-        """
-        Check if a key exists in cache.
-        """
+        if not self.available:
+            return False
         try:
             return bool(self.redis_client.exists(key))
-        except Exception as e:
-            logger.error(f"Error checking cache existence: {str(e)}")
+        except Exception:
             return False
 
     def clear_pattern(self, pattern: str) -> bool:
-        """
-        Clear all keys matching a pattern.
-        """
+        if not self.available:
+            return False
         try:
             keys = self.redis_client.keys(pattern)
             if keys:
                 self.redis_client.delete(*keys)
             return True
-        except Exception as e:
-            logger.error(f"Error clearing cache pattern: {str(e)}")
+        except Exception:
             return False
 
 # Cache key patterns
@@ -110,9 +105,15 @@ cache = RedisCache()
 
 async def init_cache():
     """Initialize Redis cache."""
-    redis = aioredis.from_url(
-        settings.REDIS_URL,
-        encoding="utf8",
-        decode_responses=True
-    )
-    FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache") 
+    try:
+        redis_client = aioredis.from_url(
+            settings.REDIS_URL,
+            encoding="utf8",
+            decode_responses=True
+        )
+        # Test the connection
+        await redis_client.ping()
+        logger.info("Redis cache initialized successfully")
+    except Exception as e:
+        logger.warning(f"Redis cache initialization failed: {str(e)}")
+        logger.info("Continuing without Redis cache") 

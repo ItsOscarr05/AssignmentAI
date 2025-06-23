@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
-from app.api import deps
+from app.core.deps import get_current_user, get_db
 from app.services.template_service import TemplateService
 from app.models.user import User
 from pydantic import BaseModel
@@ -44,8 +44,8 @@ class TemplateResponse(BaseModel):
 @router.post("/", response_model=TemplateResponse)
 async def create_template(
     template: TemplateCreate,
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Create a new template"""
     template_service = TemplateService(db)
@@ -63,8 +63,8 @@ async def create_template(
 @router.get("/{template_id}", response_model=TemplateResponse)
 async def get_template(
     template_id: int,
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Get a template by ID"""
     template_service = TemplateService(db)
@@ -75,8 +75,8 @@ async def list_templates(
     template_type: Optional[str] = None,
     category: Optional[str] = None,
     include_public: bool = True,
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """List available templates"""
     template_service = TemplateService(db)
@@ -91,8 +91,8 @@ async def list_templates(
 async def update_template(
     template_id: int,
     template: TemplateUpdate,
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Update a template"""
     template_service = TemplateService(db)
@@ -106,8 +106,8 @@ async def update_template(
 @router.delete("/{template_id}")
 async def delete_template(
     template_id: int,
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Delete a template"""
     template_service = TemplateService(db)
@@ -118,8 +118,8 @@ async def delete_template(
 async def expand_template(
     template_id: int,
     variables: Dict[str, Any],
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Expand a template with provided variables"""
     template_service = TemplateService(db)

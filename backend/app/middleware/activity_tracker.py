@@ -4,8 +4,14 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from app.core.auth import get_current_user_optional
 from app.crud import activity as activity_crud
 from app.schemas.activity import ActivityCreate
-from app.db.session import SessionLocal
+from app.database import SessionLocal
 import json
+import logging
+import time
+from datetime import datetime
+from sqlalchemy.orm import Session
+from app.models.activity import Activity
+from app.core.config import settings
 
 class ActivityTrackerMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Callable) -> Response:

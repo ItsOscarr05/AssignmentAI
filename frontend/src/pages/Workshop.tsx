@@ -216,6 +216,17 @@ const Workshop: React.FC = () => {
     if (location.state?.responseTab) {
       setResponseTab(location.state.responseTab);
     }
+
+    // Handle reopening assignment from assignments page
+    if (location.state?.assignment && location.state?.reopen) {
+      const assignment = location.state.assignment;
+      const assignmentPrompt = `Reopen assignment: ${assignment.title}\n\nSubject: ${assignment.subject}\nDescription: ${assignment.description}\n\nPlease help me continue working on this assignment.`;
+      setInput(assignmentPrompt);
+      setActiveTab(0); // Switch to chat tab
+
+      // Clear the location state to prevent re-triggering
+      window.history.replaceState({}, document.title);
+    }
   }, [location]);
 
   useEffect(() => {
@@ -1007,9 +1018,25 @@ const Workshop: React.FC = () => {
 
           {/* AI Suggestions */}
           <Paper sx={{ ...cardStyle, p: 3, mb: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Try These
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="h6" gutterBottom>
+                Try These
+              </Typography>
+              <Tooltip
+                title="To use it, click a button and press send message in the upload content card"
+                arrow
+              >
+                <InfoOutlinedIcon
+                  sx={{
+                    color: 'text.secondary',
+                    fontSize: 18,
+                    cursor: 'pointer',
+                    position: 'relative',
+                    top: '-4px',
+                  }}
+                />
+              </Tooltip>
+            </Box>
             <List>
               <ListItem button onClick={() => handleSuggestionClick('Summarize this document.', 3)}>
                 <ListItemIcon>

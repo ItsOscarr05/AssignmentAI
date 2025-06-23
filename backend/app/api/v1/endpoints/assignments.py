@@ -1,8 +1,8 @@
-from typing import List, Optional
+from typing import List, Optional, Any
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from sqlalchemy.orm import Session
-from app.api import deps
+from app.core.deps import get_current_user, get_db
 from app.crud import assignment as assignment_crud
 from app.schemas.assignment import (
     AssignmentCreate,
@@ -12,6 +12,8 @@ from app.schemas.assignment import (
 )
 from app.models.assignment import AssignmentStatus
 from app.services.file_service import file_service
+from app.models.user import User
+from app.models.assignment import Assignment
 
 router = APIRouter()
 
@@ -24,8 +26,8 @@ async def create_assignment(
     due_date: datetime,
     max_score: int = 100,
     files: List[UploadFile] = File(None),
-    db: Session = Depends(deps.get_db),
-    current_user = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
 ):
     """
     Create a new assignment with optional file attachments.
@@ -63,8 +65,8 @@ def list_assignments(
     status: Optional[AssignmentStatus] = None,
     subject: Optional[str] = None,
     grade_level: Optional[str] = None,
-    db: Session = Depends(deps.get_db),
-    current_user = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
 ):
     """
     List all assignments with optional filtering and sorting.
@@ -84,8 +86,8 @@ def list_assignments(
 @router.get("/{assignment_id}", response_model=AssignmentResponse)
 def get_assignment(
     assignment_id: int,
-    db: Session = Depends(deps.get_db),
-    current_user = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
 ):
     """
     Get a specific assignment by ID.
@@ -106,8 +108,8 @@ async def update_assignment(
     max_score: Optional[int] = None,
     status: Optional[AssignmentStatus] = None,
     files: List[UploadFile] = File(None),
-    db: Session = Depends(deps.get_db),
-    current_user = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
 ):
     """
     Update an assignment with optional file attachments.
@@ -145,8 +147,8 @@ async def update_assignment(
 @router.delete("/{assignment_id}")
 def delete_assignment(
     assignment_id: int,
-    db: Session = Depends(deps.get_db),
-    current_user = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
 ):
     """
     Delete an assignment.

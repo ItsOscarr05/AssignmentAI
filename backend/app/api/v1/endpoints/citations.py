@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
-from app.api import deps
+from app.core.deps import get_current_user, get_db
 from app.services.citation_service import CitationService
 from app.models.user import User
 from pydantic import BaseModel
@@ -66,8 +66,8 @@ class CitationResponse(BaseModel):
 @router.post("/", response_model=CitationResponse)
 async def create_citation(
     citation: CitationCreate,
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Create a new citation"""
     citation_service = CitationService(db)
@@ -79,8 +79,8 @@ async def create_citation(
 @router.get("/{citation_id}", response_model=CitationResponse)
 async def get_citation(
     citation_id: int,
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Get a citation by ID"""
     citation_service = CitationService(db)
@@ -91,8 +91,8 @@ async def list_citations(
     citation_type: Optional[str] = Query(None),
     tags: Optional[str] = Query(None),  # Comma-separated tags
     search: Optional[str] = Query(None),
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """List user's citations with optional filtering"""
     citation_service = CitationService(db)
@@ -113,8 +113,8 @@ async def list_citations(
 async def update_citation(
     citation_id: int,
     citation: CitationUpdate,
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Update a citation"""
     citation_service = CitationService(db)
@@ -128,8 +128,8 @@ async def update_citation(
 @router.delete("/{citation_id}")
 async def delete_citation(
     citation_id: int,
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Delete a citation"""
     citation_service = CitationService(db)
@@ -140,8 +140,8 @@ async def delete_citation(
 async def generate_citations_batch(
     citations: List[CitationCreate],
     format_type: str = Query('APA', regex='^(APA|MLA|Chicago|Harvard)$'),
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Generate formatted citations for multiple sources"""
     citation_service = CitationService(db)
@@ -155,8 +155,8 @@ async def generate_citations_batch(
 @router.post("/extract-from-url")
 async def extract_citation_from_url(
     url: str,
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Extract citation information from a URL"""
     citation_service = CitationService(db)
@@ -165,8 +165,8 @@ async def extract_citation_from_url(
 @router.get("/validate-doi/{doi}")
 async def validate_doi(
     doi: str,
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Validate and fetch metadata for a DOI"""
     citation_service = CitationService(db)
@@ -175,8 +175,8 @@ async def validate_doi(
 @router.get("/formats/{citation_id}")
 async def get_citation_formats(
     citation_id: int,
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Get all formatted versions of a citation"""
     citation_service = CitationService(db)
@@ -186,8 +186,8 @@ async def get_citation_formats(
 @router.post("/{citation_id}/duplicate")
 async def duplicate_citation(
     citation_id: int,
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Duplicate an existing citation"""
     citation_service = CitationService(db)

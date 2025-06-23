@@ -1,10 +1,10 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
-from app.api import deps
+from app.core.deps import get_current_user, get_db
 from app.services.storage_service import StorageService
 from app.schemas.file import FileUploadResponse, FileResponse, FileCreate
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse as FastAPIFileResponse
 import os
 
 from app.services import file_service
@@ -15,8 +15,8 @@ router = APIRouter()
 async def upload_file(
     file: UploadFile = File(...),
     subdirectory: str = None,
-    db: Session = Depends(deps.get_db),
-    current_user: dict = Depends(deps.get_current_active_user)
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
 ):
     """
     Upload a file to the storage.
@@ -38,8 +38,8 @@ async def upload_file(
 @router.get("/download/{file_path:path}")
 async def download_file(
     file_path: str,
-    db: Session = Depends(deps.get_db),
-    current_user: dict = Depends(deps.get_current_active_user)
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
 ):
     """
     Download a file from storage.
@@ -62,8 +62,8 @@ async def download_file(
 @router.delete("/{file_path:path}")
 async def delete_file(
     file_path: str,
-    db: Session = Depends(deps.get_db),
-    current_user: dict = Depends(deps.get_current_active_user)
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
 ):
     """
     Delete a file from storage.
@@ -86,8 +86,8 @@ async def delete_file(
 @router.get("/{file_path:path}")
 async def get_file(
     file_path: str,
-    db: Session = Depends(deps.get_db),
-    current_user = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
 ):
     """
     Get a file by its path.
@@ -100,7 +100,7 @@ async def get_file(
     # TODO: Add permission check based on file ownership
     # For now, we'll just check if the file exists
     
-    return FileResponse(
+    return FastAPIFileResponse(
         full_path,
         filename=os.path.basename(file_path),
         media_type="application/octet-stream"
@@ -108,14 +108,14 @@ async def get_file(
 
 @router.get("/files", response_model=List[FileResponse])
 async def get_files(
-    current_user: dict = Depends(deps.get_current_active_user)
+    current_user: dict = Depends(get_current_user)
 ):
     return await file_service.get_user_files(current_user)
 
 @router.delete("/files/{file_id}")
 async def delete_file_by_id(
     file_id: str,
-    current_user: dict = Depends(deps.get_current_active_user)
+    current_user: dict = Depends(get_current_user)
 ):
     await file_service.delete_file(file_id, current_user)
     return {"message": "File deleted successfully"} 

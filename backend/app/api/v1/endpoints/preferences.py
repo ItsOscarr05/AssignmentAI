@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.api import deps
+from app.core.deps import get_current_user, get_db
 from app.crud import preference as preference_crud
 from app.schemas.preference import Preference, PreferenceUpdate
 from app.core.auth import get_current_user
@@ -9,7 +9,7 @@ router = APIRouter()
 
 @router.get("/", response_model=Preference)
 def get_preferences(
-    db: Session = Depends(deps.get_db),
+    db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
     """
@@ -21,7 +21,7 @@ def get_preferences(
 @router.patch("/", response_model=Preference)
 def update_preferences(
     preference_update: PreferenceUpdate,
-    db: Session = Depends(deps.get_db),
+    db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
     """
@@ -34,7 +34,7 @@ def update_preferences(
 
 @router.post("/reset", response_model=Preference)
 def reset_preferences(
-    db: Session = Depends(deps.get_db),
+    db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
     """
@@ -47,7 +47,7 @@ def reset_preferences(
 
 @router.delete("/")
 def delete_preferences(
-    db: Session = Depends(deps.get_db),
+    db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
     """

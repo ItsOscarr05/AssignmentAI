@@ -39,16 +39,38 @@ const getSubjectColor = (subject: string) => {
   return found ? subjectColorMap[found] : '#BDBDBD'; // Default: gray
 };
 
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const { name, value } = payload[0];
+    const label = name === 'No Subjects' ? name : `${name}: ${value}`;
+    return (
+      <div
+        style={{
+          backgroundColor: '#fff',
+          padding: '5px',
+          border: '1px solid #ccc',
+        }}
+      >
+        <span>{label}</span>
+      </div>
+    );
+  }
+  return null;
+};
+
 const DashboardPieChart: React.FC<DashboardPieChartProps> = ({ data, distributionFilter }) => {
   const navigate = useNavigate();
 
   const handlePieClick = (payload: any) => {
-    if (payload && payload.name) {
+    if (payload && payload.name && payload.name !== 'No Subjects') {
       navigate('/dashboard/assignments', {
         state: { subject: payload.name, timeframe: distributionFilter },
       });
     }
   };
+
+  const hasData = data.length > 0;
+  const chartData = hasData ? data : [{ name: 'No Subjects', value: 1 }];
 
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -72,20 +94,24 @@ const DashboardPieChart: React.FC<DashboardPieChartProps> = ({ data, distributio
           {data.length}
         </text>
         <Pie
-          data={data}
+          data={chartData}
           cx="50%"
           cy="50%"
           innerRadius={115}
           outerRadius={160}
-          paddingAngle={4}
+          paddingAngle={hasData ? 4 : 0}
           dataKey="value"
           onClick={handlePieClick}
         >
-          {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={getSubjectColor(entry.name)} cursor="pointer" />
+          {chartData.map((entry, index) => (
+            <Cell
+              key={`cell-${index}`}
+              fill={hasData ? getSubjectColor(entry.name) : '#BDBDBD'}
+              cursor={hasData ? 'pointer' : 'default'}
+            />
           ))}
         </Pie>
-        <Tooltip />
+        <Tooltip content={<CustomTooltip />} />
       </PieChart>
     </ResponsiveContainer>
   );

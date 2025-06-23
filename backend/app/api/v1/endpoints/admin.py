@@ -1,18 +1,18 @@
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Dict
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
-from app.api import deps
-from app.services.health_service import HealthService
+from app.core.deps import get_current_active_superuser, get_db
+from app.services.health_service import check_postgres_health
 from app.crud import get_logs, delete_log
 
 router = APIRouter()
 
 @router.get("/stats", response_model=schemas.AdminStats)
 def get_admin_stats(
-    db: Session = Depends(deps.get_db),
-    current_user: models.User = Depends(deps.get_current_active_superuser),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_superuser),
 ) -> Any:
     """
     Get admin dashboard statistics
@@ -28,10 +28,10 @@ def get_admin_stats(
 
 @router.get("/users", response_model=List[schemas.User])
 def get_all_users(
-    db: Session = Depends(deps.get_db),
+    db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
-    current_user: models.User = Depends(deps.get_current_active_superuser),
+    current_user: models.User = Depends(get_current_active_superuser),
 ) -> Any:
     """
     Get all users (admin only)
@@ -43,8 +43,8 @@ def get_all_users(
 def update_user_status(
     user_id: int,
     status: schemas.UserStatusUpdate,
-    db: Session = Depends(deps.get_db),
-    current_user: models.User = Depends(deps.get_current_active_superuser),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_superuser),
 ) -> Any:
     """
     Update user status (admin only)
@@ -57,27 +57,23 @@ def update_user_status(
 
 @router.get("/health")
 async def get_system_health(
-    db: Session = Depends(deps.get_db),
-    current_user: dict = Depends(deps.get_current_active_superuser)
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_active_superuser)
 ):
     """
     Get system health status. Only superusers can access this endpoint.
     """
-    health_service = HealthService(db)
     return {
-        "database": health_service.check_database(),
-        "email": await health_service.check_email_service(),
-        "ai": await health_service.check_ai_service(),
-        "storage": health_service.check_storage()
+        "database": check_postgres_health(),
     }
 
 @router.get("/logs", response_model=List[schemas.SystemLog])
 def read_logs(
-    db: Session = Depends(deps.get_db),
+    db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
     level: Optional[str] = None,
-    current_user: dict = Depends(deps.get_current_active_superuser)
+    current_user: dict = Depends(get_current_active_superuser)
 ):
     """
     Retrieve system logs. Only superusers can access this endpoint.
@@ -88,8 +84,8 @@ def read_logs(
 @router.delete("/logs/{log_id}")
 def delete_log_endpoint(
     log_id: int,
-    db: Session = Depends(deps.get_db),
-    current_user: dict = Depends(deps.get_current_active_superuser)
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_active_superuser)
 ):
     """
     Delete a system log. Only superusers can access this endpoint.

@@ -11,7 +11,7 @@ class Activity(Base):
     type = Column(String, nullable=False, index=True)
     title = Column(String, nullable=False)
     description = Column(Text, nullable=True)
-    metadata = Column(JSON, default={})
+    activity_metadata = Column(JSON, default={})
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     
     # Relationships

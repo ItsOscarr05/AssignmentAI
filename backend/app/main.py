@@ -5,9 +5,9 @@ from fastapi.exceptions import RequestValidationError
 from sqlalchemy.exc import SQLAlchemyError
 from pydantic import ValidationError
 from app.core.config import settings
-from app.db.database import engine, Base
+from app.database import engine, Base
 from app.api.v1.api import api_router
-from app.core.rate_limit import rate_limit_middleware
+from app.core.rate_limit import rate_limit_middleware, init_rate_limiter, close_rate_limiter
 from app.core.error_handlers import (
     http_exception_handler,
     validation_exception_handler,
@@ -16,7 +16,6 @@ from app.core.error_handlers import (
     validation_error_handler
 )
 from app.services.logging_service import logging_service
-from app.api.deps import get_db
 from app.api.middleware import file_size_limit_middleware
 from datetime import datetime
 from app.middleware.security import SecurityHeadersMiddleware
@@ -25,7 +24,6 @@ from app.middleware.logging import LoggingMiddleware
 from app.middleware.performance import PerformanceMiddleware, QueryOptimizationMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.security import SecurityMiddleware
 from app.middleware.rate_limit import RateLimitMiddleware
 import uvicorn
 
@@ -173,19 +171,6 @@ app.middleware("http")(file_size_limit_middleware)
 # Add compression middleware
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
-# Add security headers
-app.add_middleware(
-    SecurityMiddleware,
-    headers={
-        "X-Frame-Options": "DENY",
-        "X-Content-Type-Options": "nosniff",
-        "X-XSS-Protection": "1; mode=block",
-        "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
-        "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';",
-        "Referrer-Policy": "strict-origin-when-cross-origin"
-    }
-)
-
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -196,12 +181,14 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 async def startup_event():
     """Initialize services on startup"""
     logging_service.info("Starting up AssignmentAI application")
+    await init_rate_limiter()
     # Add any additional startup initialization here
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup on shutdown"""
     logging_service.info("Shutting down AssignmentAI application")
+    await close_rate_limiter()
     # Add any cleanup code here
 
 @app.get("/")

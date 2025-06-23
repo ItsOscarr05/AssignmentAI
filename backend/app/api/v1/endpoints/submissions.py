@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File,
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
-from app.api import deps
+from app.core.deps import get_current_user, get_db
 from app.core.config import settings
 import os
 from app.crud import submission as submission_crud
@@ -22,10 +22,10 @@ router = APIRouter()
 
 @router.get("/submissions", response_model=List[schemas.Submission])
 def read_submissions(
-    db: Session = Depends(deps.get_db),
+    db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
-    current_user: models.User = Depends(deps.get_current_active_user),
+    current_user: models.User = Depends(get_current_user),
 ) -> Any:
     """
     Retrieve submissions.
@@ -38,10 +38,10 @@ def read_submissions(
 @router.post("/submissions", response_model=schemas.Submission)
 async def create_submission(
     *,
-    db: Session = Depends(deps.get_db),
+    db: Session = Depends(get_db),
     submission_in: schemas.SubmissionCreate,
     file: UploadFile = File(None),
-    current_user: models.User = Depends(deps.get_current_active_user),
+    current_user: models.User = Depends(get_current_user),
 ) -> Any:
     """
     Create new submission.
@@ -79,9 +79,9 @@ async def create_submission(
 @router.get("/submissions/{submission_id}", response_model=schemas.Submission)
 def read_submission(
     *,
-    db: Session = Depends(deps.get_db),
+    db: Session = Depends(get_db),
     submission_id: int,
-    current_user: models.User = Depends(deps.get_current_active_user),
+    current_user: models.User = Depends(get_current_user),
 ) -> Any:
     """
     Get submission by ID.
@@ -96,11 +96,11 @@ def read_submission(
 @router.put("/submissions/{submission_id}", response_model=schemas.Submission)
 async def update_submission(
     *,
-    db: Session = Depends(deps.get_db),
+    db: Session = Depends(get_db),
     submission_id: int,
     submission_in: schemas.SubmissionUpdate,
     file: UploadFile = File(None),
-    current_user: models.User = Depends(deps.get_current_active_user),
+    current_user: models.User = Depends(get_current_user),
 ) -> Any:
     """
     Update submission.
@@ -148,9 +148,9 @@ async def update_submission(
 @router.delete("/submissions/{submission_id}", response_model=schemas.Submission)
 def delete_submission(
     *,
-    db: Session = Depends(deps.get_db),
+    db: Session = Depends(get_db),
     submission_id: int,
-    current_user: models.User = Depends(deps.get_current_active_user),
+    current_user: models.User = Depends(get_current_user),
 ) -> Any:
     """
     Delete submission.
@@ -171,10 +171,10 @@ def delete_submission(
 @router.put("/submissions/{submission_id}/status", response_model=schemas.Submission)
 def update_submission_status(
     *,
-    db: Session = Depends(deps.get_db),
+    db: Session = Depends(get_db),
     submission_id: int,
     status: str,
-    current_user: models.User = Depends(deps.get_current_active_user),
+    current_user: models.User = Depends(get_current_user),
 ) -> Any:
     """
     Update submission status.
@@ -195,8 +195,8 @@ async def submit_assignment(
     assignment_id: int,
     files: List[UploadFile] = File(None),
     comments: Optional[str] = None,
-    db: Session = Depends(deps.get_db),
-    current_user = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
 ):
     """
     Submit an assignment with optional files and comments.
@@ -236,8 +236,8 @@ def list_submissions(
     sort_by: str = Query("submitted_at"),
     sort_order: str = Query("desc"),
     status: Optional[SubmissionStatus] = None,
-    db: Session = Depends(deps.get_db),
-    current_user = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
 ):
     """
     List all submissions for an assignment.
@@ -266,8 +266,8 @@ def list_student_submissions(
     sort_by: str = Query("submitted_at"),
     sort_order: str = Query("desc"),
     status: Optional[SubmissionStatus] = None,
-    db: Session = Depends(deps.get_db),
-    current_user = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
 ):
     """
     List all submissions for the current student.
@@ -285,8 +285,8 @@ def list_student_submissions(
 @router.get("/submissions/{submission_id}", response_model=SubmissionResponse)
 def get_submission(
     submission_id: int,
-    db: Session = Depends(deps.get_db),
-    current_user = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
 ):
     """
     Get a specific submission by ID.
@@ -302,8 +302,8 @@ def get_submission(
 def update_submission(
     submission_id: int,
     submission: SubmissionUpdate,
-    db: Session = Depends(deps.get_db),
-    current_user = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
 ):
     """
     Update a submission (e.g., grade and feedback).
@@ -322,8 +322,8 @@ def update_submission(
 @router.delete("/submissions/{submission_id}")
 def delete_submission(
     submission_id: int,
-    db: Session = Depends(deps.get_db),
-    current_user = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
 ):
     """
     Delete a submission.

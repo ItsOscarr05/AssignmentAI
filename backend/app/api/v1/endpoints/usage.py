@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
 from datetime import datetime
-from app.api import deps
+from app.core.deps import get_current_user, get_db
 from app.services.usage_service import UsageService
 from app.models.user import User
 from pydantic import BaseModel
@@ -32,8 +32,8 @@ class UsageSummaryResponse(BaseModel):
 @router.post("/track", response_model=UsageResponse)
 async def track_usage(
     usage: UsageCreate,
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Track a usage event"""
     usage_service = UsageService(db)
@@ -49,8 +49,8 @@ async def get_usage_history(
     feature: Optional[str] = None,
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Get usage history for the current user"""
     usage_service = UsageService(db)
@@ -65,8 +65,8 @@ async def get_usage_history(
 async def get_usage_summary(
     feature: Optional[str] = None,
     period: str = 'daily',
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Get usage summary for the current user"""
     usage_service = UsageService(db)
@@ -79,8 +79,8 @@ async def get_usage_summary(
 @router.get("/limits")
 async def get_usage_limits(
     feature: Optional[str] = None,
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Get usage limits for the current user's plan"""
     usage_service = UsageService(db)

@@ -64,6 +64,9 @@ class PerformanceMiddleware(BaseHTTPMiddleware):
     async def _cache_response(self, cache_key: str, response: Response):
         """Cache the response with appropriate metadata"""
         try:
+            # Only cache if response has a .body method
+            if not hasattr(response, 'body') or not callable(getattr(response, 'body', None)):
+                return
             content = await response.body()
             cache_data = {
                 "content": content,
@@ -84,7 +87,7 @@ class PerformanceMiddleware(BaseHTTPMiddleware):
             
             logging_service.info("Cached response", extra={"path": Request.url.path})
         except Exception as e:
-            logging_service.error("Error caching response", error=e)
+            logging_service.error(f"Error caching response: {str(e)}")
     
     def _get_cache_tags(self, path: str) -> list:
         """Get cache tags based on the request path"""
