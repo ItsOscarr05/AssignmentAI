@@ -1,6 +1,7 @@
 import {
   ArrowForward,
   ArticleOutlined,
+  AttachFile,
   ContactSupportOutlined,
   ExpandMore,
   FeedbackOutlined,
@@ -15,13 +16,20 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  Alert,
   Box,
   Button,
   Card,
   CardContent,
+  Chip,
+  FormControl,
   Grid,
   InputAdornment,
+  InputLabel,
+  MenuItem,
   Paper,
+  Select,
+  Snackbar,
   Stack,
   Tab,
   Tabs,
@@ -29,7 +37,10 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
+import CircularProgress from '@mui/material/CircularProgress';
 import React, { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { helpService } from '../services/helpService';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -105,21 +116,25 @@ const HelpSection = ({ title, icon, children }: any) => {
 
 const Help: React.FC = () => {
   const theme = useTheme();
+  const { user } = useAuth?.() || {};
   const [tabValue, setTabValue] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [expandedFaqs, setExpandedFaqs] = useState<{ [key: string]: boolean }>({});
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error' | 'info' | 'warning';
+  }>({ open: false, message: '', severity: 'info' });
 
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
+  // System status/announcement (placeholder)
+  const systemStatus = {
+    message: 'All systems operational. No known issues.',
+    severity: 'success' as 'success' | 'info' | 'warning' | 'error',
   };
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    // Switch to FAQ tab when searching
-    if (query && tabValue !== 0) {
-      setTabValue(0);
-    }
-  };
-
+  // FAQ and quick links data
   const faqData = [
     {
       category: 'Getting Started',
@@ -132,7 +147,12 @@ const Help: React.FC = () => {
         {
           question: 'What types of assignments does AssignmentAI support?',
           answer:
-            'AssignmentAI supports a wide range of assignments including essays, research papers, code projects, and mathematical problems. Our AI adapts to your specific needs.',
+            'AssignmentAI supports a wide range of assignments including essays, research papers, code projects, mathematical problems, lab reports, and presentations. Our AI adapts to your specific needs.',
+        },
+        {
+          question: 'How do I create my first assignment?',
+          answer:
+            'Click the "Create Assignment" button on your dashboard, fill in the assignment details, and our AI will help you structure and develop your work step by step.',
         },
       ],
     },
@@ -142,12 +162,42 @@ const Help: React.FC = () => {
         {
           question: 'How does the AI token system work?',
           answer:
-            'AI tokens are credits you use when interacting with our AI. Each interaction costs a certain number of tokens, and you can monitor your usage in the AI Tokens section.',
+            'AI tokens are credits you use when interacting with our AI. Each interaction costs a certain number of tokens, and you can monitor your usage in the AI Tokens section. Free users get a limited number of tokens per month.',
         },
         {
           question: 'Can I collaborate with others on assignments?',
           answer:
-            'Yes! AssignmentAI supports collaboration features. You can share assignments, receive feedback, and work together with classmates or instructors.',
+            'Yes! AssignmentAI supports collaboration features. You can share assignments, receive feedback, and work together with classmates or instructors in real-time.',
+        },
+        {
+          question: 'How accurate is the AI feedback?',
+          answer:
+            'Our AI provides high-quality feedback based on academic standards. However, we recommend using it as a learning tool alongside your own critical thinking and instructor guidance.',
+        },
+        {
+          question: 'Can the AI help with plagiarism detection?',
+          answer:
+            'Yes, our AI includes built-in plagiarism detection and can help you ensure your work is original while providing suggestions for proper citations.',
+        },
+      ],
+    },
+    {
+      category: 'Account & Settings',
+      questions: [
+        {
+          question: 'How do I change my password?',
+          answer:
+            'Go to your Profile settings, click on "Security", and select "Change Password". You\'ll need to enter your current password and then your new password twice.',
+        },
+        {
+          question: 'Can I export my assignments?',
+          answer:
+            'Yes, you can export your assignments in multiple formats including PDF, Word, and Google Docs. Look for the export button in the assignment view.',
+        },
+        {
+          question: 'How do I enable two-factor authentication?',
+          answer:
+            'In your Profile settings, go to "Security" and click "Enable 2FA". Follow the setup instructions to link your authenticator app.',
         },
       ],
     },
@@ -171,6 +221,36 @@ const Help: React.FC = () => {
         {
           question: 'Can I get a refund?',
           answer: 'Yes, we offer a 30-day money-back guarantee for all paid plans.',
+        },
+        {
+          question: 'How do I cancel my subscription?',
+          answer:
+            'Go to your Account settings, click on "Subscription", and select "Cancel Subscription". You\'ll continue to have access until the end of your current billing period.',
+        },
+      ],
+    },
+    {
+      category: 'Technical Support',
+      questions: [
+        {
+          question: 'What browsers are supported?',
+          answer:
+            'AssignmentAI works on all modern browsers including Chrome, Firefox, Safari, and Edge. We recommend using the latest version for the best experience.',
+        },
+        {
+          question: 'Can I use AssignmentAI on my mobile device?',
+          answer:
+            'Yes! AssignmentAI is fully responsive and works great on mobile devices. You can access all features through your mobile browser.',
+        },
+        {
+          question: 'What should I do if the AI is not responding?',
+          answer:
+            'First, check your internet connection. If the issue persists, try refreshing the page or contact our support team for assistance.',
+        },
+        {
+          question: 'How do I report a bug?',
+          answer:
+            'Use the contact form on this page and select "Bug Report" as the category. Please include detailed steps to reproduce the issue.',
         },
       ],
     },
@@ -203,16 +283,150 @@ const Help: React.FC = () => {
     },
   ];
 
+  // Category chips
+  const allCategories = ['All', ...faqData.map(c => c.category)];
+
+  // Filtered FAQ data with category and search
   const filteredFaqData = faqData
     .map(category => ({
       ...category,
       questions: category.questions.filter(
         faq =>
-          faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          faq.answer.toLowerCase().includes(searchQuery.toLowerCase())
+          (selectedCategory === 'All' || category.category === selectedCategory) &&
+          (faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            faq.answer.toLowerCase().includes(searchQuery.toLowerCase()))
       ),
     }))
     .filter(category => category.questions.length > 0);
+
+  // Popular FAQs (first 2 from each category)
+  const popularFaqs = faqData.flatMap(cat => cat.questions.slice(0, 2));
+
+  // Expand/collapse all logic
+  const handleExpandAll = () => {
+    const newState: { [key: string]: boolean } = {};
+    filteredFaqData.forEach(cat => {
+      cat.questions.forEach(faq => {
+        newState[faq.question] = true;
+      });
+    });
+    setExpandedFaqs(newState);
+  };
+  const handleCollapseAll = () => {
+    setExpandedFaqs({});
+  };
+
+  // Improved highlight function
+  const highlightSearchTerm = (text: string, searchTerm: string) => {
+    if (!searchTerm.trim()) return text;
+    const regex = new RegExp(`(${searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    const parts = text.split(regex);
+    return parts.map((part, index) =>
+      regex.test(part) ? (
+        <Box
+          key={index}
+          component="span"
+          sx={{
+            backgroundColor: theme.palette.warning.light,
+            color: theme.palette.warning.contrastText,
+            fontWeight: 'bold',
+            borderRadius: 1,
+            px: 0.5,
+            boxShadow: 1,
+          }}
+        >
+          {part}
+        </Box>
+      ) : (
+        part
+      )
+    );
+  };
+
+  // Contact form state
+  const [contactForm, setContactForm] = useState({
+    subject: '',
+    message: '',
+    category: '',
+    priority: 'medium',
+    email: user?.email || '',
+    attachment: null as File | null,
+  });
+
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
+
+  const handleContactFormChange = (field: string, value: string) => {
+    setContactForm(prev => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Basic validation
+    if (!contactForm.subject.trim() || !contactForm.message.trim()) {
+      setSnackbar({
+        open: true,
+        message: 'Please fill in all required fields',
+        severity: 'error',
+      });
+      return;
+    }
+
+    if (!contactForm.email.trim() || !contactForm.email.includes('@')) {
+      setSnackbar({
+        open: true,
+        message: 'Please enter a valid email address',
+        severity: 'error',
+      });
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      // Submit contact form using help service
+      await helpService.submitContactForm({
+        email: contactForm.email,
+        subject: contactForm.subject,
+        message: contactForm.message,
+        category: contactForm.category,
+        priority: contactForm.priority as 'low' | 'medium' | 'high' | 'urgent',
+      });
+
+      setSnackbar({
+        open: true,
+        message: "Your message has been sent successfully! We'll get back to you within 24 hours.",
+        severity: 'success',
+      });
+
+      // Reset form
+      setContactForm({
+        subject: '',
+        message: '',
+        category: '',
+        priority: 'medium',
+        email: '',
+        attachment: null,
+      });
+    } catch (error: any) {
+      setSnackbar({
+        open: true,
+        message: error.response?.data?.message || 'Failed to send message. Please try again.',
+        severity: 'error',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
 
   return (
     <Box
@@ -223,6 +437,13 @@ const Help: React.FC = () => {
         pb: 4,
       }}
     >
+      {/* System status/announcement */}
+      <Alert
+        severity={systemStatus.severity as 'success' | 'info' | 'warning' | 'error'}
+        sx={{ mb: 2, maxWidth: 600, mx: 'auto' }}
+      >
+        {systemStatus.message}
+      </Alert>
       <Box
         sx={{
           mb: 5,
@@ -255,12 +476,15 @@ const Help: React.FC = () => {
         <TextField
           placeholder="Search for help..."
           value={searchQuery}
-          onChange={e => handleSearch(e.target.value)}
+          onChange={e => setSearchQuery(e.target.value)}
           sx={{
             ml: 'auto',
-            width: '300px',
+            width: '350px',
+            fontWeight: 600,
             '& .MuiOutlinedInput-root': {
               borderRadius: 3,
+              fontWeight: 600,
+              fontSize: '1.1rem',
               '&:hover': {
                 '& > fieldset': {
                   borderColor: theme.palette.primary.main,
@@ -274,10 +498,36 @@ const Help: React.FC = () => {
                 <SearchOutlined />
               </InputAdornment>
             ),
+            inputProps: {
+              'aria-label': 'Search help',
+              autoFocus: true,
+            },
           }}
         />
       </Box>
-
+      {/* Category filter chips */}
+      <Stack direction="row" spacing={1} sx={{ mb: 3, flexWrap: 'wrap' }}>
+        {allCategories.map(cat => (
+          <Chip
+            key={cat}
+            label={cat}
+            color={selectedCategory === cat ? 'primary' : 'default'}
+            onClick={() => setSelectedCategory(cat)}
+            sx={{ fontWeight: 500, fontSize: '1rem', borderRadius: 2 }}
+            aria-pressed={selectedCategory === cat}
+            tabIndex={0}
+          />
+        ))}
+      </Stack>
+      {/* Expand/Collapse All */}
+      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+        <Button variant="outlined" onClick={handleExpandAll} aria-label="Expand all FAQs">
+          Expand All
+        </Button>
+        <Button variant="outlined" onClick={handleCollapseAll} aria-label="Collapse all FAQs">
+          Collapse All
+        </Button>
+      </Stack>
       <Box
         sx={{
           borderRadius: 4,
@@ -335,9 +585,85 @@ const Help: React.FC = () => {
             <Tab icon={<ContactSupportOutlined />} label="Contact" sx={{ gap: 1 }} />
           </Tabs>
         </Box>
-
         <Box sx={{ p: 4 }}>
           <TabPanel value={tabValue} index={0}>
+            <HelpSection title="Popular Questions" icon={<QuestionAnswerOutlined />}>
+              <Stack spacing={2}>
+                {popularFaqs.map((faq, idx) => (
+                  <Accordion
+                    key={faq.question + idx}
+                    expanded={!!expandedFaqs[faq.question]}
+                    onChange={() =>
+                      setExpandedFaqs(f => ({ ...f, [faq.question]: !f[faq.question] }))
+                    }
+                    sx={{
+                      background: 'transparent',
+                      boxShadow: 'none',
+                      '&:before': { display: 'none' },
+                      mb: 2,
+                      border: '1px solid',
+                      borderColor:
+                        theme.palette.mode === 'dark'
+                          ? 'rgba(255,255,255,0.1)'
+                          : 'rgba(0,0,0,0.06)',
+                      borderRadius: 2,
+                      overflow: 'hidden',
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        borderColor: theme.palette.primary.main,
+                        transform: 'translateY(-2px)',
+                        boxShadow: theme.shadows[4],
+                      },
+                    }}
+                  >
+                    <AccordionSummary
+                      expandIcon={<ExpandMore />}
+                      sx={{
+                        background:
+                          theme.palette.mode === 'dark'
+                            ? 'rgba(255,255,255,0.05)'
+                            : 'rgba(0,0,0,0.02)',
+                        borderRadius: 2,
+                        '&:hover': {
+                          background:
+                            theme.palette.mode === 'dark'
+                              ? 'rgba(255,255,255,0.08)'
+                              : 'rgba(0,0,0,0.04)',
+                        },
+                        '& .MuiAccordionSummary-expandIconWrapper': {
+                          color: theme.palette.primary.main,
+                          transition: 'transform 0.3s ease',
+                        },
+                        '& .MuiAccordionSummary-expandIconWrapper.Mui-expanded': {
+                          transform: 'rotate(180deg)',
+                        },
+                      }}
+                    >
+                      <Typography fontWeight="500" sx={{ color: theme.palette.primary.main }}>
+                        {highlightSearchTerm(faq.question, searchQuery)}
+                      </Typography>
+                    </AccordionSummary>
+                    <AccordionDetails
+                      sx={{
+                        background:
+                          theme.palette.mode === 'dark'
+                            ? 'rgba(255,255,255,0.02)'
+                            : 'rgba(0,0,0,0.01)',
+                        borderTop: '1px solid',
+                        borderColor:
+                          theme.palette.mode === 'dark'
+                            ? 'rgba(255,255,255,0.1)'
+                            : 'rgba(0,0,0,0.06)',
+                      }}
+                    >
+                      <Typography color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                        {highlightSearchTerm(faq.answer, searchQuery)}
+                      </Typography>
+                    </AccordionDetails>
+                  </Accordion>
+                ))}
+              </Stack>
+            </HelpSection>
             <HelpSection title="Frequently Asked Questions" icon={<QuestionAnswerOutlined />}>
               {filteredFaqData.length > 0 ? (
                 filteredFaqData.map((category, categoryIndex) => (
@@ -358,6 +684,10 @@ const Help: React.FC = () => {
                     {category.questions.map((faq, index) => (
                       <Accordion
                         key={index}
+                        expanded={!!expandedFaqs[faq.question]}
+                        onChange={() =>
+                          setExpandedFaqs(f => ({ ...f, [faq.question]: !f[faq.question] }))
+                        }
                         sx={{
                           background: 'transparent',
                           boxShadow: 'none',
@@ -402,7 +732,7 @@ const Help: React.FC = () => {
                           }}
                         >
                           <Typography fontWeight="500" sx={{ color: theme.palette.primary.main }}>
-                            {faq.question}
+                            {highlightSearchTerm(faq.question, searchQuery)}
                           </Typography>
                         </AccordionSummary>
                         <AccordionDetails
@@ -419,7 +749,7 @@ const Help: React.FC = () => {
                           }}
                         >
                           <Typography color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                            {faq.answer}
+                            {highlightSearchTerm(faq.answer, searchQuery)}
                           </Typography>
                         </AccordionDetails>
                       </Accordion>
@@ -454,7 +784,16 @@ const Help: React.FC = () => {
                 </Box>
               )}
             </HelpSection>
-
+            {/* Back to Top button */}
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 4 }}>
+              <Button
+                variant="outlined"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                aria-label="Back to top"
+              >
+                Back to Top
+              </Button>
+            </Box>
             <HelpSection title="Quick Links" icon={<HelpOutlineOutlined />}>
               <Grid container spacing={3}>
                 {quickLinks.map((link, index) => (
@@ -501,6 +840,8 @@ const Help: React.FC = () => {
                         <Button
                           variant="text"
                           endIcon={<ArrowForward />}
+                          href={link.link}
+                          component="a"
                           sx={{
                             '&:hover': {
                               background: 'transparent',
@@ -508,6 +849,7 @@ const Help: React.FC = () => {
                               transform: 'translateX(4px)',
                             },
                           }}
+                          aria-label={`Visit ${link.title}`}
                         >
                           Visit
                         </Button>
@@ -526,50 +868,171 @@ const Help: React.FC = () => {
                   <Typography variant="h6" gutterBottom>
                     Send us a Message
                   </Typography>
-                  <Stack spacing={3}>
-                    <TextField
-                      fullWidth
-                      label="Subject"
-                      variant="outlined"
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: 2,
-                        },
-                      }}
-                    />
-                    <TextField
-                      fullWidth
-                      label="Message"
-                      multiline
-                      rows={4}
-                      variant="outlined"
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: 2,
-                        },
-                      }}
-                    />
-                    <Button
-                      variant="contained"
-                      startIcon={<SendOutlined />}
-                      sx={{
-                        alignSelf: 'flex-start',
-                        px: 4,
-                        py: 1.5,
-                        borderRadius: 3,
-                        background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
-                        boxShadow:
-                          '0 4px 20px 0px rgba(0,0,0,0.14), 0 7px 10px -5px rgba(33,150,243,0.4)',
-                        transition: 'all 0.3s ease',
-                        '&:hover': {
-                          transform: 'translateY(-2px)',
-                          boxShadow: '0 7px 30px -10px rgba(33,150,243,0.6)',
-                        },
-                      }}
-                    >
-                      Send Message
-                    </Button>
-                  </Stack>
+                  <Box component="form" onSubmit={handleContactSubmit}>
+                    <Stack spacing={3}>
+                      <TextField
+                        fullWidth
+                        label="Email Address"
+                        variant="outlined"
+                        type="email"
+                        required
+                        value={contactForm.email}
+                        onChange={e => handleContactFormChange('email', e.target.value)}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 2,
+                          },
+                        }}
+                        inputProps={{ 'aria-label': 'Email address' }}
+                      />
+
+                      <TextField
+                        fullWidth
+                        label="Subject"
+                        variant="outlined"
+                        required
+                        value={contactForm.subject}
+                        onChange={e => handleContactFormChange('subject', e.target.value)}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 2,
+                          },
+                        }}
+                        inputProps={{ 'aria-label': 'Subject' }}
+                      />
+
+                      <FormControl fullWidth>
+                        <InputLabel>Category</InputLabel>
+                        <Select
+                          value={contactForm.category}
+                          label="Category"
+                          onChange={e => handleContactFormChange('category', e.target.value)}
+                          sx={{
+                            borderRadius: 2,
+                          }}
+                          inputProps={{ 'aria-label': 'Category' }}
+                        >
+                          <MenuItem value="">Select a category</MenuItem>
+                          <MenuItem value="technical">Technical Support</MenuItem>
+                          <MenuItem value="billing">Billing & Subscription</MenuItem>
+                          <MenuItem value="feature">Feature Request</MenuItem>
+                          <MenuItem value="bug">Bug Report</MenuItem>
+                          <MenuItem value="general">General Inquiry</MenuItem>
+                        </Select>
+                      </FormControl>
+
+                      <FormControl fullWidth>
+                        <InputLabel>Priority</InputLabel>
+                        <Select
+                          value={contactForm.priority}
+                          label="Priority"
+                          onChange={e => handleContactFormChange('priority', e.target.value)}
+                          sx={{
+                            borderRadius: 2,
+                          }}
+                          inputProps={{ 'aria-label': 'Priority' }}
+                        >
+                          <MenuItem value="low">Low</MenuItem>
+                          <MenuItem value="medium">Medium</MenuItem>
+                          <MenuItem value="high">High</MenuItem>
+                          <MenuItem value="urgent">Urgent</MenuItem>
+                        </Select>
+                      </FormControl>
+
+                      <TextField
+                        fullWidth
+                        label="Message"
+                        multiline
+                        rows={4}
+                        variant="outlined"
+                        required
+                        value={contactForm.message}
+                        onChange={e => handleContactFormChange('message', e.target.value)}
+                        placeholder="Please describe your issue or question in detail..."
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 2,
+                          },
+                        }}
+                        inputProps={{
+                          maxLength: 1000,
+                          'aria-label': 'Message',
+                        }}
+                        helperText={`${contactForm.message.length}/1000 characters`}
+                      />
+
+                      {/* File attachment */}
+                      <Button
+                        variant="outlined"
+                        component="label"
+                        startIcon={<AttachFile />}
+                        aria-label="Attach file"
+                        sx={{ alignSelf: 'flex-start' }}
+                      >
+                        Attach File
+                        <input
+                          type="file"
+                          hidden
+                          onChange={e =>
+                            setContactForm(prev => ({
+                              ...prev,
+                              attachment: e.target.files?.[0] || null,
+                            }))
+                          }
+                        />
+                        {contactForm.attachment && (
+                          <Typography variant="caption" sx={{ ml: 1 }}>
+                            {contactForm.attachment.name}
+                          </Typography>
+                        )}
+                      </Button>
+
+                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                        <Button
+                          type="submit"
+                          variant="contained"
+                          startIcon={
+                            isSubmitting ? <CircularProgress size={20} /> : <SendOutlined />
+                          }
+                          disabled={isSubmitting}
+                          sx={{
+                            px: 4,
+                            py: 1.5,
+                            borderRadius: 3,
+                            background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
+                            boxShadow:
+                              '0 4px 20px 0px rgba(0,0,0,0.14), 0 7px 10px -5px rgba(33,150,243,0.4)',
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                              transform: 'translateY(-2px)',
+                              boxShadow: '0 7px 30px -10px rgba(33,150,243,0.6)',
+                            },
+                          }}
+                          aria-label="Send message"
+                        >
+                          {isSubmitting ? 'Sending...' : 'Send Message'}
+                        </Button>
+
+                        {contactForm.priority === 'urgent' && (
+                          <Chip
+                            label="Urgent"
+                            color="error"
+                            size="small"
+                            icon={<ContactSupportOutlined />}
+                          />
+                        )}
+                      </Box>
+                    </Stack>
+                  </Box>
+                  {/* Confirmation animation/message */}
+                  {snackbar.open && snackbar.severity === 'success' && (
+                    <Alert severity="success" sx={{ mt: 3, fontWeight: 600, fontSize: '1.1rem' }}>
+                      <span role="img" aria-label="check">
+                        ✅
+                      </span>{' '}
+                      Thank you! Your message was sent.
+                    </Alert>
+                  )}
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <Paper
@@ -603,6 +1066,18 @@ const Help: React.FC = () => {
                         </Typography>
                         <Typography>Within 24 hours</Typography>
                       </Box>
+                      <Box>
+                        <Typography color="text.secondary" gutterBottom>
+                          Office Hours
+                        </Typography>
+                        <Typography>Monday - Friday: 9 AM - 6 PM EST</Typography>
+                      </Box>
+                      <Box>
+                        <Typography color="text.secondary" gutterBottom>
+                          Emergency Support
+                        </Typography>
+                        <Typography>Available 24/7 for urgent issues</Typography>
+                      </Box>
                     </Stack>
                   </Paper>
                 </Grid>
@@ -611,6 +1086,18 @@ const Help: React.FC = () => {
           </TabPanel>
         </Box>
       </Box>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

@@ -2,30 +2,45 @@ import {
   AccountCircleOutlined,
   AssignmentOutlined,
   BadgeOutlined,
-  CalendarMonthOutlined,
+  CancelOutlined,
   EditOutlined,
   EmailOutlined,
   LanguageOutlined,
   LocationOnOutlined,
+  PhotoCameraOutlined,
+  SaveOutlined,
   SchoolOutlined,
   TimelineOutlined,
   VerifiedOutlined,
 } from '@mui/icons-material';
 import {
+  Alert,
   Avatar,
   Box,
   Button,
   Chip,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
   Grid,
+  IconButton,
   Paper,
+  Snackbar,
   Stack,
   Tab,
   Tabs,
+  TextField,
+  Tooltip,
   Typography,
   useTheme,
 } from '@mui/material';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { useProfileStore } from '../services/ProfileService';
+import { recentAssignments } from './DashboardHome';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -137,365 +152,213 @@ const StatCard = ({ icon, title, value, color }: any) => {
   );
 };
 
-const ActivityItem = ({ title, date, status, icon }: any) => {
-  const theme = useTheme();
-  return (
-    <Box sx={{ mb: 2, '&:last-child': { mb: 0 } }}>
-      <Stack direction="row" spacing={2} alignItems="center">
-        <Box
-          sx={{
-            p: 1,
-            borderRadius: 1.5,
-            background: '#ffffff',
-            color: theme.palette.primary.main,
-          }}
-        >
-          {icon}
-        </Box>
-        <Box sx={{ flexGrow: 1 }}>
-          <Typography variant="subtitle1" fontWeight="500">
-            {title}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {date}
-          </Typography>
-        </Box>
-        <Chip
-          label={status}
-          size="small"
-          color={
-            status === 'Completed'
-              ? 'success'
-              : status === 'In Progress'
-              ? 'warning'
-              : status === 'Overdue'
-              ? 'error'
-              : 'default'
-          }
-          sx={{ borderRadius: 1 }}
-        />
-      </Stack>
-    </Box>
-  );
-};
-
-const ActivityTimelineItem = ({ date, title, description, icon, status }: any) => {
-  const theme = useTheme();
-  return (
-    <Box sx={{ display: 'flex', mb: 4, position: 'relative' }}>
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          mr: 2,
-        }}
-      >
-        <Box
-          sx={{
-            p: 1.5,
-            borderRadius: 2,
-            background: '#ffffff',
-            color: theme.palette.primary.main,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            border: '1px solid',
-            borderColor:
-              theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
-            zIndex: 1,
-          }}
-        >
-          {icon}
-        </Box>
-        <Box
-          sx={{
-            width: 2,
-            flexGrow: 1,
-            bgcolor: 'divider',
-            my: 1,
-          }}
-        />
-      </Box>
-      <Box
-        sx={{
-          flexGrow: 1,
-          p: 2,
-          borderRadius: 2,
-          bgcolor: 'rgba(0,0,0,0.02)',
-          border: '1px solid',
-          borderColor: 'divider',
-          position: 'relative',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            left: -8,
-            top: 20,
-            width: 16,
-            height: 16,
-            bgcolor: 'background.paper',
-            border: '1px solid',
-            borderColor: 'divider',
-            transform: 'rotate(45deg)',
-          },
-        }}
-      >
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-          <Typography variant="subtitle1" fontWeight="500">
-            {title}
-          </Typography>
-          <Chip
-            label={status}
-            size="small"
-            color={
-              status === 'Completed'
-                ? 'success'
-                : status === 'In Progress'
-                ? 'warning'
-                : status === 'Overdue'
-                ? 'error'
-                : 'default'
-            }
-            sx={{ borderRadius: 1 }}
-          />
-        </Box>
-        <Typography variant="body2" color="text.secondary" gutterBottom>
-          {date}
-        </Typography>
-        <Typography variant="body2">{description}</Typography>
-      </Box>
-    </Box>
-  );
-};
-
-const AchievementCard = ({ title, description, icon, progress, total, unlocked }: any) => {
-  const theme = useTheme();
-  return (
-    <Paper
-      sx={{
-        p: 3,
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        background: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
-        borderRadius: 2,
-        border: '1px solid',
-        borderColor: unlocked ? 'success.main' : 'divider',
-        position: 'relative',
-        overflow: 'hidden',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 4,
-          background: unlocked
-            ? `linear-gradient(90deg, ${theme.palette.success.main}, ${theme.palette.success.light})`
-            : 'transparent',
-        },
-      }}
-    >
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          mb: 2,
-          gap: 2,
-        }}
-      >
-        <Box
-          sx={{
-            p: 1.5,
-            borderRadius: 2,
-            background: '#ffffff',
-            color: unlocked ? 'success.main' : theme.palette.primary.main,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            border: '1px solid',
-            borderColor:
-              theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
-          }}
-        >
-          {icon}
-        </Box>
-        <Box sx={{ flexGrow: 1 }}>
-          <Typography variant="h6" gutterBottom>
-            {title}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {description}
-          </Typography>
-        </Box>
-        {unlocked && (
-          <Box
-            sx={{
-              p: 1,
-              borderRadius: '50%',
-              background: 'success.main',
-              color: 'white',
-            }}
-          >
-            <VerifiedOutlined fontSize="small" />
-          </Box>
-        )}
-      </Box>
-      <Box sx={{ mt: 'auto' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-          <Typography variant="body2" color="text.secondary">
-            Progress
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {progress}/{total}
-          </Typography>
-        </Box>
-        <Box
-          sx={{
-            height: 6,
-            bgcolor: 'rgba(0,0,0,0.1)',
-            borderRadius: 3,
-            overflow: 'hidden',
-          }}
-        >
-          <Box
-            sx={{
-              height: '100%',
-              width: `${(progress / total) * 100}%`,
-              bgcolor: unlocked ? 'success.main' : 'primary.main',
-              borderRadius: 3,
-              transition: 'width 0.3s ease',
-            }}
-          />
-        </Box>
-      </Box>
-    </Paper>
-  );
-};
-
 const Profile: React.FC = () => {
   const theme = useTheme();
+  const { user } = useAuth();
+  const { profile, isLoading, error, updateProfile, fetchProfile } = useProfileStore();
+
   const [tabValue, setTabValue] = useState(0);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isAvatarUploading, setIsAvatarUploading] = useState(false);
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error' | 'info' | 'warning';
+  }>({ open: false, message: '', severity: 'info' });
+
+  // Form state
+  const [editForm, setEditForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    bio: '',
+    location: '',
+    institution: '',
+    department: '',
+  });
+
+  // Avatar state
+  const [avatarPreview, setAvatarPreview] = useState<string>('');
+
+  // Load profile data on component mount
+  useEffect(() => {
+    if (!profile) {
+      fetchProfile();
+    }
+  }, [profile, fetchProfile]);
+
+  // Initialize form with profile data
+  useEffect(() => {
+    if (profile) {
+      setEditForm({
+        firstName: profile.firstName || '',
+        lastName: profile.lastName || '',
+        email: profile.email || '',
+        bio: profile.bio || '',
+        location: '',
+        institution: '',
+        department: '',
+      });
+    }
+  }, [profile]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 
+  const handleEditProfile = () => {
+    setIsEditDialogOpen(true);
+  };
+
+  const handleCloseEditDialog = () => {
+    setIsEditDialogOpen(false);
+    setAvatarPreview('');
+  };
+
+  const handleFormChange = (field: string, value: string) => {
+    setEditForm(prev => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type and size
+      if (!file.type.startsWith('image/')) {
+        setSnackbar({
+          open: true,
+          message: 'Please select an image file',
+          severity: 'error',
+        });
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        // 5MB limit
+        setSnackbar({
+          open: true,
+          message: 'Image size must be less than 5MB',
+          severity: 'error',
+        });
+        return;
+      }
+
+      setAvatarPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      setIsAvatarUploading(true);
+
+      // Update profile data
+      await updateProfile({
+        firstName: editForm.firstName,
+        lastName: editForm.lastName,
+        email: editForm.email,
+        bio: editForm.bio,
+      });
+
+      setSnackbar({
+        open: true,
+        message: 'Profile updated successfully',
+        severity: 'success',
+      });
+
+      handleCloseEditDialog();
+    } catch (error: any) {
+      setSnackbar({
+        open: true,
+        message: error.response?.data?.message || 'Failed to update profile',
+        severity: 'error',
+      });
+    } finally {
+      setIsAvatarUploading(false);
+    }
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <Box
+        sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}
+      >
+        <CircularProgress size={60} />
+      </Box>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+        <Button variant="contained" onClick={fetchProfile}>
+          Retry
+        </Button>
+      </Box>
+    );
+  }
+
+  // Use profile data or fallback to user data
+  const profileData = profile || user;
+  const displayName = profileData
+    ? profile && profile.firstName
+      ? `${profile.firstName} ${profile.lastName || ''}`.trim()
+      : user && user.firstName
+      ? `${user.firstName} ${user.lastName || ''}`.trim()
+      : 'John Doe'
+    : 'John Doe';
+  const displayEmail = profileData?.email || 'john.doe@example.com';
+  const displayInstitution = 'University of Technology'; // Fallback value
+  const displayLocation = 'United States'; // Full country name
+  const memberSince =
+    profileData && 'createdAt' in profileData && profileData.createdAt
+      ? new Date((profileData as any).createdAt).toLocaleDateString(undefined, {
+          year: 'numeric',
+          month: 'long',
+        })
+      : undefined;
+
+  // Calculate stats from mock data
+  const totalAssignments = recentAssignments.length;
+  const completedCount = recentAssignments.filter(
+    a => a.status === 'Completed' || a.status === 'completed'
+  ).length;
+  const inProgressCount = recentAssignments.filter(
+    a => a.status === 'In Progress' || a.status === 'in_progress'
+  ).length;
+  const notStartedCount = recentAssignments.filter(
+    a => a.status === 'Not Started' || a.status === 'pending'
+  ).length;
+
   const stats = [
-    { icon: <AssignmentOutlined />, title: 'Total Assignments', value: '156' },
-    { icon: <VerifiedOutlined />, title: 'Completed', value: '134' },
-    { icon: <TimelineOutlined />, title: 'In Progress', value: '12' },
-    { icon: <CalendarMonthOutlined />, title: 'Overdue', value: '10' },
-  ];
-
-  const skills = [
-    { name: 'Python', level: 90 },
-    { name: 'JavaScript', level: 85 },
-    { name: 'Machine Learning', level: 80 },
-    { name: 'Data Analysis', level: 75 },
-    { name: 'Web Development', level: 85 },
-    { name: 'Database Design', level: 70 },
-  ];
-
-  const education = [
-    {
-      degree: 'Bachelor of Science in Computer Science',
-      school: 'University of Technology',
-      year: '2020 - 2024',
-      gpa: '3.8/4.0',
-    },
-    {
-      degree: 'Associate Degree in Programming',
-      school: 'Community College',
-      year: '2018 - 2020',
-      gpa: '3.9/4.0',
-    },
-  ];
-
-  const activityTimeline = [
-    {
-      date: 'February 15, 2024',
-      title: 'Research Paper: Machine Learning',
-      description:
-        'Working on a comprehensive analysis of machine learning algorithms and their applications in real-world scenarios.',
-      icon: <AssignmentOutlined />,
-      status: 'In Progress',
-    },
-    {
-      date: 'February 14, 2024',
-      title: 'Math Assignment: Calculus II',
-      description:
-        'Completed the advanced calculus assignment focusing on multivariable calculus and vector analysis.',
-      icon: <AssignmentOutlined />,
-      status: 'Completed',
-    },
-    {
-      date: 'February 12, 2024',
-      title: 'Physics Lab Report',
-      description:
-        'Conducted experiments on wave mechanics and prepared a detailed lab report with data analysis.',
-      icon: <AssignmentOutlined />,
-      status: 'Overdue',
-    },
-    {
-      date: 'February 10, 2024',
-      title: 'Programming Project: Web Application',
-      description:
-        'Developed a full-stack web application using React and Node.js for the software engineering course.',
-      icon: <AssignmentOutlined />,
-      status: 'Completed',
-    },
-  ];
-
-  const achievements = [
-    {
-      title: 'Assignment Master',
-      description: 'Complete 100 assignments with a grade of A or higher',
-      icon: <AssignmentOutlined />,
-      progress: 85,
-      total: 100,
-      unlocked: false,
-    },
-    {
-      title: 'Perfect Streak',
-      description: 'Submit 10 assignments on time in a row',
-      icon: <TimelineOutlined />,
-      progress: 10,
-      total: 10,
-      unlocked: true,
-    },
-    {
-      title: 'Early Bird',
-      description: 'Submit 5 assignments before the deadline',
-      icon: <CalendarMonthOutlined />,
-      progress: 3,
-      total: 5,
-      unlocked: false,
-    },
-    {
-      title: 'Research Scholar',
-      description: 'Complete 5 research papers',
-      icon: <SchoolOutlined />,
-      progress: 5,
-      total: 5,
-      unlocked: true,
-    },
-    {
-      title: 'Team Player',
-      description: 'Participate in 10 group projects',
-      icon: <BadgeOutlined />,
-      progress: 7,
-      total: 10,
-      unlocked: false,
-    },
-    {
-      title: 'Perfect Score',
-      description: 'Get 100% on any assignment',
-      icon: <VerifiedOutlined />,
-      progress: 1,
-      total: 1,
-      unlocked: true,
-    },
+    { icon: <AssignmentOutlined />, title: 'Total Assignments', value: totalAssignments },
+    { icon: <VerifiedOutlined />, title: 'Completed', value: completedCount },
+    { icon: <TimelineOutlined />, title: 'In Progress', value: inProgressCount },
+    { icon: <CancelOutlined />, title: 'Not Started', value: notStartedCount },
   ];
 
   return (
-    <Box sx={{ width: '100%', position: 'relative', px: 2, pb: 4 }}>
+    <Box
+      sx={{
+        width: '100%',
+        position: 'relative',
+        px: 2,
+        pb: 4,
+        minHeight: '100vh',
+        background: theme.palette.background.default,
+        transition: 'background 0.3s',
+      }}
+    >
       <Box
         sx={{
           mb: 5,
@@ -529,6 +392,7 @@ const Profile: React.FC = () => {
         <Button
           variant="contained"
           startIcon={<EditOutlined />}
+          aria-label="Edit Profile"
           sx={{
             ml: 'auto',
             px: 4,
@@ -545,11 +409,11 @@ const Profile: React.FC = () => {
               boxShadow: '0 7px 30px -10px rgba(33,150,243,0.6)',
             },
           }}
+          onClick={handleEditProfile}
         >
           Edit Profile
         </Button>
       </Box>
-
       <Box
         sx={{
           borderRadius: 4,
@@ -608,7 +472,6 @@ const Profile: React.FC = () => {
             <Tab icon={<BadgeOutlined />} label="Achievements" sx={{ gap: 1 }} />
           </Tabs>
         </Box>
-
         <Box sx={{ p: 4 }}>
           <TabPanel value={tabValue} index={0}>
             <ProfileSection title="Personal Information" icon={<AccountCircleOutlined />}>
@@ -624,15 +487,18 @@ const Profile: React.FC = () => {
                     boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
                     background: '#fff',
                   }}
+                  aria-label="User avatar"
                 >
                   <AccountCircleOutlined sx={{ fontSize: 80, color: theme.palette.error.main }} />
                 </Avatar>
                 <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
-                  John Doe
+                  {displayName}
                 </Typography>
-                <Typography color="text.secondary" gutterBottom sx={{ mb: 2 }}>
-                  Computer Science Student
-                </Typography>
+                {memberSince && (
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    Member since {memberSince}
+                  </Typography>
+                )}
                 <Stack
                   direction="row"
                   spacing={1}
@@ -640,57 +506,71 @@ const Profile: React.FC = () => {
                   sx={{
                     mb: 3,
                     flexWrap: 'wrap',
-                    gap: 1,
+                    gap: 1.5,
+                    rowGap: 1.5,
                   }}
                 >
-                  <Chip
-                    icon={<EmailOutlined />}
-                    label="john.doe@example.com"
-                    sx={{
-                      background: 'rgba(255,255,255,0.9)',
-                      border: '1px solid',
-                      borderColor: theme.palette.primary.main,
-                      '& .MuiChip-icon': {
-                        color: theme.palette.primary.main,
-                      },
-                    }}
-                  />
-                  <Chip
-                    icon={<LocationOnOutlined />}
-                    label="New York, USA"
-                    sx={{
-                      background: 'rgba(255,255,255,0.9)',
-                      border: '1px solid',
-                      borderColor: theme.palette.primary.main,
-                      '& .MuiChip-icon': {
-                        color: theme.palette.primary.main,
-                      },
-                    }}
-                  />
-                  <Chip
-                    icon={<LanguageOutlined />}
-                    label="English"
-                    sx={{
-                      background: 'rgba(255,255,255,0.9)',
-                      border: '1px solid',
-                      borderColor: theme.palette.primary.main,
-                      '& .MuiChip-icon': {
-                        color: theme.palette.primary.main,
-                      },
-                    }}
-                  />
-                  <Chip
-                    icon={<SchoolOutlined />}
-                    label="University of Technology"
-                    sx={{
-                      background: 'rgba(255,255,255,0.9)',
-                      border: '1px solid',
-                      borderColor: theme.palette.primary.main,
-                      '& .MuiChip-icon': {
-                        color: theme.palette.primary.main,
-                      },
-                    }}
-                  />
+                  <Tooltip title="Email" arrow>
+                    <Chip
+                      icon={<EmailOutlined aria-label="Email icon" />}
+                      label={displayEmail}
+                      aria-label="User email"
+                      sx={{
+                        background: 'rgba(255,255,255,0.9)',
+                        border: '1px solid',
+                        borderColor: theme.palette.primary.main,
+                        '& .MuiChip-icon': {
+                          color: theme.palette.primary.main,
+                        },
+                        mr: 0.5,
+                      }}
+                    />
+                  </Tooltip>
+                  <Tooltip title="Institution" arrow>
+                    <Chip
+                      icon={<SchoolOutlined aria-label="Institution icon" />}
+                      label={displayInstitution}
+                      aria-label="User institution"
+                      sx={{
+                        background: 'rgba(255,255,255,0.9)',
+                        border: '1px solid',
+                        borderColor: theme.palette.primary.main,
+                        '& .MuiChip-icon': {
+                          color: theme.palette.primary.main,
+                        },
+                      }}
+                    />
+                  </Tooltip>
+                  <Tooltip title="Country" arrow>
+                    <Chip
+                      icon={<LocationOnOutlined aria-label="Location icon" />}
+                      label={displayLocation}
+                      aria-label="User country"
+                      sx={{
+                        background: 'rgba(255,255,255,0.9)',
+                        border: '1px solid',
+                        borderColor: theme.palette.primary.main,
+                        '& .MuiChip-icon': {
+                          color: theme.palette.primary.main,
+                        },
+                      }}
+                    />
+                  </Tooltip>
+                  <Tooltip title="Language" arrow>
+                    <Chip
+                      icon={<LanguageOutlined aria-label="Language icon" />}
+                      label="English"
+                      aria-label="User language"
+                      sx={{
+                        background: 'rgba(255,255,255,0.9)',
+                        border: '1px solid',
+                        borderColor: theme.palette.primary.main,
+                        '& .MuiChip-icon': {
+                          color: theme.palette.primary.main,
+                        },
+                      }}
+                    />
+                  </Tooltip>
                 </Stack>
               </Box>
 
@@ -703,81 +583,6 @@ const Profile: React.FC = () => {
                   </Grid>
                 ))}
               </Grid>
-            </ProfileSection>
-
-            <ProfileSection title="Skills & Expertise" icon={<TimelineOutlined />}>
-              <Grid container spacing={3}>
-                {skills.map((skill, index) => (
-                  <Grid item xs={12} md={6} key={index}>
-                    <Box sx={{ mb: 2 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                        <Typography variant="subtitle1">{skill.name}</Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {skill.level}%
-                        </Typography>
-                      </Box>
-                      <Box
-                        sx={{
-                          height: 8,
-                          bgcolor: 'rgba(0,0,0,0.1)',
-                          borderRadius: 4,
-                          overflow: 'hidden',
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            height: '100%',
-                            width: `${skill.level}%`,
-                            bgcolor: theme.palette.primary.main,
-                            borderRadius: 4,
-                            transition: 'width 0.3s ease',
-                          }}
-                        />
-                      </Box>
-                    </Box>
-                  </Grid>
-                ))}
-              </Grid>
-            </ProfileSection>
-
-            <ProfileSection title="Education" icon={<SchoolOutlined />}>
-              <Stack spacing={3}>
-                {education.map((edu, index) => (
-                  <Box
-                    key={index}
-                    sx={{
-                      p: 3,
-                      borderRadius: 2,
-                      bgcolor: 'rgba(0,0,0,0.02)',
-                      border: '1px solid',
-                      borderColor: 'divider',
-                    }}
-                  >
-                    <Typography variant="h6" gutterBottom>
-                      {edu.degree}
-                    </Typography>
-                    <Typography color="text.secondary" gutterBottom>
-                      {edu.school}
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
-                      <Chip size="small" label={edu.year} sx={{ bgcolor: 'rgba(0,0,0,0.05)' }} />
-                      <Chip
-                        size="small"
-                        label={`GPA: ${edu.gpa}`}
-                        sx={{ bgcolor: 'rgba(0,0,0,0.05)' }}
-                      />
-                    </Box>
-                  </Box>
-                ))}
-              </Stack>
-            </ProfileSection>
-
-            <ProfileSection title="Recent Activity" icon={<TimelineOutlined />}>
-              <Stack spacing={2}>
-                {activityTimeline.map((activity, index) => (
-                  <ActivityItem key={index} {...activity} />
-                ))}
-              </Stack>
             </ProfileSection>
           </TabPanel>
 
@@ -838,6 +643,215 @@ const Profile: React.FC = () => {
           </TabPanel>
         </Box>
       </Box>
+
+      {/* Edit Profile Dialog */}
+      <Dialog
+        open={isEditDialogOpen}
+        onClose={handleCloseEditDialog}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            background:
+              theme.palette.mode === 'dark'
+                ? 'linear-gradient(145deg, rgba(50,50,50,0.95) 0%, rgba(40,40,40,0.95) 100%)'
+                : 'linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(240,240,240,0.95) 100%)',
+            backdropFilter: 'blur(10px)',
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
+            color: 'white',
+            borderRadius: '12px 12px 0 0',
+          }}
+        >
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <EditOutlined />
+            <Typography variant="h6">Edit Profile</Typography>
+          </Stack>
+        </DialogTitle>
+
+        <DialogContent sx={{ p: 4 }}>
+          <Grid container spacing={3}>
+            {/* Avatar Section */}
+            <Grid item xs={12} sx={{ textAlign: 'center', mb: 3 }}>
+              <Box sx={{ position: 'relative', display: 'inline-block' }}>
+                <Avatar
+                  src={
+                    avatarPreview || (profileData as any)?.avatarUrl || (profileData as any)?.avatar
+                  }
+                  sx={{
+                    width: 120,
+                    height: 120,
+                    border: '4px solid',
+                    borderColor: theme.palette.primary.main,
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                  }}
+                >
+                  <AccountCircleOutlined sx={{ fontSize: 80, color: theme.palette.error.main }} />
+                </Avatar>
+                <Tooltip title="Change Avatar">
+                  <IconButton
+                    component="label"
+                    sx={{
+                      position: 'absolute',
+                      bottom: 0,
+                      right: 0,
+                      bgcolor: 'background.paper',
+                      border: '2px solid',
+                      borderColor: theme.palette.primary.main,
+                      '&:hover': {
+                        bgcolor: 'action.hover',
+                      },
+                    }}
+                  >
+                    <PhotoCameraOutlined />
+                    <input type="file" hidden accept="image/*" onChange={handleAvatarChange} />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            </Grid>
+
+            {/* Form Fields */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="First Name"
+                value={editForm.firstName}
+                onChange={e => handleFormChange('firstName', e.target.value)}
+                variant="outlined"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                  },
+                }}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Last Name"
+                value={editForm.lastName}
+                onChange={e => handleFormChange('lastName', e.target.value)}
+                variant="outlined"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                  },
+                }}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Email"
+                value={editForm.email}
+                onChange={e => handleFormChange('email', e.target.value)}
+                variant="outlined"
+                type="email"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                  },
+                }}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Bio"
+                value={editForm.bio}
+                onChange={e => handleFormChange('bio', e.target.value)}
+                variant="outlined"
+                multiline
+                rows={3}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                  },
+                }}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Location"
+                value={editForm.location}
+                onChange={e => handleFormChange('location', e.target.value)}
+                variant="outlined"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                  },
+                }}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Institution"
+                value={editForm.institution}
+                onChange={e => handleFormChange('institution', e.target.value)}
+                variant="outlined"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                  },
+                }}
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+
+        <DialogActions sx={{ p: 3, borderTop: '1px solid', borderColor: 'divider' }}>
+          <Button
+            onClick={handleCloseEditDialog}
+            startIcon={<CancelOutlined />}
+            variant="outlined"
+            sx={{ borderRadius: 2 }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSaveProfile}
+            startIcon={isAvatarUploading ? <CircularProgress size={20} /> : <SaveOutlined />}
+            variant="contained"
+            disabled={isAvatarUploading}
+            sx={{
+              borderRadius: 2,
+              background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
+              boxShadow: '0 4px 20px 0px rgba(0,0,0,0.14), 0 7px 10px -5px rgba(33,150,243,0.4)',
+              '&:hover': {
+                boxShadow: '0 7px 30px -10px rgba(33,150,243,0.6)',
+              },
+            }}
+          >
+            {isAvatarUploading ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

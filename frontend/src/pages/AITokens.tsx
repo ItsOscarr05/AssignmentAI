@@ -3,6 +3,7 @@ import {
   Autorenew as AutorenewIcon,
   Psychology as BrainIcon,
   CheckCircle as CheckCircleIcon,
+  Close as CloseIcon,
   Code as CodeIcon,
   CreditCard as CreditCardIcon,
   Description as DescriptionIcon,
@@ -24,8 +25,13 @@ import {
   Card,
   CardContent,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
   Grid,
+  IconButton,
   InputAdornment,
   LinearProgress,
   List,
@@ -76,6 +82,7 @@ const AITokens: React.FC = () => {
   const [plan] = React.useState<'Free' | 'Pro'>('Free');
   const [calcTokens, setCalcTokens] = React.useState(0);
   const [calcCost, setCalcCost] = React.useState(0);
+  const [modalOpen, setModalOpen] = React.useState(false);
   const navigate = useNavigate();
 
   const { totalTokens, usedTokens, remainingTokens, percentUsed, assignmentsInCycle } =
@@ -278,6 +285,30 @@ const AITokens: React.FC = () => {
       tokens: totalTokens,
       summary: 'Monthly free token allocation',
     },
+    {
+      date: '2024-06-01',
+      description: 'Token Purchase - Free Tier',
+      tokens: totalTokens,
+      summary: 'Monthly free token allocation',
+    },
+    {
+      date: '2024-05-01',
+      description: 'Token Purchase - Free Tier',
+      tokens: totalTokens,
+      summary: 'Monthly free token allocation',
+    },
+    {
+      date: '2024-04-01',
+      description: 'Token Purchase - Free Tier',
+      tokens: totalTokens,
+      summary: 'Monthly free token allocation',
+    },
+    {
+      date: '2024-03-01',
+      description: 'Token Purchase - Free Tier',
+      tokens: totalTokens,
+      summary: 'Monthly free token allocation',
+    },
     ...assignmentsInCycle.slice(-3).map(a => ({
       date: a.createdAt.slice(0, 10),
       description: `${a.title} - ${a.status}`,
@@ -341,6 +372,12 @@ const AITokens: React.FC = () => {
     setAnchorEl(null);
     setPopoverContent(null);
   };
+  const handleModalOpen = () => {
+    setModalOpen(true);
+  };
+  const handleModalClose = () => {
+    setModalOpen(false);
+  };
   const open = Boolean(anchorEl);
 
   const getTransactionIcon = (desc: string) => {
@@ -357,8 +394,8 @@ const AITokens: React.FC = () => {
     ['Code Review', 'Math Problem Solving', 'Plagiarism Check'].includes(info.title)
   );
   const handleTryIt = (feature: string) => {
-    // Prefill Workshop logic (navigate with state or query param)
-    window.location.href = `/dashboard/workshop?feature=${encodeURIComponent(feature)}`;
+    // Navigate to workshop page with feature as query parameter
+    navigate(`/dashboard/workshop?feature=${encodeURIComponent(feature)}`);
   };
   const handleSeeAllFeatures = () => {
     window.open('https://assignmentai.com/docs/features', '_blank');
@@ -410,6 +447,9 @@ const AITokens: React.FC = () => {
           {plan === 'Free' && (
             <Card sx={{ p: 2, mb: 2, ...redOutline }}>
               <CardContent>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: 'black', mb: 2 }}>
+                  Upgrade Subscription
+                </Typography>
                 <Grid container spacing={0} wrap="nowrap" sx={{ overflowX: 'auto' }}>
                   <Grid
                     item
@@ -767,133 +807,6 @@ const AITokens: React.FC = () => {
 
           <Paper sx={{ p: 2, mb: 2, ...redOutline }}>
             <Typography variant="h6" gutterBottom sx={{ color: 'black', fontWeight: 'normal' }}>
-              Recent Transactions
-            </Typography>
-            <List>
-              {recentTransactions
-                .filter(t => /purchase/i.test(t.description))
-                .map((transaction, index) => {
-                  const type = getTransactionType(transaction.description);
-                  const color = getTypeColor(type);
-                  return (
-                    <React.Fragment key={index}>
-                      <ListItem
-                        button
-                        onClick={e => handleTransactionClick(e, transaction)}
-                        sx={{
-                          pl: 0,
-                          position: 'relative',
-                          borderLeft: 'none',
-                          background: '#fff',
-                          border: `2px solid ${color}`,
-                          transition: 'box-shadow 0.2s',
-                          '&:hover': {
-                            boxShadow: '0 2px 8px rgba(211,47,47,0.08)',
-                          },
-                          mb: 1,
-                          borderRadius: 2,
-                          '::before': {
-                            content: '""',
-                            position: 'absolute',
-                            left: 0,
-                            top: 0,
-                            bottom: 0,
-                            width: '6px',
-                            borderTopLeftRadius: '6px',
-                            borderBottomLeftRadius: '6px',
-                            background:
-                              type === 'Purchase'
-                                ? '#388e3c'
-                                : type === 'Refund'
-                                ? '#1976d2'
-                                : '#d32f2f',
-                          },
-                        }}
-                      >
-                        <ListItemIcon sx={{ minWidth: 40, pl: 1 }}>
-                          {React.cloneElement(getTransactionIcon(transaction.description), {
-                            sx: { color, fontSize: 28 },
-                          })}
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={transaction.description}
-                          secondary={
-                            <>
-                              <Chip
-                                label={type}
-                                size="small"
-                                sx={{
-                                  backgroundColor: color,
-                                  color: '#fff',
-                                  fontWeight: 600,
-                                  mr: 1,
-                                }}
-                              />
-                              {formatDistanceToNow(parseISO(transaction.date), { addSuffix: true })}
-                            </>
-                          }
-                        />
-                        <Chip
-                          label={`${transaction.tokens > 0 ? '+' : ''}${transaction.tokens} tokens`}
-                          size="medium"
-                          sx={{
-                            backgroundColor: '#fff',
-                            color: color,
-                            border: `2px solid ${color}`,
-                            fontWeight: 700,
-                            fontSize: '1rem',
-                          }}
-                        />
-                      </ListItem>
-                      {index < recentTransactions.length - 1 && (
-                        <Divider sx={{ borderColor: color, opacity: 0.5, ml: 1.5 }} />
-                      )}
-                    </React.Fragment>
-                  );
-                })}
-            </List>
-            <Popover
-              open={open}
-              anchorEl={anchorEl}
-              onClose={handlePopoverClose}
-              anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-            >
-              {popoverContent && (
-                <Box sx={{ p: 2, minWidth: 220 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                    {popoverContent.description}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {popoverContent.date}
-                  </Typography>
-                  {popoverContent.assignment && (
-                    <Typography variant="body2" sx={{ mt: 1 }}>
-                      Assignment: <b>{popoverContent.assignment}</b>
-                    </Typography>
-                  )}
-                  {popoverContent.summary && (
-                    <Typography variant="body2" sx={{ mt: 1 }}>
-                      {popoverContent.summary}
-                    </Typography>
-                  )}
-                  {popoverContent && popoverContent.link && (
-                    <Button
-                      href={popoverContent.link}
-                      target="_blank"
-                      size="small"
-                      startIcon={<OpenInNewIcon />}
-                      sx={{ mt: 1 }}
-                    >
-                      View Full Response
-                    </Button>
-                  )}
-                </Box>
-              )}
-            </Popover>
-          </Paper>
-
-          <Paper sx={{ p: 2, mb: 2, ...redOutline }}>
-            <Typography variant="h6" gutterBottom sx={{ color: 'black', fontWeight: 'normal' }}>
               Token Cost Calculator ($1 per 2,000 tokens)
             </Typography>
             <Box
@@ -1140,7 +1053,6 @@ const AITokens: React.FC = () => {
                       <Button
                         variant="outlined"
                         size="small"
-                        endIcon={<OpenInNewIcon />}
                         onClick={() => handleTryIt(info.title)}
                         sx={{ borderColor: 'red', color: 'red', mt: 1 }}
                       >
@@ -1227,7 +1139,6 @@ const AITokens: React.FC = () => {
                       <Button
                         variant="outlined"
                         size="small"
-                        endIcon={<OpenInNewIcon />}
                         onClick={() => handleTryIt(info.title)}
                         sx={{ borderColor: 'red', color: 'red', mt: 1 }}
                       >
@@ -1249,6 +1160,282 @@ const AITokens: React.FC = () => {
               See All AI Features
             </Button>
           </Paper>
+
+          <Paper sx={{ p: 2, mb: 2, ...redOutline }}>
+            <Typography variant="h6" gutterBottom sx={{ color: 'black', fontWeight: 'normal' }}>
+              Recent Transactions
+            </Typography>
+            <List>
+              {recentTransactions
+                .filter(t => /purchase/i.test(t.description))
+                .slice(0, 3)
+                .map((transaction, index) => {
+                  const type = getTransactionType(transaction.description);
+                  const color = getTypeColor(type);
+                  return (
+                    <React.Fragment key={index}>
+                      <ListItem
+                        button
+                        onClick={e => handleTransactionClick(e, transaction)}
+                        sx={{
+                          pl: 0,
+                          position: 'relative',
+                          borderLeft: 'none',
+                          background: '#fff',
+                          border: `2px solid ${color}`,
+                          transition: 'box-shadow 0.2s',
+                          '&:hover': {
+                            boxShadow: '0 2px 8px rgba(211,47,47,0.08)',
+                          },
+                          mb: 1,
+                          borderRadius: 2,
+                          '::before': {
+                            content: '""',
+                            position: 'absolute',
+                            left: 0,
+                            top: 0,
+                            bottom: 0,
+                            width: '6px',
+                            borderTopLeftRadius: '6px',
+                            borderBottomLeftRadius: '6px',
+                            background:
+                              type === 'Purchase'
+                                ? '#388e3c'
+                                : type === 'Refund'
+                                ? '#1976d2'
+                                : '#d32f2f',
+                          },
+                        }}
+                      >
+                        <ListItemIcon sx={{ minWidth: 40, pl: 1 }}>
+                          {React.cloneElement(getTransactionIcon(transaction.description), {
+                            sx: { color, fontSize: 28 },
+                          })}
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={transaction.description}
+                          secondary={
+                            <>
+                              <Chip
+                                label={type}
+                                size="small"
+                                sx={{
+                                  backgroundColor: color,
+                                  color: '#fff',
+                                  fontWeight: 600,
+                                  mr: 1,
+                                }}
+                              />
+                              {formatDistanceToNow(parseISO(transaction.date), { addSuffix: true })}
+                            </>
+                          }
+                        />
+                        <Chip
+                          label={`${transaction.tokens > 0 ? '+' : ''}${transaction.tokens} tokens`}
+                          size="medium"
+                          sx={{
+                            backgroundColor: '#fff',
+                            color: color,
+                            border: `2px solid ${color}`,
+                            fontWeight: 700,
+                            fontSize: '1rem',
+                          }}
+                        />
+                      </ListItem>
+                      {index <
+                        Math.min(
+                          3,
+                          recentTransactions.filter(t => /purchase/i.test(t.description)).length
+                        ) -
+                          1 && <Divider sx={{ borderColor: color, opacity: 0.5, ml: 1.5 }} />}
+                    </React.Fragment>
+                  );
+                })}
+            </List>
+            {recentTransactions.filter(t => /purchase/i.test(t.description)).length > 3 && (
+              <Button
+                variant="outlined"
+                fullWidth
+                onClick={handleModalOpen}
+                sx={{
+                  mt: 2,
+                  borderColor: 'red',
+                  color: 'red',
+                  fontWeight: 600,
+                  '&:hover': {
+                    borderColor: 'red',
+                    backgroundColor: 'rgba(211, 47, 47, 0.04)',
+                  },
+                }}
+              >
+                View All Transactions
+              </Button>
+            )}
+            <Popover
+              open={open}
+              anchorEl={anchorEl}
+              onClose={handlePopoverClose}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+            >
+              {popoverContent && (
+                <Box sx={{ p: 2, minWidth: 220 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                    {popoverContent.description}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {popoverContent.date}
+                  </Typography>
+                  {popoverContent.assignment && (
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      Assignment: <b>{popoverContent.assignment}</b>
+                    </Typography>
+                  )}
+                  {popoverContent.summary && (
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      {popoverContent.summary}
+                    </Typography>
+                  )}
+                  {popoverContent && popoverContent.link && (
+                    <Button
+                      href={popoverContent.link}
+                      target="_blank"
+                      size="small"
+                      startIcon={<OpenInNewIcon />}
+                      sx={{ mt: 1 }}
+                    >
+                      View Full Response
+                    </Button>
+                  )}
+                </Box>
+              )}
+            </Popover>
+          </Paper>
+
+          {/* All Transactions Modal */}
+          <Dialog
+            open={modalOpen}
+            onClose={handleModalClose}
+            maxWidth="md"
+            fullWidth
+            PaperProps={{
+              sx: {
+                borderRadius: 3,
+                border: '2px solid red',
+                maxHeight: '80vh',
+              },
+            }}
+          >
+            <DialogTitle sx={{ borderBottom: '1px solid', borderColor: 'divider', pb: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="h6" sx={{ color: 'black', fontWeight: 'normal' }}>
+                  All Transactions
+                </Typography>
+                <IconButton onClick={handleModalClose} size="small">
+                  <CloseIcon />
+                </IconButton>
+              </Box>
+            </DialogTitle>
+            <DialogContent sx={{ p: 0 }}>
+              <List sx={{ py: 0 }}>
+                {recentTransactions
+                  .filter(t => /purchase/i.test(t.description))
+                  .map((transaction, index) => {
+                    const type = getTransactionType(transaction.description);
+                    const color = getTypeColor(type);
+                    return (
+                      <React.Fragment key={index}>
+                        <ListItem
+                          button
+                          onClick={e => handleTransactionClick(e, transaction)}
+                          sx={{
+                            pl: 2,
+                            pr: 2,
+                            position: 'relative',
+                            borderLeft: 'none',
+                            background: '#fff',
+                            border: `2px solid ${color}`,
+                            transition: 'box-shadow 0.2s',
+                            '&:hover': {
+                              boxShadow: '0 2px 8px rgba(211,47,47,0.08)',
+                            },
+                            mb: 1,
+                            mx: 2,
+                            borderRadius: 2,
+                            '::before': {
+                              content: '""',
+                              position: 'absolute',
+                              left: 0,
+                              top: 0,
+                              bottom: 0,
+                              width: '6px',
+                              borderTopLeftRadius: '6px',
+                              borderBottomLeftRadius: '6px',
+                              background:
+                                type === 'Purchase'
+                                  ? '#388e3c'
+                                  : type === 'Refund'
+                                  ? '#1976d2'
+                                  : '#d32f2f',
+                            },
+                          }}
+                        >
+                          <ListItemIcon sx={{ minWidth: 40, pl: 1 }}>
+                            {React.cloneElement(getTransactionIcon(transaction.description), {
+                              sx: { color, fontSize: 28 },
+                            })}
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={transaction.description}
+                            secondary={
+                              <>
+                                <Chip
+                                  label={type}
+                                  size="small"
+                                  sx={{
+                                    backgroundColor: color,
+                                    color: '#fff',
+                                    fontWeight: 600,
+                                    mr: 1,
+                                  }}
+                                />
+                                {formatDistanceToNow(parseISO(transaction.date), {
+                                  addSuffix: true,
+                                })}
+                              </>
+                            }
+                          />
+                          <Chip
+                            label={`${transaction.tokens > 0 ? '+' : ''}${
+                              transaction.tokens
+                            } tokens`}
+                            size="medium"
+                            sx={{
+                              backgroundColor: '#fff',
+                              color: color,
+                              border: `2px solid ${color}`,
+                              fontWeight: 700,
+                              fontSize: '1rem',
+                            }}
+                          />
+                        </ListItem>
+                        {index <
+                          recentTransactions.filter(t => /purchase/i.test(t.description)).length -
+                            1 && <Divider sx={{ borderColor: color, opacity: 0.5, mx: 2 }} />}
+                      </React.Fragment>
+                    );
+                  })}
+              </List>
+            </DialogContent>
+            <DialogActions sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+              <Button
+                onClick={handleModalClose}
+                variant="outlined"
+                sx={{ borderColor: 'red', color: 'red' }}
+              >
+                Close
+              </Button>
+            </DialogActions>
+          </Dialog>
         </Grid>
       </Grid>
     </Box>
