@@ -99,6 +99,22 @@ const Assignments: React.FC = () => {
     }
   }, [filterDate]);
 
+  useEffect(() => {
+    if (location.state?.rowsPerPage !== undefined) {
+      setRowsPerPage(location.state.rowsPerPage);
+    }
+    if (location.state?.status) {
+      setFilterStatus(location.state.status);
+    }
+    setPage(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
+
+  useEffect(() => {
+    // Scroll to top when navigation state changes (e.g., after clicking dashboard cards)
+    window.scrollTo(0, 0);
+  }, [location.state]);
+
   const [assignmentsList, setAssignmentsList] = useState<Assignment[]>(
     recentAssignments.map((a: any) => ({
       ...a,
@@ -347,7 +363,29 @@ const Assignments: React.FC = () => {
 
       return matchesStatus && matchesName && matchesSubject && matchesDate && matchesTimeframe;
     })
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    .sort((a, b) => {
+      // If subject filter is "all", sort by date only (newest first)
+      if (filterSubject === 'all') {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+
+      // If a specific subject is selected, sort by status priority first, then by date
+      const statusPriority = {
+        Completed: 1,
+        'In Progress': 2,
+        'Not Started': 3,
+      };
+
+      const statusA = statusPriority[a.status as keyof typeof statusPriority] || 4;
+      const statusB = statusPriority[b.status as keyof typeof statusPriority] || 4;
+
+      if (statusA !== statusB) {
+        return statusA - statusB;
+      }
+
+      // If status is the same, sort by date (newest first)
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
 
   const getAssignmentStats = () => {
     const total = assignmentsList.length;
@@ -360,6 +398,11 @@ const Assignments: React.FC = () => {
   };
 
   const stats = getAssignmentStats();
+
+  const displayedRows =
+    rowsPerPage === -1
+      ? filteredAssignments.slice(0, 500)
+      : filteredAssignments.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   if (loading) {
     return (
@@ -598,68 +641,70 @@ const Assignments: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredAssignments
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map(assignment => (
-                  <TableRow key={assignment.id}>
-                    <TableCell>
-                      <Box>
-                        <Typography variant="body1">{assignment.title}</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {assignment.description}
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Typography sx={{ color: getSubjectColor(assignment.subject) }}>
-                        {assignment.subject}
+              {displayedRows.map(assignment => (
+                <TableRow key={assignment.id}>
+                  <TableCell>
+                    <Box>
+                      <Typography variant="body1">{assignment.title}</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {assignment.description}
                       </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        {getStatusIcon(assignment.status)}
-                        {assignment.status}
-                      </Box>
-                    </TableCell>
-                    <TableCell>{new Date(assignment.createdAt).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      <IconButton onClick={e => handleMenuClick(e, assignment.id)} size="small">
-                        <MoreVertIcon />
-                      </IconButton>
-                      <Menu
-                        anchorEl={anchorEl}
-                        open={Boolean(anchorEl) && selectedAssignment === assignment.id}
-                        onClose={handleMenuClose}
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Typography sx={{ color: getSubjectColor(assignment.subject) }}>
+                      {assignment.subject}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {getStatusIcon(assignment.status)}
+                      {assignment.status}
+                    </Box>
+                  </TableCell>
+                  <TableCell>{new Date(assignment.createdAt).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    <IconButton onClick={e => handleMenuClick(e, assignment.id)} size="small">
+                      <MoreVertIcon />
+                    </IconButton>
+                    <Menu
+                      anchorEl={anchorEl}
+                      open={Boolean(anchorEl) && selectedAssignment === assignment.id}
+                      onClose={handleMenuClose}
+                    >
+                      <MenuItem onClick={() => handleViewAssignment(assignment.id)}>
+                        <VisibilityIcon sx={{ mr: 1 }} /> View Assignment
+                      </MenuItem>
+                      <MenuItem onClick={() => handleReopenInWorkshop(assignment.id)}>
+                        <RefreshIcon sx={{ mr: 1 }} /> Reopen in Workshop
+                      </MenuItem>
+                      <MenuItem onClick={() => handleEditAssignment(assignment.id)}>
+                        <EditIcon sx={{ mr: 1 }} /> Edit Title/Metadata
+                      </MenuItem>
+                      <MenuItem
+                        onClick={() => handleDeleteClick(assignment.id)}
+                        sx={{ color: 'error.main' }}
                       >
-                        <MenuItem onClick={() => handleViewAssignment(assignment.id)}>
-                          <VisibilityIcon sx={{ mr: 1 }} /> View Assignment
-                        </MenuItem>
-                        <MenuItem onClick={() => handleReopenInWorkshop(assignment.id)}>
-                          <RefreshIcon sx={{ mr: 1 }} /> Reopen in Workshop
-                        </MenuItem>
-                        <MenuItem onClick={() => handleEditAssignment(assignment.id)}>
-                          <EditIcon sx={{ mr: 1 }} /> Edit Title/Metadata
-                        </MenuItem>
-                        <MenuItem
-                          onClick={() => handleDeleteClick(assignment.id)}
-                          sx={{ color: 'error.main' }}
-                        >
-                          <DeleteIcon sx={{ mr: 1 }} /> Delete
-                        </MenuItem>
-                      </Menu>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                        <DeleteIcon sx={{ mr: 1 }} /> Delete
+                      </MenuItem>
+                    </Menu>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
           <TablePagination
-            rowsPerPageOptions={[5, 10, 25]}
+            rowsPerPageOptions={[5, 10, 25, { label: 'All', value: -1 }]}
             component="div"
             count={filteredAssignments.length}
             rowsPerPage={rowsPerPage}
-            page={page}
+            page={rowsPerPage === -1 ? 0 : page}
             onPageChange={handleChangePage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
+            onRowsPerPageChange={event => {
+              const value = parseInt(event.target.value, 10);
+              setRowsPerPage(value === -1 ? -1 : value);
+              setPage(0);
+            }}
           />
         </TableContainer>
 

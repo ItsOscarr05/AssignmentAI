@@ -11,9 +11,18 @@ import {
   PsychologyOutlined as PsychologyIcon,
   TrendingUp as TrendingUpIcon,
 } from '@mui/icons-material';
+import AutorenewOutlinedIcon from '@mui/icons-material/AutorenewOutlined';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import PlayArrowOutlinedIcon from '@mui/icons-material/PlayArrowOutlined';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import {
   Box,
   Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   FormControl,
   Grid,
   InputLabel,
@@ -222,6 +231,9 @@ const DashboardHome: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'in progress' | 'completed' | 'not started'>('all');
   const [page, setPage] = useState(0);
   const [distributionFilter, setDistributionFilter] = useState('total');
+  const [assignments, setAssignments] = useState([...recentAssignments]);
+  const [selectedAssignment, setSelectedAssignment] = useState<any>(null);
+  const [viewAssignment, setViewAssignment] = useState<any>(null);
 
   const stats = [
     {
@@ -336,7 +348,7 @@ const DashboardHome: React.FC = () => {
   }, [distributionFilter]);
 
   // Sort assignments newest to oldest
-  const sortedAssignments = [...recentAssignments].sort(
+  const sortedAssignments = [...assignments].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
   const filteredAssignments = sortedAssignments.filter(assignment => {
@@ -506,7 +518,16 @@ const DashboardHome: React.FC = () => {
               <TableBody>
                 {filteredAssignments.slice(page * 5, page * 5 + 5).map(assignment => (
                   <TableRow key={assignment.id}>
-                    <TableCell>{assignment.title}</TableCell>
+                    <TableCell>
+                      <span
+                        style={{ cursor: 'pointer', fontWeight: 500, textDecoration: 'none' }}
+                        onClick={() => setSelectedAssignment(assignment)}
+                        onMouseOver={e => (e.currentTarget.style.textDecoration = 'underline')}
+                        onMouseOut={e => (e.currentTarget.style.textDecoration = 'none')}
+                      >
+                        {assignment.title}
+                      </span>
+                    </TableCell>
                     <TableCell>
                       <span
                         style={{
@@ -514,11 +535,9 @@ const DashboardHome: React.FC = () => {
                             assignment.status === 'Completed'
                               ? '#388E3C'
                               : assignment.status === 'In Progress'
-                              ? '#FFA000'
-                              : assignment.status === 'Not Started'
-                              ? '#D32F2F'
-                              : assignment.status === 'Draft Generated'
                               ? '#1976D2'
+                              : assignment.status === 'Not Started'
+                              ? '#FFA726'
                               : '#8E24AA',
                           fontWeight: 600,
                         }}
@@ -528,21 +547,51 @@ const DashboardHome: React.FC = () => {
                     </TableCell>
                     <TableCell>{new Date(assignment.createdAt).toLocaleDateString()}</TableCell>
                     <TableCell>
-                      <Button size="small" sx={{ color: '#1976D2' }}>
-                        📝 View
+                      <Button
+                        size="small"
+                        sx={{ color: '#009688' }}
+                        onClick={() => setViewAssignment(assignment)}
+                      >
+                        <VisibilityOutlinedIcon sx={{ fontSize: 18, mr: 0.5 }} />
+                        View
                       </Button>
                       {assignment.status === 'Completed' && (
-                        <Button size="small" sx={{ color: '#8E24AA' }}>
-                          🔄 Regenerate
+                        <Button
+                          size="small"
+                          sx={{ color: '#8E24AA' }}
+                          onClick={() =>
+                            navigate('/dashboard/workshop', {
+                              state: { assignment, responseTab: 1 },
+                            })
+                          }
+                        >
+                          <AutorenewOutlinedIcon sx={{ fontSize: 18, mr: 0.5 }} />
+                          Regenerate
                         </Button>
                       )}
                       {assignment.status === 'In Progress' && (
-                        <Button size="small" sx={{ color: '#388E3C' }}>
-                          ⏳ Resume
+                        <Button
+                          size="small"
+                          sx={{ color: '#FFA726' }}
+                          onClick={() =>
+                            navigate('/dashboard/workshop', {
+                              state: { assignment, responseTab: 1 },
+                            })
+                          }
+                        >
+                          <PlayArrowOutlinedIcon sx={{ fontSize: 18, mr: 0.5 }} />
+                          Resume
                         </Button>
                       )}
-                      <Button size="small" sx={{ color: '#D32F2F' }}>
-                        🗑️ Delete
+                      <Button
+                        size="small"
+                        sx={{ color: '#D32F2F' }}
+                        onClick={() =>
+                          setAssignments(prev => prev.filter(a => a.id !== assignment.id))
+                        }
+                      >
+                        <DeleteOutlineIcon sx={{ fontSize: 18, mr: 0.5 }} />
+                        Delete
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -658,7 +707,7 @@ const DashboardHome: React.FC = () => {
             <Grid container spacing={2}>
               <Grid item xs={6}>
                 <Paper
-                  onClick={() => navigate('/dashboard/assignments')}
+                  onClick={() => navigate('/dashboard/assignments', { state: { rowsPerPage: -1 } })}
                   sx={{
                     p: 2,
                     textAlign: 'center',
@@ -670,6 +719,7 @@ const DashboardHome: React.FC = () => {
                     '&:hover': {
                       transform: 'translateY(-2px)',
                       boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                      borderColor: '#1565C0',
                     },
                   }}
                 >
@@ -687,7 +737,9 @@ const DashboardHome: React.FC = () => {
               <Grid item xs={6}>
                 <Paper
                   onClick={() =>
-                    navigate('/dashboard/assignments', { state: { status: 'Completed' } })
+                    navigate('/dashboard/assignments', {
+                      state: { rowsPerPage: -1, status: 'Completed' },
+                    })
                   }
                   sx={{
                     p: 2,
@@ -700,6 +752,7 @@ const DashboardHome: React.FC = () => {
                     '&:hover': {
                       transform: 'translateY(-2px)',
                       boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                      borderColor: '#2E7D32',
                     },
                   }}
                 >
@@ -909,6 +962,66 @@ const DashboardHome: React.FC = () => {
           </Paper>
         </Grid>
       </Grid>
+      {/* Dialog for Open in Workshop */}
+      <Dialog
+        open={!!selectedAssignment}
+        onClose={() => setSelectedAssignment(null)}
+        aria-labelledby="open-workshop-dialog-title"
+      >
+        <DialogTitle id="open-workshop-dialog-title">Open in Workshop?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Would you like to open <b>{selectedAssignment?.title}</b> in the Workshop?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSelectedAssignment(null)} color="primary">
+            Cancel
+          </Button>
+          <Button
+            onClick={() => {
+              navigate('/dashboard/workshop', {
+                state: {
+                  assignment: selectedAssignment,
+                  reopen: true,
+                },
+              });
+              setSelectedAssignment(null);
+            }}
+            color="primary"
+            variant="contained"
+          >
+            Open in Workshop
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Add View Assignment Dialog below the Workshop dialog */}
+      <Dialog
+        open={!!viewAssignment}
+        onClose={() => setViewAssignment(null)}
+        aria-labelledby="view-assignment-dialog-title"
+      >
+        <DialogTitle id="view-assignment-dialog-title">Assignment Details</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            <b>Title:</b> {viewAssignment?.title}
+            <br />
+            <b>Status:</b> {viewAssignment?.status}
+            <br />
+            <b>Created At:</b>{' '}
+            {viewAssignment ? new Date(viewAssignment.createdAt).toLocaleString() : ''}
+            <br />
+            <b>Word Count:</b> {viewAssignment?.wordCount}
+            <br />
+            <b>Tokens Used:</b> {viewAssignment?.tokensUsed}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setViewAssignment(null)} color="primary">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

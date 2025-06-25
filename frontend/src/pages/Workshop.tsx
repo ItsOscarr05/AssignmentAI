@@ -205,6 +205,7 @@ const Workshop: React.FC = () => {
   };
   const uploadContentRef = useRef<HTMLDivElement>(null);
   const aiResponseRef = useRef<HTMLDivElement>(null);
+  const rewriteTabRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (location.hash === '#upload-content-card' && uploadContentRef.current) {
@@ -254,6 +255,16 @@ const Workshop: React.FC = () => {
     }));
     setHistory(historyItems);
   }, []);
+
+  useEffect(() => {
+    if (responseTab === 1 && rewriteTabRef.current) {
+      rewriteTabRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'center',
+      });
+    }
+  }, [responseTab]);
 
   // Custom styles
   const cardStyle = {
@@ -867,6 +878,7 @@ const Workshop: React.FC = () => {
                       },
                       minWidth: 120,
                     }}
+                    ref={rewriteTabRef}
                   />
                   <Tab
                     label="Extract"

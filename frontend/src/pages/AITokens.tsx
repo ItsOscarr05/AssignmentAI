@@ -1,62 +1,62 @@
 import {
-  Assignment as AssignmentIcon,
-  Autorenew as AutorenewIcon,
-  Psychology as BrainIcon,
-  CheckCircle as CheckCircleIcon,
-  Close as CloseIcon,
-  Code as CodeIcon,
-  CreditCard as CreditCardIcon,
-  Description as DescriptionIcon,
-  Diamond as DiamondIcon,
-  EmojiEvents as EmojiEventsIcon,
-  Functions as FunctionsIcon,
-  History as HistoryIcon,
-  HourglassEmpty as HourglassEmptyIcon,
-  LocalOffer as LocalOfferIcon,
-  OpenInNew as OpenInNewIcon,
-  Report as ReportIcon,
-  School as SchoolIcon,
-  Search as SearchIcon,
-  Star as StarIcon,
+    Assignment as AssignmentIcon,
+    Autorenew as AutorenewIcon,
+    Psychology as BrainIcon,
+    CheckCircle as CheckCircleIcon,
+    Close as CloseIcon,
+    Code as CodeIcon,
+    CreditCard as CreditCardIcon,
+    Description as DescriptionIcon,
+    Diamond as DiamondIcon,
+    EmojiEvents as EmojiEventsIcon,
+    Functions as FunctionsIcon,
+    History as HistoryIcon,
+    HourglassEmpty as HourglassEmptyIcon,
+    LocalOffer as LocalOfferIcon,
+    OpenInNew as OpenInNewIcon,
+    Report as ReportIcon,
+    School as SchoolIcon,
+    Search as SearchIcon,
+    Star as StarIcon,
 } from '@mui/icons-material';
 import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Divider,
-  Grid,
-  IconButton,
-  InputAdornment,
-  LinearProgress,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Paper,
-  Popover,
-  TextField,
-  ToggleButton,
-  ToggleButtonGroup,
-  Tooltip,
-  Typography,
+    Box,
+    Button,
+    Card,
+    CardContent,
+    Chip,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Divider,
+    Grid,
+    IconButton,
+    InputAdornment,
+    LinearProgress,
+    List,
+    ListItem,
+    ListItemIcon,
+    ListItemText,
+    Paper,
+    Popover,
+    TextField,
+    ToggleButton,
+    ToggleButtonGroup,
+    Tooltip,
+    Typography,
 } from '@mui/material';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  Tooltip as RechartsTooltip,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
+    CartesianGrid,
+    Line,
+    LineChart,
+    Tooltip as RechartsTooltip,
+    ResponsiveContainer,
+    XAxis,
+    YAxis,
 } from 'recharts';
 import { useTokenUsage } from '../hooks/useTokenUsage';
 import { api } from '../services/api';
@@ -398,7 +398,14 @@ const AITokens: React.FC = () => {
     navigate(`/dashboard/workshop?feature=${encodeURIComponent(feature)}`);
   };
   const handleSeeAllFeatures = () => {
-    window.open('https://assignmentai.com/docs/features', '_blank');
+    if (window.location.pathname === '/') {
+      const featuresSection = document.getElementById('features');
+      if (featuresSection) {
+        featuresSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      navigate('/#features');
+    }
   };
 
   const costPerToken = 1 / 2000; // $1 per 2,000 tokens
