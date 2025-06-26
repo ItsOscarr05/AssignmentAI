@@ -81,6 +81,7 @@ const Assignments: React.FC = () => {
   const [filterSubject, setFilterSubject] = useState(location.state?.subject || 'all');
   const [filterTimeframe, setFilterTimeframe] = useState(location.state?.timeframe || 'total');
   const [filterDate, setFilterDate] = useState<Dayjs | null>(null);
+  const [dateView, setDateView] = useState<'year' | 'month' | 'day'>('year');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [assignmentToDelete, setAssignmentToDelete] = useState<Assignment | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -115,14 +116,41 @@ const Assignments: React.FC = () => {
     window.scrollTo(0, 0);
   }, [location.state]);
 
-  const [assignmentsList, setAssignmentsList] = useState<Assignment[]>(
-    recentAssignments.map((a: any) => ({
+  const [assignmentsList, setAssignmentsList] = useState<Assignment[]>([
+    {
+      id: 'a1',
+      title: 'Algebra Homework 1',
+      subject: 'Mathematics',
+      status: 'Completed',
+      description: 'Solve all problems in Chapter 2.',
+      createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
+      attachments: [{ id: 'f1', name: 'algebra1.pdf', type: 'pdf', size: '1.2MB' }],
+    },
+    {
+      id: 'a2',
+      title: 'English Essay: Shakespeare',
+      subject: 'English',
+      status: 'In Progress',
+      description: 'Write an essay on Hamlet.',
+      createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+      attachments: [{ id: 'f2', name: 'hamlet.docx', type: 'docx', size: '800KB' }],
+    },
+    {
+      id: 'a3',
+      title: 'Biology Lab Report',
+      subject: 'Science',
+      status: 'Not Started',
+      description: 'Complete the lab report for photosynthesis experiment.',
+      createdAt: new Date(Date.now() - 86400000).toISOString(),
+      attachments: [],
+    },
+    ...recentAssignments.map((a: any) => ({
       ...a,
       subject: a.subject || (a.title ? mapToCoreSubject(a.title) : 'Unknown'),
       description: a.description || '',
       attachments: a.attachments || [],
-    }))
-  );
+    })),
+  ]);
   const [loading] = useState(false);
 
   // Custom styles
@@ -143,11 +171,6 @@ const Assignments: React.FC = () => {
 
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
   };
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>, assignmentId: string) => {
@@ -359,7 +382,11 @@ const Assignments: React.FC = () => {
         return true;
       })();
 
-      const matchesDate = !filterDate || assignmentDate.isSame(filterDate, 'day');
+      const matchesDate =
+        !filterDate ||
+        (dateView === 'year' && assignmentDate.isSame(filterDate, 'year')) ||
+        (dateView === 'month' && assignmentDate.isSame(filterDate, 'month')) ||
+        (dateView === 'day' && assignmentDate.isSame(filterDate, 'day'));
 
       return matchesStatus && matchesName && matchesSubject && matchesDate && matchesTimeframe;
     })
@@ -592,39 +619,47 @@ const Assignments: React.FC = () => {
             </FormControl>
           </Grid>
           <Grid item xs={12} md={3}>
-            <DatePicker
-              label="Filter by date"
-              value={filterDate}
-              onChange={setFilterDate}
-              slotProps={{
-                field: { clearable: true, onClear: () => setFilterDate(null) },
-                textField: {
-                  fullWidth: true,
-                  sx: {
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      borderColor: 'red',
-                      borderWidth: '2px',
-                    },
-                    '&:hover .MuiOutlinedInput-notchedOutline': {
-                      borderColor: 'red',
-                      borderWidth: '2px',
-                    },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                      borderColor: 'red',
-                      borderWidth: '2px',
-                    },
-                  },
-                  InputLabelProps: {
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DatePicker
+                label="Filter by date"
+                value={filterDate}
+                onChange={setFilterDate}
+                views={['year', 'month', 'day']}
+                openTo="year"
+                onViewChange={setDateView}
+                format={
+                  dateView === 'year' ? 'YYYY' : dateView === 'month' ? 'MM/YYYY' : 'MM/DD/YYYY'
+                }
+                slotProps={{
+                  field: { clearable: true, onClear: () => setFilterDate(null) },
+                  textField: {
+                    fullWidth: true,
                     sx: {
-                      color: 'red',
-                      '&.Mui-focused': {
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'red',
+                        borderWidth: '2px',
+                      },
+                      '&:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'red',
+                        borderWidth: '2px',
+                      },
+                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'red',
+                        borderWidth: '2px',
+                      },
+                    },
+                    InputLabelProps: {
+                      sx: {
                         color: 'red',
+                        '&.Mui-focused': {
+                          color: 'red',
+                        },
                       },
                     },
                   },
-                },
-              }}
-            />
+                }}
+              />
+            </LocalizationProvider>
           </Grid>
         </Grid>
 

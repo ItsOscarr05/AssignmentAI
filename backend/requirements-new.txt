@@ -1,0 +1,16 @@
+# New dependencies for AssignmentAI MVP features
+
+# Web scraping and HTTP requests
+aiohttp>=3.8.0
+beautifulsoup4>=4.11.0
+requests>=2.28.0
+
+# PDF generation
+reportlab>=3.6.0
+
+# Word document generation
+python-docx>=0.8.11
+
+# Additional utilities
+lxml>=4.9.0
+html5lib>=1.1 

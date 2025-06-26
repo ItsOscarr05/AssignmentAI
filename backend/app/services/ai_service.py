@@ -1,6 +1,7 @@
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func
 from openai import AsyncOpenAI
 from app.crud import ai_assignment as ai_assignment_crud
 from app.crud import feedback as feedback_crud
@@ -18,7 +19,6 @@ from app.core.logger import logger
 import re
 import asyncio
 from fastapi import HTTPException
-from sqlalchemy import func
 from app.models.usage import Usage
 
 class AIService:
@@ -30,15 +30,18 @@ class AIService:
 
     async def get_user_model(self, user_id: int) -> str:
         """Get the AI model assigned to a user's subscription"""
-        subscription = self.db.query(Subscription).filter(
-            Subscription.user_id == user_id,
-            Subscription.status == SubscriptionStatus.ACTIVE
-        ).first()
+        result = await self.db.execute(
+            select(Subscription).filter(
+                Subscription.user_id == user_id,
+                Subscription.status == SubscriptionStatus.ACTIVE
+            )
+        )
+        subscription = result.scalar_one_or_none()
         
         if not subscription:
             return "gpt-4.1-nano"  # Default model for users without subscription (Free plan model)
         
-        return subscription.ai_model
+        return str(subscription.ai_model)
 
     async def generate_assignment(self, request: AssignmentGenerationRequest) -> AssignmentGenerationResponse:
         """
@@ -49,6 +52,7 @@ class AIService:
             if not self._validate_request(request):
                 return AssignmentGenerationResponse(
                     success=False,
+                    assignment=None,
                     error="Invalid request parameters"
                 )
 
@@ -65,6 +69,7 @@ class AIService:
             if not self._validate_generated_content(assignment_content):
                 return AssignmentGenerationResponse(
                     success=False,
+                    assignment=None,
                     error="Generated content failed validation"
                 )
 
@@ -81,15 +86,9 @@ class AIService:
                         evaluation_criteria=assignment_content.get("evaluation_criteria", []),
                         estimated_duration=assignment_content.get("estimated_duration", "1 hour"),
                         resources=assignment_content.get("resources", [])
-                    ),
-                    metadata={
-                        "word_count": self._count_words(assignment_content),
-                        "difficulty_level": request.difficulty,
-                        "generation_timestamp": datetime.utcnow().isoformat(),
-                        "model_version": self.model,
-                        "confidence_score": self._calculate_confidence_score(assignment_content)
-                    }
-                )
+                    )
+                ),
+                error=None
             )
             
             return response
@@ -98,10 +97,11 @@ class AIService:
             logger.error(f"Error generating assignment: {str(e)}")
             return AssignmentGenerationResponse(
                 success=False,
+                assignment=None,
                 error=f"Failed to generate assignment: {str(e)}"
             )
 
-    async def generate_feedback(self, user_id: int, submission_content: str, feedback_type: str) -> Optional[FeedbackCreate]:
+    async def generate_feedback(self, user_id: int, submission_content: str, feedback_type: str, submission_id: int) -> Optional[FeedbackCreate]:
         """
         Generate feedback for a submission using AI.
         """
@@ -127,9 +127,13 @@ class AIService:
             )
             
             feedback_content = response.choices[0].message.content
+            if feedback_content is None:
+                logger.error("OpenAI returned None content for feedback")
+                return None
             
             # Create feedback object
             feedback = FeedbackCreate(
+                submission_id=submission_id,
                 content=feedback_content,
                 feedback_type=feedback_type,
                 confidence_score=0.8,  # TODO: Get actual confidence score from AI model
@@ -177,11 +181,15 @@ class AIService:
                     frequency_penalty=settings.AI_FREQUENCY_PENALTY,
                     presence_penalty=settings.AI_PRESENCE_PENALTY
                 )
-                return response.choices[0].message.content
+                content = response.choices[0].message.content
+                if content is None:
+                    raise ValueError("OpenAI returned None content")
+                return content
             except Exception as e:
                 if attempt == max_retries - 1:
                     raise e
                 await asyncio.sleep(1 * (attempt + 1))  # Exponential backoff
+        raise RuntimeError("Failed to get response from OpenAI after all retries")
 
     def _validate_generated_content(self, content: Dict[str, Any]) -> bool:
         """Validate the generated content structure and completeness."""
@@ -360,6 +368,15 @@ class AIService:
         # Parse the response to extract structured information
         # This is a simple implementation - you might want to make this more robust
         try:
+            if analysis is None:
+                return {
+                    "score": 0.0,
+                    "feedback": "No analysis available",
+                    "suggestions": [],
+                    "strengths": [],
+                    "areas_for_improvement": []
+                }
+            
             lines = analysis.split("\n")
             score = float(next(line for line in lines if "score" in line.lower()).split(":")[-1].strip())
             feedback = "\n".join(line for line in lines if "feedback" in line.lower())
@@ -370,7 +387,7 @@ class AIService:
             # Fallback if parsing fails
             return {
                 "score": 0.0,
-                "feedback": analysis,
+                "feedback": analysis or "No analysis available",
                 "suggestions": [],
                 "strengths": [],
                 "areas_for_improvement": []
@@ -400,24 +417,86 @@ class AIService:
         Enforce the user's monthly token limit. Raise HTTPException if exceeded.
         """
         # Get active subscription
-        subscription = self.db.query(Subscription).filter(
-            Subscription.user_id == user_id,
-            Subscription.status == SubscriptionStatus.ACTIVE
-        ).first()
-        token_limit = subscription.token_limit if subscription else 30000  # Default to free plan
+        result = await self.db.execute(
+            select(Subscription).filter(
+                Subscription.user_id == user_id,
+                Subscription.status == SubscriptionStatus.ACTIVE
+            )
+        )
+        subscription = result.scalar_one_or_none()
+        token_limit = int(subscription.token_limit) if subscription is not None and subscription.token_limit is not None else 30000  # type: ignore # Default to free plan
 
         # Calculate start of current month
         now = datetime.utcnow()
         start_of_month = datetime(now.year, now.month, 1)
 
         # Sum tokens used this month
-        tokens_used = self.db.query(func.coalesce(func.sum(Usage.tokens_used), 0)).filter(
-            Usage.user_id == user_id,
-            Usage.timestamp >= start_of_month
-        ).scalar()
+        result = await self.db.execute(
+            select(func.sum(Usage.tokens_used)).filter(
+                Usage.user_id == user_id,
+                Usage.timestamp >= start_of_month
+            )
+        )
+        tokens_used_result = result.scalar_one()
+        tokens_used = int(tokens_used_result) if tokens_used_result is not None else 0
 
-        if tokens_used + tokens_needed > token_limit:
+        # Ensure all values are integers for comparison
+        tokens_used_int = int(tokens_used)
+        tokens_needed_int = int(tokens_needed)
+        token_limit_int = int(token_limit)
+
+        if tokens_used_int + tokens_needed_int > token_limit_int:
             raise HTTPException(
                 status_code=403,
-                detail=f"Token limit exceeded: {tokens_used + tokens_needed} / {token_limit}"
-            ) 
+                detail=f"Token limit exceeded: {tokens_used_int + tokens_needed_int} / {token_limit_int}"
+            )
+
+    async def generate_assignment_content_from_prompt(self, prompt: str) -> str:
+        """
+        Generate assignment content from a natural language prompt.
+        This method is used for chat-based assignment input.
+        
+        Args:
+            prompt: Natural language description of the assignment
+            
+        Returns:
+            Generated assignment content as string
+        """
+        try:
+            # Construct a system prompt for chat-based generation
+            system_prompt = """You are an expert educational content creator. 
+            When given a description of an assignment, create a comprehensive, 
+            well-structured assignment that includes:
+            
+            1. Clear title and description
+            2. Learning objectives
+            3. Detailed instructions
+            4. Requirements and deliverables
+            5. Evaluation criteria
+            6. Estimated time and resources needed
+            
+            Format the response in a clear, structured manner that students can easily follow.
+            Make sure the assignment is appropriate for the described level and subject."""
+            
+            # Call OpenAI API
+            response = await self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=settings.AI_MAX_TOKENS,
+                temperature=settings.AI_TEMPERATURE,
+                top_p=settings.AI_TOP_P,
+                frequency_penalty=settings.AI_FREQUENCY_PENALTY,
+                presence_penalty=settings.AI_PRESENCE_PENALTY
+            )
+            
+            content = response.choices[0].message.content
+            if content is None:
+                raise ValueError("OpenAI returned None content")
+            return content
+            
+        except Exception as e:
+            logger.error(f"Error generating content from prompt: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Failed to generate content: {str(e)}") 

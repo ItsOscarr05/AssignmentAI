@@ -136,7 +136,13 @@ const AITokens: React.FC = () => {
 
     let runningTotalPrev = initialTokens;
     let runningTotalCurrent = 0;
-    const points: { date: string; tokens: number; used: number; description: string }[] = [];
+    const points: {
+      date: string;
+      tokens: number;
+      used: number;
+      description: string;
+      isRenewal: boolean;
+    }[] = [];
     const tokenLimit = total;
     let capped = false;
 
@@ -144,6 +150,7 @@ const AITokens: React.FC = () => {
       const key = format(d, 'yyyy-MM-dd');
       let used = usageByDate[key]?.used || 0;
       let description = used > 0 ? `Used for: ${usageByDate[key].titles.join(', ')}` : '';
+      const isRenewal = d.getTime() === currentCycleStart.getTime();
 
       if (d < currentCycleStart) {
         runningTotalPrev += used;
@@ -152,14 +159,16 @@ const AITokens: React.FC = () => {
           tokens: runningTotalPrev,
           used,
           description,
+          isRenewal: false,
         });
-      } else if (d.getTime() === currentCycleStart.getTime()) {
+      } else if (isRenewal) {
         runningTotalCurrent = 0;
         points.push({
           date: format(d, 'MMM d'),
           tokens: 0,
           used: 0,
           description,
+          isRenewal: true,
         });
         runningTotalCurrent += used;
         if (used > 0) {
@@ -169,6 +178,7 @@ const AITokens: React.FC = () => {
             tokens: used > tokenLimit ? tokenLimit : used,
             used: used > tokenLimit ? 0 : used,
             description,
+            isRenewal: false,
           });
           runningTotalCurrent = used > tokenLimit ? tokenLimit : used;
           capped = used > tokenLimit;
@@ -190,6 +200,7 @@ const AITokens: React.FC = () => {
           tokens: runningTotalCurrent,
           used,
           description,
+          isRenewal: false,
         });
       }
     }
@@ -201,6 +212,7 @@ const AITokens: React.FC = () => {
       tokens: initialTokens,
       used: 0,
       description: 'Starting balance',
+      isRenewal: false,
     });
 
     return points;
@@ -804,7 +816,7 @@ const AITokens: React.FC = () => {
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
                         const point = payload[0].payload;
-                        const isRenewal = point.tokens === 0;
+                        const isRenewal = point.isRenewal;
                         // Format date as 'MMM d, yyyy'
                         const formattedDate = point.date
                           ? new Date(
