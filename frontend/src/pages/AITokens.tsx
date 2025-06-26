@@ -1,62 +1,62 @@
 import {
-    Assignment as AssignmentIcon,
-    Autorenew as AutorenewIcon,
-    Psychology as BrainIcon,
-    CheckCircle as CheckCircleIcon,
-    Close as CloseIcon,
-    Code as CodeIcon,
-    CreditCard as CreditCardIcon,
-    Description as DescriptionIcon,
-    Diamond as DiamondIcon,
-    EmojiEvents as EmojiEventsIcon,
-    Functions as FunctionsIcon,
-    History as HistoryIcon,
-    HourglassEmpty as HourglassEmptyIcon,
-    LocalOffer as LocalOfferIcon,
-    OpenInNew as OpenInNewIcon,
-    Report as ReportIcon,
-    School as SchoolIcon,
-    Search as SearchIcon,
-    Star as StarIcon,
+  Assignment as AssignmentIcon,
+  Autorenew as AutorenewIcon,
+  Psychology as BrainIcon,
+  CheckCircle as CheckCircleIcon,
+  Close as CloseIcon,
+  Code as CodeIcon,
+  CreditCard as CreditCardIcon,
+  Description as DescriptionIcon,
+  Diamond as DiamondIcon,
+  EmojiEvents as EmojiEventsIcon,
+  Functions as FunctionsIcon,
+  History as HistoryIcon,
+  HourglassEmpty as HourglassEmptyIcon,
+  LocalOffer as LocalOfferIcon,
+  OpenInNew as OpenInNewIcon,
+  Report as ReportIcon,
+  School as SchoolIcon,
+  Search as SearchIcon,
+  Star as StarIcon,
 } from '@mui/icons-material';
 import {
-    Box,
-    Button,
-    Card,
-    CardContent,
-    Chip,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    Divider,
-    Grid,
-    IconButton,
-    InputAdornment,
-    LinearProgress,
-    List,
-    ListItem,
-    ListItemIcon,
-    ListItemText,
-    Paper,
-    Popover,
-    TextField,
-    ToggleButton,
-    ToggleButtonGroup,
-    Tooltip,
-    Typography,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  Grid,
+  IconButton,
+  InputAdornment,
+  LinearProgress,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Paper,
+  Popover,
+  TextField,
+  ToggleButton,
+  ToggleButtonGroup,
+  Tooltip,
+  Typography,
 } from '@mui/material';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    CartesianGrid,
-    Line,
-    LineChart,
-    Tooltip as RechartsTooltip,
-    ResponsiveContainer,
-    XAxis,
-    YAxis,
+  CartesianGrid,
+  Line,
+  LineChart,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
 } from 'recharts';
 import { useTokenUsage } from '../hooks/useTokenUsage';
 import { api } from '../services/api';
@@ -106,7 +106,7 @@ const AITokens: React.FC = () => {
   // For 30-day graph, show last 30 days, but only add usage from billing start onward
   function buildLast30DaysChart(
     assignments: { tokensUsed?: number; title: string; createdAt?: string }[],
-    _total: number
+    total: number
   ) {
     if (!assignments.length) return [];
     const today = new Date();
@@ -114,12 +114,10 @@ const AITokens: React.FC = () => {
     const startDate = new Date(endDate);
     startDate.setDate(endDate.getDate() - 29);
 
-    // Find the start of the current and previous billing cycles
     const currentCycleStart = new Date(today.getFullYear(), today.getMonth(), 1);
     const prevCycleStart = new Date(currentCycleStart);
     prevCycleStart.setMonth(prevCycleStart.getMonth() - 1);
 
-    // Calculate cumulative tokens used from prevCycleStart up to startDate
     const initialTokens = assignments
       .filter(a => {
         const created = new Date(a.createdAt!);
@@ -127,7 +125,6 @@ const AITokens: React.FC = () => {
       })
       .reduce((sum, a) => sum + (a.tokensUsed || 500), 0);
 
-    // Build a map of date (yyyy-MM-dd) to tokens used that day
     const usageByDate: Record<string, { used: number; titles: string[] }> = {};
     assignments.forEach(a => {
       if (!a.createdAt) return;
@@ -140,6 +137,8 @@ const AITokens: React.FC = () => {
     let runningTotalPrev = initialTokens;
     let runningTotalCurrent = 0;
     const points: { date: string; tokens: number; used: number; description: string }[] = [];
+    const tokenLimit = total;
+    let capped = false;
 
     for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
       const key = format(d, 'yyyy-MM-dd');
@@ -155,27 +154,37 @@ const AITokens: React.FC = () => {
           description,
         });
       } else if (d.getTime() === currentCycleStart.getTime()) {
-        // Reset on the first day of the current cycle
         runningTotalCurrent = 0;
         points.push({
           date: format(d, 'MMM d'),
           tokens: 0,
-          used,
+          used: 0,
           description,
         });
         runningTotalCurrent += used;
-        // If there is usage on the reset day, add a second point for that day
         if (used > 0) {
-          points[points.length - 1].used = 0; // The reset point
+          points[points.length - 1].used = 0;
           points.push({
             date: format(d, 'MMM d'),
-            tokens: runningTotalCurrent,
-            used,
+            tokens: used > tokenLimit ? tokenLimit : used,
+            used: used > tokenLimit ? 0 : used,
             description,
           });
+          runningTotalCurrent = used > tokenLimit ? tokenLimit : used;
+          capped = used > tokenLimit;
         }
       } else {
-        runningTotalCurrent += used;
+        if (!capped && runningTotalCurrent + used > tokenLimit) {
+          used = 0;
+          runningTotalCurrent = tokenLimit;
+          capped = true;
+        } else if (!capped) {
+          runningTotalCurrent += used;
+          if (runningTotalCurrent > tokenLimit) {
+            runningTotalCurrent = tokenLimit;
+            capped = true;
+          }
+        }
         points.push({
           date: format(d, 'MMM d'),
           tokens: runningTotalCurrent,
@@ -185,7 +194,6 @@ const AITokens: React.FC = () => {
       }
     }
 
-    // Add initial point (before any usage)
     const initialDate = new Date(startDate);
     initialDate.setDate(initialDate.getDate() - 1);
     points.unshift({
@@ -201,7 +209,7 @@ const AITokens: React.FC = () => {
   // For 7-day chart: show last 7 days ending with today, with usage per day
   function buildUsageHistory(
     assignments: { tokensUsed?: number; title: string; createdAt?: string }[],
-    _total: number,
+    total: number,
     range: number
   ) {
     const today = new Date();
@@ -222,7 +230,8 @@ const AITokens: React.FC = () => {
     });
     let runningTotal = 0;
     const points: { date: string; tokens: number; used: number; description: string }[] = [];
-    // Initial point (day before the range)
+    const tokenLimit = total;
+    let capped = false;
     const initialDate = new Date(today);
     initialDate.setDate(today.getDate() - range);
     points.push({
@@ -232,9 +241,19 @@ const AITokens: React.FC = () => {
       description: 'Starting balance',
     });
     days.forEach(dateStr => {
-      const used = usageByDate[dateStr]?.used || 0;
-      runningTotal += used;
-      const description = used > 0 ? `Used for: ${usageByDate[dateStr]?.titles.join(', ')}` : '';
+      let used = usageByDate[dateStr]?.used || 0;
+      let description = used > 0 ? `Used for: ${usageByDate[dateStr]?.titles.join(', ')}` : '';
+      if (!capped && runningTotal + used > tokenLimit) {
+        used = 0;
+        runningTotal = tokenLimit;
+        capped = true;
+      } else if (!capped) {
+        runningTotal += used;
+        if (runningTotal > tokenLimit) {
+          runningTotal = tokenLimit;
+          capped = true;
+        }
+      }
       points.push({
         date: format(parseISO(dateStr), 'MMM d'),
         tokens: runningTotal,
@@ -322,37 +341,37 @@ const AITokens: React.FC = () => {
   const tokenUsageInfo = [
     {
       title: 'Assignment Analysis',
-      tokens: '50 tokens',
+      tokens: '500 tokens',
       description: 'Basic analysis of your assignment requirements and structure',
       features: ['Requirements breakdown', 'Structure suggestions', 'Key points identification'],
     },
     {
       title: 'Essay Review',
-      tokens: '100 tokens',
+      tokens: '1000 tokens',
       description: 'Comprehensive review of your essay with feedback and suggestions',
       features: ['Grammar and style check', 'Content analysis', 'Improvement suggestions'],
     },
     {
       title: 'Math Problem Solving',
-      tokens: '75 tokens',
+      tokens: '750 tokens',
       description: 'Step-by-step solutions for mathematical problems',
       features: ['Solution steps', 'Formula explanations', 'Alternative methods'],
     },
     {
       title: 'Research Assistance',
-      tokens: '100 tokens',
+      tokens: '1200 tokens',
       description: 'AI-powered research help with sources and citations',
       features: ['Source finding', 'Citation generation', 'Literature review'],
     },
     {
       title: 'Science Lab Report',
-      tokens: '75 tokens',
+      tokens: '900 tokens',
       description: 'Analysis and formatting of lab experiment data',
       features: ['Data analysis', 'Conclusion generation', 'Format assistance'],
     },
     {
       title: 'History Timeline',
-      tokens: '100 tokens',
+      tokens: '1100 tokens',
       description: 'Create and analyze historical timelines',
       features: ['Event sequencing', 'Source verification', 'Context analysis'],
     },
@@ -782,16 +801,39 @@ const AITokens: React.FC = () => {
                     domain={range === '30' ? [0, tokenUsage.total] : undefined}
                   />
                   <RechartsTooltip
-                    content={({ active, payload, label }) => {
+                    content={({ active, payload }) => {
                       if (active && payload && payload.length) {
                         const point = payload[0].payload;
+                        const isRenewal = point.tokens === 0;
+                        // Format date as 'MMM d, yyyy'
+                        const formattedDate = point.date
+                          ? new Date(
+                              point.date + ', ' + new Date().getFullYear()
+                            ).toLocaleDateString(undefined, {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            })
+                          : '';
                         return (
                           <Paper sx={{ p: 2 }}>
-                            <Typography variant="subtitle2">{label}</Typography>
+                            <Typography variant="subtitle2">{formattedDate}</Typography>
                             <Typography variant="body2">
-                              +{point.used} tokens
+                              +{point.used} tokens (used that day)
                               <br />
-                              {point.description ? point.description : ''}
+                              Cumulative: {point.tokens} tokens
+                              {point.description && (
+                                <>
+                                  <br />
+                                  Used for: {point.description.replace('Used for: ', '')}
+                                </>
+                              )}
+                              {isRenewal && (
+                                <>
+                                  <br />
+                                  <b style={{ color: 'red' }}>Subscription Renewal</b>
+                                </>
+                              )}
                             </Typography>
                           </Paper>
                         );

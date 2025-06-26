@@ -111,23 +111,53 @@ const allSubjects = [
 ];
 const statuses = ['Completed', 'In Progress', 'Not Started'];
 
-// Generate 20 more mock assignments
-const extraAssignments = Array.from({ length: 20 }, (_, i) => {
+// Generate a random number of mock assignments between 40 and 60 (inclusive) per session
+const assignmentCount = Math.floor(Math.random() * (60 - 40 + 1)) + 40;
+
+// Set the monthly token limit (e.g., 30,000 for Free plan)
+const MONTHLY_TOKEN_LIMIT = 30000;
+const now = new Date();
+const currentMonth = now.getMonth();
+const currentYear = now.getFullYear();
+
+// Step 1: Generate all assignments with random tokens
+let rawExtraAssignments = Array.from({ length: assignmentCount }, (_, i) => {
   const subject = randomFrom(allSubjects);
   const status = randomFrom(statuses);
   const daysAgo = Math.floor(Math.random() * 60);
-  // Realistic word count: 400-2000, tokens: 200-2000
+  const createdAt = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
   const wordCount = Math.floor(Math.random() * 1601) + 400;
   const tokensUsed = Math.floor(Math.random() * 1801) + 200;
   return {
     id: `mock-extra-${i}`,
     title: `${subject} Assignment #${i + 1}`,
     status,
-    createdAt: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000).toISOString(),
+    createdAt: createdAt.toISOString(),
     wordCount,
     tokensUsed,
+    _createdAtDate: createdAt, // for sorting
   };
 });
+
+// Step 2: Sort by date (oldest to newest)
+rawExtraAssignments.sort((a, b) => a._createdAtDate.getTime() - b._createdAtDate.getTime());
+
+// Step 3: Cap tokensUsed for current month
+let tokensUsedThisMonth = 0;
+for (let a of rawExtraAssignments) {
+  const d = a._createdAtDate;
+  if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+    if (tokensUsedThisMonth + a.tokensUsed > MONTHLY_TOKEN_LIMIT) {
+      a.tokensUsed = Math.max(0, MONTHLY_TOKEN_LIMIT - tokensUsedThisMonth);
+    }
+    tokensUsedThisMonth += a.tokensUsed;
+    if (tokensUsedThisMonth > MONTHLY_TOKEN_LIMIT) {
+      a.tokensUsed = 0;
+    }
+  }
+}
+// Remove helper property
+const extraAssignments = rawExtraAssignments.map(({ _createdAtDate, ...rest }) => rest);
 
 // Existing assignments (for demo)
 const baseAssignments = [

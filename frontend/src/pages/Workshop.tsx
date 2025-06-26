@@ -576,11 +576,7 @@ const Workshop: React.FC = () => {
     );
   };
 
-  const getProgressColor = (percent: number) => {
-    if (percent > 85) return theme.palette.error.main;
-    if (percent > 60) return theme.palette.warning.main;
-    return theme.palette.primary.main;
-  };
+  const getProgressColor = (_percent: number) => '#D32F2F';
   const progressColor = getProgressColor(tokenUsage.percentUsed);
 
   return (
@@ -1108,7 +1104,7 @@ const Workshop: React.FC = () => {
                   variant="determinate"
                   value={animatedPercent}
                   size={160}
-                  thickness={7}
+                  thickness={5}
                   sx={{
                     color: progressColor,
                     position: 'absolute',
