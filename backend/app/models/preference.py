@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, JSON, ForeignKey, Boolean
+from sqlalchemy import Column, String, JSON, ForeignKey, Boolean, Integer
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.db.base_class import Base
@@ -7,7 +7,7 @@ class Preference(Base):
     __tablename__ = "preferences"
 
     id = Column(String, primary_key=True, index=True)
-    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
     
     # UI Preferences
     theme = Column(String, default="light")  # light, dark, system
@@ -39,4 +39,4 @@ class Preference(Base):
     custom_preferences = Column(JSON, default={})
     
     # Relationships
-    user = relationship("User", back_populates="preferences") 
+    user = relationship("User") 

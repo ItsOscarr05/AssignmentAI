@@ -157,7 +157,12 @@ class AuthService {
   }
 
   async register(data: { email: string; password: string; firstName: string; lastName: string }) {
-    return api.post('/auth/register', data);
+    const name = `${data.firstName} ${data.lastName}`.trim();
+    return api.post('/api/v1/auth/register', {
+      email: data.email,
+      password: data.password,
+      name: name,
+    });
   }
 }
 

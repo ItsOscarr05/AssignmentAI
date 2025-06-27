@@ -23,7 +23,6 @@ class User(Base):
     location = Column(String)
     website = Column(String)
     preferences = Column(JSON)
-    role = Column(Enum(UserRole), nullable=False)
     is_active = Column(Boolean, default=True)
     is_verified = Column(Boolean, default=False)
     two_factor_secret = Column(String, nullable=True)
@@ -47,32 +46,11 @@ class User(Base):
 
     # Add composite index for common queries
     __table_args__ = (
-        Index('idx_user_role_active', 'role', 'is_active'),
+        Index('idx_user_active', 'is_active'),
     )
 
-    # Relationships
-    created_assignments = relationship("Assignment", 
-                                    foreign_keys="[Assignment.created_by_id]",
-                                    back_populates="created_by")
-    teaching_assignments = relationship("Assignment", 
-                                     foreign_keys="[Assignment.teacher_id]",
-                                     back_populates="teacher")
-    assigned_assignments = relationship("Assignment", 
-                                      foreign_keys="[Assignment.user_id]",
-                                      back_populates="user")
-    submissions = relationship("Submission", back_populates="user")
-    classes_teaching = relationship("Class", back_populates="teacher")
-    enrolled_classes = relationship("Class", secondary="class_members", back_populates="students")
+    # Relationships - minimal for basic authentication
     tokens = relationship("Token", back_populates="user")
-    subscription = relationship("Subscription", back_populates="user", uselist=False)
-    assignments = relationship("Assignment", back_populates="user")
-    files = relationship("File", back_populates="user")
-    sessions = relationship("UserSession", back_populates="user")
-    activities = relationship("Activity", back_populates="user")
-    citations = relationship("Citation", back_populates="user")
-    templates = relationship("Template", back_populates="creator")
-    prompts = relationship('Prompt', back_populates='owner')
-    usage = relationship('Usage', back_populates='user')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

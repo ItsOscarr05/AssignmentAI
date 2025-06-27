@@ -3,7 +3,27 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from alembic import context
 from app.core.config import settings
-from app.models.base import Base
+from app.db.base_class import Base  # Import the Base class that models actually use
+
+# Import all models to ensure they are registered with the metadata
+from app.models.user import User
+from app.models.token import Token
+from app.models.assignment import Assignment
+from app.models.submission import Submission
+from app.models.feedback import Feedback
+from app.models.ai_assignment import AIAssignment
+from app.models.class_model import Class
+from app.models.security import SecurityAlert, AuditLog, TwoFactorSetup
+from app.models.log import SystemLog
+from app.models.notification import Notification
+from app.models.subscription import Subscription
+from app.models.usage import Usage, UsageLimit
+from app.models.activity import Activity
+from app.models.preference import Preference
+from app.models.session import UserSession
+from app.models.template import Template
+from app.models.citation import Citation
+from app.models.file import File
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

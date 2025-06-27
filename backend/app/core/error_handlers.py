@@ -24,17 +24,17 @@ async def validation_exception_handler(request: Request, exc: ValidationError):
 
 async def database_error_handler(request: Request, exc: SQLAlchemyError):
     """Handle database errors"""
-    extra = {"error": str(exc)}
+    extra = {"error": str(exc), "error_type": type(exc).__name__}
     if hasattr(request.state, "db"):
         extra["db"] = request.state.db
     
     logging_service.error(
-        "Database error occurred",
+        f"Database error occurred: {str(exc)}",
         extra=extra
     )
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"detail": "Database error occurred"}
+        content={"detail": f"Database error: {str(exc)}"}
     )
 
 async def validation_error_handler(request: Request, exc: ValueError):

@@ -18,7 +18,7 @@ class SecurityAlert(Base):
     resolved = Column(Boolean, default=False)
     resolution_notes = Column(String, nullable=True)
 
-    user = relationship("User", back_populates="security_alerts")
+    user = relationship("User")
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"
@@ -33,7 +33,7 @@ class AuditLog(Base):
     ip_address = Column(String, nullable=True)
     user_agent = Column(String, nullable=True)
 
-    user = relationship("User", back_populates="audit_logs")
+    user = relationship("User")
 
 class TwoFactorSetup(Base):
     __tablename__ = "two_factor_setups"
@@ -47,4 +47,4 @@ class TwoFactorSetup(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    user = relationship("User", back_populates="two_factor_setup") 
+    user = relationship("User") 

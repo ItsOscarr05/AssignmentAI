@@ -33,11 +33,12 @@ router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
 
 @router.post("/login", response_model=Token)
-async def login(
+def login(
     request: Request,
     login_data: LoginRequest,
+    db: Session = Depends(get_db),
 ):
-    user = crud.user.get_by_email(login_data.email)
+    user = db.query(User).filter(User.email == login_data.email).first()
     if not user or not verify_password(login_data.password, user.hashed_password):
         # Check rate limiting for login attempts
         client_id = request.client.host if request.client else "unknown"
@@ -195,24 +196,36 @@ def test_token(current_user: models.User = Depends(get_current_user)) -> Any:
 def register(
     *,
     user_in: UserCreate,
+    db: Session = Depends(get_db),
 ) -> Any:
     """
     Create new user.
     """
-    user = crud.user.get_by_email(user_in.email)
-    if user:
-        raise HTTPException(
-            status_code=400,
-            detail="The user with this email already exists in the system.",
+    try:
+        # Check if user already exists
+        existing_user = db.query(User).filter(User.email == user_in.email).first()
+        if existing_user:
+            raise HTTPException(
+                status_code=400,
+                detail="The user with this email already exists in the system.",
+            )
+        
+        # Create new user
+        hashed_password = get_password_hash(user_in.password)
+        user = User(
+            email=user_in.email,
+            hashed_password=hashed_password,
+            name=user_in.name,
         )
-    user = User(
-        email=user_in.email,
-        hashed_password=get_password_hash(user_in.password),
-        full_name=user_in.full_name,
-        role=user_in.role,
-    )
-    crud.user.create(user)
-    return user
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        return user
+    except Exception as e:
+        db.rollback()
+        print(f"Registration error: {str(e)}")
+        print(f"Error type: {type(e).__name__}")
+        raise
 
 @router.get("/me", response_model=UserSchema)
 def read_users_me(
@@ -247,6 +260,7 @@ async def oauth_callback(
     provider: str,
     code: str,
     state: str,
+    db: Session = Depends(get_db),
 ):
     """
     Handle OAuth callback and create/update user
@@ -268,11 +282,11 @@ async def oauth_callback(
         user_info = await oauth_config.get_user_info(provider, token["access_token"])
         
         # Create or update user
-        user = crud.user.get_by_email(user_info["email"])
+        user = await crud.user.get_user_by_email(db, email=user_info["email"])
         if not user:
-            user = crud.user.create({
+            user = await crud.user.create(db, obj_in={
                 "email": user_info["email"],
-                "full_name": user_info["name"],
+                "name": user_info["name"],
                 "oauth_provider": provider,
                 "oauth_id": user_info.get("id"),
             })
@@ -281,7 +295,7 @@ async def oauth_callback(
         user.oauth_access_token = token["access_token"]
         user.oauth_refresh_token = token.get("refresh_token")
         user.oauth_token_expires_at = datetime.utcnow() + timedelta(seconds=token.get("expires_in", 3600))
-        crud.user.update(user)
+        await crud.user.update(db, db_obj=user, obj_in=user.__dict__)
         
         # Create session
         session_id = session_service.create_session(
@@ -331,7 +345,7 @@ async def refresh_token(
         session_id = payload.get("session_id")
         
         # Get user and verify session
-        user = crud.user.get(db, id=user_id)
+        user = await crud.user.get(db, id=user_id)
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -530,6 +544,7 @@ async def check_password(password: str):
 @router.post("/verify-email")
 async def verify_email(
     token: str,
+    db: Session = Depends(get_db),
 ):
     """
     Verify user's email address
@@ -542,7 +557,7 @@ async def verify_email(
                 detail="Invalid verification token"
             )
         
-        user = crud.user.get_by_email(payload["email"])
+        user = await crud.user.get_user_by_email(db, email=payload["email"])
         if not user:
             raise HTTPException(
                 status_code=404,
@@ -556,7 +571,7 @@ async def verify_email(
             )
         
         user.is_verified = True
-        # TODO: Save updated user to MongoDB/Beanie
+        await crud.user.update(db, db_obj=user, obj_in={"is_verified": True})
         
         return {"message": "Email verified successfully"}
     except Exception as e:
@@ -568,11 +583,12 @@ async def verify_email(
 @router.post("/resend-verification")
 async def resend_verification(
     email: str,
+    db: Session = Depends(get_db),
 ):
     """
     Resend email verification link
     """
-    user = crud.user.get_by_email(email)
+    user = await crud.user.get_user_by_email(db, email=email)
     if not user:
         raise HTTPException(
             status_code=404,
@@ -600,11 +616,12 @@ async def resend_verification(
 @router.post("/forgot-password")
 async def forgot_password(
     email: str,
+    db: Session = Depends(get_db),
 ):
     """
     Send password reset email
     """
-    user = crud.user.get_by_email(email)
+    user = await crud.user.get_user_by_email(db, email=email)
     if not user:
         # Don't reveal if user exists or not
         return {"message": "If the email exists, a password reset link has been sent"}
@@ -625,6 +642,7 @@ async def forgot_password(
 async def reset_password(
     token: str,
     new_password: str,
+    db: Session = Depends(get_db),
 ):
     """
     Reset password using token
@@ -637,7 +655,7 @@ async def reset_password(
                 detail="Invalid or expired reset token"
             )
         
-        user = crud.user.get_by_email(payload["email"])
+        user = await crud.user.get_user_by_email(db, email=payload["email"])
         if not user:
             raise HTTPException(
                 status_code=404,
@@ -645,8 +663,8 @@ async def reset_password(
             )
         
         # Update password
-        user.hashed_password = get_password_hash(new_password)
-        # TODO: Save updated user to database
+        hashed_password = get_password_hash(new_password)
+        await crud.user.update(db, db_obj=user, obj_in={"hashed_password": hashed_password})
         
         return {"message": "Password reset successfully"}
     except Exception as e:
@@ -659,7 +677,8 @@ async def reset_password(
 async def change_password(
     current_password: str,
     new_password: str,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     """
     Change password for authenticated user
@@ -671,7 +690,7 @@ async def change_password(
         )
     
     # Update password
-    current_user.hashed_password = get_password_hash(new_password)
-    # TODO: Save updated user to database
+    hashed_password = get_password_hash(new_password)
+    await crud.user.update(db, db_obj=current_user, obj_in={"hashed_password": hashed_password})
     
     return {"message": "Password changed successfully"} 

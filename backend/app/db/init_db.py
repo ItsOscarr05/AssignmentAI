@@ -5,7 +5,7 @@ from app.core.config import settings
 
 def init_db(db: Session) -> None:
     # Create first superuser
-    user = crud.user.get_by_email(db, email=settings.FIRST_SUPERUSER)
+    user = crud.user.get_user_by_email(db, email=settings.FIRST_SUPERUSER)
     if not user:
         user_in = schemas.UserCreate(
             email=settings.FIRST_SUPERUSER,

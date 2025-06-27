@@ -42,9 +42,9 @@ import {
 import dayjs from 'dayjs';
 import React, { Suspense, useMemo, useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import DashboardPieChart from '../../../DashboardPieChart';
 import { useAuth } from '../contexts/AuthContext';
 import { mapToCoreSubject } from '../services/subjectService';
-import DashboardPieChart from './DashboardPieChart';
 
 // Helper for random selection
 function randomFrom<T>(arr: T[]): T {
@@ -421,7 +421,7 @@ const DashboardHome: React.FC = () => {
           >
             <Box>
               <Typography variant="h4" sx={{ fontWeight: 700, mb: 1, color: '#D32F2F' }}>
-                Welcome back, {user?.email?.split('@')[0] || 'User'}!
+                Welcome back, {user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'User'}!
               </Typography>
               <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
                 Ready to tackle your next assignment?

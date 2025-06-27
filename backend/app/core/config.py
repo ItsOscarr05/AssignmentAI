@@ -275,7 +275,7 @@ class Settings(BaseSettings):
     CANVAS_REDIRECT_URI: str = os.getenv("CANVAS_REDIRECT_URI", "http://localhost:8000/api/v1/canvas/callback")
     
     # CORS Security
-    ALLOWED_ORIGINS: List[str] = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+    ALLOWED_ORIGINS: List[str] = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001").split(",")
     
     @validator("ALLOWED_ORIGINS", pre=True)
     def validate_allowed_origins(cls, v: Union[str, List[str]]) -> List[str]:

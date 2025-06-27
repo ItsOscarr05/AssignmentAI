@@ -15,4 +15,4 @@ class Activity(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     
     # Relationships
-    user = relationship("User", back_populates="activities") 
+    user = relationship("User") 

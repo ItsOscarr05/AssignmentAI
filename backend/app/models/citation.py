@@ -37,4 +37,4 @@ class Citation(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    user = relationship("User", back_populates="citations") 
+    user = relationship("User") 

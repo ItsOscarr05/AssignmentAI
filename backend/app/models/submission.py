@@ -31,7 +31,7 @@ class Submission(Base):
     assignment_id = Column(Integer, ForeignKey("assignments.id"), nullable=False)
     
     # Relationships
-    user = relationship("User", back_populates="submissions")
+    user = relationship("User")
     assignment = relationship("Assignment", back_populates="submissions")
     ai_feedback = relationship("Feedback", back_populates="submission")
 

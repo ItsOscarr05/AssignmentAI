@@ -21,6 +21,6 @@ class Class(Base):
     teacher_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     # Relationships
-    teacher = relationship("User", back_populates="classes_teaching", foreign_keys=[teacher_id])
-    students = relationship("User", secondary=class_members, back_populates="enrolled_classes")
+    teacher = relationship("User", foreign_keys=[teacher_id])
+    students = relationship("User", secondary=class_members)
     assignments = relationship("Assignment", back_populates="class_", cascade="all, delete-orphan") 

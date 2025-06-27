@@ -41,9 +41,9 @@ class Assignment(Base):
     class_id = Column(Integer, ForeignKey("classes.id"), nullable=False)
     
     # Relationships
-    user = relationship("User", foreign_keys=[user_id], back_populates="assigned_assignments")
-    teacher = relationship("User", foreign_keys=[teacher_id], back_populates="teaching_assignments")
-    created_by = relationship("User", foreign_keys=[created_by_id], back_populates="created_assignments")
+    user = relationship("User", foreign_keys=[user_id])
+    teacher = relationship("User", foreign_keys=[teacher_id])
+    created_by = relationship("User", foreign_keys=[created_by_id])
     class_ = relationship("Class", back_populates="assignments")
     submissions = relationship("Submission", back_populates="assignment")
     ai_generation = relationship("AIAssignment", back_populates="assignment", uselist=False)

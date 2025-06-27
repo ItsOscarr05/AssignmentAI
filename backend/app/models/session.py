@@ -16,4 +16,4 @@ class UserSession(Base):
     invalidated_at = Column(DateTime, nullable=True)
     
     # Relationships
-    user = relationship("User", back_populates="sessions") 
+    user = relationship("User") 

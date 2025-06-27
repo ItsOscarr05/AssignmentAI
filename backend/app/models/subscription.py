@@ -25,4 +25,4 @@ class Subscription(Base):
     subscription_metadata = Column(JSON)  # Additional subscription data
     
     # Relationships
-    user = relationship("User", back_populates="subscription") 
+    user = relationship("User") 

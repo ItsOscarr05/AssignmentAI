@@ -15,7 +15,7 @@ class Usage(Base):
     usage_metadata = Column(JSON)  # Additional usage data like size, duration, etc.
     
     # Relationships
-    user = relationship("User", back_populates="usage_records")
+    user = relationship("User")
 
 class UsageLimit(Base):
     __tablename__ = "usage_limits"

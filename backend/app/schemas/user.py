@@ -37,7 +37,7 @@ class UserPreferences(BaseModel):
     timezone: str = "UTC"
 
 class UserInDBBase(UserBase):
-    id: str
+    id: int
     created_at: datetime
     updated_at: Optional[datetime] = None
 

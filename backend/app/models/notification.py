@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, JSON, ForeignKey, Boolean
+from sqlalchemy import Column, String, DateTime, JSON, ForeignKey, Boolean, Integer
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.db.base_class import Base
@@ -7,7 +7,7 @@ class Notification(Base):
     __tablename__ = "notifications"
 
     id = Column(String, primary_key=True, index=True)
-    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     type = Column(String, nullable=False)  # e.g., "assignment_due", "comment", "grade", etc.
     title = Column(String, nullable=False)
     message = Column(String, nullable=False)
@@ -19,4 +19,4 @@ class Notification(Base):
     expires_at = Column(DateTime(timezone=True))
 
     # Relationships
-    user = relationship("User", back_populates="notifications") 
+    user = relationship("User") 

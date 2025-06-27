@@ -4862,7 +4862,7 @@ react-dom@^18.2.0:
     loose-envify "^1.1.0"
     scheduler "^0.23.2"
 
-react-dropzone@^14.2.3:
+react-dropzone@^14.3.8:
   version "14.3.8"
   resolved "https://registry.npmjs.org/react-dropzone/-/react-dropzone-14.3.8.tgz"
   integrity sha512-sBgODnq+lcA4P296DY4wacOZz3JFpD99fp+hb//iBO2HHnyeZU3FwWyXJ6salNpqQdsZrgMrotuko/BdJMV8Ug==

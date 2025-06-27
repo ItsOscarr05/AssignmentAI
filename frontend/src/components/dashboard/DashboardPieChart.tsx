@@ -30,7 +30,7 @@ const subjectColorMap: Record<string, string> = {
   'Career & Technical Ed': '#4DB6AC', // Medium Teal (vibrant pastel)
 };
 
-const getSubjectColor = (subject: string) => {
+const getSubjectColor = (subject: string): string => {
   // Try direct match, then case-insensitive, then default
   if (subjectColorMap[subject]) return subjectColorMap[subject];
   const found = Object.keys(subjectColorMap).find(
@@ -39,7 +39,7 @@ const getSubjectColor = (subject: string) => {
   return found ? subjectColorMap[found] : '#BDBDBD'; // Default: gray
 };
 
-const CustomTooltip = ({ active, payload }: any) => {
+const CustomTooltip: React.FC<any> = ({ active, payload }) => {
   if (active && payload && payload.length) {
     const { name, value } = payload[0];
     const label = name === 'No Subjects' ? name : `${name}: ${value}`;
@@ -103,7 +103,7 @@ const DashboardPieChart: React.FC<DashboardPieChartProps> = ({ data, distributio
           dataKey="value"
           onClick={handlePieClick}
         >
-          {chartData.map((entry, index) => (
+          {chartData.map((entry: { name: string; value: number }, index: number) => (
             <Cell
               key={`cell-${index}`}
               fill={hasData ? getSubjectColor(entry.name) : '#BDBDBD'}

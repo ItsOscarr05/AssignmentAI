@@ -50,4 +50,25 @@ class AIService:
         except Exception as e:
             raise Exception(f"Error generating assignment content: {str(e)}")
 
+    @staticmethod
+    async def generate_assignment_content_from_prompt(prompt: str) -> str:
+        """
+        Generate assignment content from a simple prompt.
+        """
+        try:
+            response = await openai.ChatCompletion.acreate(
+                model=settings.OPENAI_MODEL,
+                messages=[
+                    {"role": "system", "content": "You are an expert educational content creator."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=settings.OPENAI_TEMPERATURE,
+                max_tokens=settings.OPENAI_MAX_TOKENS,
+            )
+            
+            return response.choices[0].message.content
+            
+        except Exception as e:
+            raise Exception(f"Error generating content from prompt: {str(e)}")
+
 ai_service = AIService() 

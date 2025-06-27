@@ -21,5 +21,5 @@ class Template(Base):
     template_metadata = Column(JSON)  # Stores additional template metadata like tags, difficulty, etc.
     
     # Relationships
-    creator = relationship("User", back_populates="templates")
+    creator = relationship("User")
     usage_count = Column(Integer, default=0)  # Track template usage 

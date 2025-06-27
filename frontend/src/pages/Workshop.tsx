@@ -1,4 +1,5 @@
 import {
+  Add as AddIcon,
   Chat as ChatIcon,
   ChatOutlined as ChatOutlinedIcon,
   ContentCopy as ContentCopyIcon,
@@ -16,10 +17,10 @@ import {
   Send as SendIcon,
   ThumbDown as ThumbDownIcon,
   ThumbUp as ThumbUpIcon,
-  Upload as UploadIcon,
   UploadOutlined as UploadOutlinedIcon,
 } from '@mui/icons-material';
 import {
+  Alert,
   alpha,
   Box,
   Button,
@@ -35,6 +36,7 @@ import {
   ListItemIcon,
   ListItemText,
   Paper,
+  Snackbar,
   Tab,
   Tabs,
   TextField,
@@ -56,18 +58,11 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import WorkshopFileUpload from '../components/workshop/WorkshopFileUpload';
+import WorkshopLiveModal from '../components/workshop/WorkshopLiveModal';
 import { useTokenUsage } from '../hooks/useTokenUsage';
 import { useWorkshopStore } from '../services/WorkshopService';
 import { recentAssignments } from './DashboardHome';
-
-interface FileUpload {
-  id: string;
-  name: string;
-  size: number;
-  type: string;
-  progress: number;
-  preview?: string;
-}
 
 interface HistoryItem {
   id: string;
@@ -182,9 +177,17 @@ const VerticalDividers = ({ xAxisMap, yAxisMap }: any) => {
 const Workshop: React.FC = () => {
   const theme = useTheme();
   const location = useLocation();
-  const { generateContent, history: workshopHistory, isLoading } = useWorkshopStore();
+  const {
+    generateContent,
+    history: workshopHistory,
+    isLoading,
+    error,
+    files,
+    addLink,
+    processFile,
+    clearWorkshop,
+  } = useWorkshopStore();
   const [input, setInput] = useState('');
-  const [, setUploadedFiles] = useState<FileUpload[]>([]);
   const [linkInput, setLinkInput] = useState('');
   const [activeTab, setActiveTab] = useState(0);
   const [responseTab, setResponseTab] = useState(0);
@@ -195,6 +198,15 @@ const Workshop: React.FC = () => {
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
   const [animatedPercent, setAnimatedPercent] = useState(0);
   const [isTokenChartHovered, setIsTokenChartHovered] = useState(false);
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error';
+  }>({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
   const { totalTokens, usedTokens, remainingTokens, percentUsed } = useTokenUsage();
   const tokenUsage = {
     label: 'Free Plan (30,000 tokens/month)',
@@ -206,6 +218,12 @@ const Workshop: React.FC = () => {
   const uploadContentRef = useRef<HTMLDivElement>(null);
   const aiResponseRef = useRef<HTMLDivElement>(null);
   const rewriteTabRef = useRef<HTMLDivElement>(null);
+  // Modal state for live AI response
+  const [liveModalOpen, setLiveModalOpen] = useState(false);
+  const [liveModalContent, setLiveModalContent] = useState('');
+  const [liveModalTitle, setLiveModalTitle] = useState('');
+  const [liveModalAI, setLiveModalAI] = useState('');
+  const [liveModalLoading, setLiveModalLoading] = useState(false);
 
   useEffect(() => {
     if (location.hash === '#upload-content-card' && uploadContentRef.current) {
@@ -266,6 +284,28 @@ const Workshop: React.FC = () => {
     }
   }, [responseTab]);
 
+  // Show error snackbar when there's an error
+  useEffect(() => {
+    if (error) {
+      setSnackbar({
+        open: true,
+        message: error,
+        severity: 'error',
+      });
+    }
+  }, [error]);
+
+  // File complete notification when liveModalLoading finishes
+  useEffect(() => {
+    if (!liveModalLoading && liveModalOpen && liveModalAI.length > 0) {
+      setSnackbar({
+        open: true,
+        message: 'File processing complete!',
+        severity: 'success',
+      });
+    }
+  }, [liveModalLoading, liveModalOpen, liveModalAI]);
+
   // Custom styles
   const cardStyle = {
     backgroundColor: '#fff',
@@ -286,6 +326,22 @@ const Workshop: React.FC = () => {
     }
   };
 
+  const handleLinkSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (linkInput.trim()) {
+      const processedLink = await addLink({ url: linkInput, title: linkInput });
+      setLinkInput('');
+      setSnackbar({
+        open: true,
+        message: 'Link processed successfully!',
+        severity: 'success',
+      });
+      if (processedLink) {
+        handleLinkUploadComplete(processedLink);
+      }
+    }
+  };
+
   const handleQuickActionClick = (tabIndex: number) => {
     setActiveTab(tabIndex);
     if (uploadContentRef.current) {
@@ -299,6 +355,18 @@ const Workshop: React.FC = () => {
     setResponseTab(tabIndex);
     if (aiResponseRef.current) {
       aiResponseRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
+  const handleFileAction = async (action: 'summarize' | 'extract' | 'rewrite' | 'analyze') => {
+    if (files.length > 0) {
+      const lastFile = files[files.length - 1];
+      await processFile(lastFile.id, action);
+      setSnackbar({
+        open: true,
+        message: `File ${action} completed!`,
+        severity: 'success',
+      });
     }
   };
 
@@ -319,21 +387,6 @@ const Workshop: React.FC = () => {
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files) return;
-
-    const newFiles: FileUpload[] = Array.from(files).map(file => ({
-      id: Math.random().toString(36).substr(2, 9),
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      progress: 0,
-    }));
-
-    setUploadedFiles(prev => [...prev, ...newFiles]);
-  };
-
   const handleCopy = () => {
     if (workshopHistory.length > 0) {
       const lastResponse = workshopHistory[workshopHistory.length - 1].content;
@@ -350,168 +403,8 @@ const Workshop: React.FC = () => {
     }
   };
 
-  const renderInputSection = () => {
-    switch (activeTab) {
-      case 0:
-        return (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <TextField
-              fullWidth
-              multiline
-              rows={4}
-              placeholder="Type your message here..."
-              variant="outlined"
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': {
-                    borderColor: 'red',
-                  },
-                  '&:hover fieldset': {
-                    borderColor: 'red',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: 'red',
-                  },
-                },
-              }}
-            />
-            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
-              <Button
-                variant="contained"
-                startIcon={<SendIcon />}
-                onClick={handleSubmit}
-                sx={{
-                  backgroundColor: 'red',
-                  '&:hover': {
-                    backgroundColor: '#d32f2f',
-                  },
-                }}
-              >
-                Send Message
-              </Button>
-              <Button
-                variant="outlined"
-                startIcon={<DeleteOutlined />}
-                onClick={() => setInput('')}
-                sx={{
-                  borderColor: 'red',
-                  color: 'red',
-                  '&:hover': {
-                    borderColor: 'red',
-                    backgroundColor: 'rgba(255, 0, 0, 0.04)',
-                  },
-                }}
-              >
-                Clear
-              </Button>
-            </Box>
-          </Box>
-        );
-      case 1:
-        return (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Box
-              sx={{
-                p: 3,
-                border: '2px dashed #8884d8',
-                borderRadius: 2,
-                textAlign: 'center',
-                backgroundColor: 'rgba(136, 132, 216, 0.02)',
-                cursor: 'pointer',
-                '&:hover': {
-                  backgroundColor: 'rgba(136, 132, 216, 0.04)',
-                },
-              }}
-            >
-              <input
-                type="file"
-                accept=".pdf,.doc,.docx,.txt,.rtf"
-                onChange={handleFileUpload}
-                style={{ display: 'none' }}
-                id="file-upload"
-              />
-              <label htmlFor="file-upload">
-                <Box
-                  sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}
-                >
-                  <UploadIcon sx={{ fontSize: 48, color: '#8884d8', opacity: 0.7 }} />
-                  <Typography variant="h6" color="text.secondary">
-                    Drag and drop your file here
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    or click to browse files
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-                    Supported formats: PDF, DOCX, TXT, RTF
-                  </Typography>
-                </Box>
-              </label>
-            </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
-              <Button
-                variant="outlined"
-                startIcon={<DeleteOutlined />}
-                sx={{
-                  borderColor: 'red',
-                  color: 'red',
-                  '&:hover': {
-                    borderColor: 'red',
-                    backgroundColor: 'rgba(255, 0, 0, 0.04)',
-                  },
-                }}
-              >
-                Clear
-              </Button>
-            </Box>
-          </Box>
-        );
-      case 2:
-        return (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <TextField
-              fullWidth
-              placeholder="Paste your link here..."
-              variant="outlined"
-              value={linkInput}
-              onChange={e => setLinkInput(e.target.value)}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': {
-                    borderColor: '#82ca9d',
-                  },
-                  '&:hover fieldset': {
-                    borderColor: '#82ca9d',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: '#82ca9d',
-                  },
-                },
-              }}
-            />
-            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
-              <Button
-                variant="outlined"
-                startIcon={<DeleteOutlined />}
-                onClick={() => setLinkInput('')}
-                sx={{
-                  borderColor: 'red',
-                  color: 'red',
-                  '&:hover': {
-                    borderColor: 'red',
-                    backgroundColor: 'rgba(255, 0, 0, 0.04)',
-                  },
-                }}
-              >
-                Clear
-              </Button>
-            </Box>
-          </Box>
-        );
-      default:
-        return null;
-    }
+  const handleClearChat = () => {
+    clearWorkshop();
   };
 
   // Custom tooltip for the activity graph
@@ -578,6 +471,172 @@ const Workshop: React.FC = () => {
 
   const getProgressColor = (_percent: number) => '#D32F2F';
   const progressColor = getProgressColor(tokenUsage.percentUsed);
+
+  const simulateLiveAI = (fullText: string) => {
+    setLiveModalLoading(true);
+    setLiveModalAI('');
+    let currentIndex = 0;
+    function nextChunk() {
+      if (currentIndex < fullText.length) {
+        const chunk = fullText.slice(0, currentIndex + 10);
+        setLiveModalAI(chunk);
+        currentIndex += 10;
+        setTimeout(nextChunk, 50);
+      } else {
+        setLiveModalLoading(false);
+      }
+    }
+    nextChunk();
+  };
+
+  // Handler for link upload completion (simulate similar to file)
+  const handleLinkUploadComplete = (link: any) => {
+    setLiveModalTitle(link.title || 'Processed Link');
+    setLiveModalContent(link.content || '');
+    setLiveModalOpen(true);
+    simulateLiveAI(link.analysis || '');
+  };
+
+  // Add a download handler
+  const handleDownloadAIContent = () => {
+    if (workshopHistory.length > 0) {
+      const last = workshopHistory[workshopHistory.length - 1];
+      const blob = new Blob([last.content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'ai_response.txt';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 0);
+    }
+  };
+
+  const renderInputSection = () => {
+    switch (activeTab) {
+      case 0:
+        return (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              fullWidth
+              multiline
+              rows={4}
+              placeholder="Type your message here..."
+              variant="outlined"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': {
+                    borderColor: 'red',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: 'red',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: 'red',
+                  },
+                },
+              }}
+            />
+            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
+              <Button
+                variant="contained"
+                startIcon={<SendIcon />}
+                onClick={handleSubmit}
+                sx={{
+                  backgroundColor: 'red',
+                  '&:hover': {
+                    backgroundColor: '#d32f2f',
+                  },
+                }}
+              >
+                Send Message
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<DeleteOutlined />}
+                onClick={() => setInput('')}
+                sx={{
+                  borderColor: 'red',
+                  color: 'red',
+                  '&:hover': {
+                    borderColor: 'red',
+                    backgroundColor: 'rgba(255, 0, 0, 0.04)',
+                  },
+                }}
+              >
+                Clear
+              </Button>
+            </Box>
+          </Box>
+        );
+      case 1:
+        return <WorkshopFileUpload />;
+      case 2:
+        return (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <form onSubmit={handleLinkSubmit}>
+              <TextField
+                fullWidth
+                placeholder="Paste your link here..."
+                variant="outlined"
+                value={linkInput}
+                onChange={e => setLinkInput(e.target.value)}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      borderColor: '#82ca9d',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: '#82ca9d',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#82ca9d',
+                    },
+                  },
+                }}
+              />
+              <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 2 }}>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  type="submit"
+                  sx={{
+                    backgroundColor: '#82ca9d',
+                    '&:hover': {
+                      backgroundColor: '#6a9c7a',
+                    },
+                  }}
+                >
+                  Process Link
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<DeleteOutlined />}
+                  onClick={() => setLinkInput('')}
+                  sx={{
+                    borderColor: 'red',
+                    color: 'red',
+                    '&:hover': {
+                      borderColor: 'red',
+                      backgroundColor: 'rgba(255, 0, 0, 0.04)',
+                    },
+                  }}
+                >
+                  Clear
+                </Button>
+              </Box>
+            </form>
+          </Box>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <Box sx={{ p: 3, backgroundColor: 'white', minHeight: '100vh' }}>
@@ -903,6 +962,11 @@ const Workshop: React.FC = () => {
                 </Tabs>
               </Box>
               <Box sx={{ flexShrink: 0, mt: { xs: 1, sm: 0 } }}>
+                <Tooltip title="Clear Chat">
+                  <IconButton size="small" sx={{ color: 'red' }} onClick={handleClearChat}>
+                    <DeleteOutlined />
+                  </IconButton>
+                </Tooltip>
                 <Tooltip title={isCopied ? 'Copied!' : 'Copy'}>
                   <IconButton size="small" sx={{ color: 'red' }} onClick={handleCopy}>
                     <ContentCopyIcon />
@@ -993,6 +1057,19 @@ const Workshop: React.FC = () => {
                 </Box>
               )}
             </Box>
+            {responseTab === 0 && (
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                <Button
+                  variant="contained"
+                  startIcon={<DownloadOutlinedIcon />}
+                  color="primary"
+                  onClick={handleDownloadAIContent}
+                  disabled={workshopHistory.length === 0}
+                >
+                  Download AI Response
+                </Button>
+              </Box>
+            )}
           </Paper>
         </Grid>
 
@@ -1072,6 +1149,35 @@ const Workshop: React.FC = () => {
               </ListItem>
             </List>
           </Paper>
+
+          {/* File Actions */}
+          {files.length > 0 && (
+            <Paper sx={{ ...cardStyle, p: 3, mb: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                File Actions
+              </Typography>
+              <List>
+                <ListItem button onClick={() => handleFileAction('summarize')}>
+                  <ListItemIcon>
+                    <RecordVoiceOverOutlined sx={{ color: '#ff9800' }} />
+                  </ListItemIcon>
+                  <ListItemText primary="Summarize File" />
+                </ListItem>
+                <ListItem button onClick={() => handleFileAction('extract')}>
+                  <ListItemIcon>
+                    <FormatListBulletedIcon sx={{ color: '#ffc107' }} />
+                  </ListItemIcon>
+                  <ListItemText primary="Extract Key Points" />
+                </ListItem>
+                <ListItem button onClick={() => handleFileAction('rewrite')}>
+                  <ListItemIcon>
+                    <EditOutlinedIcon sx={{ color: '#2196f3' }} />
+                  </ListItemIcon>
+                  <ListItemText primary="Rewrite Content" />
+                </ListItem>
+              </List>
+            </Paper>
+          )}
 
           {/* Assignment Tokens */}
           <Paper sx={{ ...cardStyle, p: 3 }}>
@@ -1216,6 +1322,31 @@ const Workshop: React.FC = () => {
           </motion.div>
         </Box>
       </Drawer>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+
+      {/* Render the modal */}
+      <WorkshopLiveModal
+        open={liveModalOpen}
+        onClose={() => setLiveModalOpen(false)}
+        content={liveModalContent}
+        aiResponse={liveModalAI}
+        isLoading={liveModalLoading}
+        title={liveModalTitle}
+      />
     </Box>
   );
 };

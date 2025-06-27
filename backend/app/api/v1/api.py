@@ -14,7 +14,8 @@ from app.api.v1.endpoints import (
     dashboard,
     citations,
     templates,
-    assignment_input
+    assignment_input,
+    workshop
 )
 
 api_router = APIRouter()
@@ -34,4 +35,5 @@ api_router.include_router(payments.router, prefix="/payments", tags=["payments"]
 api_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
 api_router.include_router(citations.router, prefix="/citations", tags=["citations"])
 api_router.include_router(templates.router, prefix="/templates", tags=["templates"])
-api_router.include_router(assignment_input.router, prefix="/assignment-input", tags=["Assignment Input"]) 
+api_router.include_router(assignment_input.router, prefix="/assignment-input", tags=["Assignment Input"])
+api_router.include_router(workshop.router, prefix="/workshop", tags=["workshop"]) 
