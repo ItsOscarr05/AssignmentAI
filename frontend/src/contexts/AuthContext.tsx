@@ -14,6 +14,7 @@ interface AuthContextType {
   updateUser: (userData: Partial<User>) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
   mockLogin: () => void;
+  resetPassword: (email: string) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -119,6 +120,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     navigate('/dashboard');
   };
 
+  const resetPassword = async (email: string) => {
+    const response = await fetch('/api/auth/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    if (!response.ok) {
+      throw new Error('Failed to send reset email');
+    }
+  };
+
   const value = {
     user,
     isAuthenticated: !!user,
@@ -129,6 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     updateUser,
     register,
     mockLogin,
+    resetPassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

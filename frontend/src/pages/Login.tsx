@@ -101,6 +101,7 @@ const Login: React.FC = () => {
         minHeight: '100vh',
         display: 'flex',
         background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.dark} 90%)`,
+        overflowY: 'auto',
       }}
     >
       <Container
@@ -109,7 +110,6 @@ const Login: React.FC = () => {
         sx={{
           display: 'flex',
           alignItems: 'stretch',
-          height: '100vh',
           width: '100vw',
         }}
       >

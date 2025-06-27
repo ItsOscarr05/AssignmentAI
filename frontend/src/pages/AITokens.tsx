@@ -476,7 +476,7 @@ const AITokens: React.FC = () => {
         variant="h4"
         gutterBottom
         className="page-title"
-        sx={{ color: 'error.main', mb: 3 }}
+        sx={{ color: 'error.main', mb: 3, ml: 4 }}
       >
         AI Tokens
       </Typography>

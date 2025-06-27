@@ -8,7 +8,6 @@ import {
   Divider,
   Grid,
   Link,
-  Paper,
   Stack,
   TextField,
   Typography,
@@ -93,34 +92,14 @@ const Register: React.FC = () => {
   return (
     <Box
       sx={{
-        minHeight: { xs: 'auto', sm: 'auto', md: '100vh' },
-        height: { xs: 'auto', sm: 'auto', md: '100vh' },
+        minHeight: '100vh',
         display: 'flex',
         background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.dark} 90%)`,
-        overflowX: 'hidden',
+        overflowY: 'auto',
       }}
     >
-      <Container
-        maxWidth={false}
-        disableGutters
-        sx={{
-          display: 'flex',
-          alignItems: 'stretch',
-          minHeight: { xs: 'auto', sm: 'auto', md: '100vh' },
-          height: { xs: 'auto', sm: 'auto', md: '100vh' },
-          width: '100%',
-        }}
-      >
-        <Grid
-          container
-          component={Paper}
-          direction={{ xs: 'column', md: 'row' }}
-          sx={{
-            borderRadius: 0,
-            overflow: { xs: 'visible', md: 'hidden' },
-            flex: 1,
-          }}
-        >
+      <Container maxWidth={false} disableGutters>
+        <Grid container direction={{ xs: 'column', md: 'row' }} sx={{ borderRadius: 0 }}>
           {/* Left side - Branding */}
           <Grid
             item
@@ -128,24 +107,35 @@ const Register: React.FC = () => {
             md={5}
             sx={{
               background: 'radial-gradient(circle at center, #FF5252 0%,rgb(84, 8, 8) 100%)',
+              p: 6,
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
               alignItems: 'center',
               color: 'white',
-              minHeight: { xs: 'auto', sm: 'auto', md: '100vh' },
-              height: { xs: 'auto', sm: 'auto', md: '100%' },
-              width: '100%',
+              position: 'relative',
+              minHeight: { md: '100vh' },
+              height: { md: '100%' },
             }}
           >
-            <Box sx={{ width: '100%', maxWidth: 480, textAlign: 'center' }}>
-              <Box
-                component="img"
+            <Box
+              sx={{
+                position: 'relative',
+                textAlign: 'center',
+                zIndex: 1,
+                width: '100%',
+                maxWidth: 480,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+              }}
+            >
+              <img
                 src="/AssignmentAI_Logo-transparent-white.png"
                 alt="Logo"
-                sx={{
-                  height: { xs: 160, sm: 160, md: 320 },
-                  marginBottom: 4,
+                style={{
+                  height: 320,
+                  marginBottom: 32,
                   width: 'auto',
                   maxWidth: '100%',
                   objectFit: 'contain',
@@ -201,18 +191,18 @@ const Register: React.FC = () => {
             xs={12}
             md={7}
             sx={{
-              p: { xs: 2, md: 3 },
               display: 'flex',
               flexDirection: 'column',
-              justifyContent: 'flex-start',
-              mt: { xs: 2, sm: 2, md: 0 },
+              justifyContent: 'center',
+              alignItems: 'center',
+              background: 'white',
+              p: { xs: 2, md: 6 },
             }}
           >
             <Box
               sx={{
-                maxWidth: 420,
-                mx: 'auto',
-                pb: { xs: 2, md: 3 },
+                width: '100%',
+                maxWidth: 480,
               }}
             >
               <Typography

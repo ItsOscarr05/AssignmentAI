@@ -42,6 +42,7 @@ const ForgotPassword: React.FC = () => {
         minHeight: '100vh',
         display: 'flex',
         background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.dark} 90%)`,
+        overflowY: 'auto',
       }}
     >
       <Container
@@ -50,7 +51,6 @@ const ForgotPassword: React.FC = () => {
         sx={{
           display: 'flex',
           alignItems: 'stretch',
-          height: '100vh',
           width: '100vw',
         }}
       >
@@ -69,18 +69,28 @@ const ForgotPassword: React.FC = () => {
             xs={12}
             md={5}
             sx={{
-              background: `linear-gradient(45deg, ${theme.palette.primary.dark} 30%, ${theme.palette.primary.main} 90%)`,
+              background: 'radial-gradient(circle at center, #FF5252 0%,rgb(84, 8, 8) 100%)',
+              p: 6,
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
               alignItems: 'center',
               color: 'white',
-              minHeight: '100vh',
-              height: '100%',
-              width: '100%',
+              position: 'relative',
             }}
           >
-            <Box sx={{ width: '100%', maxWidth: 480 }}>
+            <Box
+              sx={{
+                position: 'relative',
+                textAlign: 'center',
+                zIndex: 1,
+                width: '100%',
+                maxWidth: 480,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+              }}
+            >
               <img
                 src="/AssignmentAI_Logo-transparent-white.png"
                 alt="Logo"

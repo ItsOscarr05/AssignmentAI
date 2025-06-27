@@ -397,6 +397,7 @@ const Settings: React.FC = () => {
             backgroundClip: 'text',
             WebkitBackgroundClip: 'text',
             color: 'transparent',
+            ml: 4,
           }}
         >
           Settings

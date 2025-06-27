@@ -385,6 +385,7 @@ const Profile: React.FC = () => {
             backgroundClip: 'text',
             WebkitBackgroundClip: 'text',
             color: 'transparent',
+            ml: 4,
           }}
         >
           Profile

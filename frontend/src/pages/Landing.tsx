@@ -340,7 +340,8 @@ const Landing: React.FC = () => {
           flexDirection: 'column',
           justifyContent: 'flex-start',
           position: 'relative',
-          overflow: 'hidden',
+          overflowX: 'hidden',
+          width: '100%',
           pt: 0,
           mt: 0,
         }}
@@ -361,13 +362,13 @@ const Landing: React.FC = () => {
           }}
         >
           {/* Brand/Logo on the left */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', marginRight: -10 }}>
             <Box
               component="img"
               src="/AssignmentAI_Logo-transparent-white.png"
               alt="AI Logo"
               sx={{
-                height: { xs: '3.5rem', md: '3.5rem' },
+                height: { xs: '4.5rem', md: '5rem' },
                 width: 'auto',
                 display: 'block',
               }}
@@ -378,7 +379,7 @@ const Landing: React.FC = () => {
                 fontWeight: 800,
                 color: 'common.white',
                 letterSpacing: 1,
-                fontSize: { xs: '1.7rem', md: '2.4rem' },
+                fontSize: { xs: '2.2rem', md: '3rem' },
                 textShadow: '0 0 32px rgba(255,255,255,0.25), 0 0 64px rgba(255,255,255,0.18)',
                 userSelect: 'none',
                 textDecoration: 'none',
@@ -609,10 +610,11 @@ const Landing: React.FC = () => {
       <Box
         sx={{
           bgcolor: 'white',
-          width: '100vw',
+          width: '100%',
           minHeight: '100vh',
           position: 'relative',
           zIndex: 1,
+          overflowX: 'hidden',
         }}
       >
         {/* What Can You Generate With AssignmentAI? Section */}

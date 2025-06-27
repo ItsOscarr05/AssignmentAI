@@ -4,6 +4,7 @@ import {
   Button,
   CircularProgress,
   Container,
+  Divider,
   FormControl,
   FormControlLabel,
   Grid,
@@ -20,6 +21,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAI } from '../../contexts/AIContext';
 import { assignments } from '../../services/api';
+import { AssignmentInputHub } from '../assignment/AssignmentInputHub';
 import RichTextEditor from '../editor/RichTextEditor';
 
 interface AssignmentFormData {
@@ -75,6 +77,25 @@ const AssignmentCreate: React.FC = () => {
       ...prev,
       description: value,
     }));
+  };
+
+  // Handle content from AssignmentInputHub
+  const handleAssignmentGenerated = (content: string, source: string) => {
+    setFormData(prev => ({
+      ...prev,
+      description: content,
+      aiGenerated: source === 'chat' || source.startsWith('link:'),
+    }));
+  };
+
+  const handleFilesUploaded = (files: File[]) => {
+    // Handle uploaded files - you can process them or store references
+    console.log('Files uploaded:', files);
+  };
+
+  const handleLinksSubmitted = (links: any[]) => {
+    // Handle submitted links
+    console.log('Links submitted:', links);
   };
 
   const handleAIGeneration = async () => {
@@ -152,6 +173,29 @@ const AssignmentCreate: React.FC = () => {
             {error}
           </Alert>
         )}
+
+        {/* Assignment Input Hub */}
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h5" gutterBottom>
+            Assignment Content Input
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Choose your preferred method to input assignment content: AI chat, file upload, or link
+            submission
+          </Typography>
+          <AssignmentInputHub
+            onAssignmentGenerated={handleAssignmentGenerated}
+            onFilesUploaded={handleFilesUploaded}
+            onLinksSubmitted={handleLinksSubmitted}
+          />
+        </Box>
+
+        <Divider sx={{ my: 4 }} />
+
+        {/* Assignment Details Form */}
+        <Typography variant="h5" gutterBottom>
+          Assignment Details
+        </Typography>
 
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>

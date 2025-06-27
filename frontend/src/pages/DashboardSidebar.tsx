@@ -8,10 +8,13 @@ import {
   MonetizationOn as MonetizationOnIcon,
   Settings as SettingsIcon,
 } from '@mui/icons-material';
+import CloseIcon from '@mui/icons-material/Close';
+import MenuIcon from '@mui/icons-material/Menu';
 import {
   Box,
   Divider,
   Drawer,
+  IconButton,
   List,
   ListItem,
   ListItemIcon,
@@ -67,21 +70,32 @@ const Dashboard: React.FC = () => {
         sx={{
           p: 1,
           display: 'flex',
+          flexDirection: 'row',
           alignItems: 'center',
-          gap: 0,
+          justifyContent: 'center',
           width: '100%',
+          minHeight: 64,
+          overflow: 'visible',
         }}
       >
         <img
           src="/AssignmentAI_Logo-transparent-white.png"
           alt="Logo"
-          style={{ height: 48, marginRight: 12 }}
+          style={{ maxHeight: 48, width: 'auto', marginRight: -25, display: 'block' }}
         />
         <Typography
           variant="h6"
           noWrap
           component="div"
-          sx={{ color: 'primary.contrastText', fontSize: '1.4rem' }}
+          sx={{
+            color: 'primary.contrastText',
+            fontSize: '1.7rem',
+            fontWeight: 700,
+            minWidth: 0,
+            flexShrink: 1,
+            textAlign: 'center',
+            width: '100%',
+          }}
         >
           AssignmentAI
         </Typography>
@@ -108,7 +122,8 @@ const Dashboard: React.FC = () => {
             sx={{
               borderRadius: 2,
               mx: 1,
-              mb: 1,
+              mb: 2,
+              py: 1.8,
               '&:hover': {
                 backgroundColor: 'rgba(255, 255, 255, 0.1)',
               },
@@ -150,7 +165,7 @@ const Dashboard: React.FC = () => {
           color="primary.contrastText"
           sx={{ opacity: 0.7, fontSize: '1rem' }}
         >
-          © 2024 AssignmentAI
+          © 2025 AssignmentAI
         </Typography>
       </Box>
     </Box>
@@ -158,6 +173,32 @@ const Dashboard: React.FC = () => {
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+      {/* Toggle button for mobile */}
+      {isMobile && (
+        <IconButton
+          color="inherit"
+          aria-label={mobileOpen ? 'close drawer' : 'open drawer'}
+          edge="start"
+          onClick={handleDrawerToggle}
+          sx={{
+            position: 'fixed',
+            top: 16,
+            left: mobileOpen ? 'auto' : 16,
+            right: mobileOpen ? 16 : 'auto',
+            zIndex: theme.zIndex.drawer + 3,
+            background: 'rgba(255,255,255,0.85)',
+            color: theme.palette.primary.main,
+            boxShadow: 2,
+            width: 48,
+            height: 48,
+            '&:hover': {
+              background: 'rgba(255,255,255,1)',
+            },
+          }}
+        >
+          {mobileOpen ? <CloseIcon sx={{ fontSize: 32 }} /> : <MenuIcon sx={{ fontSize: 32 }} />}
+        </IconButton>
+      )}
       <Box
         component="nav"
         sx={{
