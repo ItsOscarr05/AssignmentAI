@@ -10,6 +10,8 @@ export interface User {
   avatar?: string;
   createdAt: string;
   updatedAt: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 export interface UserProfile {

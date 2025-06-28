@@ -1,11 +1,21 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip, TooltipProps } from 'recharts';
 
 interface DashboardPieChartProps {
   data: { name: string; value: number }[];
   stats: { value: string }[];
   distributionFilter: string;
+}
+
+interface ChartData {
+  name: string;
+  value: number;
+}
+
+interface TooltipPayload {
+  name: string;
+  value: number;
 }
 
 // Subject to color mapping
@@ -39,9 +49,9 @@ const getSubjectColor = (subject: string): string => {
   return found ? subjectColorMap[found] : '#BDBDBD'; // Default: gray
 };
 
-const CustomTooltip: React.FC<any> = ({ active, payload }) => {
+const CustomTooltip: React.FC<TooltipProps<number, string>> = ({ active, payload }) => {
   if (active && payload && payload.length) {
-    const { name, value } = payload[0];
+    const { name, value } = payload[0] as TooltipPayload;
     const label = name === 'No Subjects' ? name : `${name}: ${value}`;
     return (
       <div
@@ -70,7 +80,7 @@ const DashboardPieChart: React.FC<DashboardPieChartProps> = ({ data, distributio
   };
 
   const hasData = data.length > 0;
-  const chartData = hasData ? data : [{ name: 'No Subjects', value: 1 }];
+  const chartData: ChartData[] = hasData ? data : [{ name: 'No Subjects', value: 1 }];
 
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -103,7 +113,7 @@ const DashboardPieChart: React.FC<DashboardPieChartProps> = ({ data, distributio
           dataKey="value"
           onClick={handlePieClick}
         >
-          {chartData.map((entry: { name: string; value: number }, index: number) => (
+          {chartData.map((entry: ChartData, index: number) => (
             <Cell
               key={`cell-${index}`}
               fill={hasData ? getSubjectColor(entry.name) : '#BDBDBD'}

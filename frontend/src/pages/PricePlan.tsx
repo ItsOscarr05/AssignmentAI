@@ -53,9 +53,10 @@ import {
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { useSnackbar } from 'notistack';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PaymentForm from '../components/payment/PaymentForm';
+import { api } from '../services/api';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
@@ -80,6 +81,14 @@ interface Plan {
   bestFor: string;
   tokenBoost?: number;
   isCurrentPlan?: boolean;
+}
+
+interface CurrentPlan {
+  id: string;
+  name: string;
+  price: number;
+  interval: string;
+  features: string[];
 }
 
 const features: Feature[] = [
@@ -355,6 +364,30 @@ const PricePlan: React.FC = () => {
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [showDetailedComparison, setShowDetailedComparison] = useState(false);
+  const [, setCurrentPlan] = useState<CurrentPlan | null>(null);
+  const [plansWithCurrentPlan, setPlansWithCurrentPlan] = useState<Plan[]>(plans);
+
+  useEffect(() => {
+    fetchCurrentPlan();
+  }, []);
+
+  const fetchCurrentPlan = async () => {
+    try {
+      const response = await api.get<CurrentPlan>('/plans/current');
+      setCurrentPlan(response.data);
+
+      // Update plans to mark current plan
+      const updatedPlans = plans.map(plan => ({
+        ...plan,
+        isCurrentPlan: plan.name.toLowerCase() === response.data.name.toLowerCase(),
+      }));
+      setPlansWithCurrentPlan(updatedPlans);
+    } catch (error) {
+      console.error('Failed to fetch current plan:', error);
+      // If no current plan, all plans are available
+      setPlansWithCurrentPlan(plans.map(plan => ({ ...plan, isCurrentPlan: false })));
+    }
+  };
 
   const handlePlanSelect = (plan: Plan) => {
     if (plan.price === 0) {
@@ -391,7 +424,7 @@ const PricePlan: React.FC = () => {
               <Grid item xs={12}>
                 <Box sx={{ display: 'flex', mb: 2 }}>
                   <Box sx={{ flex: 1 }} /> {/* Empty space for feature names */}
-                  {plans.map(plan => (
+                  {plansWithCurrentPlan.map(plan => (
                     <Box key={plan.name} sx={{ flex: 1, textAlign: 'center' }}>
                       <Box
                         sx={{
@@ -428,9 +461,9 @@ const PricePlan: React.FC = () => {
                         </Tooltip>
                       )}
                     </Box>
-                    {plans.map((plan, index) => {
+                    {plansWithCurrentPlan.map((plan, index) => {
                       // Check if this plan or any previous plan includes this feature
-                      const isIncluded = plans
+                      const isIncluded = plansWithCurrentPlan
                         .slice(0, index + 1)
                         .some(p => p.features.includes(feature.name));
 
@@ -492,7 +525,7 @@ const PricePlan: React.FC = () => {
       <Container>
         <Stack spacing={6}>
           <Grid container spacing={6}>
-            {plans.map(plan => (
+            {plansWithCurrentPlan.map(plan => (
               <Grid item xs={12} md={6} lg={3} key={plan.name}>
                 <Card
                   sx={{
@@ -679,6 +712,15 @@ const PricePlan: React.FC = () => {
                           background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
                           '&:hover': {
                             background: `linear-gradient(45deg, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`,
+                          },
+                        }),
+                        ...(plan.isCurrentPlan && {
+                          backgroundColor: theme.palette.grey[300],
+                          color: theme.palette.grey[600],
+                          borderColor: theme.palette.grey[400],
+                          '&:hover': {
+                            backgroundColor: theme.palette.grey[300],
+                            color: theme.palette.grey[600],
                           },
                         }),
                       }}

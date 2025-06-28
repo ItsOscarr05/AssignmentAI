@@ -116,41 +116,14 @@ const Assignments: React.FC = () => {
     window.scrollTo(0, 0);
   }, [location.state]);
 
-  const [assignmentsList, setAssignmentsList] = useState<Assignment[]>([
-    {
-      id: 'a1',
-      title: 'Algebra Homework 1',
-      subject: 'Mathematics',
-      status: 'Completed',
-      description: 'Solve all problems in Chapter 2.',
-      createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
-      attachments: [{ id: 'f1', name: 'algebra1.pdf', type: 'pdf', size: '1.2MB' }],
-    },
-    {
-      id: 'a2',
-      title: 'English Essay: Shakespeare',
-      subject: 'English',
-      status: 'In Progress',
-      description: 'Write an essay on Hamlet.',
-      createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-      attachments: [{ id: 'f2', name: 'hamlet.docx', type: 'docx', size: '800KB' }],
-    },
-    {
-      id: 'a3',
-      title: 'Biology Lab Report',
-      subject: 'Science',
-      status: 'Not Started',
-      description: 'Complete the lab report for photosynthesis experiment.',
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
-      attachments: [],
-    },
-    ...recentAssignments.map((a: any) => ({
+  const [assignmentsList, setAssignmentsList] = useState<Assignment[]>(
+    recentAssignments.map((a: any) => ({
       ...a,
       subject: a.subject || (a.title ? mapToCoreSubject(a.title) : 'Unknown'),
       description: a.description || '',
       attachments: a.attachments || [],
-    })),
-  ]);
+    }))
+  );
   const [loading] = useState(false);
 
   // Custom styles

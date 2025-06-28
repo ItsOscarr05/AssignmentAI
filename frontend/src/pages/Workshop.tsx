@@ -407,81 +407,17 @@ const Workshop: React.FC = () => {
     clearWorkshop();
   };
 
-  // Custom tooltip for the activity graph
-  const CustomActivityTooltip = ({ active, payload, label }: any) => {
-    if (!active || !payload || !payload.length) return null;
-    const point = payload[0].payload;
-    const allKeys = [
-      { key: 'chats', label: 'Chats', color: '#E53935' },
-      { key: 'summarize', label: 'Summarize', color: '#FB8C00' },
-      { key: 'extract', label: 'Extract', color: '#FDD835' },
-      { key: 'links', label: 'Links', color: '#43A047' },
-      { key: 'rewrite', label: 'Rewrite', color: '#1E88E5' },
-      { key: 'files', label: 'Files', color: '#8E24AA' },
-    ];
-    return (
-      <Paper sx={{ p: 2, boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
-          {label}
-        </Typography>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-          {allKeys.map(({ key, label, color }) => {
-            if (selectedArea && selectedArea !== key) return null;
-            return (
-              <Box key={key} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Box
-                  sx={{
-                    width: 12,
-                    height: 12,
-                    backgroundColor: color,
-                    borderRadius: '2px',
-                  }}
-                />
-                <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 500 }}>
-                  {label}:
-                </Typography>
-                <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 'bold' }}>
-                  {point[key]}
-                </Typography>
-              </Box>
-            );
-          })}
-        </Box>
-      </Paper>
-    );
-  };
-
-  const renderLegendText = (value: string, entry: any) => {
-    const { color, dataKey } = entry;
-    const keyAsString = String(dataKey);
-    const isSelected = selectedArea === keyAsString;
-    return (
-      <span
-        style={{
-          color,
-          fontWeight: 500,
-          textDecoration: isSelected ? 'underline' : 'none',
-          cursor: 'pointer',
-        }}
-      >
-        {value}
-      </span>
-    );
-  };
-
-  const getProgressColor = (_percent: number) => '#D32F2F';
-  const progressColor = getProgressColor(tokenUsage.percentUsed);
-
+  // Helper to simulate live AI response (for demo, chunk by chunk)
   const simulateLiveAI = (fullText: string) => {
-    setLiveModalLoading(true);
     setLiveModalAI('');
-    let currentIndex = 0;
+    setLiveModalLoading(true);
+    let i = 0;
+    const chunkSize = 30;
     function nextChunk() {
-      if (currentIndex < fullText.length) {
-        const chunk = fullText.slice(0, currentIndex + 10);
-        setLiveModalAI(chunk);
-        currentIndex += 10;
-        setTimeout(nextChunk, 50);
+      if (i < fullText.length) {
+        setLiveModalAI(prev => prev + fullText.slice(i, i + chunkSize));
+        i += chunkSize;
+        setTimeout(nextChunk, 40);
       } else {
         setLiveModalLoading(false);
       }
@@ -637,6 +573,71 @@ const Workshop: React.FC = () => {
         return null;
     }
   };
+
+  // Custom tooltip for the activity graph
+  const CustomActivityTooltip = ({ active, payload, label }: any) => {
+    if (!active || !payload || !payload.length) return null;
+    const point = payload[0].payload;
+    const allKeys = [
+      { key: 'chats', label: 'Chats', color: '#E53935' },
+      { key: 'summarize', label: 'Summarize', color: '#FB8C00' },
+      { key: 'extract', label: 'Extract', color: '#FDD835' },
+      { key: 'links', label: 'Links', color: '#43A047' },
+      { key: 'rewrite', label: 'Rewrite', color: '#1E88E5' },
+      { key: 'files', label: 'Files', color: '#8E24AA' },
+    ];
+    return (
+      <Paper sx={{ p: 2, boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+          {label}
+        </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+          {allKeys.map(({ key, label, color }) => {
+            if (selectedArea && selectedArea !== key) return null;
+            return (
+              <Box key={key} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box
+                  sx={{
+                    width: 12,
+                    height: 12,
+                    backgroundColor: color,
+                    borderRadius: '2px',
+                  }}
+                />
+                <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 500 }}>
+                  {label}:
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 'bold' }}>
+                  {point[key]}
+                </Typography>
+              </Box>
+            );
+          })}
+        </Box>
+      </Paper>
+    );
+  };
+
+  const renderLegendText = (value: string, entry: any) => {
+    const { color, dataKey } = entry;
+    const keyAsString = String(dataKey);
+    const isSelected = selectedArea === keyAsString;
+    return (
+      <span
+        style={{
+          color,
+          fontWeight: 500,
+          textDecoration: isSelected ? 'underline' : 'none',
+          cursor: 'pointer',
+        }}
+      >
+        {value}
+      </span>
+    );
+  };
+
+  const getProgressColor = (_percent: number) => '#D32F2F';
+  const progressColor = getProgressColor(tokenUsage.percentUsed);
 
   return (
     <Box sx={{ p: 3, backgroundColor: 'white', minHeight: '100vh' }}>
@@ -1197,7 +1198,7 @@ const Workshop: React.FC = () => {
                   variant="determinate"
                   value={100}
                   size={160}
-                  thickness={7}
+                  thickness={5}
                   sx={{
                     color: alpha(progressColor, 0.2),
                     position: 'absolute',

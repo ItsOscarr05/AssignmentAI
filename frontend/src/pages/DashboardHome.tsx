@@ -42,7 +42,7 @@ import {
 import dayjs from 'dayjs';
 import React, { Suspense, useMemo, useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import DashboardPieChart from '../../../DashboardPieChart';
+import DashboardPieChart from '../components/dashboard/DashboardPieChart';
 import { useAuth } from '../contexts/AuthContext';
 import { mapToCoreSubject } from '../services/subjectService';
 

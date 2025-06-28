@@ -62,9 +62,10 @@ const SubscriptionStatus: React.FC = () => {
       ]);
       setSubscription(subResponse.data);
       setPlan(planResponse.data);
-      setAvailablePlans(plansResponse.data);
+      setAvailablePlans(Array.isArray(plansResponse.data) ? plansResponse.data : []);
     } catch (error) {
       enqueueSnackbar('Failed to fetch subscription data', { variant: 'error' });
+      setAvailablePlans([]); // fallback to empty array on error
     } finally {
       setLoading(false);
     }
@@ -131,6 +132,36 @@ const SubscriptionStatus: React.FC = () => {
     return <Typography>Loading subscription information...</Typography>;
   }
 
+  // Handle case where no subscription exists
+  if (!subscription && !plan) {
+    return (
+      <Box>
+        <Card>
+          <CardContent>
+            <Stack spacing={3}>
+              <Typography variant="h5">No Active Subscription</Typography>
+              <Typography variant="body1" color="text.secondary">
+                You don't have an active subscription. Choose a plan to get started.
+              </Typography>
+              <Button
+                variant="contained"
+                onClick={() => (window.location.href = '/dashboard/price-plan')}
+                sx={{
+                  background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
+                  '&:hover': {
+                    background: `linear-gradient(45deg, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`,
+                  },
+                }}
+              >
+                View Plans
+              </Button>
+            </Stack>
+          </CardContent>
+        </Card>
+      </Box>
+    );
+  }
+
   return (
     <Box>
       <Card>
@@ -138,7 +169,7 @@ const SubscriptionStatus: React.FC = () => {
           <Stack spacing={3}>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Typography variant="h5">Subscription Status</Typography>
-              {subscription && (
+              {subscription && subscription.status && (
                 <Chip
                   label={subscription.status.toUpperCase()}
                   color={getStatusColor(subscription.status) as any}
@@ -157,7 +188,7 @@ const SubscriptionStatus: React.FC = () => {
               </Box>
             )}
 
-            {subscription && (
+            {subscription && subscription.current_period_end && (
               <Box>
                 <Typography variant="body2" color="text.secondary">
                   Next billing date: {formatDate(subscription.current_period_end)}
@@ -209,7 +240,7 @@ const SubscriptionStatus: React.FC = () => {
                 label="Select Plan"
                 onChange={e => setSelectedPlanId(e.target.value)}
               >
-                {availablePlans
+                {(Array.isArray(availablePlans) ? availablePlans : [])
                   .filter(p => !plan || p.price > plan.price)
                   .map(p => (
                     <MenuItem key={p.id} value={p.priceId}>
@@ -218,13 +249,21 @@ const SubscriptionStatus: React.FC = () => {
                   ))}
               </Select>
             </FormControl>
-            {selectedPlanId && (
-              <PaymentForm
-                priceId={selectedPlanId}
-                onSuccess={handleUpgradeSuccess}
-                onError={handleUpgradeError}
-              />
-            )}
+            {selectedPlanId &&
+              (() => {
+                const selectedPlan = (Array.isArray(availablePlans) ? availablePlans : []).find(
+                  p => p.priceId === selectedPlanId
+                );
+                return selectedPlan ? (
+                  <PaymentForm
+                    priceId={selectedPlanId}
+                    planName={selectedPlan.name}
+                    planPrice={selectedPlan.price}
+                    onSuccess={handleUpgradeSuccess}
+                    onError={handleUpgradeError}
+                  />
+                ) : null;
+              })()}
           </Stack>
         </DialogContent>
         <DialogActions>

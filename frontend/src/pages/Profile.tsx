@@ -7,6 +7,7 @@ import {
   EmailOutlined,
   LanguageOutlined,
   LocationOnOutlined,
+  LogoutOutlined,
   PhotoCameraOutlined,
   SaveOutlined,
   SchoolOutlined,
@@ -114,10 +115,11 @@ const ProfileSection = ({ title, icon, children }: any) => {
   );
 };
 
-const StatCard = ({ icon, title, value, color }: any) => {
+const StatCard = ({ icon, title, value, color, onClick, sx }: any) => {
   const theme = useTheme();
   return (
     <Paper
+      onClick={onClick}
       sx={{
         p: 3,
         height: '100%',
@@ -128,9 +130,12 @@ const StatCard = ({ icon, title, value, color }: any) => {
         borderRadius: 2,
         transition: 'all 0.3s ease',
         '&:hover': {
-          transform: 'translateY(-4px)',
+          transform: onClick ? 'translateY(-4px) scale(1.03)' : 'translateY(-4px)',
           boxShadow: theme.shadows[4],
+          background: onClick ? 'rgba(255,0,0,0.08)' : undefined,
         },
+        cursor: onClick ? 'pointer' : 'default',
+        ...sx,
       }}
     >
       <Box
@@ -154,7 +159,7 @@ const StatCard = ({ icon, title, value, color }: any) => {
 
 const Profile: React.FC = () => {
   const theme = useTheme();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { profile, isLoading, error, updateProfile, fetchProfile } = useProfileStore();
 
   const [tabValue, setTabValue] = useState(0);
@@ -283,6 +288,10 @@ const Profile: React.FC = () => {
     setSnackbar(prev => ({ ...prev, open: false }));
   };
 
+  // Calculate stats from mock data (fallback to empty array if recentAssignments is undefined)
+  const assignments = Array.isArray(recentAssignments) ? recentAssignments : [];
+  const totalAssignments = assignments.length;
+
   // Loading state
   if (isLoading) {
     return (
@@ -327,25 +336,6 @@ const Profile: React.FC = () => {
           month: 'long',
         })
       : undefined;
-
-  // Calculate stats from mock data
-  const totalAssignments = recentAssignments.length;
-  const completedCount = recentAssignments.filter(
-    a => a.status === 'Completed' || a.status === 'completed'
-  ).length;
-  const inProgressCount = recentAssignments.filter(
-    a => a.status === 'In Progress' || a.status === 'in_progress'
-  ).length;
-  const notStartedCount = recentAssignments.filter(
-    a => a.status === 'Not Started' || a.status === 'pending'
-  ).length;
-
-  const stats = [
-    { icon: <AssignmentOutlined />, title: 'Total Assignments', value: totalAssignments },
-    { icon: <VerifiedOutlined />, title: 'Completed', value: completedCount },
-    { icon: <TimelineOutlined />, title: 'In Progress', value: inProgressCount },
-    { icon: <CancelOutlined />, title: 'Not Started', value: notStartedCount },
-  ];
 
   return (
     <Box
@@ -413,6 +403,30 @@ const Profile: React.FC = () => {
           onClick={handleEditProfile}
         >
           Edit Profile
+        </Button>
+        <Button
+          variant="contained"
+          startIcon={<LogoutOutlined />}
+          aria-label="Logout"
+          sx={{
+            ml: 2,
+            px: 4,
+            py: 1.5,
+            borderRadius: 3,
+            backgroundColor: theme.palette.error.main,
+            color: '#ffffff',
+            boxShadow: '0 4px 20px 0px rgba(0,0,0,0.14), 0 7px 10px -5px rgba(244,67,54,0.4)',
+            transition: 'all 0.3s ease',
+            '&:hover': {
+              transform: 'translateY(-2px)',
+              backgroundColor: theme.palette.error.dark,
+              color: '#ffffff',
+              boxShadow: '0 7px 30px -10px rgba(244,67,54,0.6)',
+            },
+          }}
+          onClick={logout}
+        >
+          Logout
         </Button>
       </Box>
       <Box
@@ -578,11 +592,23 @@ const Profile: React.FC = () => {
               <Divider sx={{ my: 4 }} />
 
               <Grid container spacing={3}>
-                {stats.map((stat, index) => (
-                  <Grid item xs={12} sm={6} md={3} key={index}>
-                    <StatCard {...stat} />
-                  </Grid>
-                ))}
+                <Grid item xs={12} sm={6} md={4}>
+                  <StatCard
+                    icon={<AssignmentOutlined />}
+                    title="Total Assignments"
+                    value={totalAssignments}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6} md={4}>
+                  <StatCard icon={<BadgeOutlined />} title="Subscription Type" value={'Free'} />
+                </Grid>
+                <Grid item xs={12} sm={6} md={4}>
+                  <StatCard
+                    icon={<VerifiedOutlined />}
+                    title="Member Since"
+                    value={memberSince || 'N/A'}
+                  />
+                </Grid>
               </Grid>
             </ProfileSection>
           </TabPanel>
