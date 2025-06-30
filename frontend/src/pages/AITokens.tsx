@@ -1,20 +1,21 @@
 import {
-  Assignment as AssignmentIcon,
   Autorenew as AutorenewIcon,
   Psychology as BrainIcon,
-  CheckCircle as CheckCircleIcon,
+  CalculateOutlined as CalculateIcon,
+  CheckCircleOutline as CheckCircleIcon,
   Close as CloseIcon,
-  Code as CodeIcon,
+  CodeOutlined as CodeIcon,
   CreditCard as CreditCardIcon,
-  Description as DescriptionIcon,
-  Functions as FunctionsIcon,
+  DescriptionOutlined as DescriptionIcon,
   History as HistoryIcon,
   HourglassEmpty as HourglassEmptyIcon,
+  ImageOutlined as ImageIcon,
   InfoOutlined as InfoIcon,
   OpenInNew as OpenInNewIcon,
-  Report as ReportIcon,
-  School as SchoolIcon,
-  Search as SearchIcon,
+  RateReviewOutlined as RateReviewIcon,
+  ReportOutlined as ReportIcon,
+  SchoolOutlined as SchoolIcon,
+  TerminalOutlined as TerminalIcon,
 } from '@mui/icons-material';
 import {
   Box,
@@ -489,11 +490,11 @@ const AITokens: React.FC = () => {
   // Icon and color mapping for features
   const featureIcons: Record<string, { icon: JSX.Element; color: string }> = {
     'Assignment Analysis': { icon: <DescriptionIcon />, color: '#8e24aa' }, // purple
-    'Essay Review': { icon: <AssignmentIcon />, color: '#1976d2' }, // blue
-    'Image Analysis': { icon: <SearchIcon />, color: '#00897b' }, // teal
+    'Essay Review': { icon: <RateReviewIcon />, color: '#1976d2' }, // blue
+    'Image Analysis': { icon: <ImageIcon />, color: '#00897b' }, // teal
     'Code Review': { icon: <CodeIcon />, color: '#388e3c' }, // green
-    'Math Problem Solving': { icon: <FunctionsIcon />, color: '#f57c00' }, // orange
-    'Programming Completion': { icon: <CodeIcon />, color: '#d32f2f' }, // red
+    'Math Problem Solving': { icon: <CalculateIcon />, color: '#f57c00' }, // orange
+    'Programming Completion': { icon: <TerminalIcon />, color: '#d32f2f' }, // red
     'Plagiarism Check': { icon: <ReportIcon />, color: '#d32f2f' }, // red
   };
 

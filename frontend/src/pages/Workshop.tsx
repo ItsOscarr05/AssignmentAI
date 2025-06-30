@@ -62,6 +62,7 @@ import WorkshopFileUpload from '../components/workshop/WorkshopFileUpload';
 import WorkshopLiveModal from '../components/workshop/WorkshopLiveModal';
 import { useAuth } from '../contexts/AuthContext';
 import { useTokenUsage } from '../hooks/useTokenUsage';
+import { api } from '../services/api';
 import { useWorkshopStore } from '../services/WorkshopService';
 import { recentAssignments } from './DashboardHome';
 
@@ -209,14 +210,36 @@ const Workshop: React.FC = () => {
     message: '',
     severity: 'success',
   });
+  const [realTokenUsage, setRealTokenUsage] = useState({
+    total: 30000,
+    used: 0,
+    remaining: 30000,
+    percentUsed: 0,
+  });
+
   const { totalTokens, usedTokens, remainingTokens, percentUsed } = useTokenUsage();
-  const tokenUsage = {
-    label: 'Free Plan (30,000 tokens/month)',
-    total: totalTokens,
-    used: usedTokens,
-    remaining: remainingTokens,
-    percentUsed,
-  };
+
+  // Fetch real token usage for test/real users
+  useEffect(() => {
+    if (!isMockUser) {
+      api.get('/assignments').then(res => {
+        const data = Array.isArray(res.data)
+          ? res.data
+          : Array.isArray(res.data.assignments)
+          ? res.data.assignments
+          : [];
+        const used = data.reduce((sum: number, a: any) => sum + (a.tokensUsed || 0), 0);
+        const total = totalTokens || 30000;
+        setRealTokenUsage({
+          total,
+          used,
+          remaining: total - used,
+          percentUsed: total > 0 ? Math.round((used / total) * 100) : 0,
+        });
+      });
+    }
+  }, [isMockUser, totalTokens]);
+
   const uploadContentRef = useRef<HTMLDivElement>(null);
   const aiResponseRef = useRef<HTMLDivElement>(null);
   const rewriteTabRef = useRef<HTMLDivElement>(null);
@@ -226,6 +249,23 @@ const Workshop: React.FC = () => {
   const [liveModalTitle, setLiveModalTitle] = useState('');
   const [liveModalAI, setLiveModalAI] = useState('');
   const [liveModalLoading, setLiveModalLoading] = useState(false);
+
+  // Use real or mock token usage for the circular progress bar
+  const tokenUsage = isMockUser
+    ? {
+        label: 'Free Plan (30,000 tokens/month)',
+        total: totalTokens,
+        used: usedTokens,
+        remaining: remainingTokens,
+        percentUsed,
+      }
+    : {
+        label: 'Free Plan (30,000 tokens/month)',
+        total: realTokenUsage.total,
+        used: realTokenUsage.used,
+        remaining: realTokenUsage.remaining,
+        percentUsed: realTokenUsage.percentUsed,
+      };
 
   useEffect(() => {
     if (location.hash === '#upload-content-card' && uploadContentRef.current) {
