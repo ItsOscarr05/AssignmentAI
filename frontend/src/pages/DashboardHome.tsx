@@ -11,6 +11,7 @@ import {
   PsychologyOutlined as PsychologyIcon,
   TrendingUp as TrendingUpIcon,
 } from '@mui/icons-material';
+import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
 import AutorenewOutlinedIcon from '@mui/icons-material/AutorenewOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import PlayArrowOutlinedIcon from '@mui/icons-material/PlayArrowOutlined';
@@ -592,98 +593,125 @@ const DashboardHome: React.FC = () => {
                 </Button>
               </Stack>
             </Box>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ color: '#D32F2F', fontWeight: 700 }}>Assignment</TableCell>
-                  <TableCell sx={{ color: '#D32F2F', fontWeight: 700 }}>Status</TableCell>
-                  <TableCell sx={{ color: '#D32F2F', fontWeight: 700 }}>Last Used</TableCell>
-                  <TableCell sx={{ color: '#D32F2F', fontWeight: 700 }}>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredAssignments.slice(page * 5, page * 5 + 5).map(assignment => (
-                  <TableRow key={assignment.id}>
-                    <TableCell>
-                      <span
-                        style={{ cursor: 'pointer', fontWeight: 500, textDecoration: 'none' }}
-                        onClick={() => setSelectedAssignment(assignment)}
-                        onMouseOver={e => (e.currentTarget.style.textDecoration = 'underline')}
-                        onMouseOut={e => (e.currentTarget.style.textDecoration = 'none')}
-                      >
-                        {assignment.title}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        style={{
-                          color:
-                            assignment.status === 'Completed'
-                              ? '#388E3C'
-                              : assignment.status === 'In Progress'
-                              ? '#1976D2'
-                              : assignment.status === 'Not Started'
-                              ? '#FFA726'
-                              : '#8E24AA',
-                          fontWeight: 600,
-                        }}
-                      >
-                        {assignment.status}
-                      </span>
-                    </TableCell>
-                    <TableCell>{new Date(assignment.createdAt).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      <Button
-                        size="small"
-                        sx={{ color: '#009688' }}
-                        onClick={() => setViewAssignment(assignment)}
-                      >
-                        <VisibilityOutlinedIcon sx={{ fontSize: 18, mr: 0.5 }} />
-                        View
-                      </Button>
-                      {assignment.status === 'Completed' && (
-                        <Button
-                          size="small"
-                          sx={{ color: '#8E24AA' }}
-                          onClick={() =>
-                            navigate('/dashboard/workshop', {
-                              state: { assignment, responseTab: 1 },
-                            })
-                          }
-                        >
-                          <AutorenewOutlinedIcon sx={{ fontSize: 18, mr: 0.5 }} />
-                          Regenerate
-                        </Button>
-                      )}
-                      {assignment.status === 'In Progress' && (
-                        <Button
-                          size="small"
-                          sx={{ color: '#FFA726' }}
-                          onClick={() =>
-                            navigate('/dashboard/workshop', {
-                              state: { assignment, responseTab: 1 },
-                            })
-                          }
-                        >
-                          <PlayArrowOutlinedIcon sx={{ fontSize: 18, mr: 0.5 }} />
-                          Resume
-                        </Button>
-                      )}
-                      <Button
-                        size="small"
-                        sx={{ color: '#D32F2F' }}
-                        onClick={() =>
-                          setAssignments(prev => prev.filter(a => a.id !== assignment.id))
-                        }
-                      >
-                        <DeleteOutlineIcon sx={{ fontSize: 18, mr: 0.5 }} />
-                        Delete
-                      </Button>
-                    </TableCell>
+            <Box sx={{ minHeight: 340 }}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ color: '#D32F2F', fontWeight: 700 }}>Assignment</TableCell>
+                    <TableCell sx={{ color: '#D32F2F', fontWeight: 700 }}>Status</TableCell>
+                    <TableCell sx={{ color: '#D32F2F', fontWeight: 700 }}>Last Used</TableCell>
+                    <TableCell sx={{ color: '#D32F2F', fontWeight: 700 }}>Actions</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHead>
+                <TableBody>
+                  {filteredAssignments.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} align="center" sx={{ p: 0 }}>
+                        <Box
+                          minHeight={265}
+                          display="flex"
+                          flexDirection="column"
+                          alignItems="center"
+                          justifyContent="center"
+                          height="100%"
+                        >
+                          <AssignmentOutlinedIcon
+                            sx={{ fontSize: 54, color: 'red', mb: 2, opacity: 0.5 }}
+                          />
+                          <Typography variant="h5" color="text.secondary" gutterBottom>
+                            No Assignments Yet
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Start by uploading content or asking AI about an assignment.
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredAssignments.slice(page * 5, page * 5 + 5).map(assignment => (
+                      <TableRow key={assignment.id}>
+                        <TableCell>
+                          <span
+                            style={{ cursor: 'pointer', fontWeight: 500, textDecoration: 'none' }}
+                            onClick={() => setSelectedAssignment(assignment)}
+                            onMouseOver={e => (e.currentTarget.style.textDecoration = 'underline')}
+                            onMouseOut={e => (e.currentTarget.style.textDecoration = 'none')}
+                          >
+                            {assignment.title}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span
+                            style={{
+                              color:
+                                assignment.status === 'Completed'
+                                  ? '#388E3C'
+                                  : assignment.status === 'In Progress'
+                                  ? '#1976D2'
+                                  : assignment.status === 'Not Started'
+                                  ? '#FFA726'
+                                  : '#8E24AA',
+                              fontWeight: 600,
+                            }}
+                          >
+                            {assignment.status}
+                          </span>
+                        </TableCell>
+                        <TableCell>{new Date(assignment.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <Button
+                            size="small"
+                            sx={{ color: '#009688' }}
+                            onClick={() => setViewAssignment(assignment)}
+                          >
+                            <VisibilityOutlinedIcon sx={{ fontSize: 18, mr: 0.5 }} />
+                            View
+                          </Button>
+                          {assignment.status === 'Completed' && (
+                            <Button
+                              size="small"
+                              sx={{ color: '#8E24AA' }}
+                              onClick={() =>
+                                navigate('/dashboard/workshop', {
+                                  state: { assignment, responseTab: 1 },
+                                })
+                              }
+                            >
+                              <AutorenewOutlinedIcon sx={{ fontSize: 18, mr: 0.5 }} />
+                              Regenerate
+                            </Button>
+                          )}
+                          {assignment.status === 'In Progress' && (
+                            <Button
+                              size="small"
+                              sx={{ color: '#FFA726' }}
+                              onClick={() =>
+                                navigate('/dashboard/workshop', {
+                                  state: { assignment, responseTab: 1 },
+                                })
+                              }
+                            >
+                              <PlayArrowOutlinedIcon sx={{ fontSize: 18, mr: 0.5 }} />
+                              Resume
+                            </Button>
+                          )}
+                          <Button
+                            size="small"
+                            sx={{ color: '#D32F2F' }}
+                            onClick={() =>
+                              setAssignments(prev => prev.filter(a => a.id !== assignment.id))
+                            }
+                          >
+                            <DeleteOutlineIcon sx={{ fontSize: 18, mr: 0.5 }} />
+                            Delete
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </Box>
             <TablePagination
               component="div"
               rowsPerPageOptions={[]}
@@ -919,41 +947,86 @@ const DashboardHome: React.FC = () => {
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
               background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)',
               border: '2px solid #D32F2F',
-              minHeight: 340,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
             }}
           >
             <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2, color: 'black' }}>
               AssignmentAI Suggestions
             </Typography>
-            <Stack spacing={2}>
-              {suggestionAssignment && (
-                <Paper
-                  variant="outlined"
-                  sx={{
-                    p: 2,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 2,
-                    borderColor: '#8E24AA',
-                  }}
-                >
-                  <LightbulbIcon sx={{ color: '#8E24AA' }} />
-                  <Typography variant="body2">
-                    Get a head start on your{' '}
-                    <RouterLink
-                      to="/dashboard/assignments"
-                      state={{ name: suggestionAssignment.title }}
-                      style={{ fontWeight: 'bold', color: '#8E24AA', textDecoration: 'none' }}
-                      onMouseOver={e => (e.currentTarget.style.textDecoration = 'underline')}
-                      onMouseOut={e => (e.currentTarget.style.textDecoration = 'none')}
-                    >
-                      {suggestionAssignment.title}
-                    </RouterLink>{' '}
-                    assignment. It's marked as 'Not Started'.
-                  </Typography>
-                </Paper>
-              )}
-              {unusedCoreSubject && (
+            {assignments.length === 0 ? (
+              <Box
+                display="flex"
+                flexDirection="column"
+                alignItems="center"
+                justifyContent="center"
+                sx={{ mt: 6 }}
+              >
+                <LightbulbIcon sx={{ fontSize: 54, color: 'red', mb: 2, opacity: 0.5 }} />
+                <Typography variant="h5" color="text.secondary" gutterBottom>
+                  No Suggestions Yet
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Check back later for personalized AI suggestions!
+                </Typography>
+              </Box>
+            ) : (
+              <Stack spacing={2}>
+                {suggestionAssignment && (
+                  <Paper
+                    variant="outlined"
+                    sx={{
+                      p: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                      borderColor: '#8E24AA',
+                    }}
+                  >
+                    <LightbulbIcon sx={{ color: '#8E24AA' }} />
+                    <Typography variant="body2">
+                      Get a head start on your{' '}
+                      <RouterLink
+                        to="/dashboard/assignments"
+                        state={{ name: suggestionAssignment.title }}
+                        style={{ fontWeight: 'bold', color: '#8E24AA', textDecoration: 'none' }}
+                        onMouseOver={e => (e.currentTarget.style.textDecoration = 'underline')}
+                        onMouseOut={e => (e.currentTarget.style.textDecoration = 'none')}
+                      >
+                        {suggestionAssignment.title}
+                      </RouterLink>{' '}
+                      assignment. It's marked as 'Not Started'.
+                    </Typography>
+                  </Paper>
+                )}
+                {unusedCoreSubject && (
+                  <Paper
+                    variant="outlined"
+                    sx={{
+                      p: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                      borderColor: '#1976D2',
+                    }}
+                  >
+                    <ExploreIcon sx={{ color: '#1976D2' }} />
+                    <Typography variant="body2">
+                      Expand your knowledge. Why not start an assignment in{' '}
+                      <RouterLink
+                        to="/dashboard/assignments"
+                        state={{ subject: unusedCoreSubject }}
+                        style={{ fontWeight: 'bold', color: '#1976D2', textDecoration: 'none' }}
+                        onMouseOver={e => (e.currentTarget.style.textDecoration = 'underline')}
+                        onMouseOut={e => (e.currentTarget.style.textDecoration = 'none')}
+                      >
+                        {unusedCoreSubject}
+                      </RouterLink>
+                      ?
+                    </Typography>
+                  </Paper>
+                )}
                 <Paper
                   variant="outlined"
                   sx={{
@@ -964,60 +1037,21 @@ const DashboardHome: React.FC = () => {
                     borderColor: '#1976D2',
                   }}
                 >
-                  <ExploreIcon sx={{ color: '#1976D2' }} />
+                  <CreateIcon sx={{ color: '#1976D2' }} />
                   <Typography variant="body2">
-                    Expand your knowledge. Why not start an assignment in{' '}
+                    Want to improve your writing? The{' '}
                     <RouterLink
-                      to="/dashboard/assignments"
-                      state={{ subject: unusedCoreSubject }}
+                      to="/dashboard/workshop"
+                      state={{ responseTab: 1 }}
                       style={{ fontWeight: 'bold', color: '#1976D2', textDecoration: 'none' }}
                       onMouseOver={e => (e.currentTarget.style.textDecoration = 'underline')}
                       onMouseOut={e => (e.currentTarget.style.textDecoration = 'none')}
                     >
-                      {unusedCoreSubject}
-                    </RouterLink>
-                    ?
+                      Rewrite tool
+                    </RouterLink>{' '}
+                    can help refine your tone.
                   </Typography>
                 </Paper>
-              )}
-              <Paper
-                variant="outlined"
-                sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2, borderColor: '#1976D2' }}
-              >
-                <CreateIcon sx={{ color: '#1976D2' }} />
-                <Typography variant="body2">
-                  Want to improve your writing? The{' '}
-                  <RouterLink
-                    to="/dashboard/workshop"
-                    state={{ responseTab: 1 }}
-                    style={{ fontWeight: 'bold', color: '#1976D2', textDecoration: 'none' }}
-                    onMouseOver={e => (e.currentTarget.style.textDecoration = 'underline')}
-                    onMouseOut={e => (e.currentTarget.style.textDecoration = 'none')}
-                  >
-                    Rewrite tool
-                  </RouterLink>{' '}
-                  can help refine your tone.
-                </Typography>
-              </Paper>
-              <Paper
-                variant="outlined"
-                sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2, borderColor: '#388E3C' }}
-              >
-                <PsychologyIcon sx={{ color: '#388E3C' }} />
-                <Typography variant="body2">
-                  Stuck on a problem? Use the{' '}
-                  <RouterLink
-                    to="/dashboard/workshop"
-                    style={{ fontWeight: 'bold', color: '#388E3C', textDecoration: 'none' }}
-                    onMouseOver={e => (e.currentTarget.style.textDecoration = 'underline')}
-                    onMouseOut={e => (e.currentTarget.style.textDecoration = 'none')}
-                  >
-                    Workshop
-                  </RouterLink>{' '}
-                  to ask the AI for hints or explanations.
-                </Typography>
-              </Paper>
-              {mostFrequentSubject && (
                 <Paper
                   variant="outlined"
                   sx={{
@@ -1025,26 +1059,52 @@ const DashboardHome: React.FC = () => {
                     display: 'flex',
                     alignItems: 'center',
                     gap: 2,
-                    borderColor: '#FFA000',
+                    borderColor: '#388E3C',
                   }}
                 >
-                  <ArticleIcon sx={{ color: '#FFA000' }} />
+                  <PsychologyIcon sx={{ color: '#388E3C' }} />
                   <Typography variant="body2">
-                    You're an expert in {mostFrequentSubject}. Try{' '}
+                    Stuck on a problem? Use the{' '}
                     <RouterLink
                       to="/dashboard/workshop"
-                      state={{ responseTab: 3 }}
-                      style={{ fontWeight: 'bold', color: '#FFA000', textDecoration: 'none' }}
+                      style={{ fontWeight: 'bold', color: '#388E3C', textDecoration: 'none' }}
                       onMouseOver={e => (e.currentTarget.style.textDecoration = 'underline')}
                       onMouseOut={e => (e.currentTarget.style.textDecoration = 'none')}
                     >
-                      summarizing
+                      Workshop
                     </RouterLink>{' '}
-                    your notes to prepare for an exam.
+                    to ask the AI for hints or explanations.
                   </Typography>
                 </Paper>
-              )}
-            </Stack>
+                {mostFrequentSubject && (
+                  <Paper
+                    variant="outlined"
+                    sx={{
+                      p: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                      borderColor: '#FFA000',
+                    }}
+                  >
+                    <ArticleIcon sx={{ color: '#FFA000' }} />
+                    <Typography variant="body2">
+                      You're an expert in {mostFrequentSubject}. Try{' '}
+                      <RouterLink
+                        to="/dashboard/workshop"
+                        state={{ responseTab: 3 }}
+                        style={{ fontWeight: 'bold', color: '#FFA000', textDecoration: 'none' }}
+                        onMouseOver={e => (e.currentTarget.style.textDecoration = 'underline')}
+                        onMouseOut={e => (e.currentTarget.style.textDecoration = 'none')}
+                      >
+                        summarizing
+                      </RouterLink>{' '}
+                      your notes to prepare for an exam.
+                    </Typography>
+                  </Paper>
+                )}
+              </Stack>
+            )}
           </Paper>
         </Grid>
       </Grid>

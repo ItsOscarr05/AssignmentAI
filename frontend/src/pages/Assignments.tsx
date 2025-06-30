@@ -1,4 +1,5 @@
 import {
+  AssignmentOutlined as AssignmentOutlinedIcon,
   AutorenewOutlined as AutorenewIcon,
   CheckCircleOutline as CheckCircleIcon,
   Clear as ClearIcon,
@@ -656,56 +657,81 @@ const Assignments: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {displayedRows.map(assignment => (
-                <TableRow key={assignment.id}>
-                  <TableCell>
-                    <Box>
-                      <Typography variant="body1">{assignment.title}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {assignment.description}
+              {displayedRows.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} align="center" sx={{ p: 0 }}>
+                    <Box
+                      minHeight={530}
+                      display="flex"
+                      flexDirection="column"
+                      alignItems="center"
+                      justifyContent="center"
+                      height="100%"
+                    >
+                      <AssignmentOutlinedIcon
+                        sx={{ fontSize: 64, color: 'red', mb: 2, opacity: 0.5 }}
+                      />
+                      <Typography variant="h4" color="text.secondary" gutterBottom>
+                        No Assignments Yet
+                      </Typography>
+                      <Typography variant="body1" color="text.secondary">
+                        Start by uploading content or asking AI about an assignment.
                       </Typography>
                     </Box>
                   </TableCell>
-                  <TableCell>
-                    <Typography sx={{ color: getSubjectColor(assignment.subject) }}>
-                      {assignment.subject}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {getStatusIcon(assignment.status)}
-                      {assignment.status}
-                    </Box>
-                  </TableCell>
-                  <TableCell>{new Date(assignment.createdAt).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <IconButton onClick={e => handleMenuClick(e, assignment.id)} size="small">
-                      <MoreVertIcon />
-                    </IconButton>
-                    <Menu
-                      anchorEl={anchorEl}
-                      open={Boolean(anchorEl) && selectedAssignment === assignment.id}
-                      onClose={handleMenuClose}
-                    >
-                      <MenuItem onClick={() => handleViewAssignment(assignment.id)}>
-                        <VisibilityIcon sx={{ mr: 1 }} /> View Assignment
-                      </MenuItem>
-                      <MenuItem onClick={() => handleReopenInWorkshop(assignment.id)}>
-                        <RefreshIcon sx={{ mr: 1 }} /> Reopen in Workshop
-                      </MenuItem>
-                      <MenuItem onClick={() => handleEditAssignment(assignment.id)}>
-                        <EditIcon sx={{ mr: 1 }} /> Edit Title/Metadata
-                      </MenuItem>
-                      <MenuItem
-                        onClick={() => handleDeleteClick(assignment.id)}
-                        sx={{ color: 'error.main' }}
-                      >
-                        <DeleteIcon sx={{ mr: 1 }} /> Delete
-                      </MenuItem>
-                    </Menu>
-                  </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                displayedRows.map(assignment => (
+                  <TableRow key={assignment.id}>
+                    <TableCell>
+                      <Box>
+                        <Typography variant="body1">{assignment.title}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {assignment.description}
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Typography sx={{ color: getSubjectColor(assignment.subject) }}>
+                        {assignment.subject}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {getStatusIcon(assignment.status)}
+                        {assignment.status}
+                      </Box>
+                    </TableCell>
+                    <TableCell>{new Date(assignment.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <IconButton onClick={e => handleMenuClick(e, assignment.id)} size="small">
+                        <MoreVertIcon />
+                      </IconButton>
+                      <Menu
+                        anchorEl={anchorEl}
+                        open={Boolean(anchorEl) && selectedAssignment === assignment.id}
+                        onClose={handleMenuClose}
+                      >
+                        <MenuItem onClick={() => handleViewAssignment(assignment.id)}>
+                          <VisibilityIcon sx={{ mr: 1 }} /> View Assignment
+                        </MenuItem>
+                        <MenuItem onClick={() => handleReopenInWorkshop(assignment.id)}>
+                          <RefreshIcon sx={{ mr: 1 }} /> Reopen in Workshop
+                        </MenuItem>
+                        <MenuItem onClick={() => handleEditAssignment(assignment.id)}>
+                          <EditIcon sx={{ mr: 1 }} /> Edit Title/Metadata
+                        </MenuItem>
+                        <MenuItem
+                          onClick={() => handleDeleteClick(assignment.id)}
+                          sx={{ color: 'error.main' }}
+                        >
+                          <DeleteIcon sx={{ mr: 1 }} /> Delete
+                        </MenuItem>
+                      </Menu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
           <TablePagination

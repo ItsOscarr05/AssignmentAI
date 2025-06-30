@@ -40,8 +40,8 @@ import {
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useAssignments } from '../hooks/useApiQuery';
 import { useProfileStore } from '../services/ProfileService';
-import { recentAssignments } from './DashboardHome';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -207,6 +207,13 @@ const Profile: React.FC = () => {
     }
   }, [profile]);
 
+  // Fetch real assignments for the logged-in user
+  const {
+    data: assignments = [],
+    isLoading: assignmentsLoading,
+    error: assignmentsError,
+  } = useAssignments();
+
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
@@ -288,8 +295,7 @@ const Profile: React.FC = () => {
     setSnackbar(prev => ({ ...prev, open: false }));
   };
 
-  // Calculate stats from mock data (fallback to empty array if recentAssignments is undefined)
-  const assignments = Array.isArray(recentAssignments) ? recentAssignments : [];
+  // Calculate stats from real data
   const totalAssignments = assignments.length;
 
   // Loading state
@@ -327,8 +333,6 @@ const Profile: React.FC = () => {
       : 'John Doe'
     : 'John Doe';
   const displayEmail = profileData?.email || 'john.doe@example.com';
-  const displayInstitution = 'University of Technology'; // Fallback value
-  const displayLocation = 'United States'; // Full country name
   const memberSince =
     profileData && 'createdAt' in profileData && profileData.createdAt
       ? new Date((profileData as any).createdAt).toLocaleDateString(undefined, {
@@ -336,6 +340,11 @@ const Profile: React.FC = () => {
           month: 'long',
         })
       : undefined;
+
+  // Language label logic
+  const language =
+    (profileData as any)?.preferences?.language || (user as any)?.preferences?.language || '';
+  const languageLabel = !language || language === 'en' ? 'English' : language;
 
   return (
     <Box
@@ -544,7 +553,9 @@ const Profile: React.FC = () => {
                   <Tooltip title="Institution" arrow>
                     <Chip
                       icon={<SchoolOutlined aria-label="Institution icon" />}
-                      label={displayInstitution}
+                      label={
+                        (profileData as any)?.institution || (user as any)?.institution || 'No Data'
+                      }
                       aria-label="User institution"
                       sx={{
                         background: 'rgba(255,255,255,0.9)',
@@ -559,7 +570,7 @@ const Profile: React.FC = () => {
                   <Tooltip title="Country" arrow>
                     <Chip
                       icon={<LocationOnOutlined aria-label="Location icon" />}
-                      label={displayLocation}
+                      label={(profileData as any)?.location || (user as any)?.location || 'No Data'}
                       aria-label="User country"
                       sx={{
                         background: 'rgba(255,255,255,0.9)',
@@ -574,7 +585,7 @@ const Profile: React.FC = () => {
                   <Tooltip title="Language" arrow>
                     <Chip
                       icon={<LanguageOutlined aria-label="Language icon" />}
-                      label="English"
+                      label={languageLabel}
                       aria-label="User language"
                       sx={{
                         background: 'rgba(255,255,255,0.9)',
@@ -596,7 +607,17 @@ const Profile: React.FC = () => {
                   <StatCard
                     icon={<AssignmentOutlined />}
                     title="Total Assignments"
-                    value={totalAssignments}
+                    value={
+                      assignmentsLoading ? (
+                        <CircularProgress size={28} />
+                      ) : assignmentsError ? (
+                        'Error'
+                      ) : typeof totalAssignments === 'number' ? (
+                        totalAssignments
+                      ) : (
+                        0
+                      )
+                    }
                   />
                 </Grid>
                 <Grid item xs={12} sm={6} md={4}>

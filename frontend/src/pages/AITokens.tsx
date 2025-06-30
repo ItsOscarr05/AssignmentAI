@@ -1,5 +1,6 @@
 import {
   Autorenew as AutorenewIcon,
+  BarChartOutlined as BarChartOutlinedIcon,
   Psychology as BrainIcon,
   CalculateOutlined as CalculateIcon,
   CheckCircleOutline as CheckCircleIcon,
@@ -13,6 +14,7 @@ import {
   InfoOutlined as InfoIcon,
   OpenInNew as OpenInNewIcon,
   RateReviewOutlined as RateReviewIcon,
+  ReceiptLongOutlined as ReceiptLongOutlinedIcon,
   ReportOutlined as ReportIcon,
   SchoolOutlined as SchoolIcon,
   TerminalOutlined as TerminalIcon,
@@ -663,67 +665,86 @@ const AITokens: React.FC = () => {
                 LAST 30 DAYS
               </ToggleButton>
             </ToggleButtonGroup>
-            <Box sx={{ height: 300, width: '100%' }}>
-              <ResponsiveContainer>
-                <LineChart data={displayedUsageData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                  <XAxis dataKey="date" stroke="#d32f2f" />
-                  <YAxis
-                    stroke="#d32f2f"
-                    domain={range === '30' ? [0, tokenUsage.total] : undefined}
-                  />
-                  <RechartsTooltip
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        const point = payload[0].payload;
-                        const isRenewal = point.isRenewal;
-                        // Format date as 'MMM d, yyyy'
-                        const formattedDate = point.date
-                          ? new Date(
-                              point.date + ', ' + new Date().getFullYear()
-                            ).toLocaleDateString(undefined, {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                            })
-                          : '';
-                        return (
-                          <Paper sx={{ p: 2 }}>
-                            <Typography variant="subtitle2">{formattedDate}</Typography>
-                            <Typography variant="body2">
-                              +{point.used} tokens (used that day)
-                              <br />
-                              Cumulative: {point.tokens} tokens
-                              {point.description && (
-                                <>
-                                  <br />
-                                  Used for: {point.description.replace('Used for: ', '')}
-                                </>
-                              )}
-                              {isRenewal && (
-                                <>
-                                  <br />
-                                  <b style={{ color: 'red' }}>Subscription Renewal</b>
-                                </>
-                              )}
-                            </Typography>
-                          </Paper>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="tokens"
-                    stroke="#d32f2f"
-                    strokeWidth={3}
-                    dot={{ r: 6, stroke: '#82ca9d', strokeWidth: 2, fill: '#fff' }}
-                    activeDot={{ r: 8, fill: '#82ca9d' }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </Box>
+            {displayedUsageData.length === 0 ||
+            displayedUsageData.every(d => (d.used ?? 0) === 0) ? (
+              <Box
+                display="flex"
+                flexDirection="column"
+                alignItems="center"
+                justifyContent="center"
+                sx={{ minHeight: 220 }}
+              >
+                <BarChartOutlinedIcon sx={{ fontSize: 54, color: 'red', mb: 2, opacity: 0.5 }} />
+                <Typography variant="h5" color="text.secondary" gutterBottom>
+                  No Activity Yet
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Your usage history will appear here once you start using AI services.
+                </Typography>
+              </Box>
+            ) : (
+              <Box sx={{ height: 300, width: '100%' }}>
+                <ResponsiveContainer>
+                  <LineChart data={displayedUsageData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                    <XAxis dataKey="date" stroke="#d32f2f" />
+                    <YAxis
+                      stroke="#d32f2f"
+                      domain={range === '30' ? [0, tokenUsage.total] : undefined}
+                    />
+                    <RechartsTooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const point = payload[0].payload;
+                          const isRenewal = point.isRenewal;
+                          // Format date as 'MMM d, yyyy'
+                          const formattedDate = point.date
+                            ? new Date(
+                                point.date + ', ' + new Date().getFullYear()
+                              ).toLocaleDateString(undefined, {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              })
+                            : '';
+                          return (
+                            <Paper sx={{ p: 2 }}>
+                              <Typography variant="subtitle2">{formattedDate}</Typography>
+                              <Typography variant="body2">
+                                +{point.used} tokens (used that day)
+                                <br />
+                                Cumulative: {point.tokens} tokens
+                                {point.description && (
+                                  <>
+                                    <br />
+                                    Used for: {point.description.replace('Used for: ', '')}
+                                  </>
+                                )}
+                                {isRenewal && (
+                                  <>
+                                    <br />
+                                    <b style={{ color: 'red' }}>Subscription Renewal</b>
+                                  </>
+                                )}
+                              </Typography>
+                            </Paper>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="tokens"
+                      stroke="#d32f2f"
+                      strokeWidth={3}
+                      dot={{ r: 6, stroke: '#82ca9d', strokeWidth: 2, fill: '#fff' }}
+                      activeDot={{ r: 8, fill: '#82ca9d' }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </Box>
+            )}
           </Paper>
 
           <Paper sx={{ p: 2, mb: 2, ...redOutline }}>
@@ -892,93 +913,115 @@ const AITokens: React.FC = () => {
             <Typography variant="h6" gutterBottom sx={{ color: 'black', fontWeight: 'normal' }}>
               Recent Transactions
             </Typography>
-            <List>
-              {transactions
-                .filter(t => /purchase/i.test(t.description))
-                .slice(0, 3)
-                .map((transaction, index) => {
-                  const type = getTransactionType(transaction.description);
-                  const color = getTypeColor(type);
-                  return (
-                    <React.Fragment key={index}>
-                      <ListItem
-                        button
-                        onClick={e => handleTransactionClick(e, transaction)}
-                        sx={{
-                          pl: 0,
-                          position: 'relative',
-                          borderLeft: 'none',
-                          background: '#fff',
-                          border: `2px solid ${color}`,
-                          transition: 'box-shadow 0.2s',
-                          '&:hover': {
-                            boxShadow: '0 2px 8px rgba(211,47,47,0.08)',
-                          },
-                          mb: 1,
-                          borderRadius: 2,
-                          '::before': {
-                            content: '""',
-                            position: 'absolute',
-                            left: 0,
-                            top: 0,
-                            bottom: 0,
-                            width: '6px',
-                            borderTopLeftRadius: '6px',
-                            borderBottomLeftRadius: '6px',
-                            background:
-                              type === 'Purchase'
-                                ? '#388e3c'
-                                : type === 'Refund'
-                                ? '#1976d2'
-                                : '#d32f2f',
-                          },
-                        }}
-                      >
-                        <ListItemIcon sx={{ minWidth: 40, pl: 1 }}>
-                          {React.cloneElement(getTransactionIcon(transaction.description), {
-                            sx: { color, fontSize: 28 },
-                          })}
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={transaction.description}
-                          secondary={
-                            <>
-                              <Chip
-                                label={type}
-                                size="small"
-                                sx={{
-                                  backgroundColor: color,
-                                  color: '#fff',
-                                  fontWeight: 600,
-                                  mr: 1,
-                                }}
-                              />
-                              {formatDistanceToNow(parseISO(transaction.date), { addSuffix: true })}
-                            </>
-                          }
-                        />
-                        <Chip
-                          label={`${transaction.tokens > 0 ? '+' : ''}${transaction.tokens} tokens`}
-                          size="medium"
+            {transactions.length === 0 ? (
+              <Box
+                display="flex"
+                flexDirection="column"
+                alignItems="center"
+                justifyContent="center"
+                sx={{ minHeight: 120 }}
+              >
+                <ReceiptLongOutlinedIcon sx={{ fontSize: 48, color: 'red', mb: 2, opacity: 0.5 }} />
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                  No Transactions Yet
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Your recent transactions will appear here once you start using tokens.
+                </Typography>
+              </Box>
+            ) : (
+              <List>
+                {transactions
+                  .filter(t => /purchase/i.test(t.description))
+                  .slice(0, 3)
+                  .map((transaction, index) => {
+                    const type = getTransactionType(transaction.description);
+                    const color = getTypeColor(type);
+                    return (
+                      <React.Fragment key={index}>
+                        <ListItem
+                          button
+                          onClick={e => handleTransactionClick(e, transaction)}
                           sx={{
-                            backgroundColor: '#fff',
-                            color: color,
+                            pl: 0,
+                            position: 'relative',
+                            borderLeft: 'none',
+                            background: '#fff',
                             border: `2px solid ${color}`,
-                            fontWeight: 700,
-                            fontSize: '1rem',
+                            transition: 'box-shadow 0.2s',
+                            '&:hover': {
+                              boxShadow: '0 2px 8px rgba(211,47,47,0.08)',
+                            },
+                            mb: 1,
+                            borderRadius: 2,
+                            '::before': {
+                              content: '""',
+                              position: 'absolute',
+                              left: 0,
+                              top: 0,
+                              bottom: 0,
+                              width: '6px',
+                              borderTopLeftRadius: '6px',
+                              borderBottomLeftRadius: '6px',
+                              background:
+                                type === 'Purchase'
+                                  ? '#388e3c'
+                                  : type === 'Refund'
+                                  ? '#1976d2'
+                                  : '#d32f2f',
+                            },
                           }}
-                        />
-                      </ListItem>
-                      {index <
-                        Math.min(
-                          3,
-                          transactions.filter(t => /purchase/i.test(t.description)).length
-                        ) -
-                          1 && <Divider sx={{ borderColor: color, opacity: 0.5, ml: 1.5 }} />}
-                    </React.Fragment>
-                  );
-                })}
-            </List>
+                        >
+                          <ListItemIcon sx={{ minWidth: 40, pl: 1 }}>
+                            {React.cloneElement(getTransactionIcon(transaction.description), {
+                              sx: { color, fontSize: 28 },
+                            })}
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={transaction.description}
+                            secondary={
+                              <>
+                                <Chip
+                                  label={type}
+                                  size="small"
+                                  sx={{
+                                    backgroundColor: color,
+                                    color: '#fff',
+                                    fontWeight: 600,
+                                    mr: 1,
+                                  }}
+                                />
+                                {formatDistanceToNow(parseISO(transaction.date), {
+                                  addSuffix: true,
+                                })}
+                              </>
+                            }
+                          />
+                          <Chip
+                            label={`${transaction.tokens > 0 ? '+' : ''}${
+                              transaction.tokens
+                            } tokens`}
+                            size="medium"
+                            sx={{
+                              backgroundColor: '#fff',
+                              color: color,
+                              border: `2px solid ${color}`,
+                              fontWeight: 700,
+                              fontSize: '1rem',
+                            }}
+                          />
+                        </ListItem>
+                        {index <
+                          Math.min(
+                            3,
+                            transactions.filter(t => /purchase/i.test(t.description)).length
+                          ) -
+                            1 && <Divider sx={{ borderColor: color, opacity: 0.5, ml: 1.5 }} />}
+                      </React.Fragment>
+                    );
+                  })}
+              </List>
+            )}
             {transactions.filter(t => /purchase/i.test(t.description)).length > 3 && (
               <Button
                 variant="outlined"

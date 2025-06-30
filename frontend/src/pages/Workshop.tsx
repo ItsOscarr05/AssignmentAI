@@ -1,5 +1,6 @@
 import {
   Add as AddIcon,
+  BarChartOutlined as BarChartOutlinedIcon,
   Chat as ChatIcon,
   ChatOutlined as ChatOutlinedIcon,
   ContentCopy as ContentCopyIcon,
@@ -8,6 +9,7 @@ import {
   EditOutlined as EditOutlinedIcon,
   FormatListBulleted as FormatListBulletedIcon,
   History as HistoryIcon,
+  HistoryOutlined as HistoryOutlinedIcon,
   InfoOutlined as InfoOutlinedIcon,
   LinkOutlined as LinkOutlinedIcon,
   PushPin as PushPinIcon,
@@ -727,107 +729,130 @@ const Workshop: React.FC = () => {
                 />
               </Tooltip>
             </Box>
-            <Box sx={{ height: 350 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={activityData}
-                  margin={{
-                    top: 20,
-                    right: 30,
-                    left: 20,
-                    bottom: 20,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis
-                    dataKey="date"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fontWeight: 500 }}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fontWeight: 500 }}
-                  />
-                  <RechartsTooltip
-                    content={CustomActivityTooltip}
-                    cursor={{ fill: 'rgba(0,0,0,0.05)' }}
-                  />
-                  <Legend
-                    onClick={e => {
-                      if (e.dataKey) {
-                        const keyAsString = String(e.dataKey);
-                        setSelectedArea(prev => (prev === keyAsString ? null : keyAsString));
-                      }
+            {activityData.length === 0 ||
+            activityData.every(d =>
+              Object.values(d)
+                .slice(1)
+                .every(v => v === 0)
+            ) ? (
+              <Box
+                display="flex"
+                flexDirection="column"
+                alignItems="center"
+                justifyContent="center"
+                sx={{ minHeight: 300 }}
+              >
+                <BarChartOutlinedIcon sx={{ fontSize: 64, color: 'red', mb: 2, opacity: 0.5 }} />
+                <Typography variant="h5" color="text.secondary" gutterBottom>
+                  No Activity Yet
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Your weekly activity will appear here once you start using the AI Workshop.
+                </Typography>
+              </Box>
+            ) : (
+              <Box sx={{ height: 350 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={activityData}
+                    margin={{
+                      top: 20,
+                      right: 30,
+                      left: 20,
+                      bottom: 20,
                     }}
-                    wrapperStyle={{ paddingTop: 10 }}
-                    formatter={renderLegendText}
-                  />
-                  <Customized component={VerticalDividers} />
-                  <Bar
-                    dataKey="chats"
-                    stroke="#E53935"
-                    strokeWidth={2}
-                    fill="#E53935"
-                    fillOpacity={selectedArea ? (selectedArea === 'chats' ? 0.8 : 0.15) : 0.4}
-                    strokeOpacity={selectedArea ? (selectedArea === 'chats' ? 1 : 0.3) : 1}
-                    name="Chats"
-                    radius={[4, 4, 0, 0]}
-                  />
-                  <Bar
-                    dataKey="summarize"
-                    stroke="#FB8C00"
-                    strokeWidth={2}
-                    fill="#FB8C00"
-                    fillOpacity={selectedArea ? (selectedArea === 'summarize' ? 0.8 : 0.15) : 0.4}
-                    strokeOpacity={selectedArea ? (selectedArea === 'summarize' ? 1 : 0.3) : 1}
-                    name="Summarize"
-                    radius={[4, 4, 0, 0]}
-                  />
-                  <Bar
-                    dataKey="extract"
-                    stroke="#FDD835"
-                    strokeWidth={2}
-                    fill="#FDD835"
-                    fillOpacity={selectedArea ? (selectedArea === 'extract' ? 0.8 : 0.15) : 0.4}
-                    strokeOpacity={selectedArea ? (selectedArea === 'extract' ? 1 : 0.3) : 1}
-                    name="Extract"
-                    radius={[4, 4, 0, 0]}
-                  />
-                  <Bar
-                    dataKey="links"
-                    stroke="#43A047"
-                    strokeWidth={2}
-                    fill="#43A047"
-                    fillOpacity={selectedArea ? (selectedArea === 'links' ? 0.8 : 0.15) : 0.4}
-                    strokeOpacity={selectedArea ? (selectedArea === 'links' ? 1 : 0.3) : 1}
-                    name="Links"
-                    radius={[4, 4, 0, 0]}
-                  />
-                  <Bar
-                    dataKey="rewrite"
-                    stroke="#1E88E5"
-                    strokeWidth={2}
-                    fill="#1E88E5"
-                    fillOpacity={selectedArea ? (selectedArea === 'rewrite' ? 0.8 : 0.15) : 0.4}
-                    strokeOpacity={selectedArea ? (selectedArea === 'rewrite' ? 1 : 0.3) : 1}
-                    name="Rewrite"
-                    radius={[4, 4, 0, 0]}
-                  />
-                  <Bar
-                    dataKey="files"
-                    stroke="#8E24AA"
-                    strokeWidth={2}
-                    fill="#8E24AA"
-                    fillOpacity={selectedArea ? (selectedArea === 'files' ? 0.8 : 0.15) : 0.4}
-                    strokeOpacity={selectedArea ? (selectedArea === 'files' ? 1 : 0.3) : 1}
-                    name="Files"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </Box>
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis
+                      dataKey="date"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12, fontWeight: 500 }}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12, fontWeight: 500 }}
+                    />
+                    <RechartsTooltip
+                      content={CustomActivityTooltip}
+                      cursor={{ fill: 'rgba(0,0,0,0.05)' }}
+                    />
+                    <Legend
+                      onClick={e => {
+                        if (e.dataKey) {
+                          const keyAsString = String(e.dataKey);
+                          setSelectedArea(prev => (prev === keyAsString ? null : keyAsString));
+                        }
+                      }}
+                      wrapperStyle={{ paddingTop: 10 }}
+                      formatter={renderLegendText}
+                    />
+                    <Customized component={VerticalDividers} />
+                    <Bar
+                      dataKey="chats"
+                      stroke="#E53935"
+                      strokeWidth={2}
+                      fill="#E53935"
+                      fillOpacity={selectedArea ? (selectedArea === 'chats' ? 0.8 : 0.15) : 0.4}
+                      strokeOpacity={selectedArea ? (selectedArea === 'chats' ? 1 : 0.3) : 1}
+                      name="Chats"
+                      radius={[4, 4, 0, 0]}
+                    />
+                    <Bar
+                      dataKey="summarize"
+                      stroke="#FB8C00"
+                      strokeWidth={2}
+                      fill="#FB8C00"
+                      fillOpacity={selectedArea ? (selectedArea === 'summarize' ? 0.8 : 0.15) : 0.4}
+                      strokeOpacity={selectedArea ? (selectedArea === 'summarize' ? 1 : 0.3) : 1}
+                      name="Summarize"
+                      radius={[4, 4, 0, 0]}
+                    />
+                    <Bar
+                      dataKey="extract"
+                      stroke="#FDD835"
+                      strokeWidth={2}
+                      fill="#FDD835"
+                      fillOpacity={selectedArea ? (selectedArea === 'extract' ? 0.8 : 0.15) : 0.4}
+                      strokeOpacity={selectedArea ? (selectedArea === 'extract' ? 1 : 0.3) : 1}
+                      name="Extract"
+                      radius={[4, 4, 0, 0]}
+                    />
+                    <Bar
+                      dataKey="links"
+                      stroke="#43A047"
+                      strokeWidth={2}
+                      fill="#43A047"
+                      fillOpacity={selectedArea ? (selectedArea === 'links' ? 0.8 : 0.15) : 0.4}
+                      strokeOpacity={selectedArea ? (selectedArea === 'links' ? 1 : 0.3) : 1}
+                      name="Links"
+                      radius={[4, 4, 0, 0]}
+                    />
+                    <Bar
+                      dataKey="rewrite"
+                      stroke="#1E88E5"
+                      strokeWidth={2}
+                      fill="#1E88E5"
+                      fillOpacity={selectedArea ? (selectedArea === 'rewrite' ? 0.8 : 0.15) : 0.4}
+                      strokeOpacity={selectedArea ? (selectedArea === 'rewrite' ? 1 : 0.3) : 1}
+                      name="Rewrite"
+                      radius={[4, 4, 0, 0]}
+                    />
+                    <Bar
+                      dataKey="files"
+                      stroke="#8E24AA"
+                      strokeWidth={2}
+                      fill="#8E24AA"
+                      fillOpacity={selectedArea ? (selectedArea === 'files' ? 0.8 : 0.15) : 0.4}
+                      strokeOpacity={selectedArea ? (selectedArea === 'files' ? 1 : 0.3) : 1}
+                      name="Files"
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Box>
+            )}
           </Paper>
 
           {/* Upload Content and Input Section */}
@@ -1327,46 +1352,68 @@ const Workshop: React.FC = () => {
               <InfoOutlinedIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
             </Tooltip>
           </Box>
-          <motion.div layout>
-            <List>
-              {history
-                .slice()
-                .sort((a, b) => Number(b.isPinned) - Number(a.isPinned))
-                .map(item => (
-                  <motion.div layout key={item.id}>
-                    <ListItem
-                      button
-                      onClick={() => handlePinHistory(item.id)}
-                      sx={{ border: '1px solid red', borderRadius: '8px', mb: 1 }}
-                    >
-                      <ListItemIcon>
-                        {React.cloneElement(getHistoryIcon(item.type), { sx: { color: 'red' } })}
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={item.title}
-                        secondary={item.date.toLocaleString()}
-                        primaryTypographyProps={{
-                          style: {
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                          },
-                        }}
-                      />
-                      <IconButton
-                        size="small"
-                        onClick={e => {
-                          e.stopPropagation();
-                          handlePinHistory(item.id);
-                        }}
+          {history.length === 0 ? (
+            <Box
+              display="flex"
+              flexDirection="column"
+              alignItems="center"
+              justifyContent="center"
+              sx={{ mt: 8 }}
+            >
+              <HistoryOutlinedIcon sx={{ fontSize: 54, color: 'red', mb: 2, opacity: 0.5 }} />
+              <Typography variant="h5" color="text.secondary" gutterBottom>
+                No History Yet
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Your recent activity will appear here as you use the Workshop.
+              </Typography>
+            </Box>
+          ) : (
+            <motion.div layout>
+              <List>
+                {history
+                  .slice()
+                  .sort((a, b) => Number(b.isPinned) - Number(a.isPinned))
+                  .map(item => (
+                    <motion.div layout key={item.id}>
+                      <ListItem
+                        button
+                        onClick={() => handlePinHistory(item.id)}
+                        sx={{ border: '1px solid red', borderRadius: '8px', mb: 1 }}
                       >
-                        {item.isPinned ? <PushPinIcon color="primary" /> : <PushPinOutlinedIcon />}
-                      </IconButton>
-                    </ListItem>
-                  </motion.div>
-                ))}
-            </List>
-          </motion.div>
+                        <ListItemIcon>
+                          {React.cloneElement(getHistoryIcon(item.type), { sx: { color: 'red' } })}
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={item.title}
+                          secondary={item.date.toLocaleString()}
+                          primaryTypographyProps={{
+                            style: {
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                            },
+                          }}
+                        />
+                        <IconButton
+                          size="small"
+                          onClick={e => {
+                            e.stopPropagation();
+                            handlePinHistory(item.id);
+                          }}
+                        >
+                          {item.isPinned ? (
+                            <PushPinIcon color="primary" />
+                          ) : (
+                            <PushPinOutlinedIcon />
+                          )}
+                        </IconButton>
+                      </ListItem>
+                    </motion.div>
+                  ))}
+              </List>
+            </motion.div>
+          )}
         </Box>
       </Drawer>
 
