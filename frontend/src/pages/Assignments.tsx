@@ -196,23 +196,25 @@ const Assignments: React.FC = () => {
     }
   };
 
+  // Define fetchAssignments only once, inside the component
+  const fetchAssignments = async () => {
+    try {
+      const data = await assignments.getAll();
+      setAssignmentsList(
+        data.map((a: any) => ({
+          ...a,
+          subject: a.subject || (a.title ? mapToCoreSubject(a.title) : 'Unknown'),
+          description: a.description || '',
+          attachments: a.attachments || [],
+        }))
+      );
+    } catch (error) {
+      toast.error('Failed to fetch assignments.');
+    }
+  };
+
   useEffect(() => {
     if (!isMockUser) {
-      const fetchAssignments = async () => {
-        try {
-          const data = await assignments.getAll();
-          setAssignmentsList(
-            data.map((a: any) => ({
-              ...a,
-              subject: a.subject || (a.title ? mapToCoreSubject(a.title) : 'Unknown'),
-              description: a.description || '',
-              attachments: a.attachments || [],
-            }))
-          );
-        } catch (error) {
-          toast.error('Failed to fetch assignments.');
-        }
-      };
       fetchAssignments();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

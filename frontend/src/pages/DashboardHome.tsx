@@ -169,10 +169,12 @@ for (let a of rawExtraAssignments) {
   }
 }
 // Remove helper property
-const extraAssignments = rawExtraAssignments.map(({ _createdAtDate, ...rest }) => rest);
+const extraAssignments: Assignment[] = rawExtraAssignments.map(
+  ({ _createdAtDate, ...rest }) => rest as Assignment
+);
 
 // Existing assignments (for demo)
-const baseAssignments = [
+const baseAssignments: Assignment[] = [
   {
     id: '1',
     title: 'Math Homework',
@@ -180,6 +182,7 @@ const baseAssignments = [
     createdAt: '2024-03-15T10:00:00Z',
     wordCount: 1200,
     tokensUsed: 800,
+    subject: 'Math',
   },
   {
     id: '2',
@@ -188,6 +191,7 @@ const baseAssignments = [
     createdAt: '2024-03-16T12:00:00Z',
     wordCount: 1800,
     tokensUsed: 1200,
+    subject: 'Literature',
   },
   {
     id: '3',
@@ -196,6 +200,7 @@ const baseAssignments = [
     createdAt: '2024-03-17T09:00:00Z',
     wordCount: 950,
     tokensUsed: 600,
+    subject: 'Science',
   },
   {
     id: '4',
@@ -204,6 +209,7 @@ const baseAssignments = [
     createdAt: '2024-03-18T14:00:00Z',
     wordCount: 1400,
     tokensUsed: 900,
+    subject: 'History',
   },
   {
     id: '5',
@@ -212,6 +218,7 @@ const baseAssignments = [
     createdAt: '2024-03-19T11:00:00Z',
     wordCount: 700,
     tokensUsed: 400,
+    subject: 'Language',
   },
   {
     id: '6',
@@ -220,6 +227,7 @@ const baseAssignments = [
     createdAt: '2024-03-20T13:00:00Z',
     wordCount: 1100,
     tokensUsed: 700,
+    subject: 'Technology',
   },
   {
     id: '7',
@@ -228,6 +236,7 @@ const baseAssignments = [
     createdAt: '2024-03-21T15:00:00Z',
     wordCount: 1600,
     tokensUsed: 1000,
+    subject: 'Business',
   },
   {
     id: '8',
@@ -236,6 +245,7 @@ const baseAssignments = [
     createdAt: '2024-03-22T16:00:00Z',
     wordCount: 800,
     tokensUsed: 500,
+    subject: 'Arts',
   },
   {
     id: '9',
@@ -244,6 +254,7 @@ const baseAssignments = [
     createdAt: '2024-03-23T08:00:00Z',
     wordCount: 600,
     tokensUsed: 350,
+    subject: 'Fitness',
   },
   {
     id: '10',
@@ -252,11 +263,18 @@ const baseAssignments = [
     createdAt: '2024-03-24T17:00:00Z',
     wordCount: 1300,
     tokensUsed: 850,
+    subject: 'Career & Technical Ed',
   },
 ];
 
 // Combine base and extra assignments for a seasoned user
 export const recentAssignments = [...baseAssignments, ...extraAssignments];
+
+// Ensure all mock assignments have a subject property
+const recentAssignmentsWithSubject = recentAssignments.map(a => ({
+  ...a,
+  subject: a.subject || mapToCoreSubject(a.title),
+}));
 
 const DashboardHome: React.FC = () => {
   const { user, isMockUser } = useAuth();
@@ -282,12 +300,12 @@ const DashboardHome: React.FC = () => {
             : [];
           setAssignments(data);
         })
-        .catch(err => {
+        .catch(() => {
           setError('Failed to fetch assignments.');
           setAssignments([]);
         });
     } else {
-      setAssignments([...recentAssignments]);
+      setAssignments([...recentAssignmentsWithSubject]);
     }
   }, [isMockUser]);
 
@@ -349,7 +367,7 @@ const DashboardHome: React.FC = () => {
   const usedSubjects = useMemo(
     () =>
       isMockUser
-        ? new Set(recentAssignments.map(a => a.subject || mapToCoreSubject(a.title)))
+        ? new Set(recentAssignmentsWithSubject.map(a => a.subject || mapToCoreSubject(a.title)))
         : new Set(assignments.map(a => a.subject || mapToCoreSubject(a.title))),
     [isMockUser, assignments]
   );
@@ -359,7 +377,7 @@ const DashboardHome: React.FC = () => {
   );
 
   const mostFrequentSubject = useMemo(() => {
-    const source = isMockUser ? recentAssignments : assignments;
+    const source = isMockUser ? recentAssignmentsWithSubject : assignments;
     const subjectFrequency = source.reduce((acc, curr) => {
       const core = curr.subject || mapToCoreSubject(curr.title);
       if (core !== 'Other') {
@@ -389,7 +407,7 @@ const DashboardHome: React.FC = () => {
 
   const pieChartData = useMemo(() => {
     const now = dayjs();
-    const source = isMockUser ? recentAssignments : assignments;
+    const source = isMockUser ? recentAssignmentsWithSubject : assignments;
     const filteredAssignments =
       distributionFilter === 'total'
         ? source
