@@ -8,12 +8,14 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isMockUser: boolean;
   login: (provider: string) => Promise<void>;
   handleCallback: (code: string, state: string) => Promise<void>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
   mockLogin: () => void;
+  testLogin: (email: string, password: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
 }
 
@@ -30,6 +32,7 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMockUser, setIsMockUser] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const authService = AuthService.getInstance();
@@ -41,8 +44,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
+    const storedIsMockUser = localStorage.getItem('isMockUser') === 'true';
+
     if (storedUser) {
       setUser(JSON.parse(storedUser));
+      setIsMockUser(storedIsMockUser);
     }
     setIsLoading(false);
   }, []);
@@ -60,6 +66,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const userData = await authService.handleCallback(code, state);
       setUser(userData);
+      setIsMockUser(false);
+      localStorage.setItem('isMockUser', 'false');
     } catch (error) {
       console.error('Callback handling failed:', error);
       throw error;
@@ -69,6 +77,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     authService.logout();
     setUser(null);
+    setIsMockUser(false);
+    localStorage.removeItem('user');
+    localStorage.removeItem('isMockUser');
     navigate('/login');
   };
 
@@ -96,9 +107,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const mockLogin = () => {
     console.log('Mock login called');
     const mockUser: User = {
-      id: '1',
-      email: 'test@example.com',
-      name: 'Test User',
+      id: 'mock-1',
+      email: 'mock@example.com',
+      name: 'Mock User',
       role: 'student',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -116,9 +127,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       },
     };
     setUser(mockUser);
+    setIsMockUser(true);
     localStorage.setItem('user', JSON.stringify(mockUser));
+    localStorage.setItem('isMockUser', 'true');
     console.log('Mock user set:', mockUser);
     navigate('/dashboard');
+  };
+
+  const testLogin = async (email: string, password: string) => {
+    if (process.env.NODE_ENV === 'production') {
+      // In production, call your real backend authentication API
+      try {
+        const response = await api.post('/auth/login', { email, password });
+        const realUser = response.data.user;
+        setUser(realUser);
+        setIsMockUser(false);
+        localStorage.setItem('user', JSON.stringify(realUser));
+        localStorage.setItem('isMockUser', 'false');
+        navigate('/dashboard');
+      } catch (error) {
+        throw error;
+      }
+    } else {
+      // In development, return a test user
+      const testUser = {
+        id: 'test-1',
+        email,
+        name: 'Test User',
+        firstName: 'Test',
+        lastName: 'User',
+        role: 'student',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        preferences: {
+          theme: 'light',
+          notifications: true,
+          language: 'en',
+        },
+        profile: {
+          avatar: 'https://via.placeholder.com/150',
+          bio: 'Test user with real data',
+          location: 'Test Location',
+          education: 'Test Education',
+          interests: ['Testing'],
+        },
+      };
+      setUser(testUser);
+      setIsMockUser(false);
+      localStorage.setItem('user', JSON.stringify(testUser));
+      localStorage.setItem('isMockUser', 'false');
+      navigate('/dashboard');
+    }
   };
 
   const resetPassword = async (email: string) => {
@@ -136,12 +195,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     isAuthenticated: !!user,
     isLoading,
+    isMockUser,
     login,
     handleCallback,
     logout,
     updateUser,
     register,
     mockLogin,
+    testLogin,
     resetPassword,
   };
 

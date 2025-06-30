@@ -40,11 +40,23 @@ import {
   Typography,
 } from '@mui/material';
 import dayjs from 'dayjs';
-import React, { Suspense, useMemo, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import DashboardPieChart from '../components/dashboard/DashboardPieChart';
 import { useAuth } from '../contexts/AuthContext';
+import { api } from '../services/api';
 import { mapToCoreSubject } from '../services/subjectService';
+
+// Assignment interface to fix TypeScript errors
+interface Assignment {
+  id: string;
+  title: string;
+  status: string;
+  createdAt: string;
+  wordCount: number;
+  tokensUsed: number;
+  subject?: string;
+}
 
 // Helper for random selection
 function randomFrom<T>(arr: T[]): T {
@@ -246,24 +258,46 @@ const baseAssignments = [
 // Combine base and extra assignments for a seasoned user
 export const recentAssignments = [...baseAssignments, ...extraAssignments];
 
-// Calculate AI Activity & Insights stats from mock data
-const assignmentsGenerated = recentAssignments.length;
-const assignmentsCompletedCount = recentAssignments.filter(a => a.status === 'Completed').length;
-const monthlyTokenUsage = recentAssignments
-  .filter(a => dayjs(a.createdAt).isSame(dayjs(), 'month'))
-  .reduce((sum, a) => sum + (a.tokensUsed || 0), 0);
-const lifetimeTokenUsage = recentAssignments.reduce((sum, a) => sum + (a.tokensUsed || 0), 0);
-
 const DashboardHome: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isMockUser } = useAuth();
   const navigate = useNavigate();
-  const [error] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'in progress' | 'completed' | 'not started'>('all');
   const [page, setPage] = useState(0);
   const [distributionFilter, setDistributionFilter] = useState('total');
-  const [assignments, setAssignments] = useState([...recentAssignments]);
-  const [selectedAssignment, setSelectedAssignment] = useState<any>(null);
-  const [viewAssignment, setViewAssignment] = useState<any>(null);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
+  const [viewAssignment, setViewAssignment] = useState<Assignment | null>(null);
+
+  // Fetch real assignments if not mock user
+  useEffect(() => {
+    if (!isMockUser) {
+      api
+        .get('/assignments')
+        .then(res => {
+          const data = Array.isArray(res.data)
+            ? res.data
+            : Array.isArray(res.data.assignments)
+            ? res.data.assignments
+            : [];
+          setAssignments(data);
+        })
+        .catch(err => {
+          setError('Failed to fetch assignments.');
+          setAssignments([]);
+        });
+    } else {
+      setAssignments([...recentAssignments]);
+    }
+  }, [isMockUser]);
+
+  // Calculate stats from assignments
+  const assignmentsGenerated = assignments.length;
+  const assignmentsCompletedCount = assignments.filter(a => a.status === 'Completed').length;
+  const monthlyTokenUsage = assignments
+    .filter(a => dayjs(a.createdAt).isSame(dayjs(), 'month'))
+    .reduce((sum, a) => sum + (a.tokensUsed || 0), 0);
+  const lifetimeTokenUsage = assignments.reduce((sum, a) => sum + (a.tokensUsed || 0), 0);
 
   const stats = [
     {
@@ -293,7 +327,7 @@ const DashboardHome: React.FC = () => {
 
   const notStartedAssignments = useMemo(
     () =>
-      recentAssignments
+      assignments
         .filter(a => a.status === 'Not Started')
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
     []
@@ -313,8 +347,11 @@ const DashboardHome: React.FC = () => {
     'Music & Arts',
   ];
   const usedSubjects = useMemo(
-    () => new Set(recentAssignments.map(a => mapToCoreSubject(a.title))),
-    []
+    () =>
+      isMockUser
+        ? new Set(recentAssignments.map(a => a.subject || mapToCoreSubject(a.title)))
+        : new Set(assignments.map(a => a.subject || mapToCoreSubject(a.title))),
+    [isMockUser, assignments]
   );
   const unusedCoreSubject = useMemo(
     () => coreSubjects.find(s => !usedSubjects.has(s)),
@@ -322,8 +359,9 @@ const DashboardHome: React.FC = () => {
   );
 
   const mostFrequentSubject = useMemo(() => {
-    const subjectFrequency = recentAssignments.reduce((acc, curr) => {
-      const core = mapToCoreSubject(curr.title);
+    const source = isMockUser ? recentAssignments : assignments;
+    const subjectFrequency = source.reduce((acc, curr) => {
+      const core = curr.subject || mapToCoreSubject(curr.title);
       if (core !== 'Other') {
         acc[core] = (acc[core] || 0) + 1;
       }
@@ -333,7 +371,7 @@ const DashboardHome: React.FC = () => {
     if (Object.keys(subjectFrequency).length === 0) return null;
 
     return Object.entries(subjectFrequency).sort((a, b) => b[1] - a[1])[0][0];
-  }, []);
+  }, [isMockUser, assignments]);
 
   // Rainbow order for pie chart (counterclockwise, starting with red)
   const rainbowOrder = [
@@ -351,11 +389,11 @@ const DashboardHome: React.FC = () => {
 
   const pieChartData = useMemo(() => {
     const now = dayjs();
-
+    const source = isMockUser ? recentAssignments : assignments;
     const filteredAssignments =
       distributionFilter === 'total'
-        ? recentAssignments
-        : recentAssignments.filter(a => {
+        ? source
+        : source.filter(a => {
             const assignmentDate = dayjs(a.createdAt);
             if (distributionFilter === 'daily') return now.isSame(assignmentDate, 'day');
             if (distributionFilter === 'weekly') return now.isSame(assignmentDate, 'week');
@@ -366,7 +404,7 @@ const DashboardHome: React.FC = () => {
 
     const subjectCounts: Record<string, number> = {};
     filteredAssignments.forEach(assignment => {
-      const core = mapToCoreSubject(assignment.title);
+      const core = assignment.subject || mapToCoreSubject(assignment.title);
       if (rainbowOrder.includes(core)) {
         subjectCounts[core] = (subjectCounts[core] || 0) + 1;
       }
@@ -375,7 +413,7 @@ const DashboardHome: React.FC = () => {
     return rainbowOrder
       .filter(core => subjectCounts[core])
       .map(core => ({ name: core, value: subjectCounts[core] }));
-  }, [distributionFilter]);
+  }, [distributionFilter, isMockUser, assignments]);
 
   // Sort assignments newest to oldest
   const sortedAssignments = [...assignments].sort(

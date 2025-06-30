@@ -32,7 +32,7 @@ const Login: React.FC = () => {
   const [isLoading] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
-  const { login, mockLogin } = useAuth();
+  const { testLogin, mockLogin, user } = useAuth();
   const navigate = useNavigate();
   const theme = useTheme();
 
@@ -65,7 +65,7 @@ const Login: React.FC = () => {
     e.preventDefault();
     if (validateForm()) {
       try {
-        await login('credentials');
+        await testLogin(email, password);
         navigate('/dashboard');
       } catch (error) {
         setError('Invalid email or password');
@@ -219,7 +219,9 @@ const Login: React.FC = () => {
                   color: 'text.primary',
                 }}
               >
-                Welcome Back
+                {user && (user.firstName || (user.name && user.name.split(' ')[0]))
+                  ? `Welcome Back, ${user.firstName || user.name.split(' ')[0]}`
+                  : 'Welcome Back'}
               </Typography>
               <Typography
                 color="text.secondary"

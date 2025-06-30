@@ -60,6 +60,7 @@ import {
 } from 'recharts';
 import WorkshopFileUpload from '../components/workshop/WorkshopFileUpload';
 import WorkshopLiveModal from '../components/workshop/WorkshopLiveModal';
+import { useAuth } from '../contexts/AuthContext';
 import { useTokenUsage } from '../hooks/useTokenUsage';
 import { useWorkshopStore } from '../services/WorkshopService';
 import { recentAssignments } from './DashboardHome';
@@ -177,6 +178,7 @@ const VerticalDividers = ({ xAxisMap, yAxisMap }: any) => {
 const Workshop: React.FC = () => {
   const theme = useTheme();
   const location = useLocation();
+  const { isMockUser } = useAuth();
   const {
     generateContent,
     history: workshopHistory,
@@ -194,7 +196,7 @@ const Workshop: React.FC = () => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
-  const [activityData] = useState<ActivityData[]>(initialActivityData);
+  const [activityData] = useState<ActivityData[]>(isMockUser ? initialActivityData : []);
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
   const [animatedPercent, setAnimatedPercent] = useState(0);
   const [isTokenChartHovered, setIsTokenChartHovered] = useState(false);
@@ -261,18 +263,22 @@ const Workshop: React.FC = () => {
 
   useEffect(() => {
     // Use the 5 most recent assignments from mock data for history
-    const sorted = [...recentAssignments].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-    const historyItems: HistoryItem[] = sorted.slice(0, 5).map(assignment => ({
-      id: assignment.id,
-      title: assignment.title,
-      date: new Date(assignment.createdAt),
-      type: 'file',
-      isPinned: false,
-    }));
-    setHistory(historyItems);
-  }, []);
+    if (isMockUser) {
+      const sorted = [...recentAssignments].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      const historyItems: HistoryItem[] = sorted.slice(0, 5).map(assignment => ({
+        id: assignment.id,
+        title: assignment.title,
+        date: new Date(assignment.createdAt),
+        type: 'file',
+        isPinned: false,
+      }));
+      setHistory(historyItems);
+    } else {
+      setHistory([]);
+    }
+  }, [isMockUser]);
 
   useEffect(() => {
     if (responseTab === 1 && rewriteTabRef.current) {

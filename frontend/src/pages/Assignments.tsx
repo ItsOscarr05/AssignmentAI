@@ -49,6 +49,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import AssignmentEditDialog from '../components/assignments/AssignmentEdit';
+import { useAuth } from '../contexts/AuthContext';
 import { assignments } from '../services/api/assignments';
 import { mapToCoreSubject } from '../services/subjectService';
 import { recentAssignments } from './DashboardHome';
@@ -72,6 +73,7 @@ const Assignments: React.FC = () => {
   const theme = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
+  const { isMockUser } = useAuth();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -117,12 +119,14 @@ const Assignments: React.FC = () => {
   }, [location.state]);
 
   const [assignmentsList, setAssignmentsList] = useState<Assignment[]>(
-    recentAssignments.map((a: any) => ({
-      ...a,
-      subject: a.subject || (a.title ? mapToCoreSubject(a.title) : 'Unknown'),
-      description: a.description || '',
-      attachments: a.attachments || [],
-    }))
+    isMockUser
+      ? recentAssignments.map((a: any) => ({
+          ...a,
+          subject: a.subject || (a.title ? mapToCoreSubject(a.title) : 'Unknown'),
+          description: a.description || '',
+          attachments: a.attachments || [],
+        }))
+      : []
   );
   const [loading] = useState(false);
 
@@ -192,26 +196,27 @@ const Assignments: React.FC = () => {
     }
   };
 
-  const fetchAssignments = async () => {
-    try {
-      const data = await assignments.getAll();
-      setAssignmentsList(
-        data.map((a: any) => ({
-          ...a,
-          subject: a.subject || (a.title ? mapToCoreSubject(a.title) : 'Unknown'),
-          description: a.description || '',
-          attachments: a.attachments || [],
-        }))
-      );
-    } catch (error) {
-      toast.error('Failed to fetch assignments.');
-    }
-  };
-
   useEffect(() => {
-    fetchAssignments();
+    if (!isMockUser) {
+      const fetchAssignments = async () => {
+        try {
+          const data = await assignments.getAll();
+          setAssignmentsList(
+            data.map((a: any) => ({
+              ...a,
+              subject: a.subject || (a.title ? mapToCoreSubject(a.title) : 'Unknown'),
+              description: a.description || '',
+              attachments: a.attachments || [],
+            }))
+          );
+        } catch (error) {
+          toast.error('Failed to fetch assignments.');
+        }
+      };
+      fetchAssignments();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isMockUser]);
 
   const handleDeleteConfirm = async () => {
     if (!assignmentToDelete) return;

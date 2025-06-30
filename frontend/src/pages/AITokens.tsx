@@ -7,17 +7,14 @@ import {
   Code as CodeIcon,
   CreditCard as CreditCardIcon,
   Description as DescriptionIcon,
-  Diamond as DiamondIcon,
-  EmojiEvents as EmojiEventsIcon,
   Functions as FunctionsIcon,
   History as HistoryIcon,
   HourglassEmpty as HourglassEmptyIcon,
-  LocalOffer as LocalOfferIcon,
+  InfoOutlined as InfoIcon,
   OpenInNew as OpenInNewIcon,
   Report as ReportIcon,
   School as SchoolIcon,
   Search as SearchIcon,
-  Star as StarIcon,
 } from '@mui/icons-material';
 import {
   Box,
@@ -58,6 +55,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { useAuth } from '../contexts/AuthContext';
 import { useTokenUsage } from '../hooks/useTokenUsage';
 import { api } from '../services/api';
 import { recentAssignments } from './DashboardHome';
@@ -79,18 +77,81 @@ const AITokens: React.FC = () => {
   const guideRef = React.useRef<HTMLDivElement>(null);
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [popoverContent, setPopoverContent] = React.useState<any>(null);
-  const [plan] = React.useState<'Free' | 'Pro'>('Free');
   const [calcTokens, setCalcTokens] = React.useState(0);
   const [calcCost, setCalcCost] = React.useState(0);
   const [modalOpen, setModalOpen] = React.useState(false);
   const navigate = useNavigate();
+  const { isMockUser } = useAuth();
+  const [assignments, setAssignments] = useState<any[]>(isMockUser ? [...recentAssignments] : []);
+  const [transactions, setTransactions] = useState<any[]>([]);
 
-  const { totalTokens, usedTokens, remainingTokens, percentUsed, assignmentsInCycle } =
-    useTokenUsage(subscription);
+  const { totalTokens, usedTokens, remainingTokens, percentUsed } = useTokenUsage(subscription);
 
   useEffect(() => {
     fetchSubscriptionData();
-  }, []);
+    if (!isMockUser) {
+      api
+        .get('/assignments')
+        .then(res => {
+          const data = Array.isArray(res.data)
+            ? res.data
+            : Array.isArray(res.data.assignments)
+            ? res.data.assignments
+            : [];
+          setAssignments(data);
+        })
+        .catch(() => setAssignments([]));
+      // Fetch real transactions for test/real users
+      api
+        .get('/transactions')
+        .then(res => {
+          setTransactions(Array.isArray(res.data) ? res.data : []);
+        })
+        .catch(() => setTransactions([]));
+    } else {
+      setAssignments([...recentAssignments]);
+      // Use mock transactions for mock users
+      setTransactions([
+        {
+          date: new Date().toISOString().slice(0, 10),
+          description: 'Token Purchase - Free Tier',
+          tokens: totalTokens,
+          summary: 'Monthly free token allocation',
+        },
+        {
+          date: '2024-06-01',
+          description: 'Token Purchase - Free Tier',
+          tokens: totalTokens,
+          summary: 'Monthly free token allocation',
+        },
+        {
+          date: '2024-05-01',
+          description: 'Token Purchase - Free Tier',
+          tokens: totalTokens,
+          summary: 'Monthly free token allocation',
+        },
+        {
+          date: '2024-04-01',
+          description: 'Token Purchase - Free Tier',
+          tokens: totalTokens,
+          summary: 'Monthly free token allocation',
+        },
+        {
+          date: '2024-03-01',
+          description: 'Token Purchase - Free Tier',
+          tokens: totalTokens,
+          summary: 'Monthly free token allocation',
+        },
+        ...assignments.slice(-3).map(a => ({
+          date: a.createdAt?.slice(0, 10) || '',
+          description: `${a.title} - ${a.status}`,
+          tokens: -(a.tokensUsed || 500),
+          assignment: a.title,
+          summary: `AI service for assignment: ${a.title}`,
+        })),
+      ]);
+    }
+  }, [isMockUser]);
 
   const fetchSubscriptionData = async () => {
     try {
@@ -276,14 +337,23 @@ const AITokens: React.FC = () => {
     return points;
   }
 
+  // Calculate token usage based on user type
+  let usedTokensCalc = usedTokens;
+  let remainingTokensCalc = remainingTokens;
+  let percentUsedCalc = percentUsed;
+  if (!isMockUser) {
+    usedTokensCalc = assignments.reduce((sum, a) => sum + (a.tokensUsed || 0), 0);
+    remainingTokensCalc = totalTokens - usedTokensCalc;
+    percentUsedCalc = totalTokens > 0 ? Math.round((usedTokensCalc / totalTokens) * 100) : 0;
+  }
   const tokenUsage = {
     label: subscription
       ? `Plan (${totalTokens.toLocaleString()} tokens/month)`
       : 'Free Plan (30,000 tokens/month)',
     total: totalTokens,
-    used: usedTokens,
-    remaining: remainingTokens,
-    percentUsed,
+    used: usedTokensCalc,
+    remaining: remainingTokensCalc,
+    percentUsed: percentUsedCalc,
   };
 
   if (loading) {
@@ -295,59 +365,18 @@ const AITokens: React.FC = () => {
   }
 
   // Build accurate usage history for the graph
-  const sortedAssignmentsAll = [...recentAssignments].sort(
+  const sortedAssignmentsAll = [...assignments].sort(
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
   );
 
   // For 30-day chart, use buildLast30DaysChart with all assignments
   const usageData30 = buildLast30DaysChart(sortedAssignmentsAll, totalTokens);
   // For 7-day chart, keep using buildUsageHistory for last 7 assignments (current cycle only)
-  const usageData7 = buildUsageHistory(assignmentsInCycle, totalTokens, 7);
+  const usageData7 = buildUsageHistory(assignments, totalTokens, 7);
   const handleRangeChange = (_: any, newRange: '7' | '30') => {
     if (newRange) setRange(newRange);
   };
   const displayedUsageData = range === '7' ? usageData7 : usageData30;
-
-  // Generate recent transactions from assignments
-  const recentTransactions = [
-    {
-      date: new Date().toISOString().slice(0, 10),
-      description: 'Token Purchase - Free Tier',
-      tokens: totalTokens,
-      summary: 'Monthly free token allocation',
-    },
-    {
-      date: '2024-06-01',
-      description: 'Token Purchase - Free Tier',
-      tokens: totalTokens,
-      summary: 'Monthly free token allocation',
-    },
-    {
-      date: '2024-05-01',
-      description: 'Token Purchase - Free Tier',
-      tokens: totalTokens,
-      summary: 'Monthly free token allocation',
-    },
-    {
-      date: '2024-04-01',
-      description: 'Token Purchase - Free Tier',
-      tokens: totalTokens,
-      summary: 'Monthly free token allocation',
-    },
-    {
-      date: '2024-03-01',
-      description: 'Token Purchase - Free Tier',
-      tokens: totalTokens,
-      summary: 'Monthly free token allocation',
-    },
-    ...assignmentsInCycle.slice(-3).map(a => ({
-      date: a.createdAt.slice(0, 10),
-      description: `${a.title} - ${a.status}`,
-      tokens: -(a.tokensUsed || 500),
-      assignment: a.title,
-      summary: `AI service for assignment: ${a.title}`,
-    })),
-  ];
 
   // Token usage info for free tier features
   const tokenUsageInfo = [
@@ -364,16 +393,22 @@ const AITokens: React.FC = () => {
       features: ['Grammar and style check', 'Content analysis', 'Improvement suggestions'],
     },
     {
+      title: 'Image Analysis',
+      tokens: '1500 tokens',
+      description: 'Analyze and extract information from images using AI',
+      features: ['Object detection', 'Text extraction (OCR)', 'Scene description'],
+    },
+    {
       title: 'Math Problem Solving',
       tokens: '750 tokens',
       description: 'Step-by-step solutions for mathematical problems',
       features: ['Solution steps', 'Formula explanations', 'Alternative methods'],
     },
     {
-      title: 'Research Assistance',
-      tokens: '1200 tokens',
-      description: 'AI-powered research help with sources and citations',
-      features: ['Source finding', 'Citation generation', 'Literature review'],
+      title: 'Programming Completion',
+      tokens: '1300 tokens',
+      description: 'AI-powered code completion and suggestions for programming tasks',
+      features: ['Code generation', 'Syntax suggestions', 'Bug detection'],
     },
     {
       title: 'Science Lab Report',
@@ -419,10 +454,12 @@ const AITokens: React.FC = () => {
 
   // Group features by category
   const academicFeatures = tokenUsageInfo.filter(info =>
-    ['Assignment Analysis', 'Essay Review', 'Research Assistance'].includes(info.title)
+    ['Assignment Analysis', 'Essay Review', 'Image Analysis'].includes(info.title)
   );
   const technicalFeatures = tokenUsageInfo.filter(info =>
-    ['Code Review', 'Math Problem Solving', 'Plagiarism Check'].includes(info.title)
+    ['Code Review', 'Math Problem Solving', 'Programming Completion', 'Plagiarism Check'].includes(
+      info.title
+    )
   );
   const handleTryIt = (feature: string) => {
     // Navigate to workshop page with feature as query parameter
@@ -453,9 +490,10 @@ const AITokens: React.FC = () => {
   const featureIcons: Record<string, { icon: JSX.Element; color: string }> = {
     'Assignment Analysis': { icon: <DescriptionIcon />, color: '#8e24aa' }, // purple
     'Essay Review': { icon: <AssignmentIcon />, color: '#1976d2' }, // blue
-    'Research Assistance': { icon: <SearchIcon />, color: '#00897b' }, // teal
+    'Image Analysis': { icon: <SearchIcon />, color: '#00897b' }, // teal
     'Code Review': { icon: <CodeIcon />, color: '#388e3c' }, // green
     'Math Problem Solving': { icon: <FunctionsIcon />, color: '#f57c00' }, // orange
+    'Programming Completion': { icon: <CodeIcon />, color: '#d32f2f' }, // red
     'Plagiarism Check': { icon: <ReportIcon />, color: '#d32f2f' }, // red
   };
 
@@ -482,185 +520,6 @@ const AITokens: React.FC = () => {
       </Typography>
       <Grid container spacing={3}>
         <Grid item xs={12} md={8}>
-          {plan === 'Free' && (
-            <Card sx={{ p: 2, mb: 2, ...redOutline }}>
-              <CardContent>
-                <Typography variant="h6" sx={{ fontWeight: 700, color: 'black', mb: 2 }}>
-                  Upgrade Subscription
-                </Typography>
-                <Grid container spacing={0} wrap="nowrap" sx={{ overflowX: 'auto' }}>
-                  <Grid
-                    item
-                    sx={{
-                      minWidth: 150,
-                      flex: '1 1 0',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      py: 1,
-                      background: 'none',
-                      border: '2px solid #2196f3',
-                      borderRadius: 2,
-                      mr: 1,
-                    }}
-                  >
-                    <LocalOfferIcon sx={{ color: '#2196f3', fontSize: 36, mb: 1 }} />
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#2196f3' }}>
-                      Free
-                    </Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                      Free
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      align="center"
-                      sx={{ mb: 1 }}
-                    >
-                      Perfect for getting started with basic writing assistance
-                    </Typography>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      sx={{
-                        borderColor: '#2196f3',
-                        color: '#2196f3',
-                        fontWeight: 700,
-                        pointerEvents: 'none',
-                        opacity: 1,
-                      }}
-                      disabled
-                    >
-                      Current Plan
-                    </Button>
-                  </Grid>
-                  <Grid
-                    item
-                    sx={{
-                      minWidth: 150,
-                      flex: '1 1 0',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      py: 1,
-                      background: 'none',
-                      border: '2px solid #4caf50',
-                      borderRadius: 2,
-                      mx: 1,
-                    }}
-                  >
-                    <StarIcon sx={{ color: '#4caf50', fontSize: 36, mb: 1 }} />
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#4caf50' }}>
-                      Plus
-                    </Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                      $4.99
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      align="center"
-                      sx={{ mb: 1 }}
-                    >
-                      Enhanced features for more serious students
-                    </Typography>
-                    <Button
-                      variant="outlined"
-                      color="success"
-                      size="small"
-                      onClick={() => navigate('/dashboard/price-plan#plus')}
-                    >
-                      Upgrade
-                    </Button>
-                  </Grid>
-                  <Grid
-                    item
-                    sx={{
-                      minWidth: 150,
-                      flex: '1 1 0',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      py: 1,
-                      background: 'none',
-                      border: '2px solid #9c27b0',
-                      borderRadius: 2,
-                      mx: 1,
-                    }}
-                  >
-                    <DiamondIcon sx={{ color: '#9c27b0', fontSize: 36, mb: 1 }} />
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#9c27b0' }}>
-                      Pro
-                    </Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                      $9.99
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      align="center"
-                      sx={{ mb: 1 }}
-                    >
-                      Unlimited tokens, priority support, advanced features
-                    </Typography>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => navigate('/dashboard/price-plan#pro')}
-                      sx={{ borderColor: '#9c27b0', color: '#9c27b0', fontWeight: 700 }}
-                    >
-                      Upgrade
-                    </Button>
-                  </Grid>
-                  <Grid
-                    item
-                    sx={{
-                      minWidth: 150,
-                      flex: '1 1 0',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      py: 1,
-                      background: 'none',
-                      border: '2px solid #ff9800',
-                      borderRadius: 2,
-                      ml: 1,
-                    }}
-                  >
-                    <EmojiEventsIcon sx={{ color: '#ff9800', fontSize: 36, mb: 1 }} />
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#ff9800' }}>
-                      Max
-                    </Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                      $14.99
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      align="center"
-                      sx={{ mb: 1 }}
-                    >
-                      Ultimate package for
-                      <br />
-                      power users
-                    </Typography>
-                    <Button
-                      variant="outlined"
-                      color="warning"
-                      size="small"
-                      onClick={() => navigate('/dashboard/price-plan#max')}
-                    >
-                      Upgrade
-                    </Button>
-                  </Grid>
-                </Grid>
-              </CardContent>
-            </Card>
-          )}
           <Paper sx={{ p: 2, mb: 2, ...redOutline }}>
             <Typography variant="h6" gutterBottom sx={{ color: 'black', fontWeight: 'normal' }}>
               Token Usage
@@ -1028,14 +887,172 @@ const AITokens: React.FC = () => {
               </Box>
             </Box>
           </Paper>
+          <Paper sx={{ p: 2, mb: 2, ...redOutline }}>
+            <Typography variant="h6" gutterBottom sx={{ color: 'black', fontWeight: 'normal' }}>
+              Recent Transactions
+            </Typography>
+            <List>
+              {transactions
+                .filter(t => /purchase/i.test(t.description))
+                .slice(0, 3)
+                .map((transaction, index) => {
+                  const type = getTransactionType(transaction.description);
+                  const color = getTypeColor(type);
+                  return (
+                    <React.Fragment key={index}>
+                      <ListItem
+                        button
+                        onClick={e => handleTransactionClick(e, transaction)}
+                        sx={{
+                          pl: 0,
+                          position: 'relative',
+                          borderLeft: 'none',
+                          background: '#fff',
+                          border: `2px solid ${color}`,
+                          transition: 'box-shadow 0.2s',
+                          '&:hover': {
+                            boxShadow: '0 2px 8px rgba(211,47,47,0.08)',
+                          },
+                          mb: 1,
+                          borderRadius: 2,
+                          '::before': {
+                            content: '""',
+                            position: 'absolute',
+                            left: 0,
+                            top: 0,
+                            bottom: 0,
+                            width: '6px',
+                            borderTopLeftRadius: '6px',
+                            borderBottomLeftRadius: '6px',
+                            background:
+                              type === 'Purchase'
+                                ? '#388e3c'
+                                : type === 'Refund'
+                                ? '#1976d2'
+                                : '#d32f2f',
+                          },
+                        }}
+                      >
+                        <ListItemIcon sx={{ minWidth: 40, pl: 1 }}>
+                          {React.cloneElement(getTransactionIcon(transaction.description), {
+                            sx: { color, fontSize: 28 },
+                          })}
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={transaction.description}
+                          secondary={
+                            <>
+                              <Chip
+                                label={type}
+                                size="small"
+                                sx={{
+                                  backgroundColor: color,
+                                  color: '#fff',
+                                  fontWeight: 600,
+                                  mr: 1,
+                                }}
+                              />
+                              {formatDistanceToNow(parseISO(transaction.date), { addSuffix: true })}
+                            </>
+                          }
+                        />
+                        <Chip
+                          label={`${transaction.tokens > 0 ? '+' : ''}${transaction.tokens} tokens`}
+                          size="medium"
+                          sx={{
+                            backgroundColor: '#fff',
+                            color: color,
+                            border: `2px solid ${color}`,
+                            fontWeight: 700,
+                            fontSize: '1rem',
+                          }}
+                        />
+                      </ListItem>
+                      {index <
+                        Math.min(
+                          3,
+                          transactions.filter(t => /purchase/i.test(t.description)).length
+                        ) -
+                          1 && <Divider sx={{ borderColor: color, opacity: 0.5, ml: 1.5 }} />}
+                    </React.Fragment>
+                  );
+                })}
+            </List>
+            {transactions.filter(t => /purchase/i.test(t.description)).length > 3 && (
+              <Button
+                variant="outlined"
+                fullWidth
+                onClick={handleModalOpen}
+                sx={{
+                  mt: 2,
+                  borderColor: 'red',
+                  color: 'red',
+                  fontWeight: 600,
+                  '&:hover': {
+                    borderColor: 'red',
+                    backgroundColor: 'rgba(211, 47, 47, 0.04)',
+                  },
+                }}
+              >
+                View All Transactions
+              </Button>
+            )}
+            <Popover
+              open={open}
+              anchorEl={anchorEl}
+              onClose={handlePopoverClose}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+            >
+              {popoverContent && (
+                <Box sx={{ p: 2, minWidth: 220 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                    {popoverContent.description}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {popoverContent.date}
+                  </Typography>
+                  {popoverContent.assignment && (
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      Assignment: <b>{popoverContent.assignment}</b>
+                    </Typography>
+                  )}
+                  {popoverContent.summary && (
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      {popoverContent.summary}
+                    </Typography>
+                  )}
+                  {popoverContent && popoverContent.link && (
+                    <Button
+                      href={popoverContent.link}
+                      target="_blank"
+                      size="small"
+                      startIcon={<OpenInNewIcon />}
+                      sx={{ mt: 1 }}
+                    >
+                      View Full Response
+                    </Button>
+                  )}
+                </Box>
+              )}
+            </Popover>
+          </Paper>
           <Box sx={{ mb: 4 }} />
         </Grid>
 
         <Grid item xs={12} md={4}>
           <Paper sx={{ p: 3, mb: 4, ...redOutline }} ref={guideRef}>
-            <Typography variant="h6" gutterBottom sx={{ color: 'black' }}>
-              Token Usage Guide
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+              <Typography variant="h6" sx={{ color: 'black' }}>
+                Token Usage Guide
+              </Typography>
+              <Tooltip
+                title="Token costs are estimates. Actual usage depends on the complexity and length of your content."
+                arrow
+                placement="top"
+              >
+                <InfoIcon sx={{ color: 'text.secondary', fontSize: 20, cursor: 'pointer' }} />
+              </Tooltip>
+            </Box>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
               Understand how tokens are used for different AI-powered features
             </Typography>
@@ -1126,12 +1143,6 @@ const AITokens: React.FC = () => {
               </List>
             </Box>
             <Box sx={{ mb: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                <CodeIcon color="primary" />
-                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                  Technical
-                </Typography>
-              </Box>
               <List sx={{ py: 0 }}>
                 {technicalFeatures.map((info, index) => (
                   <React.Fragment key={index}>
@@ -1222,156 +1233,6 @@ const AITokens: React.FC = () => {
             </Button>
           </Paper>
 
-          <Paper sx={{ p: 2, mb: 2, ...redOutline }}>
-            <Typography variant="h6" gutterBottom sx={{ color: 'black', fontWeight: 'normal' }}>
-              Recent Transactions
-            </Typography>
-            <List>
-              {recentTransactions
-                .filter(t => /purchase/i.test(t.description))
-                .slice(0, 3)
-                .map((transaction, index) => {
-                  const type = getTransactionType(transaction.description);
-                  const color = getTypeColor(type);
-                  return (
-                    <React.Fragment key={index}>
-                      <ListItem
-                        button
-                        onClick={e => handleTransactionClick(e, transaction)}
-                        sx={{
-                          pl: 0,
-                          position: 'relative',
-                          borderLeft: 'none',
-                          background: '#fff',
-                          border: `2px solid ${color}`,
-                          transition: 'box-shadow 0.2s',
-                          '&:hover': {
-                            boxShadow: '0 2px 8px rgba(211,47,47,0.08)',
-                          },
-                          mb: 1,
-                          borderRadius: 2,
-                          '::before': {
-                            content: '""',
-                            position: 'absolute',
-                            left: 0,
-                            top: 0,
-                            bottom: 0,
-                            width: '6px',
-                            borderTopLeftRadius: '6px',
-                            borderBottomLeftRadius: '6px',
-                            background:
-                              type === 'Purchase'
-                                ? '#388e3c'
-                                : type === 'Refund'
-                                ? '#1976d2'
-                                : '#d32f2f',
-                          },
-                        }}
-                      >
-                        <ListItemIcon sx={{ minWidth: 40, pl: 1 }}>
-                          {React.cloneElement(getTransactionIcon(transaction.description), {
-                            sx: { color, fontSize: 28 },
-                          })}
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={transaction.description}
-                          secondary={
-                            <>
-                              <Chip
-                                label={type}
-                                size="small"
-                                sx={{
-                                  backgroundColor: color,
-                                  color: '#fff',
-                                  fontWeight: 600,
-                                  mr: 1,
-                                }}
-                              />
-                              {formatDistanceToNow(parseISO(transaction.date), { addSuffix: true })}
-                            </>
-                          }
-                        />
-                        <Chip
-                          label={`${transaction.tokens > 0 ? '+' : ''}${transaction.tokens} tokens`}
-                          size="medium"
-                          sx={{
-                            backgroundColor: '#fff',
-                            color: color,
-                            border: `2px solid ${color}`,
-                            fontWeight: 700,
-                            fontSize: '1rem',
-                          }}
-                        />
-                      </ListItem>
-                      {index <
-                        Math.min(
-                          3,
-                          recentTransactions.filter(t => /purchase/i.test(t.description)).length
-                        ) -
-                          1 && <Divider sx={{ borderColor: color, opacity: 0.5, ml: 1.5 }} />}
-                    </React.Fragment>
-                  );
-                })}
-            </List>
-            {recentTransactions.filter(t => /purchase/i.test(t.description)).length > 3 && (
-              <Button
-                variant="outlined"
-                fullWidth
-                onClick={handleModalOpen}
-                sx={{
-                  mt: 2,
-                  borderColor: 'red',
-                  color: 'red',
-                  fontWeight: 600,
-                  '&:hover': {
-                    borderColor: 'red',
-                    backgroundColor: 'rgba(211, 47, 47, 0.04)',
-                  },
-                }}
-              >
-                View All Transactions
-              </Button>
-            )}
-            <Popover
-              open={open}
-              anchorEl={anchorEl}
-              onClose={handlePopoverClose}
-              anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-            >
-              {popoverContent && (
-                <Box sx={{ p: 2, minWidth: 220 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                    {popoverContent.description}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {popoverContent.date}
-                  </Typography>
-                  {popoverContent.assignment && (
-                    <Typography variant="body2" sx={{ mt: 1 }}>
-                      Assignment: <b>{popoverContent.assignment}</b>
-                    </Typography>
-                  )}
-                  {popoverContent.summary && (
-                    <Typography variant="body2" sx={{ mt: 1 }}>
-                      {popoverContent.summary}
-                    </Typography>
-                  )}
-                  {popoverContent && popoverContent.link && (
-                    <Button
-                      href={popoverContent.link}
-                      target="_blank"
-                      size="small"
-                      startIcon={<OpenInNewIcon />}
-                      sx={{ mt: 1 }}
-                    >
-                      View Full Response
-                    </Button>
-                  )}
-                </Box>
-              )}
-            </Popover>
-          </Paper>
-
           {/* All Transactions Modal */}
           <Dialog
             open={modalOpen}
@@ -1398,7 +1259,7 @@ const AITokens: React.FC = () => {
             </DialogTitle>
             <DialogContent sx={{ p: 0 }}>
               <List sx={{ py: 0 }}>
-                {recentTransactions
+                {transactions
                   .filter(t => /purchase/i.test(t.description))
                   .map((transaction, index) => {
                     const type = getTransactionType(transaction.description);
@@ -1480,8 +1341,9 @@ const AITokens: React.FC = () => {
                           />
                         </ListItem>
                         {index <
-                          recentTransactions.filter(t => /purchase/i.test(t.description)).length -
-                            1 && <Divider sx={{ borderColor: color, opacity: 0.5, mx: 2 }} />}
+                          transactions.filter(t => /purchase/i.test(t.description)).length - 1 && (
+                          <Divider sx={{ borderColor: color, opacity: 0.5, mx: 2 }} />
+                        )}
                       </React.Fragment>
                     );
                   })}
