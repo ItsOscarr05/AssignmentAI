@@ -33,6 +33,7 @@
   - [ ] `GOOGLE_CLIENT_SECRET` - Google OAuth client secret
   - [ ] `SMTP_PASSWORD` - Email service password
   - [ ] `ACME_EMAIL` - Email for SSL certificates
+  - [ ] `ALERT_EMAIL` - Email for monitoring alerts
 
 ### 4. External Service Configuration
 
@@ -119,6 +120,14 @@
 - [ ] Critical alerts tested
 - [ ] Escalation procedures documented
 
+### 4. Health Check Endpoints
+
+- [ ] Frontend health check at `/health` implemented
+- [ ] Backend health check at `/health` enhanced with system metrics
+- [ ] Database connectivity check working
+- [ ] Redis connectivity check working
+- [ ] Response time monitoring configured
+
 ## Performance Optimization
 
 ### 1. Application Performance
@@ -155,6 +164,14 @@
 - [ ] Data recovery time objectives defined
 - [ ] Business continuity plan in place
 
+### 3. Emergency Procedures
+
+- [ ] Emergency response script tested (`scripts/emergency-response.ps1`)
+- [ ] Maintenance mode functionality working
+- [ ] Rollback procedures tested
+- [ ] Emergency backup procedures tested
+- [ ] Security incident response plan ready
+
 ## Testing & Validation
 
 ### 1. Functional Testing
@@ -181,6 +198,14 @@
 - [ ] Security headers verified
 - [ ] Input validation tested
 - [ ] Authentication bypass attempts tested
+
+### 4. Monitoring Scripts
+
+- [ ] Production monitoring script tested (`scripts/monitor-production.ps1`)
+- [ ] Health check endpoints responding correctly
+- [ ] Alert thresholds configured appropriately
+- [ ] Email alerts working
+- [ ] System resource monitoring active
 
 ## Post-Deployment Tasks
 
@@ -224,6 +249,14 @@
 - [ ] Disk space monitoring
 - [ ] Certificate renewal monitoring
 - [ ] Performance trend analysis
+
+### 3. Automated Monitoring
+
+- [ ] Scheduled monitoring script running
+- [ ] Automated alerts configured
+- [ ] Performance baselines established
+- [ ] Capacity planning in place
+- [ ] Regular maintenance windows scheduled
 
 ## Compliance & Legal
 
@@ -279,6 +312,14 @@
 - [ ] Support ticket system configured
 - [ ] Knowledge base established
 - [ ] FAQ section created
+
+### 3. Emergency Scripts
+
+- [ ] Emergency response script ready (`scripts/emergency-response.ps1`)
+- [ ] Monitoring script configured (`scripts/monitor-production.ps1`)
+- [ ] Backup scripts tested
+- [ ] Rollback procedures documented
+- [ ] Security incident response ready
 
 ---
 

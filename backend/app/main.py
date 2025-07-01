@@ -26,6 +26,9 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.middleware.rate_limit import RateLimitMiddleware
 import uvicorn
+import psutil
+import os
+import redis
 
 # Initialize logging
 logging_service.info("Initializing logging service")
@@ -204,10 +207,46 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
+    # Get system information
+    cpu_percent = psutil.cpu_percent(interval=1)
+    memory = psutil.virtual_memory()
+    disk = psutil.disk_usage('/')
+    
+    # Check database connectivity
+    try:
+        from app.database import SessionLocal
+        from sqlalchemy import text
+        db = SessionLocal()
+        db.execute(text("SELECT 1"))
+        db.close()
+        db_status = "healthy"
+    except Exception as e:
+        db_status = f"unhealthy: {str(e)}"
+    
+    # Check Redis connectivity
+    try:
+        r = redis.from_url(settings.REDIS_URL)
+        r.ping()
+        redis_status = "healthy"
+    except Exception as e:
+        redis_status = f"unhealthy: {str(e)}"
+    
     return {
         "status": "healthy",
         "version": settings.VERSION,
         "environment": settings.ENVIRONMENT,
+        "timestamp": datetime.utcnow().isoformat(),
+        "services": {
+            "database": db_status,
+            "redis": redis_status,
+        },
+        "system": {
+            "cpu_percent": cpu_percent,
+            "memory_percent": memory.percent,
+            "disk_percent": disk.percent,
+            "uptime": psutil.boot_time(),
+        },
+        "uptime": datetime.fromtimestamp(psutil.boot_time()).isoformat(),
     }
 
 if __name__ == "__main__":

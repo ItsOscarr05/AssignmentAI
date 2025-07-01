@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { auth } from '../../services/api';
+import { auth } from '../../config/api';
 
 export const ResetPassword: React.FC = () => {
   const [searchParams] = useSearchParams();

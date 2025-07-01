@@ -86,12 +86,11 @@ $albArn = ($albResponse | ConvertFrom-Json).LoadBalancers[0].LoadBalancerArn
 
 # Create listener for HTTP
 Write-Host "Creating HTTP listener..."
-$httpListenerResponse = aws elbv2 create-listener `
+$null = aws elbv2 create-listener `
     --load-balancer-arn $albArn `
     --protocol HTTP `
     --port 80 `
     --default-actions Type=redirect,RedirectConfig='{Protocol=HTTPS,Port=443,Host=#{host},Path=/#{path},Query=#{query},StatusCode=HTTP_301}'
-$httpListenerArn = ($httpListenerResponse | ConvertFrom-Json).Listeners[0].ListenerArn
 
 # Create listener for HTTPS
 Write-Host "Creating HTTPS listener..."

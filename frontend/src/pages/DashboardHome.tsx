@@ -14,6 +14,7 @@ import {
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
 import AutorenewOutlinedIcon from '@mui/icons-material/AutorenewOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
 import PlayArrowOutlinedIcon from '@mui/icons-material/PlayArrowOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import {
@@ -26,7 +27,10 @@ import {
   DialogTitle,
   FormControl,
   Grid,
+  IconButton,
   InputLabel,
+  ListItemText,
+  Menu,
   MenuItem,
   Paper,
   Select,
@@ -46,7 +50,9 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import DashboardPieChart from '../components/dashboard/DashboardPieChart';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../services/api';
+import { notificationService } from '../services/notification';
 import { mapToCoreSubject } from '../services/subjectService';
+import { Notification } from '../types';
 
 // Assignment interface to fix TypeScript errors
 interface Assignment {
@@ -287,6 +293,82 @@ const DashboardHome: React.FC = () => {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
   const [viewAssignment, setViewAssignment] = useState<Assignment | null>(null);
+  // Notification bell menu state
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
+  const handleBellClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  // Token usage/remaining mock notifications
+  const tokenLimits = [5000, 10000, 15000, 20000, 25000, 30000];
+  const tokenUsed = tokenLimits[Math.floor(Math.random() * tokenLimits.length)];
+  const tokenRemaining = 30000 - tokenUsed;
+  const tokenNotificationVariants = [
+    {
+      title: 'Token Usage',
+      body: `You have used ${tokenUsed.toLocaleString()} tokens this month.`,
+    },
+    {
+      title: 'Token Remaining',
+      body: `You have ${tokenRemaining.toLocaleString()} tokens remaining this month.`,
+    },
+  ];
+  const randomTokenNotification =
+    tokenNotificationVariants[Math.floor(Math.random() * tokenNotificationVariants.length)];
+
+  // Token limit threshold notifications for mock users
+  const tokenThresholds = [
+    { percent: 75, remaining: 22500 },
+    { percent: 50, remaining: 15000 },
+    { percent: 25, remaining: 7500 },
+    { percent: 10, remaining: 3000 },
+  ];
+  const tokenThresholdNotifications = tokenThresholds.map(t => ({
+    title: 'Token Limit Warning',
+    body: `You have ${t.remaining.toLocaleString()} tokens (${t.percent}%) remaining this month.`,
+  }));
+
+  // Mock notifications for mock users only
+  const mockNotificationTemplates = [
+    { title: 'Assignment Created', body: 'Your new assignment "Math Homework" was created.' },
+    { title: 'Assignment In Progress', body: 'You started working on "Math Homework".' },
+    { title: 'Assignment Completed', body: 'You completed "Math Homework". Well done!' },
+    { title: 'Ready to Download', body: '"Math Homework" is ready to download.' },
+    { title: 'Assignment graded', body: 'Your Math Homework was graded.' },
+    { title: 'New assignment', body: 'A new Science Project was assigned.' },
+    { title: 'Feedback received', body: 'You received feedback on your essay.' },
+    randomTokenNotification,
+    ...tokenThresholdNotifications,
+    { title: 'Profile updated', body: 'Your profile was updated successfully.' },
+    { title: 'AI suggestion', body: 'Try the new AI-powered summary tool!' },
+    { title: 'Assignment due soon', body: 'Your Literature Essay is due tomorrow.' },
+    { title: 'Welcome!', body: 'Thanks for trying AssignmentAI.' },
+  ];
+  const mockNotifications = useMemo(() => {
+    if (!isMockUser) return [];
+    const shuffled = [...mockNotificationTemplates].sort(() => 0.5 - Math.random());
+    return shuffled
+      .slice(0, Math.floor(Math.random() * 5) + 1)
+      .map((n, i) => ({ ...n, id: i + 1 }));
+  }, [isMockUser]);
+
+  // Real notifications for real users
+  const [realNotifications, setRealNotifications] = useState<Notification[]>([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  useEffect(() => {
+    if (!isMockUser) {
+      setNotificationsLoading(true);
+      notificationService
+        .getNotifications({}, 0, 5)
+        .then(n => setRealNotifications(n))
+        .catch(() => setRealNotifications([]))
+        .finally(() => setNotificationsLoading(false));
+    }
+  }, [isMockUser]);
 
   // Fetch real assignments if not mock user
   useEffect(() => {
@@ -487,7 +569,100 @@ const DashboardHome: React.FC = () => {
                 "Tip: Use AI to break down big tasks into manageable steps!"
               </Typography>
             </Box>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
+              <IconButton
+                aria-label="notifications"
+                onClick={handleBellClick}
+                sx={{
+                  color: '#D32F2F',
+                  mr: { xs: 0, sm: 1 },
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    background: '#f5f5f5',
+                  },
+                }}
+              >
+                <NotificationsNoneOutlinedIcon fontSize="medium" />
+              </IconButton>
+              <Menu
+                anchorEl={anchorEl}
+                open={open}
+                onClose={handleMenuClose}
+                PaperProps={{ sx: { minWidth: 300, maxWidth: 350, p: 1 } }}
+              >
+                {isMockUser && mockNotifications.length > 0 ? (
+                  mockNotifications.map(n => (
+                    <MenuItem key={n.id} onClick={handleMenuClose}>
+                      <ListItemText
+                        primary={
+                          <Typography fontWeight="bold" sx={{ color: '#D32F2F' }}>
+                            {n.title}
+                          </Typography>
+                        }
+                        secondary={
+                          <Typography variant="body2" color="text.secondary">
+                            {n.body}
+                          </Typography>
+                        }
+                      />
+                    </MenuItem>
+                  ))
+                ) : !isMockUser && notificationsLoading ? (
+                  <MenuItem disabled>
+                    <Box
+                      width="100%"
+                      display="flex"
+                      flexDirection="column"
+                      alignItems="center"
+                      py={2}
+                    >
+                      <NotificationsNoneOutlinedIcon
+                        sx={{ fontSize: 40, color: 'red', mb: 1, opacity: 0.5 }}
+                      />
+                      <Typography variant="h6" sx={{ color: '#222' }} gutterBottom>
+                        Loading Notifications...
+                      </Typography>
+                    </Box>
+                  </MenuItem>
+                ) : !isMockUser && realNotifications.length > 0 ? (
+                  realNotifications.map(n => (
+                    <MenuItem key={n.id} onClick={handleMenuClose}>
+                      <ListItemText
+                        primary={
+                          <Typography fontWeight="bold" sx={{ color: '#D32F2F' }}>
+                            {n.title}
+                          </Typography>
+                        }
+                        secondary={
+                          <Typography variant="body2" color="text.secondary">
+                            {n.message}
+                          </Typography>
+                        }
+                      />
+                    </MenuItem>
+                  ))
+                ) : (
+                  <MenuItem disabled>
+                    <Box
+                      width="100%"
+                      display="flex"
+                      flexDirection="column"
+                      alignItems="center"
+                      py={2}
+                    >
+                      <NotificationsNoneOutlinedIcon
+                        sx={{ fontSize: 40, color: 'red', mb: 1, opacity: 0.5 }}
+                      />
+                      <Typography variant="h6" sx={{ color: '#222' }} gutterBottom>
+                        No Notifications Yet
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#333' }}>
+                        You're all caught up!
+                      </Typography>
+                    </Box>
+                  </MenuItem>
+                )}
+              </Menu>
               <Button
                 variant="outlined"
                 color="primary"

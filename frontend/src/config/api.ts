@@ -7,11 +7,11 @@ import {
   WebSocketConfig,
 } from '../services/api/types';
 
-// Use environment variable with fallback
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+// Use environment variable with fallback - standardize to match backend
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: `${API_URL}/api/v1`,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -81,9 +81,9 @@ export const auth = {
   login: async (email: string, password: string) => {
     try {
       const response = await api.post('/auth/login', { email, password });
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+      if (response.data.access_token) {
+        localStorage.setItem('token', response.data.access_token);
+        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.access_token}`;
       }
       return response.data;
     } catch (error) {
@@ -94,10 +94,28 @@ export const auth = {
   register: async (userData: any) => {
     try {
       const response = await api.post('/auth/register', userData);
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+      if (response.data.access_token) {
+        localStorage.setItem('token', response.data.access_token);
+        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.access_token}`;
       }
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  forgotPassword: async (email: string) => {
+    try {
+      const response = await api.post('/auth/forgot-password', { email });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  resetPassword: async (token: string, password: string) => {
+    try {
+      const response = await api.post('/auth/reset-password', { token, new_password: password });
       return response.data;
     } catch (error) {
       throw error;
@@ -118,9 +136,13 @@ export const auth = {
     }
   },
 
-  logout: () => {
-    localStorage.removeItem('token');
-    delete api.defaults.headers.common['Authorization'];
+  logout: async () => {
+    try {
+      await api.post('/auth/logout');
+    } finally {
+      localStorage.removeItem('token');
+      delete api.defaults.headers.common['Authorization'];
+    }
   },
 
   setToken: (token: string) => {
@@ -132,7 +154,7 @@ export const auth = {
 export default api;
 
 export const apiConfig: ApiClientConfig = {
-  baseURL: API_URL,
+  baseURL: `${API_URL}/api/v1`,
   timeout: 30000,
   maxRetries: 3,
   retryDelay: 1000,

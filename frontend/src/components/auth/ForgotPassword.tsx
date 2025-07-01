@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { auth } from '../../services/api';
+import { auth } from '../../config/api';
 
 export const ForgotPassword: React.FC = () => {
   const navigate = useNavigate();

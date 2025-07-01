@@ -201,6 +201,7 @@ def upgrade() -> None:
     sa.Column('ai_model', sa.String(), nullable=False),
     sa.Column('token_limit', sa.Integer(), nullable=False),
     sa.Column('subscription_metadata', sa.JSON(), nullable=True),
+    sa.Column('notified_token_thresholds', postgresql.ARRAY(sa.Integer), server_default='{}'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -454,4 +455,5 @@ def downgrade() -> None:
     op.drop_table('users')
     op.drop_index(op.f('ix_usage_limits_id'), table_name='usage_limits')
     op.drop_table('usage_limits')
+    op.drop_column('subscriptions', 'notified_token_thresholds')
     # ### end Alembic commands ###

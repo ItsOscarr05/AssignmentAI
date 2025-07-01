@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../services/api';
-import { AuthService } from '../services/auth';
+import { api, auth } from '../config/api';
+import { AuthService } from '../services/auth/AuthService';
 import { User } from '../types';
 
 interface AuthContextType {
@@ -74,13 +74,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const logout = () => {
-    authService.logout();
-    setUser(null);
-    setIsMockUser(false);
-    localStorage.removeItem('user');
-    localStorage.removeItem('isMockUser');
-    navigate('/login');
+  const logout = async () => {
+    try {
+      await auth.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setUser(null);
+      setIsMockUser(false);
+      localStorage.removeItem('user');
+      localStorage.removeItem('isMockUser');
+      navigate('/login');
+    }
   };
 
   const updateUser = async (userData: Partial<User>) => {
@@ -135,26 +140,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const testLogin = async (email: string, password: string) => {
-    if (process.env.NODE_ENV === 'production') {
-      // In production, call your real backend authentication API
-      try {
-        const response = await api.post('/auth/login', { email, password });
-        const realUser = response.data.user;
-        setUser(realUser);
-        setIsMockUser(false);
-        localStorage.setItem('user', JSON.stringify(realUser));
-        localStorage.setItem('isMockUser', 'false');
-        navigate('/dashboard');
-      } catch (error) {
-        throw error;
-      }
-    } else {
-      // In development, return a test user
-      const testUser = {
-        id: 'test-1',
+    try {
+      const response = await auth.login(email, password);
+      const realUser = response.user || {
+        id: 'real-1',
         email,
-        name: 'Test User',
-        firstName: 'Test',
+        name: 'Real User',
+        firstName: 'Real',
         lastName: 'User',
         role: 'student',
         createdAt: new Date().toISOString(),
@@ -166,28 +158,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
         profile: {
           avatar: 'https://via.placeholder.com/150',
-          bio: 'Test user with real data',
-          location: 'Test Location',
-          education: 'Test Education',
-          interests: ['Testing'],
+          bio: 'Real user from backend',
+          location: 'Real Location',
+          education: 'Real Education',
+          interests: ['Real Interests'],
         },
       };
-      setUser(testUser);
+      setUser(realUser);
       setIsMockUser(false);
-      localStorage.setItem('user', JSON.stringify(testUser));
+      localStorage.setItem('user', JSON.stringify(realUser));
       localStorage.setItem('isMockUser', 'false');
       navigate('/dashboard');
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
     }
   };
 
   const resetPassword = async (email: string) => {
-    const response = await fetch('/api/auth/reset-password', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    });
-    if (!response.ok) {
-      throw new Error('Failed to send reset email');
+    try {
+      await auth.forgotPassword(email);
+    } catch (error) {
+      console.error('Reset password failed:', error);
+      throw error;
     }
   };
 

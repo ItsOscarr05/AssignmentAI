@@ -1,10 +1,14 @@
 import axios from 'axios';
 
+// Use the same standardized API configuration
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
+  baseURL: `${API_URL}/api/v1`,
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 });
 
 // Add request interceptor for authentication

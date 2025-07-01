@@ -3,7 +3,7 @@ import { api } from '../api';
 
 export class AuthService {
   static async login(email: string, password: string): Promise<AuthResponse> {
-    const response = await api.post<AuthResponse>('/api/v1/auth/login', { email, password });
+    const response = await api.post<AuthResponse>('/auth/login', { email, password });
     return response.data;
   }
 
@@ -13,29 +13,29 @@ export class AuthService {
     email: string;
     password: string;
   }): Promise<AuthResponse> {
-    const response = await api.post<AuthResponse>('/api/v1/auth/register', userData);
+    const response = await api.post<AuthResponse>('/auth/register', userData);
     return response.data;
   }
 
   static async logout(): Promise<void> {
-    await api.post('/api/v1/auth/logout');
+    await api.post('/auth/logout');
   }
 
   static async getCurrentUser(): Promise<User> {
-    const response = await api.get<User>('/api/v1/auth/me');
+    const response = await api.get<User>('/auth/me');
     return response.data;
   }
 
   static async refreshToken(): Promise<AuthResponse> {
-    const response = await api.post<AuthResponse>('/api/v1/auth/refresh-token');
+    const response = await api.post<AuthResponse>('/auth/refresh-token');
     return response.data;
   }
 
   static async forgotPassword(email: string): Promise<void> {
-    await api.post('/api/v1/auth/forgot-password', { email });
+    await api.post('/auth/forgot-password', { email });
   }
 
   static async resetPassword(token: string, password: string): Promise<void> {
-    await api.post('/api/v1/auth/reset-password', { token, password });
+    await api.post('/auth/reset-password', { token, new_password: password });
   }
 }

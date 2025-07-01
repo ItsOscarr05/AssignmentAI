@@ -5,6 +5,10 @@ from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from app.models.user import User
 from app.schemas.auth import TokenData
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import os
 
 # Security configuration
 SECRET_KEY = "your-secret-key-here"  # TODO: Move to environment variables
@@ -53,4 +57,36 @@ def get_current_user(db: Session, token: str) -> Optional[User]:
     user = db.query(User).filter(User.email == email).first()
     if user is None:
         return None
-    return user 
+    return user
+
+async def send_password_reset_email(email: str, reset_link: str) -> bool:
+    """
+    Send password reset email
+    """
+    try:
+        # For development, just log the reset link
+        # In production, this would send an actual email
+        print(f"Password reset link for {email}: {reset_link}")
+        
+        # TODO: Implement actual email sending in production
+        # This is a placeholder for the email service
+        return True
+    except Exception as e:
+        print(f"Error sending password reset email: {e}")
+        return False
+
+async def send_verification_email(email: str, verification_link: str) -> bool:
+    """
+    Send email verification link
+    """
+    try:
+        # For development, just log the verification link
+        # In production, this would send an actual email
+        print(f"Email verification link for {email}: {verification_link}")
+        
+        # TODO: Implement actual email sending in production
+        # This is a placeholder for the email service
+        return True
+    except Exception as e:
+        print(f"Error sending verification email: {e}")
+        return False 
