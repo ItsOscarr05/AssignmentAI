@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, Dict, Any
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class SystemLogBase(BaseModel):
     level: str
@@ -14,5 +14,4 @@ class SystemLog(SystemLogBase):
     id: int
     timestamp: datetime
 
-    class Config:
-        from_attributes = True 
+    model_config = ConfigDict(from_attributes=True) 

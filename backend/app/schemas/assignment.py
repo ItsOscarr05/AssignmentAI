@@ -19,6 +19,8 @@ class AssignmentBase(BaseModel):
     estimated_time: int = Field(..., ge=1)
     content: str = Field(..., min_length=1)
 
+    model_config = ConfigDict(from_attributes=True)
+
 class AssignmentCreate(AssignmentBase):
     pass
 
@@ -39,8 +41,7 @@ class AssignmentResponse(AssignmentBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class AssignmentList(BaseModel):
     total: int

@@ -1,5 +1,5 @@
 from typing import Optional, Dict, Any
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 from app.schemas.base import BaseSchema
 from datetime import datetime
 
@@ -12,6 +12,7 @@ class UserBase(BaseModel):
     website: Optional[str] = None
     preferences: Optional[Dict[str, Any]] = None
     is_active: bool = True
+    model_config = ConfigDict(from_attributes=True)
 
 class UserCreate(UserBase):
     password: str
@@ -45,9 +46,7 @@ class UserInDBBase(UserBase):
     id: int
     created_at: datetime
     updated_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class User(UserInDBBase):
     pass

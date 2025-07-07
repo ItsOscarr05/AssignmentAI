@@ -4,7 +4,7 @@ from typing import List, Optional, Dict, Any
 from app.core.deps import get_current_user, get_db
 from app.services.citation_service import CitationService
 from app.models.user import User
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 router = APIRouter()
 
@@ -60,8 +60,7 @@ class CitationResponse(BaseModel):
     created_at: str
     updated_at: str
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 @router.post("/", response_model=CitationResponse)
 async def create_citation(
@@ -139,7 +138,7 @@ async def delete_citation(
 @router.post("/batch")
 async def generate_citations_batch(
     citations: List[CitationCreate],
-    format_type: str = Query('APA', regex='^(APA|MLA|Chicago|Harvard)$'),
+    format_type: str = Query('APA', pattern='^(APA|MLA|Chicago|Harvard)$'),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):

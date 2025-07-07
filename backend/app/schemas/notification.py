@@ -1,6 +1,6 @@
 from typing import Optional
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class NotificationBase(BaseModel):
     title: str
@@ -8,6 +8,7 @@ class NotificationBase(BaseModel):
     type: str
     is_read: bool = False
     is_archived: bool = False
+    model_config = ConfigDict(from_attributes=True)
 
 class NotificationCreate(NotificationBase):
     user_id: str
@@ -21,9 +22,7 @@ class Notification(NotificationBase):
     user_id: str
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class NotificationFilter(BaseModel):
     type: Optional[str] = None

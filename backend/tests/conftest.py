@@ -15,7 +15,7 @@ from app.models.submission import Submission, SubmissionStatus
 from app.models.ai_assignment import AIAssignment
 from app.models.feedback import Feedback
 from app.core.security import get_password_hash, create_access_token
-from app.database import engine
+from app.database import engine, get_db
 from app.core.rate_limit import FallbackRateLimiter
 
 # Set testing environment

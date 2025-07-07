@@ -1,14 +1,14 @@
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
-from app.core.deps import get_current_user, get_db
+from pydantic import BaseModel, ConfigDict
+import logging
+import base64
+
+from app.core.deps import get_db, get_current_user
 from app.models.user import User
 from app.services.web_scraping import WebScrapingService
 from app.services.export_service import ExportService
-from app.services.ai_service import AIService
-from pydantic import BaseModel
-import logging
-import base64
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -39,6 +39,8 @@ class ChatMessageResponse(BaseModel):
     response: str
     tokens_used: int
     model_used: str
+
+    model_config = ConfigDict(protected_namespaces=())
 
 @router.post("/extract-from-link", response_model=LinkSubmissionResponse)
 async def extract_content_from_link(

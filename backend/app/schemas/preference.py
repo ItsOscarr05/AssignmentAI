@@ -1,5 +1,5 @@
 from typing import Optional, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from uuid import uuid4
 
 class NotificationTypes(BaseModel):
@@ -32,6 +32,7 @@ class PreferenceBase(BaseModel):
     
     # Custom Preferences
     custom_preferences: Dict[str, Any] = Field(default_factory=dict)
+    model_config = ConfigDict(from_attributes=True)
 
 class PreferenceCreate(PreferenceBase):
     user_id: str
@@ -64,9 +65,7 @@ class PreferenceUpdate(BaseModel):
 class PreferenceInDBBase(PreferenceBase):
     id: str = Field(default_factory=lambda: str(uuid4()))
     user_id: str
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class Preference(PreferenceInDBBase):
     pass 

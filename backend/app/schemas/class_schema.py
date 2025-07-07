@@ -1,5 +1,5 @@
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from app.schemas.user import UserResponse
 
 class ClassBase(BaseModel):
@@ -7,6 +7,7 @@ class ClassBase(BaseModel):
     code: str
     description: Optional[str] = Field(None, max_length=500)
     teacher_id: int
+    model_config = ConfigDict(from_attributes=True)
 
 class ClassCreate(ClassBase):
     pass
@@ -18,9 +19,7 @@ class ClassUpdate(ClassBase):
 
 class ClassInDBBase(ClassBase):
     id: int
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class Class(ClassInDBBase):
     student_ids: Optional[List[int]] = None
@@ -32,6 +31,4 @@ class ClassResponse(ClassBase):
     id: int
     teacher: UserResponse
     students: List[UserResponse] = []
-
-    class Config:
-        from_attributes = True 
+    model_config = ConfigDict(from_attributes=True) 

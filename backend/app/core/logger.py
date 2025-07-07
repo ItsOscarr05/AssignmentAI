@@ -31,4 +31,7 @@ file_handler = RotatingFileHandler(
     backupCount=5
 )
 file_handler.setFormatter(file_formatter)
-logger.addHandler(file_handler) 
+logger.addHandler(file_handler)
+
+# Export logging_service for compatibility
+logging_service = logger 

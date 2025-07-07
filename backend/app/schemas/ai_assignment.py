@@ -1,5 +1,5 @@
 from typing import Dict, Any, List, Optional
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 from typing import Pattern
 from datetime import datetime
 import re
@@ -14,6 +14,8 @@ class AssignmentGenerationRequest(BaseModel):
         max_length=1000,
         description="Additional requirements or specifications for the assignment"
     )
+
+    model_config = ConfigDict(protected_namespaces=())
 
     @field_validator('subject', 'topic')
     @classmethod
@@ -39,6 +41,8 @@ class AssignmentContent(BaseModel):
     evaluation_criteria: List[str] = Field(..., min_length=1, max_length=10, description="Evaluation criteria")
     estimated_duration: str = Field(..., description="Estimated time to complete")
     resources: List[str] = Field(default_factory=list, max_length=10, description="Recommended resources")
+
+    model_config = ConfigDict(protected_namespaces=())
 
     @field_validator('objectives', 'requirements', 'evaluation_criteria', 'resources')
     @classmethod
@@ -73,6 +77,8 @@ class GeneratedAssignment(BaseModel):
     description: str = Field(..., min_length=10, max_length=1000, description="Detailed description")
     content: AssignmentContent
 
+    model_config = ConfigDict(protected_namespaces=())
+
     @field_validator('title', 'description')
     @classmethod
     def sanitize_text(cls, v):
@@ -83,6 +89,8 @@ class AssignmentGenerationResponse(BaseModel):
     success: bool = Field(..., description="Whether the generation was successful")
     assignment: Optional[GeneratedAssignment] = Field(None, description="Generated assignment")
     error: Optional[str] = Field(None, description="Error message if generation failed")
+
+    model_config = ConfigDict(protected_namespaces=())
 
 class AIAssignmentBase(BaseModel):
     assignment_id: int = Field(..., description="ID of the assignment")
@@ -95,6 +103,8 @@ class AIAssignmentBase(BaseModel):
     model_version: str = Field(default="1.0", description="Version of the AI model used")
     confidence_score: Optional[float] = Field(None, ge=0.0, le=1.0, description="AI model's confidence in the generation")
     generation_metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional generation data")
+
+    model_config = ConfigDict(protected_namespaces=())
 
     @field_validator('prompt', 'generated_content')
     @classmethod
@@ -133,6 +143,8 @@ class AIAssignmentCreateRequest(BaseModel):
     model_version: str = Field(default="1.0", description="Version of the AI model used")
     confidence_score: Optional[float] = Field(None, ge=0.0, le=1.0, description="AI model's confidence in the generation")
     generation_metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional generation data")
+
+    model_config = ConfigDict(protected_namespaces=())
 
     @field_validator('prompt', 'generated_content')
     @classmethod
@@ -174,6 +186,8 @@ class AIAssignmentUpdate(BaseModel):
     generation_metadata: Optional[Dict[str, Any]] = None
     model_version: Optional[str] = None
 
+    model_config = ConfigDict(protected_namespaces=())
+
     @field_validator('model')
     @classmethod
     def validate_model(cls, v):
@@ -203,7 +217,7 @@ class AIAssignmentInDB(AIAssignmentBase):
     created_at: datetime
     updated_at: datetime
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
 
 class AIAssignment(AIAssignmentInDB):
     pass 

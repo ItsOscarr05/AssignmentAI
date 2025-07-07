@@ -1,5 +1,5 @@
 from typing import List, Optional, Union, Any, Dict
-from pydantic import AnyHttpUrl, EmailStr, validator, PostgresDsn
+from pydantic import AnyHttpUrl, EmailStr, validator, PostgresDsn, field_validator, ConfigDict
 from pydantic_settings import BaseSettings
 import os
 import secrets
@@ -160,7 +160,8 @@ class Settings(BaseSettings):
     CORS_CREDENTIALS: bool = True
     CORS_PREFLIGHT_MAX_AGE: int = 86400  # 24 hours
     
-    @validator("CORS_ORIGINS", pre=True)
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",")]
@@ -284,7 +285,8 @@ class Settings(BaseSettings):
     # CORS Security
     ALLOWED_ORIGINS: List[str] = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001").split(",")
     
-    @validator("ALLOWED_ORIGINS", pre=True)
+    @field_validator("ALLOWED_ORIGINS", mode="before")
+    @classmethod
     def validate_allowed_origins(cls, v: Union[str, List[str]]) -> List[str]:
         if isinstance(v, str):
             return [i.strip() for i in v.split(",")]
@@ -319,9 +321,11 @@ class Settings(BaseSettings):
     # Rate Limiting Settings
     RATE_LIMIT_PER_MINUTE: int = int(os.getenv("RATE_LIMIT_PER_MINUTE", "60"))
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
-        extra = "allow"
+    model_config = ConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+        extra="allow",
+        protected_namespaces=()
+    )
 
 settings = Settings() 

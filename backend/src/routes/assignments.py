@@ -2,7 +2,7 @@ from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from models.assignment import Assignment, AssignmentSubmission, AssignmentAttachment, SubmissionAttachment, AssignmentStatus
 from models.user import User
 from services.auth import get_current_active_user
@@ -36,9 +36,7 @@ class AssignmentResponse(AssignmentBase):
     feedback: Optional[str]
     created_at: datetime
     updated_at: Optional[datetime]
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class SubmissionBase(BaseModel):
     content: Optional[str] = None
@@ -57,9 +55,7 @@ class SubmissionResponse(SubmissionBase):
     submitted_at: datetime
     score: Optional[int]
     feedback: Optional[str]
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Grading routes
 class GradeSubmission(BaseModel):

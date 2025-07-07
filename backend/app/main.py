@@ -1,13 +1,23 @@
+import os
+import sys
+import logging
+import psutil
+import redis
+from datetime import datetime
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from sqlalchemy.exc import SQLAlchemyError
 from pydantic import ValidationError
+
 from app.core.config import settings
-from app.database import engine, Base
+from app.core.logger import logging_service
 from app.api.v1.api import api_router
-from app.core.rate_limit import rate_limit_middleware, init_rate_limiter, close_rate_limiter
 from app.core.error_handlers import (
     http_exception_handler,
     validation_exception_handler,
@@ -15,50 +25,77 @@ from app.core.error_handlers import (
     general_exception_handler,
     validation_error_handler
 )
-from app.services.logging_service import logging_service
-from app.api.middleware import file_size_limit_middleware
-from datetime import datetime
 from app.middleware.security import SecurityHeadersMiddleware
+from app.middleware.rate_limit import RateLimitMiddleware
 from app.middleware.error_handler import ErrorHandlerMiddleware
 from app.middleware.logging import LoggingMiddleware
 from app.middleware.performance import PerformanceMiddleware, QueryOptimizationMiddleware
-from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.staticfiles import StaticFiles
-from app.middleware.rate_limit import RateLimitMiddleware
-import uvicorn
-import psutil
-import os
-import redis
+from app.api.middleware import file_size_limit_middleware
+from app.core.rate_limit import init_rate_limiter, close_rate_limiter
 
-# Initialize logging
-logging_service.info("Initializing logging service")
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# Create database tables
-Base.metadata.create_all(bind=engine)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan context manager for startup and shutdown events"""
+    # Startup
+    logging_service.info("Starting up AssignmentAI application")
+    await init_rate_limiter()
+    # Add any additional startup initialization here
+    
+    yield
+    
+    # Shutdown
+    logging_service.info("Shutting down AssignmentAI application")
+    await close_rate_limiter()
+    # Add any cleanup code here
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     description="""
-    🎓 AssignmentAI API - Intelligent Educational Platform
+    # AssignmentAI API
+
+    A comprehensive AI-powered educational platform for teachers and students.
 
     ## Features
 
-    * 👩‍🏫 Teacher Management
-        * Create and manage assignments
-        * Track student progress
-        * Generate AI-powered assignments
+    * 🤖 AI-Powered Assignment Generation
+        * Generate assignments based on subject, grade level, and learning objectives
+        * AI-powered feedback and grading
+        * Intelligent plagiarism detection
+        * Automated rubric generation
 
-    * 👨‍🎓 Student Experience
-        * Submit assignments
-        * View grades and feedback
-        * Track progress
+    * 📚 Assignment Management
+        * Create, edit, and organize assignments
+        * Support for multiple file formats
+        * Assignment templates and libraries
+        * Due date management and notifications
 
-    * 🔐 Authentication
-        * Secure JWT-based authentication
+    * 👥 User Management
+        * Teacher and student accounts
         * Role-based access control
-        * Email verification
+        * Class and course management
+        * Student progress tracking
+
+    * 🔒 Security & Privacy
+        * JWT authentication
         * Two-factor authentication
-        * Password reset functionality
+        * Rate limiting and DDoS protection
+        * Data encryption and privacy compliance
+
+    * 📊 Analytics & Reporting
+        * Student performance analytics
+        * Assignment completion statistics
+        * Usage analytics and insights
+        * Custom report generation
+
+    * 🔗 Integrations
+        * Canvas LMS integration
+        * Google Classroom support
+        * File storage integration
+        * Email notifications
 
     * 📊 Administration
         * User management
@@ -124,7 +161,8 @@ app = FastAPI(
     license_info={
         "name": "MIT",
         "url": "https://opensource.org/licenses/MIT",
-    }
+    },
+    lifespan=lifespan
 )
 
 # Setup error handling
@@ -179,20 +217,6 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Include API router
 app.include_router(api_router, prefix=settings.API_V1_STR)
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialize services on startup"""
-    logging_service.info("Starting up AssignmentAI application")
-    await init_rate_limiter()
-    # Add any additional startup initialization here
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Cleanup on shutdown"""
-    logging_service.info("Shutting down AssignmentAI application")
-    await close_rate_limiter()
-    # Add any cleanup code here
 
 @app.get("/")
 async def root():

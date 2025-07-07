@@ -223,7 +223,7 @@ async def close_rate_limiter():
     """Close the rate limiter"""
     global _rate_limiter
     if _rate_limiter and hasattr(_rate_limiter, 'redis'):
-        await _rate_limiter.redis.close()
+        await _rate_limiter.redis.aclose()
 
 # Global fallback rate limiter instance
 _fallback_rate_limiter = None

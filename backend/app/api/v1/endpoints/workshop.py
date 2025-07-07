@@ -9,7 +9,7 @@ from app.models.user import User
 import logging
 import uuid
 from datetime import datetime
-import PyPDF2
+import pypdf
 from docx import Document
 import io
 
@@ -179,9 +179,9 @@ async def extract_file_content(file_path: str, content_type: str) -> str:
             with open(file_path, 'r', encoding='utf-8') as f:
                 return f.read()
         elif content_type == "application/pdf":
-            # Use PyPDF2 for PDF parsing
+            # Use pypdf for PDF parsing
             with open(file_path, 'rb') as file:
-                pdf_reader = PyPDF2.PdfReader(file)
+                pdf_reader = pypdf.PdfReader(file)
                 text = ""
                 for page in pdf_reader.pages:
                     text += page.extract_text() + "\n"

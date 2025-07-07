@@ -1,11 +1,12 @@
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 
 class TokenBase(BaseModel):
     token: str
     user_id: int
     expires_at: datetime
+    model_config = ConfigDict(from_attributes=True)
 
 class TokenCreate(TokenBase):
     pass
@@ -15,9 +16,7 @@ class TokenUpdate(TokenBase):
 
 class TokenInDBBase(TokenBase):
     id: int
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class Token(TokenInDBBase):
     pass

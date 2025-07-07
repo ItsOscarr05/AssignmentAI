@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings
 import os
 from typing import Optional
+from pydantic import ConfigDict
 
 class Settings(BaseSettings):
     # API Settings
@@ -37,7 +38,6 @@ class Settings(BaseSettings):
     # Testing
     TESTING: bool = os.getenv("TESTING", "false").lower() == "true"
     
-    class Config:
-        case_sensitive = True
+    model_config = ConfigDict(case_sensitive=True)
 
 settings = Settings() 

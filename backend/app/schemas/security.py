@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, Dict, Any
 from datetime import datetime
 
@@ -7,6 +7,7 @@ class SecurityAlertBase(BaseModel):
     description: str
     severity: str
     alert_metadata: Optional[Dict[str, Any]] = None
+    model_config = ConfigDict(from_attributes=True)
 
 class SecurityAlertCreate(SecurityAlertBase):
     pass
@@ -21,9 +22,7 @@ class SecurityAlertResponse(SecurityAlertBase):
     timestamp: datetime
     resolved: bool
     resolution_notes: Optional[str] = None
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class AuditLogBase(BaseModel):
     action: str
@@ -40,6 +39,4 @@ class AuditLogResponse(AuditLogBase):
     id: int
     user_id: Optional[int] = None
     timestamp: datetime
-
-    class Config:
-        from_attributes = True 
+    model_config = ConfigDict(from_attributes=True) 

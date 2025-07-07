@@ -5,7 +5,7 @@ from datetime import datetime
 from app.core.deps import get_current_user, get_db
 from app.services.usage_service import UsageService
 from app.models.user import User
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 router = APIRouter()
 
@@ -22,8 +22,7 @@ class UsageResponse(BaseModel):
     timestamp: datetime
     metadata: Optional[Dict[str, Any]]
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class UsageSummaryResponse(BaseModel):
     feature: str
