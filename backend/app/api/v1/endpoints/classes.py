@@ -2,7 +2,7 @@ from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import get_db, get_current_active_teacher, get_current_user
+from app.core.deps import get_db, get_current_user
 from app.models.user import User
 from app.models.class_model import Class
 from app.schemas.class_schema import ClassCreate, ClassUpdate, ClassResponse

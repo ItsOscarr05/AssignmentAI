@@ -1,9 +1,11 @@
 from typing import List, Optional, Any, Dict, Union
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from sqlalchemy import desc, asc, func, select
 from app.crud.base import CRUDBase
 from app.models.assignment import Assignment, AssignmentStatus
 from app.schemas.assignment import AssignmentCreate, AssignmentUpdate
+from app.models.class_model import Class
 
 class CRUDAssignment(CRUDBase[Assignment, AssignmentCreate, AssignmentUpdate]):
     async def get_by_teacher(
@@ -76,6 +78,110 @@ class CRUDAssignment(CRUDBase[Assignment, AssignmentCreate, AssignmentUpdate]):
         await db.commit()
         await db.refresh(new_assignment)
         return new_assignment
+
+# Synchronous versions for use with regular sessions
+def create_assignment_sync(db: Session, assignment: AssignmentCreate, user_id: int) -> Assignment:
+    # Create a class for the assignment if one does not exist
+    unique_code = f"TEST{user_id}"
+    test_class = db.query(Class).filter_by(code=unique_code).first()
+    if not test_class:
+        test_class = Class(
+            name=f"Test Class {user_id}",
+            code=unique_code,
+            description=f"Test Description for user {user_id}",
+            teacher_id=user_id
+        )
+        db.add(test_class)
+        db.commit()
+        db.refresh(test_class)
+    db_assignment = Assignment(
+        **assignment.model_dump(),
+        user_id=user_id,
+        created_by_id=user_id,
+        teacher_id=user_id,
+        class_id=test_class.id
+    )
+    db.add(db_assignment)
+    db.commit()
+    db.refresh(db_assignment)
+    return db_assignment
+
+def get_assignment_sync(db: Session, assignment_id: int) -> Optional[Assignment]:
+    return db.query(Assignment).filter(Assignment.id == assignment_id).first()
+
+def get_assignments_sync(
+    db: Session,
+    skip: int = 0,
+    limit: int = 100,
+    sort_by: str = "created_at",
+    sort_order: str = "desc",
+    search: Optional[str] = None,
+    status: Optional[AssignmentStatus] = None,
+    subject: Optional[str] = None,
+    grade_level: Optional[str] = None
+) -> List[Assignment]:
+    query = db.query(Assignment)
+    
+    if search:
+        query = query.filter(Assignment.title.ilike(f"%{search}%"))
+    if status:
+        query = query.filter(Assignment.status == status)
+    if subject:
+        query = query.filter(Assignment.subject == subject)
+    if grade_level:
+        query = query.filter(Assignment.grade_level == grade_level)
+    
+    if sort_order == "desc":
+        query = query.order_by(desc(getattr(Assignment, sort_by)))
+    else:
+        query = query.order_by(asc(getattr(Assignment, sort_by)))
+    
+    return query.offset(skip).limit(limit).all()
+
+def update_assignment_sync(
+    db: Session,
+    assignment_id: int,
+    assignment: AssignmentUpdate
+) -> Optional[Assignment]:
+    db_assignment = get_assignment_sync(db, assignment_id)
+    if not db_assignment:
+        return None
+    
+    for field, value in assignment.model_dump(exclude_unset=True).items():
+        setattr(db_assignment, field, value)
+    
+    db.commit()
+    db.refresh(db_assignment)
+    return db_assignment
+
+def delete_assignment_sync(db: Session, assignment_id: int) -> bool:
+    db_assignment = get_assignment_sync(db, assignment_id)
+    if not db_assignment:
+        return False
+    
+    db.delete(db_assignment)
+    db.commit()
+    return True
+
+def get_assignments_count_sync(
+    db: Session,
+    search: Optional[str] = None,
+    status: Optional[AssignmentStatus] = None,
+    subject: Optional[str] = None,
+    grade_level: Optional[str] = None
+) -> int:
+    query = db.query(Assignment)
+    
+    if search:
+        query = query.filter(Assignment.title.ilike(f"%{search}%"))
+    if status:
+        query = query.filter(Assignment.status == status)
+    if subject:
+        query = query.filter(Assignment.subject == subject)
+    if grade_level:
+        query = query.filter(Assignment.grade_level == grade_level)
+    
+    return query.count()
 
 async def create_assignment(db: AsyncSession, assignment: AssignmentCreate, user_id: int) -> Assignment:
     db_assignment = Assignment(

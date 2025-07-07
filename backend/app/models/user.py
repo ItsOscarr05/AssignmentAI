@@ -1,48 +1,49 @@
 from datetime import datetime
-from sqlalchemy import Boolean, Column, Integer, String, Enum, Index, DateTime, JSON
-from sqlalchemy.orm import relationship
+from typing import Optional, List, Dict, Any
+from sqlalchemy import Boolean, Column, Integer, String, Index, DateTime, JSON
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.sql import func
 from app.db.base_class import Base
 from app.models.token import Token
-import enum
-
-class UserRole(str, enum.Enum):
-    STUDENT = "student"
-    TEACHER = "teacher"
-    ADMIN = "admin"
 
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String(255), unique=True, index=True, nullable=False)
-    name = Column(String)
-    hashed_password = Column(String(255), nullable=False)
-    avatar = Column(String)
-    bio = Column(String)
-    location = Column(String)
-    website = Column(String)
-    preferences = Column(JSON)
-    is_active = Column(Boolean, default=True)
-    is_verified = Column(Boolean, default=False)
-    two_factor_secret = Column(String, nullable=True)
-    two_factor_enabled = Column(Boolean, default=False)
-    backup_codes = Column(JSON, nullable=True)  # Store hashed backup codes
-    is_superuser = Column(Boolean, default=False)
-    last_login = Column(DateTime(timezone=True), nullable=True)
-    failed_login_attempts = Column(Integer, default=0)
-    account_locked_until = Column(DateTime(timezone=True), nullable=True)
-    password_history = Column(JSON, nullable=True)  # Store last N password hashes
-    sessions = Column(JSON, nullable=True)  # Store active sessions
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    stripe_customer_id = Column(String, unique=True, index=True, nullable=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
+    name: Mapped[Optional[str]] = mapped_column(String)
+    hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+    avatar: Mapped[Optional[str]] = mapped_column(String)
+    bio: Mapped[Optional[str]] = mapped_column(String)
+    location: Mapped[Optional[str]] = mapped_column(String)
+    website: Mapped[Optional[str]] = mapped_column(String)
+    preferences: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    two_factor_secret: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    two_factor_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    backup_codes: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)  # Store hashed backup codes
+    is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
+    last_login: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    failed_login_attempts: Mapped[int] = mapped_column(Integer, default=0)
+    account_locked_until: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    password_history: Mapped[Optional[List[Dict[str, Any]]]] = mapped_column(JSON, nullable=True)  # Store last N password hashes
+    sessions: Mapped[Optional[List[Dict[str, Any]]]] = mapped_column(JSON, nullable=True)  # Store active sessions
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    stripe_customer_id: Mapped[Optional[str]] = mapped_column(String, unique=True, index=True, nullable=True)
 
     # Canvas Integration
-    canvas_access_token = Column(String, nullable=True)
-    canvas_refresh_token = Column(String, nullable=True)
-    canvas_user_id = Column(String, nullable=True)
-    canvas_institution = Column(String, nullable=True)
+    canvas_access_token: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    canvas_refresh_token: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    canvas_user_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    canvas_institution: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+
+    # OAuth Integration
+    oauth_provider: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    oauth_access_token: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    oauth_refresh_token: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    oauth_token_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     # Add composite index for common queries
     __table_args__ = (
@@ -50,7 +51,7 @@ class User(Base):
     )
 
     # Relationships - minimal for basic authentication
-    tokens = relationship("Token", back_populates="user")
+    tokens: Mapped[List[Token]] = relationship("Token", back_populates="user")
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -89,3 +90,12 @@ class User(Base):
         if not self.password_history:
             return False
         return any(p["hash"] == password_hash for p in self.password_history)
+
+    def generate_verification_token(self) -> str:
+        """Generate a verification token for email verification"""
+        from app.core.security import create_access_token
+        from datetime import timedelta
+        return create_access_token(
+            subject=self.id,
+            expires_delta=timedelta(hours=24)
+        )

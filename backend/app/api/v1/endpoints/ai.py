@@ -14,10 +14,16 @@ from app.schemas.ai_assignment import (
 )
 from app.schemas.feedback import Feedback, FeedbackCreate
 from app.core.logger import logger
-from app.core.rate_limit import check_rate_limit, rate_limiter
+from app.core.rate_limit import check_rate_limit, get_rate_limiter
 from app.services.ai import ai_service
+from pydantic import BaseModel
 
 router = APIRouter()
+
+class FeedbackRequest(BaseModel):
+    submission_content: str
+    feedback_type: str
+    submission_id: int
 
 @router.post("/generate", response_model=schemas.Assignment)
 async def generate_assignment(
@@ -61,18 +67,15 @@ async def generate_assignment_old(
 ):
     """
     Generate an assignment using AI.
-    Only teachers can generate assignments.
     """
-    # Check user role
-    if current_user.role != "teacher":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only teachers can generate assignments"
-        )
-    
     # Check rate limit
     client_id = request.client.host
-    remaining = check_rate_limit(client_id)
+    try:
+        check_rate_limit(client_id)
+    except HTTPException as e:
+        if e.status_code == 429:
+            raise e
+        raise HTTPException(status_code=429, detail="Rate limit exceeded")
     
     try:
         ai_service = AIService(db)
@@ -102,32 +105,33 @@ async def generate_assignment_old(
 @router.post("/generate-feedback", response_model=Feedback)
 async def generate_feedback(
     request: Request,
-    submission_content: str,
-    feedback_type: str,
+    feedback_request: FeedbackRequest,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
     """
     Generate feedback for a submission using AI.
-    Only teachers can generate feedback.
     """
-    # Check user role
-    if current_user.role != "teacher":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only teachers can generate feedback"
-        )
-    
     # Check rate limit
     client_id = request.client.host
-    remaining = check_rate_limit(client_id)
+    try:
+        check_rate_limit(client_id)
+    except HTTPException as e:
+        if e.status_code == 429:
+            raise e
+        raise HTTPException(status_code=429, detail="Rate limit exceeded")
     
     try:
         ai_service = AIService(db)
         tokens_needed = 500
         await ai_service.enforce_token_limit(current_user.id, tokens_needed)
-        feedback = await ai_service.generate_feedback(submission_content, feedback_type)
+        feedback = await ai_service.generate_feedback(
+            user_id=current_user.id,
+            submission_content=feedback_request.submission_content,
+            feedback_type=feedback_request.feedback_type,
+            submission_id=feedback_request.submission_id
+        )
         
         if not feedback:
             raise HTTPException(
@@ -213,16 +217,9 @@ async def analyze_submission(
 ) -> Any:
     """
     Analyze a submission using AI and provide feedback.
-    Only teachers can analyze submissions.
     """
-    # Check user role
-    if current_user.role != "teacher":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only teachers can analyze submissions"
-        )
-    
-    submission = crud.submission.get(db=db, id=submission_id)
+    from app.crud.submission import get_sync
+    submission = get_sync(db=db, id=submission_id)
     if not submission:
         raise HTTPException(status_code=404, detail="Submission not found")
     

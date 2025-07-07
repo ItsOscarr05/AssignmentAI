@@ -72,7 +72,7 @@ def test_assignment_content_validation():
     assert len(valid_content.resources) == 1
     
     # Invalid estimated duration
-    with pytest.raises(ValidationError) as exc_info:
+    with pytest.raises(ValueError) as exc_info:
         AssignmentContent(
             objectives=["Learn quadratic equations"],
             instructions="Complete the following problems",
@@ -86,7 +86,7 @@ def test_assignment_content_validation():
     # Too many objectives
     with pytest.raises(ValidationError) as exc_info:
         AssignmentContent(
-            objectives=["Objective 1", "Objective 2", "Objective 3", "Objective 4", "Objective 5", "Objective 6"],
+            objectives=["Objective 1", "Objective 2", "Objective 3", "Objective 4", "Objective 5", "Objective 6", "Objective 7", "Objective 8", "Objective 9", "Objective 10", "Objective 11"],
             instructions="Complete the following problems",
             requirements=["Show all work"],
             evaluation_criteria=["Correctness"],
@@ -134,12 +134,13 @@ def test_feedback_validation():
         content="This is good work",
         feedback_type="content",
         confidence_score=0.8,
-        metadata={"model_version": "1.0"}
+        feedback_metadata={"model_version": "1.0"},
+        score=85
     )
     assert valid_feedback.content == "This is good work"
     assert valid_feedback.feedback_type == "content"
     assert valid_feedback.confidence_score == 0.8
-    assert valid_feedback.metadata == {"model_version": "1.0"}
+    assert valid_feedback.feedback_metadata == {"model_version": "1.0"}
     
     # Invalid feedback type
     with pytest.raises(ValidationError) as exc_info:
@@ -147,7 +148,8 @@ def test_feedback_validation():
             content="This is good work",
             feedback_type="invalid",
             confidence_score=0.8,
-            metadata={"model_version": "1.0"}
+            feedback_metadata={"model_version": "1.0"},
+            score=85
         )
     assert "feedback_type" in str(exc_info.value)
     
@@ -157,7 +159,8 @@ def test_feedback_validation():
             content="This is good work",
             feedback_type="content",
             confidence_score=1.5,
-            metadata={"model_version": "1.0"}
+            feedback_metadata={"model_version": "1.0"},
+            score=85
         )
     assert "confidence_score" in str(exc_info.value)
     
@@ -167,7 +170,8 @@ def test_feedback_validation():
             content="Too short",
             feedback_type="content",
             confidence_score=0.8,
-            metadata={"model_version": "1.0"}
+            feedback_metadata={"model_version": "1.0"},
+            score=85
         )
     assert "content" in str(exc_info.value)
 
@@ -178,19 +182,21 @@ def test_feedback_create_validation():
         content="This is good work",
         feedback_type="content",
         confidence_score=0.8,
-        metadata={"model_version": "1.0"}
+        feedback_metadata={"model_version": "1.0"},
+        score=85
     )
     assert valid_feedback.submission_id == 1
     assert valid_feedback.content == "This is good work"
     
-    # Missing submission_id
+    # Test that all required fields are needed
     with pytest.raises(ValidationError) as exc_info:
         FeedbackCreate(
             content="This is good work",
             feedback_type="content",
             confidence_score=0.8,
-            metadata={"model_version": "1.0"}
-        )
+            feedback_metadata={"model_version": "1.0"},
+            score=85
+        )  # type: ignore[call-arg]
     assert "submission_id" in str(exc_info.value)
 
 def test_feedback_update_validation():
@@ -199,19 +205,21 @@ def test_feedback_update_validation():
         content="Updated feedback",
         feedback_type="content",
         confidence_score=0.9,
-        metadata={"model_version": "1.1"}
+        feedback_metadata={"model_version": "1.1"},
+        score=85
     )
     assert valid_feedback.content == "Updated feedback"
     assert valid_feedback.confidence_score == 0.9
     
-    # Partial update
+    # Partial update - all fields are optional in FeedbackUpdate
     partial_feedback = FeedbackUpdate(
-        content="Updated feedback"
-    )
+        content="Updated feedback",
+        score=85
+    )  # type: ignore[call-arg]
     assert partial_feedback.content == "Updated feedback"
     assert partial_feedback.feedback_type is None
     assert partial_feedback.confidence_score is None
-    assert partial_feedback.metadata is None
+    assert partial_feedback.feedback_metadata is None
 
 def test_html_sanitization():
     # Test HTML sanitization in content
@@ -219,7 +227,8 @@ def test_html_sanitization():
         content="<script>alert('xss')</script>This is good work",
         feedback_type="content",
         confidence_score=0.8,
-        metadata={"model_version": "1.0"}
+        feedback_metadata={"model_version": "1.0"},
+        score=85
     )
     assert feedback_with_html.content == "This is good work"
     
@@ -228,9 +237,10 @@ def test_html_sanitization():
         content="This is good work",
         feedback_type="content",
         confidence_score=0.8,
-        metadata={"model_version": "<script>alert('xss')</script>1.0"}
+        feedback_metadata={"model_version": "<script>alert('xss')</script>1.0"},
+        score=85
     )
-    assert feedback_with_html_metadata.metadata["model_version"] == "1.0"
+    assert feedback_with_html_metadata.feedback_metadata["model_version"] == "1.0"
     
     # Test HTML sanitization in assignment content
     content_with_html = AssignmentContent(

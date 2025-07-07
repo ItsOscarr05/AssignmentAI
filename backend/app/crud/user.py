@@ -1,5 +1,6 @@
 from typing import Any, Dict, Optional, Union, List
 from sqlalchemy.orm import Session
+from datetime import datetime
 
 from app.core.security import get_password_hash, verify_password
 from app.crud.base import CRUDBase
@@ -13,11 +14,15 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
     def get_user(self, db: Session, *, user_id: int) -> Optional[User]:
         return self.get(db, id=user_id)
 
+    def get_multi(self, db: Session, *, skip: int = 0, limit: int = 100) -> List[User]:
+        return db.query(User).offset(skip).limit(limit).all()
+
     def create(self, db: Session, *, obj_in: UserCreate) -> User:
         db_obj = User(
             email=obj_in.email,
             hashed_password=get_password_hash(obj_in.password),
             name=obj_in.name,
+            updated_at=datetime.utcnow(),
         )
         db.add(db_obj)
         db.commit()
@@ -30,12 +35,21 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         if isinstance(obj_in, dict):
             update_data = obj_in
         else:
-            update_data = obj_in.dict(exclude_unset=True)
+            update_data = obj_in.model_dump(exclude_unset=True)
         if update_data.get("password"):
             hashed_password = get_password_hash(update_data["password"])
             del update_data["password"]
             update_data["hashed_password"] = hashed_password
-        return super().update(db, db_obj=db_obj, obj_in=update_data)
+        
+        # Update the object directly
+        for field, value in update_data.items():
+            if hasattr(db_obj, field):
+                setattr(db_obj, field, value)
+        
+        db.add(db_obj)
+        db.commit()
+        db.refresh(db_obj)
+        return db_obj
 
     def authenticate(
         self, db: Session, *, email: str, password: str
@@ -58,6 +72,7 @@ user = CRUDUser(User)
 # Export functions
 get_user = user.get_user
 get_user_by_email = user.get_by_email
+get_multi = user.get_multi
 create_user = user.create
 update_user = user.update
 delete_user = user.remove
@@ -71,7 +86,7 @@ def get_profile(db: Session, user_id: str) -> UserProfile:
     return UserProfile(
         name=user.name,
         email=user.email,
-        avatar=user.avatar,
+        avatar=user.avatar or "",
         bio=user.bio,
         location=user.location,
         website=user.website
@@ -120,7 +135,7 @@ def update_avatar(db: Session, user_id: str, avatar_url: str) -> None:
     db.commit()
     db.refresh(user)
 
-def verify_password(user: User, password: str) -> bool:
+def verify_user_password(user: User, password: str) -> bool:
     """Verify user password"""
     return verify_password(password, user.hashed_password)
 
@@ -136,7 +151,7 @@ def update_password(db: Session, user_id: str, new_password: str) -> None:
     db.commit()
     db.refresh(user)
 
-def delete_user(db: Session, user_id: str) -> None:
+def delete_user_account(db: Session, user_id: str) -> None:
     """Delete user"""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:

@@ -1,11 +1,9 @@
 from pydantic import BaseModel, EmailStr
-from app.models.user import UserRole
 from typing import Optional, List, Union
 
 class UserBase(BaseModel):
     email: EmailStr
-    full_name: str
-    role: UserRole
+    name: str
 
 class UserCreate(UserBase):
     password: str
@@ -17,6 +15,13 @@ class UserLogin(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+    expires_in: int
+
+class TokenWith2FA(BaseModel):
+    access_token: str
+    token_type: str
+    expires_in: int
+    requires_2fa: bool
 
 class TokenData(BaseModel):
     email: Optional[str] = None

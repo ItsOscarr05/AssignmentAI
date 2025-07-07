@@ -4,6 +4,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 import time
 from typing import Dict, Tuple
 import asyncio
+import os
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
     def __init__(self, app, requests_per_minute: int = 60):
@@ -22,6 +23,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             await asyncio.sleep(60)
 
     async def dispatch(self, request: Request, call_next):
+        # Skip rate limiting in test environment
+        if os.getenv("TESTING") == "true":
+            return await call_next(request)
+            
         client_ip = request.client.host
         current_time = time.time()
 

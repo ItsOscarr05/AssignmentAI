@@ -13,6 +13,11 @@ class AssignmentBase(BaseModel):
     due_date: datetime
     max_score: int = Field(..., ge=0, le=100)
     attachments: Optional[List[str]] = None
+    assignment_type: str = Field(..., min_length=1, max_length=50)
+    topic: str = Field(..., min_length=1, max_length=255)
+    difficulty: str = Field(..., min_length=1, max_length=50)
+    estimated_time: int = Field(..., ge=1)
+    content: str = Field(..., min_length=1)
 
 class AssignmentCreate(AssignmentBase):
     pass

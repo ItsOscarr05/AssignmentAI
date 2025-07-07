@@ -2,25 +2,29 @@ from datetime import datetime
 from typing import Optional, Dict, Any, List
 from pydantic import BaseModel, Field, field_validator
 import re
+import bleach
 
 class FeedbackBase(BaseModel):
     content: str = Field(..., min_length=10, max_length=5000)
-    feedback_type: str = Field(..., pattern=r'^(general|grammar|content|structure|technical)$')
-    confidence_score: float = Field(..., ge=0.0, le=1.0)
+    feedback_type: str = Field(..., pattern=r'^(general|grammar|content|structure|technical|grading)$')
+    confidence_score: Optional[float] = Field(None, ge=0.0, le=1.0)
+    score: Optional[float] = Field(None, ge=0.0, le=100.0)
     feedback_metadata: Dict[str, Any] = Field(default_factory=dict)
 
     @field_validator('content')
     @classmethod
     def sanitize_content(cls, v):
-        """Sanitize content by removing HTML and limiting length."""
-        return re.sub(r'<[^>]+>', '', v)[:5000]
+        """Sanitize content by removing HTML, scripts, and limiting length."""
+        # Remove <script>...</script> blocks and their content
+        v = re.sub(r'<script.*?>.*?</script>', '', v, flags=re.DOTALL | re.IGNORECASE)
+        return bleach.clean(v, tags=[], strip=True)[:5000]
 
     @field_validator('feedback_metadata')
     @classmethod
     def sanitize_metadata(cls, v):
         """Sanitize metadata values."""
         return {
-            k: re.sub(r'<[^>]+>', '', str(v))[:500]  # Remove HTML and limit length
+            k: bleach.clean(re.sub(r'<script.*?>.*?</script>', '', str(v), flags=re.DOTALL | re.IGNORECASE), tags=[], strip=True)[:500]
             for k, v in v.items()
         }
 
@@ -29,8 +33,9 @@ class FeedbackCreate(FeedbackBase):
 
 class FeedbackUpdate(FeedbackBase):
     content: Optional[str] = Field(None, min_length=10, max_length=5000)
-    feedback_type: Optional[str] = Field(None, pattern=r'^(general|grammar|content|structure|technical)$')
+    feedback_type: Optional[str] = Field(None, pattern=r'^(general|grammar|content|structure|technical|grading)$')
     confidence_score: Optional[float] = Field(None, ge=0.0, le=1.0)
+    score: Optional[float] = Field(None, ge=0.0, le=100.0)
     feedback_metadata: Optional[Dict[str, Any]] = Field(None)
 
 class FeedbackInDB(FeedbackBase):

@@ -8,6 +8,7 @@ from app.services.export_service import ExportService
 from app.services.ai_service import AIService
 from pydantic import BaseModel
 import logging
+import base64
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -92,19 +93,54 @@ async def generate_chat_response(
     Generate AI response for chat-based assignment input.
     """
     try:
-        ai_service = AIService()
+        # Create a simplified AI service for chat generation (no database needed)
+        from openai import AsyncOpenAI
+        from app.core.config import settings
+        
+        client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
         
         # Create a prompt that includes context if provided
         prompt = request.message
         if request.context:
             prompt = f"Context: {request.context}\n\nUser Request: {request.message}"
         
-        # Generate response using AI service
-        response = await ai_service.generate_assignment_content_from_prompt(prompt)
+        # Construct a system prompt for chat-based generation
+        system_prompt = """You are an expert educational content creator. 
+        When given a description of an assignment, create a comprehensive, 
+        well-structured assignment that includes:
+        
+        1. Clear title and description
+        2. Learning objectives
+        3. Detailed instructions
+        4. Requirements and deliverables
+        5. Evaluation criteria
+        6. Estimated time and resources needed
+        
+        Format the response in a clear, structured manner that students can easily follow.
+        Make sure the assignment is appropriate for the described level and subject."""
+        
+        # Call OpenAI API directly
+        response = await client.chat.completions.create(
+            model=settings.OPENAI_MODEL,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=settings.AI_MAX_TOKENS,
+            temperature=settings.AI_TEMPERATURE,
+            top_p=settings.AI_TOP_P,
+            frequency_penalty=settings.AI_FREQUENCY_PENALTY,
+            presence_penalty=settings.AI_PRESENCE_PENALTY
+        )
+        
+        content = response.choices[0].message.content
+        if content is None:
+            raise ValueError("OpenAI returned None content")
+        response_text = content
         
         return ChatMessageResponse(
-            response=response,
-            tokens_used=len(response.split()),  # Approximate token count
+            response=response_text,
+            tokens_used=len(response_text.split()),  # Approximate token count
             model_used="gpt-4"
         )
     except Exception as e:
@@ -126,16 +162,18 @@ async def export_assignment(
         
         if format == "pdf":
             pdf_content = await export_service.export_to_pdf(request.content, request.options)
+            encoded_content = base64.b64encode(pdf_content).decode("utf-8")
             return {
-                "content": pdf_content,
+                "content": encoded_content,
                 "format": "pdf",
                 "filename": f"{request.options.get('customTitle', 'assignment')}.pdf",
                 "content_type": "application/pdf"
             }
         elif format == "docx":
             word_content = await export_service.export_to_word(request.content, request.options)
+            encoded_content = base64.b64encode(word_content).decode("utf-8")
             return {
-                "content": word_content,
+                "content": encoded_content,
                 "format": "docx",
                 "filename": f"{request.options.get('customTitle', 'assignment')}.docx",
                 "content_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -218,11 +256,48 @@ async def process_multiple_inputs(
         
         # Process chat prompt
         if chat_prompt:
-            ai_service = AIService()
-            chat_response = await ai_service.generate_assignment_content_from_prompt(chat_prompt)
+            # Create a simplified AI service for chat generation (no database needed)
+            from openai import AsyncOpenAI
+            from app.core.config import settings
+            
+            client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+            
+            # Construct a system prompt for chat-based generation
+            system_prompt = """You are an expert educational content creator. 
+            When given a description of an assignment, create a comprehensive, 
+            well-structured assignment that includes:
+            
+            1. Clear title and description
+            2. Learning objectives
+            3. Detailed instructions
+            4. Requirements and deliverables
+            5. Evaluation criteria
+            6. Estimated time and resources needed
+            
+            Format the response in a clear, structured manner that students can easily follow.
+            Make sure the assignment is appropriate for the described level and subject."""
+            
+            # Call OpenAI API directly
+            response = await client.chat.completions.create(
+                model=settings.OPENAI_MODEL,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": chat_prompt}
+                ],
+                max_tokens=settings.AI_MAX_TOKENS,
+                temperature=settings.AI_TEMPERATURE,
+                top_p=settings.AI_TOP_P,
+                frequency_penalty=settings.AI_FREQUENCY_PENALTY,
+                presence_penalty=settings.AI_PRESENCE_PENALTY
+            )
+            
+            content = response.choices[0].message.content
+            if content is None:
+                content = "No response generated"
+            
             results["chat"] = {
                 "prompt": chat_prompt,
-                "response": chat_response
+                "response": content
             }
         
         # Combine all content

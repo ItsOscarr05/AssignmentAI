@@ -1,6 +1,5 @@
 from typing import Optional, Dict, Any
 from pydantic import BaseModel, EmailStr
-from app.models.user import UserRole
 from app.schemas.base import BaseSchema
 from datetime import datetime
 
@@ -12,13 +11,19 @@ class UserBase(BaseModel):
     location: Optional[str] = None
     website: Optional[str] = None
     preferences: Optional[Dict[str, Any]] = None
-    role: str = "user"
     is_active: bool = True
 
 class UserCreate(UserBase):
     password: str
 
-class UserUpdate(UserBase):
+class UserUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    name: Optional[str] = None
+    avatar: Optional[str] = None
+    bio: Optional[str] = None
+    location: Optional[str] = None
+    website: Optional[str] = None
+    preferences: Optional[Dict[str, Any]] = None
     password: Optional[str] = None
 
 class UserProfile(BaseModel):

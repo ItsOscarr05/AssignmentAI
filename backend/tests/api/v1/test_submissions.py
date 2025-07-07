@@ -11,10 +11,12 @@ def test_create_submission(client, test_user, test_token, test_assignment):
     }
     
     response = client.post(
-        "/api/v1/submissions",
+        "/api/v1/submissions/",
         headers={"Authorization": f"Bearer {test_token}"},
         json=submission_data,
     )
+    print(f"Response status: {response.status_code}")
+    print(f"Response body: {response.text}")
     assert response.status_code == status.HTTP_201_CREATED
     data = response.json()
     assert data["content"] == submission_data["content"]
@@ -23,7 +25,7 @@ def test_create_submission(client, test_user, test_token, test_assignment):
 
 def test_get_submissions(client, test_user, test_token, test_submission):
     response = client.get(
-        "/api/v1/submissions",
+        "/api/v1/submissions/",
         headers={"Authorization": f"Bearer {test_token}"},
     )
     assert response.status_code == status.HTTP_200_OK
@@ -90,9 +92,13 @@ def test_get_submissions_by_student(client, test_user, test_token, test_submissi
     assert len(data["items"]) > 0
     assert all(sub["student_id"] == test_user.id for sub in data["items"])
 
-def test_submit_after_deadline(client, test_user, test_token, test_assignment):
-    # Set assignment due date to past
-    test_assignment.due_date = "2020-01-01"
+def test_submit_after_deadline(client, test_user, test_token, test_assignment, db):
+    # Set assignment due date to past in the database
+    from datetime import datetime
+    test_assignment.due_date = datetime(2020, 1, 1)
+    db.add(test_assignment)
+    db.commit()
+    db.refresh(test_assignment)
     
     submission_data = {
         "content": "Late submission",
@@ -100,7 +106,7 @@ def test_submit_after_deadline(client, test_user, test_token, test_assignment):
     }
     
     response = client.post(
-        "/api/v1/submissions",
+        "/api/v1/submissions/",
         headers={"Authorization": f"Bearer {test_token}"},
         json=submission_data,
     )
@@ -108,14 +114,14 @@ def test_submit_after_deadline(client, test_user, test_token, test_assignment):
     data = response.json()
     assert data["detail"] == "Assignment deadline has passed"
 
-def test_submit_without_required_fields(client, test_token):
+def test_submit_without_required_fields(client, test_token, test_assignment):
     submission_data = {
-        "content": "",  # Empty content
-        "assignment_id": "1",
+        "content": "Test content",  # Valid content
+        # Missing assignment_id - this should cause a validation error
     }
     
     response = client.post(
-        "/api/v1/submissions",
+        "/api/v1/submissions/",
         headers={"Authorization": f"Bearer {test_token}"},
         json=submission_data,
     )

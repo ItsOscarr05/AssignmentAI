@@ -14,6 +14,7 @@ class OAuthConfig:
                 "token_url": "https://oauth2.googleapis.com/token",
                 "userinfo_url": "https://www.googleapis.com/oauth2/v3/userinfo",
                 "scope": "openid email profile",
+                "redirect_uri": f"{settings.BACKEND_URL}/api/v1/auth/oauth/google/callback",
             },
             "github": {
                 "client_id": settings.GITHUB_CLIENT_ID,
@@ -22,6 +23,7 @@ class OAuthConfig:
                 "token_url": "https://github.com/login/oauth/access_token",
                 "userinfo_url": "https://api.github.com/user",
                 "scope": "user:email",
+                "redirect_uri": f"{settings.BACKEND_URL}/api/v1/auth/oauth/github/callback",
             },
             "facebook": {
                 "client_id": settings.FACEBOOK_CLIENT_ID,
@@ -30,6 +32,7 @@ class OAuthConfig:
                 "token_url": "https://graph.facebook.com/v12.0/oauth/access_token",
                 "userinfo_url": "https://graph.facebook.com/v12.0/me",
                 "scope": "email public_profile",
+                "redirect_uri": f"{settings.BACKEND_URL}/api/v1/auth/oauth/facebook/callback",
             },
             "apple": {
                 "client_id": settings.APPLE_CLIENT_ID,
@@ -38,6 +41,7 @@ class OAuthConfig:
                 "token_url": "https://appleid.apple.com/auth/token",
                 "userinfo_url": "https://appleid.apple.com/auth/userinfo",
                 "scope": "email name",
+                "redirect_uri": f"{settings.BACKEND_URL}/api/v1/auth/oauth/apple/callback",
             },
         }
 

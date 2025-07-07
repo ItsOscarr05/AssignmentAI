@@ -1,5 +1,6 @@
 from typing import Any, Dict, Optional, Union, List
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from sqlalchemy import desc, asc, select, func
 from app.crud.base import CRUDBase
 from app.models.submission import Submission, SubmissionStatus
@@ -50,6 +51,44 @@ class CRUDSubmission(CRUDBase[Submission, SubmissionCreate, SubmissionUpdate]):
         await db.refresh(submission)
         return submission
 
+# Synchronous versions for use with regular sessions
+def get_by_user_sync(db: Session, *, user_id: int, skip: int = 0, limit: int = 100) -> list[Submission]:
+    return db.query(Submission).filter(Submission.user_id == user_id).offset(skip).limit(limit).all()
+
+def get_by_assignment_sync(db: Session, *, assignment_id: int, skip: int = 0, limit: int = 100) -> list[Submission]:
+    return db.query(Submission).filter(Submission.assignment_id == assignment_id).offset(skip).limit(limit).all()
+
+def get_sync(db: Session, id: int) -> Optional[Submission]:
+    return db.query(Submission).filter(Submission.id == id).first()
+
+def create_with_user_sync(db: Session, *, obj_in: SubmissionCreate, user_id: int) -> Submission:
+    obj_in_data = obj_in.model_dump()
+    db_obj = Submission(**obj_in_data, user_id=user_id)
+    db.add(db_obj)
+    db.commit()
+    db.refresh(db_obj)
+    return db_obj
+
+def update_sync(db: Session, *, db_obj: Submission, obj_in: Union[SubmissionUpdate, Dict[str, Any]]) -> Submission:
+    obj_data = db_obj.__dict__
+    if isinstance(obj_in, dict):
+        update_data = obj_in
+    else:
+        update_data = obj_in.model_dump(exclude_unset=True)
+    for field in obj_data:
+        if field in update_data:
+            setattr(db_obj, field, update_data[field])
+    db.add(db_obj)
+    db.commit()
+    db.refresh(db_obj)
+    return db_obj
+
+def remove_sync(db: Session, *, id: int) -> Submission:
+    obj = get_sync(db, id)
+    db.delete(obj)
+    db.commit()
+    return obj
+
 async def create_submission(
     db: AsyncSession,
     submission: SubmissionCreate,
@@ -65,10 +104,6 @@ async def create_submission(
     await db.commit()
     await db.refresh(db_submission)
     return db_submission
-
-async def get_submission(db: AsyncSession, submission_id: int) -> Optional[Submission]:
-    result = await db.execute(select(Submission).filter(Submission.id == submission_id))
-    return result.scalar_one_or_none()
 
 async def get_submissions(
     db: AsyncSession,
@@ -92,31 +127,6 @@ async def get_submissions(
     query = query.offset(skip).limit(limit)
     result = await db.execute(query)
     return result.scalars().all()
-
-async def update_submission(
-    db: AsyncSession,
-    submission_id: int,
-    submission: SubmissionUpdate
-) -> Optional[Submission]:
-    db_submission = await get_submission(db, submission_id)
-    if not db_submission:
-        return None
-    
-    for field, value in submission.model_dump(exclude_unset=True).items():
-        setattr(db_submission, field, value)
-    
-    await db.commit()
-    await db.refresh(db_submission)
-    return db_submission
-
-async def delete_submission(db: AsyncSession, submission_id: int) -> bool:
-    db_submission = await get_submission(db, submission_id)
-    if not db_submission:
-        return False
-    
-    await db.delete(db_submission)
-    await db.commit()
-    return True
 
 async def get_submissions_count(
     db: AsyncSession,
@@ -166,5 +176,72 @@ async def get_student_submissions_count(
     
     result = await db.execute(select(func.count()).select_from(query.subquery()))
     return result.scalar_one()
+
+# Synchronous versions
+def get_submissions_sync(
+    db: Session,
+    assignment_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    sort_by: str = "submitted_at",
+    sort_order: str = "desc",
+    status: Optional[SubmissionStatus] = None
+) -> List[Submission]:
+    query = db.query(Submission).filter(Submission.assignment_id == assignment_id)
+    
+    if status:
+        query = query.filter(Submission.status == status)
+    
+    if sort_order == "desc":
+        query = query.order_by(desc(getattr(Submission, sort_by)))
+    else:
+        query = query.order_by(asc(getattr(Submission, sort_by)))
+    
+    return query.offset(skip).limit(limit).all()
+
+def get_submissions_count_sync(
+    db: Session,
+    assignment_id: int,
+    status: Optional[SubmissionStatus] = None
+) -> int:
+    query = db.query(Submission).filter(Submission.assignment_id == assignment_id)
+    
+    if status:
+        query = query.filter(Submission.status == status)
+    
+    return query.count()
+
+def get_student_submissions_sync(
+    db: Session,
+    student_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    sort_by: str = "submitted_at",
+    sort_order: str = "desc",
+    status: Optional[SubmissionStatus] = None
+) -> List[Submission]:
+    query = db.query(Submission).filter(Submission.student_id == student_id)
+    
+    if status:
+        query = query.filter(Submission.status == status)
+    
+    if sort_order == "desc":
+        query = query.order_by(desc(getattr(Submission, sort_by)))
+    else:
+        query = query.order_by(asc(getattr(Submission, sort_by)))
+    
+    return query.offset(skip).limit(limit).all()
+
+def get_student_submissions_count_sync(
+    db: Session,
+    student_id: int,
+    status: Optional[SubmissionStatus] = None
+) -> int:
+    query = db.query(Submission).filter(Submission.student_id == student_id)
+    
+    if status:
+        query = query.filter(Submission.status == status)
+    
+    return query.count()
 
 submission = CRUDSubmission(Submission) 

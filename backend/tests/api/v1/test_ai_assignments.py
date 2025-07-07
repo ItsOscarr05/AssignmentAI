@@ -114,7 +114,7 @@ def test_create_ai_assignment_with_invalid_temperature(client, test_user, test_t
         "prompt": "Test AI prompt",
         "model": "gpt-4",
         "max_tokens": 1000,
-        "temperature": 2.0,  # Invalid temperature value
+        "temperature": 2.1,  # Invalid temperature value (should be > 2.0)
     }
     
     response = client.post(

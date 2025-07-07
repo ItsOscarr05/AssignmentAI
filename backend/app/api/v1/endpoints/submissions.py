@@ -1,6 +1,9 @@
 from typing import Any, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query, Request
 from sqlalchemy.orm import Session
+import logging
+from pydantic import ValidationError
+import json
 
 from app import crud, models, schemas
 from app.core.deps import get_current_user, get_db
@@ -20,7 +23,7 @@ from app.services.file_service import file_service
 
 router = APIRouter()
 
-@router.get("/submissions", response_model=List[schemas.Submission])
+@router.get("", response_model=schemas.SubmissionList)
 def read_submissions(
     db: Session = Depends(get_db),
     skip: int = 0,
@@ -30,22 +33,59 @@ def read_submissions(
     """
     Retrieve submissions.
     """
-    submissions = crud.submission.get_by_user(
+    submissions = submission_crud.get_by_user_sync(
         db=db, user_id=current_user.id, skip=skip, limit=limit
     )
-    return submissions
+    total = len(submissions)
+    result = []
+    for sub in submissions:
+        sub_dict = sub.__dict__.copy()
+        sub_dict["student_id"] = sub_dict.pop("user_id", None)
+        result.append(sub_dict)
+    return {"items": result, "total": total}
 
-@router.post("/submissions", response_model=schemas.Submission)
+@router.get("/", response_model=schemas.SubmissionList)
+def read_submissions_slash(
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 100,
+    current_user: models.User = Depends(get_current_user),
+) -> Any:
+    return read_submissions(db, skip, limit, current_user)
+
+@router.post("", response_model=schemas.SubmissionResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=schemas.SubmissionResponse, status_code=status.HTTP_201_CREATED)
 async def create_submission(
     *,
     db: Session = Depends(get_db),
-    submission_in: schemas.SubmissionCreate,
+    request: Request,
     file: UploadFile = File(None),
     current_user: models.User = Depends(get_current_user),
 ) -> Any:
     """
     Create new submission.
     """
+    # Parse request body manually
+    body = await request.json()
+    
+    # Convert attachments list to JSON string if present
+    if body.get('attachments') and isinstance(body['attachments'], list):
+        body['attachments'] = json.dumps(body['attachments'])
+    
+    submission = schemas.SubmissionCreate(**body)
+    
+    # Check if assignment exists and get its due date
+    assignment = db.query(models.Assignment).filter(models.Assignment.id == submission.assignment_id).first()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    
+    # Check if deadline has passed
+    if assignment.due_date and datetime.utcnow() > assignment.due_date:
+        raise HTTPException(
+            status_code=400,
+            detail="Assignment deadline has passed"
+        )
+    
     # Handle file upload if provided
     file_path = None
     if file:
@@ -67,16 +107,30 @@ async def create_submission(
             buffer.write(content)
     
     # Create submission with file path
-    submission_data = submission_in.model_dump()
+    submission_data = submission.model_dump()
+    if not submission_data.get("title"):
+        submission_data["title"] = "Submission"
     if file_path:
         submission_data["file_path"] = file_path
     
-    submission = crud.submission.create_with_user(
-        db=db, obj_in=schemas.SubmissionCreate(**submission_data), user_id=current_user.id
-    )
-    return submission
+    try:
+        submission_obj = submission_crud.create_with_user_sync(
+            db=db, obj_in=schemas.SubmissionCreate(**submission_data), user_id=current_user.id
+        )
+        resp = submission_obj.__dict__.copy()
+        resp["student_id"] = resp.pop("user_id", None)
+        # Parse attachments JSON string back to list for response
+        if resp.get("attachments") and isinstance(resp["attachments"], str):
+            try:
+                resp["attachments"] = json.loads(resp["attachments"])
+            except (json.JSONDecodeError, TypeError):
+                resp["attachments"] = []
+        return schemas.SubmissionResponse(**resp)
+    except ValidationError as e:
+        logging.error(f"Validation error in create_submission: {e.errors()}")
+        raise
 
-@router.get("/submissions/{submission_id}", response_model=schemas.Submission)
+@router.get("/{submission_id}", response_model=schemas.Submission)
 def read_submission(
     *,
     db: Session = Depends(get_db),
@@ -86,33 +140,43 @@ def read_submission(
     """
     Get submission by ID.
     """
-    submission = crud.submission.get(db=db, id=submission_id)
+    submission = submission_crud.get_sync(db=db, id=submission_id)
     if not submission:
         raise HTTPException(status_code=404, detail="Submission not found")
     if submission.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
     return submission
 
-@router.put("/submissions/{submission_id}", response_model=schemas.Submission)
+@router.put("{submission_id}", response_model=schemas.SubmissionResponse)
+@router.put("/{submission_id}", response_model=schemas.SubmissionResponse)
 async def update_submission(
     *,
     db: Session = Depends(get_db),
     submission_id: int,
-    submission_in: schemas.SubmissionUpdate,
+    request: Request,
     file: UploadFile = File(None),
     current_user: models.User = Depends(get_current_user),
 ) -> Any:
     """
     Update submission.
     """
-    submission = crud.submission.get(db=db, id=submission_id)
-    if not submission:
+    # Parse request body manually
+    body = await request.json()
+    
+    # Convert attachments list to JSON string if present
+    if body.get('attachments') and isinstance(body['attachments'], list):
+        body['attachments'] = json.dumps(body['attachments'])
+    
+    submission = schemas.SubmissionUpdate(**body)
+    
+    submission_obj = submission_crud.get_sync(db=db, id=submission_id)
+    if not submission_obj:
         raise HTTPException(status_code=404, detail="Submission not found")
-    if submission.user_id != current_user.id:
+    if submission_obj.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
     
     # Handle file upload if provided
-    file_path = submission.file_path
+    file_path = submission_obj.file_path
     if file:
         # Validate file type
         file_ext = os.path.splitext(file.filename)[1].lower()
@@ -136,26 +200,40 @@ async def update_submission(
             buffer.write(content)
     
     # Update submission with file path
-    submission_data = submission_in.model_dump(exclude_unset=True)
+    submission_data = submission.model_dump(exclude_unset=True)
+    if not submission_data.get("title"):
+        submission_data["title"] = "Submission"
     if file_path:
         submission_data["file_path"] = file_path
     
-    submission = crud.submission.update(
-        db=db, db_obj=submission, obj_in=submission_data
-    )
-    return submission
+    try:
+        updated_submission = submission_crud.update_sync(
+            db=db, db_obj=submission_obj, obj_in=submission_data
+        )
+        resp = updated_submission.__dict__.copy()
+        resp["student_id"] = resp.pop("user_id", None)
+        # Parse attachments JSON string back to list for response
+        if resp.get("attachments") and isinstance(resp["attachments"], str):
+            try:
+                resp["attachments"] = json.loads(resp["attachments"])
+            except (json.JSONDecodeError, TypeError):
+                resp["attachments"] = []
+        return schemas.SubmissionResponse(**resp)
+    except ValidationError as e:
+        logging.error(f"Validation error in update_submission: {e.errors()}")
+        raise
 
-@router.delete("/submissions/{submission_id}", response_model=schemas.Submission)
+@router.delete("/{submission_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_submission(
     *,
     db: Session = Depends(get_db),
     submission_id: int,
     current_user: models.User = Depends(get_current_user),
-) -> Any:
+) -> None:
     """
     Delete submission.
     """
-    submission = crud.submission.get(db=db, id=submission_id)
+    submission = submission_crud.get_sync(db=db, id=submission_id)
     if not submission:
         raise HTTPException(status_code=404, detail="Submission not found")
     if submission.user_id != current_user.id:
@@ -165,8 +243,8 @@ def delete_submission(
     if submission.file_path and os.path.exists(submission.file_path):
         os.remove(submission.file_path)
     
-    submission = crud.submission.remove(db=db, id=submission_id)
-    return submission
+    submission_crud.remove_sync(db=db, id=submission_id)
+    # Do not return anything for 204
 
 @router.put("/submissions/{submission_id}/status", response_model=schemas.Submission)
 def update_submission_status(
@@ -179,13 +257,13 @@ def update_submission_status(
     """
     Update submission status.
     """
-    submission = crud.submission.get(db=db, id=submission_id)
+    submission = submission_crud.get_sync(db=db, id=submission_id)
     if not submission:
         raise HTTPException(status_code=404, detail="Submission not found")
     if submission.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
     
-    submission = crud.submission.update_status(
+    submission = submission_crud.update_status(
         db=db, submission_id=submission_id, status=status
     )
     return submission
@@ -342,4 +420,121 @@ def delete_submission(
     
     if not submission_crud.delete_submission(db, submission_id):
         raise HTTPException(status_code=500, detail="Failed to delete submission")
-    return {"message": "Submission deleted successfully"} 
+    return {"message": "Submission deleted successfully"}
+
+@router.get("/assignments/{assignment_id}/submissions", response_model=List[schemas.Submission])
+def get_submissions_by_assignment(
+    assignment_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+) -> Any:
+    """
+    Get all submissions for an assignment.
+    """
+    submissions = submission_crud.get_by_assignment_sync(
+        db=db, assignment_id=assignment_id
+    )
+    return submissions
+
+@router.get("/users/{user_id}/submissions", response_model=List[schemas.Submission])
+def get_submissions_by_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+) -> Any:
+    """
+    Get all submissions for a user.
+    """
+    if user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    submissions = submission_crud.get_by_user_sync(
+        db=db, user_id=user_id
+    )
+    return submissions 
+
+@router.post("/upload")
+async def upload_file(
+    file: UploadFile = File(...),
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Upload a file with security validation"""
+    # Check file type
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No file provided")
+    
+    file_ext = os.path.splitext(file.filename)[1].lower()
+    if file_ext not in [f".{ext}" for ext in settings.ALLOWED_FILE_TYPES]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File type not allowed. Allowed types: {', '.join(settings.ALLOWED_FILE_TYPES)}"
+        )
+    
+    # Read file content for security scanning
+    content = await file.read()
+    
+    # Check file size
+    if len(content) > settings.MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail="File size exceeds limit"
+        )
+    
+    # Enhanced security scanning for malicious content
+    malicious_patterns = [
+        b"import os",
+        b"os.system",
+        b"subprocess",
+        b"eval(",
+        b"exec(",
+        b"__import__",
+        b"rm -rf",
+        b"del /",
+        b"format(",
+        b"globals(",
+        b"locals(",
+        b"<?php",
+        b"<script",
+        b"javascript:",
+        b"vbscript:",
+        b"onload=",
+        b"onerror=",
+        b"onclick=",
+        b"<iframe",
+        b"<object",
+        b"<embed"
+    ]
+    
+    for pattern in malicious_patterns:
+        if pattern in content:
+            # Create security alert
+            from app.models.security import SecurityAlert
+            alert = SecurityAlert(
+                user_id=current_user.id,
+                alert_type="malicious_upload",
+                description=f"Malicious file upload detected: {file.filename}",
+                severity="high",
+                alert_metadata={"filename": file.filename, "pattern": pattern.decode()}
+            )
+            db.add(alert)
+            db.commit()
+            
+            raise HTTPException(
+                status_code=400,
+                detail="Malicious content detected"
+            )
+    
+    # Create upload directory if it doesn't exist
+    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+    
+    # Save file
+    file_path = os.path.join(settings.UPLOAD_DIR, file.filename)
+    with open(file_path, "wb") as buffer:
+        buffer.write(content)
+    
+    return {
+        "filename": file.filename,
+        "file_path": file_path,
+        "size": len(content),
+        "message": "File uploaded successfully"
+    } 

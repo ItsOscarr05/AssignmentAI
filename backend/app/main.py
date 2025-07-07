@@ -137,7 +137,7 @@ app.add_exception_handler(RequestValidationError, validation_error_handler)
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Temporarily allow all origins for debugging
+    allow_origins=[settings.FRONTEND_URL] if settings.FRONTEND_URL else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

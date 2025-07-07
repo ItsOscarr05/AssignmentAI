@@ -1,9 +1,10 @@
 from typing import List, Optional, Any
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, status
 from sqlalchemy.orm import Session
 from app.core.deps import get_current_user, get_db
 from app.crud import assignment as assignment_crud
+from app.crud import ai_assignment as ai_assignment_crud
 from app.schemas.assignment import (
     AssignmentCreate,
     AssignmentUpdate,
@@ -14,51 +15,27 @@ from app.models.assignment import AssignmentStatus
 from app.services.file_service import file_service
 from app.models.user import User
 from app.models.assignment import Assignment
+from pydantic import ValidationError
+from app.schemas.ai_assignment import AIAssignment
 
 router = APIRouter()
 
-@router.post("/", response_model=AssignmentResponse)
-async def create_assignment(
-    title: str,
-    description: str,
-    subject: str,
-    grade_level: str,
-    due_date: datetime,
-    max_score: int = 100,
-    files: List[UploadFile] = File(None),
+@router.post("/", response_model=AssignmentResponse, status_code=status.HTTP_201_CREATED)
+def create_assignment(
+    assignment: AssignmentCreate,
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
     """
-    Create a new assignment with optional file attachments.
+    Create a new assignment.
     """
-    # Handle file uploads
-    file_urls = []
-    if files:
-        try:
-            file_paths = await file_service.save_files(files, f"assignments/{current_user.id}")
-            file_urls = [file_service.get_file_url(path) for path in file_paths]
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail=str(e))
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to upload files: {str(e)}")
-    
-    assignment = AssignmentCreate(
-        title=title,
-        description=description,
-        subject=subject,
-        grade_level=grade_level,
-        due_date=due_date,
-        max_score=max_score,
-        attachments=file_urls
-    )
-    
-    return assignment_crud.create_assignment(db, assignment, current_user.id)
+    created_assignment = assignment_crud.create_assignment_sync(db, assignment, current_user.id)
+    return AssignmentResponse.model_validate(created_assignment)
 
-@router.get("/", response_model=AssignmentList)
+@router.get("/", response_model=dict)
 def list_assignments(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=100),
+    page: int = Query(1, ge=1),
+    size: int = Query(10, ge=1, le=100),
     sort_by: str = Query("created_at"),
     sort_order: str = Query("desc"),
     search: Optional[str] = None,
@@ -71,17 +48,33 @@ def list_assignments(
     """
     List all assignments with optional filtering and sorting.
     """
-    total = assignment_crud.get_assignments_count(
+    # Validate pagination parameters
+    if page < 1:
+        raise HTTPException(status_code=422, detail="Page must be greater than 0")
+    if size < 1 or size > 100:
+        raise HTTPException(status_code=422, detail="Size must be between 1 and 100")
+    
+    skip = (page - 1) * size
+    total = assignment_crud.get_assignments_count_sync(
         db, search=search, status=status,
         subject=subject, grade_level=grade_level
     )
-    items = assignment_crud.get_assignments(
-        db, skip=skip, limit=limit,
+    assignments = assignment_crud.get_assignments_sync(
+        db, skip=skip, limit=size,
         sort_by=sort_by, sort_order=sort_order,
         search=search, status=status,
         subject=subject, grade_level=grade_level
     )
-    return {"total": total, "items": items}
+    
+    # Convert SQLAlchemy models to Pydantic models
+    items = [AssignmentResponse.model_validate(assignment) for assignment in assignments]
+    
+    return {
+        "total": total, 
+        "items": items,
+        "page": page,
+        "size": size
+    }
 
 @router.get("/{assignment_id}", response_model=AssignmentResponse)
 def get_assignment(
@@ -92,59 +85,31 @@ def get_assignment(
     """
     Get a specific assignment by ID.
     """
-    assignment = assignment_crud.get_assignment(db, assignment_id)
+    assignment = assignment_crud.get_assignment_sync(db, assignment_id)
     if not assignment:
         raise HTTPException(status_code=404, detail="Assignment not found")
-    return assignment
+    return AssignmentResponse.model_validate(assignment)
 
 @router.put("/{assignment_id}", response_model=AssignmentResponse)
-async def update_assignment(
+def update_assignment(
     assignment_id: int,
-    title: Optional[str] = None,
-    description: Optional[str] = None,
-    subject: Optional[str] = None,
-    grade_level: Optional[str] = None,
-    due_date: Optional[datetime] = None,
-    max_score: Optional[int] = None,
-    status: Optional[AssignmentStatus] = None,
-    files: List[UploadFile] = File(None),
+    assignment: AssignmentUpdate,
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
     """
-    Update an assignment with optional file attachments.
+    Update an assignment.
     """
-    db_assignment = assignment_crud.get_assignment(db, assignment_id)
+    db_assignment = assignment_crud.get_assignment_sync(db, assignment_id)
     if not db_assignment:
         raise HTTPException(status_code=404, detail="Assignment not found")
     if db_assignment.created_by_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
     
-    # Handle file uploads
-    file_urls = db_assignment.attachments or []
-    if files:
-        try:
-            file_paths = await file_service.save_files(files, f"assignments/{current_user.id}")
-            file_urls.extend([file_service.get_file_url(path) for path in file_paths])
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail=str(e))
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to upload files: {str(e)}")
-    
-    assignment = AssignmentUpdate(
-        title=title,
-        description=description,
-        subject=subject,
-        grade_level=grade_level,
-        due_date=due_date,
-        max_score=max_score,
-        status=status,
-        attachments=file_urls
-    )
-    
-    return assignment_crud.update_assignment(db, assignment_id, assignment)
+    updated_assignment = assignment_crud.update_assignment_sync(db, assignment_id, assignment)
+    return AssignmentResponse.model_validate(updated_assignment)
 
-@router.delete("/{assignment_id}")
+@router.delete("/{assignment_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_assignment(
     assignment_id: int,
     db: Session = Depends(get_db),
@@ -153,7 +118,7 @@ def delete_assignment(
     """
     Delete an assignment.
     """
-    db_assignment = assignment_crud.get_assignment(db, assignment_id)
+    db_assignment = assignment_crud.get_assignment_sync(db, assignment_id)
     if not db_assignment:
         raise HTTPException(status_code=404, detail="Assignment not found")
     if db_assignment.created_by_id != current_user.id:
@@ -165,6 +130,27 @@ def delete_assignment(
         if not file_service.delete_files(file_paths):
             raise HTTPException(status_code=500, detail="Failed to delete assignment files")
     
-    if not assignment_crud.delete_assignment(db, assignment_id):
+    if not assignment_crud.delete_assignment_sync(db, assignment_id):
         raise HTTPException(status_code=500, detail="Failed to delete assignment")
-    return {"message": "Assignment deleted successfully"} 
+
+@router.get("/{assignment_id}/ai-assignments", response_model=dict)
+def get_ai_assignments_by_assignment(
+    assignment_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+):
+    ai_assignments = ai_assignment_crud.get_ai_assignment_by_assignment(db, assignment_id, skip=skip, limit=limit)
+    total = ai_assignment_crud.count_ai_assignments_by_assignment(db, assignment_id)
+    items = []
+    for a in ai_assignments:
+        try:
+            items.append(AIAssignment.model_validate(a))
+        except ValidationError:
+            continue
+    return {
+        "items": items,
+        "total": len(items),
+        "skip": skip,
+        "limit": limit
+    } 

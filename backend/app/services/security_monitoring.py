@@ -164,17 +164,18 @@ class SecurityMonitoringService:
             }
         }
 
-        # Read and analyze alert logs
-        with open(self.alert_log_file, "r") as f:
-            for line in f:
-                alert = json.loads(line)
-                alert_time = datetime.fromisoformat(alert["timestamp"])
-                if start_date <= alert_time <= end_date:
-                    report["alerts"]["total"] += 1
-                    report["alerts"]["by_severity"][alert["severity"]] = \
-                        report["alerts"]["by_severity"].get(alert["severity"], 0) + 1
-                    report["alerts"]["by_type"][alert["alert_type"]] = \
-                        report["alerts"]["by_type"].get(alert["alert_type"], 0) + 1
+        # Read and analyze alert logs if file exists
+        if self.alert_log_file.exists():
+            with open(self.alert_log_file, "r") as f:
+                for line in f:
+                    alert = json.loads(line)
+                    alert_time = datetime.fromisoformat(alert["timestamp"])
+                    if start_date <= alert_time <= end_date:
+                        report["alerts"]["total"] += 1
+                        report["alerts"]["by_severity"][alert["severity"]] = \
+                            report["alerts"]["by_severity"].get(alert["severity"], 0) + 1
+                        report["alerts"]["by_type"][alert["alert_type"]] = \
+                            report["alerts"]["by_type"].get(alert["alert_type"], 0) + 1
 
         return report
 

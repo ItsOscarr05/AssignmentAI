@@ -218,6 +218,13 @@ class Settings(BaseSettings):
     # File upload settings
     UPLOAD_DIR: str = "uploads"
     MAX_FILE_SIZE: int = 50 * 1024 * 1024  # 50MB
+    ALLOWED_FILE_TYPES: List[str] = [
+        "pdf", "doc", "docx", "txt", "rtf", "odt",
+        "jpg", "jpeg", "png", "gif",
+        "zip", "rar", "7z",
+        "mp3", "mp4", "wav", "avi",
+        "py", "java", "cpp", "c", "js", "html", "css"
+    ]
     ALLOWED_EXTENSIONS: set = {
         "pdf", "doc", "docx", "txt", "rtf", "odt",
         "jpg", "jpeg", "png", "gif",

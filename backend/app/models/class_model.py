@@ -1,5 +1,6 @@
+from typing import List
 from sqlalchemy import Column, Integer, String, ForeignKey, Table
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 
 from app.db.base_class import Base
 
@@ -14,13 +15,13 @@ class_members = Table(
 class Class(Base):
     __tablename__ = "classes"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False)
-    code = Column(String, unique=True, index=True, nullable=False)
-    description = Column(String)
-    teacher_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    code: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
+    description: Mapped[str] = mapped_column(String)
+    teacher_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
 
     # Relationships
-    teacher = relationship("User", foreign_keys=[teacher_id])
-    students = relationship("User", secondary=class_members)
-    assignments = relationship("Assignment", back_populates="class_", cascade="all, delete-orphan") 
+    teacher: Mapped["User"] = relationship("User", foreign_keys=[teacher_id])
+    students: Mapped[List["User"]] = relationship("User", secondary=class_members)
+    assignments: Mapped[List["Assignment"]] = relationship("Assignment", back_populates="class_", cascade="all, delete-orphan") 

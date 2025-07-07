@@ -18,6 +18,22 @@ class RateLimiter:
         self.redis = redis_client
         self.rate_limit = settings.RATE_LIMIT_PER_MINUTE
         self.window = 60  # 1 minute window
+        # Add missing attributes for in-memory rate limiting
+        self.endpoint_patterns = {
+            "api": ["/api/"],
+            "auth": ["/auth/"],
+            "admin": ["/admin/"]
+        }
+        self.endpoint_limits = {
+            "api": {"requests": 100, "period": 1},
+            "auth": {"requests": 5, "period": 1},
+            "admin": {"requests": 50, "period": 1}
+        }
+        self.requests = {}
+        self.reset_times = {}
+        self.locked_accounts = {}
+        self.login_attempts = {}
+        self.two_factor_attempts = {}
 
     async def check_rate_limit(self, request: Request) -> bool:
         """Check if the request is within rate limits."""
@@ -71,14 +87,12 @@ class RateLimiter:
         # Check if limit exceeded
         return self.requests[client_id][endpoint_type] > limits["requests"]
 
-    def get_remaining_requests(self, client_id: str, path: str) -> int:
+    def get_remaining_requests(self, client_id: str, path: str = "") -> int:
         """Get the number of remaining requests for a client."""
         endpoint_type = self.get_endpoint_type(path)
         limits = self.endpoint_limits[endpoint_type]
-        
         if client_id not in self.requests or endpoint_type not in self.requests[client_id]:
             return limits["requests"]
-            
         return max(0, limits["requests"] - self.requests[client_id][endpoint_type])
 
     def get_reset_time(self, client_id: str) -> Optional[datetime]:
@@ -182,45 +196,89 @@ class RateLimiter:
         if client_id in self.requests:
             del self.requests[client_id]
 
-    def get_remaining_requests(self, client_id: str) -> tuple[int, int]:
+    def get_remaining_requests_and_ttl(self, client_id: str) -> tuple[int, int]:
         """Get the number of remaining requests and time until reset"""
-        remaining = self.get_remaining_requests(client_id, "")
+        remaining = self.get_remaining_requests(client_id)
         reset_time = self.get_reset_time(client_id)
         ttl = 0
         if reset_time:
             ttl = int((reset_time - datetime.utcnow()).total_seconds())
         return remaining, ttl
 
-# Global variables for redis and rate limiter
-redis_client = None
-rate_limiter = None
+# Remove any global 'rate_limiter' variable or export. All access should be via get_rate_limiter().
+# If any code tries to import 'rate_limiter' from this module, it should be updated to use get_rate_limiter().
+# No code output needed here, just a reminder for the rest of the codebase.
 
 async def init_rate_limiter():
-    global redis_client, rate_limiter
+    """Initialize the rate limiter"""
+    global _rate_limiter
     try:
-        redis_client = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
-        rate_limiter = RateLimiter(redis_client)
+        redis_client = aioredis.from_url(settings.REDIS_URL)
+        _rate_limiter = RateLimiter(redis_client)
     except Exception as e:
-        logger.warning(f"Redis rate limiter initialization failed: {str(e)}")
-        logger.info("Continuing without rate limiting")
+        logger.warning(f"Failed to initialize Redis rate limiter: {e}")
+        _rate_limiter = FallbackRateLimiter()
 
 async def close_rate_limiter():
-    global redis_client
-    if redis_client:
-        await redis_client.close()
+    """Close the rate limiter"""
+    global _rate_limiter
+    if _rate_limiter and hasattr(_rate_limiter, 'redis'):
+        await _rate_limiter.redis.close()
 
-def get_rate_limiter():
-    """Get the rate limiter instance, creating it if necessary."""
-    global rate_limiter
-    if rate_limiter is None:
-        # Create a fallback rate limiter without Redis
-        class FallbackRateLimiter:
-            def is_rate_limited(self, client_id: str, path: str) -> bool:
-                return False
-            def check_rate_limit(self, request: Request) -> bool:
-                return True
-        rate_limiter = FallbackRateLimiter()
-    return rate_limiter
+# Global fallback rate limiter instance
+_fallback_rate_limiter = None
+
+def get_rate_limiter(app=None):
+    global _rate_limiter, _fallback_rate_limiter
+    if app is not None:
+        if not hasattr(app.state, "fallback_rate_limiter"):
+            app.state.fallback_rate_limiter = FallbackRateLimiter()
+        return app.state.fallback_rate_limiter
+    if _rate_limiter is not None:
+        return _rate_limiter
+    if _fallback_rate_limiter is None:
+        _fallback_rate_limiter = FallbackRateLimiter()
+    return _fallback_rate_limiter
+
+class FallbackRateLimiter:
+    # Use class-level dictionaries to persist state across all instances
+    requests = {}
+    reset_times = {}
+
+    def __init__(self):
+        self.endpoint_limits = {
+            "auth": {"requests": 3, "period": 1},  # 3 requests per minute for auth
+            "api": {"requests": 100, "period": 1},
+            "admin": {"requests": 50, "period": 1}
+        }
+    
+    def get_endpoint_type(self, path: str) -> str:
+        """Determine the type of endpoint based on the path."""
+        if "/auth/" in path:
+            return "auth"
+        elif "/admin/" in path:
+            return "admin"
+        return "api"
+    
+    def is_rate_limited(self, client_id: str, path: str) -> bool:
+        """Check if a client has exceeded their rate limit."""
+        endpoint_type = self.get_endpoint_type(path)
+        limits = self.endpoint_limits[endpoint_type]
+        # Use class-level state
+        if client_id not in FallbackRateLimiter.requests:
+            FallbackRateLimiter.requests[client_id] = {}
+        if endpoint_type not in FallbackRateLimiter.requests[client_id]:
+            FallbackRateLimiter.requests[client_id][endpoint_type] = 0
+        if client_id not in FallbackRateLimiter.reset_times:
+            FallbackRateLimiter.reset_times[client_id] = datetime.now()
+        # Check if we need to reset the counter
+        if datetime.now() > FallbackRateLimiter.reset_times[client_id] + timedelta(minutes=limits["period"]):
+            FallbackRateLimiter.requests[client_id][endpoint_type] = 0
+            FallbackRateLimiter.reset_times[client_id] = datetime.now()
+        FallbackRateLimiter.requests[client_id][endpoint_type] += 1
+        if FallbackRateLimiter.requests[client_id][endpoint_type] > limits["requests"]:
+            return True
+        return False
 
 def check_rate_limit(client_id: str) -> None:
     """
