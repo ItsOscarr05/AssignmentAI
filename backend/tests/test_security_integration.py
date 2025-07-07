@@ -106,9 +106,12 @@ class TestSecurityIntegration:
             SecurityAlert.user_id == self.test_user.id,
             SecurityAlert.alert_type == "failed_login"
         )
-        alert = self.db.execute(stmt).scalars().first()
-        assert alert is not None, "No security alert found for failed_login"
-        assert alert.severity == "high"
+        result = self.db.execute(stmt).scalars().first()
+        if not (result is None or isinstance(result, SecurityAlert)):
+            raise AssertionError("Query did not return a SecurityAlert instance or None")
+        alert = result
+        assert alert is not None, "No security alert found for failed_login"  # type: ignore[reportGeneralTypeIssues]
+        assert alert.severity == "high"  # type: ignore[reportGeneralTypeIssues]
 
         # Step 3: Verify audit log was created
         stmt = select(AuditLog).where(
@@ -137,9 +140,12 @@ class TestSecurityIntegration:
             SecurityAlert.user_id == self.test_user.id,
             SecurityAlert.alert_type == "malicious_upload"
         )
-        alert = self.db.execute(stmt).scalars().first()
-        assert alert is not None, "No security alert found for malicious_upload"
-        assert alert.severity == "high"
+        result = self.db.execute(stmt).scalars().first()
+        if not (result is None or isinstance(result, SecurityAlert)):
+            raise AssertionError("Query did not return a SecurityAlert instance or None")
+        alert = result
+        assert alert is not None, "No security alert found for malicious_upload"  # type: ignore[reportGeneralTypeIssues]
+        assert alert.severity == "high"  # type: ignore[reportGeneralTypeIssues]
 
         # Step 3: Upload legitimate file
         files = {
@@ -201,9 +207,12 @@ class TestSecurityIntegration:
             SecurityAlert.user_id == self.test_user.id,
             SecurityAlert.alert_type == "rate_limit_exceeded"
         )
-        alert = self.db.execute(stmt).scalars().first()
-        assert alert is not None, "No security alert found for rate_limit_exceeded"
-        assert alert.severity == "medium"
+        result = self.db.execute(stmt).scalars().first()
+        if not (result is None or isinstance(result, SecurityAlert)):
+            raise AssertionError("Query did not return a SecurityAlert instance or None")
+        alert = result
+        assert alert is not None, "No security alert found for rate_limit_exceeded"  # type: ignore[reportGeneralTypeIssues]
+        assert alert.severity == "medium"  # type: ignore[reportGeneralTypeIssues]
 
     def test_security_alert_creation(self, client: TestClient):
         """Test security alert creation and retrieval"""
