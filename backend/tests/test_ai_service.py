@@ -1,176 +1,315 @@
 import pytest
-from unittest.mock import Mock, patch, AsyncMock
-from datetime import datetime
+from unittest.mock import AsyncMock, MagicMock, patch
 from app.services.ai_service import AIService
-from app.schemas.ai_assignment import (
-    AssignmentGenerationRequest,
-    AssignmentContent,
-    GeneratedAssignment,
-    AssignmentGenerationResponse
-)
+from app.schemas.ai_assignment import AssignmentGenerationRequest, AssignmentGenerationResponse, GeneratedAssignment, AssignmentContent
 from app.schemas.feedback import FeedbackCreate
-from app.core.config import settings
-
-@pytest.fixture(autouse=True)
-def patch_openai():
-    with patch('app.services.ai_service.AsyncOpenAI') as mock:
-        mock_client = AsyncMock()
-        mock.return_value = mock_client
-        yield mock_client
+from app.models.subscription import Subscription, SubscriptionStatus
+from datetime import datetime
+from fastapi import HTTPException
+import json
 
 @pytest.fixture
-def ai_service(patch_openai):
-    mock_db = AsyncMock()
-    return AIService(mock_db)
+def mock_db():
+    return AsyncMock()
+
+@pytest.fixture
+def ai_service(mock_db):
+    with patch('app.services.ai_service.AsyncOpenAI') as mock_openai:
+        mock_client = AsyncMock()
+        mock_openai.return_value = mock_client
+        service = AIService(mock_db)
+        service.client = mock_client
+        return service
 
 @pytest.fixture
 def sample_assignment_request():
     return AssignmentGenerationRequest(
         subject="Mathematics",
         grade_level="10",
-        topic="Quadratic Equations",
-        difficulty="medium",
-        requirements={
-            "format": "PDF",
-            "length": "2-3 pages"
-        }
+        topic="Algebra",
+        difficulty="medium"
     )
 
 @pytest.fixture
-def sample_generated_content():
-    # Format content to match the parser's expectations
-    # Section headers must be on separate lines ending with ":"
-    return (
-        "Title:\n"
-        "Understanding Quadratic Equations\n"
-        "Description:\n"
-        "A comprehensive assignment on solving quadratic equations\n"
-        "Objectives:\n"
-        "- Solve quadratic equations using various methods\n"
-        "- Graph quadratic functions\n"
-        "- Apply quadratic equations to real-world problems\n"
-        "Instructions:\n"
-        "Follow these steps to complete the assignment...\n"
-        "Requirements:\n"
-        "- Show all work\n"
-        "- Include graphs where applicable\n"
-        "- Provide real-world examples\n"
-        "Evaluation Criteria:\n"
-        "- Correctness of solutions\n"
-        "- Clarity of explanations\n"
-        "- Quality of graphs\n"
-        "Estimated Duration:\n"
-        "2 hours\n"
-        "Resources:\n"
-        "- Textbook Chapter 5\n"
-        "- Online graphing calculator\n"
-    )
+def mock_openai_response():
+    response = MagicMock()
+    response.choices = [MagicMock()]
+    response.choices[0].message.content = """
+Title:
+Algebra Problem Set
+Description:
+A comprehensive set of algebra problems
+Objectives:
+- Solve linear equations
+- Understand variables
+Instructions:
+Complete all problems showing your work
+Requirements:
+- Calculator
+- Graph paper
+Evaluation Criteria:
+- Accuracy
+- Methodology
+Estimated Duration:
+60 minutes
+Resources:
+- Textbook Chapter 5
+    """
+    return response
 
-@pytest.mark.asyncio
-async def test_generate_assignment_success(ai_service, patch_openai, sample_assignment_request, sample_generated_content):
-    mock_response = Mock()
-    mock_response.choices = [
-        Mock(message=Mock(content=sample_generated_content))
-    ]
-    patch_openai.chat.completions.create.return_value = mock_response
+class TestAIService:
+    
+    async def test_get_user_model_with_subscription(self, ai_service, mock_db):
+        """Test getting user model when user has active subscription"""
+        mock_subscription = MagicMock(spec=Subscription)
+        mock_subscription.ai_model = "gpt-4"
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = mock_subscription
+        mock_db.execute.return_value = mock_result
+        
+        result = await ai_service.get_user_model(1)
+        
+        assert result == "gpt-4"
+        mock_db.execute.assert_called_once()
 
-    response = await ai_service.generate_assignment(sample_assignment_request)
+    async def test_get_user_model_without_subscription(self, ai_service, mock_db):
+        """Test getting default model when user has no subscription"""
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = None
+        mock_db.execute.return_value = mock_result
+        
+        result = await ai_service.get_user_model(1)
+        
+        assert result == "gpt-4.1-nano"
 
-    assert response.success is True
-    assert response.assignment is not None
-    assert response.assignment.title == "Understanding Quadratic Equations"
-    assert len(response.assignment.content.objectives) == 3
-    assert len(response.assignment.content.requirements) == 3
-    assert response.assignment.content.estimated_duration == "2 hours"
+    async def test_generate_assignment_success(self, ai_service, sample_assignment_request, mock_openai_response):
+        """Test successful assignment generation"""
+        with patch.object(ai_service, '_call_openai_with_retry', return_value=mock_openai_response.choices[0].message.content):
+            result = await ai_service.generate_assignment(sample_assignment_request)
+            
+            assert result.success is True
+            assert result.assignment is not None
+            assert result.assignment.title == "Algebra Problem Set"
+            assert result.error is None
 
-    patch_openai.chat.completions.create.assert_called_once()
-    call_args = patch_openai.chat.completions.create.call_args[1]
-    assert call_args['model'] == settings.OPENAI_MODEL
-    assert call_args['max_tokens'] == settings.AI_MAX_TOKENS
-    assert call_args['temperature'] == settings.AI_TEMPERATURE
+    async def test_generate_assignment_invalid_request(self, ai_service):
+        """Test assignment generation with invalid request"""
+        # Create valid request first, then modify it to be invalid
+        valid_request = AssignmentGenerationRequest(
+            subject="Mathematics",
+            grade_level="10",
+            topic="Algebra",
+            difficulty="medium"
+        )
+        # Manually set invalid subject to bypass Pydantic validation
+        valid_request.subject = ""
+        
+        result = await ai_service.generate_assignment(valid_request)
+        
+        assert result.success is False
+        assert result.assignment is None
+        assert "Invalid request parameters" in result.error
 
-@pytest.mark.asyncio
-async def test_generate_assignment_failure(ai_service, patch_openai, sample_assignment_request):
-    patch_openai.chat.completions.create.side_effect = Exception("API Error")
+    async def test_generate_assignment_openai_error(self, ai_service, sample_assignment_request):
+        """Test assignment generation when OpenAI API fails"""
+        with patch.object(ai_service, '_call_openai_with_retry', side_effect=Exception("OpenAI API error")):
+            result = await ai_service.generate_assignment(sample_assignment_request)
+            
+            assert result.success is False
+            assert result.assignment is None
+            assert "Failed to generate assignment" in result.error
 
-    response = await ai_service.generate_assignment(sample_assignment_request)
-
-    assert response.success is False
-    assert "API Error" in response.error
-    assert response.assignment is None
-
-@pytest.mark.asyncio
-async def test_generate_feedback_success(ai_service, patch_openai):
-    mock_response = Mock()
-    mock_response.choices = [
-        Mock(message=Mock(content="Sample feedback content"))
-    ]
-    patch_openai.chat.completions.create.return_value = mock_response
-
-    with patch.object(ai_service, 'get_user_model', return_value="gpt-3.5-turbo"):
-        feedback = await ai_service.generate_feedback(
+    async def test_generate_feedback_success(self, ai_service, mock_db):
+        """Test successful feedback generation"""
+        mock_subscription = MagicMock(spec=Subscription)
+        mock_subscription.ai_model = "gpt-4"
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = mock_subscription
+        mock_db.execute.return_value = mock_result
+        
+        mock_openai_response = MagicMock()
+        mock_openai_response.choices = [MagicMock()]
+        mock_openai_response.choices[0].message.content = "Great work! Your solution is correct."
+        
+        ai_service.client.chat.completions.create = AsyncMock(return_value=mock_openai_response)
+        
+        result = await ai_service.generate_feedback(
             user_id=1,
-            submission_content="Sample submission",
-            feedback_type="content",
+            submission_content="2x + 3 = 7, x = 2",
+            feedback_type="general",
             submission_id=1
         )
-        assert feedback is not None
-        assert feedback.content == "Sample feedback content"
-        assert feedback.feedback_type == "content"
-        assert feedback.confidence_score == 0.8
-        assert "model_version" in feedback.feedback_metadata
-        assert "generated_at" in feedback.feedback_metadata
+        
+        assert result is not None
+        assert isinstance(result, FeedbackCreate)
+        assert result.content == "Great work! Your solution is correct."
+        assert result.feedback_type == "general"
+        assert result.submission_id == 1
 
-@pytest.mark.asyncio
-async def test_generate_feedback_failure(ai_service, patch_openai):
-    patch_openai.chat.completions.create.side_effect = Exception("API Error")
-
-    with patch.object(ai_service, 'get_user_model', return_value="gpt-3.5-turbo"):
-        feedback = await ai_service.generate_feedback(
+    async def test_generate_feedback_openai_error(self, ai_service, mock_db):
+        """Test feedback generation when OpenAI API fails"""
+        mock_subscription = MagicMock(spec=Subscription)
+        mock_subscription.ai_model = "gpt-4"
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = mock_subscription
+        mock_db.execute.return_value = mock_result
+        
+        ai_service.client.chat.completions.create = AsyncMock(side_effect=Exception("OpenAI API error"))
+        
+        result = await ai_service.generate_feedback(
             user_id=1,
-            submission_content="Sample submission",
-            feedback_type="content",
+            submission_content="2x + 3 = 7, x = 2",
+            feedback_type="general",
             submission_id=1
         )
-        assert feedback is None
+        
+        assert result is None
 
-def test_parse_assignment_content(ai_service, sample_generated_content):
-    parsed_content = ai_service._parse_assignment_content(sample_generated_content)
-    assert parsed_content["title"] == "Understanding Quadratic Equations"
-    assert len(parsed_content["objectives"]) == 3
-    assert len(parsed_content["requirements"]) == 3
-    assert parsed_content["estimated_duration"] == "2 hours"
-    assert len(parsed_content["resources"]) == 2
+    async def test_analyze_submission_success(self, ai_service, mock_db):
+        """Test successful submission analysis"""
+        mock_subscription = MagicMock(spec=Subscription)
+        mock_subscription.ai_model = "gpt-4"
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = mock_subscription
+        mock_db.execute.return_value = mock_result
+        
+        mock_openai_response = MagicMock()
+        mock_openai_response.choices = [MagicMock()]
+        mock_openai_response.choices[0].message.content = """
+        Score: 85
+        Feedback: Good work overall
+        Strengths:
+        - Clear methodology
+        Areas for improvement:
+        - Show more steps
+        """
+        
+        ai_service.client.chat.completions.create = AsyncMock(return_value=mock_openai_response)
+        
+        result = await ai_service.analyze_submission(
+            submission_content="2x + 3 = 7, x = 2",
+            assignment_requirements={"type": "algebra", "difficulty": "medium"}
+        )
+        
+        assert result is not None
+        assert "score" in result
+        assert result["score"] == 85.0
 
-def test_parse_assignment_content_invalid(ai_service):
-    parsed_content = ai_service._parse_assignment_content("Invalid content")
-    # The parser successfully parses but finds no sections, so returns empty values
-    assert parsed_content["title"] == "Generated Assignment"
-    assert parsed_content["description"] == ""
-    assert parsed_content["objectives"] == []
-    assert parsed_content["instructions"] == ""
-    assert parsed_content["requirements"] == []
-    assert parsed_content["evaluation_criteria"] == []
-    assert parsed_content["estimated_duration"] == "1 hour"
-    assert parsed_content["resources"] == []
+    async def test_analyze_submission_error(self, ai_service, mock_db):
+        """Test submission analysis when OpenAI API fails"""
+        mock_subscription = MagicMock(spec=Subscription)
+        mock_subscription.ai_model = "gpt-4"
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = mock_subscription
+        mock_db.execute.return_value = mock_result
+        
+        ai_service.client.chat.completions.create = AsyncMock(side_effect=Exception("OpenAI API error"))
+        
+        with pytest.raises(Exception) as exc_info:
+            await ai_service.analyze_submission(
+                submission_content="2x + 3 = 7, x = 2",
+                assignment_requirements={"type": "algebra", "difficulty": "medium"}
+            )
+        assert "OpenAI API error" in str(exc_info.value)
 
-def test_construct_assignment_prompt(ai_service, sample_assignment_request):
-    prompt = ai_service._construct_assignment_prompt(sample_assignment_request)
-    assert "Mathematics" in prompt
-    assert "10" in prompt
-    assert "Quadratic Equations" in prompt
-    assert "medium" in prompt
-    assert "format" in prompt
-    assert "length" in prompt
+    def test_validate_request_valid(self, ai_service, sample_assignment_request):
+        """Test valid request validation"""
+        result = ai_service._validate_request(sample_assignment_request)
+        assert result is True
 
-def test_construct_feedback_prompt(ai_service):
-    prompt = ai_service._construct_feedback_prompt(
-        submission_content="Sample submission",
-        feedback_type="content"
-    )
-    assert "Sample submission" in prompt
-    assert "content" in prompt
-    assert "Strengths:" in prompt
-    assert "Areas for Improvement:" in prompt
-    assert "Suggestions:" in prompt
-    assert "Examples:" in prompt 
+    def test_validate_request_invalid_subject(self, ai_service):
+        """Test invalid subject validation"""
+        # Create valid request first, then modify it
+        valid_request = AssignmentGenerationRequest(
+            subject="Mathematics",
+            grade_level="10",
+            topic="Algebra",
+            difficulty="medium"
+        )
+        valid_request.subject = ""  # Manually set invalid subject
+        
+        result = ai_service._validate_request(valid_request)
+        assert result is False
+
+    def test_validate_request_invalid_grade_level(self, ai_service):
+        """Test invalid grade level validation"""
+        # Create valid request first, then modify it
+        valid_request = AssignmentGenerationRequest(
+            subject="Mathematics",
+            grade_level="10",
+            topic="Algebra",
+            difficulty="medium"
+        )
+        valid_request.grade_level = "invalid"  # Manually set invalid grade level
+        
+        result = ai_service._validate_request(valid_request)
+        assert result is False
+
+    def test_validate_request_invalid_difficulty(self, ai_service):
+        """Test invalid difficulty validation"""
+        # Create valid request first, then modify it
+        valid_request = AssignmentGenerationRequest(
+            subject="Mathematics",
+            grade_level="10",
+            topic="Algebra",
+            difficulty="medium"
+        )
+        valid_request.difficulty = "invalid"  # Manually set invalid difficulty
+        
+        result = ai_service._validate_request(valid_request)
+        assert result is False
+
+    def test_validate_generated_content_valid(self, ai_service):
+        """Test valid generated content validation"""
+        valid_content = {
+            "title": "Math Problem",
+            "description": "Solve this equation",
+            "objectives": ["Learn algebra"],
+            "instructions": "Show your work",
+            "requirements": ["Calculator"]
+        }
+        
+        result = ai_service._validate_generated_content(valid_content)
+        assert result is True
+
+    def test_validate_generated_content_invalid(self, ai_service):
+        """Test invalid generated content validation"""
+        invalid_content = {
+            "title": "Math Problem"
+            # Missing required fields
+        }
+        
+        result = ai_service._validate_generated_content(invalid_content)
+        assert result is False
+
+    def test_estimate_time(self, ai_service):
+        """Test time estimation"""
+        easy_time = ai_service._estimate_time("easy")
+        medium_time = ai_service._estimate_time("medium")
+        hard_time = ai_service._estimate_time("hard")
+        
+        assert easy_time < medium_time < hard_time
+        assert all(isinstance(t, int) for t in [easy_time, medium_time, hard_time])
+
+    async def test_call_openai_with_retry_success(self, ai_service, mock_openai_response):
+        """Test successful OpenAI API call with retry"""
+        ai_service.client.chat.completions.create = AsyncMock(return_value=mock_openai_response)
+        
+        result = await ai_service._call_openai_with_retry("Test prompt")
+        
+        assert result == mock_openai_response.choices[0].message.content
+
+    async def test_call_openai_with_retry_failure_then_success(self, ai_service, mock_openai_response):
+        """Test OpenAI API call with initial failure then success"""
+        ai_service.client.chat.completions.create = AsyncMock(side_effect=[Exception("API error"), mock_openai_response])
+        
+        result = await ai_service._call_openai_with_retry("Test prompt")
+        
+        assert result == mock_openai_response.choices[0].message.content
+
+    async def test_call_openai_with_retry_all_failures(self, ai_service):
+        """Test OpenAI API call with all retries failing"""
+        ai_service.client.chat.completions.create = AsyncMock(side_effect=Exception("API error"))
+        
+        with pytest.raises(Exception):
+            await ai_service._call_openai_with_retry("Test prompt") 

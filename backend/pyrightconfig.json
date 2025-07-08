@@ -1,7 +1,14 @@
 {
   "include": ["app", "tests"],
-  "exclude": ["**/node_modules", "**/__pycache__", "**/venv", "**/.venv"],
-  "ignore": ["**/migrations/**"],
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/venv",
+    "**/.venv",
+    "**/test_schemas.py",
+    "tests/test_schemas.py"
+  ],
+  "ignore": ["**/migrations/**", "**/test_schemas.py"],
   "reportMissingImports": false,
   "reportMissingTypeStubs": false,
   "reportGeneralTypeIssues": "warning",

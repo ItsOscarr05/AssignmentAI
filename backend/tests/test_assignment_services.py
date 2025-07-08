@@ -33,27 +33,37 @@ class TestAsyncAssignmentService:
             content="Initial content"
         )
     
-    @patch('app.services.assignment.openai')
-    async def test_generate_content_success(self, mock_openai, assignment_service, assignment_data):
+    @patch('app.services.assignment.OpenAI')
+    async def test_generate_content_success(self, mock_openai_class, assignment_service, assignment_data):
         """Test successful content generation"""
+        mock_client = Mock()
         mock_response = Mock()
         mock_response.choices = [Mock()]
         mock_response.choices[0].message.content = "Generated assignment content"
-        mock_openai.ChatCompletion.acreate = AsyncMock(return_value=mock_response)
+        mock_client.chat.completions.create.return_value = mock_response
+        mock_openai_class.return_value = mock_client
+        
+        # Recreate the service with mocked client
+        assignment_service.client = mock_client
         
         result = await assignment_service.generate_content(assignment_data)
         
         assert result == "Generated assignment content"
-        mock_openai.ChatCompletion.acreate.assert_called_once()
-        call_args = mock_openai.ChatCompletion.acreate.call_args
+        mock_client.chat.completions.create.assert_called_once()
+        call_args = mock_client.chat.completions.create.call_args
         assert call_args[1]['model'] == "gpt-4"
         assert call_args[1]['temperature'] == 0.7
         assert call_args[1]['max_tokens'] == 2000
     
-    @patch('app.services.assignment.openai')
-    async def test_generate_content_failure(self, mock_openai, assignment_service, assignment_data):
+    @patch('app.services.assignment.OpenAI')
+    async def test_generate_content_failure(self, mock_openai_class, assignment_service, assignment_data):
         """Test content generation failure"""
-        mock_openai.ChatCompletion.acreate = AsyncMock(side_effect=Exception("API Error"))
+        mock_client = Mock()
+        mock_client.chat.completions.create.side_effect = Exception("API Error")
+        mock_openai_class.return_value = mock_client
+        
+        # Recreate the service with mocked client
+        assignment_service.client = mock_client
         
         with pytest.raises(Exception, match="Failed to generate assignment content: API Error"):
             await assignment_service.generate_content(assignment_data)
@@ -72,15 +82,20 @@ class TestAsyncAssignmentService:
         assert "Clear instructions" in prompt
         assert "Detailed requirements" in prompt
     
-    @patch('app.services.assignment.openai')
+    @patch('app.services.assignment.OpenAI')
     @patch('app.crud.assignment.assignment.create_with_user')
-    async def test_create_assignment_success(self, mock_create, mock_openai, assignment_service, assignment_data):
+    async def test_create_assignment_success(self, mock_create, mock_openai_class, assignment_service, assignment_data):
         """Test successful assignment creation"""
         # Mock OpenAI response
+        mock_client = Mock()
         mock_response = Mock()
         mock_response.choices = [Mock()]
         mock_response.choices[0].message.content = "Generated content"
-        mock_openai.ChatCompletion.acreate = AsyncMock(return_value=mock_response)
+        mock_client.chat.completions.create.return_value = mock_response
+        mock_openai_class.return_value = mock_client
+        
+        # Recreate the service with mocked client
+        assignment_service.client = mock_client
         
         # Mock database creation
         mock_db = AsyncMock()
@@ -95,10 +110,15 @@ class TestAsyncAssignmentService:
         assert call_args[1]['user_id'] == 1
         assert call_args[1]['obj_in'].content == "Generated content"
     
-    @patch('app.services.assignment.openai')
-    async def test_create_assignment_generation_failure(self, mock_openai, assignment_service, assignment_data):
+    @patch('app.services.assignment.OpenAI')
+    async def test_create_assignment_generation_failure(self, mock_openai_class, assignment_service, assignment_data):
         """Test assignment creation with AI generation failure"""
-        mock_openai.ChatCompletion.acreate = AsyncMock(side_effect=Exception("API Error"))
+        mock_client = Mock()
+        mock_client.chat.completions.create.side_effect = Exception("API Error")
+        mock_openai_class.return_value = mock_client
+        
+        # Recreate the service with mocked client
+        assignment_service.client = mock_client
         mock_db = AsyncMock()
         
         with pytest.raises(Exception, match="Failed to generate assignment content: API Error"):

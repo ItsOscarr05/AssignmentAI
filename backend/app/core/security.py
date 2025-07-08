@@ -104,6 +104,7 @@ def verify_token(token: str) -> Optional[dict]:
 def is_token_expired(token: str) -> bool:
     """
     Check if a token is expired.
+    Handles exp as int/float (timestamp) or datetime.
     """
     payload = verify_token(token)
     if not payload:
@@ -111,7 +112,19 @@ def is_token_expired(token: str) -> bool:
     exp = payload.get("exp")
     if not exp:
         return True
-    return datetime.fromtimestamp(exp) < datetime.utcnow()
+    # Handle both int/float (timestamp) and datetime
+    if isinstance(exp, (int, float)):
+        exp_dt = datetime.fromtimestamp(exp)
+    elif isinstance(exp, str):
+        try:
+            exp_dt = datetime.fromtimestamp(float(exp))
+        except Exception:
+            return True
+    elif isinstance(exp, datetime):
+        exp_dt = exp
+    else:
+        return True
+    return exp_dt < datetime.utcnow()
 
 def check_password_history(db: Session, user: User, new_password: str) -> bool:
     """Check if the new password was used recently"""

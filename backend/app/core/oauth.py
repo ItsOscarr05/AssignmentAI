@@ -53,7 +53,7 @@ class OAuthConfig:
             )
         return self.providers[provider]
 
-    async def get_user_info(self, provider: str, access_token: str) -> Dict:
+    def get_user_info(self, provider: str, access_token: str) -> Dict:
         config = self.get_provider_config(provider)
         client = OAuth2Session(
             client_id=config["client_id"],
@@ -65,12 +65,12 @@ class OAuthConfig:
         try:
             if provider == "github":
                 # GitHub requires a special header
-                resp = await client.get(
+                resp = client.get(
                     config["userinfo_url"],
                     headers={"Accept": "application/json"},
                 )
             else:
-                resp = await client.get(config["userinfo_url"])
+                resp = client.get(config["userinfo_url"])
             
             user_info = resp.json()
 

@@ -1,3 +1,4 @@
+# pyright: ignore[reportArgumentType]
 import pytest
 import importlib
 from pydantic import ValidationError
@@ -14,6 +15,9 @@ ClassPyClassUpdate = class_schema.ClassUpdate
 ClassPyClassInDBBase = class_schema.ClassInDBBase
 ClassPyClass = class_schema.Class
 ClassPyClassInDB = class_schema.ClassInDB
+
+def get_invalid_int():
+    return 123
 
 class TestAISchemas:
     """Test AI-related schemas"""
@@ -55,7 +59,7 @@ class TestAISchemas:
             "difficulty": "Intermediate"
         }
         with pytest.raises(ValidationError):
-            AssignmentGenerationRequest(**data)
+            AssignmentGenerationRequest(**data)  # type: ignore
     
     def test_assignment_generation_request_subject_too_long(self):
         """Test AssignmentGenerationRequest with subject too long"""
@@ -67,6 +71,25 @@ class TestAISchemas:
         }
         with pytest.raises(ValidationError):
             AssignmentGenerationRequest(**data)
+    
+    def test_assignment_generation_request_invalid_requirements(self):
+        """Test AssignmentGenerationRequest with invalid requirements type (should fail)"""
+        data = dict(subject="Math", grade_level="10th Grade", topic="Algebra", difficulty="Intermediate")
+        data.update({"requirements": "should_be_dict"})
+        with pytest.raises(ValidationError):
+            AssignmentGenerationRequest(**data)
+
+    def test_assignment_generation_request_valid_requirements(self):
+        """Test AssignmentGenerationRequest with valid requirements dict"""
+        data = {
+            "subject": "Math",
+            "grade_level": "10th Grade",
+            "topic": "Algebra",
+            "difficulty": "Intermediate",
+            "requirements": {"pages": 2}
+        }
+        req = AssignmentGenerationRequest(**data)
+        assert req.requirements == {"pages": 2}
     
     def test_assignment_generation_response_success(self):
         """Test AssignmentGenerationResponse with success"""
@@ -168,6 +191,19 @@ class TestClassSchemas:
         assert class_update.description == "Only description update"
         assert class_update.teacher_id is None
     
+    def test_class_update_teacher_id_int(self):
+        """Test ClassUpdate with teacher_id as int (valid)"""
+        data = {"teacher_id": 5}
+        class_update = ClassUpdate(**data)
+        assert class_update.teacher_id == 5
+
+    def test_class_update_teacher_id_str(self):  # type: ignore
+        """Test ClassUpdate with teacher_id as string (should fail)"""
+        data = dict()
+        data.update({"teacher_id": "not_a_number"})
+        with pytest.raises(ValidationError):
+            ClassUpdate(**data)  # type: ignore
+    
     def test_class_in_db_base_valid(self):
         """Test valid ClassInDBBase"""
         data = {
@@ -226,20 +262,16 @@ class TestClassSchemas:
         teacher = UserResponse(
             id=1,
             email="teacher@example.com",
-            username="teacher",
-            full_name="John Teacher",
+            name="John Teacher",
             is_active=True,
-            is_verified=True,
             created_at=datetime.now(),
             updated_at=datetime.now()
         )
         student = UserResponse(
             id=2,
             email="student@example.com",
-            username="student",
-            full_name="Jane Student",
+            name="Jane Student",
             is_active=True,
-            is_verified=True,
             created_at=datetime.now(),
             updated_at=datetime.now()
         )
@@ -265,10 +297,8 @@ class TestClassSchemas:
         teacher = UserResponse(
             id=1,
             email="teacher@example.com",
-            username="teacher",
-            full_name="John Teacher",
+            name="John Teacher",
             is_active=True,
-            is_verified=True,
             created_at=datetime.now(),
             updated_at=datetime.now()
         )
@@ -374,20 +404,16 @@ class TestClassPySchemas:
         teacher = User(
             id=1,
             email="teacher@example.com",
-            username="teacher",
-            full_name="John Teacher",
+            name="John Teacher",
             is_active=True,
-            is_verified=True,
             created_at=datetime.now(),
             updated_at=datetime.now()
         )
         student = User(
             id=2,
             email="student@example.com",
-            username="student",
-            full_name="Jane Student",
+            name="Jane Student",
             is_active=True,
-            is_verified=True,
             created_at=datetime.now(),
             updated_at=datetime.now()
         )
@@ -415,10 +441,8 @@ class TestClassPySchemas:
         teacher = User(
             id=1,
             email="teacher@example.com",
-            username="teacher",
-            full_name="John Teacher",
+            name="John Teacher",
             is_active=True,
-            is_verified=True,
             created_at=datetime.now(),
             updated_at=datetime.now()
         )
@@ -440,10 +464,8 @@ class TestClassPySchemas:
         teacher = User(
             id=1,
             email="teacher@example.com",
-            username="teacher",
-            full_name="John Teacher",
+            name="John Teacher",
             is_active=True,
-            is_verified=True,
             created_at=datetime.now(),
             updated_at=datetime.now()
         )
@@ -466,10 +488,8 @@ class TestClassPySchemas:
         teacher = User(
             id=1,
             email="teacher@example.com",
-            username="teacher",
-            full_name="John Teacher",
+            name="John Teacher",
             is_active=True,
-            is_verified=True,
             created_at=datetime.now(),
             updated_at=datetime.now()
         )
@@ -486,3 +506,21 @@ class TestClassPySchemas:
         class_in_db = ClassPyClassInDB(**data)
         assert class_in_db.id == 1
         assert class_in_db.name == "Test Class" 
+
+    def test_class_in_db_base_invalid_types(self):  # type: ignore
+        """Test ClassInDBBase with invalid types for name, code, description (should fail)"""
+        data = dict(id=1, teacher_id=1)
+        data.update({
+            "name": get_invalid_int(),
+            "code": get_invalid_int(),
+            "description": get_invalid_int()
+        })
+        with pytest.raises(ValidationError):
+            ClassInDBBase(**data)  # type: ignore
+
+    def test_class_update_teacher_id_str_invalid(self):  # type: ignore
+        """Test ClassUpdate with teacher_id as string (should fail)"""
+        data = dict()
+        data.update({"teacher_id": "not_an_int"})
+        with pytest.raises(ValidationError):
+            ClassUpdate(**data)  # type: ignore 

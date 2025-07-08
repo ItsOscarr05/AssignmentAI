@@ -84,7 +84,6 @@ async def process_uploaded_file(
     try:
         # In a real implementation, you'd fetch the file from storage
         # For now, we'll simulate the processing
-        
         if action == "summarize":
             prompt = "Please provide a comprehensive summary of the document content."
         elif action == "extract":
@@ -95,14 +94,14 @@ async def process_uploaded_file(
             prompt = "Please analyze the document structure, arguments, and provide feedback."
         else:
             raise HTTPException(status_code=400, detail="Invalid action specified")
-        
         result = await ai_service.generate_assignment_content_from_prompt(prompt)
-        
         return {
             "action": action,
             "result": result,
             "processed_at": datetime.utcnow().isoformat()
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error processing file action: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to process file: {str(e)}")

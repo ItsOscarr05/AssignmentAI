@@ -1,0 +1,359 @@
+import pytest
+from unittest.mock import Mock, patch, AsyncMock, MagicMock
+from fastapi.testclient import TestClient
+from app.main import app
+from app.models.user import User
+from app.models.file import File
+from datetime import datetime
+import io
+
+client = TestClient(app)
+
+@pytest.fixture
+def mock_user():
+    """Create a mock user for testing"""
+    user = Mock(spec=User)
+    user.id = 1
+    user.email = "test@example.com"
+    user.is_active = True
+    return user
+
+@pytest.fixture
+def mock_db():
+    """Create a mock database session"""
+    return Mock()
+
+@pytest.fixture
+def override_get_current_user(mock_user):
+    """Override the get_current_user dependency"""
+    app.dependency_overrides = getattr(app, 'dependency_overrides', {})
+    from app.core.deps import get_current_user
+    app.dependency_overrides[get_current_user] = lambda: mock_user
+    yield
+    app.dependency_overrides = {}
+
+@pytest.fixture
+def override_get_db(mock_db):
+    """Override the get_db dependency"""
+    app.dependency_overrides = getattr(app, 'dependency_overrides', {})
+    from app.core.deps import get_db
+    app.dependency_overrides[get_db] = lambda: mock_db
+    yield
+    app.dependency_overrides = {}
+
+class TestWorkshopEndpoints:
+    """Test workshop endpoints functionality"""
+
+    @patch('app.api.v1.endpoints.workshop.ai_service.generate_assignment_content_from_prompt')
+    async def test_generate_content_success(self, mock_generate_content, override_get_current_user, override_get_db):
+        """Test successful content generation"""
+        mock_generate_content.return_value = "Generated content"
+        
+        response = client.post(
+            "/api/v1/workshop/generate",
+            data={"prompt": "Test prompt"}
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["content"] == "Generated content"
+        assert "timestamp" in data
+        mock_generate_content.assert_called_once_with("Test prompt")
+
+    @patch('app.api.v1.endpoints.workshop.ai_service.generate_assignment_content_from_prompt')
+    async def test_generate_content_error(self, mock_generate_content, override_get_current_user, override_get_db):
+        """Test content generation with error"""
+        mock_generate_content.side_effect = Exception("AI service error")
+        
+        response = client.post(
+            "/api/v1/workshop/generate",
+            data={"prompt": "Test prompt"}
+        )
+        
+        assert response.status_code == 500
+        assert "Failed to generate content" in response.json()["detail"]
+
+    @patch('app.api.v1.endpoints.workshop.file_service.save_file')
+    @patch('app.api.v1.endpoints.workshop.extract_file_content')
+    @patch('app.api.v1.endpoints.workshop.ai_service.generate_assignment_content_from_prompt')
+    async def test_upload_and_process_file_success(
+        self, 
+        mock_generate_content, 
+        mock_extract_content, 
+        mock_save_file,
+        override_get_current_user, 
+        override_get_db
+    ):
+        """Test successful file upload and processing"""
+        mock_save_file.return_value = ("/path/to/file.txt", 1024)
+        mock_extract_content.return_value = "Extracted content"
+        mock_generate_content.return_value = "AI analysis"
+        
+        file_content = io.BytesIO(b"test file content")
+        
+        response = client.post(
+            "/api/v1/workshop/files",
+            files={"file": ("test.txt", file_content, "text/plain")}
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["name"] == "test.txt"
+        assert data["type"] == "text/plain"
+        assert data["content"] == "Extracted content"
+        assert data["analysis"] == "AI analysis"
+        assert "uploaded_at" in data
+        assert "id" in data
+
+    @patch('app.api.v1.endpoints.workshop.file_service.save_file')
+    async def test_upload_and_process_file_error(self, mock_save_file, override_get_current_user, override_get_db):
+        """Test file upload with error"""
+        mock_save_file.side_effect = Exception("File save error")
+        
+        file_content = io.BytesIO(b"test file content")
+        
+        response = client.post(
+            "/api/v1/workshop/files",
+            files={"file": ("test.txt", file_content, "text/plain")}
+        )
+        
+        assert response.status_code == 500
+        assert "Failed to process file" in response.json()["detail"]
+
+    @patch('app.api.v1.endpoints.workshop.ai_service.generate_assignment_content_from_prompt')
+    async def test_process_uploaded_file_summarize(self, mock_generate_content, override_get_current_user, override_get_db):
+        """Test file processing with summarize action"""
+        mock_generate_content.return_value = "Summary of document"
+        
+        response = client.post(
+            "/api/v1/workshop/files/process",
+            data={"file_id": "test-id", "action": "summarize"}
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["action"] == "summarize"
+        assert data["result"] == "Summary of document"
+        assert "processed_at" in data
+
+    @patch('app.api.v1.endpoints.workshop.ai_service.generate_assignment_content_from_prompt')
+    async def test_process_uploaded_file_extract(self, mock_generate_content, override_get_current_user, override_get_db):
+        """Test file processing with extract action"""
+        mock_generate_content.return_value = "Key points extracted"
+        
+        response = client.post(
+            "/api/v1/workshop/files/process",
+            data={"file_id": "test-id", "action": "extract"}
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["action"] == "extract"
+        assert data["result"] == "Key points extracted"
+
+    @patch('app.api.v1.endpoints.workshop.ai_service.generate_assignment_content_from_prompt')
+    async def test_process_uploaded_file_rewrite(self, mock_generate_content, override_get_current_user, override_get_db):
+        """Test file processing with rewrite action"""
+        mock_generate_content.return_value = "Rewritten content"
+        
+        response = client.post(
+            "/api/v1/workshop/files/process",
+            data={"file_id": "test-id", "action": "rewrite"}
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["action"] == "rewrite"
+        assert data["result"] == "Rewritten content"
+
+    @patch('app.api.v1.endpoints.workshop.ai_service.generate_assignment_content_from_prompt')
+    async def test_process_uploaded_file_analyze(self, mock_generate_content, override_get_current_user, override_get_db):
+        """Test file processing with analyze action"""
+        mock_generate_content.return_value = "Document analysis"
+        
+        response = client.post(
+            "/api/v1/workshop/files/process",
+            data={"file_id": "test-id", "action": "analyze"}
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["action"] == "analyze"
+        assert data["result"] == "Document analysis"
+
+    async def test_process_uploaded_file_invalid_action(self, override_get_current_user, override_get_db):
+        """Test file processing with invalid action"""
+        response = client.post(
+            "/api/v1/workshop/files/process",
+            data={"file_id": "test-id", "action": "invalid_action"}
+        )
+        
+        assert response.status_code == 400
+        assert "Invalid action specified" in response.json()["detail"]
+
+    @patch('app.api.v1.endpoints.workshop.ai_service.generate_assignment_content_from_prompt')
+    async def test_process_uploaded_file_error(self, mock_generate_content, override_get_current_user, override_get_db):
+        """Test file processing with error"""
+        mock_generate_content.side_effect = Exception("Processing error")
+        
+        response = client.post(
+            "/api/v1/workshop/files/process",
+            data={"file_id": "test-id", "action": "summarize"}
+        )
+        
+        assert response.status_code == 500
+        assert "Failed to process file" in response.json()["detail"]
+
+    @patch('app.api.v1.endpoints.workshop.WebScrapingService')
+    @patch('app.api.v1.endpoints.workshop.ai_service.generate_assignment_content_from_prompt')
+    async def test_process_link_success(self, mock_generate_content, mock_scraper_class, override_get_current_user, override_get_db):
+        """Test successful link processing"""
+        mock_scraper = AsyncMock()
+        mock_scraper.extract_content_from_url.return_value = {
+            "title": "Test Page",
+            "content": "Test content",
+            "type": "article"
+        }
+        mock_scraper_class.return_value.__aenter__.return_value = mock_scraper
+        mock_generate_content.return_value = "Web content analysis"
+        
+        response = client.post(
+            "/api/v1/workshop/links",
+            data={"url": "https://example.com"}
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["url"] == "https://example.com"
+        assert data["title"] == "Test Page"
+        assert data["content"] == "Test content"
+        assert data["type"] == "article"
+        assert data["analysis"] == "Web content analysis"
+        assert "extracted_at" in data
+
+    @patch('app.api.v1.endpoints.workshop.WebScrapingService')
+    async def test_process_link_error(self, mock_scraper_class, override_get_current_user, override_get_db):
+        """Test link processing with error"""
+        mock_scraper = AsyncMock()
+        mock_scraper.extract_content_from_url.side_effect = Exception("Scraping error")
+        mock_scraper_class.return_value.__aenter__.return_value = mock_scraper
+        
+        response = client.post(
+            "/api/v1/workshop/links",
+            data={"url": "https://example.com"}
+        )
+        
+        assert response.status_code == 500
+        assert "Failed to process link" in response.json()["detail"]
+
+    async def test_delete_file_success(self, override_get_current_user, override_get_db):
+        """Test successful file deletion"""
+        response = client.delete("/api/v1/workshop/files/test-file-id")
+        
+        assert response.status_code == 200
+        assert response.json()["message"] == "File deleted successfully"
+
+    async def test_delete_file_error(self, override_get_current_user, override_get_db):
+        """Test file deletion with error"""
+        # This endpoint doesn't actually have error handling in the current implementation
+        # but we test the basic functionality
+        response = client.delete("/api/v1/workshop/files/test-file-id")
+        
+        assert response.status_code == 200
+
+    async def test_delete_link_success(self, override_get_current_user, override_get_db):
+        """Test successful link deletion"""
+        response = client.delete("/api/v1/workshop/links/test-link-id")
+        
+        assert response.status_code == 200
+        assert response.json()["message"] == "Link deleted successfully"
+
+    async def test_delete_link_error(self, override_get_current_user, override_get_db):
+        """Test link deletion with error"""
+        # This endpoint doesn't actually have error handling in the current implementation
+        # but we test the basic functionality
+        response = client.delete("/api/v1/workshop/links/test-link-id")
+        
+        assert response.status_code == 200
+
+class TestExtractFileContent:
+    """Test the extract_file_content function"""
+
+    @patch('builtins.open', create=True)
+    async def test_extract_text_plain(self, mock_open):
+        """Test extracting content from plain text file"""
+        mock_open.return_value.__enter__.return_value.read.return_value = "Plain text content"
+        
+        from app.api.v1.endpoints.workshop import extract_file_content
+        
+        result = await extract_file_content("/path/to/file.txt", "text/plain")
+        
+        assert result == "Plain text content"
+        mock_open.assert_called_once_with("/path/to/file.txt", 'r', encoding='utf-8')
+
+    @patch('builtins.open', create=True)
+    @patch('app.api.v1.endpoints.workshop.pypdf.PdfReader')
+    async def test_extract_pdf_content(self, mock_pdf_reader, mock_open):
+        """Test extracting content from PDF file"""
+        mock_page1 = Mock()
+        mock_page1.extract_text.return_value = "Page 1 content"
+        mock_page2 = Mock()
+        mock_page2.extract_text.return_value = "Page 2 content"
+        mock_pdf_reader.return_value.pages = [mock_page1, mock_page2]
+        
+        from app.api.v1.endpoints.workshop import extract_file_content
+        
+        result = await extract_file_content("/path/to/file.pdf", "application/pdf")
+        
+        assert result == "Page 1 content\nPage 2 content"
+        mock_open.assert_called_once_with("/path/to/file.pdf", 'rb')
+
+    @patch('app.api.v1.endpoints.workshop.Document')
+    async def test_extract_word_document(self, mock_document):
+        """Test extracting content from Word document"""
+        mock_para1 = Mock()
+        mock_para1.text = "Paragraph 1"
+        mock_para2 = Mock()
+        mock_para2.text = "Paragraph 2"
+        mock_document.return_value.paragraphs = [mock_para1, mock_para2]
+        
+        from app.api.v1.endpoints.workshop import extract_file_content
+        
+        result = await extract_file_content("/path/to/file.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        
+        assert result == "Paragraph 1\nParagraph 2"
+        mock_document.assert_called_once_with("/path/to/file.docx")
+
+    @patch('builtins.open', create=True)
+    async def test_extract_rtf_content(self, mock_open):
+        """Test extracting content from RTF file"""
+        mock_open.return_value.__enter__.return_value.read.return_value = "{\\rtf1\\ansi\\deff0 {\\fonttbl {\\f0 Times New Roman;}}\\f0\\fs24 This is RTF content}"
+        
+        from app.api.v1.endpoints.workshop import extract_file_content
+        
+        result = await extract_file_content("/path/to/file.rtf", "application/rtf")
+        
+        # Should have RTF markup removed
+        assert "This is RTF content" in result
+        assert "\\rtf1" not in result
+        assert "{" not in result
+        assert "}" not in result
+
+    async def test_extract_unsupported_format(self):
+        """Test extracting content from unsupported format"""
+        from app.api.v1.endpoints.workshop import extract_file_content
+        
+        result = await extract_file_content("/path/to/file.xyz", "application/unknown")
+        
+        assert "Format not supported" in result
+
+    @patch('builtins.open', create=True)
+    async def test_extract_file_error(self, mock_open):
+        """Test extracting content with file error"""
+        mock_open.side_effect = Exception("File read error")
+        
+        from app.api.v1.endpoints.workshop import extract_file_content
+        
+        result = await extract_file_content("/path/to/file.txt", "text/plain")
+        
+        assert "Error extracting content" in result 

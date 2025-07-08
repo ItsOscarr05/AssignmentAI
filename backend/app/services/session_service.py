@@ -165,14 +165,6 @@ class SessionService:
             "device_types": device_types,
         }
 
-# Global session service instance
-session_service = SessionService(None)
-
-def get_session_service(db: Session) -> SessionService:
-    """Get session service instance with database session"""
-    session_service.db = db
-    return session_service
-
     def track_session_activity(
         self,
         session_id: str,
@@ -217,7 +209,7 @@ def get_session_service(db: Session) -> SessionService:
         # Update session data
         self.active_sessions[session_id] = session_data
 
-    def get_session_analytics(self, session_id: str) -> Dict:
+    def get_session_analytics_by_id(self, session_id: str) -> Dict:
         """Get analytics for a specific session"""
         if session_id not in self.active_sessions:
             return None
@@ -254,6 +246,15 @@ def get_session_service(db: Session) -> SessionService:
         ]
 
         return [
-            self.get_session_analytics(session_id)
+            self.get_session_analytics_by_id(session_id)
             for session_id in user_sessions
-        ] 
+        ]
+
+
+# Global session service instance
+session_service = SessionService(None)
+
+def get_session_service(db: Session) -> SessionService:
+    """Get session service instance with database session"""
+    session_service.db = db
+    return session_service 

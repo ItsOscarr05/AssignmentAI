@@ -14,10 +14,15 @@ class StorageService:
         """Save an uploaded file to the storage"""
         try:
             # Create subdirectory if specified
-            save_dir = os.path.join(self.upload_dir, subdirectory) if subdirectory else self.upload_dir
+            if subdirectory is not None:
+                save_dir = os.path.join(self.upload_dir, subdirectory)
+            else:
+                save_dir = self.upload_dir
             os.makedirs(save_dir, exist_ok=True)
 
             # Generate unique filename
+            if file.filename is None:
+                raise ValueError("File has no filename")
             file_path = os.path.join(save_dir, file.filename)
             
             # Save file
@@ -25,15 +30,13 @@ class StorageService:
                 content = await file.read()
                 buffer.write(content)
 
-            LoggingService.log_info(
-                self.db,
+            LoggingService.info(
                 f"File saved successfully: {file.filename}",
                 {"path": file_path}
             )
             return file_path
         except Exception as e:
-            LoggingService.log_error(
-                self.db,
+            LoggingService.error(
                 f"Failed to save file: {file.filename}",
                 {"error": str(e)}
             )
@@ -45,14 +48,12 @@ class StorageService:
             if not os.path.exists(file_path):
                 raise FileNotFoundError(f"File not found: {file_path}")
 
-            LoggingService.log_info(
-                self.db,
+            LoggingService.info(
                 f"File read successfully: {file_path}"
             )
             return open(file_path, "rb")
         except Exception as e:
-            LoggingService.log_error(
-                self.db,
+            LoggingService.error(
                 f"Failed to read file: {file_path}",
                 {"error": str(e)}
             )
@@ -65,14 +66,12 @@ class StorageService:
                 return False
 
             os.remove(file_path)
-            LoggingService.log_info(
-                self.db,
+            LoggingService.info(
                 f"File deleted successfully: {file_path}"
             )
             return True
         except Exception as e:
-            LoggingService.log_error(
-                self.db,
+            LoggingService.error(
                 f"Failed to delete file: {file_path}",
                 {"error": str(e)}
             )
@@ -85,15 +84,13 @@ class StorageService:
                 raise FileNotFoundError(f"File not found: {file_path}")
 
             size = os.path.getsize(file_path)
-            LoggingService.log_info(
-                self.db,
+            LoggingService.info(
                 f"File size retrieved: {file_path}",
                 {"size": size}
             )
             return size
         except Exception as e:
-            LoggingService.log_error(
-                self.db,
+            LoggingService.error(
                 f"Failed to get file size: {file_path}",
                 {"error": str(e)}
             )

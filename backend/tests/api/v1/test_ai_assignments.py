@@ -123,3 +123,47 @@ def test_create_ai_assignment_with_invalid_temperature(client, test_user, test_t
         json=ai_assignment_data,
     )
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY 
+
+def test_get_ai_assignment_not_found(client, test_user, test_token):
+    response = client.get(
+        f"/api/v1/ai-assignments/999999",
+        headers={"Authorization": f"Bearer {test_token}"},
+    )
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+def test_update_ai_assignment_not_found(client, test_user, test_token):
+    update_data = {"prompt": "Updated", "model": "gpt-4"}
+    response = client.put(
+        f"/api/v1/ai-assignments/999999",
+        headers={"Authorization": f"Bearer {test_token}"},
+        json=update_data,
+    )
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+def test_delete_ai_assignment_not_found(client, test_user, test_token):
+    response = client.delete(
+        f"/api/v1/ai-assignments/999999",
+        headers={"Authorization": f"Bearer {test_token}"},
+    )
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+def test_create_ai_assignment_invalid_payload(client, test_user, test_token):
+    # Missing required fields
+    ai_assignment_data = {"prompt": "Test"}
+    response = client.post(
+        "/api/v1/ai-assignments",
+        headers={"Authorization": f"Bearer {test_token}"},
+        json=ai_assignment_data,
+    )
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+def test_get_ai_assignments_empty(client, test_user, test_token):
+    # Assuming a user with no AI assignments
+    response = client.get(
+        "/api/v1/ai-assignments",
+        headers={"Authorization": f"Bearer {test_token}"},
+    )
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert "items" in data
+    assert isinstance(data["items"], list) 
