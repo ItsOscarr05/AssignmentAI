@@ -1,10 +1,10 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from app.core.auth import get_current_user
+from app.auth import get_current_user
 from app.database import get_db
 from app.models.user import User
-from app.schemas.activity import Activity, ActivityFilter, ActivityResponse
+from app.schemas.activity import Activity, ActivityFilter
 from app.crud import activity as activity_crud
 
 router = APIRouter()
@@ -19,7 +19,7 @@ async def get_activities(
 ):
     """Get activities with filtering"""
     # Only allow users to view their own activities unless they're admin
-    if not current_user.role == "admin":
+    if not current_user.is_superuser:
         filter_params.user_id = current_user.id
     
     return activity_crud.get_activities(db, filter_params, skip, limit)
@@ -41,7 +41,7 @@ async def get_activity_stats(
 
 @router.get("/user/{user_id}", response_model=List[Activity])
 async def get_user_activities(
-    user_id: str,
+    user_id: int,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),
     current_user: User = Depends(get_current_user),
@@ -49,7 +49,7 @@ async def get_user_activities(
 ):
     """Get activities for a specific user"""
     # Only allow users to view their own activities unless they're admin
-    if not current_user.role == "admin" and current_user.id != user_id:
+    if not current_user.is_superuser and current_user.id != user_id:
         raise HTTPException(
             status_code=403,
             detail="Not authorized to view other users' activities"
@@ -65,7 +65,7 @@ async def cleanup_old_activities(
 ):
     """Delete activities older than specified days"""
     # Only allow admins to clean up activities
-    if not current_user.role == "admin":
+    if not current_user.is_superuser:
         raise HTTPException(
             status_code=403,
             detail="Not authorized to clean up activities"

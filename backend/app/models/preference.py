@@ -2,11 +2,12 @@ from sqlalchemy import Column, String, JSON, ForeignKey, Boolean, Integer
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.db.base_class import Base
+from uuid import uuid4
 
 class Preference(Base):
     __tablename__ = "preferences"
 
-    id = Column(String, primary_key=True, index=True)
+    id = Column(String, primary_key=True, index=True, default=lambda: str(uuid4()))
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
     
     # UI Preferences

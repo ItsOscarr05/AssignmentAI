@@ -22,7 +22,7 @@ class AssignmentBase(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class AssignmentCreate(AssignmentBase):
-    pass
+    class_id: int = Field(..., description="ID of the class this assignment belongs to")
 
 class AssignmentUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=255)

@@ -2,6 +2,7 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
+import pytz
 from app.models.notification import Notification
 from app.schemas.notification import NotificationCreate, NotificationUpdate, NotificationFilter
 
@@ -12,7 +13,7 @@ def create_notification(db: Session, notification: NotificationCreate) -> Notifi
     db.refresh(db_notification)
     return db_notification
 
-def get_notification(db: Session, notification_id: str) -> Optional[Notification]:
+def get_notification(db: Session, notification_id: int) -> Optional[Notification]:
     return db.query(Notification).filter(Notification.id == notification_id).first()
 
 def get_user_notifications(
@@ -40,7 +41,7 @@ def get_user_notifications(
 
 def update_notification(
     db: Session,
-    notification_id: str,
+    notification_id: int,
     notification_update: NotificationUpdate
 ) -> Optional[Notification]:
     db_notification = get_notification(db, notification_id)
@@ -51,7 +52,7 @@ def update_notification(
     
     # Update read_at timestamp if marking as read
     if update_data.get("is_read") and not db_notification.is_read:
-        update_data["read_at"] = datetime.utcnow()
+        update_data["read_at"] = datetime.now(pytz.UTC)
     
     for field, value in update_data.items():
         setattr(db_notification, field, value)
@@ -60,7 +61,7 @@ def update_notification(
     db.refresh(db_notification)
     return db_notification
 
-def delete_notification(db: Session, notification_id: str) -> bool:
+def delete_notification(db: Session, notification_id: int) -> bool:
     db_notification = get_notification(db, notification_id)
     if not db_notification:
         return False
@@ -77,7 +78,7 @@ def mark_all_as_read(db: Session, user_id: str) -> int:
         )
     ).update({
         "is_read": True,
-        "read_at": datetime.utcnow()
+        "read_at": datetime.now(pytz.UTC)
     })
     db.commit()
     return result
@@ -103,11 +104,11 @@ def get_unread_count(db: Session, user_id: str) -> int:
     ).count()
 
 def cleanup_expired_notifications(db: Session, days: int = 30) -> int:
-    cutoff_date = datetime.utcnow() - timedelta(days=days)
+    utc_now = datetime.now(pytz.UTC)
     result = db.query(Notification).filter(
-        or_(
-            Notification.expires_at < datetime.utcnow(),
-            Notification.created_at < cutoff_date
+        and_(
+            Notification.expires_at != None,
+            Notification.expires_at < utc_now
         )
     ).delete()
     db.commit()

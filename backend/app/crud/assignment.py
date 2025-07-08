@@ -98,8 +98,7 @@ def create_assignment_sync(db: Session, assignment: AssignmentCreate, user_id: i
         **assignment.model_dump(),
         user_id=user_id,
         created_by_id=user_id,
-        teacher_id=user_id,
-        class_id=test_class.id
+        teacher_id=user_id
     )
     db.add(db_assignment)
     db.commit()

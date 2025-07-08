@@ -1,8 +1,9 @@
 from typing import Optional
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.crud.assignment import assignment
 from app.schemas.assignment import AssignmentCreate
 from app.core.config import settings
+from app.models.assignment import Assignment
 import openai
 
 class AssignmentService:
@@ -36,9 +37,6 @@ Topic: {data.topic}
 Difficulty Level: {data.difficulty}
 Estimated Time: {data.estimated_time} minutes
 
-Additional Requirements:
-{data.additional_requirements if data.additional_requirements else 'None'}
-
 Please provide:
 1. Clear instructions
 2. Detailed requirements
@@ -51,15 +49,19 @@ Format the response in a clear, structured manner."""
         return prompt
 
     async def create_assignment(
-        self, db: Session, *, obj_in: AssignmentCreate, user_id: int
-    ) -> Optional[dict]:
+        self, db: AsyncSession, *, obj_in: AssignmentCreate, user_id: int
+    ) -> Optional[Assignment]:
         """Create a new assignment with AI-generated content."""
         # Generate content using AI
         content = await self.generate_content(obj_in)
         
+        # Update the assignment data with generated content
+        obj_in_data = obj_in.model_dump()
+        obj_in_data['content'] = content
+        
         # Create assignment in database
-        db_obj = assignment.create_with_user(
-            db=db, obj_in=obj_in, user_id=user_id, content=content
+        db_obj = await assignment.create_with_user(
+            db=db, obj_in=AssignmentCreate(**obj_in_data), user_id=user_id
         )
         
         return db_obj

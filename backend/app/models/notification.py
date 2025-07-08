@@ -6,7 +6,7 @@ from app.db.base_class import Base
 class Notification(Base):
     __tablename__ = "notifications"
 
-    id = Column(String, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     type = Column(String, nullable=False)  # e.g., "assignment_due", "comment", "grade", etc.
     title = Column(String, nullable=False)

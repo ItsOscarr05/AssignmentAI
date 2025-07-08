@@ -106,6 +106,21 @@ def test_teacher(db) -> User:
     return teacher
 
 @pytest.fixture(scope="function")
+def test_student(db) -> User:
+    """Create a test student user."""
+    unique_id = str(uuid.uuid4())[:8]
+    student = User(
+        email=f"student-{unique_id}@example.com",
+        hashed_password=get_password_hash("studentpassword"),
+        name=f"Test Student {unique_id}",
+        updated_at=datetime.utcnow()
+    )
+    db.add(student)
+    db.commit()
+    db.refresh(student)
+    return student
+
+@pytest.fixture(scope="function")
 def test_class(db, test_teacher) -> Class:
     """Create a test class."""
     teacher = test_teacher

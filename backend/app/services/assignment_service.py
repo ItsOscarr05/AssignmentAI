@@ -16,10 +16,10 @@ class AssignmentService:
         if class_obj.teacher_id != teacher_id:
             raise ValueError("Not enough permissions")
 
-        assignment = Assignment(
-            **assignment_data.model_dump(),
-            teacher_id=teacher_id
-        )
+        assignment = Assignment()
+        for key, value in assignment_data.model_dump().items():
+            setattr(assignment, key, value)
+        assignment.teacher_id = teacher_id
         db.add(assignment)
         db.commit()
         db.refresh(assignment)
@@ -32,11 +32,13 @@ class AssignmentService:
         if not user:
             raise ValueError("User not found")
 
-        if user.role == "teacher":
-            return db.query(Assignment).filter(Assignment.teacher_id == user_id).all()
-        else:
-            # For students, get assignments from their classes
-            return db.query(Assignment).join(Class).join(Class.students).filter(User.id == user_id).all()
+        # Check if user is a teacher (has classes they teach)
+        teacher_assignments = db.query(Assignment).filter(Assignment.teacher_id == user_id).all()
+        if teacher_assignments:
+            return teacher_assignments
+        
+        # If not a teacher, get assignments from classes where user is a student
+        return db.query(Assignment).join(Class).join(Class.students).filter(User.id == user_id).all()
 
     @staticmethod
     def get_assignment(db: Session, assignment_id: int) -> Optional[Assignment]:
@@ -54,17 +56,19 @@ class AssignmentService:
         if not user:
             return False
 
-        if user.role == "teacher":
-            return assignment.teacher_id == user_id
-        else:
-            return user in assignment.class_.students
+        # Check if user is the teacher of this assignment
+        if assignment.teacher_id == user_id:
+            return True
+        
+        # Check if user is a student in the class
+        return user in assignment.class_.students
 
     @staticmethod
-    def update_assignment(db: Session, assignment_id: int, assignment_data: AssignmentUpdate) -> Assignment:
+    def update_assignment(db: Session, assignment_id: int, assignment_data: AssignmentUpdate) -> Optional[Assignment]:
         """Update an assignment"""
         assignment = AssignmentService.get_assignment(db, assignment_id)
         if not assignment:
-            raise ValueError("Assignment not found")
+            return None
 
         for field, value in assignment_data.model_dump(exclude_unset=True).items():
             setattr(assignment, field, value)

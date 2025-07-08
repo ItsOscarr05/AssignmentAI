@@ -17,7 +17,12 @@ from app.api.v1.endpoints import (
     assignment_input,
     workshop,
     oauth,
-    security
+    security,
+    activities,
+    classes,
+    notifications,
+    preferences,
+    usage
 )
 from app.crud import feedback as feedback_crud
 from app.schemas.feedback import Feedback
@@ -49,6 +54,11 @@ api_router.include_router(templates.router, prefix="/templates", tags=["template
 api_router.include_router(assignment_input.router, prefix="/assignment-input", tags=["Assignment Input"])
 api_router.include_router(workshop.router, prefix="/workshop", tags=["workshop"])
 api_router.include_router(security.router, prefix="/security", tags=["security"])
+api_router.include_router(activities.router, prefix="/activities", tags=["activities"])
+api_router.include_router(classes.router, prefix="/classes", tags=["classes"])
+api_router.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
+api_router.include_router(preferences.router, prefix="/preferences", tags=["preferences"])
+api_router.include_router(usage.router, prefix="/usage", tags=["usage"])
 
 @api_router.get("/submissions/{submission_id}/feedback", tags=["Feedback"])
 def get_feedback_by_submission(submission_id: int, db=Depends(get_db)):
@@ -62,14 +72,9 @@ def get_feedback_by_user(user_id: int, db=Depends(get_db)):
     items = feedback_crud.get_feedback_by_user(db, user_id)
     result = []
     for fb in items:
-        if hasattr(fb, 'model_dump'):
-            fb_dict = fb.model_dump()
-        else:
-            fb_dict = {k: v for k, v in fb.__dict__.items() if not k.startswith('_')}
-        if hasattr(fb, 'submission') and fb.submission is not None:
+        fb_dict = fb.__dict__.copy()
+        if hasattr(fb, 'submission') and fb.submission is not None and hasattr(fb.submission, 'user_id'):
             fb_dict['user_id'] = fb.submission.user_id
-        elif hasattr(fb, 'user_id'):
-            fb_dict['user_id'] = fb.user_id
         result.append(fb_dict)
     return {"items": result}
 

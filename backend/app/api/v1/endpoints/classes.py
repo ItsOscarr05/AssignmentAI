@@ -2,7 +2,8 @@ from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import get_db, get_current_user
+from app.core.deps import get_db
+from app.auth import get_current_user
 from app.models.user import User
 from app.models.class_model import Class
 from app.schemas.class_schema import ClassCreate, ClassUpdate, ClassResponse
@@ -18,7 +19,7 @@ async def create_class(
     current_user: User = Depends(get_current_user)
 ):
     """Create a new class"""
-    if current_user.role != "teacher":
+    if not current_user.is_superuser:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only teachers can create classes"

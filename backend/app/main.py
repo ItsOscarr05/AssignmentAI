@@ -92,8 +92,6 @@ app = FastAPI(
         * Custom report generation
 
     * 🔗 Integrations
-        * Canvas LMS integration
-        * Google Classroom support
         * File storage integration
         * Email notifications
 

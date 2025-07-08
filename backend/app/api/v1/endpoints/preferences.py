@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 from app.core.deps import get_current_user, get_db
 from app.crud import preference as preference_crud
 from app.schemas.preference import Preference, PreferenceUpdate
-from app.core.auth import get_current_user
 
 router = APIRouter()
 

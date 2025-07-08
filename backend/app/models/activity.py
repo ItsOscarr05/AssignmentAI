@@ -1,18 +1,25 @@
-from sqlalchemy import Column, String, Integer, DateTime, JSON, ForeignKey, Text
-from sqlalchemy.orm import relationship
+from sqlalchemy import String, Integer, DateTime, JSON, ForeignKey, Text, Index
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base_class import Base
 from datetime import datetime
 
 class Activity(Base):
     __tablename__ = "activities"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    type = Column(String, nullable=False, index=True)
-    title = Column(String, nullable=False)
-    description = Column(Text, nullable=True)
-    activity_metadata = Column(JSON, default={})
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    
-    # Relationships
-    user = relationship("User") 
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    action: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    resource_type: Mapped[str] = mapped_column(String, nullable=True)
+    resource_id: Mapped[str] = mapped_column(String, nullable=True)
+    activity_metadata: Mapped[dict] = mapped_column(JSON, default={})
+    ip_address: Mapped[str] = mapped_column(String, nullable=True)
+    user_agent: Mapped[str] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relationship
+    user = relationship("User", back_populates="activities")
+
+    __table_args__ = (
+        Index('ix_activities_action', 'action'),
+        Index('ix_activities_user_id', 'user_id'),
+    ) 

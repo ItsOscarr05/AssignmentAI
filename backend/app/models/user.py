@@ -33,11 +33,7 @@ class User(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     stripe_customer_id: Mapped[Optional[str]] = mapped_column(String, unique=True, index=True, nullable=True)
 
-    # Canvas Integration
-    canvas_access_token: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    canvas_refresh_token: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    canvas_user_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    canvas_institution: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+
 
     # OAuth Integration
     oauth_provider: Mapped[Optional[str]] = mapped_column(String, nullable=True)
@@ -52,6 +48,7 @@ class User(Base):
 
     # Relationships - minimal for basic authentication
     tokens: Mapped[List[Token]] = relationship("Token", back_populates="user")
+    activities: Mapped[List["Activity"]] = relationship("Activity", back_populates="user")
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

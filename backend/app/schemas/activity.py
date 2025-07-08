@@ -6,22 +6,22 @@ class ActivityBase(BaseModel):
     action: str
     resource_type: Optional[str] = None
     resource_id: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
+    activity_metadata: Optional[Dict[str, Any]] = None
     ip_address: Optional[str] = None
     user_agent: Optional[str] = None
     model_config = ConfigDict(from_attributes=True)
 
 class ActivityCreate(ActivityBase):
-    user_id: str
+    user_id: int
 
 class Activity(ActivityBase):
-    id: str
-    user_id: str
+    id: int
+    user_id: int
     created_at: datetime
     model_config = ConfigDict(from_attributes=True)
 
 class ActivityFilter(BaseModel):
-    user_id: Optional[str] = None
+    user_id: Optional[int] = None
     action: Optional[str] = None
     resource_type: Optional[str] = None
     resource_id: Optional[str] = None

@@ -276,11 +276,7 @@ class Settings(BaseSettings):
     BACKUP_RETENTION_DAYS: int = 30
     BACKUP_SCHEDULE: str = "0 0 * * *"  # Daily at midnight
     
-    # Canvas LMS Integration
-    CANVAS_API_URL: str = os.getenv("CANVAS_API_URL", "https://canvas.instructure.com")
-    CANVAS_CLIENT_ID: Optional[str] = os.getenv("CANVAS_CLIENT_ID")
-    CANVAS_CLIENT_SECRET: Optional[str] = os.getenv("CANVAS_CLIENT_SECRET")
-    CANVAS_REDIRECT_URI: str = os.getenv("CANVAS_REDIRECT_URI", "http://localhost:8000/api/v1/canvas/callback")
+
     
     # CORS Security
     ALLOWED_ORIGINS: List[str] = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001").split(",")

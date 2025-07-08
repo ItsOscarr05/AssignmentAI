@@ -9,7 +9,6 @@ from app.schemas.notification import (
     NotificationUpdate,
     NotificationFilter
 )
-from app.core.auth import get_current_user
 
 router = APIRouter()
 
@@ -42,20 +41,6 @@ def get_unread_count(
     """
     return {"count": notification_crud.get_unread_count(db, current_user.id)}
 
-@router.get("/{notification_id}", response_model=Notification)
-def get_notification(
-    notification_id: str,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
-):
-    """
-    Get a specific notification.
-    """
-    notification = notification_crud.get_notification(db, notification_id)
-    if not notification or notification.user_id != current_user.id:
-        raise HTTPException(status_code=404, detail="Notification not found")
-    return notification
-
 @router.post("/", response_model=Notification)
 def create_notification(
     notification: NotificationCreate,
@@ -68,37 +53,6 @@ def create_notification(
     if notification.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to create notifications for other users")
     return notification_crud.create_notification(db, notification)
-
-@router.patch("/{notification_id}", response_model=Notification)
-def update_notification(
-    notification_id: str,
-    notification_update: NotificationUpdate,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
-):
-    """
-    Update a notification.
-    """
-    notification = notification_crud.get_notification(db, notification_id)
-    if not notification or notification.user_id != current_user.id:
-        raise HTTPException(status_code=404, detail="Notification not found")
-    return notification_crud.update_notification(db, notification_id, notification_update)
-
-@router.delete("/{notification_id}")
-def delete_notification(
-    notification_id: str,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
-):
-    """
-    Delete a notification.
-    """
-    notification = notification_crud.get_notification(db, notification_id)
-    if not notification or notification.user_id != current_user.id:
-        raise HTTPException(status_code=404, detail="Notification not found")
-    if notification_crud.delete_notification(db, notification_id):
-        return {"message": "Notification deleted successfully"}
-    raise HTTPException(status_code=500, detail="Failed to delete notification")
 
 @router.post("/mark-all-read")
 def mark_all_as_read(
@@ -131,7 +85,52 @@ def cleanup_notifications(
     """
     Clean up expired notifications.
     """
-    if not current_user.is_admin:
+    if not current_user.is_superuser:
         raise HTTPException(status_code=403, detail="Not authorized to cleanup notifications")
     count = notification_crud.cleanup_expired_notifications(db, days)
-    return {"message": f"Cleaned up {count} notifications"} 
+    return {"message": f"Cleaned up {count} notifications"}
+
+@router.get("/{notification_id}", response_model=Notification)
+def get_notification(
+    notification_id: int,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """
+    Get a specific notification.
+    """
+    notification = notification_crud.get_notification(db, notification_id)
+    if not notification or notification.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    return notification
+
+@router.patch("/{notification_id}", response_model=Notification)
+def update_notification(
+    notification_id: int,
+    notification_update: NotificationUpdate,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """
+    Update a notification.
+    """
+    notification = notification_crud.get_notification(db, notification_id)
+    if not notification or notification.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    return notification_crud.update_notification(db, notification_id, notification_update)
+
+@router.delete("/{notification_id}")
+def delete_notification(
+    notification_id: int,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """
+    Delete a notification.
+    """
+    notification = notification_crud.get_notification(db, notification_id)
+    if not notification or notification.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    if notification_crud.delete_notification(db, notification_id):
+        return {"message": "Notification deleted successfully"}
+    raise HTTPException(status_code=500, detail="Failed to delete notification") 

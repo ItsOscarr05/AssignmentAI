@@ -3,9 +3,10 @@ from fastapi import status
 from app.models.assignment import Assignment
 from app.schemas.assignment import AssignmentCreate
 
-def test_create_assignment(client, test_user, test_token):
+def test_create_assignment(client, test_user, test_token, test_class):
     user = test_user
     token = test_token
+    class_ = test_class
     
     assignment_data = {
         "title": "Test Assignment",
@@ -19,6 +20,7 @@ def test_create_assignment(client, test_user, test_token):
         "difficulty": "easy",
         "estimated_time": 60,
         "content": "Test content",
+        "class_id": class_.id,
     }
     
     response = client.post(

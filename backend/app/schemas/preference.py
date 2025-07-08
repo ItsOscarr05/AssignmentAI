@@ -35,7 +35,7 @@ class PreferenceBase(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class PreferenceCreate(PreferenceBase):
-    user_id: str
+    user_id: int
 
 class PreferenceUpdate(BaseModel):
     # UI Preferences
@@ -64,7 +64,7 @@ class PreferenceUpdate(BaseModel):
 
 class PreferenceInDBBase(PreferenceBase):
     id: str = Field(default_factory=lambda: str(uuid4()))
-    user_id: str
+    user_id: int
     model_config = ConfigDict(from_attributes=True)
 
 class Preference(PreferenceInDBBase):

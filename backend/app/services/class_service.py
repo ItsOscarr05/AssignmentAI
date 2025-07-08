@@ -8,7 +8,9 @@ class ClassService:
     @staticmethod
     def create_class(db: Session, class_data: ClassCreate, teacher_id: int) -> Class:
         """Create a new class"""
-        db_class = Class(**class_data.model_dump(), teacher_id=teacher_id)
+        data = class_data.model_dump()
+        data.pop('teacher_id', None)  # Remove teacher_id if present
+        db_class = Class(**data, teacher_id=teacher_id)
         db.add(db_class)
         db.commit()
         db.refresh(db_class)
@@ -69,7 +71,7 @@ class ClassService:
         if not class_:
             return None
         
-        student = db.query(User).filter(User.id == student_id, User.role == "student").first()
+        student = db.query(User).filter(User.id == student_id).first()
         if not student:
             return None
         

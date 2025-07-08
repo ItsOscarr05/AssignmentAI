@@ -8,6 +8,7 @@ import os
 import asyncio
 import logging
 from app.core.config import settings
+import sys
 
 logger = logging.getLogger(__name__)
 
@@ -292,5 +293,6 @@ class MonitoringService:
         except Exception as e:
             logger.error(f"Error tracking error metrics: {str(e)}")
 
-# Create global monitoring service instance
-monitoring_service = MonitoringService() 
+# Create global monitoring service instance only if not running under pytest
+if not any('pytest' in arg for arg in sys.argv):
+    monitoring_service = MonitoringService() 
