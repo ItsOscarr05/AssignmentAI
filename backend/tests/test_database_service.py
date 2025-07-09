@@ -86,7 +86,8 @@ class TestDatabaseService:
              patch('app.services.database_service.ssl.create_default_context', return_value=mock_ssl_context), \
              patch('app.services.database_service.create_engine') as mock_create_engine, \
              patch('app.services.database_service.sessionmaker') as mock_sessionmaker, \
-             patch('app.services.database_service.event') as mock_event:
+             patch('app.services.database_service.event') as mock_event, \
+             patch('app.services.database_service.os.path.exists', return_value=True):
             
             mock_engine = Mock()
             mock_create_engine.return_value = mock_engine

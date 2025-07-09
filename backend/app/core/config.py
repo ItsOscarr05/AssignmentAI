@@ -35,6 +35,23 @@ class Settings(BaseSettings):
     DB_PASSWORD: str = "postgres"
     DB_NAME: str = "assignmentai"
     SQLALCHEMY_DATABASE_URI: str = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    
+    # Override database URI for testing
+    @property
+    def database_uri(self) -> str:
+        if os.getenv("TESTING") == "true":
+            return "sqlite:///./test.db"
+        # Check for DATABASE_URL environment variable first
+        database_url = os.getenv("DATABASE_URL")
+        if database_url:
+            return database_url
+        # Use environment variables if available, otherwise use defaults
+        db_host = os.getenv("DB_HOST", self.DB_HOST)
+        db_port = os.getenv("DB_PORT", str(self.DB_PORT))
+        db_user = os.getenv("DB_USER", self.DB_USER)
+        db_password = os.getenv("DB_PASSWORD", self.DB_PASSWORD)
+        db_name = os.getenv("DB_NAME", self.DB_NAME)
+        return f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
     SSL_ENABLED: bool = True
     SSL_CERTFILE: Optional[str] = None
     SSL_KEYFILE: Optional[str] = None
@@ -124,16 +141,13 @@ class Settings(BaseSettings):
     ENABLE_PASSWORD_RESET: bool = os.getenv("ENABLE_PASSWORD_RESET", "true").lower() == "true"
     ENABLE_SOCIAL_LOGIN: bool = os.getenv("ENABLE_SOCIAL_LOGIN", "false").lower() == "true"
     
-    # SSL/TLS settings
-    SSL_ENABLED: bool = os.getenv("SSL_ENABLED", "true").lower() == "true"
-    SSL_KEYFILE: Optional[str] = os.getenv("SSL_KEYFILE")
-    SSL_CERTFILE: Optional[str] = os.getenv("SSL_CERTFILE")
+    # SSL/TLS settings (duplicate removed)
     
     # CORS
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "https://assignmentai.com")
     
     # CORS Configuration
-    CORS_ORIGINS: List[AnyHttpUrl] = [
+    CORS_ORIGINS: List[str] = [
         "https://assignmentai.com",
         "https://www.assignmentai.com",
         "http://localhost:3000"  # Keep localhost for development
@@ -169,10 +183,7 @@ class Settings(BaseSettings):
             return v
         raise ValueError(v)
     
-    # Email Configuration
-    SMTP_USERNAME: EmailStr = "your-email@gmail.com"
-    SMTP_PASSWORD: str = "your-app-specific-password"
-    SMTP_FROM_EMAIL: EmailStr = "your-email@gmail.com"
+    # Email Configuration (duplicate removed)
     
     # OAuth Provider Settings
     GOOGLE_CLIENT_ID: Optional[str] = os.getenv("GOOGLE_CLIENT_ID")
@@ -197,8 +208,7 @@ class Settings(BaseSettings):
     RATE_LIMIT_PERIOD: int = 1  # minutes
     AUTH_RATE_LIMIT_REQUESTS: int = int(os.getenv("AUTH_RATE_LIMIT_REQUESTS", "5"))
     AUTH_RATE_LIMIT_PERIOD: int = int(os.getenv("AUTH_RATE_LIMIT_PERIOD", "60"))
-    MAX_LOGIN_ATTEMPTS: int = 5  # maximum login attempts before lockout
-    LOGIN_TIMEOUT_MINUTES: int = 15  # lockout duration in minutes
+    # Login security (duplicate removed)
     MAX_2FA_ATTEMPTS: int = 3  # maximum 2FA attempts before backoff
     INITIAL_2FA_BACKOFF_MINUTES: int = 1  # initial backoff period in minutes
     MAX_2FA_BACKOFF_MINUTES: int = 16  # maximum backoff period in minutes
@@ -216,16 +226,7 @@ class Settings(BaseSettings):
     DB_POOL_PRE_PING: bool = True
     SQL_DEBUG: bool = False
     
-    # File upload settings
-    UPLOAD_DIR: str = "uploads"
-    MAX_FILE_SIZE: int = 50 * 1024 * 1024  # 50MB
-    ALLOWED_FILE_TYPES: List[str] = [
-        "pdf", "doc", "docx", "txt", "rtf", "odt",
-        "jpg", "jpeg", "png", "gif",
-        "zip", "rar", "7z",
-        "mp3", "mp4", "wav", "avi",
-        "py", "java", "cpp", "c", "js", "html", "css"
-    ]
+    # File upload settings (duplicate removed)
     ALLOWED_EXTENSIONS: set = {
         "pdf", "doc", "docx", "txt", "rtf", "odt",
         "jpg", "jpeg", "png", "gif",
@@ -243,7 +244,7 @@ class Settings(BaseSettings):
     REDIS_SSL_CERT_REQS: Optional[str] = None
     
     # OpenAI
-    OPENAI_API_KEY: str = None
+    OPENAI_API_KEY: Optional[str] = None
     OPENAI_MODEL: str = "gpt-4.1-nano"  # Default model (overridden by subscription)
     OPENAI_TEMPERATURE: float = 0.7
     OPENAI_MAX_TOKENS: int = 2000
@@ -278,15 +279,7 @@ class Settings(BaseSettings):
     
 
     
-    # CORS Security
-    ALLOWED_ORIGINS: List[str] = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001").split(",")
-    
-    @field_validator("ALLOWED_ORIGINS", mode="before")
-    @classmethod
-    def validate_allowed_origins(cls, v: Union[str, List[str]]) -> List[str]:
-        if isinstance(v, str):
-            return [i.strip() for i in v.split(",")]
-        return v
+    # CORS Security (using CORS_ORIGINS instead)
     
     # Session Management
     MAX_CONCURRENT_SESSIONS: int = int(os.getenv("MAX_CONCURRENT_SESSIONS", "5"))  # Maximum number of concurrent sessions per user
@@ -319,9 +312,7 @@ class Settings(BaseSettings):
     
     model_config = ConfigDict(
         env_file=".env",
-        case_sensitive=True,
-        extra="allow",
-        protected_namespaces=()
+        extra="allow"
     )
 
 settings = Settings() 

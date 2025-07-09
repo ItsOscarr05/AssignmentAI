@@ -1,6 +1,5 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Enum, JSON
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import ARRAY
 from app.db.base_class import Base
 import enum
 
@@ -24,7 +23,7 @@ class Subscription(Base):
     ai_model = Column(String, nullable=False)  # The AI model assigned to this subscription
     token_limit = Column(Integer, nullable=False)  # Monthly token limit
     subscription_metadata = Column(JSON)  # Additional subscription data
-    notified_token_thresholds = Column(ARRAY(Integer), default=list)  # Track notified thresholds
+    notified_token_thresholds = Column(JSON, default=list)  # Track notified thresholds
     
     # Relationships
     user = relationship("User") 

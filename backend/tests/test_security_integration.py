@@ -125,7 +125,7 @@ class TestSecurityIntegration:
         """Test integration of file upload security features"""
         # Step 1: Upload malicious file
         files = {
-            "file": ("test.py", b"import os\nos.system('rm -rf /')", "text/plain")
+            "file": ("test.py", b"import os\nos.system('rm -rf /')", "text/x-python")
         }
         response = client.post(
             "/api/v1/submissions/upload",

@@ -19,8 +19,12 @@ class DatabaseService:
         ssl_context = None
         if settings.SSL_ENABLED:
             ssl_context = ssl.create_default_context()
-            if settings.SSL_CERTFILE:
-                ssl_context.load_cert_chain(settings.SSL_CERTFILE, settings.SSL_KEYFILE)
+            if settings.SSL_CERTFILE and os.path.exists(settings.SSL_CERTFILE):
+                try:
+                    ssl_context.load_cert_chain(settings.SSL_CERTFILE, settings.SSL_KEYFILE)
+                except FileNotFoundError:
+                    logger.warning(f"SSL certificate file not found: {settings.SSL_CERTFILE}")
+                    ssl_context = None
             ssl_context.check_hostname = True
             ssl_context.verify_mode = ssl.CERT_REQUIRED
 

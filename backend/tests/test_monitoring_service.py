@@ -90,16 +90,13 @@ class TestMonitoringService:
         mock_app.on_event = Mock()
         
         with patch('app.services.monitoring_service.start_http_server') as mock_start_server, \
-             patch('app.services.monitoring_service.Instrumentator') as mock_instrumentator, \
              patch.object(monitoring_service, '_start_system_metrics_collection') as mock_start_metrics:
             
             mock_start_server.return_value = Mock()
-            mock_instrumentator.return_value.instrument.return_value.expose.return_value = None
             
             monitoring_service.setup_monitoring(mock_app)
             
             mock_start_server.assert_called_once_with(9090)
-            mock_instrumentator.return_value.instrument.assert_called_once_with(mock_app)
             mock_start_metrics.assert_called_once()
             assert mock_app.on_event.call_count == 2  # startup and shutdown
 
@@ -371,11 +368,9 @@ class TestMonitoringService:
             return decorator
         mock_app.on_event = fake_on_event
         with patch('app.services.monitoring_service.start_http_server') as mock_start_server, \
-             patch('app.services.monitoring_service.Instrumentator') as mock_instrumentator, \
              patch.object(monitoring_service, '_start_system_metrics_collection') as mock_start_metrics, \
              patch.object(monitoring_service, 'stop', new=AsyncMock()):
             mock_start_server.return_value = Mock()
-            mock_instrumentator.return_value.instrument.return_value.expose.return_value = None
             monitoring_service.setup_monitoring(mock_app)
             # Test startup handler
             asyncio.run(event_handlers['startup']())

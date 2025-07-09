@@ -50,7 +50,7 @@ def upgrade() -> None:
     op.alter_column('submissions', 'submitted_at',
                existing_type=postgresql.TIMESTAMP(),
                nullable=False)
-    op.add_column('subscriptions', sa.Column('notified_token_thresholds', postgresql.ARRAY(sa.Integer()), nullable=True))
+    op.add_column('subscriptions', sa.Column('notified_token_thresholds', sa.JSON(), nullable=True))
     op.add_column('users', sa.Column('oauth_provider', sa.String(), nullable=True))
     op.add_column('users', sa.Column('oauth_access_token', sa.String(), nullable=True))
     op.add_column('users', sa.Column('oauth_refresh_token', sa.String(), nullable=True))

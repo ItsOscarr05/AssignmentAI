@@ -1,5 +1,5 @@
 from prometheus_client import Counter, Histogram, Gauge, start_http_server
-from prometheus_fastapi_instrumentator import Instrumentator
+# from prometheus_fastapi_instrumentator import Instrumentator  # Commented out - not installed
 from fastapi import FastAPI
 import time
 from typing import Optional, Dict, Any
@@ -134,7 +134,7 @@ class MonitoringService:
             self._prometheus_server = start_http_server(settings.METRICS_PORT)
             
             # Instrument FastAPI app
-            Instrumentator().instrument(app).expose(app)
+            # Instrumentator().instrument(app).expose(app)  # Commented out - not installed
             
             # Start system metrics collection
             self._start_system_metrics_collection()

@@ -90,11 +90,11 @@ async def create_submission(
     file_path = None
     if file:
         # Validate file type
-        file_ext = os.path.splitext(file.filename)[1].lower()
-        if file_ext not in [f".{ext}" for ext in settings.ALLOWED_FILE_TYPES]:
+        file_ext = os.path.splitext(file.filename)[1].lower().lstrip('.')
+        if file_ext not in settings.ALLOWED_EXTENSIONS:
             raise HTTPException(
                 status_code=400,
-                detail=f"File type not allowed. Allowed types: {', '.join(settings.ALLOWED_FILE_TYPES)}"
+                detail=f"File type not allowed. Allowed extensions: {', '.join(settings.ALLOWED_EXTENSIONS)}"
             )
         
         # Create upload directory if it doesn't exist
@@ -179,11 +179,11 @@ async def update_submission(
     file_path = submission_obj.file_path
     if file:
         # Validate file type
-        file_ext = os.path.splitext(file.filename)[1].lower()
-        if file_ext not in [f".{ext}" for ext in settings.ALLOWED_FILE_TYPES]:
+        file_ext = os.path.splitext(file.filename)[1].lower().lstrip('.')
+        if file_ext not in settings.ALLOWED_EXTENSIONS:
             raise HTTPException(
                 status_code=400,
-                detail=f"File type not allowed. Allowed types: {', '.join(settings.ALLOWED_FILE_TYPES)}"
+                detail=f"File type not allowed. Allowed extensions: {', '.join(settings.ALLOWED_EXTENSIONS)}"
             )
         
         # Create upload directory if it doesn't exist
@@ -463,11 +463,11 @@ async def upload_file(
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file provided")
     
-    file_ext = os.path.splitext(file.filename)[1].lower()
-    if file_ext not in [f".{ext}" for ext in settings.ALLOWED_FILE_TYPES]:
+    file_ext = os.path.splitext(file.filename)[1].lower().lstrip('.')
+    if file_ext not in settings.ALLOWED_EXTENSIONS:
         raise HTTPException(
             status_code=400,
-            detail=f"File type not allowed. Allowed types: {', '.join(settings.ALLOWED_FILE_TYPES)}"
+            detail=f"File type not allowed. Allowed extensions: {', '.join(settings.ALLOWED_EXTENSIONS)}"
         )
     
     # Read file content for security scanning

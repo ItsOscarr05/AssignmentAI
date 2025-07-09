@@ -51,7 +51,7 @@ def upgrade() -> None:
     sa.Column('account_locked_until', sa.DateTime(timezone=True), nullable=True),
     sa.Column('password_history', sa.JSON(), nullable=True),
     sa.Column('sessions', sa.JSON(), nullable=True),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('stripe_customer_id', sa.String(), nullable=True),
     sa.Column('canvas_access_token', sa.String(), nullable=True),
@@ -147,7 +147,7 @@ def upgrade() -> None:
     sa.Column('data', sa.JSON(), nullable=True),
     sa.Column('is_read', sa.Boolean(), nullable=True),
     sa.Column('is_archived', sa.Boolean(), nullable=True),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.Column('read_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('expires_at', sa.DateTime(timezone=True), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
@@ -201,7 +201,7 @@ def upgrade() -> None:
     sa.Column('ai_model', sa.String(), nullable=False),
     sa.Column('token_limit', sa.Integer(), nullable=False),
     sa.Column('subscription_metadata', sa.JSON(), nullable=True),
-    sa.Column('notified_token_thresholds', postgresql.ARRAY(sa.Integer), server_default='{}'),
+    sa.Column('notified_token_thresholds', sa.JSON(), server_default='[]'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -231,7 +231,7 @@ def upgrade() -> None:
     sa.Column('token_type', sa.String(length=50), nullable=False),
     sa.Column('expires_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('is_revoked', sa.Boolean(), nullable=True),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
@@ -374,8 +374,16 @@ def upgrade() -> None:
     op.create_index('idx_feedback_date', 'feedback', ['created_at'], unique=False)
     op.create_index('idx_feedback_submission', 'feedback', ['submission_id'], unique=False)
     op.create_index(op.f('ix_feedback_id'), 'feedback', ['id'], unique=False)
-    op.drop_index('ix_systemlog_id', table_name='systemlog')
-    op.drop_table('systemlog')
+    # SQLite-safe drop index
+    try:
+        op.drop_index('ix_systemlog_id', table_name='systemlog')
+    except Exception:
+        pass
+    # SQLite-safe drop table
+    try:
+        op.drop_table('systemlog')
+    except Exception:
+        pass
     # ### end Alembic commands ###
 
 

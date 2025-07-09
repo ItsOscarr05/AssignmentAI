@@ -15,14 +15,24 @@ from app.models.submission import Submission, SubmissionStatus
 from app.models.ai_assignment import AIAssignment
 from app.models.feedback import Feedback
 from app.core.security import get_password_hash, create_access_token
-from app.database import engine, get_db
+from app.database import get_db
 from app.core.rate_limit import FallbackRateLimiter
+from sqlalchemy import create_engine, text
 
 # Set testing environment
 os.environ["TESTING"] = "true"
 
+# Use SQLite for testing
+TEST_DATABASE_URL = "sqlite:///./test.db"
+
+# Create test database engine
+test_engine = create_engine(
+    TEST_DATABASE_URL,
+    connect_args={"check_same_thread": False}
+)
+
 # Create test database session
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
 
 @pytest.fixture(autouse=True)
 def reset_rate_limiter():
@@ -34,7 +44,7 @@ def reset_rate_limiter():
 def db():
     """Create a fresh database for each test."""
     # Create all tables
-    Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=test_engine)
     
     # Create a session
     session = TestingSessionLocal()
@@ -42,25 +52,20 @@ def db():
         yield session
     finally:
         session.close()
-        # Clean up all data from tables and reset sequences
+        # Clean up all data from tables
         try:
-            with engine.connect() as conn:
-                # Disable foreign key checks temporarily
-                conn.execute("SET session_replication_role = replica;")
-                
+            with test_engine.connect() as conn:
                 # Get all table names
-                result = conn.execute("SELECT tablename FROM pg_tables WHERE schemaname = 'public';")
+                result = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';"))
                 tables = [row[0] for row in result]
                 
-                # Truncate all tables and reset identity
+                # Delete all data from tables
                 for table in tables:
                     try:
-                        conn.execute(f"TRUNCATE TABLE {table} RESTART IDENTITY CASCADE;")
+                        conn.execute(text(f"DELETE FROM {table};"))
                     except Exception:
                         pass
                 
-                # Re-enable foreign key checks
-                conn.execute("SET session_replication_role = DEFAULT;")
                 conn.commit()
         except Exception:
             # If cleanup fails, just continue

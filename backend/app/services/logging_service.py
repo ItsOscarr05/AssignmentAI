@@ -5,10 +5,22 @@ from typing import Any, Dict, Optional
 
 from app.core.config import settings
 
+# Safe fallback for LOG_FORMAT
+DEFAULT_LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+log_format = settings.LOG_FORMAT
+if log_format == 'json':
+    # To enable real JSON logging, install python-json-logger and use:
+    # from pythonjsonlogger import jsonlogger
+    # handler = logging.StreamHandler()
+    # handler.setFormatter(jsonlogger.JsonFormatter())
+    # logging.getLogger().addHandler(handler)
+    # For now, fallback to default format to avoid errors
+    log_format = DEFAULT_LOG_FORMAT
+
 # Configure logging
 logging.basicConfig(
     level=getattr(logging, settings.LOG_LEVEL),
-    format=settings.LOG_FORMAT,
+    format=log_format,
     handlers=[
         logging.StreamHandler(),
         logging.FileHandler(
