@@ -14,6 +14,9 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
     def get_user(self, db: Session, *, user_id: int) -> Optional[User]:
         return self.get(db, id=user_id)
 
+    def get(self, db: Session, *, id: int) -> Optional[User]:
+        return db.query(User).filter(User.id == id).first()
+
     def get_multi(self, db: Session, *, skip: int = 0, limit: int = 100) -> List[User]:
         return db.query(User).offset(skip).limit(limit).all()
 
@@ -76,6 +79,7 @@ get_multi = user.get_multi
 create_user = user.create
 update_user = user.update
 delete_user = user.remove
+get = user.get
 
 def get_profile(db: Session, user_id: str) -> UserProfile:
     """Get user profile"""
@@ -188,4 +192,26 @@ def revoke_all_sessions(db: Session, user_id: str) -> None:
     """Revoke all sessions except current"""
     # This is a placeholder. In a real application, you would invalidate all sessions
     # in your session management system
-    pass 
+    pass
+
+def count(db: Session) -> int:
+    """Count total users"""
+    return db.query(User).count()
+
+def count_by_role(db: Session, role: str) -> int:
+    """Count users by role"""
+    if role == "teacher":
+        return db.query(User).filter(User.is_superuser == True).count()
+    elif role == "student":
+        return db.query(User.is_superuser == False).count()
+    return 0
+
+def update_status(db: Session, user: User, is_active: bool, is_superuser: bool = None) -> User:
+    """Update user status"""
+    user.is_active = is_active
+    if is_superuser is not None:
+        user.is_superuser = is_superuser
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user 

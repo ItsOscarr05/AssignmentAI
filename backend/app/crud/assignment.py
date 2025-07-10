@@ -182,6 +182,10 @@ def get_assignments_count_sync(
     
     return query.count()
 
+def count(db: Session) -> int:
+    """Count total assignments"""
+    return db.query(Assignment).count()
+
 async def create_assignment(db: AsyncSession, assignment: AssignmentCreate, user_id: int) -> Assignment:
     db_assignment = Assignment(
         **assignment.model_dump(),

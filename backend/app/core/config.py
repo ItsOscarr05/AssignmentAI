@@ -73,6 +73,7 @@ class Settings(BaseSettings):
     
     # File Upload Settings
     MAX_FILE_SIZE: int = 100 * 1024 * 1024  # 100MB
+    MAX_UPLOAD_SIZE: int = 100 * 1024 * 1024  # 100MB (for middleware compatibility)
     UPLOAD_DIR: str = "uploads"
     ALLOWED_FILE_TYPES: List[str] = [
         # Documents

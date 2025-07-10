@@ -57,9 +57,23 @@ class CitationResponse(BaseModel):
     formatted_citations: Dict[str, str]
     notes: Optional[str]
     tags: Optional[List[str]]
-    created_at: str
-    updated_at: str
+    created_at: str  # Ensure this is always a string
+    updated_at: str  # Ensure this is always a string
 
+    @classmethod
+    def from_orm(cls, obj):
+        # Convert datetime fields to ISO format strings
+        data = obj.__dict__.copy()
+        if isinstance(data.get('created_at'), (str, type(None))):
+            pass
+        else:
+            data['created_at'] = data['created_at'].isoformat()
+        if isinstance(data.get('updated_at'), (str, type(None))):
+            pass
+        else:
+            data['updated_at'] = data['updated_at'].isoformat()
+        return cls(**data)
+    
     model_config = ConfigDict(from_attributes=True)
 
 @router.post("/", response_model=CitationResponse)
@@ -72,18 +86,8 @@ async def create_citation(
     citation_service = CitationService(db)
     return await citation_service.create_citation(
         user=current_user,
-        citation_data=citation.dict()
+        citation_data=citation.model_dump()
     )
-
-@router.get("/{citation_id}", response_model=CitationResponse)
-async def get_citation(
-    citation_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Get a citation by ID"""
-    citation_service = CitationService(db)
-    return await citation_service.get_citation(citation_id, current_user)
 
 @router.get("/", response_model=List[CitationResponse])
 async def list_citations(
@@ -108,33 +112,6 @@ async def list_citations(
         search=search
     )
 
-@router.put("/{citation_id}", response_model=CitationResponse)
-async def update_citation(
-    citation_id: int,
-    citation: CitationUpdate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Update a citation"""
-    citation_service = CitationService(db)
-    updates = citation.dict(exclude_unset=True)
-    return await citation_service.update_citation(
-        user=current_user,
-        citation_id=citation_id,
-        updates=updates
-    )
-
-@router.delete("/{citation_id}")
-async def delete_citation(
-    citation_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Delete a citation"""
-    citation_service = CitationService(db)
-    await citation_service.delete_citation(user=current_user, citation_id=citation_id)
-    return {"message": "Citation deleted successfully"}
-
 @router.post("/batch")
 async def generate_citations_batch(
     citations: List[CitationCreate],
@@ -144,7 +121,7 @@ async def generate_citations_batch(
 ):
     """Generate formatted citations for multiple sources"""
     citation_service = CitationService(db)
-    citations_data = [citation.dict() for citation in citations]
+    citations_data = [citation.model_dump() for citation in citations]
     return await citation_service.generate_citations_batch(
         user=current_user,
         citations_data=citations_data,
@@ -161,7 +138,7 @@ async def extract_citation_from_url(
     citation_service = CitationService(db)
     return await citation_service.extract_citation_from_url(url)
 
-@router.get("/validate-doi/{doi}")
+@router.get("/validate-doi/{doi:path}")
 async def validate_doi(
     doi: str,
     db: Session = Depends(get_db),
@@ -181,6 +158,43 @@ async def get_citation_formats(
     citation_service = CitationService(db)
     citation = await citation_service.get_citation(citation_id, current_user)
     return citation.formatted_citations
+
+@router.get("/{citation_id}", response_model=CitationResponse)
+async def get_citation(
+    citation_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get a citation by ID"""
+    citation_service = CitationService(db)
+    return await citation_service.get_citation(citation_id, current_user)
+
+@router.put("/{citation_id}", response_model=CitationResponse)
+async def update_citation(
+    citation_id: int,
+    citation: CitationUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update a citation"""
+    citation_service = CitationService(db)
+    updates = citation.model_dump(exclude_unset=True)
+    return await citation_service.update_citation(
+        user=current_user,
+        citation_id=citation_id,
+        updates=updates
+    )
+
+@router.delete("/{citation_id}")
+async def delete_citation(
+    citation_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a citation"""
+    citation_service = CitationService(db)
+    await citation_service.delete_citation(user=current_user, citation_id=citation_id)
+    return {"message": "Citation deleted successfully"}
 
 @router.post("/{citation_id}/duplicate")
 async def duplicate_citation(

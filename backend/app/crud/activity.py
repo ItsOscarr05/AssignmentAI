@@ -102,4 +102,13 @@ def delete_old_activities(db: Session, days: int = 90) -> int:
     cutoff_date = datetime.utcnow() - timedelta(days=days)
     result = db.query(Activity).filter(Activity.created_at < cutoff_date).delete()
     db.commit()
-    return result 
+    return result
+
+def get_recent(db: Session, limit: int = 10) -> List[Activity]:
+    """Get recent activities"""
+    return (
+        db.query(Activity)
+        .order_by(Activity.created_at.desc())
+        .limit(limit)
+        .all()
+    ) 

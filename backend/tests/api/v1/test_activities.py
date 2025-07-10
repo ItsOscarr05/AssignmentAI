@@ -170,3 +170,67 @@ class TestActivitiesEndpoints:
         response = client.get("/api/v1/activities/?skip=-1&limit=0")
         
         assert response.status_code == 422 
+    
+    def test_get_activities_non_superuser_filtering(self, db: Session, test_user: User):
+        """Test that non-superuser users can only see their own activities"""
+        # Ensure test_user is not a superuser
+        test_user.is_superuser = False
+        db.commit()
+        
+        # Create activities for different users
+        from app.models.activity import Activity
+        from app.schemas.activity import ActivityCreate
+        
+        # Activity for test_user
+        activity_data = ActivityCreate(
+            user_id=test_user.id,
+            action="test_action",
+            resource_type="test_resource",
+            resource_id="123"
+        )
+        user_activity = Activity(**activity_data.model_dump())
+        db.add(user_activity)
+        
+        # Create another user and activity
+        from datetime import datetime
+        import uuid
+        unique_id = str(uuid.uuid4())[:8]
+        other_user = User(
+            email=f"otheruser-{unique_id}@example.com",
+            hashed_password="fakehash",
+            name="Other User",
+            is_active=True,
+            is_verified=True,
+            is_superuser=False,
+            updated_at=datetime.utcnow(),
+            created_at=datetime.utcnow()
+        )
+        db.add(other_user)
+        db.commit()
+        db.refresh(other_user)
+        
+        # Activity for other_user
+        other_activity_data = ActivityCreate(
+            user_id=other_user.id,
+            action="other_action",
+            resource_type="other_resource",
+            resource_id="456"
+        )
+        other_activity = Activity(**other_activity_data.model_dump())
+        db.add(other_activity)
+        db.commit()
+        
+        # Test that non-superuser only sees their own activities
+        response = client.get("/api/v1/activities/")
+        
+        assert response.status_code == 200
+        data = response.json()
+        
+        # Should only see activities for test_user
+        for activity in data:
+            assert activity["user_id"] == test_user.id
+            assert activity["action"] == "test_action"
+        
+        # Should not see activities for other_user
+        other_user_activities = [a for a in data if a["user_id"] == other_user.id]
+        assert len(other_user_activities) == 0 

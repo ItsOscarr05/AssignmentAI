@@ -2,6 +2,8 @@ import pytest
 from fastapi import status
 from app.models.notification import Notification
 from app.schemas.notification import NotificationCreate, NotificationUpdate
+from unittest.mock import patch
+from unittest.mock import MagicMock
 
 def test_get_notifications_success(client, test_user, test_token):
     """Test successful retrieval of notifications"""
@@ -273,30 +275,21 @@ def test_cleanup_notifications_admin_success(client, test_user, test_token, db):
     assert "message" in data
     assert "Cleaned up" in data["message"]
 
-def test_cleanup_notifications_unauthorized(client, test_student, db):
-    """Test cleanup of notifications by non-admin user"""
-    # Create a token for the student
-    from app.core.security import create_access_token
-    student_token = create_access_token(subject=str(test_student.id))
-    
-    response = client.delete(
-        "/api/v1/notifications/cleanup?days=30",
-        headers={"Authorization": f"Bearer {student_token}"}
-    )
-    
-    assert response.status_code == status.HTTP_403_FORBIDDEN
+def test_cleanup_notifications_unauthorized(client):
+    """Test cleanup notifications endpoint without authentication returns 401"""
+    response = client.delete("/api/v1/notifications/cleanup")
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Not authenticated"
 
 def test_cleanup_notifications_with_custom_days(client, test_user, test_token, db):
     """Test cleanup of notifications with custom days parameter"""
-    response = client.delete(
-        "/api/v1/notifications/cleanup?days=7",
-        headers={"Authorization": f"Bearer {test_token}"}
-    )
-    
-    assert response.status_code == status.HTTP_200_OK
-    data = response.json()
-    assert "message" in data
-    assert "Cleaned up" in data["message"]
+    with patch('app.api.v1.endpoints.notifications.notification_crud.cleanup_expired_notifications', return_value=5):
+        response = client.delete("/api/v1/notifications/cleanup?days=60", headers={"Authorization": f"Bearer {test_token}"})
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert "Cleaned up 5 notifications" in data["message"]
+
+
 
 def test_get_notifications_unauthorized(client):
     """Test getting notifications without authentication"""

@@ -5,6 +5,8 @@ from app.middleware.security import SecurityMiddleware
 from app.middleware.rate_limit import RateLimitMiddleware
 from app.middleware.logging import LoggingMiddleware
 from app.middleware.performance import PerformanceMiddleware, QueryOptimizationMiddleware
+from app.api.middleware import file_size_limit_middleware
+from unittest.mock import patch
 
 def test_security_headers(client):
     """Test security headers are present in responses"""
@@ -118,19 +120,149 @@ def test_error_handler_middleware(client):
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert "Email, password, and full_name are required" in response.json()["detail"]
 
-def test_file_size_limit_middleware(client):
-    """Test file size limit middleware"""
-    # Create a file larger than the limit
-    large_file = b"x" * (settings.MAX_FILE_SIZE + 1)
-    files = {
-        "file": ("large_file.pdf", large_file, "application/pdf")
-    }
-    response = client.post(
-        f"{settings.API_V1_STR}/submissions/upload",
-        files=files
-    )
-    # Endpoint requires authentication, so returns 401
-    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+@pytest.mark.asyncio
+async def test_file_size_limit_middleware_under_limit():
+    """Test file size limit middleware with file under limit"""
+    from fastapi import Request
+    from unittest.mock import AsyncMock, Mock
+    
+    # Mock request
+    mock_request = Mock(spec=Request)
+    mock_request.method = "POST"
+    mock_request.url.path = "/api/v1/files/upload"
+    mock_request.headers = {"content-length": "1000"}
+    
+    # Mock call_next
+    mock_call_next = AsyncMock()
+    mock_response = Mock()
+    mock_call_next.return_value = mock_response
+    
+    # Test with file under limit
+    with patch('app.api.middleware.settings') as mock_settings:
+        mock_settings.MAX_UPLOAD_SIZE = 2000
+        
+        response = await file_size_limit_middleware(mock_request, mock_call_next)
+        
+        assert response == mock_response
+        mock_call_next.assert_called_once_with(mock_request)
+
+@pytest.mark.asyncio
+async def test_file_size_limit_middleware_over_limit():
+    """Test file size limit middleware with file over limit"""
+    from fastapi import Request, HTTPException
+    from unittest.mock import AsyncMock, Mock
+    
+    # Mock request
+    mock_request = Mock(spec=Request)
+    mock_request.method = "POST"
+    mock_request.url.path = "/api/v1/files/upload"
+    mock_request.headers = {"content-length": "3000"}
+    
+    # Mock call_next
+    mock_call_next = AsyncMock()
+    
+    # Test with file over limit
+    with patch('app.api.middleware.settings') as mock_settings:
+        mock_settings.MAX_UPLOAD_SIZE = 2000
+        
+        with pytest.raises(HTTPException) as exc_info:
+            await file_size_limit_middleware(mock_request, mock_call_next)
+        
+        assert exc_info.value.status_code == status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+        assert "File size exceeds maximum limit" in str(exc_info.value.detail)
+        mock_call_next.assert_not_called()
+
+@pytest.mark.asyncio
+async def test_file_size_limit_middleware_no_content_length():
+    """Test file size limit middleware with no content-length header"""
+    from fastapi import Request
+    from unittest.mock import AsyncMock, Mock
+    
+    # Mock request
+    mock_request = Mock(spec=Request)
+    mock_request.method = "POST"
+    mock_request.url.path = "/api/v1/files/upload"
+    mock_request.headers = {}
+    
+    # Mock call_next
+    mock_call_next = AsyncMock()
+    mock_response = Mock()
+    mock_call_next.return_value = mock_response
+    
+    response = await file_size_limit_middleware(mock_request, mock_call_next)
+    
+    assert response == mock_response
+    mock_call_next.assert_called_once_with(mock_request)
+
+@pytest.mark.asyncio
+async def test_file_size_limit_middleware_non_post_request():
+    """Test file size limit middleware with non-POST request"""
+    from fastapi import Request
+    from unittest.mock import AsyncMock, Mock
+    
+    # Mock request
+    mock_request = Mock(spec=Request)
+    mock_request.method = "GET"
+    mock_request.url.path = "/api/v1/files/upload"
+    mock_request.headers = {"content-length": "3000"}
+    
+    # Mock call_next
+    mock_call_next = AsyncMock()
+    mock_response = Mock()
+    mock_call_next.return_value = mock_response
+    
+    response = await file_size_limit_middleware(mock_request, mock_call_next)
+    
+    assert response == mock_response
+    mock_call_next.assert_called_once_with(mock_request)
+
+@pytest.mark.asyncio
+async def test_file_size_limit_middleware_different_path():
+    """Test file size limit middleware with different path"""
+    from fastapi import Request
+    from unittest.mock import AsyncMock, Mock
+    
+    # Mock request
+    mock_request = Mock(spec=Request)
+    mock_request.method = "POST"
+    mock_request.url.path = "/api/v1/other/endpoint"
+    mock_request.headers = {"content-length": "3000"}
+    
+    # Mock call_next
+    mock_call_next = AsyncMock()
+    mock_response = Mock()
+    mock_call_next.return_value = mock_response
+    
+    response = await file_size_limit_middleware(mock_request, mock_call_next)
+    
+    assert response == mock_response
+    mock_call_next.assert_called_once_with(mock_request)
+
+@pytest.mark.asyncio
+async def test_file_size_limit_middleware_exact_limit():
+    """Test file size limit middleware with file exactly at limit"""
+    from fastapi import Request
+    from unittest.mock import AsyncMock, Mock
+    
+    # Mock request
+    mock_request = Mock(spec=Request)
+    mock_request.method = "POST"
+    mock_request.url.path = "/api/v1/files/upload"
+    mock_request.headers = {"content-length": "2000"}
+    
+    # Mock call_next
+    mock_call_next = AsyncMock()
+    mock_response = Mock()
+    mock_call_next.return_value = mock_response
+    
+    # Test with file exactly at limit
+    with patch('app.api.middleware.settings') as mock_settings:
+        mock_settings.MAX_UPLOAD_SIZE = 2000
+        
+        response = await file_size_limit_middleware(mock_request, mock_call_next)
+        
+        assert response == mock_response
+        mock_call_next.assert_called_once_with(mock_request)
 
 def test_file_type_validation(client):
     """Test file type validation"""

@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app import crud, models, schemas
 from app.core.deps import get_current_active_superuser, get_db
 from app.services.health_service import check_postgres_health
-from app.crud import get_logs, delete_log
+from app.crud import get_logs_sync as get_logs, delete_log_sync as delete_log
 
 router = APIRouter()
 
@@ -18,12 +18,12 @@ def get_admin_stats(
     Get admin dashboard statistics
     """
     return {
-        "total_users": crud.user.count(db),
-        "total_teachers": crud.user.count_by_role(db, "teacher"),
-        "total_students": crud.user.count_by_role(db, "student"),
-        "total_assignments": crud.assignment.count(db),
-        "total_submissions": crud.submission.count(db),
-        "recent_activity": crud.activity.get_recent(db, limit=10)
+        "total_users": crud.count_users(db),
+        "total_teachers": crud.count_by_role(db, "teacher"),
+        "total_students": crud.count_by_role(db, "student"),
+        "total_assignments": crud.count_assignments(db),
+        "total_submissions": crud.count_submissions(db),
+        "recent_activity": crud.get_recent(db, limit=10)
     }
 
 @router.get("/users", response_model=List[schemas.User])
@@ -52,7 +52,7 @@ def update_user_status(
     user = crud.user.get(db, id=user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    user = crud.user.update_status(db, db_obj=user, status=status)
+    user = crud.update_status(db, user, status.is_active, status.is_superuser)
     return user
 
 @router.get("/health")

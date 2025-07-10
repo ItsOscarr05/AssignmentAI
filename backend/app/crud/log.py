@@ -34,4 +34,24 @@ async def delete_log(db: AsyncSession, log_id: int) -> bool:
         await db.delete(log)
         await db.commit()
         return True
+    return False
+
+# Synchronous versions for testing
+def get_logs_sync(
+    db,
+    skip: int = 0,
+    limit: int = 100,
+    level: Optional[str] = None
+) -> List[SystemLog]:
+    query = db.query(SystemLog)
+    if level:
+        query = query.filter(SystemLog.level == level)
+    return query.offset(skip).limit(limit).all()
+
+def delete_log_sync(db, log_id: int) -> bool:
+    log = db.query(SystemLog).filter(SystemLog.id == log_id).first()
+    if log:
+        db.delete(log)
+        db.commit()
+        return True
     return False 

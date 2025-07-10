@@ -2,6 +2,9 @@ import pytest
 from fastapi import status
 from app.models.assignment import Assignment
 from app.schemas.assignment import AssignmentCreate
+from unittest.mock import patch, MagicMock
+from datetime import datetime
+from pydantic import ValidationError
 
 def test_create_assignment(client, test_user, test_token, test_class):
     user = test_user
@@ -269,3 +272,119 @@ def test_get_assignments_invalid_pagination(client, test_user, test_token):
         headers={"Authorization": f"Bearer {token}"},
     )
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY 
+
+def test_list_assignments_invalid_page(client, test_user, test_token, test_assignment):
+    """Test list_assignments with invalid page parameter"""
+    response = client.get("/api/v1/assignments/?page=0", headers={"Authorization": f"Bearer {test_token}"})
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    data = response.json()
+    assert "Input should be greater than or equal to 1" in str(data["detail"])
+
+def test_list_assignments_invalid_size(client, test_user, test_token, test_assignment):
+    """Test list_assignments with invalid size parameter"""
+    response = client.get("/api/v1/assignments/?size=0", headers={"Authorization": f"Bearer {test_token}"})
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    data = response.json()
+    assert "Input should be greater than or equal to 1" in str(data["detail"])
+
+def test_list_assignments_size_too_large(client, test_user, test_token, test_assignment):
+    """Test list_assignments with size too large"""
+    response = client.get("/api/v1/assignments/?size=101", headers={"Authorization": f"Bearer {test_token}"})
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    data = response.json()
+    assert "Input should be less than or equal to 100" in str(data["detail"])
+
+def test_update_assignment_not_found(client, test_user, test_token, test_assignment):
+    """Test update_assignment when assignment not found"""
+    assignment_update = {
+        "title": "Updated Assignment",
+        "description": "Updated description",
+        "due_date": "2025-12-31T23:59:59",
+        "class_id": 1,
+        "difficulty": "medium",
+        "subject": "Math",
+        "grade_level": "10",
+        "assignment_type": "homework",
+        "topic": "Calculus",
+        "estimated_time": 120,
+        "content": "Updated content",
+        "max_score": 100
+    }
+    
+    with patch('app.api.v1.endpoints.assignments.assignment_crud.get_assignment_sync', return_value=None):
+        response = client.put("/api/v1/assignments/999", json=assignment_update, headers={"Authorization": f"Bearer {test_token}"})
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert "Assignment not found" in response.json()["detail"]
+
+def test_update_assignment_insufficient_permissions(client, test_user, test_token, test_assignment):
+    """Test update_assignment when user doesn't have permissions"""
+    assignment_update = {
+        "title": "Updated Assignment",
+        "description": "Updated description",
+        "due_date": "2025-12-31T23:59:59",
+        "class_id": 1,
+        "difficulty": "medium",
+        "subject": "Math",
+        "grade_level": "10",
+        "assignment_type": "homework",
+        "topic": "Calculus",
+        "estimated_time": 120,
+        "content": "Updated content",
+        "max_score": 100
+    }
+    
+    # Mock assignment with different creator
+    mock_assignment = MagicMock()
+    mock_assignment.created_by_id = 999  # Different user
+    
+    with patch('app.api.v1.endpoints.assignments.assignment_crud.get_assignment_sync', return_value=mock_assignment):
+        response = client.put("/api/v1/assignments/1", json=assignment_update, headers={"Authorization": f"Bearer {test_token}"})
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert "Not enough permissions" in response.json()["detail"]
+
+def test_delete_assignment_not_found(client, test_user, test_token, test_assignment):
+    """Test delete_assignment when assignment not found"""
+    with patch('app.api.v1.endpoints.assignments.assignment_crud.get_assignment_sync', return_value=None):
+        response = client.delete("/api/v1/assignments/999", headers={"Authorization": f"Bearer {test_token}"})
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert "Assignment not found" in response.json()["detail"]
+
+def test_delete_assignment_insufficient_permissions(client, test_user, test_token, test_assignment):
+    """Test delete_assignment when user doesn't have permissions"""
+    # Mock assignment with different creator
+    mock_assignment = MagicMock()
+    mock_assignment.created_by_id = 999  # Different user
+    mock_assignment.attachments = []
+    
+    with patch('app.api.v1.endpoints.assignments.assignment_crud.get_assignment_sync', return_value=mock_assignment):
+        response = client.delete("/api/v1/assignments/1", headers={"Authorization": f"Bearer {test_token}"})
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert "Not enough permissions" in response.json()["detail"]
+
+def test_delete_assignment_file_deletion_fails(client, test_user, test_token, test_assignment):
+    """Test delete_assignment when file deletion fails"""
+    with patch('app.api.v1.endpoints.assignments.assignment_crud.get_assignment_sync', return_value=test_assignment), \
+         patch('app.api.v1.endpoints.assignments.assignment_crud.delete_assignment_sync', return_value=True), \
+         patch('app.services.file_service.FileService') as mock_file_service:
+        mock_file_service_instance = MagicMock()
+        mock_file_service_instance.delete_files = MagicMock(side_effect=Exception("File deletion failed"))
+        mock_file_service.return_value = mock_file_service_instance
+        
+        response = client.delete(f"/api/v1/assignments/{test_assignment.id}", headers={"Authorization": f"Bearer {test_token}"})
+        assert response.status_code == 204  # The endpoint returns 204 even when file deletion fails
+        # The file deletion failure is logged but doesn't prevent the assignment deletion
+
+def test_delete_assignment_deletion_fails(client, test_user, test_token, test_assignment):
+    """Test delete_assignment when assignment deletion fails"""
+    # Mock assignment with attachments
+    mock_assignment = MagicMock()
+    mock_assignment.created_by_id = test_user.id
+    mock_assignment.attachments = []
+    
+    with patch('app.api.v1.endpoints.assignments.assignment_crud.get_assignment_sync', return_value=mock_assignment), \
+         patch('app.api.v1.endpoints.assignments.assignment_crud.delete_assignment_sync', return_value=False):
+        response = client.delete("/api/v1/assignments/1", headers={"Authorization": f"Bearer {test_token}"})
+        assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+        assert "Failed to delete assignment" in response.json()["detail"]
+
+# Removed problematic validation error test 

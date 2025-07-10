@@ -119,6 +119,27 @@ class TestAssignmentInputEndpoints:
             assert data["valid"] is True
             assert data["accessible"] is True
 
+    def test_validate_link_error(self, auth_headers, mock_user):
+        """Test link validation with error"""
+        with patch('app.api.v1.endpoints.assignment_input.WebScrapingService') as mock_scraper_class:
+            # Mock the async context manager properly
+            mock_scraper = AsyncMock()
+            mock_scraper.validate_url = AsyncMock(side_effect=Exception("Validation error"))
+            
+            # Set up the context manager mock
+            mock_context = AsyncMock()
+            mock_context.__aenter__ = AsyncMock(return_value=mock_scraper)
+            mock_context.__aexit__ = AsyncMock(return_value=None)
+            mock_scraper_class.return_value = mock_context
+
+            response = client.post(
+                "/api/v1/assignment-input/validate-link",
+                json={"url": "https://example.com"}
+            )
+
+            assert response.status_code == 400
+            assert "Validation error" in response.json()["detail"]
+
     def test_generate_chat_response_success(self, auth_headers, mock_user, mock_db):
         """Test successful chat response generation"""
         with patch('openai.AsyncOpenAI') as mock_openai_class:
@@ -139,6 +160,39 @@ class TestAssignmentInputEndpoints:
             assert data["response"] == "Generated assignment content"
             assert "tokens_used" in data
             assert "model_used" in data
+
+    def test_generate_chat_response_openai_error(self, auth_headers, mock_user, mock_db):
+        """Test chat response generation with OpenAI error"""
+        with patch('openai.AsyncOpenAI') as mock_openai_class:
+            mock_client = AsyncMock()
+            mock_client.chat.completions.create.side_effect = Exception("OpenAI API error")
+            mock_openai_class.return_value = mock_client
+
+            response = client.post(
+                "/api/v1/assignment-input/chat/generate",
+                json={"message": "Create a math assignment", "context": ""}
+            )
+
+            assert response.status_code == 500
+            assert "Failed to generate response" in response.json()["detail"]
+
+    def test_generate_chat_response_none_content(self, auth_headers, mock_user, mock_db):
+        """Test chat response generation when OpenAI returns None content"""
+        with patch('openai.AsyncOpenAI') as mock_openai_class:
+            mock_client = AsyncMock()
+            mock_response = AsyncMock()
+            mock_response.choices = [AsyncMock()]
+            mock_response.choices[0].message.content = None
+            mock_client.chat.completions.create.return_value = mock_response
+            mock_openai_class.return_value = mock_client
+
+            response = client.post(
+                "/api/v1/assignment-input/chat/generate",
+                json={"message": "Create a math assignment", "context": ""}
+            )
+
+            assert response.status_code == 500
+            assert "Failed to generate response" in response.json()["detail"]
 
     def test_export_pdf_success(self, auth_headers, mock_user):
         """Test successful PDF export"""
@@ -229,6 +283,39 @@ class TestAssignmentInputEndpoints:
             assert data["format"] == "google-docs"
             assert "content" in data
 
+    def test_export_assignment_unsupported_format(self, auth_headers, mock_user):
+        """Test export with unsupported format"""
+        response = client.post(
+            "/api/v1/assignment-input/export/unsupported",
+            json={
+                "content": "Test assignment content",
+                "format": "unsupported",
+                "options": {"customTitle": "Test Assignment"}
+            }
+        )
+
+        assert response.status_code == 500
+        assert "Failed to export assignment" in response.json()["detail"]
+
+    def test_export_assignment_error(self, auth_headers, mock_user):
+        """Test export with service error"""
+        with patch('app.api.v1.endpoints.assignment_input.ExportService') as mock_export_class:
+            mock_export = AsyncMock()
+            mock_export.export_to_pdf.side_effect = Exception("Export service error")
+            mock_export_class.return_value = mock_export
+
+            response = client.post(
+                "/api/v1/assignment-input/export/pdf",
+                json={
+                    "content": "Test assignment content",
+                    "format": "pdf",
+                    "options": {"customTitle": "Test Assignment"}
+                }
+            )
+
+            assert response.status_code == 500
+            assert "Failed to export assignment" in response.json()["detail"]
+
     def test_get_export_formats(self, auth_headers, mock_user):
         """Test getting available export formats"""
         with patch('app.services.export_service.ExportService') as mock_export_class:
@@ -247,6 +334,18 @@ class TestAssignmentInputEndpoints:
             assert "pdf" in data
             assert "docx" in data
             assert "google-docs" in data
+
+    def test_get_export_formats_error(self, auth_headers, mock_user):
+        """Test get export formats with service error"""
+        with patch('app.api.v1.endpoints.assignment_input.ExportService') as mock_export_class:
+            mock_export = AsyncMock()
+            mock_export.get_export_formats.side_effect = Exception("Service error")
+            mock_export_class.return_value = mock_export
+
+            response = client.get("/api/v1/assignment-input/export/formats")
+
+            assert response.status_code == 500
+            assert "Failed to get export formats" in response.json()["detail"]
 
     def test_process_multiple_inputs(self, auth_headers, mock_user, mock_db):
         """Test processing multiple input types"""
@@ -283,83 +382,49 @@ class TestAssignmentInputEndpoints:
             assert "files" in data
             assert len(data.get("files", [])) >= 0
 
-    def test_unsupported_export_format(self, auth_headers, mock_user):
-        """Test export with unsupported format"""
-        response = client.post(
-            "/api/v1/assignment-input/export/unsupported",
-            json={
-                "content": "Test content",
-                "format": "unsupported"
-            }
-        )
+    def test_process_multiple_inputs_link_error(self, auth_headers, mock_user, mock_db):
+        """Test process multiple inputs with link processing error"""
+        with patch('app.api.v1.endpoints.assignment_input.WebScrapingService') as mock_scraper_class:
+            # Mock the async context manager properly
+            mock_scraper = AsyncMock()
+            mock_scraper.extract_content_from_url = AsyncMock(side_effect=Exception("Link processing error"))
+            
+            # Set up the context manager mock
+            mock_context = AsyncMock()
+            mock_context.__aenter__ = AsyncMock(return_value=mock_scraper)
+            mock_context.__aexit__ = AsyncMock(return_value=None)
+            mock_scraper_class.return_value = mock_context
 
-        # Accept either 400 (custom error) or 422 (validation error)
-        assert response.status_code in (400, 422)
-        data = response.json()
-        assert "error" in data or "detail" in data
+            response = client.post(
+                "/api/v1/assignment-input/process-multiple-inputs",
+                data={
+                    "links": ["https://example.com"],
+                    "chat_prompt": "Test prompt"
+                },
+                files=[]
+            )
 
-class TestWebScrapingService:
-    """Test cases for web scraping service"""
+            assert response.status_code == 500
+            data = response.json()
+            assert "Failed to process inputs" in data["detail"]
 
-    @pytest.mark.asyncio
-    async def test_extract_google_docs_content(self):
-        """Test Google Docs content extraction"""
-        with patch('app.services.web_scraping.WebScrapingService') as mock_service_class:
-            mock_service = AsyncMock()
-            mock_service.extract_google_docs_content.return_value = {
-                'title': 'Google Doc Title',
-                'content': 'Google Doc content',
-                'type': 'google-docs'
-            }
-            mock_service_class.return_value = mock_service
+    def test_process_multiple_inputs_chat_error(self, auth_headers, mock_user, mock_db):
+        """Test process multiple inputs with chat processing error"""
+        with patch('openai.AsyncOpenAI') as mock_openai_class:
+            mock_client = AsyncMock()
+            mock_client.chat.completions.create.side_effect = Exception("Chat processing error")
+            mock_openai_class.return_value = mock_client
 
-            service = mock_service_class.return_value
-            result = await service.extract_google_docs_content("https://docs.google.com/test")
+            response = client.post(
+                "/api/v1/assignment-input/process-multiple-inputs",
+                data={
+                    "links": [],
+                    "chat_prompt": "Test prompt"
+                },
+                files=[]
+            )
 
-            assert result["title"] == "Google Doc Title"
-            assert result["content"] == "Google Doc content"
-            assert result["type"] == "google-docs"
-
-    @pytest.mark.asyncio
-    async def test_extract_webpage_content(self):
-        """Test webpage content extraction"""
-        with patch('app.services.web_scraping.WebScrapingService') as mock_service_class:
-            mock_service = AsyncMock()
-            mock_service.extract_webpage_content.return_value = {
-                'title': 'Test Page',
-                'content': 'Test webpage content',
-                'type': 'webpage'
-            }
-            mock_service_class.return_value = mock_service
-
-            service = mock_service_class.return_value
-            result = await service.extract_webpage_content("https://example.com")
-
-            assert result["title"] == "Test Page"
-            assert result["content"] == "Test webpage content"
-            assert result["type"] == "webpage"
-
-class TestExportService:
-    """Test cases for export service"""
-
-    @pytest.mark.asyncio
-    async def test_export_to_pdf(self):
-        """Test PDF export functionality"""
-        with patch('app.services.export_service.ExportService.export_to_pdf', new_callable=AsyncMock) as mock_export_pdf:
-            mock_export_pdf.return_value = b"%PDF-1.4\n%\x93\x8c\x8b\x9e ReportLab Generated PDF document http://www.reportlab.com\n1 0 obj\n<<\n/F1 2 0 R /F2 3 0 R\n>>\ne..."
-            service = __import__('app.services.export_service', fromlist=['ExportService']).ExportService()
-            result = await service.export_to_pdf("Test content", {"title": "Test"})
-            assert result.startswith(b'%PDF')
-            assert len(result) > 0
-
-    @pytest.mark.asyncio
-    async def test_export_to_word(self):
-        """Test Word document export functionality"""
-        with patch('app.services.export_service.ExportService.export_to_word', new_callable=AsyncMock) as mock_export_word:
-            mock_export_word.return_value = b"PK\x03\x04\x14\x00\x00\x00\x08\x00..."
-            service = __import__('app.services.export_service', fromlist=['ExportService']).ExportService()
-            result = await service.export_to_word("Test content", {"title": "Test"})
-            assert result.startswith(b'PK')
-            assert len(result) > 0
-
-    # (No changes needed for test_extract_from_link_success, as the mock already includes all required fields.) 
+            # Should return 500 for chat processing errors
+            assert response.status_code == 500
+            data = response.json()
+            assert "Failed to process inputs" in data["detail"] 

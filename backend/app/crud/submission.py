@@ -244,4 +244,8 @@ def get_student_submissions_count_sync(
     
     return query.count()
 
+def count(db: Session) -> int:
+    """Count total submissions"""
+    return db.query(Submission).count()
+
 submission = CRUDSubmission(Submission) 

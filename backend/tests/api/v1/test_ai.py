@@ -8,6 +8,7 @@ from app.schemas.ai_assignment import AssignmentGenerationRequest, AssignmentGen
 from app.schemas.feedback import Feedback, FeedbackCreate
 from app.services.ai_service import AIService
 from datetime import datetime
+from fastapi import status
 
 client = TestClient(app)
 
@@ -15,6 +16,7 @@ client = TestClient(app)
 def mock_user():
     user = MagicMock(spec=User)
     user.id = 1
+    user.token = "test_token" # Added for testing headers
     return user
 
 @pytest.fixture
@@ -213,8 +215,198 @@ def test_analyze_submission_success(override_get_current_user, override_get_db, 
                 assert "score" in data
 
 def test_analyze_submission_error(override_get_current_user, override_get_db, mock_db, mock_user):
-    with patch('app.services.ai_service.AIService') as MockAIService:
-        mock_ai = MockAIService.return_value
-        mock_ai.analyze_submission = AsyncMock(side_effect=Exception("AI error"))
+    # Mock the submission retrieval
+    mock_submission = MagicMock()
+    mock_submission.id = 1
+    mock_submission.content = "Test submission"
+    mock_submission.assignment_id = 1
+    mock_assignment = MagicMock()
+    mock_assignment.content = "Assignment requirements"
+    mock_submission.assignment = mock_assignment
+    
+    with patch('app.crud.submission.get_sync', return_value=mock_submission):
+        with patch('app.api.v1.endpoints.ai.check_rate_limit'), \
+             patch.object(AIService, 'enforce_token_limit', new_callable=AsyncMock) as mock_enforce, \
+             patch.object(AIService, 'analyze_submission', new_callable=AsyncMock, return_value={"analysis": "test"}) as mock_analyze:
+            response = client.post("/api/v1/ai/analyze/1")
+            assert response.status_code == 200
+            data = response.json()
+            assert "analysis" in data
+
+def test_analyze_submission_not_found(override_get_current_user, override_get_db, mock_db, mock_user):
+    with patch('app.crud.submission.get_sync', return_value=None):
+        response = client.post("/api/v1/ai/analyze/999")
+        assert response.status_code == 404
+        assert "Submission not found" in response.json()["detail"]
+
+def test_analyze_submission_no_content(override_get_current_user, override_get_db, mock_db, mock_user):
+    mock_submission = MagicMock()
+    mock_submission.id = 1
+    mock_submission.content = None
+    
+    with patch('app.crud.submission.get_sync', return_value=mock_submission):
         response = client.post("/api/v1/ai/analyze/1")
-        assert response.status_code == 500 or response.status_code == 422 
+        assert response.status_code == 400
+        assert "Submission has no content to analyze" in response.json()["detail"]
+
+def test_analyze_submission_ai_service_error(override_get_current_user, override_get_db, mock_db, mock_user):
+    mock_submission = MagicMock()
+    mock_submission.id = 1
+    mock_submission.content = "Test submission"
+    mock_submission.assignment_id = 1
+    mock_assignment = MagicMock()
+    mock_assignment.content = "Assignment requirements"
+    mock_submission.assignment = mock_assignment
+    
+    with patch('app.crud.submission.get_sync', return_value=mock_submission):
+        with patch('app.api.v1.endpoints.ai.check_rate_limit'), \
+             patch.object(AIService, 'enforce_token_limit', new_callable=AsyncMock) as mock_enforce, \
+             patch.object(AIService, 'analyze_submission', new_callable=AsyncMock, side_effect=Exception("AI service error")) as mock_analyze:
+            response = client.post("/api/v1/ai/analyze/1")
+            assert response.status_code == 500
+            assert "Failed to analyze submission" in response.json()["detail"]
+
+def test_generate_assignment_old_rate_limit_429(override_get_current_user, override_get_db, mock_db, mock_user):
+    req = AssignmentGenerationRequest(subject="Math", grade_level="10", topic="Algebra", difficulty="easy")
+    from fastapi import HTTPException
+    with patch('app.api.v1.endpoints.ai.check_rate_limit', side_effect=HTTPException(status_code=429, detail="Rate limit exceeded")):
+        response = client.post("/api/v1/ai/generate-assignment", json=req.model_dump())
+        assert response.status_code == 429
+
+def test_generate_assignment_old_rate_limit_other_exception(override_get_current_user, override_get_db, mock_db, mock_user):
+    """Test generate_assignment with other rate limit exception"""
+    with patch('app.api.v1.endpoints.ai.check_rate_limit'), \
+         patch.object(AIService, 'enforce_token_limit', new_callable=AsyncMock) as mock_enforce, \
+         patch.object(AIService, 'generate_assignment', new_callable=AsyncMock) as mock_generate:
+        mock_generate.side_effect = Exception("Other error")
+        
+        response = client.post(
+            "/api/v1/ai/generate-assignment",
+            json={
+                "subject": "Math",
+                "grade_level": "10",
+                "topic": "Algebra",
+                "difficulty": "easy"
+            },
+            headers={"Authorization": f"Bearer {mock_user.token}"}
+        )
+        
+        assert response.status_code == 500
+        data = response.json()
+        assert "An error occurred while generating the assignment" in data["detail"]
+
+def test_generate_feedback_rate_limit_429(override_get_current_user, override_get_db, mock_db, mock_user):
+    feedback_req = {"submission_content": "Answer", "feedback_type": "general", "submission_id": 1}
+    from fastapi import HTTPException
+    with patch('app.api.v1.endpoints.ai.check_rate_limit', side_effect=HTTPException(status_code=429, detail="Rate limit exceeded")):
+        response = client.post("/api/v1/ai/generate-feedback", json=feedback_req)
+        assert response.status_code == 429
+
+def test_generate_feedback_rate_limit_other_exception(override_get_current_user, override_get_db, mock_db, mock_user):
+    """Test generate_feedback with other rate limit exception"""
+    with patch('app.api.v1.endpoints.ai.check_rate_limit'), \
+         patch.object(AIService, 'enforce_token_limit', new_callable=AsyncMock) as mock_enforce, \
+         patch.object(AIService, 'generate_feedback', new_callable=AsyncMock) as mock_generate:
+        mock_generate.side_effect = Exception("Other error")
+        
+        response = client.post(
+            "/api/v1/ai/generate-feedback",
+            json={
+                "submission_content": "Test submission content",
+                "feedback_type": "general",
+                "submission_id": 1
+            },
+            headers={"Authorization": f"Bearer {mock_user.token}"}
+        )
+        
+        assert response.status_code == 500
+        data = response.json()
+        assert "An error occurred while generating feedback" in data["detail"]
+
+def test_generate_feedback_ai_service_returns_none(override_get_current_user, override_get_db, mock_db, mock_user):
+    """Test generate_feedback when AI service returns None"""
+    with patch('app.api.v1.endpoints.ai.check_rate_limit'), \
+         patch.object(AIService, 'enforce_token_limit', new_callable=AsyncMock) as mock_enforce, \
+         patch.object(AIService, 'generate_feedback', new_callable=AsyncMock) as mock_generate:
+        mock_generate.return_value = None
+        
+        response = client.post(
+            "/api/v1/ai/generate-feedback",
+            json={
+                "submission_content": "Test submission content",
+                "feedback_type": "general",
+                "submission_id": 1
+            },
+            headers={"Authorization": f"Bearer {mock_user.token}"}
+        )
+        
+        assert response.status_code == 500
+        data = response.json()
+        assert "An error occurred while generating feedback" in data["detail"]
+
+def test_generate_assignment_old_ai_service_exception(override_get_current_user, override_get_db, mock_db, mock_user):
+    req = AssignmentGenerationRequest(subject="Math", grade_level="10", topic="Algebra", difficulty="easy")
+    with patch('app.api.v1.endpoints.ai.check_rate_limit'), \
+         patch('app.api.v1.endpoints.ai._store_generated_assignment'):
+        with patch.object(AIService, 'enforce_token_limit', new_callable=AsyncMock, side_effect=Exception("AI service error")) as mock_enforce:
+            response = client.post("/api/v1/ai/generate-assignment", json=req.model_dump())
+            assert response.status_code == 500
+            assert "An error occurred while generating the assignment" in response.json()["detail"]
+
+def test_generate_feedback_ai_service_exception(override_get_current_user, override_get_db, mock_db, mock_user):
+    feedback_req = {"submission_content": "Answer", "feedback_type": "general", "submission_id": 1}
+    with patch('app.api.v1.endpoints.ai.check_rate_limit'), \
+         patch('app.api.v1.endpoints.ai._store_generated_feedback'):
+        with patch.object(AIService, 'enforce_token_limit', new_callable=AsyncMock, side_effect=Exception("AI service error")) as mock_enforce:
+            response = client.post("/api/v1/ai/generate-feedback", json=feedback_req)
+            assert response.status_code == 500
+            assert "An error occurred while generating feedback" in response.json()["detail"]
+
+def test_store_generated_assignment_exception(override_get_current_user, override_get_db, mock_db, mock_user):
+    req = AssignmentGenerationRequest(subject="Math", grade_level="10", topic="Algebra", difficulty="easy")
+    assignment_content = AssignmentContent(
+        objectives=["Understand algebraic expressions"],
+        instructions="Solve all problems.",
+        requirements=["Show all work"],
+        evaluation_criteria=["Accuracy"],
+        estimated_duration="60 minutes",
+        resources=["Textbook"]
+    )
+    generated_assignment = GeneratedAssignment(
+        title="AI Assignment",
+        description="A generated assignment.",
+        content=assignment_content
+    )
+    response_obj = AssignmentGenerationResponse(success=True, assignment=generated_assignment, error=None)
+    
+    with patch('app.api.v1.endpoints.ai.check_rate_limit'), \
+         patch('app.schemas.ai_assignment.AssignmentGenerationRequest.model_dump_json', return_value="{}"), \
+         patch('app.schemas.ai_assignment.GeneratedAssignment.model_dump_json', return_value="{}"), \
+         patch('app.crud.ai_assignment.create_ai_assignment', side_effect=Exception("Database error")):
+        with patch.object(AIService, 'enforce_token_limit', new_callable=AsyncMock) as mock_enforce, \
+             patch.object(AIService, 'generate_assignment', new_callable=AsyncMock, return_value=response_obj) as mock_generate:
+            response = client.post("/api/v1/ai/generate-assignment", json=req.model_dump())
+            # The endpoint should still return success even if background task fails
+            assert response.status_code == 200
+
+def test_store_generated_feedback_exception(override_get_current_user, override_get_db, mock_db, mock_user):
+    feedback_req = {"submission_content": "Answer", "feedback_type": "general", "submission_id": 1}
+    feedback_obj = Feedback(
+        id=1,
+        content="Good job on the assignment!",
+        feedback_type="general",
+        submission_id=1,
+        created_at=datetime(2025, 1, 1),
+        updated_at=datetime(2025, 1, 2),
+        confidence_score=0.95,
+        score=100.0,
+        feedback_metadata={}
+    )
+    
+    with patch('app.api.v1.endpoints.ai.check_rate_limit'), \
+         patch('app.crud.feedback.create_feedback', side_effect=Exception("Database error")):
+        with patch.object(AIService, 'enforce_token_limit', new_callable=AsyncMock) as mock_enforce, \
+             patch.object(AIService, 'generate_feedback', new_callable=AsyncMock, return_value=feedback_obj) as mock_generate:
+            response = client.post("/api/v1/ai/generate-feedback", json=feedback_req)
+            # The endpoint should still return success even if background task fails
+            assert response.status_code == 200 

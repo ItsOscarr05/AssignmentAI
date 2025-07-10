@@ -211,4 +211,239 @@ def test_get_usage_analytics_error(override_get_current_user, override_get_db, m
     mock_db.query.side_effect = Exception("DB error")
     response = client.get("/api/v1/dashboard/usage/analytics?period=month")
     assert response.status_code == 500
-    assert response.json()['detail'] == "DB error" 
+    assert response.json()['detail'] == "DB error"
+
+def test_get_usage_analytics_week_period(override_get_current_user, override_get_db, mock_db, mock_user):
+    """Test usage analytics with week period"""
+    mock_assignment = MagicMock(spec=Assignment)
+    mock_assignment.id = 1
+    mock_assignment.status = "completed"
+    mock_assignment.created_at = datetime.now()
+    mock_db.query().filter().all.return_value = [mock_assignment]
+    
+    response = client.get("/api/v1/dashboard/usage/analytics?period=week")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["period"] == "week"
+    assert "start_date" in data
+    assert "end_date" in data
+
+def test_get_usage_analytics_year_period(override_get_current_user, override_get_db, mock_db, mock_user):
+    """Test usage analytics with year period"""
+    mock_assignment = MagicMock(spec=Assignment)
+    mock_assignment.id = 1
+    mock_assignment.status = "completed"
+    mock_assignment.created_at = datetime.now()
+    mock_db.query().filter().all.return_value = [mock_assignment]
+    
+    response = client.get("/api/v1/dashboard/usage/analytics?period=year")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["period"] == "year"
+    assert "start_date" in data
+    assert "end_date" in data
+
+def test_get_usage_analytics_invalid_period(override_get_current_user, override_get_db, mock_db, mock_user):
+    """Test usage analytics with invalid period (should default to month)"""
+    mock_assignment = MagicMock(spec=Assignment)
+    mock_assignment.id = 1
+    mock_assignment.status = "completed"
+    mock_assignment.created_at = datetime.now()
+    mock_db.query().filter().all.return_value = [mock_assignment]
+    
+    response = client.get("/api/v1/dashboard/usage/analytics?period=invalid")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["period"] == "invalid"  # The period parameter is passed through
+    assert "start_date" in data
+    assert "end_date" in data
+
+def test_get_usage_analytics_with_pending_assignments(override_get_current_user, override_get_db, mock_db, mock_user):
+    """Test usage analytics with pending assignments"""
+    mock_assignment_pending = MagicMock(spec=Assignment)
+    mock_assignment_pending.id = 1
+    mock_assignment_pending.status = "pending"
+    mock_assignment_pending.created_at = datetime.now()
+    
+    mock_assignment_completed = MagicMock(spec=Assignment)
+    mock_assignment_completed.id = 2
+    mock_assignment_completed.status = "completed"
+    mock_assignment_completed.created_at = datetime.now()
+    
+    mock_db.query().filter().all.return_value = [mock_assignment_pending, mock_assignment_completed]
+    
+    response = client.get("/api/v1/dashboard/usage/analytics?period=month")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total_assignments"] == 2
+    assert len(data["daily_stats"]) > 0
+
+def test_get_storage_limit_no_subscription(override_get_current_user, override_get_db, mock_db):
+    """Test get_storage_limit with no subscription"""
+    from app.api.v1.endpoints.dashboard import get_storage_limit
+    
+    result = get_storage_limit(None)
+    assert result == 100 * 1024 * 1024  # 100MB for free users
+
+def test_get_storage_limit_with_subscription(override_get_current_user, override_get_db, mock_db):
+    """Test get_storage_limit with subscription"""
+    from app.api.v1.endpoints.dashboard import get_storage_limit
+    
+    mock_subscription = MagicMock()
+    mock_subscription.plan_id = "price_plus"
+    
+    result = get_storage_limit(mock_subscription)
+    assert result == 1 * 1024 * 1024 * 1024  # 1GB for plus plan
+
+def test_get_storage_limit_unknown_plan(override_get_current_user, override_get_db, mock_db):
+    """Test get_storage_limit with unknown plan"""
+    from app.api.v1.endpoints.dashboard import get_storage_limit
+    
+    mock_subscription = MagicMock()
+    mock_subscription.plan_id = "unknown_plan"
+    
+    result = get_storage_limit(mock_subscription)
+    assert result == 100 * 1024 * 1024  # Default to 100MB
+
+def test_get_monthly_limit_no_subscription(override_get_current_user, override_get_db, mock_db):
+    """Test get_monthly_limit with no subscription"""
+    from app.api.v1.endpoints.dashboard import get_monthly_limit
+    
+    result = get_monthly_limit(None)
+    assert result == 5  # 5 assignments for free users
+
+def test_get_monthly_limit_with_subscription(override_get_current_user, override_get_db, mock_db):
+    """Test get_monthly_limit with subscription"""
+    from app.api.v1.endpoints.dashboard import get_monthly_limit
+    
+    mock_subscription = MagicMock()
+    mock_subscription.plan_id = "price_pro"
+    
+    result = get_monthly_limit(mock_subscription)
+    assert result == 100  # 100 assignments for pro plan
+
+def test_get_monthly_limit_unlimited_plan(override_get_current_user, override_get_db, mock_db):
+    """Test get_monthly_limit with unlimited plan"""
+    from app.api.v1.endpoints.dashboard import get_monthly_limit
+    
+    mock_subscription = MagicMock()
+    mock_subscription.plan_id = "price_max"
+    
+    result = get_monthly_limit(mock_subscription)
+    assert result == -1  # Unlimited for max plan
+
+def test_get_activity_title_assignment_created(override_get_current_user, override_get_db, mock_db):
+    """Test get_activity_title for assignment_created"""
+    from app.api.v1.endpoints.dashboard import get_activity_title
+    
+    mock_activity = MagicMock()
+    mock_activity.type = "assignment_created"
+    
+    result = get_activity_title(mock_activity)
+    assert result == "New Assignment Created"
+
+def test_get_activity_title_assignment_completed(override_get_current_user, override_get_db, mock_db):
+    """Test get_activity_title for assignment_completed"""
+    from app.api.v1.endpoints.dashboard import get_activity_title
+    
+    mock_activity = MagicMock()
+    mock_activity.type = "assignment_completed"
+    
+    result = get_activity_title(mock_activity)
+    assert result == "Assignment Completed"
+
+def test_get_activity_title_file_uploaded(override_get_current_user, override_get_db, mock_db):
+    """Test get_activity_title for file_uploaded"""
+    from app.api.v1.endpoints.dashboard import get_activity_title
+    
+    mock_activity = MagicMock()
+    mock_activity.type = "file_uploaded"
+    
+    result = get_activity_title(mock_activity)
+    assert result == "File Uploaded"
+
+def test_get_activity_title_subscription_updated(override_get_current_user, override_get_db, mock_db):
+    """Test get_activity_title for subscription_updated"""
+    from app.api.v1.endpoints.dashboard import get_activity_title
+    
+    mock_activity = MagicMock()
+    mock_activity.type = "subscription_updated"
+    
+    result = get_activity_title(mock_activity)
+    assert result == "Subscription Updated"
+
+def test_get_activity_title_unknown_type(override_get_current_user, override_get_db, mock_db):
+    """Test get_activity_title for unknown type"""
+    from app.api.v1.endpoints.dashboard import get_activity_title
+    
+    mock_activity = MagicMock()
+    mock_activity.type = "unknown_type"
+    
+    result = get_activity_title(mock_activity)
+    assert result == "Activity"
+
+def test_get_activity_description_assignment_created(override_get_current_user, override_get_db, mock_db):
+    """Test get_activity_description for assignment_created"""
+    from app.api.v1.endpoints.dashboard import get_activity_description
+    
+    mock_activity = MagicMock()
+    mock_activity.type = "assignment_created"
+    mock_activity.metadata = {"title": "Test Assignment"}
+    
+    result = get_activity_description(mock_activity)
+    assert result == "Created assignment: Test Assignment"
+
+def test_get_activity_description_assignment_completed(override_get_current_user, override_get_db, mock_db):
+    """Test get_activity_description for assignment_completed"""
+    from app.api.v1.endpoints.dashboard import get_activity_description
+    
+    mock_activity = MagicMock()
+    mock_activity.type = "assignment_completed"
+    mock_activity.metadata = {"title": "Test Assignment"}
+    
+    result = get_activity_description(mock_activity)
+    assert result == "Completed assignment: Test Assignment"
+
+def test_get_activity_description_file_uploaded(override_get_current_user, override_get_db, mock_db):
+    """Test get_activity_description for file_uploaded"""
+    from app.api.v1.endpoints.dashboard import get_activity_description
+    
+    mock_activity = MagicMock()
+    mock_activity.type = "file_uploaded"
+    mock_activity.metadata = {"filename": "test.pdf"}
+    
+    result = get_activity_description(mock_activity)
+    assert result == "Uploaded file: test.pdf"
+
+def test_get_activity_description_subscription_updated(override_get_current_user, override_get_db, mock_db):
+    """Test get_activity_description for subscription_updated"""
+    from app.api.v1.endpoints.dashboard import get_activity_description
+    
+    mock_activity = MagicMock()
+    mock_activity.type = "subscription_updated"
+    mock_activity.metadata = {"plan": "Pro"}
+    
+    result = get_activity_description(mock_activity)
+    assert result == "Updated to Pro plan"
+
+def test_get_activity_description_no_metadata(override_get_current_user, override_get_db, mock_db):
+    """Test get_activity_description with no metadata"""
+    from app.api.v1.endpoints.dashboard import get_activity_description
+    
+    mock_activity = MagicMock()
+    mock_activity.type = "assignment_created"
+    mock_activity.metadata = None
+    
+    result = get_activity_description(mock_activity)
+    assert result == "Created assignment: Assignment"
+
+def test_get_activity_description_unknown_type(override_get_current_user, override_get_db, mock_db):
+    """Test get_activity_description for unknown type"""
+    from app.api.v1.endpoints.dashboard import get_activity_description
+    
+    mock_activity = MagicMock()
+    mock_activity.type = "unknown_type"
+    mock_activity.metadata = {}
+    
+    result = get_activity_description(mock_activity)
+    assert result == "Activity occurred" 

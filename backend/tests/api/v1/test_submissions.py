@@ -2,6 +2,8 @@ import pytest
 from fastapi import status
 from app.models.submission import Submission
 from app.schemas.submission import SubmissionCreate
+from unittest.mock import MagicMock, patch
+from datetime import datetime
 
 def test_create_submission(client, test_user, test_token, test_assignment):
     submission_data = {
@@ -126,3 +128,59 @@ def test_submit_without_required_fields(client, test_token, test_assignment):
         json=submission_data,
     )
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY 
+
+def test_get_submissions_by_user_mapping_error(client, test_user, test_token, test_submission):
+    """Test get_submissions_by_user when user_id mapping fails"""
+    # Mock submission without user_id to trigger the missing line
+    mock_submission = MagicMock()
+    mock_submission.__dict__ = {
+        'id': 1,
+        'content': 'Test submission',
+        'assignment_id': 1,
+        'created_at': datetime(2025, 1, 1),
+        'updated_at': datetime(2025, 1, 2),
+        'status': 'submitted',
+        'score': 100.0,
+        'feedback_count': 0,
+        'submission_metadata': {}
+    }
+    # Remove user_id to trigger the missing line
+    if hasattr(mock_submission.__dict__, 'user_id'):
+        del mock_submission.__dict__['user_id']
+    
+    with patch('app.api.v1.api.submission_crud.get_by_user_sync', return_value=[mock_submission]):
+        response = client.get(f"/api/v1/users/{test_user.id}/submissions", headers={"Authorization": f"Bearer {test_token}"})
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert "items" in data
+        assert len(data["items"]) == 1
+        # Should have student_id as None since user_id was not present
+        assert data["items"][0]["student_id"] is None
+
+def test_get_submissions_by_assignment_mapping_error(client, test_user, test_token, test_submission):
+    """Test get_submissions_by_assignment when user_id mapping fails"""
+    # Mock submission without user_id to trigger the missing line
+    mock_submission = MagicMock()
+    mock_submission.__dict__ = {
+        'id': 1,
+        'content': 'Test submission',
+        'assignment_id': 1,
+        'created_at': datetime(2025, 1, 1),
+        'updated_at': datetime(2025, 1, 2),
+        'status': 'submitted',
+        'score': 100.0,
+        'feedback_count': 0,
+        'submission_metadata': {}
+    }
+    # Remove user_id to trigger the missing line
+    if hasattr(mock_submission.__dict__, 'user_id'):
+        del mock_submission.__dict__['user_id']
+    
+    with patch('app.api.v1.api.submission_crud.get_by_assignment_sync', return_value=[mock_submission]):
+        response = client.get(f"/api/v1/assignments/1/submissions", headers={"Authorization": f"Bearer {test_token}"})
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert "items" in data
+        assert len(data["items"]) == 1
+        # Should have student_id as None since user_id was not present
+        assert data["items"][0]["student_id"] is None 
