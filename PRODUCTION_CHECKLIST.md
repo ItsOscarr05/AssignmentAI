@@ -14,7 +14,7 @@
 ### 2. Server Infrastructure
 
 - [ ] VPS/Cloud server provisioned (minimum 4GB RAM, 2 vCPUs)
-- [ ] Ubuntu 20.04+ or CentOS 8+ installed
+- [ ] Ubuntu 20.04+ installed # (CentOS removed, only Ubuntu supported in scripts)
 - [ ] Docker and Docker Compose installed
 - [ ] Firewall configured (ports 80, 443, 22)
 - [ ] SSL certificates ready (Let's Encrypt via Traefik)
@@ -50,13 +50,13 @@
 ### 1. Initial Setup
 
 - [ ] Clone repository to production server
-- [ ] Run deployment script: `./scripts/deploy-production.sh` (Linux) or `.\scripts\deploy-production.ps1` (Windows)
+- [ ] Run deployment script: `./scripts/deploy-production.sh` (Linux) or `./scripts/deploy-production.ps1` (Windows)
 - [ ] Verify all services start successfully
 - [ ] Check SSL certificates are generated
 
 ### 2. Database Setup
 
-- [ ] Database migrations run successfully
+- [ ] Database migrations run successfully (Alembic)
 - [ ] Initial superuser created
 - [ ] Database backup configured
 - [ ] Connection pool settings optimized
@@ -77,7 +77,7 @@
 - [ ] Password policies enforced
 - [ ] Rate limiting configured
 - [ ] CORS settings properly configured
-- [ ] 2FA enabled for admin accounts
+- [ ] 2FA enabled for admin accounts (optional)
 
 ### 2. Network Security
 
@@ -90,7 +90,7 @@
 ### 3. Data Security
 
 - [ ] Database passwords secure and unique
-- [ ] Redis password configured
+- [ ] Redis password configured (if Redis is used)
 - [ ] File uploads restricted to safe types
 - [ ] Environment variables not logged
 - [ ] Backup encryption enabled
@@ -103,7 +103,7 @@
 - [ ] Grafana dashboards configured
 - [ ] Alert rules configured
 - [ ] Performance metrics tracked
-- [ ] Error tracking enabled
+- [ ] Error tracking enabled (Sentry, optional)
 
 ### 2. Infrastructure Monitoring
 
@@ -111,7 +111,7 @@
 - [ ] Database performance monitoring
 - [ ] Network traffic monitoring
 - [ ] Disk space monitoring
-- [ ] Log aggregation configured
+- [ ] Log aggregation configured (optional)
 
 ### 3. Alerting
 
@@ -125,7 +125,7 @@
 - [ ] Frontend health check at `/health` implemented
 - [ ] Backend health check at `/health` enhanced with system metrics
 - [ ] Database connectivity check working
-- [ ] Redis connectivity check working
+- [ ] Redis connectivity check working (if Redis is used)
 - [ ] Response time monitoring configured
 
 ## Performance Optimization
@@ -135,8 +135,8 @@
 - [ ] Frontend assets optimized and cached
 - [ ] API response times acceptable
 - [ ] Database queries optimized
-- [ ] Redis caching configured
-- [ ] CDN configured for static assets
+- [ ] Redis caching configured (if Redis is used)
+- [ ] CDN configured for static assets (optional)
 
 ### 2. Infrastructure Performance
 
@@ -144,14 +144,14 @@
 - [ ] Auto-scaling configured (if applicable)
 - [ ] Load balancing configured
 - [ ] Database connection pooling optimized
-- [ ] Background job processing configured
+- [ ] Background job processing configured (if used)
 
 ## Backup & Recovery
 
 ### 1. Data Backup
 
 - [ ] Database backup schedule configured
-- [ ] File storage backup configured
+- [ ] File storage backup configured (if used)
 - [ ] Backup retention policy set
 - [ ] Backup encryption enabled
 - [ ] Backup restoration tested
@@ -160,9 +160,9 @@
 
 - [ ] Recovery procedures documented
 - [ ] Backup restoration tested
-- [ ] Failover procedures documented
+- [ ] Failover procedures documented (optional)
 - [ ] Data recovery time objectives defined
-- [ ] Business continuity plan in place
+- [ ] Business continuity plan in place (optional)
 
 ### 3. Emergency Procedures
 
@@ -180,7 +180,7 @@
 - [ ] File upload functionality tested
 - [ ] AI assignment generation working
 - [ ] Payment processing tested
-- [ ] OAuth login working
+- [ ] OAuth login working (optional)
 - [ ] Email notifications working
 
 ### 2. Performance Testing
@@ -193,8 +193,8 @@
 
 ### 3. Security Testing
 
-- [ ] Penetration testing completed
-- [ ] Vulnerability scanning completed
+- [ ] Penetration testing completed (optional)
+- [ ] Vulnerability scanning completed (optional)
 - [ ] Security headers verified
 - [ ] Input validation tested
 - [ ] Authentication bypass attempts tested
@@ -238,7 +238,7 @@
 
 - [ ] Update deployment process documented
 - [ ] Rollback procedures tested
-- [ ] Zero-downtime deployment configured
+- [ ] Zero-downtime deployment configured (if supported)
 - [ ] Database migration procedures tested
 - [ ] Configuration management documented
 
@@ -255,8 +255,8 @@
 - [ ] Scheduled monitoring script running
 - [ ] Automated alerts configured
 - [ ] Performance baselines established
-- [ ] Capacity planning in place
-- [ ] Regular maintenance windows scheduled
+- [ ] Capacity planning in place (optional)
+- [ ] Regular maintenance windows scheduled (optional)
 
 ## Compliance & Legal
 
@@ -264,7 +264,7 @@
 
 - [ ] GDPR compliance verified (if applicable)
 - [ ] Data retention policies configured
-- [ ] User data export functionality
+- [ ] User data export functionality (optional)
 - [ ] Data deletion procedures
 - [ ] Privacy policy implemented
 
@@ -272,9 +272,9 @@
 
 - [ ] Terms of service implemented
 - [ ] Privacy policy implemented
-- [ ] Cookie consent configured
+- [ ] Cookie consent configured (optional)
 - [ ] Legal contact information
-- [ ] Compliance monitoring
+- [ ] Compliance monitoring (optional)
 
 ## Final Verification
 
@@ -309,9 +309,9 @@
 
 - [ ] Common issues and solutions documented
 - [ ] Troubleshooting guides created
-- [ ] Support ticket system configured
-- [ ] Knowledge base established
-- [ ] FAQ section created
+- [ ] Support ticket system configured (optional)
+- [ ] Knowledge base established (optional)
+- [ ] FAQ section created (optional)
 
 ### 3. Emergency Scripts
 
@@ -320,6 +320,51 @@
 - [ ] Backup scripts tested
 - [ ] Rollback procedures documented
 - [ ] Security incident response ready
+
+## Advanced/Optional Best Practices
+
+### 1. Infrastructure as Code (IaC)
+
+- [ ] Infrastructure code versioned and tested (e.g., Terraform, Ansible)
+
+### 2. Container Security
+
+- [ ] Docker images scanned for vulnerabilities (e.g., Trivy, Snyk)
+- [ ] Only trusted base images used
+
+### 3. Secrets Management
+
+- [ ] Secrets are not hardcoded and are managed via environment variables or a secrets manager (AWS Secrets Manager, Vault, etc.)
+
+### 4. Database Security
+
+- [ ] Database only accessible from trusted networks (not public internet)
+- [ ] Database user permissions are least-privilege
+
+### 5. CI/CD Pipeline
+
+- [ ] CI/CD pipeline configured for automated tests, builds, and deployments
+- [ ] Environment-specific configuration managed in CI/CD
+
+### 6. Rate Limiting/Abuse Protection
+
+- [ ] API rate limiting tested and enforced for all endpoints
+
+### 7. Data Privacy
+
+- [ ] Data subject request process documented (for GDPR/CCPA, if applicable)
+
+### 8. Third-Party Dependency Review
+
+- [ ] All dependencies are up-to-date and reviewed for vulnerabilities
+
+### 9. Mobile/Tablet Responsiveness
+
+- [ ] Frontend tested on mobile/tablet devices
+
+### 10. Accessibility
+
+- [ ] Accessibility (a11y) checks performed on frontend
 
 ---
 

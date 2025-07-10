@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api, auth } from '../config/api';
+import api, { auth } from '../config/api';
 import { AuthService } from '../services/auth/AuthService';
 import { User } from '../types';
 
@@ -35,7 +35,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isMockUser, setIsMockUser] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const authService = AuthService.getInstance();
 
   useEffect(() => {
     // Remove the checkAuth() call to prevent overriding the stored user
@@ -55,7 +54,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (provider: string) => {
     try {
-      await authService.login(provider);
+      // For now, we'll use the auth object from api.ts
+      // This will be updated when we implement OAuth providers
+      console.log('Login with provider:', provider);
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
@@ -64,10 +65,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const handleCallback = async (code: string, state: string) => {
     try {
-      const userData = await authService.handleCallback(code, state);
-      setUser(userData);
-      setIsMockUser(false);
-      localStorage.setItem('isMockUser', 'false');
+      // This will be implemented when we add OAuth providers
+      console.log('Handle callback:', code, state);
     } catch (error) {
       console.error('Callback handling failed:', error);
       throw error;
@@ -101,7 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (email: string, password: string, name: string) => {
     const [firstName, ...rest] = name.split(' ');
     const lastName = rest.join(' ');
-    await AuthService.getInstance().register({
+    await AuthService.register({
       email,
       password,
       firstName,

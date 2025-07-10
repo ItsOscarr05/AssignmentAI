@@ -22,8 +22,7 @@
     "build:frontend": "cd frontend && npm run build",
     "build:backend": "cd backend && npm run build",
     "analyze": "cd frontend && npm run analyze",
-    "performance": "cd frontend && npm run performance",
-    "prepare": "husky install"
+    "performance": "cd frontend && npm run performance"
   },
   "dependencies": {
     "@stripe/react-stripe-js": "^3.7.0",
@@ -36,26 +35,12 @@
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react": "^16.3.0",
-    "@testing-library/react-native": "^13.2.0",
     "@vitejs/plugin-react": "^4.4.1",
     "@vitest/ui": "^3.1.4",
-    "husky": "^8.0.3",
     "jest-junit": "^16.0.0",
-    "jest-react-native": "^18.0.0",
     "jsdom": "^26.1.0",
-    "lint-staged": "^13.2.3",
     "vitest": "^3.1.4"
-  },
-  "lint-staged": {
-    "*.{js,jsx,ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.{json,md}": [
-      "prettier --write"
-    ]
   },
   "engines": {
     "node": ">=14.0.0",
