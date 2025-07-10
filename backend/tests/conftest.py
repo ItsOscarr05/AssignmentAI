@@ -87,7 +87,25 @@ def test_user(db) -> User:
         name=f"Test User {unique_id}",
         is_active=True,
         is_verified=True,
-        is_superuser=True,  # Make superuser for security tests
+        is_superuser=False,  # Regular user by default
+        updated_at=datetime.utcnow()
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+@pytest.fixture(scope="function")
+def regular_user(db) -> User:
+    """Create a regular user (non-superuser) for testing unauthorized access."""
+    unique_id = str(uuid.uuid4())[:8]
+    user = User(
+        email=f"regular-{unique_id}@example.com",
+        hashed_password=get_password_hash("regularpassword"),
+        name=f"Regular User {unique_id}",
+        is_active=True,
+        is_verified=True,
+        is_superuser=False,  # Regular user
         updated_at=datetime.utcnow()
     )
     db.add(user)
@@ -253,6 +271,22 @@ def cleanup_feedback(db):
 @pytest.fixture(scope="function")
 def test_token(test_user) -> str:
     """Create a test token."""
-    user = test_user
-    token = create_access_token(subject=str(user.id))
-    return token 
+    return create_access_token(test_user.id)
+
+@pytest.fixture(scope="function")
+def superuser(db) -> User:
+    """Create a test superuser."""
+    unique_id = str(uuid.uuid4())[:8]
+    superuser = User(
+        email=f"superuser-{unique_id}@example.com",
+        hashed_password=get_password_hash("superuserpassword"),
+        name=f"Test Superuser {unique_id}",
+        is_active=True,
+        is_verified=True,
+        is_superuser=True,  # This is the key difference
+        updated_at=datetime.utcnow()
+    )
+    db.add(superuser)
+    db.commit()
+    db.refresh(superuser)
+    return superuser 

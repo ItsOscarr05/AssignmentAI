@@ -4,6 +4,7 @@ from app.models.notification import Notification
 from app.schemas.notification import NotificationCreate, NotificationUpdate
 from unittest.mock import patch
 from unittest.mock import MagicMock
+from app.core.security import create_access_token
 
 def test_get_notifications_success(client, test_user, test_token):
     """Test successful retrieval of notifications"""
@@ -263,11 +264,12 @@ def test_archive_read_notifications_success(client, test_user, test_token, db):
     assert "message" in data
     assert "Archived" in data["message"]
 
-def test_cleanup_notifications_admin_success(client, test_user, test_token, db):
+def test_cleanup_notifications_admin_success(client, superuser, db):
     """Test successful cleanup of notifications by admin"""
+    superuser_token = create_access_token(superuser.id)
     response = client.delete(
         "/api/v1/notifications/cleanup?days=30",
-        headers={"Authorization": f"Bearer {test_token}"}
+        headers={"Authorization": f"Bearer {superuser_token}"}
     )
     
     assert response.status_code == status.HTTP_200_OK
@@ -281,10 +283,11 @@ def test_cleanup_notifications_unauthorized(client):
     assert response.status_code == 401
     assert response.json()["detail"] == "Not authenticated"
 
-def test_cleanup_notifications_with_custom_days(client, test_user, test_token, db):
+def test_cleanup_notifications_with_custom_days(client, superuser, db):
     """Test cleanup of notifications with custom days parameter"""
+    superuser_token = create_access_token(superuser.id)
     with patch('app.api.v1.endpoints.notifications.notification_crud.cleanup_expired_notifications', return_value=5):
-        response = client.delete("/api/v1/notifications/cleanup?days=60", headers={"Authorization": f"Bearer {test_token}"})
+        response = client.delete("/api/v1/notifications/cleanup?days=60", headers={"Authorization": f"Bearer {superuser_token}"})
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert "Cleaned up 5 notifications" in data["message"]

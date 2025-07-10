@@ -174,6 +174,49 @@ def test_is_token_expired_invalid():
     invalid_token = "invalid.token.here"
     assert is_token_expired(invalid_token)
 
+def test_verify_token_jwt_error():
+    """Test verifying token with JWT error"""
+    with patch('app.core.security.jwt.decode') as mock_decode:
+        mock_decode.side_effect = JWTError("Invalid token")
+        payload = verify_token("invalid.token.here")
+        assert payload is None
+
+def test_is_token_expired_jwt_error():
+    """Test checking if token is expired with JWT error"""
+    with patch('app.core.security.verify_token') as mock_verify:
+        mock_verify.return_value = None
+        assert is_token_expired("invalid.token.here")
+
+def test_is_token_expired_no_exp():
+    """Test checking if token is expired with no exp field"""
+    with patch('app.core.security.verify_token') as mock_verify:
+        mock_verify.return_value = {"sub": "test", "type": "access"}
+        assert is_token_expired("token.without.exp")
+
+def test_is_token_expired_string_exp():
+    """Test checking if token is expired with string exp"""
+    with patch('app.core.security.verify_token') as mock_verify:
+        mock_verify.return_value = {"sub": "test", "exp": "invalid_string"}
+        assert is_token_expired("token.with.string.exp")
+
+def test_is_token_expired_datetime_exp():
+    """Test checking if token is expired with datetime exp"""
+    with patch('app.core.security.verify_token') as mock_verify:
+        mock_verify.return_value = {
+            "sub": "test", 
+            "exp": datetime.utcnow() - timedelta(hours=1)
+        }
+        assert is_token_expired("token.with.datetime.exp")
+
+def test_is_token_expired_future_datetime():
+    """Test checking if token is not expired with future datetime"""
+    with patch('app.core.security.verify_token') as mock_verify:
+        mock_verify.return_value = {
+            "sub": "test", 
+            "exp": datetime.utcnow() + timedelta(hours=1)
+        }
+        assert not is_token_expired("token.with.future.datetime")
+
 def test_check_password_history_no_history(mock_user, mock_db):
     """Test password history check with no history"""
     mock_user.password_history = []
@@ -228,6 +271,21 @@ def test_update_password_history_limit(mock_user, mock_db):
     assert len(mock_user.password_history) == settings.PASSWORD_HISTORY_SIZE
     mock_db.commit.assert_called_once()
 
+def test_check_password_history_empty_history(mock_user, mock_db):
+    """Test password history check with empty history"""
+    mock_user.password_history = None
+    new_password = "newpassword123"
+    assert check_password_history(mock_db, mock_user, new_password)
+
+def test_update_password_history_none_history(mock_user, mock_db):
+    """Test updating password history with None history"""
+    mock_user.password_history = None
+    new_password = "newpassword123"
+    update_password_history(mock_db, mock_user, new_password)
+    assert mock_user.password_history is not None
+    assert len(mock_user.password_history) == 1
+    mock_db.commit.assert_called_once()
+
 def test_track_login_attempt_success(mock_user, mock_db):
     """Test tracking successful login attempt"""
     mock_user.failed_login_attempts = 3
@@ -260,6 +318,37 @@ def test_track_login_attempt_max_failures(mock_user, mock_db):
     assert mock_user.account_locked_until is not None
     mock_db.commit.assert_called_once()
 
+def test_track_login_attempt_success_reset(mock_user, mock_db):
+    """Test tracking successful login attempt with reset"""
+    mock_user.failed_login_attempts = 5
+    mock_user.account_locked_until = datetime.utcnow() + timedelta(minutes=30)
+    
+    track_login_attempt(mock_db, mock_user, True)
+    
+    assert mock_user.failed_login_attempts == 0
+    assert mock_user.account_locked_until is None
+    assert mock_user.last_login is not None
+    mock_db.commit.assert_called_once()
+
+def test_track_login_attempt_failure_increment(mock_user, mock_db):
+    """Test tracking failed login attempt with increment"""
+    mock_user.failed_login_attempts = 2
+    
+    track_login_attempt(mock_db, mock_user, False)
+    
+    assert mock_user.failed_login_attempts == 3
+    mock_db.commit.assert_called_once()
+
+def test_track_login_attempt_max_failures_lock_account(mock_user, mock_db):
+    """Test tracking failed login attempt that locks account"""
+    mock_user.failed_login_attempts = settings.MAX_LOGIN_ATTEMPTS - 1
+    
+    track_login_attempt(mock_db, mock_user, False)
+    
+    assert mock_user.failed_login_attempts == settings.MAX_LOGIN_ATTEMPTS
+    assert mock_user.account_locked_until is not None
+    mock_db.commit.assert_called_once()
+
 def test_is_account_locked_not_locked(mock_user):
     """Test checking if account is not locked"""
     mock_user.account_locked_until = None
@@ -271,6 +360,20 @@ def test_is_account_locked_locked(mock_user):
     assert is_account_locked(mock_user)
 
 def test_is_account_locked_expired(mock_user):
+    """Test checking if account lock has expired"""
+    mock_user.account_locked_until = datetime.utcnow() - timedelta(minutes=30)
+    mock_user.failed_login_attempts = 5
+    
+    assert not is_account_locked(mock_user)
+    assert mock_user.account_locked_until is None
+    assert mock_user.failed_login_attempts == 0 
+
+def test_is_account_locked_future_lock(mock_user):
+    """Test checking if account is locked in the future"""
+    mock_user.account_locked_until = datetime.utcnow() + timedelta(minutes=30)
+    assert is_account_locked(mock_user)
+
+def test_is_account_locked_expired_lock(mock_user):
     """Test checking if account lock has expired"""
     mock_user.account_locked_until = datetime.utcnow() - timedelta(minutes=30)
     mock_user.failed_login_attempts = 5

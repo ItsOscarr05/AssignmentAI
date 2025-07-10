@@ -13,6 +13,50 @@ import json
 
 router = APIRouter()
 
+def _get_audit_logs(db, start_date, end_date, event_type=None):
+    query = db.query(AuditLog).filter(
+        AuditLog.timestamp >= start_date,
+        AuditLog.timestamp <= end_date
+    )
+    if event_type:
+        query = query.filter(AuditLog.action == event_type)
+    logs = query.all()
+    return [
+        {
+            "id": log.id,
+            "action": log.action,
+            "resource_type": log.resource_type,
+            "resource_id": log.resource_id,
+            "timestamp": log.timestamp.isoformat(),
+            "details": log.details,
+            "ip_address": log.ip_address,
+            "user_agent": log.user_agent
+        }
+        for log in logs
+    ]
+
+def _get_security_alerts(db, start_date, end_date, severity=None):
+    query = db.query(SecurityAlert).filter(
+        SecurityAlert.timestamp >= start_date,
+        SecurityAlert.timestamp <= end_date
+    )
+    if severity:
+        query = query.filter(SecurityAlert.severity == severity)
+    alerts = query.all()
+    return [
+        {
+            "id": alert.id,
+            "alert_type": alert.alert_type,
+            "description": alert.description,
+            "severity": alert.severity,
+            "timestamp": alert.timestamp.isoformat(),
+            "alert_metadata": alert.alert_metadata,
+            "resolved": alert.resolved,
+            "resolution_notes": alert.resolution_notes
+        }
+        for alert in alerts
+    ]
+
 @router.get("/metrics")
 async def get_security_metrics(
     db: Session = Depends(get_db),
@@ -52,30 +96,7 @@ async def get_security_alerts(
     if not end_date:
         end_date = datetime.utcnow()
     
-    # Query alerts from database
-    query = db.query(SecurityAlert).filter(
-        SecurityAlert.timestamp >= start_date,
-        SecurityAlert.timestamp <= end_date
-    )
-    
-    if severity:
-        query = query.filter(SecurityAlert.severity == severity)
-    
-    alerts = query.all()
-    
-    return [
-        {
-            "id": alert.id,
-            "alert_type": alert.alert_type,
-            "description": alert.description,
-            "severity": alert.severity,
-            "timestamp": alert.timestamp.isoformat(),
-            "alert_metadata": alert.alert_metadata,
-            "resolved": alert.resolved,
-            "resolution_notes": alert.resolution_notes
-        }
-        for alert in alerts
-    ]
+    return _get_security_alerts(db, start_date, end_date, severity)
 
 @router.post("/alerts", status_code=201)
 async def create_security_alert(
@@ -174,30 +195,7 @@ async def get_audit_logs(
     if not end_date:
         end_date = datetime.utcnow()
     
-    # Query logs from database
-    query = db.query(AuditLog).filter(
-        AuditLog.timestamp >= start_date,
-        AuditLog.timestamp <= end_date
-    )
-    
-    if event_type:
-        query = query.filter(AuditLog.action == event_type)
-    
-    logs = query.all()
-    
-    return [
-        {
-            "id": log.id,
-            "action": log.action,
-            "resource_type": log.resource_type,
-            "resource_id": log.resource_id,
-            "timestamp": log.timestamp.isoformat(),
-            "details": log.details,
-            "ip_address": log.ip_address,
-            "user_agent": log.user_agent
-        }
-        for log in logs
-    ]
+    return _get_audit_logs(db, start_date, end_date, event_type)
 
 @router.post("/generate-report")
 async def generate_security_report(
@@ -218,7 +216,7 @@ async def generate_security_report(
     
     # Add additional data based on report type
     if report_type == "full":
-        report["audit_logs"] = await get_audit_logs(start_date=start_date, end_date=end_date)
-        report["alerts"] = await get_security_alerts(start_date=start_date, end_date=end_date)
+        report["audit_logs"] = _get_audit_logs(db, start_date, end_date)
+        report["alerts"] = _get_security_alerts(db, start_date, end_date)
     
     return report 

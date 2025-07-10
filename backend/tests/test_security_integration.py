@@ -18,12 +18,15 @@ def security_service():
 
 class TestSecurityIntegration:
     @pytest.fixture(autouse=True)
-    def setup(self, db: Session, test_user: User, security_service: SecurityService):
+    def setup(self, db: Session, test_user: User, superuser: User, security_service: SecurityService):
         self.db = db
         self.test_user = test_user
+        self.superuser = superuser
         self.security_service = security_service
         self.access_token = create_access_token(test_user.id)
         self.headers = {"Authorization": f"Bearer {self.access_token}"}
+        self.superuser_token = create_access_token(superuser.id)
+        self.superuser_headers = {"Authorization": f"Bearer {self.superuser_token}"}
 
     def test_complete_auth_flow(self, client: TestClient):
         """Test the complete authentication flow including 2FA"""
@@ -226,7 +229,7 @@ class TestSecurityIntegration:
         
         response = client.post(
             f"/api/v1/security/alerts",
-            headers={"Authorization": f"Bearer {self.access_token}"},
+            headers=self.superuser_headers,
             json=alert_data
         )
         assert response.status_code == status.HTTP_201_CREATED
@@ -237,7 +240,7 @@ class TestSecurityIntegration:
         # Get alerts
         response = client.get(
             f"/api/v1/security/alerts",
-            headers={"Authorization": f"Bearer {self.access_token}"}
+            headers=self.superuser_headers
         )
         assert response.status_code == status.HTTP_200_OK
         alerts = response.json()
@@ -249,7 +252,7 @@ class TestSecurityIntegration:
         # Perform an action that should be logged
         response = client.post(
             f"/api/v1/auth/change-password",
-            headers={"Authorization": f"Bearer {self.access_token}"},
+            headers=self.headers,
             json={"current_password": "testpassword", "new_password": "newpassword123"}
         )
         assert response.status_code == status.HTTP_200_OK
@@ -257,7 +260,7 @@ class TestSecurityIntegration:
         # Check audit logs
         response = client.get(
             f"/api/v1/security/audit-logs",
-            headers={"Authorization": f"Bearer {self.access_token}"}
+            headers=self.superuser_headers
         )
         assert response.status_code == status.HTTP_200_OK
         logs = response.json()
@@ -276,7 +279,7 @@ class TestSecurityIntegration:
             }
             response = client.post(
                 f"/api/v1/security/alerts",
-                headers={"Authorization": f"Bearer {self.access_token}"},
+                headers=self.superuser_headers,
                 json=alert_data
             )
             assert response.status_code == status.HTTP_201_CREATED
@@ -284,7 +287,7 @@ class TestSecurityIntegration:
         # Test alert filtering
         response = client.get(
             f"/api/v1/security/alerts?severity=medium",
-            headers={"Authorization": f"Bearer {self.access_token}"}
+            headers=self.superuser_headers
         )
         assert response.status_code == status.HTTP_200_OK
         alerts = response.json()
@@ -294,7 +297,7 @@ class TestSecurityIntegration:
         alert_id = alerts[0]["id"]
         response = client.patch(
             f"/api/v1/security/alerts/{alert_id}",
-            headers={"Authorization": f"Bearer {self.access_token}"},
+            headers=self.superuser_headers,
             json={"resolved": True, "resolution_notes": "Test resolution"}
         )
         assert response.status_code == status.HTTP_200_OK

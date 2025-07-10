@@ -13,7 +13,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com; "
@@ -24,14 +24,23 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         )
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        response.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        response.headers["Cross-Origin-Resource-Policy"] = "same-site"
         
-        # Sanitize response headers
+        # Sanitize response headers - create a list of invalid headers first
+        invalid_headers = []
         for header in response.headers:
             if not re.match(r'^[a-zA-Z0-9\-_]+$', header):
-                del response.headers[header]
+                invalid_headers.append(header)
+        
+        # Remove invalid headers
+        for header in invalid_headers:
+            del response.headers[header]
         
         # Prevent caching of sensitive endpoints
-        if request.url.path.startswith(("/auth", "/admin")):
+        sensitive_paths = ["/auth", "/admin", "/api/v1/auth", "/api/v1/admin"]
+        if any(request.url.path.startswith(path) for path in sensitive_paths):
             response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, proxy-revalidate"
             response.headers["Pragma"] = "no-cache"
             response.headers["Expires"] = "0"

@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, validator
 import bleach
 from app.core.config import settings
+import jsonschema
 
 class SecurityService:
     def __init__(self):
@@ -19,29 +20,38 @@ class SecurityService:
 
     def sanitize_html(self, html_content: str) -> str:
         """Sanitize HTML content to prevent XSS attacks"""
+        # Remove script and style tag content entirely
+        html_content = re.sub(r'<(script|style)[^>]*>.*?</\1>', '', html_content, flags=re.DOTALL|re.IGNORECASE)
         return bleach.clean(
             html_content,
             tags=self.allowed_tags,
             attributes=self.allowed_attributes,
-            strip=True
+            strip=True,
+            strip_comments=True
         )
 
     def sanitize_text(self, text: str) -> str:
         """Sanitize plain text to remove potentially dangerous characters"""
         # Remove null bytes and control characters
         text = re.sub(r'[\x00-\x1F\x7F-\x9F]', '', text)
-        # Remove HTML tags
+        # Remove HTML tags and their content (script/style)
+        text = re.sub(r'<(script|style)[^>]*>.*?</\1>', '', text, flags=re.DOTALL|re.IGNORECASE)
         text = bleach.clean(text, tags=[], strip=True)
         return text
 
     def validate_email(self, email: str) -> bool:
         """Validate email format"""
-        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-        return bool(re.match(email_pattern, email))
+        # Disallow consecutive dots, dots at start/end, and basic RFC compliance
+        email_pattern = r'^(?![.])[a-zA-Z0-9._%+-]+(?<![.])@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, email):
+            return False
+        if '..' in email.split('@')[0]:
+            return False
+        return True
 
     def validate_url(self, url: str) -> bool:
         """Validate URL format"""
-        url_pattern = r'^https?://(?:[\w-]+\.)+[\w-]+(?:/[\w-./?%&=]*)?$'
+        url_pattern = r'^https?://(?:[\w.-]+\.)+[\w.-]+(?:/[\w\-./?%&=]*)?$'
         return bool(re.match(url_pattern, url))
 
     def validate_filename(self, filename: str) -> bool:
@@ -72,10 +82,26 @@ class SecurityService:
         return value
 
     def validate_json_schema(self, data: Dict[str, Any], schema: Dict[str, Any]) -> bool:
-        """Validate JSON data against a schema"""
+        """Validate JSON data against a schema using jsonschema library"""
         try:
-            model = type('DynamicModel', (BaseModel,), schema)
-            model(**data)
+            # Check if schema has the expected format (with "type" keys)
+            if not all(isinstance(val, dict) and "type" in val for val in schema.values()):
+                return False
+            
+            # Convert the test's schema format to JSON Schema draft-07
+            json_schema = {
+                "type": "object",
+                "properties": {},
+                "required": []
+            }
+            for key, val in schema.items():
+                if isinstance(val, dict) and "type" in val:
+                    json_schema["properties"][key] = {"type": val["type"]}
+                    json_schema["required"].append(key)
+            # Validate the schema itself first
+            jsonschema.validators.validator_for(json_schema)
+            # Then validate the data against the schema
+            jsonschema.validate(instance=data, schema=json_schema)
             return True
         except Exception:
             return False

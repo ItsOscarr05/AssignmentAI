@@ -25,7 +25,7 @@ from app.core.error_handlers import (
     general_exception_handler,
     validation_error_handler
 )
-from app.middleware.security import SecurityHeadersMiddleware
+from app.middleware.security import SecurityMiddleware
 from app.middleware.rate_limit import RateLimitMiddleware
 from app.middleware.error_handler import ErrorHandlerMiddleware
 from app.middleware.logging import LoggingMiddleware
@@ -181,7 +181,7 @@ app.add_middleware(
 )
 
 # Add security headers middleware
-app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(SecurityMiddleware)
 
 # Add rate limiting middleware
 app.add_middleware(RateLimitMiddleware, requests_per_minute=60)

@@ -304,3 +304,238 @@ def test_cache_middleware(client):
     response3 = client.post("/")
     assert response3.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
     assert "X-Cache" not in response3.headers 
+
+def test_security_middleware_sensitive_endpoints(client):
+    """Test security middleware adds no-cache headers for sensitive endpoints"""
+    # Test auth endpoint
+    response = client.get("/api/v1/auth/me")
+    headers = response.headers
+    assert "Cache-Control" in headers
+    assert "no-store" in headers["Cache-Control"]
+    assert "Pragma" in headers
+    assert "Expires" in headers
+    
+    # Test admin endpoint
+    response = client.get("/api/v1/admin/users")
+    headers = response.headers
+    assert "Cache-Control" in headers
+    assert "no-store" in headers["Cache-Control"]
+
+def test_security_middleware_non_sensitive_endpoints(client):
+    """Test security middleware doesn't add no-cache headers for non-sensitive endpoints"""
+    response = client.get("/")
+    headers = response.headers
+    # Non-sensitive endpoints should not have no-cache headers
+    assert "Cache-Control" not in headers or "no-store" not in headers.get("Cache-Control", "")
+
+@pytest.mark.asyncio
+async def test_security_middleware_header_sanitization(client):
+    """Test security middleware sanitizes response headers"""
+    from app.middleware.security import SecurityMiddleware
+    from fastapi import Request
+    from starlette.responses import Response
+    from unittest.mock import AsyncMock, Mock
+    
+    # Create middleware instance
+    middleware = SecurityMiddleware(Mock())
+    
+    # Mock request
+    mock_request = Mock(spec=Request)
+    mock_request.url.path = "/test"
+    
+    # Mock response with invalid headers
+    mock_response = Mock(spec=Response)
+    mock_response.headers = {
+        "valid-header": "value",
+        "invalid header": "value",  # Invalid header name
+        "another-valid": "value"
+    }
+    
+    # Mock call_next
+    mock_call_next = AsyncMock()
+    mock_call_next.return_value = mock_response
+    
+    # Test middleware
+    with patch('app.middleware.security.re.match') as mock_match:
+        mock_match.side_effect = lambda pattern, string: bool(pattern == r'^[a-zA-Z0-9\-_]+$' and string in ["valid-header", "another-valid"])
+        
+        response = await middleware.dispatch(mock_request, mock_call_next)
+        
+        # Check that invalid headers were removed
+        assert "valid-header" in response.headers
+        assert "another-valid" in response.headers
+        assert "invalid header" not in response.headers
+
+@pytest.mark.asyncio
+async def test_security_headers_middleware(client):
+    """Test SecurityHeadersMiddleware adds security headers"""
+    from app.middleware.security import SecurityHeadersMiddleware
+    from fastapi import Request
+    from starlette.responses import Response
+    from unittest.mock import AsyncMock, Mock
+    
+    # Create middleware instance
+    middleware = SecurityHeadersMiddleware(Mock())
+    
+    # Mock request
+    mock_request = Mock(spec=Request)
+    
+    # Mock response
+    mock_response = Mock(spec=Response)
+    mock_response.headers = {}
+    
+    # Mock call_next
+    mock_call_next = AsyncMock()
+    mock_call_next.return_value = mock_response
+    
+    # Mock settings
+    with patch('app.middleware.security.settings') as mock_settings:
+        mock_settings.SECURITY_HEADERS = {
+            "X-Test-Header": "test-value",
+            "X-Another-Header": "another-value"
+        }
+        
+        response = await middleware.dispatch(mock_request, mock_call_next)
+        
+        # Check that security headers were added
+        assert response.headers["X-Test-Header"] == "test-value"
+        assert response.headers["X-Another-Header"] == "another-value"
+
+def test_security_middleware_content_security_policy(client):
+    """Test Content Security Policy header is properly set"""
+    response = client.get("/")
+    headers = response.headers
+    assert "Content-Security-Policy" in headers
+    
+    csp = headers["Content-Security-Policy"]
+    # Check for required CSP directives
+    assert "default-src 'self'" in csp
+    assert "script-src" in csp
+    assert "style-src" in csp
+    assert "font-src" in csp
+    assert "img-src" in csp
+    assert "connect-src" in csp
+
+def test_security_middleware_permissions_policy(client):
+    """Test Permissions Policy header is properly set"""
+    response = client.get("/")
+    headers = response.headers
+    assert "Permissions-Policy" in headers
+    
+    pp = headers["Permissions-Policy"]
+    # Check for required permissions
+    assert "geolocation=()" in pp
+    assert "microphone=()" in pp
+    assert "camera=()" in pp
+
+def test_security_middleware_referrer_policy(client):
+    """Test Referrer Policy header is properly set"""
+    response = client.get("/")
+    headers = response.headers
+    assert "Referrer-Policy" in headers
+    assert headers["Referrer-Policy"] == "strict-origin-when-cross-origin"
+
+def test_security_middleware_xss_protection(client):
+    """Test XSS Protection header is properly set"""
+    response = client.get("/")
+    headers = response.headers
+    assert "X-XSS-Protection" in headers
+    assert headers["X-XSS-Protection"] == "1; mode=block"
+
+def test_security_middleware_frame_options(client):
+    """Test X-Frame-Options header is properly set"""
+    response = client.get("/")
+    headers = response.headers
+    assert "X-Frame-Options" in headers
+    assert headers["X-Frame-Options"] == "DENY"
+
+def test_security_middleware_content_type_options(client):
+    """Test X-Content-Type-Options header is properly set"""
+    response = client.get("/")
+    headers = response.headers
+    assert "X-Content-Type-Options" in headers
+    assert headers["X-Content-Type-Options"] == "nosniff"
+
+def test_security_middleware_hsts(client):
+    """Test Strict-Transport-Security header is properly set"""
+    response = client.get("/")
+    headers = response.headers
+    assert "Strict-Transport-Security" in headers
+    assert "max-age=31536000" in headers["Strict-Transport-Security"]
+    assert "includeSubDomains" in headers["Strict-Transport-Security"]
+
+@pytest.mark.asyncio
+async def test_security_middleware_async_dispatch():
+    """Test security middleware async dispatch method"""
+    from app.middleware.security import SecurityMiddleware
+    from fastapi import Request
+    from starlette.responses import Response
+    from unittest.mock import AsyncMock, Mock
+    
+    # Create middleware instance
+    middleware = SecurityMiddleware(Mock())
+    
+    # Mock request
+    mock_request = Mock(spec=Request)
+    mock_request.url.path = "/test"
+    
+    # Mock response
+    mock_response = Mock(spec=Response)
+    mock_response.headers = {}
+    
+    # Mock call_next
+    mock_call_next = AsyncMock()
+    mock_call_next.return_value = mock_response
+    
+    # Test async dispatch
+    response = await middleware.dispatch(mock_request, mock_call_next)
+    
+    # Verify call_next was called
+    mock_call_next.assert_called_once_with(mock_request)
+    
+    # Verify response has security headers
+    assert "X-Content-Type-Options" in response.headers
+    assert "X-Frame-Options" in response.headers
+    assert "X-XSS-Protection" in response.headers
+    assert "Strict-Transport-Security" in response.headers
+    assert "Content-Security-Policy" in response.headers
+    assert "Referrer-Policy" in response.headers
+    assert "Permissions-Policy" in response.headers
+
+@pytest.mark.asyncio
+async def test_security_headers_middleware_async_dispatch():
+    """Test SecurityHeadersMiddleware async dispatch method"""
+    from app.middleware.security import SecurityHeadersMiddleware
+    from fastapi import Request
+    from starlette.responses import Response
+    from unittest.mock import AsyncMock, Mock
+    
+    # Create middleware instance
+    middleware = SecurityHeadersMiddleware(Mock())
+    
+    # Mock request
+    mock_request = Mock(spec=Request)
+    
+    # Mock response
+    mock_response = Mock(spec=Response)
+    mock_response.headers = {}
+    
+    # Mock call_next
+    mock_call_next = AsyncMock()
+    mock_call_next.return_value = mock_response
+    
+    # Mock settings
+    with patch('app.middleware.security.settings') as mock_settings:
+        mock_settings.SECURITY_HEADERS = {
+            "X-Custom-Header": "custom-value"
+        }
+        
+        # Test async dispatch
+        response = await middleware.dispatch(mock_request, mock_call_next)
+        
+        # Verify call_next was called
+        mock_call_next.assert_called_once_with(mock_request)
+        
+        # Verify security headers were added
+        assert "X-Custom-Header" in response.headers
+        assert response.headers["X-Custom-Header"] == "custom-value" 
