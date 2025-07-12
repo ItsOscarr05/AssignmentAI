@@ -8,7 +8,7 @@ import DialogContainer from '../DialogContainer';
 vi.mock('@mui/material', async importOriginal => {
   const actual = await importOriginal();
   return {
-    ...actual,
+    ...(actual as any),
     Dialog: ({ children, ...props }: any) => (
       <div data-testid="dialog-container" role="dialog" {...props}>
         {children}

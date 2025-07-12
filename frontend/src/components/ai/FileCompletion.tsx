@@ -35,7 +35,7 @@ const FileCompletion: React.FC<FileCompletionProps> = ({
   const [showCompletion, setShowCompletion] = useState(false);
   const [, setEditorInstance] = useState<any>(null);
 
-  const { hasEnoughTokens, loading: tokenLoading } = useTokenLimitContext();
+  const { hasEnoughTokens } = useTokenLimitContext();
 
   // Estimate tokens needed for code completion
   const tokensNeeded = 200; // Conservative estimate for code completion
@@ -176,8 +176,8 @@ const FileCompletion: React.FC<FileCompletionProps> = ({
             cursorStyle: 'line',
             contextmenu: true,
             suggestOnTriggerCharacters: canGetCompletion,
-            quickSuggestions: canGetCompletion,
-            wordBasedSuggestions: true,
+            quickSuggestions: canGetCompletion ? true : false,
+            wordBasedSuggestions: 'allDocuments',
           }}
         />
       </Box>

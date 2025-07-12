@@ -13,8 +13,8 @@ import LoginForm from '../LoginForm';
 vi.mock('@mui/material', async importOriginal => {
   const actual = await importOriginal();
   return {
-    ...actual,
-    keyframes: (strings: TemplateStringsArray, ...values: any[]) => {
+    ...(actual as any),
+    keyframes: (strings: TemplateStringsArray) => {
       return `@keyframes ${strings.join('')}`;
     },
   };

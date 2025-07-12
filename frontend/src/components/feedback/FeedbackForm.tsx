@@ -75,7 +75,7 @@ export const FeedbackForm: React.FC<FeedbackFormProps> = ({ submission, rubric, 
   const [error, setError] = useState<string | null>(null);
   const [gradeError, setGradeError] = useState<string | null>(null);
   const [rubricError, setRubricError] = useState<string | null>(null);
-  const [isValidating, setIsValidating] = useState(false);
+
   const [validationErrors, setValidationErrors] = useState({
     grade: false,
     comments: false,
@@ -154,7 +154,6 @@ export const FeedbackForm: React.FC<FeedbackFormProps> = ({ submission, rubric, 
     }
 
     setValidationErrors(errors);
-    setIsValidating(true);
     return isValid;
   };
 
@@ -218,7 +217,7 @@ export const FeedbackForm: React.FC<FeedbackFormProps> = ({ submission, rubric, 
               inputProps={{
                 min: 0,
                 max: 100,
-                'aria-invalid': String(validationErrors.grade),
+                'aria-invalid': validationErrors.grade,
               }}
               required
               error={!!gradeError || validationErrors.grade}
@@ -240,7 +239,7 @@ export const FeedbackForm: React.FC<FeedbackFormProps> = ({ submission, rubric, 
               helperText={validationErrors.comments ? 'Comments are required' : ''}
               inputProps={{
                 'data-testid': 'main-comments',
-                'aria-invalid': String(validationErrors.comments),
+                'aria-invalid': validationErrors.comments,
               }}
             />
           </Grid>

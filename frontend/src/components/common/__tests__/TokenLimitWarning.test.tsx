@@ -1,10 +1,12 @@
+import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
+import { describe, expect, it, vi } from 'vitest';
 import { TokenLimitProvider } from '../../../contexts/TokenLimitContext';
 import { TokenLimitWarning } from '../TokenLimitWarning';
 
 // Mock the useTokenLimit hook
-jest.mock('../../../hooks/useTokenLimit', () => ({
+vi.mock('../../../hooks/useTokenLimit', () => ({
   useTokenLimit: () => ({
     subscription: { token_limit: 30000 },
     tokenUsage: {
@@ -22,7 +24,7 @@ jest.mock('../../../hooks/useTokenLimit', () => ({
       tokensNeeded,
       error: tokensNeeded > 5000 ? 'Insufficient tokens' : undefined,
     }),
-    refreshTokenData: jest.fn(),
+    refreshTokenData: vi.fn(),
     hasEnoughTokens: (tokensNeeded: number) => tokensNeeded <= 5000,
   }),
 }));
@@ -51,7 +53,7 @@ describe('TokenLimitWarning', () => {
     renderWithProvider(<TokenLimitWarning tokensNeeded={1000} />);
 
     // Mock the hook to return 0 remaining tokens
-    jest.doMock('../../../hooks/useTokenLimit', () => ({
+    vi.doMock('../../../hooks/useTokenLimit', () => ({
       useTokenLimit: () => ({
         subscription: { token_limit: 30000 },
         tokenUsage: {
@@ -69,7 +71,7 @@ describe('TokenLimitWarning', () => {
           tokensNeeded,
           error: 'Insufficient tokens',
         }),
-        refreshTokenData: jest.fn(),
+        refreshTokenData: vi.fn(),
         hasEnoughTokens: () => false,
       }),
     }));
@@ -93,7 +95,7 @@ describe('TokenLimitWarning', () => {
   });
 
   it('calls custom upgrade handler when provided', () => {
-    const mockUpgradeHandler = jest.fn();
+    const mockUpgradeHandler = vi.fn();
     renderWithProvider(<TokenLimitWarning tokensNeeded={10000} onUpgrade={mockUpgradeHandler} />);
 
     const upgradeButton = screen.getByText('Upgrade Plan');

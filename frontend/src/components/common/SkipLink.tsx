@@ -1,4 +1,4 @@
-import { styled } from '@mui/material/styles';
+import { Box } from '@mui/material';
 import React, { useState } from 'react';
 
 interface SkipLinkProps {
@@ -17,26 +17,6 @@ interface SkipLinkProps {
   onBlur?: (event: React.FocusEvent<HTMLAnchorElement>) => void;
 }
 
-const SkipLinkContainer = styled('a')<{ zIndex?: number; position?: string }>(
-  ({ theme, zIndex, position }) => ({
-    position: position || 'absolute',
-    top: -40,
-    left: 0,
-    background: theme.palette.primary.main,
-    color: 'white',
-    padding: 8,
-    zIndex: zIndex || 100,
-    transition: 'top 0.2s',
-    textDecoration: 'none',
-
-    '&:focus': {
-      top: 0,
-      outline: 'none',
-      boxShadow: `0 0 0 2px ${theme.palette.primary.main}`,
-    },
-  })
-);
-
 const SkipLink: React.FC<SkipLinkProps> = ({
   text = 'Skip to main content',
   target = 'main-content',
@@ -46,6 +26,8 @@ const SkipLink: React.FC<SkipLinkProps> = ({
   style,
   focusClassName,
   focusStyle,
+  zIndex = 100,
+  position = 'absolute',
   onClick,
   onFocus,
   onBlur,
@@ -83,7 +65,8 @@ const SkipLink: React.FC<SkipLinkProps> = ({
     .join(' ');
 
   return (
-    <SkipLinkContainer
+    <Box
+      component="a"
       href={`#${target}`}
       className={classes}
       style={mergedStyle}
@@ -92,10 +75,27 @@ const SkipLink: React.FC<SkipLinkProps> = ({
       onBlur={handleBlur}
       aria-label={text}
       tabIndex={0}
+      sx={{
+        position,
+        top: isFocused ? 0 : -40,
+        left: 0,
+        background: 'primary.main',
+        color: 'white',
+        padding: 1,
+        zIndex,
+        transition: 'top 0.2s',
+        textDecoration: 'none',
+        '&:focus': {
+          top: 0,
+          outline: 'none',
+          boxShadow: '0 0 0 2px',
+          boxShadowColor: 'primary.main',
+        },
+      }}
       {...props}
     >
       {text.includes('<') ? <span dangerouslySetInnerHTML={{ __html: text }} /> : text}
-    </SkipLinkContainer>
+    </Box>
   );
 };
 

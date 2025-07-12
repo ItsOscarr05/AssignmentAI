@@ -87,11 +87,10 @@ const mockStudents: Student[] = [
 export const mockUser: User = {
   id: '1',
   email: 'test@example.com',
-  fullName: 'Test User',
+  name: 'Test User',
   role: 'teacher',
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
-  isVerified: true,
 };
 
 export const mockApiService = {

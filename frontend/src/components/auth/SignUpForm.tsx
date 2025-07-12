@@ -135,7 +135,11 @@ const SignUpForm: React.FC = () => {
     try {
       setError(null);
       clearErrors();
-      await signUp(data.email, data.password, data.full_name);
+      await signUp({
+        email: data.email,
+        password: data.password,
+        confirm_password: data.confirmPassword,
+      });
       setSuccess(true);
       setTimeout(() => navigate('/login'), 2000);
     } catch (error: any) {

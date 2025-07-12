@@ -227,10 +227,20 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  isMockUser: boolean;
+  login: (provider: string) => Promise<void>;
+  handleCallback: (code: string, state: string) => Promise<void>;
   logout: () => Promise<void>;
-  register: (userData: Partial<User>) => Promise<void>;
+  register: (userData: {
+    email: string;
+    password: string;
+    confirm_password: string;
+  }) => Promise<void>;
   updateUser: (userData: Partial<User>) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updatePassword: (token: string, newPassword: string) => Promise<void>;
+  testLogin: (email: string, password: string) => Promise<void>;
+  mockLogin: () => void;
 }
 
 export interface ThemeContextType {

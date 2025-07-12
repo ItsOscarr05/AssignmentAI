@@ -99,10 +99,10 @@ const mockAxiosInstance = {
       use: (callback: any) => callback,
     },
   },
-  post: async (url: string, data?: any) => ({ data: {} }),
-  put: async (url: string, data?: any) => ({ data: {} }),
-  get: async (url: string) => ({ data: {} }),
-  delete: async (url: string) => ({ data: {} }),
+  post: async (_url: string, _data?: any) => ({ data: {} }),
+  put: async (_url: string, _data?: any) => ({ data: {} }),
+  get: async (_url: string) => ({ data: {} }),
+  delete: async (_url: string) => ({ data: {} }),
 } as unknown as AxiosInstance;
 
 // Add a request interceptor to add the auth token to requests
@@ -329,88 +329,42 @@ export const assignments = {
       {
         id: '1',
         title: 'Algebra Problem Set',
-        description: 'Complete the quadratic equations worksheet',
+        dueDate: '2024-03-20T23:59:59Z',
+        status: 'pending' as const,
         subject: 'Mathematics',
-        status: 'Not Started',
-        createdAt: '2024-03-15T10:00:00Z',
-        attachments: [
-          {
-            id: '1',
-            name: 'worksheet.pdf',
-            type: 'application/pdf',
-            size: '2.5 MB',
-          },
-        ],
+        grade: undefined,
       },
       {
         id: '2',
         title: 'Essay on Shakespeare',
-        description: 'Analyze the themes in Macbeth',
+        dueDate: '2024-03-18T23:59:59Z',
+        status: 'graded' as const,
         subject: 'English',
-        status: 'Completed',
-        createdAt: '2024-03-14T15:30:00Z',
-        attachments: [
-          {
-            id: '2',
-            name: 'essay.docx',
-            type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            size: '1.8 MB',
-          },
-        ],
+        grade: 85,
       },
       {
         id: '3',
         title: 'Chemistry Lab Report',
-        description: 'Document the results of the titration experiment',
+        dueDate: '2024-03-25T23:59:59Z',
+        status: 'pending' as const,
         subject: 'Science',
-        status: 'Not Started',
-        createdAt: '2024-03-13T09:15:00Z',
-        attachments: [
-          {
-            id: '3',
-            name: 'lab_notes.pdf',
-            type: 'application/pdf',
-            size: '3.2 MB',
-          },
-          {
-            id: '4',
-            name: 'data.xlsx',
-            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            size: '1.5 MB',
-          },
-        ],
+        grade: undefined,
       },
       {
         id: '4',
         title: 'World War II Timeline',
-        description: 'Create a detailed timeline of major events',
+        dueDate: '2024-03-16T23:59:59Z',
+        status: 'graded' as const,
         subject: 'History',
-        status: 'Completed',
-        createdAt: '2024-03-12T14:45:00Z',
-        attachments: [
-          {
-            id: '5',
-            name: 'timeline.pptx',
-            type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-            size: '4.1 MB',
-          },
-        ],
+        grade: 92,
       },
       {
         id: '5',
         title: 'French Vocabulary Quiz',
-        description: 'Practice common phrases and vocabulary',
+        dueDate: '2024-03-22T23:59:59Z',
+        status: 'pending' as const,
         subject: 'French',
-        status: 'Not Started',
-        createdAt: '2024-03-11T11:20:00Z',
-        attachments: [
-          {
-            id: '6',
-            name: 'vocab_list.pdf',
-            type: 'application/pdf',
-            size: '1.2 MB',
-          },
-        ],
+        grade: undefined,
       },
     ];
 

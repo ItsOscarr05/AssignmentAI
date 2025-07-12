@@ -2,11 +2,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, UseFormProps, UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
 
-export function useFormValidation<T extends z.ZodType>(
-  schema: T,
-  options?: Omit<UseFormProps<z.infer<T>>, 'resolver'>
-): UseFormReturn<z.infer<T>> {
-  return useForm<z.infer<T>>({
+export function useFormValidation<T extends Record<string, any>>(
+  schema: any,
+  options?: Omit<UseFormProps<T>, 'resolver'>
+): UseFormReturn<T> {
+  return useForm<T>({
     resolver: zodResolver(schema),
     mode: 'onChange',
     ...options,

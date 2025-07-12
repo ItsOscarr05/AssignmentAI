@@ -12,6 +12,10 @@ import {
   Button,
   CircularProgress,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Grid,
   IconButton,
   Paper,
@@ -21,7 +25,7 @@ import React, { useState } from 'react';
 import { files as filesService } from '../../services/api';
 import FileCreateFolder from './FileCreateFolder';
 import FileShare from './FileShare';
-import { FileUpload } from './FileUpload';
+import FileUpload from './FileUpload';
 
 interface FileItem {
   id: string;
@@ -206,15 +210,36 @@ export const FileManager: React.FC = () => {
         </Paper>
       </Box>
 
-      <FileUpload
-        open={showUpload}
-        onClose={() => setShowUpload(false)}
-        onUpload={() => {
-          setShowUpload(false);
-          fetchFiles();
-        }}
-        path={currentPath.join('/')}
-      />
+      {showUpload && (
+        <Dialog open={showUpload} onClose={() => setShowUpload(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>Upload Files</DialogTitle>
+          <DialogContent>
+            <FileUpload
+              onUploadComplete={fileUrls => {
+                console.log('Uploaded files:', fileUrls);
+                setShowUpload(false);
+                fetchFiles();
+              }}
+              onUploadError={error => {
+                console.error('Upload error:', error);
+                setError(error);
+              }}
+              maxSize={50 * 1024 * 1024} // 50MB
+              acceptedFileTypes={[
+                'application/pdf',
+                'image/*',
+                'text/*',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+              ]}
+              multiple={true}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setShowUpload(false)}>Cancel</Button>
+          </DialogActions>
+        </Dialog>
+      )}
 
       <FileShare
         open={showShare}

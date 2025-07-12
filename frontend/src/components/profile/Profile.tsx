@@ -39,7 +39,7 @@ export const Profile: React.FC = () => {
     if (user) {
       setFormData(prev => ({
         ...prev,
-        full_name: user.fullName,
+        full_name: user.name,
         email: user.email,
       }));
     }
@@ -100,12 +100,12 @@ export const Profile: React.FC = () => {
       <Paper sx={{ p: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4 }}>
           <Avatar
-            src={user.avatarUrl || '/default-avatar.png'}
-            alt={`${user.fullName}'s avatar`}
+            src={user.avatar || '/default-avatar.png'}
+            alt={`${user.name}'s avatar`}
             sx={{ width: 100, height: 100 }}
           />
           <Box>
-            <Typography variant="h4">{user.fullName}</Typography>
+            <Typography variant="h4">{user.name}</Typography>
             <Typography variant="body1" color="text.secondary">
               {user.email}
             </Typography>
@@ -113,21 +113,16 @@ export const Profile: React.FC = () => {
         </Box>
 
         <Typography variant="h6" gutterBottom>
-          {user.fullName}'s Profile
+          {user.name}'s Profile
         </Typography>
 
         <div className="profile-info">
           <p>
-            <strong>Name:</strong> {user.fullName}
+            <strong>Name:</strong> {user.name}
           </p>
           <p>
             <strong>Email:</strong> {user.email}
           </p>
-          {user.institution && (
-            <p>
-              <strong>Institution:</strong> {user.institution}
-            </p>
-          )}
         </div>
 
         {error && (

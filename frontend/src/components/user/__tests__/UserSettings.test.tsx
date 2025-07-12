@@ -12,11 +12,11 @@ vi.mock('@mui/material', () => ({
     <div data-testid="card-content">{children}</div>
   ),
   FormControl: ({ children, sx }: { children: React.ReactNode; sx?: any }) => (
-    <div data-testid="form-control" sx={sx}>
+    <div data-testid="form-control" style={sx}>
       {children}
     </div>
   ),
-  FormControlLabel: ({ label, control, ...props }: any) => (
+  FormControlLabel: ({ label, control }: any) => (
     <div data-testid="form-control-label">
       {control}
       <span>{label}</span>
@@ -37,8 +37,8 @@ vi.mock('@mui/material', () => ({
       data-testid="theme-select"
       value={value}
       onChange={onChange}
-      label={label}
-      labelId={labelId}
+      data-label={label}
+      data-label-id={labelId}
     >
       {children}
     </select>
@@ -54,7 +54,7 @@ vi.mock('@mui/material', () => ({
     />
   ),
   Typography: ({ children, variant }: { children: React.ReactNode; variant?: string }) => (
-    <div data-testid="typography" variant={variant}>
+    <div data-testid="typography" data-variant={variant}>
       {children}
     </div>
   ),

@@ -11,7 +11,7 @@ vi.mock('../useErrorTracking', () => ({
 
 vi.mock('../../utils/performance', () => ({
   usePerformanceMonitoring: () => ({
-    measurePerformance: (name: string, fn: () => void) => fn(),
+    measurePerformance: (_: string, fn: () => void) => fn(),
   }),
 }));
 

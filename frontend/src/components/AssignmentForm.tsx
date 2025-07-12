@@ -1,25 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { useApi } from '../hooks/useApi';
 import { useAssignment } from '../hooks/useAssignment';
-import Button from './ui/button';
-import {
-  default as Card,
-  default as CardContent,
-  default as CardHeader,
-  default as CardTitle,
-} from './ui/card';
-import Input from './ui/input';
-import Label from './ui/label';
-import {
-  default as Select,
-  default as SelectContent,
-  default as SelectItem,
-  default as SelectTrigger,
-  default as SelectValue,
-} from './ui/select';
-import Textarea from './ui/textarea';
+import { ApiClient } from '../services/api/ApiClient';
+import { Button } from './ui/Button';
+import { Input } from './ui/Input';
 
 interface AssignmentFormProps {
   assignmentId?: string;
@@ -38,7 +23,6 @@ interface Assignment {
 
 const AssignmentForm: React.FC<AssignmentFormProps> = ({ assignmentId }) => {
   const navigate = useNavigate();
-  const api = useApi();
   const { data: assignment, isLoading } = useAssignment(assignmentId);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<Partial<Assignment>>({
@@ -50,6 +34,8 @@ const AssignmentForm: React.FC<AssignmentFormProps> = ({ assignmentId }) => {
     priority: 'medium',
     progress: 0,
   });
+
+  const apiClient = ApiClient.getInstance();
 
   useEffect(() => {
     if (assignment) {
@@ -72,10 +58,10 @@ const AssignmentForm: React.FC<AssignmentFormProps> = ({ assignmentId }) => {
 
     try {
       if (assignmentId) {
-        await api.put(`/assignments/${assignmentId}`, formData);
+        await apiClient.assignments.update(assignmentId, formData);
         toast.success('Assignment updated successfully');
       } else {
-        await api.post('/assignments', formData);
+        await apiClient.assignments.create(formData);
         toast.success('Assignment created successfully');
       }
       navigate('/assignments');
@@ -92,15 +78,15 @@ const AssignmentForm: React.FC<AssignmentFormProps> = ({ assignmentId }) => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{assignmentId ? 'Edit Assignment' : 'Create Assignment'}</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <div className="card">
+      <div className="card-header">
+        <h2>{assignmentId ? 'Edit Assignment' : 'Create Assignment'}</h2>
+      </div>
+      <div className="card-content">
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="title">Title</Label>
+              <label htmlFor="title">Title</label>
               <Input
                 id="title"
                 name="title"
@@ -111,7 +97,7 @@ const AssignmentForm: React.FC<AssignmentFormProps> = ({ assignmentId }) => {
             </div>
 
             <div>
-              <Label htmlFor="subject">Subject</Label>
+              <label htmlFor="subject">Subject</label>
               <Input
                 id="subject"
                 name="subject"
@@ -122,18 +108,20 @@ const AssignmentForm: React.FC<AssignmentFormProps> = ({ assignmentId }) => {
             </div>
 
             <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea
+              <label htmlFor="description">Description</label>
+              <textarea
                 id="description"
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
                 required
+                className="w-full p-2 border rounded"
+                rows={4}
               />
             </div>
 
             <div>
-              <Label htmlFor="dueDate">Due Date</Label>
+              <label htmlFor="dueDate">Due Date</label>
               <Input
                 id="dueDate"
                 name="dueDate"
@@ -145,37 +133,29 @@ const AssignmentForm: React.FC<AssignmentFormProps> = ({ assignmentId }) => {
             </div>
 
             <div>
-              <Label htmlFor="status">Status</Label>
-              <Select
+              <label htmlFor="status">Status</label>
+              <select
                 value={formData.status}
-                onValueChange={value => handleSelectChange('status', value)}
+                onChange={e => handleSelectChange('status', e.target.value)}
+                className="w-full p-2 border rounded"
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="published">Published</SelectItem>
-                  <SelectItem value="archived">Archived</SelectItem>
-                </SelectContent>
-              </Select>
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+                <option value="archived">Archived</option>
+              </select>
             </div>
 
             <div>
-              <Label htmlFor="priority">Priority</Label>
-              <Select
+              <label htmlFor="priority">Priority</label>
+              <select
                 value={formData.priority}
-                onValueChange={value => handleSelectChange('priority', value)}
+                onChange={e => handleSelectChange('priority', e.target.value)}
+                className="w-full p-2 border rounded"
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select priority" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="low">Low</SelectItem>
-                </SelectContent>
-              </Select>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
             </div>
 
             <div className="flex justify-end space-x-2">
@@ -188,8 +168,8 @@ const AssignmentForm: React.FC<AssignmentFormProps> = ({ assignmentId }) => {
             </div>
           </div>
         </form>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 

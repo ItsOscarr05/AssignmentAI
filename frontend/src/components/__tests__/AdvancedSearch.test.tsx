@@ -93,7 +93,7 @@ vi.mock('@mui/material', () => ({
       {children}
     </button>
   ),
-  ListItemSecondaryAction: ({ children }: any) => (
+  ListItemSecondaryAction: () => (
     <div data-testid="history-item-actions">
       <button
         onClick={e => {
@@ -117,7 +117,7 @@ vi.mock('@mui/material', () => ({
   ),
   Card: ({ children }: any) => <div data-testid="card">{children}</div>,
   CardContent: ({ children }: any) => <div data-testid="card-content">{children}</div>,
-  Box: ({ children, sx }: any) => <div data-testid="box">{children}</div>,
+  Box: ({ children }: any) => <div data-testid="box">{children}</div>,
   Grid: ({ children, container, item, spacing, xs, md, alignItems }: any) => (
     <div
       data-testid="grid"
@@ -131,7 +131,7 @@ vi.mock('@mui/material', () => ({
       {children}
     </div>
   ),
-  Paper: ({ children, sx }: any) => <div data-testid="paper">{children}</div>,
+  Paper: ({ children }: any) => <div data-testid="paper">{children}</div>,
   Typography: ({ children, variant, gutterBottom }: any) => (
     <div data-testid="typography" data-variant={variant} data-gutter={gutterBottom}>
       {children}

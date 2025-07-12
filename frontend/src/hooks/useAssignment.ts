@@ -1,14 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
-import { useApi } from './useApi';
+import axios from 'axios';
 
 export const useAssignment = (assignmentId?: string) => {
-  const api = useApi();
-
   return useQuery({
     queryKey: ['assignment', assignmentId],
-    queryFn: () => {
+    queryFn: async () => {
       if (!assignmentId) return null;
-      return api.get(`/assignments/${assignmentId}`);
+      const response = await axios.get(`/assignments/${assignmentId}`);
+      return response.data;
     },
     enabled: !!assignmentId,
   });

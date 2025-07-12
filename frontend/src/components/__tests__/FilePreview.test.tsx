@@ -5,7 +5,7 @@ import FilePreview from '../files/FilePreview';
 
 // Mock Material-UI components
 vi.mock('@mui/material', () => ({
-  Box: ({ children, component, src, alt, sx }: any) => {
+  Box: ({ children, component, src, alt }: any) => {
     if (component === 'img') {
       return <img src={src} alt={alt} data-testid="preview-image" />;
     }

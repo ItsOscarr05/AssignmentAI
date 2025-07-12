@@ -87,7 +87,7 @@ const AssignmentList: React.FC<AssignmentListProps> = ({ onDelete }) => {
     const newStatus = assignment.status === 'draft' ? 'published' : 'draft';
     await api.put(`/assignments/${assignment.id}`, { status: newStatus });
     // Refetch the assignments to update the UI
-    queryClient.invalidateQueries(['assignments']);
+    queryClient.invalidateQueries({ queryKey: ['assignments'] });
   };
 
   if (isLoading) {
@@ -199,9 +199,9 @@ const AssignmentList: React.FC<AssignmentListProps> = ({ onDelete }) => {
                 </TableCell>
                 <TableCell variant="head">
                   <TableSortLabel
-                    active={orderBy === 'due_date'}
-                    direction={orderBy === 'due_date' ? order : 'asc'}
-                    onClick={() => handleRequestSort('due_date')}
+                    active={orderBy === 'dueDate'}
+                    direction={orderBy === 'dueDate' ? order : 'asc'}
+                    onClick={() => handleRequestSort('dueDate')}
                   >
                     Due Date
                   </TableSortLabel>
@@ -223,7 +223,7 @@ const AssignmentList: React.FC<AssignmentListProps> = ({ onDelete }) => {
                 <TableRow key={assignment.id}>
                   <TableCell>{assignment.title}</TableCell>
                   <TableCell>{assignment.subject}</TableCell>
-                  <TableCell>{format(new Date(assignment.due_date), 'MMM dd, yyyy')}</TableCell>
+                  <TableCell>{format(new Date(assignment.dueDate), 'MMM dd, yyyy')}</TableCell>
                   <TableCell>
                     <Chip
                       label={assignment.status}

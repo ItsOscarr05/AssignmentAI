@@ -134,7 +134,6 @@ const RegisterForm: React.FC = () => {
           shrink: true,
           required: false,
           style: { textTransform: 'none' },
-          'data-testid': 'password-label',
         }}
       />
       <TextField
@@ -154,7 +153,6 @@ const RegisterForm: React.FC = () => {
           shrink: true,
           required: false,
           style: { textTransform: 'none' },
-          'data-testid': 'confirm-password-label',
         }}
       />
       {Object.keys(errors).length > 0 && (

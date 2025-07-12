@@ -330,10 +330,10 @@ const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({
                 </Typography>
                 <Divider sx={{ mb: 2 }} />
                 <Typography variant="h4" color="primary" gutterBottom>
-                  Score: {plagiarismResults.score}%
+                  Probability: {plagiarismResults.probability}%
                 </Typography>
                 <Typography variant="body1" component="pre" sx={{ whiteSpace: 'pre-wrap' }}>
-                  {plagiarismResults.details}
+                  {plagiarismResults.analysis}
                 </Typography>
               </CardContent>
             </Card>

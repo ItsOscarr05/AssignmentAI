@@ -76,11 +76,11 @@ const Register: React.FC = () => {
 
     setIsLoading(true);
     try {
-      await register(
-        formData.email,
-        formData.password,
-        `${formData.firstName} ${formData.lastName}`
-      );
+      await register({
+        email: formData.email,
+        password: formData.password,
+        confirm_password: formData.confirmPassword,
+      });
       navigate('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred during registration');

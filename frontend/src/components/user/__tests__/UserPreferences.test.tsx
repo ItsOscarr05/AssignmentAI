@@ -251,11 +251,11 @@ describe('UserPreferences', () => {
     console.log('Finding theme select...');
     const themeSelect = screen.getByLabelText('Theme');
     console.log('Theme select found:', !!themeSelect);
-    console.log('Current theme value:', themeSelect.value);
+    console.log('Current theme value:', (themeSelect as HTMLSelectElement).value);
 
     console.log('Changing theme to dark...');
     fireEvent.change(themeSelect, { target: { value: 'dark' } });
-    console.log('New theme value:', themeSelect.value);
+    console.log('New theme value:', (themeSelect as HTMLSelectElement).value);
     expect(themeSelect).toHaveValue('dark');
   });
 

@@ -28,7 +28,6 @@ describe('2FA Browser Security', () => {
       vi.mocked(auth.setup2FA).mockResolvedValueOnce({
         qr_code: 'test-qr-code',
         secret: 'test-secret',
-        backup_codes: ['code1', 'code2'],
       });
 
       // Start setup
@@ -106,7 +105,7 @@ describe('2FA Browser Security', () => {
 
     it('handles successful verification', async () => {
       // Mock successful verification
-      vi.mocked(auth.verify2FA).mockResolvedValueOnce({ success: true });
+      vi.mocked(auth.verify2FA).mockResolvedValueOnce();
       const onSuccess = vi.fn();
 
       // Start verification

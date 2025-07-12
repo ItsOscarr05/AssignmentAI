@@ -6,7 +6,7 @@ import AIAnalysisPanel from '../AIAnalysisPanel';
 
 // Mock Material-UI components
 vi.mock('@mui/material', () => ({
-  Box: ({ children, sx }: any) => <div data-testid="box">{children}</div>,
+  Box: ({ children }: any) => <div data-testid="box">{children}</div>,
   Button: ({ children, onClick, disabled, startIcon }: any) => (
     <button
       onClick={onClick}

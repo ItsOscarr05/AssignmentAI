@@ -10,13 +10,18 @@ export const useAnalytics = () => {
 
   useEffect(() => {
     if (location.pathname !== previousPath.current) {
-      analytics.current.trackPageView(location.pathname, document.title);
+      analytics.current.trackPageView(location.pathname);
       previousPath.current = location.pathname;
     }
   }, [location.pathname]);
 
   const trackEvent = (name: string, properties?: Record<string, any>) => {
-    analytics.current.trackEvent(name, properties);
+    analytics.current.trackEvent({
+      name,
+      category: 'User',
+      action: 'Custom',
+      properties,
+    });
   };
 
   const trackError = (error: Error, context?: Record<string, any>) => {
@@ -24,14 +29,12 @@ export const useAnalytics = () => {
   };
 
   const trackPerformance = (metrics: PerformanceMetrics) => {
-    // Convert frontend metrics to analytics metrics
-    analytics.current.trackPerformance({
-      averageResponseTime: metrics.apiResponseTime,
-      maxResponseTime: metrics.apiResponseTime,
-      minResponseTime: metrics.apiResponseTime,
-      successRate: 100,
-      errorRate: 0,
-    });
+    // Track individual performance metrics
+    analytics.current.trackPerformance('average_response_time', metrics.apiResponseTime);
+    analytics.current.trackPerformance('page_load_time', metrics.pageLoadTime);
+    analytics.current.trackPerformance('component_render_time', metrics.componentRenderTime);
+    analytics.current.trackPerformance('memory_usage', metrics.memoryUsage);
+    analytics.current.trackPerformance('fps', metrics.fps);
   };
 
   return {

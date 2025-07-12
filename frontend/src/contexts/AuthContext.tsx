@@ -1,23 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api, { auth } from '../config/api';
+import { RegisterData } from '../services/auth';
 import { AuthService } from '../services/auth/AuthService';
-import { User } from '../types';
-
-interface AuthContextType {
-  user: User | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  isMockUser: boolean;
-  login: (provider: string) => Promise<void>;
-  handleCallback: (code: string, state: string) => Promise<void>;
-  logout: () => void;
-  updateUser: (userData: Partial<User>) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
-  mockLogin: () => void;
-  testLogin: (email: string, password: string) => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
-}
+import { AuthContextType, User } from '../types';
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -33,7 +19,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isMockUser, setIsMockUser] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -97,9 +83,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (email: string, password: string, name: string) => {
-    const [firstName, ...rest] = name.split(' ');
-    const lastName = rest.join(' ');
+  const register = async (userData: RegisterData) => {
+    const { email, password, confirm_password } = userData;
+    if (password !== confirm_password) {
+      throw new Error('Passwords do not match');
+    }
+    const name = userData.email.split('@')[0]; // Use email prefix as name
+    const [firstName, ...rest] = name.split('.');
+    const lastName = rest.join('.');
     await AuthService.register({
       email,
       password,
@@ -115,20 +106,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       email: 'mock@example.com',
       name: 'Mock User',
       role: 'student',
+      firstName: 'Mock',
+      lastName: 'User',
+      bio: 'Student at Example University',
+      location: 'New York, USA',
+      avatar: 'https://via.placeholder.com/150',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      preferences: {
-        theme: 'light',
-        notifications: true,
-        language: 'en',
-      },
-      profile: {
-        avatar: 'https://via.placeholder.com/150',
-        bio: 'Student at Example University',
-        location: 'New York, USA',
-        education: 'Bachelor of Science',
-        interests: ['Computer Science', 'Mathematics', 'Physics'],
-      },
     };
     setUser(mockUser);
     setIsMockUser(true);
@@ -148,20 +132,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         firstName: 'Real',
         lastName: 'User',
         role: 'student',
+        bio: 'Real user from backend',
+        location: 'Real Location',
+        avatar: 'https://via.placeholder.com/150',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        preferences: {
-          theme: 'light',
-          notifications: true,
-          language: 'en',
-        },
-        profile: {
-          avatar: 'https://via.placeholder.com/150',
-          bio: 'Real user from backend',
-          location: 'Real Location',
-          education: 'Real Education',
-          interests: ['Real Interests'],
-        },
       };
       setUser(realUser);
       setIsMockUser(false);
@@ -183,10 +158,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updatePassword = async (token: string, newPassword: string) => {
+    try {
+      await auth.resetPassword(token, newPassword);
+    } catch (error) {
+      console.error('Update password failed:', error);
+      throw error;
+    }
+  };
+
   const value = {
     user,
     isAuthenticated: !!user,
     isLoading,
+    error,
     isMockUser,
     login,
     handleCallback,
@@ -196,6 +181,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     mockLogin,
     testLogin,
     resetPassword,
+    updatePassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -59,8 +59,6 @@ interface Submission {
 const AssignmentDetail: React.FC<AssignmentDetailProps> = ({
   assignment: propAssignment,
   onEdit,
-  onDelete,
-  onView,
   onSubmit,
   loading: propLoading,
   error: propError,
@@ -232,7 +230,7 @@ const AssignmentDetail: React.FC<AssignmentDetailProps> = ({
             <Chip
               label={assignment.status}
               color={
-                assignment.status === 'active' || assignment.status === 'published'
+                assignment.status === 'published'
                   ? 'success'
                   : assignment.status === 'draft'
                   ? 'warning'
@@ -240,18 +238,6 @@ const AssignmentDetail: React.FC<AssignmentDetailProps> = ({
               }
               className="MuiChip-colorSuccess"
             />
-            {assignment.difficulty && (
-              <Chip
-                label={assignment.difficulty}
-                color={
-                  assignment.difficulty === 'easy'
-                    ? 'success'
-                    : assignment.difficulty === 'medium'
-                    ? 'warning'
-                    : 'error'
-                }
-              />
-            )}
             <IconButton
               color="primary"
               onClick={() => onEdit?.(assignment)}
@@ -422,7 +408,6 @@ const AssignmentDetail: React.FC<AssignmentDetailProps> = ({
             multiple
             accept=".pdf,.doc,.docx,.txt"
             maxSize={10 * 1024 * 1024} // 10MB
-            errorMessage="File too large"
           />
         </DialogContent>
         <DialogActions>

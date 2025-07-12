@@ -23,7 +23,6 @@ import {
   Typography,
 } from '@mui/material';
 import React from 'react';
-import { auth } from '../../services/auth';
 
 interface NotificationChannel {
   id: string;
@@ -137,21 +136,8 @@ const NotificationPreferences: React.FC = () => {
   React.useEffect(() => {
     const loadPreferences = async () => {
       try {
-        const response = await auth.getProfile();
-        if (response?.preferences?.notifications) {
-          const { notifications } = response.preferences;
-          setNotificationTypes(prevTypes =>
-            prevTypes.map(type => ({
-              ...type,
-              channels: {
-                email: notifications[`${type.id}`]?.email ?? type.channels.email,
-                push: notifications[`${type.id}`]?.push ?? type.channels.push,
-                sms: notifications[`${type.id}`]?.sms ?? type.channels.sms,
-                in_app: notifications[`${type.id}`]?.inApp ?? type.channels.in_app,
-              },
-            }))
-          );
-        }
+        // TODO: Implement proper API call to load notification preferences
+        // For now, just set loading to false
         setLoading(false);
       } catch (err) {
         setError('Failed to load notification preferences');

@@ -12,6 +12,7 @@ import {
   InputLabel,
   MenuItem,
   Select,
+  SelectChangeEvent,
   TextField,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
@@ -82,8 +83,8 @@ const AssignmentEditDialog: React.FC<AssignmentEditDialogProps> = ({
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSelectChange = (e: React.ChangeEvent<{ value: unknown }>) => {
-    setFormData(prev => ({ ...prev, subject: e.target.value as string }));
+  const handleSelectChange = (e: SelectChangeEvent<string>) => {
+    setFormData(prev => ({ ...prev, subject: e.target.value }));
   };
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {

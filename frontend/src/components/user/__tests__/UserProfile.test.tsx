@@ -51,7 +51,9 @@ vi.mock('@mui/material', () => ({
       {children}
     </div>
   ),
-  Avatar: ({ src, sx }: { src: string; sx: any }) => <div data-testid="avatar" src={src} sx={sx} />,
+  Avatar: ({ src, sx }: { src: string; sx: any }) => (
+    <img data-testid="avatar" src={src} style={sx} />
+  ),
   Box: ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => (
     <div {...props}>{children}</div>
   ),
@@ -70,17 +72,16 @@ vi.mock('@mui/material', () => ({
       className={`MuiButton-root MuiButton-contained ${disabled ? 'Mui-disabled' : ''}`}
       onClick={onClick}
       disabled={disabled}
-      starticon={startIcon}
-      variant="contained"
+      data-start-icon={startIcon ? 'true' : 'false'}
     >
       {children}
     </button>
   ),
   Chip: ({ label, color, sx }: { label: string; color: string; sx: any }) => (
-    <div data-testid="chip" label={label} color={color} sx={sx} />
+    <div data-testid="chip" data-label={label} data-color={color} style={sx} />
   ),
   CircularProgress: ({ size }: { size?: number }) => (
-    <div data-testid="circular-progress" role="progressbar" size={size} />
+    <div data-testid="circular-progress" role="progressbar" data-size={size} />
   ),
   Grid: ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => (
     <div data-testid="grid" {...props}>
@@ -107,7 +108,7 @@ vi.mock('@mui/material', () => ({
     </div>
   ),
   Paper: ({ children, sx, variant }: { children: React.ReactNode; sx?: any; variant?: string }) => (
-    <div sx={sx} variant={variant}>
+    <div style={sx} data-variant={variant}>
       {children}
     </div>
   ),
@@ -132,7 +133,6 @@ vi.mock('@mui/material', () => ({
     placeholder,
     rows,
     sx,
-    inputProps,
   }: {
     value: string;
     onChange: (event: any) => void;
@@ -140,18 +140,16 @@ vi.mock('@mui/material', () => ({
     placeholder: string;
     rows?: number;
     sx?: any;
-    inputProps?: any;
   }) => (
     <div>
       <input
         data-testid="text-field"
         value={value}
         onChange={onChange}
-        label={label}
         placeholder={placeholder}
-        rows={rows}
-        sx={sx}
-        inputprops={inputProps}
+        style={sx}
+        data-label={label}
+        data-rows={rows}
         type="text"
         aria-label={label}
       />
@@ -166,7 +164,7 @@ vi.mock('@mui/material', () => ({
     variant?: string;
     color?: string;
   }) => (
-    <div data-testid="typography" variant={variant} color={color}>
+    <div data-testid="typography" data-variant={variant} data-color={color}>
       {children}
     </div>
   ),
@@ -179,7 +177,7 @@ vi.mock('@mui/material', () => ({
     onClick?: () => void;
     size?: string;
   }) => (
-    <button data-testid="icon-button" onClick={onClick} size={size}>
+    <button data-testid="icon-button" onClick={onClick} data-size={size}>
       {children}
     </button>
   ),

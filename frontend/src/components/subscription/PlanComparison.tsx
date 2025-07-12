@@ -144,6 +144,8 @@ const PlanComparison: React.FC = () => {
               </Typography>
               <PaymentForm
                 priceId={selectedPlan.priceId}
+                planName={selectedPlan.name}
+                planPrice={selectedPlan.price}
                 onSuccess={handlePaymentSuccess}
                 onError={handlePaymentError}
               />

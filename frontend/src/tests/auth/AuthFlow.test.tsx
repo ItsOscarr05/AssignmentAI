@@ -9,41 +9,30 @@ import { useAuth } from '../../hooks/useAuth';
 import { theme } from '../../theme';
 
 // Mock @mui/material
-vi.mock('@mui/material', async importOriginal => {
-  const actual = await importOriginal();
-  return {
-    ...actual,
-    keyframes: (strings: TemplateStringsArray, ...values: any[]) => ({
-      toString: () => strings.join(''),
-    }),
-  };
-});
+vi.mock('@mui/material', () => ({
+  keyframes: (strings: TemplateStringsArray, ..._values: any[]) => ({
+    toString: () => strings.join(''),
+  }),
+}));
 
 // Mock @mui/icons-material
-vi.mock('@mui/icons-material', async importOriginal => {
-  const actual = await importOriginal();
-  return {
-    ...actual,
-    Google: () => <span data-testid="google-icon" />,
-    Facebook: () => <span data-testid="facebook-icon" />,
-    Apple: () => <span data-testid="apple-icon" />,
-  };
-});
+vi.mock('@mui/icons-material', () => ({
+  Google: () => <span data-testid="google-icon" />,
+  Facebook: () => <span data-testid="facebook-icon" />,
+  Apple: () => <span data-testid="apple-icon" />,
+}));
 
 // Mock the auth hook
 vi.mock('../../hooks/useAuth');
 
 const mockNavigate = vi.fn();
-vi.mock('react-router-dom', async importOriginal => {
-  const actual = await importOriginal();
-  return {
-    ...actual,
-    useNavigate: () => mockNavigate,
-    BrowserRouter: ({ children }: { children: React.ReactNode }) => (
-      <MemoryRouter>{children}</MemoryRouter>
-    ),
-  };
-});
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => mockNavigate,
+  BrowserRouter: ({ children }: { children: React.ReactNode }) => (
+    <MemoryRouter>{children}</MemoryRouter>
+  ),
+  MemoryRouter: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+}));
 
 describe('Authentication Flow', () => {
   const mockLogin = vi.fn();

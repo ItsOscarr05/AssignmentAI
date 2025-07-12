@@ -48,7 +48,7 @@ export function useApi<T>(
             errorMessage =
               'Unable to connect to the server. Please check your internet connection.';
           } else if (axiosError.response) {
-            errorMessage = axiosError.response.data?.message || axiosError.message;
+            errorMessage = (axiosError.response.data as any)?.message || axiosError.message;
           } else if (axiosError.message.includes('timeout')) {
             errorMessage = 'Request timed out. Please try again.';
           } else if (axios.isCancel(axiosError)) {

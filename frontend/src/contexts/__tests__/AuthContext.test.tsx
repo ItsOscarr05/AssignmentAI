@@ -24,11 +24,12 @@ global.fetch = mockFetch;
 const mockUser: User = {
   id: '1',
   email: 'dev@example.com',
-  fullName: 'Development User',
+  name: 'Development User',
   role: 'teacher',
+  firstName: 'Development',
+  lastName: 'User',
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
-  isVerified: true,
 };
 
 // Create mock functions
@@ -64,7 +65,7 @@ const TestComponent = () => {
   const handleLogin = async () => {
     try {
       setError(null);
-      await login('test@example.com', 'password');
+      await login('google'); // Using OAuth provider for login
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     }
@@ -73,7 +74,11 @@ const TestComponent = () => {
   const handleRegister = async () => {
     try {
       setError(null);
-      await register('test@example.com', 'password', 'Test User');
+      await register({
+        email: 'test@example.com',
+        password: 'password',
+        confirm_password: 'password',
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
     }
@@ -93,7 +98,7 @@ const TestComponent = () => {
       <button onClick={handleLogin}>Login</button>
       <button onClick={handleRegister}>Register</button>
       <button onClick={handleLogout}>Logout</button>
-      <div data-testid="user">{user ? user.fullName : 'No user'}</div>
+      <div data-testid="user">{user ? user.name : 'No user'}</div>
       <div data-testid="isAuthenticated">{isAuthenticated.toString()}</div>
       {error && <div data-testid="error">{error}</div>}
     </div>
@@ -123,13 +128,17 @@ describe('AuthContext', () => {
   it('handles login in development mode', async () => {
     renderWithAuth(<TestComponent />);
     await userEvent.click(screen.getByText('Login'));
-    expect(mockLogin).toHaveBeenCalledWith('test@example.com', 'password');
+    expect(mockLogin).toHaveBeenCalledWith('google');
   });
 
   it('handles registration', async () => {
     renderWithAuth(<TestComponent />);
     await userEvent.click(screen.getByText('Register'));
-    expect(mockRegister).toHaveBeenCalledWith('test@example.com', 'password', 'Test User');
+    expect(mockRegister).toHaveBeenCalledWith({
+      email: 'test@example.com',
+      password: 'password',
+      confirm_password: 'password',
+    });
   });
 
   it('handles logout', async () => {

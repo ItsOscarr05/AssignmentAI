@@ -21,6 +21,8 @@ const Assignments = () => {
   const [view, setView] = useState<View>('list');
   const [isNewDialogOpen, setIsNewDialogOpen] = useState(false);
   const [isBulkCreateOpen, setIsBulkCreateOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
   const { deleteAssignment } = useAssignmentsStore();
 
   const handleDelete = useCallback(
@@ -29,6 +31,11 @@ const Assignments = () => {
     },
     [deleteAssignment]
   );
+
+  const handleCloseEdit = useCallback(() => {
+    setIsEditDialogOpen(false);
+    setSelectedAssignmentId(null);
+  }, []);
 
   const mockTemplates = useMemo(
     () => [
@@ -60,7 +67,6 @@ const Assignments = () => {
         {view === 'list' && <AssignmentList onDelete={handleDelete} />}
         {view === 'detail' && <AssignmentDetail />}
         {view === 'create' && <AssignmentCreate />}
-        {view === 'edit' && <AssignmentEdit />}
       </Suspense>
 
       <Suspense fallback={<div>Loading...</div>}>
@@ -76,6 +82,14 @@ const Assignments = () => {
             setView('list');
           }}
           templates={mockTemplates}
+        />
+      </Suspense>
+
+      <Suspense fallback={<div>Loading...</div>}>
+        <AssignmentEdit
+          open={isEditDialogOpen}
+          onClose={handleCloseEdit}
+          assignmentId={selectedAssignmentId || ''}
         />
       </Suspense>
     </Container>

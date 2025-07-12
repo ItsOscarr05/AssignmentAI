@@ -4,8 +4,8 @@ import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useTheme } from '../../../contexts/ThemeContext';
+import DashboardLayout from '../../../layouts/DashboardLayout';
 import { theme } from '../../../theme';
-import DashboardLayout from '../DashboardLayout';
 
 // Mock Material-UI icons
 vi.mock('@mui/icons-material', () => ({
@@ -27,7 +27,7 @@ vi.mock('@mui/icons-material', () => ({
 vi.mock('@mui/material', async importOriginal => {
   const actual = await importOriginal();
   return {
-    ...actual,
+    ...(actual as any),
     useMediaQuery: vi.fn().mockReturnValue(false),
     Box: ({ children, component, ...props }: any) => {
       const Component = component || 'div';

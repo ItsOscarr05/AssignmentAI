@@ -10,7 +10,7 @@ import AuthLayout from '../AuthLayout';
 vi.mock('@mui/material', async importOriginal => {
   const actual = await importOriginal();
   return {
-    ...actual,
+    ...(actual as any),
     useTheme: () => theme,
   };
 });

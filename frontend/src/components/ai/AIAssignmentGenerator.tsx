@@ -73,7 +73,7 @@ const AIAssignmentGenerator: React.FC = () => {
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'requirements',
-  });
+  } as any);
 
   const onSubmit = async (data: AssignmentFormData) => {
     try {
@@ -107,8 +107,7 @@ const AIAssignmentGenerator: React.FC = () => {
   };
 
   const handleAddRequirement = () => {
-    const currentRequirements = control._formValues.requirements || [];
-    append([...currentRequirements, '']);
+    append('' as any);
   };
 
   return (

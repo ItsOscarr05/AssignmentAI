@@ -23,9 +23,9 @@ const Profile: React.FC = () => {
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isEditPreferencesOpen, setIsEditPreferencesOpen] = useState(false);
   const [editForm, setEditForm] = useState({
-    name: '',
-    phone: '',
-    institution: '',
+    firstName: '',
+    lastName: '',
+    bio: '',
   });
 
   const handleLogout = useCallback(() => {
@@ -35,9 +35,9 @@ const Profile: React.FC = () => {
   const handleEditProfile = useCallback(() => {
     if (!profile) return;
     setEditForm({
-      name: profile.name,
-      phone: profile.phone || '',
-      institution: profile.institution,
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+      bio: profile.bio || '',
     });
     setIsEditProfileOpen(true);
   }, [profile]);
@@ -45,9 +45,9 @@ const Profile: React.FC = () => {
   const handleSaveProfile = useCallback(() => {
     if (!profile) return;
     updateProfile({
-      name: editForm.name,
-      phone: editForm.phone,
-      institution: editForm.institution,
+      firstName: editForm.firstName,
+      lastName: editForm.lastName,
+      bio: editForm.bio,
     });
     setIsEditProfileOpen(false);
   }, [profile, editForm, updateProfile]);
@@ -59,8 +59,11 @@ const Profile: React.FC = () => {
   const handleSavePreferences = useCallback(() => {
     if (!profile) return;
     updatePreferences({
-      darkMode: !profile.preferences.darkMode,
-      notifications: !profile.preferences.notifications,
+      theme: profile.preferences.theme === 'light' ? 'dark' : 'light',
+      notifications: {
+        email: !profile.preferences.notifications.email,
+        push: !profile.preferences.notifications.push,
+      },
     });
     setIsEditPreferencesOpen(false);
   }, [profile, updatePreferences]);
@@ -97,33 +100,18 @@ const Profile: React.FC = () => {
         </Typography>
         <Grid container spacing={2}>
           <Grid item xs={12}>
-            <Typography variant="subtitle1">Name: {profile.name}</Typography>
+            <Typography variant="subtitle1">
+              Name: {profile.firstName} {profile.lastName}
+            </Typography>
           </Grid>
           <Grid item xs={12}>
             <Typography variant="subtitle1">Email: {profile.email}</Typography>
           </Grid>
           <Grid item xs={12}>
-            <Typography variant="subtitle1">Institution: {profile.institution}</Typography>
+            <Typography variant="subtitle1">Bio: {profile.bio || 'No bio provided'}</Typography>
           </Grid>
           <Grid item xs={12}>
-            <Typography variant="subtitle1">
-              Verification Status: {profile.isVerified ? 'Verified' : 'Not Verified'}
-            </Typography>
-          </Grid>
-          <Grid item xs={12}>
-            <Typography variant="h6" gutterBottom>
-              Statistics
-            </Typography>
-            <Typography variant="body1">
-              Total Assignments: {profile.statistics.totalAssignments}
-            </Typography>
-            <Typography variant="body1">
-              Completed: {profile.statistics.completedAssignments}
-            </Typography>
-            <Typography variant="body1">
-              Average Score: {profile.statistics.averageScore}%
-            </Typography>
-            <Typography variant="body1">Active Days: {profile.statistics.activeDays}</Typography>
+            <Typography variant="subtitle1">Theme: {profile.preferences.theme}</Typography>
           </Grid>
           <Grid item xs={12}>
             <Button variant="contained" color="primary" onClick={handleEditProfile}>
@@ -150,24 +138,26 @@ const Profile: React.FC = () => {
           <TextField
             autoFocus
             margin="dense"
-            label="Name"
+            label="First Name"
             fullWidth
-            value={editForm.name}
-            onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+            value={editForm.firstName}
+            onChange={e => setEditForm({ ...editForm, firstName: e.target.value })}
           />
           <TextField
             margin="dense"
-            label="Phone"
+            label="Last Name"
             fullWidth
-            value={editForm.phone}
-            onChange={e => setEditForm({ ...editForm, phone: e.target.value })}
+            value={editForm.lastName}
+            onChange={e => setEditForm({ ...editForm, lastName: e.target.value })}
           />
           <TextField
             margin="dense"
-            label="Institution"
+            label="Bio"
             fullWidth
-            value={editForm.institution}
-            onChange={e => setEditForm({ ...editForm, institution: e.target.value })}
+            multiline
+            rows={3}
+            value={editForm.bio}
+            onChange={e => setEditForm({ ...editForm, bio: e.target.value })}
           />
         </DialogContent>
         <DialogActions>
@@ -182,7 +172,7 @@ const Profile: React.FC = () => {
           <FormControlLabel
             control={
               <Switch
-                checked={profile.preferences.darkMode}
+                checked={profile.preferences.theme === 'dark'}
                 onChange={() => {}}
                 inputProps={{ 'aria-label': 'Dark Mode' }}
               />
@@ -192,12 +182,22 @@ const Profile: React.FC = () => {
           <FormControlLabel
             control={
               <Switch
-                checked={profile.preferences.notifications}
+                checked={profile.preferences.notifications.email}
                 onChange={() => {}}
-                inputProps={{ 'aria-label': 'Notifications' }}
+                inputProps={{ 'aria-label': 'Email Notifications' }}
               />
             }
-            label="Notifications"
+            label="Email Notifications"
+          />
+          <FormControlLabel
+            control={
+              <Switch
+                checked={profile.preferences.notifications.push}
+                onChange={() => {}}
+                inputProps={{ 'aria-label': 'Push Notifications' }}
+              />
+            }
+            label="Push Notifications"
           />
         </DialogContent>
         <DialogActions>

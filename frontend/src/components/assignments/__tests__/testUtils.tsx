@@ -43,7 +43,7 @@ vi.mock('@mui/material', async () => {
         {children}
       </div>
     ),
-    TablePagination: ({ onPageChange, onRowsPerPageChange, ...props }: any) => (
+    TablePagination: ({ onPageChange, onRowsPerPageChange }: any) => (
       <div data-testid="table-pagination">
         <button onClick={() => onPageChange({}, 1)}>Next Page</button>
         <button onClick={() => onPageChange({}, 0)}>Previous Page</button>
@@ -69,44 +69,36 @@ vi.mock('@mui/material', async () => {
         {error && <p data-testid="undefined-error">{helperText}</p>}
       </div>
     ),
-    FormControl: ({ children, error, label, ...props }: any) => (
+    FormControl: ({ children, error, label }: any) => (
       <div data-testid="form-control">
         <label data-testid="input-label">{label}</label>
         {children}
-        {error && <p data-testid="form-helper-text">{props.helperText}</p>}
+        {error && <p data-testid="form-helper-text">Error message</p>}
       </div>
     ),
-    FormHelperText: ({ children, ...props }: any) => (
-      <p {...props} data-testid="form-helper-text">
-        {children}
-      </p>
-    ),
-    InputLabel: ({ children, ...props }: any) => (
-      <label {...props} data-testid="input-label">
-        {children}
-      </label>
-    ),
+    FormHelperText: ({ children }: any) => <p data-testid="form-helper-text">{children}</p>,
+    InputLabel: ({ children }: any) => <label data-testid="input-label">{children}</label>,
     Select: ({ children, onChange, value, ...props }: any) => (
       <select {...props} value={value} onChange={e => onChange && onChange(e)} data-testid="select">
         {children}
       </select>
     ),
-    MenuItem: ({ children, value, ...props }: any) => (
-      <option {...props} value={value} data-testid="menu-item">
+    MenuItem: ({ children, value }: any) => (
+      <option value={value} data-testid="menu-item">
         {children}
       </option>
     ),
-    Chip: ({ label, onClick, ...props }: any) => (
+    Chip: ({ label, onClick }: any) => (
       <button onClick={onClick} data-testid="chip">
         {label}
       </button>
     ),
-    IconButton: ({ children, onClick, ...props }: any) => (
+    IconButton: ({ children, onClick }: any) => (
       <button onClick={onClick} data-testid="icon-button">
         {children}
       </button>
     ),
-    Button: ({ children, onClick, ...props }: any) => (
+    Button: ({ children, onClick }: any) => (
       <button onClick={onClick} data-testid="button">
         {children}
       </button>

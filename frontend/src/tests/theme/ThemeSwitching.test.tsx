@@ -31,7 +31,7 @@ describe('Theme Switching', () => {
 
   describe('Theme Toggle', () => {
     it('should toggle between light and dark themes', async () => {
-      const { rerender } = render(
+      render(
         <CustomThemeProvider>
           <ThemeToggleButton />
         </CustomThemeProvider>

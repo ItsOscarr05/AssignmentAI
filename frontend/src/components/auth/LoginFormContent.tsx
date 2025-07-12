@@ -21,7 +21,7 @@ import { responsiveStyles } from '../../styles/breakpoints';
 
 const LoginFormContent: React.FC = () => {
   const navigate = useNavigate();
-  const { login, isLoading: authLoading } = useAuth();
+  const { testLogin, isLoading: authLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -58,7 +58,7 @@ const LoginFormContent: React.FC = () => {
     setError(null);
 
     try {
-      await login(email, password);
+      await testLogin(email, password);
       setSuccess(true);
       toast.success('Login successful! Redirecting to dashboard...');
 

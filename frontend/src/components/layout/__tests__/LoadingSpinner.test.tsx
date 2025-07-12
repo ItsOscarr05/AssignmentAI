@@ -8,7 +8,7 @@ import { LoadingSpinner } from '../LoadingSpinner';
 vi.mock('@mui/material', async importOriginal => {
   const actual = await importOriginal();
   return {
-    ...actual,
+    ...(actual as any),
     Box: ({ children, ...props }: any) => (
       <div
         data-testid="loading-spinner-container"

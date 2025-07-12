@@ -33,7 +33,6 @@ interface DashboardWidgetProps {
   onRefresh?: () => void;
   onConfigure?: (widgetId: string) => void;
   onRemove?: (widgetId: string) => void;
-  onMove?: (widgetId: string, newPosition: number) => void;
   children: React.ReactNode;
 }
 
@@ -42,7 +41,6 @@ const DashboardWidget: React.FC<DashboardWidgetProps> = ({
   onRefresh,
   onConfigure,
   onRemove,
-  onMove,
   children,
 }) => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);

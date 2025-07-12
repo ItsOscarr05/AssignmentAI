@@ -106,7 +106,7 @@ const Navbar: React.FC = () => {
           {user ? (
             <>
               <Typography variant="body1" sx={{ color: 'white', ml: 2, fontWeight: 500 }}>
-                {user.fullName}
+                {user.name}
               </Typography>
               <Tooltip title="Account settings">
                 <IconButton
@@ -124,8 +124,8 @@ const Navbar: React.FC = () => {
                   aria-label="account settings"
                 >
                   <Avatar
-                    src={user.avatarUrl}
-                    alt={user.fullName}
+                    src={user.avatar}
+                    alt={user.name}
                     sx={{
                       width: 32,
                       height: 32,
@@ -134,7 +134,7 @@ const Navbar: React.FC = () => {
                       fontWeight: 600,
                     }}
                   >
-                    {!user.avatarUrl && user.email[0].toUpperCase()}
+                    {!user.avatar && user.email[0].toUpperCase()}
                   </Avatar>
                 </IconButton>
               </Tooltip>

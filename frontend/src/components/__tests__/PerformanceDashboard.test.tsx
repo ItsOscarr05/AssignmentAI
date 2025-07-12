@@ -15,30 +15,16 @@ vi.mock('@mui/material', () => ({
     children,
     variant,
     color,
-    gutterBottom,
   }: {
     children: React.ReactNode;
     variant?: string;
     color?: string;
-    gutterBottom?: boolean;
   }) => (
     <div data-variant={variant} data-color={color}>
       {children}
     </div>
   ),
-  Grid: ({
-    children,
-    item,
-    xs,
-    sm,
-    md,
-  }: {
-    children: React.ReactNode;
-    item?: boolean;
-    xs?: number;
-    sm?: number;
-    md?: number;
-  }) => <div>{children}</div>,
+  Grid: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   CircularProgress: () => <div role="progressbar" />,
   Alert: ({ children, severity }: { children: React.ReactNode; severity?: string }) => (
     <div role="alert" data-severity={severity}>
@@ -65,16 +51,6 @@ vi.mock('recharts', () => ({
 }));
 
 // Types
-interface PerformanceMetrics {
-  averageGrade: number;
-  submissionRate: number;
-  plagiarismRate: number;
-  feedbackQuality: number;
-  studentEngagement: number;
-  assignmentCompletion: number;
-  timeToGrade: number;
-  studentSatisfaction: number;
-}
 
 interface ErrorResponse {
   message: string;

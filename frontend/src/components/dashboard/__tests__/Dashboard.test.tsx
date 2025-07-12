@@ -1,34 +1,75 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { analytics, assignments } from '../../../services/api';
-import { Dashboard } from '../Dashboard';
+import Dashboard from '../Dashboard';
 
 // Mock @mui/material
-vi.mock('@mui/material', async importOriginal => {
-  const actual = await importOriginal();
-  return {
-    ...actual,
-    keyframes: (strings: TemplateStringsArray, ...values: any[]) => {
-      return `@keyframes ${strings.join('')}`;
+vi.mock('@mui/material', () => ({
+  Box: ({ children, sx }: { children: React.ReactNode; sx?: any }) => (
+    <div style={sx}>{children}</div>
+  ),
+  Card: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  CardContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  CardHeader: ({ children, title }: { children: React.ReactNode; title?: string }) => (
+    <div>
+      {title && <h3>{title}</h3>}
+      {children}
+    </div>
+  ),
+  CircularProgress: () => <div role="progressbar" />,
+  Grid: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  IconButton: ({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) => (
+    <button onClick={onClick}>{children}</button>
+  ),
+  LinearProgress: ({ value }: { value?: number }) => <div role="progressbar" data-value={value} />,
+  List: ({ children }: { children: React.ReactNode }) => <ul>{children}</ul>,
+  ListItem: ({ children }: { children: React.ReactNode }) => <li>{children}</li>,
+  ListItemIcon: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+  ListItemText: ({ primary, secondary }: { primary?: string; secondary?: string }) => (
+    <div>
+      {primary && <div>{primary}</div>}
+      {secondary && <div>{secondary}</div>}
+    </div>
+  ),
+  Paper: ({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) => (
+    <div onClick={onClick}>{children}</div>
+  ),
+  Typography: ({ children, variant }: { children: React.ReactNode; variant?: string }) => (
+    <div data-variant={variant}>{children}</div>
+  ),
+  useTheme: () => ({
+    palette: {
+      primary: { main: '#1976d2' },
+      secondary: { main: '#dc004e' },
+      info: { main: '#0288d1' },
+      warning: { main: '#ed6c02' },
+      success: { main: '#2e7d32' },
+      error: { main: '#d32f2f' },
     },
-  };
-});
+    shadows: ['none', '0px 2px 1px -1px rgba(0,0,0,0.2)'],
+  }),
+}));
 
 // Mock @mui/icons-material
-vi.mock('@mui/icons-material', async importOriginal => {
-  const actual = await importOriginal();
-  return {
-    ...actual,
-    Add: () => <span data-testid="add-icon" />,
-    Refresh: () => <span data-testid="refresh-icon" />,
-    Assignment: () => <span data-testid="assignment-icon" />,
-    AutoAwesome: () => <span data-testid="auto-awesome-icon" />,
-    Assessment: () => <span data-testid="assessment-icon" />,
-    TrendingUp: () => <span data-testid="trending-up-icon" />,
-    CalendarToday: () => <span data-testid="calendar-icon" />,
-    ChevronRight: () => <span data-testid="chevron-right-icon" />,
-  };
-});
+vi.mock('@mui/icons-material', () => ({
+  Add: () => <span data-testid="add-icon" />,
+  Refresh: () => <span data-testid="refresh-icon" />,
+  Assignment: () => <span data-testid="assignment-icon" />,
+  AutoAwesome: () => <span data-testid="auto-awesome-icon" />,
+  Assessment: () => <span data-testid="assessment-icon" />,
+  TrendingUp: () => <span data-testid="trending-up-icon" />,
+  CalendarToday: () => <span data-testid="calendar-icon" />,
+  ChevronRight: () => <span data-testid="chevron-right-icon" />,
+  CloudUpload: () => <span data-testid="cloud-upload-icon" />,
+  Description: () => <span data-testid="description-icon" />,
+  Edit: () => <span data-testid="edit-icon" />,
+  History: () => <span data-testid="history-icon" />,
+  MoreVert: () => <span data-testid="more-vert-icon" />,
+  Notifications: () => <span data-testid="notifications-icon" />,
+  Settings: () => <span data-testid="settings-icon" />,
+  Speed: () => <span data-testid="speed-icon" />,
+  Storage: () => <span data-testid="storage-icon" />,
+}));
 
 // Mock the API services
 vi.mock('../../../services/api', () => ({

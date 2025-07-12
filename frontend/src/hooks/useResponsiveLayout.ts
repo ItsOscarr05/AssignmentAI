@@ -37,7 +37,7 @@ const defaultBreakpoints: Breakpoint[] = [
 
 export const useResponsiveLayout = (options: ResponsiveLayoutOptions = {}) => {
   const { trackError } = useErrorTracking();
-  const { measurePerformance } = usePerformanceMonitoring();
+  usePerformanceMonitoring('useResponsiveLayout');
 
   const {
     breakpoints = defaultBreakpoints,
@@ -99,20 +99,21 @@ export const useResponsiveLayout = (options: ResponsiveLayoutOptions = {}) => {
   );
 
   const handleResize = useCallback(() => {
-    measurePerformance('handleResize', () => {
-      try {
-        const width = window.innerWidth;
-        const height = window.innerHeight;
-        const newIsLandscape = width > height;
+    try {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const newIsLandscape = width > height;
 
-        updateBreakpoint(width);
-        setIsLandscape(newIsLandscape);
-        onOrientationChange?.(newIsLandscape ? 'landscape' : 'portrait');
-      } catch (error) {
-        trackError('Error in handleResize', error);
-      }
-    });
-  }, [measurePerformance, onOrientationChange, trackError, updateBreakpoint]);
+      updateBreakpoint(width);
+      setIsLandscape(newIsLandscape);
+      onOrientationChange?.(newIsLandscape ? 'landscape' : 'portrait');
+    } catch (error) {
+      trackError(
+        { message: 'Error in handleResize', error: error as Error },
+        'useResponsiveLayout'
+      );
+    }
+  }, [onOrientationChange, trackError, updateBreakpoint]);
 
   const handleTouchStart = useCallback(
     (event: TouchEvent) => {
@@ -129,7 +130,10 @@ export const useResponsiveLayout = (options: ResponsiveLayoutOptions = {}) => {
         });
         setIsTouchDevice(true);
       } catch (error) {
-        trackError('Error in handleTouchStart', error);
+        trackError(
+          { message: 'Error in handleTouchStart', error: error as Error },
+          'useResponsiveLayout'
+        );
       }
     },
     [trackError]
@@ -159,7 +163,10 @@ export const useResponsiveLayout = (options: ResponsiveLayoutOptions = {}) => {
           distance,
         }));
       } catch (error) {
-        trackError('Error in handleTouchMove', error);
+        trackError(
+          { message: 'Error in handleTouchMove', error: error as Error },
+          'useResponsiveLayout'
+        );
       }
     },
     [touchState.touchStartX, touchState.touchStartY, trackError]
@@ -181,7 +188,10 @@ export const useResponsiveLayout = (options: ResponsiveLayoutOptions = {}) => {
         distance: 0,
       });
     } catch (error) {
-      trackError('Error in handleTouchEnd', error);
+      trackError(
+        { message: 'Error in handleTouchEnd', error: error as Error },
+        'useResponsiveLayout'
+      );
     }
   }, [onSwipe, touchState.direction, touchState.distance, touchThreshold, trackError]);
 

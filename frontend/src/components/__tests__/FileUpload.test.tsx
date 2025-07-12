@@ -58,12 +58,10 @@ vi.mock('react-dropzone', () => ({
     onDrop,
     maxSize,
     accept,
-    multiple,
   }: {
     onDrop?: (files: File[]) => void;
     maxSize?: number;
     accept?: Record<string, string[]>;
-    multiple?: boolean;
   }) => ({
     getRootProps: () => ({
       onClick: vi.fn(),

@@ -282,8 +282,12 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({
             role="alert"
             data-testid="submission-count-alert"
           >
-            You have {assignment.maxSubmissions - submission.submissionCount} submission
-            {assignment.maxSubmissions - submission.submissionCount !== 1 ? 's' : ''} remaining
+            You have {(assignment.maxSubmissions ?? 0) - (submission.submissionCount ?? 0)}{' '}
+            submission
+            {(assignment.maxSubmissions ?? 0) - (submission.submissionCount ?? 0) !== 1
+              ? 's'
+              : ''}{' '}
+            remaining
           </Alert>
         )}
 
@@ -422,8 +426,8 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({
               variant="contained"
               disabled={
                 loading ||
-                (assignment.maxSubmissions &&
-                  submission?.submissionCount >= assignment.maxSubmissions)
+                (Boolean(assignment.maxSubmissions) &&
+                  (submission?.submissionCount ?? 0) >= (assignment.maxSubmissions ?? 0))
               }
               aria-label="Submit"
             >

@@ -32,7 +32,9 @@ class AuthService {
   async handleCallback(code: string, state: string): Promise<User> {
     const response = await api.post('/auth/callback', { code, state });
     this.token = response.data.token;
-    localStorage.setItem('token', this.token);
+    if (this.token) {
+      localStorage.setItem('token', this.token);
+    }
     return response.data.user;
   }
 

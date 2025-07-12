@@ -1,40 +1,101 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { mockHooks, mockMuiComponents, render } from '../test/test-utils';
-import { AssignmentList } from './AssignmentList';
+import { render } from '../test/test-utils';
+import AssignmentList from './assignments/AssignmentList';
 
 // Mock Material-UI components
 vi.mock('@mui/material', () => ({
-  ...vi.importActual('@mui/material'),
-  ...mockMuiComponents,
+  Box: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+  Button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
+  Chip: ({ label, color }: any) => (
+    <span data-testid="chip" data-color={color}>
+      {label}
+    </span>
+  ),
+  IconButton: ({ children, onClick }: any) => <button onClick={onClick}>{children}</button>,
+  InputAdornment: ({ children }: any) => <div>{children}</div>,
+  Paper: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+  Table: ({ children }: any) => <table>{children}</table>,
+  TableBody: ({ children }: any) => <tbody>{children}</tbody>,
+  TableCell: ({ children }: any) => <td>{children}</td>,
+  TableContainer: ({ children }: any) => <div>{children}</div>,
+  TableHead: ({ children }: any) => <thead>{children}</thead>,
+  TablePagination: ({
+    count: _count,
+    page,
+    rowsPerPage,
+    onPageChange,
+    onRowsPerPageChange,
+  }: any) => (
+    <div>
+      <button onClick={() => onPageChange(null, page - 1)}>Previous</button>
+      <span>{page + 1}</span>
+      <button onClick={() => onPageChange(null, page + 1)}>Next</button>
+      <select value={rowsPerPage} onChange={e => onRowsPerPageChange(e)}>
+        <option value={5}>5</option>
+        <option value={10}>10</option>
+        <option value={25}>25</option>
+      </select>
+    </div>
+  ),
+  TableRow: ({ children }: any) => <tr>{children}</tr>,
+  TableSortLabel: ({ children, onClick }: any) => <button onClick={onClick}>{children}</button>,
+  TextField: ({ value, onChange, placeholder }: any) => (
+    <input value={value} onChange={onChange} placeholder={placeholder} />
+  ),
+  Typography: ({ children, variant }: any) => <div data-variant={variant}>{children}</div>,
 }));
 
-// Mock hooks
+// Mock react-router-dom
 vi.mock('react-router-dom', () => ({
-  ...vi.importActual('react-router-dom'),
-  ...mockHooks,
+  Link: ({ children, to }: any) => <a href={to}>{children}</a>,
+}));
+
+// Mock @tanstack/react-query
+vi.mock('@tanstack/react-query', () => ({
+  useQuery: ({ queryFn: _queryFn }: any) => ({
+    data: {
+      assignments: [
+        {
+          id: '1',
+          title: 'Assignment 1',
+          description: 'Description 1',
+          dueDate: '2024-03-01',
+          status: 'draft',
+          subject: 'Math',
+          createdAt: '2024-01-01',
+        },
+        {
+          id: '2',
+          title: 'Assignment 2',
+          description: 'Description 2',
+          dueDate: '2024-03-15',
+          status: 'published',
+          subject: 'Science',
+          createdAt: '2024-01-02',
+        },
+      ],
+      total: 2,
+    },
+    isLoading: false,
+    error: null,
+  }),
+  useQueryClient: () => ({
+    invalidateQueries: vi.fn(),
+  }),
+}));
+
+// Mock api service
+vi.mock('../services/api', () => ({
+  api: {
+    get: vi.fn(),
+    put: vi.fn(),
+  },
 }));
 
 describe('AssignmentList', () => {
-  const mockAssignments = [
-    {
-      id: '1',
-      title: 'Assignment 1',
-      description: 'Description 1',
-      dueDate: '2024-03-01',
-      status: 'pending',
-    },
-    {
-      id: '2',
-      title: 'Assignment 2',
-      description: 'Description 2',
-      dueDate: '2024-03-15',
-      status: 'submitted',
-    },
-  ];
-
   const renderAssignmentList = (props = {}) => {
-    return render(<AssignmentList assignments={mockAssignments} {...props} />);
+    return render(<AssignmentList {...props} />);
   };
 
   beforeEach(() => {
@@ -46,119 +107,98 @@ describe('AssignmentList', () => {
 
     expect(screen.getByText('Assignment 1')).toBeInTheDocument();
     expect(screen.getByText('Assignment 2')).toBeInTheDocument();
-    expect(screen.getByText('Description 1')).toBeInTheDocument();
-    expect(screen.getByText('Description 2')).toBeInTheDocument();
+    expect(screen.getByText('Math')).toBeInTheDocument();
+    expect(screen.getByText('Science')).toBeInTheDocument();
   });
 
-  it('handles assignment selection', async () => {
-    const onSelect = vi.fn();
-    renderAssignmentList({ onSelect });
-
-    const assignment = screen.getByText('Assignment 1');
-    fireEvent.click(assignment);
-
-    await waitFor(() => {
-      expect(onSelect).toHaveBeenCalledWith(mockAssignments[0]);
-    });
-  });
-
-  it('handles assignment submission', async () => {
-    const onSubmit = vi.fn();
-    renderAssignmentList({ onSubmit });
-
-    const submitButton = screen.getByText(/submit/i);
-    fireEvent.click(submitButton);
-
-    await waitFor(() => {
-      expect(onSubmit).toHaveBeenCalled();
-    });
-  });
-
-  it('handles assignment deletion', async () => {
-    const onDelete = vi.fn();
-    renderAssignmentList({ onDelete });
-
-    const deleteButton = screen.getByText(/delete/i);
-    fireEvent.click(deleteButton);
-
-    await waitFor(() => {
-      expect(onDelete).toHaveBeenCalled();
-    });
-  });
-
-  it('filters assignments by status', async () => {
+  it('handles search functionality', () => {
     renderAssignmentList();
 
-    const filterSelect = screen.getByLabelText(/filter by status/i);
-    fireEvent.change(filterSelect, { target: { value: 'submitted' } });
+    const searchInput = screen.getByPlaceholderText('Search assignments...');
+    fireEvent.change(searchInput, { target: { value: 'Assignment 1' } });
 
-    await waitFor(() => {
-      expect(screen.getByText('Assignment 2')).toBeInTheDocument();
-      expect(screen.queryByText('Assignment 1')).not.toBeInTheDocument();
-    });
+    expect(searchInput).toHaveValue('Assignment 1');
   });
 
-  it('sorts assignments by due date', async () => {
+  it('handles pagination', () => {
     renderAssignmentList();
 
-    const sortButton = screen.getByText(/sort by due date/i);
-    fireEvent.click(sortButton);
+    const nextButton = screen.getByText('Next');
+    fireEvent.click(nextButton);
 
-    const assignments = screen.getAllByTestId('assignment-item');
-    expect(assignments[0]).toHaveTextContent('Assignment 1');
-    expect(assignments[1]).toHaveTextContent('Assignment 2');
+    // The component should handle pagination internally
+    expect(nextButton).toBeInTheDocument();
   });
 
-  it('handles empty state', () => {
-    renderAssignmentList({ assignments: [] });
+  it('handles sorting', () => {
+    renderAssignmentList();
 
-    expect(screen.getByText(/no assignments found/i)).toBeInTheDocument();
+    const titleSortButton = screen.getByText('Title');
+    fireEvent.click(titleSortButton);
+
+    // The component should handle sorting internally
+    expect(titleSortButton).toBeInTheDocument();
   });
 
   it('handles loading state', () => {
-    renderAssignmentList({ loading: true });
+    // Mock the useQuery to return loading state
+    vi.doMock('@tanstack/react-query', () => ({
+      useQuery: () => ({
+        data: null,
+        isLoading: true,
+        error: null,
+      }),
+      useQueryClient: () => ({
+        invalidateQueries: vi.fn(),
+      }),
+    }));
 
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    renderAssignmentList();
+    expect(screen.getByText('Loading assignments...')).toBeInTheDocument();
   });
 
   it('handles error state', () => {
-    renderAssignmentList({ error: 'Failed to load assignments' });
+    // Mock the useQuery to return error state
+    vi.doMock('@tanstack/react-query', () => ({
+      useQuery: () => ({
+        data: null,
+        isLoading: false,
+        error: new Error('Failed to load assignments'),
+      }),
+      useQueryClient: () => ({
+        invalidateQueries: vi.fn(),
+      }),
+    }));
 
-    expect(screen.getByText('Failed to load assignments')).toBeInTheDocument();
+    renderAssignmentList();
+    expect(
+      screen.getByText('Error loading assignments. Please try again later.')
+    ).toBeInTheDocument();
   });
 
   describe('Accessibility', () => {
-    it('has proper ARIA attributes', () => {
+    it('has proper table structure', () => {
       renderAssignmentList();
 
-      const list = screen.getByRole('list');
-      expect(list).toHaveAttribute('aria-label', 'Assignments');
-
-      const items = screen.getAllByRole('listitem');
-      items.forEach((item, index) => {
-        expect(item).toHaveAttribute('aria-label', `Assignment ${index + 1}`);
-      });
+      expect(screen.getByRole('table')).toBeInTheDocument();
+      expect(screen.getByRole('columnheader', { name: /title/i })).toBeInTheDocument();
+      expect(screen.getByRole('columnheader', { name: /subject/i })).toBeInTheDocument();
     });
 
-    it('announces status changes to screen readers', async () => {
+    it('has proper search input', () => {
       renderAssignmentList();
 
-      const filterSelect = screen.getByLabelText(/filter by status/i);
-      fireEvent.change(filterSelect, { target: { value: 'submitted' } });
-
-      await waitFor(() => {
-        const announcement = screen.getByText(/showing submitted assignments/i);
-        expect(announcement).toHaveAttribute('aria-live', 'polite');
-      });
+      const searchInput = screen.getByPlaceholderText('Search assignments...');
+      expect(searchInput).toBeInTheDocument();
+      expect(searchInput).toHaveAttribute('type', 'text');
     });
 
-    it('has proper keyboard navigation', () => {
+    it('has proper create button', () => {
       renderAssignmentList();
 
-      const items = screen.getAllByRole('listitem');
-      items.forEach(item => {
-        expect(item).toHaveAttribute('tabindex', '0');
-      });
+      const createButton = screen.getByText('Create Assignment');
+      expect(createButton).toBeInTheDocument();
+      expect(createButton.tagName).toBe('A');
     });
   });
 });

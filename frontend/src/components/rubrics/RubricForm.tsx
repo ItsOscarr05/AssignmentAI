@@ -240,9 +240,6 @@ const RubricForm: React.FC<RubricFormProps> = ({ rubric, onSubmit, assignment })
             'aria-label': 'Passing Score',
           }}
           data-testid="passing-score-field"
-          FormHelperTextProps={{
-            'data-testid': 'passing-score-error',
-          }}
         />
 
         <Typography variant="subtitle1" sx={{ mt: 3, mb: 2 }}>
