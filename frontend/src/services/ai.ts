@@ -11,7 +11,6 @@ interface AIGenerateAssignmentParams {
 
 interface AIGenerateFeedbackParams {
   submission: string;
-  rubric?: string;
   maxPoints: number;
 }
 
@@ -22,7 +21,6 @@ interface AICheckPlagiarismParams {
 
 interface AIGradeSubmissionParams {
   submission: string;
-  rubric: string;
   maxPoints: number;
 }
 

@@ -2,19 +2,6 @@ import { Alert, Box, CircularProgress, Container, Grid, Paper, Typography } from
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import AIAnalysisPanel from '../components/AIAnalysisPanel';
-import RubricManager from '../components/RubricManager';
-
-interface RubricCriterion {
-  id: string;
-  name: string;
-  description: string;
-  weight: number;
-  levels: {
-    level: string;
-    description: string;
-    points: number;
-  }[];
-}
 
 interface Submission {
   id: number;
@@ -36,7 +23,6 @@ const SubmissionReview: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submission, setSubmission] = useState<Submission | null>(null);
-  const [rubricCriteria, setRubricCriteria] = useState<RubricCriterion[]>([]);
 
   useEffect(() => {
     const fetchSubmission = async () => {
@@ -56,10 +42,6 @@ const SubmissionReview: React.FC = () => {
 
     fetchSubmission();
   }, [submissionId]);
-
-  const handleRubricChange = (criteria: RubricCriterion[]) => {
-    setRubricCriteria(criteria);
-  };
 
   if (loading) {
     return (
@@ -135,7 +117,7 @@ const SubmissionReview: React.FC = () => {
         </Grid>
 
         <Grid item xs={12} md={4}>
-          <RubricManager onRubricChange={handleRubricChange} initialCriteria={rubricCriteria} />
+          {/* Removed RubricManager */}
         </Grid>
       </Grid>
     </Container>

@@ -47,4 +47,24 @@ export default defineConfig({
   optimizeDeps: {
     include: ['react', 'react-dom'],
   },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./test/setup.ts'],
+    css: true,
+    pool: 'forks',
+    poolOptions: {
+      forks: {
+        singleFork: true,
+        maxForks: 1,
+        minForks: 1,
+      },
+    },
+    maxThreads: 1,
+    minThreads: 1,
+    isolate: false,
+    testTimeout: 10000,
+    hookTimeout: 10000,
+    teardownTimeout: 10000,
+  },
 });

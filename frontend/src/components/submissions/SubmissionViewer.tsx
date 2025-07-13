@@ -34,12 +34,6 @@ interface InlineComment {
   comment: string;
 }
 
-interface RubricScore {
-  criterionId: string;
-  score: number;
-  comments: string;
-}
-
 interface Feedback {
   id: string;
   submissionId: string;
@@ -47,7 +41,6 @@ interface Feedback {
   grader: Student;
   grade: number;
   comments: string;
-  rubricScores: RubricScore[];
   submittedAt: string;
 }
 
@@ -228,20 +221,7 @@ export const SubmissionViewer: React.FC<SubmissionViewerProps> = ({
               {feedback.comments}
             </Typography>
 
-            {/* Rubric Scores */}
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="subtitle1" gutterBottom>
-                Rubric Scores
-              </Typography>
-              {feedback.rubricScores.map(score => (
-                <Box key={score.criterionId} sx={{ mb: 1 }}>
-                  <Typography variant="body2">Score: {score.score}</Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    {score.comments}
-                  </Typography>
-                </Box>
-              ))}
-            </Box>
+            {/* Rubric Scores section removed */}
           </Box>
         )}
       </Paper>

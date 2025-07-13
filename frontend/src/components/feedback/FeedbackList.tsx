@@ -28,11 +28,6 @@ interface FeedbackItem {
   created_at: string;
   updated_at: string;
   comments: string;
-  rubric_scores: Array<{
-    criterion_id: string;
-    score: number;
-    comments: string;
-  }>;
 }
 
 interface FeedbackResponse {
@@ -158,7 +153,6 @@ export const FeedbackList: React.FC = () => {
                 </TableSortLabel>
               </TableCell>
               <TableCell>Comments</TableCell>
-              <TableCell>Rubric Feedback</TableCell>
               <TableCell>
                 <TableSortLabel
                   active={sortBy === 'created_at'}
@@ -178,13 +172,6 @@ export const FeedbackList: React.FC = () => {
                 <TableCell>{item.grade}%</TableCell>
                 <TableCell>{item.status}</TableCell>
                 <TableCell>{item.comments}</TableCell>
-                <TableCell>
-                  {item.rubric_scores.map(score => (
-                    <Typography key={score.criterion_id} variant="body2">
-                      {score.comments}
-                    </Typography>
-                  ))}
-                </TableCell>
                 <TableCell>{format(new Date(item.created_at), 'MMM d, yyyy')}</TableCell>
               </TableRow>
             ))}

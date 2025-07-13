@@ -41,16 +41,6 @@ export const SUBMISSION_ENDPOINTS = {
   FEEDBACK: (id: string) => `/submissions/${id}/feedback`,
 } as const;
 
-// Rubric endpoints
-export const RUBRIC_ENDPOINTS = {
-  LIST: '/rubrics',
-  CREATE: '/rubrics',
-  DETAIL: (id: string) => `/rubrics/${id}`,
-  UPDATE: (id: string) => `/rubrics/${id}`,
-  DELETE: (id: string) => `/rubrics/${id}`,
-  APPLY: (id: string) => `/rubrics/${id}/apply`,
-} as const;
-
 // Analytics endpoints
 export const ANALYTICS_ENDPOINTS = {
   USAGE: '/analytics/usage',

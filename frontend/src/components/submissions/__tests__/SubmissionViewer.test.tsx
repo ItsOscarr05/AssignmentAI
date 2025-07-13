@@ -287,21 +287,4 @@ describe('SubmissionViewer', () => {
     expect(lateChip).toHaveTextContent('Submitted Late');
     expect(lateChip).toHaveAttribute('data-color', 'warning');
   });
-
-  it('displays rubric scores', () => {
-    renderComponent();
-
-    const feedbackSection = screen
-      .getByText('Feedback')
-      .closest('[data-testid="mui-box"]') as HTMLElement;
-    const rubricSection = within(feedbackSection)
-      .getByText('Rubric Scores')
-      .closest('[data-testid="mui-box"]') as HTMLElement;
-    expect(rubricSection).toBeInTheDocument();
-
-    mockFeedback.rubricScores.forEach(score => {
-      expect(within(rubricSection).getByText(`Score: ${score.score}`)).toBeInTheDocument();
-      expect(within(rubricSection).getByText(score.comments)).toBeInTheDocument();
-    });
-  });
 });

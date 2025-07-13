@@ -78,29 +78,6 @@ export interface Assignment {
   submissions?: number;
 }
 
-export interface RubricCriterion {
-  id: string;
-  name: string;
-  description: string;
-  maxScore: number;
-  weight: number;
-  points: number;
-  levels: {
-    score: number;
-    description: string;
-  }[];
-}
-
-export interface Rubric {
-  id: string;
-  title: string;
-  description: string;
-  criteria: RubricCriterion[];
-  passingScore: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface AssignmentGenerationRequest {
   title: string;
   description: string;

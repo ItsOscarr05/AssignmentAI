@@ -27,7 +27,6 @@ interface Assignment {
   averageScore?: number;
   requirements?: string[];
   resources?: Array<{ title: string; url: string; type: string }>;
-  rubric?: Array<{ criterion: string; points: number }>;
 }
 
 interface AssignmentDetailProps {
@@ -216,25 +215,6 @@ const AssignmentDetail: React.FC<AssignmentDetailProps> = ({
               </ul>
             ) : (
               <Typography color="text.secondary">No resources available</Typography>
-            )}
-          </Box>
-        )}
-
-        {assignment.rubric && (
-          <Box mb={2}>
-            <Typography variant="h6" gutterBottom>
-              Rubric
-            </Typography>
-            {assignment.rubric.length > 0 ? (
-              <ul>
-                {assignment.rubric.map((item, index) => (
-                  <li key={index}>
-                    {item.criterion} - {item.points} points
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <Typography color="text.secondary">No rubric specified</Typography>
             )}
           </Box>
         )}

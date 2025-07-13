@@ -26,13 +26,6 @@ const mockFeedback = [
     created_at: '2024-03-15T10:00:00Z',
     updated_at: '2024-03-15T11:00:00Z',
     comments: 'Good work overall',
-    rubric_scores: [
-      {
-        criterion_id: '1',
-        score: 8,
-        comments: 'Code structure is good',
-      },
-    ],
   },
   {
     id: '2',
@@ -44,13 +37,6 @@ const mockFeedback = [
     created_at: '2024-03-14T15:30:00Z',
     updated_at: '2024-03-14T16:30:00Z',
     comments: 'Excellent submission',
-    rubric_scores: [
-      {
-        criterion_id: '2',
-        score: 9,
-        comments: 'Very well organized',
-      },
-    ],
   },
 ];
 
@@ -211,18 +197,6 @@ describe('FeedbackList', () => {
     await waitFor(() => {
       expect(screen.getByText('completed')).toBeInTheDocument();
       expect(screen.getByText('in_progress')).toBeInTheDocument();
-    });
-  });
-
-  it('displays rubric scores correctly', async () => {
-    (api.get as any).mockResolvedValueOnce({
-      data: { feedback: mockFeedback, total: 2 },
-    });
-    renderFeedbackList();
-
-    await waitFor(() => {
-      expect(screen.getByText('Code structure is good')).toBeInTheDocument();
-      expect(screen.getByText('Very well organized')).toBeInTheDocument();
     });
   });
 

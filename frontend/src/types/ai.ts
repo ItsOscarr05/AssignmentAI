@@ -23,10 +23,6 @@ export interface GeneratedAssignment {
   description: string;
   content: AssignmentContent;
   instructions: string;
-  rubric: {
-    criteria: string[];
-    weights: number[];
-  };
   sample_solution: string;
   suggested_resources: string[];
 }
@@ -71,13 +67,6 @@ export interface AIGeneratedContent {
   title: string;
   description: string;
   instructions: string;
-  rubric: {
-    criteria: {
-      name: string;
-      points: number;
-    }[];
-    totalPoints: number;
-  };
   sampleSolution?: string;
   suggestedResources?: string[];
   tags: string[];

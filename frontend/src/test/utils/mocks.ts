@@ -271,23 +271,6 @@ export const mockSubmission = {
   updatedAt: '2024-01-01T00:00:00Z',
 };
 
-export const mockRubric = {
-  id: '1',
-  name: 'Test Rubric',
-  description: 'Test Description',
-  criteria: [
-    {
-      id: '1',
-      name: 'Test Criterion',
-      description: 'Test Description',
-      weight: 1,
-      maxScore: 10,
-    },
-  ],
-  createdAt: '2024-01-01T00:00:00Z',
-  updatedAt: '2024-01-01T00:00:00Z',
-};
-
 export const mockError = {
   message: 'Test error message',
   status: 400,

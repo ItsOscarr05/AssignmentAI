@@ -17,7 +17,6 @@ import { TokenLimitWarning } from '../common/TokenLimitWarning';
 export const AIFeedback: React.FC = () => {
   useParams<{ id: string }>();
   const [submission, setSubmission] = useState('');
-  const [rubric, setRubric] = useState('');
   const [maxPoints, setMaxPoints] = useState(100);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +39,6 @@ export const AIFeedback: React.FC = () => {
       setError(null);
       const response = await ai.generateFeedback({
         submission,
-        rubric: rubric || undefined,
         maxPoints,
       });
       setFeedback(response.feedback);
@@ -78,17 +76,7 @@ export const AIFeedback: React.FC = () => {
               onChange={e => setSubmission(e.target.value)}
             />
           </Box>
-          <Box sx={{ mb: 3 }}>
-            <TextField
-              fullWidth
-              multiline
-              rows={4}
-              label="Rubric (Optional)"
-              value={rubric}
-              onChange={e => setRubric(e.target.value)}
-              helperText="Enter the grading rubric to help generate more accurate feedback"
-            />
-          </Box>
+
           <Box sx={{ mb: 3 }}>
             <TextField
               required
