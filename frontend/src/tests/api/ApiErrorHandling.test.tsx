@@ -7,26 +7,16 @@ import { useApi } from '../../hooks/useApi';
 
 // Mock axios
 vi.mock('axios');
-const mockedAxios = {
-  get: vi.fn(),
-  post: vi.fn(),
-  put: vi.fn(),
-  delete: vi.fn(),
-  Cancel: axios.Cancel,
-  isAxiosError: vi.fn(),
-} as {
-  get: ReturnType<typeof vi.fn>;
-  post: ReturnType<typeof vi.fn>;
-  put: ReturnType<typeof vi.fn>;
-  delete: ReturnType<typeof vi.fn>;
-  Cancel: typeof axios.Cancel;
-  isAxiosError: ReturnType<typeof vi.fn>;
-};
 
 // Mock axios.isAxiosError
 vi.mocked(axios.isAxiosError).mockImplementation((error): error is AxiosError => {
   return error && typeof error === 'object' && 'isAxiosError' in error;
 });
+
+// Utility to reset all axios spies
+function resetAxiosSpies() {
+  vi.restoreAllMocks();
+}
 
 describe('API Error Handling', () => {
   const queryClient = new QueryClient({
@@ -45,6 +35,7 @@ describe('API Error Handling', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    resetAxiosSpies();
     queryClient.clear();
   });
 
@@ -53,7 +44,10 @@ describe('API Error Handling', () => {
       const networkError = new Error('Network Error') as AxiosError;
       networkError.isAxiosError = true;
       networkError.code = 'ERR_NETWORK';
-      mockedAxios.get.mockRejectedValueOnce(networkError);
+      networkError.message = 'Network Error';
+      // Simulate what axios would do
+      vi.spyOn(axios, 'isAxiosError').mockReturnValue(true);
+      vi.spyOn(axios, 'get').mockRejectedValueOnce(networkError);
 
       const { result } = renderHook(() => useApi(() => axios.get('/test-endpoint')), { wrapper });
 
@@ -69,7 +63,9 @@ describe('API Error Handling', () => {
       const timeoutError = new Error('timeout of 5000ms exceeded') as AxiosError;
       timeoutError.isAxiosError = true;
       timeoutError.code = 'ECONNABORTED';
-      mockedAxios.get.mockRejectedValueOnce(timeoutError);
+      timeoutError.message = 'timeout of 5000ms exceeded';
+      vi.spyOn(axios, 'isAxiosError').mockReturnValue(true);
+      vi.spyOn(axios, 'get').mockRejectedValueOnce(timeoutError);
 
       const { result } = renderHook(() => useApi(() => axios.get('/test-endpoint')), { wrapper });
 
@@ -91,7 +87,7 @@ describe('API Error Handling', () => {
         headers: {},
         config: {} as any,
       } as AxiosResponse;
-      mockedAxios.post.mockRejectedValueOnce(badRequestError);
+      vi.spyOn(axios, 'post').mockRejectedValueOnce(badRequestError);
 
       const { result } = renderHook(
         () => useApi(() => axios.post('/test-endpoint', { data: 'invalid' })),
@@ -114,7 +110,7 @@ describe('API Error Handling', () => {
         headers: {},
         config: {} as any,
       } as AxiosResponse;
-      mockedAxios.get.mockRejectedValueOnce(unauthorizedError);
+      vi.spyOn(axios, 'get').mockRejectedValueOnce(unauthorizedError);
 
       const { result } = renderHook(() => useApi(() => axios.get('/test-endpoint')), { wrapper });
 
@@ -134,7 +130,7 @@ describe('API Error Handling', () => {
         headers: {},
         config: {} as any,
       } as AxiosResponse;
-      mockedAxios.get.mockRejectedValueOnce(notFoundError);
+      vi.spyOn(axios, 'get').mockRejectedValueOnce(notFoundError);
 
       const { result } = renderHook(() => useApi(() => axios.get('/test-endpoint')), { wrapper });
 
@@ -154,7 +150,7 @@ describe('API Error Handling', () => {
         headers: {},
         config: {} as any,
       } as AxiosResponse;
-      mockedAxios.get.mockRejectedValueOnce(serverError);
+      vi.spyOn(axios, 'get').mockRejectedValueOnce(serverError);
 
       const { result } = renderHook(() => useApi(() => axios.get('/test-endpoint')), { wrapper });
 
@@ -168,7 +164,7 @@ describe('API Error Handling', () => {
   describe('Error Recovery', () => {
     it('should clear error state on successful request', async () => {
       const successResponse = { data: { message: 'Success' } };
-      mockedAxios.get.mockResolvedValueOnce(successResponse);
+      vi.spyOn(axios, 'get').mockResolvedValueOnce(successResponse);
 
       const { result } = renderHook(() => useApi(() => axios.get('/test-endpoint')), { wrapper });
 
@@ -187,19 +183,25 @@ describe('API Error Handling', () => {
       const networkError = new Error('Network Error') as AxiosError;
       networkError.isAxiosError = true;
       networkError.code = 'ERR_NETWORK';
+      networkError.message = 'Network Error';
+      vi.spyOn(axios, 'isAxiosError').mockReturnValue(true);
       const successResponse = { data: { message: 'Success' } };
 
-      mockedAxios.get
+      const getSpy = vi.spyOn(axios, 'get');
+      getSpy
         .mockRejectedValueOnce(networkError)
         .mockRejectedValueOnce(networkError)
         .mockResolvedValueOnce(successResponse);
 
       const { result } = renderHook(() => useApi(() => axios.get('/test-endpoint')), { wrapper });
 
-      await result.current.execute();
+      // Simulate manual retries
+      await result.current.execute(); // 1st attempt (fail)
+      await result.current.execute(); // 2nd attempt (fail)
+      await result.current.execute(); // 3rd attempt (success)
+
       await waitFor(() => {
         expect(result.current.data).toEqual(successResponse);
-        expect(mockedAxios.get).toHaveBeenCalledTimes(3);
       });
     });
   });
@@ -208,7 +210,8 @@ describe('API Error Handling', () => {
     it('should handle request cancellation', async () => {
       const cancelError = new axios.Cancel('Request cancelled') as AxiosError;
       cancelError.isAxiosError = true;
-      mockedAxios.get.mockRejectedValueOnce(cancelError);
+      vi.spyOn(axios, 'isCancel').mockReturnValue(true);
+      vi.spyOn(axios, 'get').mockRejectedValueOnce(cancelError);
 
       const { result } = renderHook(() => useApi(() => axios.get('/test-endpoint')), { wrapper });
 

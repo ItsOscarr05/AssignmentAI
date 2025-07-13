@@ -54,7 +54,7 @@ describe('WorkshopService', () => {
         timestamp: expect.any(String),
       })
     );
-    expect(api.post).toHaveBeenCalledWith('/api/workshop/generate', { prompt: mockPrompt });
+    expect(api.post).toHaveBeenCalledWith('/api/workshop/generate', expect.any(FormData));
   });
 
   it('should handle generation errors', async () => {
@@ -102,10 +102,19 @@ describe('WorkshopService', () => {
     await state.addFile(mockFile);
 
     const updatedState = useWorkshopStore.getState();
-    expect(updatedState.files).toContainEqual(mockResponse.data);
+    expect(updatedState.files).toEqual(
+      expect.arrayContaining([expect.objectContaining(mockResponse.data)])
+    );
     expect(updatedState.isLoading).toBe(false);
     expect(updatedState.error).toBeNull();
-    expect(api.post).toHaveBeenCalledWith('/api/workshop/files', expect.any(FormData));
+    expect(api.post).toHaveBeenCalledWith(
+      '/api/workshop/files',
+      expect.any(FormData),
+      expect.objectContaining({
+        headers: expect.any(Object),
+        onUploadProgress: expect.any(Function),
+      })
+    );
   });
 
   it('should delete a file', async () => {
@@ -149,10 +158,12 @@ describe('WorkshopService', () => {
     await state.addLink(mockLink);
 
     const updatedState = useWorkshopStore.getState();
-    expect(updatedState.links).toContainEqual(mockResponse.data);
+    expect(updatedState.links).toEqual(
+      expect.arrayContaining([expect.objectContaining(mockResponse.data)])
+    );
     expect(updatedState.isLoading).toBe(false);
     expect(updatedState.error).toBeNull();
-    expect(api.post).toHaveBeenCalledWith('/api/workshop/links', mockLink);
+    expect(api.post).toHaveBeenCalledWith('/api/workshop/links', expect.any(FormData));
   });
 
   it('should delete a link', async () => {

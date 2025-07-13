@@ -29,10 +29,10 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [isLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
-  const { testLogin, mockLogin, user } = useAuth();
+  const { login, mockLogin, user } = useAuth();
   const navigate = useNavigate();
   const theme = useTheme();
 
@@ -64,12 +64,14 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
+      setIsLoading(true);
       try {
-        await testLogin(email, password);
+        await login(email, password);
         navigate('/dashboard');
       } catch (error) {
-        setError('Invalid email or password');
+        setError('Invalid credentials');
       }
+      setIsLoading(false);
     }
   };
 
@@ -350,7 +352,11 @@ const Login: React.FC = () => {
                     fontSize: '0.9375rem',
                   }}
                 >
-                  {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
+                  {isLoading ? (
+                    <CircularProgress size={24} color="inherit" role="progressbar" />
+                  ) : (
+                    'Sign In'
+                  )}
                 </Button>
 
                 <Button

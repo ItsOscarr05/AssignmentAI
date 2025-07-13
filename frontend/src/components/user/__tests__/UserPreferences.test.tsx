@@ -1,7 +1,11 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserPreferences as UserPreferencesType } from '../../../types/user';
 import UserPreferences from '../UserPreferences';
+
+const mockFetch = vi.fn();
+global.fetch = mockFetch;
 
 // Mock LoadingSpinner component
 vi.mock('../common/LoadingSpinner', () => ({
@@ -10,8 +14,9 @@ vi.mock('../common/LoadingSpinner', () => ({
 
 // Mock Toast component
 vi.mock('../common/Toast', () => ({
-  Toast: ({ open, message }: { open: boolean; message: string }) =>
-    open ? <div data-testid="toast">{message}</div> : null,
+  Toast: ({ open, message }: { open: boolean; message: string }) => (
+    <div data-testid="toast">{open ? message : null}</div>
+  ),
 }));
 
 // Mock Material-UI components
@@ -20,17 +25,8 @@ vi.mock('@mui/material', () => ({
   FormControl: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="form-control">{children}</div>
   ),
-  FormControlLabel: ({
-    children,
-    control,
-  }: {
-    children: React.ReactNode;
-    control: React.ReactNode;
-  }) => (
-    <div data-testid="form-control-label">
-      {control}
-      {children}
-    </div>
+  FormControlLabel: ({ control, label }: { control: React.ReactElement; label: string }) => (
+    React.cloneElement(control, { 'aria-label': label })
   ),
   FormGroup: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="form-group">{children}</div>
@@ -39,67 +35,43 @@ vi.mock('@mui/material', () => ({
   InputLabel: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="input-label">{children}</div>
   ),
-  MenuItem: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="menu-item">{children}</div>
+  MenuItem: ({ children, value }: { children: React.ReactNode; value: string }) => (
+    <option value={value} data-testid="menu-item">{children}</option>
   ),
   Paper: ({ children }: { children: React.ReactNode }) => <div data-testid="paper">{children}</div>,
-  Select: ({
-    children,
-    value,
-    onChange,
-    label,
-  }: {
-    children: React.ReactNode;
-    value: string;
-    onChange: (event: any) => void;
-    label: string;
-  }) => (
+  Select: ({ children, value, onChange, label }: { children: React.ReactNode; value: string; onChange: (event: any) => void; label: string }) => (
     <select data-testid="select" value={value} onChange={onChange} aria-label={label}>
       {children}
     </select>
   ),
-  Switch: ({ checked, onChange }: { checked: boolean; onChange: (event: any) => void }) => (
+  Switch: ({ checked, onChange, 'aria-label': ariaLabel }: { checked: boolean; onChange: (event: any) => void; 'aria-label'?: string }) => (
     <input
       type="checkbox"
       data-testid="switch"
       checked={checked}
       onChange={onChange}
       role="checkbox"
+      aria-label={ariaLabel}
     />
   ),
   Typography: ({ children, variant }: { children: React.ReactNode; variant?: string }) => (
-    <p data-testid="typography" data-variant={variant}>
-      {children}
-    </p>
+    <p data-testid="typography" data-variant={variant}>{children}</p>
   ),
   Box: ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => (
-    <div data-testid="box" {...props}>
-      {children}
-    </div>
+    <div data-testid="box" {...props}>{children}</div>
   ),
-  Button: ({
-    children,
-    onClick,
-    disabled,
-  }: {
-    children: React.ReactNode;
-    onClick: () => void;
-    disabled?: boolean;
-  }) => (
-    <button data-testid="button" onClick={onClick} disabled={disabled}>
-      {children}
-    </button>
+  Button: ({ children, onClick, disabled }: { children: React.ReactNode; onClick: () => void; disabled?: boolean }) => (
+    <button data-testid="button" onClick={onClick} disabled={disabled}>{children}</button>
   ),
+  Snackbar: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
+    open ? <div data-testid="snackbar">{children}</div> : null,
+  Alert: ({ children }: { children: React.ReactNode }) => <div data-testid="alert">{children}</div>,
 }));
 
 // Mock Material-UI icons
 vi.mock('@mui/icons-material', () => ({
   Save: () => <span data-testid="save-icon" />,
 }));
-
-// Mock the global fetch function
-const mockFetch = vi.fn();
-global.fetch = mockFetch;
 
 const mockPreferences: UserPreferencesType = {
   theme: 'light',
@@ -126,12 +98,12 @@ describe('UserPreferences', () => {
 
   beforeEach(() => {
     console.log('\n=== Starting new test ===');
-    // Reset all mocks before each test
-    vi.clearAllMocks();
+    // Only clear call history, not implementation
+    mockFetch.mockClear();
+    global.fetch = mockFetch;
     // Mock the initial preferences fetch
     mockFetch.mockImplementation((url, options) => {
       console.log('Mock fetch called with:', { url, options });
-
       if (url === '/api/users/preferences') {
         if (options?.method === 'PUT') {
           console.log('Handling PUT request');
@@ -141,24 +113,27 @@ describe('UserPreferences', () => {
             json: () => Promise.resolve({ success: true }),
           });
         }
-
+        // For GET, return the preferences object directly
         console.log('Handling GET request, returning mock preferences');
         return Promise.resolve({
           ok: true,
           status: 200,
           json: () => {
             console.log('Mock json called, returning:', mockPreferences);
-            return Promise.resolve({
-              data: mockPreferences,
-              success: true,
-            });
+            return Promise.resolve(mockPreferences);
           },
         });
       }
-
       console.log('Rejecting invalid URL:', url);
       return Promise.reject(new Error('Invalid URL'));
     });
+    console.log('Mock fetch setup complete');
+  });
+
+  it('renders without crashing', () => {
+    console.log('Testing basic render...');
+    expect(() => render(<UserPreferences />)).not.toThrow();
+    console.log('Component rendered without throwing');
   });
 
   it('renders user preferences correctly', async () => {
@@ -233,7 +208,7 @@ describe('UserPreferences', () => {
     // Wait for loading to complete
     await waitFor(
       () => {
-        const spinner = screen.queryByTestId('loading-spinner');
+        const spinner = screen.queryByTestId('circular-progress');
         expect(spinner).not.toBeInTheDocument();
       },
       { timeout: 3000 }
@@ -252,10 +227,12 @@ describe('UserPreferences', () => {
     const themeSelect = screen.getByLabelText('Theme');
     console.log('Theme select found:', !!themeSelect);
     console.log('Current theme value:', (themeSelect as HTMLSelectElement).value);
+    console.log('Theme select HTML:', themeSelect.outerHTML);
 
     console.log('Changing theme to dark...');
     fireEvent.change(themeSelect, { target: { value: 'dark' } });
     console.log('New theme value:', (themeSelect as HTMLSelectElement).value);
+    console.log('Theme select HTML after change:', themeSelect.outerHTML);
     expect(themeSelect).toHaveValue('dark');
   });
 
@@ -265,7 +242,7 @@ describe('UserPreferences', () => {
     // Wait for loading to complete
     await waitFor(
       () => {
-        const spinner = screen.queryByTestId('loading-spinner');
+        const spinner = screen.queryByTestId('circular-progress');
         expect(spinner).not.toBeInTheDocument();
       },
       { timeout: 3000 }
@@ -292,7 +269,7 @@ describe('UserPreferences', () => {
     // Wait for loading to complete
     await waitFor(
       () => {
-        const spinner = screen.queryByTestId('loading-spinner');
+        const spinner = screen.queryByTestId('circular-progress');
         expect(spinner).not.toBeInTheDocument();
       },
       { timeout: 3000 }
@@ -319,7 +296,7 @@ describe('UserPreferences', () => {
     // Wait for loading to complete
     await waitFor(
       () => {
-        const spinner = screen.queryByTestId('loading-spinner');
+        const spinner = screen.queryByTestId('circular-progress');
         expect(spinner).not.toBeInTheDocument();
       },
       { timeout: 3000 }
@@ -347,7 +324,7 @@ describe('UserPreferences', () => {
     // Wait for loading to complete
     await waitFor(
       () => {
-        const spinner = screen.queryByTestId('loading-spinner');
+        const spinner = screen.queryByTestId('circular-progress');
         expect(spinner).not.toBeInTheDocument();
       },
       { timeout: 3000 }
@@ -366,7 +343,7 @@ describe('UserPreferences', () => {
     fireEvent.click(saveButton);
 
     await waitFor(() => {
-      expect(screen.getByTestId('toast')).toHaveTextContent('Preferences saved successfully');
+      expect(screen.getByTestId('alert')).toHaveTextContent('Preferences saved successfully');
     });
   });
 
@@ -384,7 +361,7 @@ describe('UserPreferences', () => {
     // Wait for loading to complete
     await waitFor(
       () => {
-        const spinner = screen.queryByTestId('loading-spinner');
+        const spinner = screen.queryByTestId('circular-progress');
         expect(spinner).not.toBeInTheDocument();
       },
       { timeout: 3000 }
@@ -403,7 +380,7 @@ describe('UserPreferences', () => {
     fireEvent.click(saveButton);
 
     await waitFor(() => {
-      expect(screen.getByTestId('toast')).toHaveTextContent('Failed to save preferences');
+      expect(screen.getByTestId('alert')).toHaveTextContent('Failed to save preferences');
     });
   });
 });

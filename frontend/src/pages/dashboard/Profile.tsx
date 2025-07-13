@@ -23,9 +23,14 @@ const Profile: React.FC = () => {
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isEditPreferencesOpen, setIsEditPreferencesOpen] = useState(false);
   const [editForm, setEditForm] = useState({
-    firstName: '',
-    lastName: '',
+    name: '',
+    institution: '',
+    phone: '',
     bio: '',
+  });
+  const [preferencesForm, setPreferencesForm] = useState({
+    darkMode: false,
+    notifications: false,
   });
 
   const handleLogout = useCallback(() => {
@@ -35,8 +40,9 @@ const Profile: React.FC = () => {
   const handleEditProfile = useCallback(() => {
     if (!profile) return;
     setEditForm({
-      firstName: profile.firstName,
-      lastName: profile.lastName,
+      name: (profile as any).name || '',
+      institution: (profile as any).institution || '',
+      phone: (profile as any).phone || '',
       bio: profile.bio || '',
     });
     setIsEditProfileOpen(true);
@@ -45,28 +51,33 @@ const Profile: React.FC = () => {
   const handleSaveProfile = useCallback(() => {
     if (!profile) return;
     updateProfile({
-      firstName: editForm.firstName,
-      lastName: editForm.lastName,
-      bio: editForm.bio,
-    });
+      name: editForm.name,
+      institution: editForm.institution,
+      phone: editForm.phone,
+    } as any);
     setIsEditProfileOpen(false);
   }, [profile, editForm, updateProfile]);
 
   const handleEditPreferences = useCallback(() => {
+    if (!profile) return;
+    setPreferencesForm({
+      darkMode: (profile.preferences as any).darkMode ?? profile.preferences.theme === 'dark',
+      notifications:
+        typeof profile.preferences.notifications === 'boolean'
+          ? profile.preferences.notifications
+          : false,
+    });
     setIsEditPreferencesOpen(true);
-  }, []);
+  }, [profile]);
 
   const handleSavePreferences = useCallback(() => {
     if (!profile) return;
     updatePreferences({
-      theme: profile.preferences.theme === 'light' ? 'dark' : 'light',
-      notifications: {
-        email: !profile.preferences.notifications.email,
-        push: !profile.preferences.notifications.push,
-      },
-    });
+      darkMode: !preferencesForm.darkMode,
+      notifications: !preferencesForm.notifications,
+    } as any);
     setIsEditPreferencesOpen(false);
-  }, [profile, updatePreferences]);
+  }, [profile, preferencesForm, updatePreferences]);
 
   if (isLoading) {
     return (
@@ -100,18 +111,49 @@ const Profile: React.FC = () => {
         </Typography>
         <Grid container spacing={2}>
           <Grid item xs={12}>
-            <Typography variant="subtitle1">
-              Name: {profile.firstName} {profile.lastName}
-            </Typography>
+            <Typography variant="subtitle1">Name: {(profile as any).name ?? ''}</Typography>
           </Grid>
           <Grid item xs={12}>
             <Typography variant="subtitle1">Email: {profile.email}</Typography>
           </Grid>
           <Grid item xs={12}>
+            <Typography variant="subtitle1">
+              Institution: {(profile as any).institution ?? ''}
+            </Typography>
+          </Grid>
+          <Grid item xs={12}>
             <Typography variant="subtitle1">Bio: {profile.bio || 'No bio provided'}</Typography>
           </Grid>
           <Grid item xs={12}>
-            <Typography variant="subtitle1">Theme: {profile.preferences.theme}</Typography>
+            <Typography variant="subtitle1">
+              Theme:{' '}
+              {(profile.preferences as any).darkMode !== undefined
+                ? (profile.preferences as any).darkMode
+                  ? 'dark'
+                  : 'light'
+                : profile.preferences.theme === 'dark'
+                ? 'dark'
+                : 'light'}
+            </Typography>
+          </Grid>
+          <Grid item xs={12}>
+            <Typography variant="subtitle1">
+              Verification Status: {(profile as any).isVerified ? 'Verified' : 'Unverified'}
+            </Typography>
+          </Grid>
+          <Grid item xs={12}>
+            <Typography variant="subtitle1">
+              Total Assignments: {(profile as any).statistics?.totalAssignments ?? 0}
+            </Typography>
+            <Typography variant="subtitle1">
+              Completed: {(profile as any).statistics?.completedAssignments ?? 0}
+            </Typography>
+            <Typography variant="subtitle1">
+              Average Score: {(profile as any).statistics?.averageScore ?? 0}%
+            </Typography>
+            <Typography variant="subtitle1">
+              Active Days: {(profile as any).statistics?.activeDays ?? 0}
+            </Typography>
           </Grid>
           <Grid item xs={12}>
             <Button variant="contained" color="primary" onClick={handleEditProfile}>
@@ -131,24 +173,30 @@ const Profile: React.FC = () => {
           </Grid>
         </Grid>
       </Paper>
-
       <Dialog open={isEditProfileOpen} onClose={() => setIsEditProfileOpen(false)}>
         <DialogTitle>Edit Profile</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
             margin="dense"
-            label="First Name"
+            label="Name"
             fullWidth
-            value={editForm.firstName}
-            onChange={e => setEditForm({ ...editForm, firstName: e.target.value })}
+            value={editForm.name}
+            onChange={e => setEditForm({ ...editForm, name: e.target.value })}
           />
           <TextField
             margin="dense"
-            label="Last Name"
+            label="Institution"
             fullWidth
-            value={editForm.lastName}
-            onChange={e => setEditForm({ ...editForm, lastName: e.target.value })}
+            value={editForm.institution}
+            onChange={e => setEditForm({ ...editForm, institution: e.target.value })}
+          />
+          <TextField
+            margin="dense"
+            label="Phone"
+            fullWidth
+            value={editForm.phone}
+            onChange={e => setEditForm({ ...editForm, phone: e.target.value })}
           />
           <TextField
             margin="dense"
@@ -165,15 +213,16 @@ const Profile: React.FC = () => {
           <Button onClick={handleSaveProfile}>Save Changes</Button>
         </DialogActions>
       </Dialog>
-
       <Dialog open={isEditPreferencesOpen} onClose={() => setIsEditPreferencesOpen(false)}>
         <DialogTitle>Edit Preferences</DialogTitle>
         <DialogContent>
           <FormControlLabel
             control={
               <Switch
-                checked={profile.preferences.theme === 'dark'}
-                onChange={() => {}}
+                checked={preferencesForm.darkMode}
+                onChange={e =>
+                  setPreferencesForm({ ...preferencesForm, darkMode: e.target.checked })
+                }
                 inputProps={{ 'aria-label': 'Dark Mode' }}
               />
             }
@@ -182,22 +231,14 @@ const Profile: React.FC = () => {
           <FormControlLabel
             control={
               <Switch
-                checked={profile.preferences.notifications.email}
-                onChange={() => {}}
-                inputProps={{ 'aria-label': 'Email Notifications' }}
+                checked={preferencesForm.notifications}
+                onChange={e =>
+                  setPreferencesForm({ ...preferencesForm, notifications: e.target.checked })
+                }
+                inputProps={{ 'aria-label': 'Notifications' }}
               />
             }
-            label="Email Notifications"
-          />
-          <FormControlLabel
-            control={
-              <Switch
-                checked={profile.preferences.notifications.push}
-                onChange={() => {}}
-                inputProps={{ 'aria-label': 'Push Notifications' }}
-              />
-            }
-            label="Push Notifications"
+            label="Notifications"
           />
         </DialogContent>
         <DialogActions>

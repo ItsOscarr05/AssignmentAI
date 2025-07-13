@@ -3,23 +3,41 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Login } from '../components/auth/Login';
 import { OAuthCallback } from '../components/auth/OAuthCallback';
-import { AuthProvider } from '../contexts/AuthContext';
+import { AuthContext } from '../contexts/AuthContext';
 
-// Mock the auth service
-const mockAuthService = {
-  login: vi.fn(),
-  handleCallback: vi.fn(),
-  logout: vi.fn(),
-  isAuthenticated: vi.fn(),
-  getToken: vi.fn(),
-  refreshToken: vi.fn(),
+// Mock the auth context methods
+const mockLogin = vi.fn();
+const mockHandleCallback = vi.fn();
+const mockLogout = vi.fn();
+const mockIsAuthenticated = vi.fn();
+const mockGetToken = vi.fn();
+const mockRefreshToken = vi.fn();
+
+const mockAuthContextValue = {
+  user: null,
+  isAuthenticated: false,
+  isLoading: false,
+  error: null,
+  isMockUser: false,
+  login: mockLogin,
+  handleCallback: mockHandleCallback,
+  logout: mockLogout,
+  updateUser: vi.fn(),
+  register: vi.fn(),
+  mockLogin: vi.fn(),
+  testLogin: vi.fn(),
+  resetPassword: vi.fn(),
+  updatePassword: vi.fn(),
 };
 
-vi.mock('../services/auth', () => ({
-  AuthService: {
-    getInstance: () => mockAuthService,
-  },
-}));
+// Mock the AuthContext
+vi.mock('../contexts/AuthContext', async () => {
+  const actual = await vi.importActual('../contexts/AuthContext');
+  return {
+    ...actual,
+    useAuth: () => mockAuthContextValue,
+  };
+});
 
 describe('OAuth Flow', () => {
   beforeEach(() => {
@@ -29,9 +47,9 @@ describe('OAuth Flow', () => {
   describe('Login Component', () => {
     it('renders login form with OAuth buttons', () => {
       render(
-        <AuthProvider>
+        <AuthContext.Provider value={mockAuthContextValue}>
           <Login />
-        </AuthProvider>
+        </AuthContext.Provider>
       );
 
       expect(screen.getByText(/Sign in with Google/i)).toBeTruthy();
@@ -40,19 +58,19 @@ describe('OAuth Flow', () => {
     });
 
     it('handles OAuth login click', async () => {
-      mockAuthService.login.mockResolvedValueOnce({ success: true });
+      mockLogin.mockResolvedValueOnce({ success: true });
 
       render(
-        <AuthProvider>
+        <AuthContext.Provider value={mockAuthContextValue}>
           <Login />
-        </AuthProvider>
+        </AuthContext.Provider>
       );
 
       const googleButton = screen.getByText(/Sign in with Google/i);
       fireEvent.click(googleButton);
 
       await waitFor(() => {
-        expect(mockAuthService.login).toHaveBeenCalledWith('google');
+        expect(mockLogin).toHaveBeenCalledWith('google');
       });
     });
   });
@@ -60,34 +78,34 @@ describe('OAuth Flow', () => {
   describe('OAuth Callback Component', () => {
     it('handles successful OAuth callback', async () => {
       const mockUser = { id: '1', email: 'test@example.com' };
-      mockAuthService.handleCallback.mockResolvedValueOnce(mockUser);
+      mockHandleCallback.mockResolvedValueOnce(mockUser);
 
       render(
-        <AuthProvider>
+        <AuthContext.Provider value={mockAuthContextValue}>
           <MemoryRouter initialEntries={['/auth/callback?code=123&state=xyz']}>
             <Routes>
               <Route path="/auth/callback" element={<OAuthCallback />} />
             </Routes>
           </MemoryRouter>
-        </AuthProvider>
+        </AuthContext.Provider>
       );
 
       await waitFor(() => {
-        expect(mockAuthService.handleCallback).toHaveBeenCalledWith('123', 'xyz');
+        expect(mockHandleCallback).toHaveBeenCalledWith('123', 'xyz');
       });
     });
 
     it('handles OAuth callback error', async () => {
-      mockAuthService.handleCallback.mockRejectedValueOnce(new Error('Invalid code'));
+      mockHandleCallback.mockRejectedValueOnce(new Error('Invalid code'));
 
       render(
-        <AuthProvider>
+        <AuthContext.Provider value={mockAuthContextValue}>
           <MemoryRouter initialEntries={['/auth/callback?error=access_denied']}>
             <Routes>
               <Route path="/auth/callback" element={<OAuthCallback />} />
             </Routes>
           </MemoryRouter>
-        </AuthProvider>
+        </AuthContext.Provider>
       );
 
       await waitFor(() => {
@@ -99,21 +117,21 @@ describe('OAuth Flow', () => {
   describe('Token Refresh', () => {
     it('refreshes token when expired', async () => {
       const mockNewToken = 'new-token-123';
-      mockAuthService.getToken.mockReturnValueOnce('expired-token');
-      mockAuthService.refreshToken.mockResolvedValueOnce(mockNewToken);
+      mockGetToken.mockReturnValueOnce('expired-token');
+      mockRefreshToken.mockResolvedValueOnce(mockNewToken);
 
-      await mockAuthService.refreshToken();
+      await mockRefreshToken();
 
-      expect(mockAuthService.refreshToken).toHaveBeenCalled();
-      expect(mockAuthService.getToken()).toBe('expired-token');
+      expect(mockRefreshToken).toHaveBeenCalled();
+      expect(mockGetToken()).toBe('expired-token');
     });
 
     it('handles token refresh failure', async () => {
-      mockAuthService.getToken.mockReturnValueOnce('expired-token');
-      mockAuthService.refreshToken.mockRejectedValueOnce(new Error('Refresh failed'));
+      mockGetToken.mockReturnValueOnce('expired-token');
+      mockRefreshToken.mockRejectedValueOnce(new Error('Refresh failed'));
 
-      await expect(mockAuthService.refreshToken()).rejects.toThrow('Refresh failed');
-      expect(mockAuthService.refreshToken).toHaveBeenCalled();
+      await expect(mockRefreshToken()).rejects.toThrow('Refresh failed');
+      expect(mockRefreshToken).toHaveBeenCalled();
     });
   });
 });

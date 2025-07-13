@@ -11,8 +11,8 @@ const mockAssignments = [
     id: 1,
     title: 'Test 1',
     subject: 'Math',
-    gradeLevel: '10',
-    due_date: new Date('2024-12-31').toISOString(),
+    grade_level: '10',
+    dueDate: '2024-12-31T00:00:00.000Z',
     status: 'Active',
   },
 ];

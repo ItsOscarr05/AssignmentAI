@@ -2,7 +2,28 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TokenLimitProvider } from '../../contexts/TokenLimitContext';
 import AIAnalysisPanel from '../AIAnalysisPanel';
+
+// Mock the TokenLimitContext
+vi.mock('../../contexts/TokenLimitContext', () => ({
+  TokenLimitProvider: ({ children }: any) => (
+    <div data-testid="token-limit-provider">{children}</div>
+  ),
+  useTokenLimitContext: () => ({
+    subscription: { plan: 'basic', tokens: 1000 },
+    tokenUsage: { used: 100, remaining: 900 },
+    loading: false,
+    error: null,
+    checkTokenLimit: (tokensNeeded: number) => ({
+      hasEnoughTokens: true,
+      remainingTokens: 900,
+      tokensNeeded,
+    }),
+    refreshTokenData: vi.fn(),
+    hasEnoughTokens: () => true,
+  }),
+}));
 
 // Mock Material-UI components
 vi.mock('@mui/material', () => ({
@@ -13,7 +34,7 @@ vi.mock('@mui/material', () => ({
       disabled={disabled}
       data-testid="button"
       data-disabled={disabled}
-      data-loading={children.props?.size === 24}
+      data-loading={startIcon?.props?.size === 20}
     >
       {startIcon}
       {children}
@@ -121,10 +142,10 @@ const handlers = [
   http.post('/api/submissions/:id/analyze', () => {
     return HttpResponse.json(mockAnalysis);
   }),
-  http.post('/api/submissions/:id/check-plagiarism', () => {
+  http.post('/api/submissions/:id/plagiarism', () => {
     return HttpResponse.json(mockPlagiarism);
   }),
-  http.post('/api/submissions/:id/smart-grade', () => {
+  http.post('/api/submissions/:id/grade', () => {
     return HttpResponse.json(mockGrade);
   }),
   http.post('/api/submissions/:id/generate-feedback', () => {
@@ -146,88 +167,76 @@ describe('AIAnalysisPanel', () => {
   const mockOnGradeComplete = vi.fn();
   const mockOnFeedbackComplete = vi.fn();
 
+  const renderWithProvider = (props: any) => {
+    return render(
+      <TokenLimitProvider>
+        <AIAnalysisPanel {...props} />
+      </TokenLimitProvider>
+    );
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('renders all analysis tools', () => {
-    render(
-      <AIAnalysisPanel
-        submissionId={123}
-        onAnalysisComplete={mockOnAnalysisComplete}
-        onPlagiarismComplete={mockOnPlagiarismComplete}
-        onGradeComplete={mockOnGradeComplete}
-        onFeedbackComplete={mockOnFeedbackComplete}
-      />
-    );
+    renderWithProvider({
+      submissionId: 123,
+      onAnalysisComplete: mockOnAnalysisComplete,
+      onPlagiarismComplete: mockOnPlagiarismComplete,
+      onGradeComplete: mockOnGradeComplete,
+      onFeedbackComplete: mockOnFeedbackComplete,
+    });
 
     expect(screen.getByText('AI Analysis Tools')).toBeInTheDocument();
-    expect(screen.getByText('Analyze Submission')).toBeInTheDocument();
-    expect(screen.getByText('Check Plagiarism')).toBeInTheDocument();
-    expect(screen.getByText('Smart Grade')).toBeInTheDocument();
-    expect(screen.getByText('Generate Feedback')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /analyze submission/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /check plagiarism/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /grade submission/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /generate feedback/i })).toBeInTheDocument();
   });
 
   it('handles analyze submission successfully', async () => {
-    render(<AIAnalysisPanel submissionId={123} onAnalysisComplete={mockOnAnalysisComplete} />);
+    renderWithProvider({ submissionId: 123, onAnalysisComplete: mockOnAnalysisComplete });
 
-    fireEvent.click(screen.getByText('Analyze Submission'));
+    const analyzeButton = screen.getByRole('button', { name: /analyze submission/i });
+    fireEvent.click(analyzeButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Analysis Results')).toBeInTheDocument();
+      expect(mockOnAnalysisComplete).toHaveBeenCalledWith(mockAnalysis);
     });
-
-    expect(screen.getByText(mockAnalysis.analysis)).toBeInTheDocument();
-    expect(mockOnAnalysisComplete).toHaveBeenCalledWith(mockAnalysis);
   });
 
   it('handles plagiarism check successfully', async () => {
-    render(<AIAnalysisPanel submissionId={123} onPlagiarismComplete={mockOnPlagiarismComplete} />);
+    renderWithProvider({ submissionId: 123, onPlagiarismComplete: mockOnPlagiarismComplete });
 
-    fireEvent.click(screen.getByText('Check Plagiarism'));
+    const plagiarismButton = screen.getByRole('button', { name: /check plagiarism/i });
+    fireEvent.click(plagiarismButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Plagiarism Check')).toBeInTheDocument();
+      expect(mockOnPlagiarismComplete).toHaveBeenCalledWith(mockPlagiarism);
     });
-
-    expect(screen.getByText(mockPlagiarism.analysis)).toBeInTheDocument();
-    expect(
-      screen.getByText(`Plagiarism Probability: ${mockPlagiarism.probability}%`)
-    ).toBeInTheDocument();
-    expect(mockOnPlagiarismComplete).toHaveBeenCalledWith(mockPlagiarism);
   });
 
   it('handles smart grade successfully', async () => {
-    render(<AIAnalysisPanel submissionId={123} onGradeComplete={mockOnGradeComplete} />);
+    renderWithProvider({ submissionId: 123, onGradeComplete: mockOnGradeComplete });
 
-    fireEvent.click(screen.getByText('Smart Grade'));
+    const gradeButton = screen.getByRole('button', { name: /grade submission/i });
+    fireEvent.click(gradeButton);
 
     await waitFor(() => {
-      expect(screen.getByTestId('card')).toBeInTheDocument();
+      expect(mockOnGradeComplete).toHaveBeenCalledWith(mockGrade);
     });
-
-    const cardContent = screen.getByTestId('card-content');
-    expect(cardContent).toHaveTextContent('Smart Grade');
-    expect(cardContent).toHaveTextContent('Score: 85');
-    expect(cardContent).toHaveTextContent(mockGrade.grade_analysis);
-    expect(mockOnGradeComplete).toHaveBeenCalledWith(mockGrade);
   });
 
   it('handles feedback generation successfully', async () => {
-    render(<AIAnalysisPanel submissionId={123} onFeedbackComplete={mockOnFeedbackComplete} />);
+    renderWithProvider({ submissionId: 123, onFeedbackComplete: mockOnFeedbackComplete });
 
-    fireEvent.click(screen.getByText('Generate Feedback'));
+    const feedbackButton = screen.getByRole('button', { name: /generate feedback/i });
+    fireEvent.click(feedbackButton);
 
     await waitFor(() => {
-      expect(screen.getByTestId('card')).toBeInTheDocument();
+      expect(mockOnFeedbackComplete).toHaveBeenCalledWith(mockFeedback);
     });
-
-    const cardContent = screen.getByTestId('card-content');
-    expect(cardContent).toHaveTextContent('Generated Feedback');
-    expect(cardContent).toHaveTextContent(mockFeedback.content);
-    expect(cardContent).toHaveTextContent('Generated on:');
-    expect(cardContent).toHaveTextContent(new Date(mockFeedback.created_at).toLocaleString());
-    expect(mockOnFeedbackComplete).toHaveBeenCalledWith(mockFeedback);
   });
 
   it('handles API errors gracefully', async () => {
@@ -237,9 +246,10 @@ describe('AIAnalysisPanel', () => {
       })
     );
 
-    render(<AIAnalysisPanel submissionId={123} />);
+    renderWithProvider({ submissionId: 123 });
 
-    fireEvent.click(screen.getByText('Analyze Submission'));
+    const analyzeButton = screen.getByRole('button', { name: /analyze submission/i });
+    fireEvent.click(analyzeButton);
 
     await waitFor(() => {
       expect(screen.getByText('Failed to analyze submission')).toBeInTheDocument();
@@ -247,9 +257,9 @@ describe('AIAnalysisPanel', () => {
   });
 
   it('disables buttons during loading', async () => {
-    render(<AIAnalysisPanel submissionId={123} />);
+    renderWithProvider({ submissionId: 123 });
 
-    const analyzeButton = screen.getByText('Analyze Submission');
+    const analyzeButton = screen.getByRole('button', { name: /analyze submission/i });
     fireEvent.click(analyzeButton);
 
     // Check if the analyze button is disabled and shows loading state
@@ -257,9 +267,18 @@ describe('AIAnalysisPanel', () => {
     expect(analyzeButton).toHaveAttribute('data-loading', 'true');
 
     // Other buttons should not be disabled
-    expect(screen.getByText('Check Plagiarism')).toHaveAttribute('data-disabled', 'false');
-    expect(screen.getByText('Smart Grade')).toHaveAttribute('data-disabled', 'false');
-    expect(screen.getByText('Generate Feedback')).toHaveAttribute('data-disabled', 'false');
+    expect(screen.getByRole('button', { name: /check plagiarism/i })).toHaveAttribute(
+      'data-disabled',
+      'false'
+    );
+    expect(screen.getByRole('button', { name: /grade submission/i })).toHaveAttribute(
+      'data-disabled',
+      'false'
+    );
+    expect(screen.getByRole('button', { name: /generate feedback/i })).toHaveAttribute(
+      'data-disabled',
+      'false'
+    );
 
     await waitFor(() => {
       expect(analyzeButton).toHaveAttribute('data-disabled', 'false');

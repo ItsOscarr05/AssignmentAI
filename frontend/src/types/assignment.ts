@@ -20,6 +20,7 @@ export interface Assignment {
   tags: string[];
   createdBy: string;
   submissions: Submission[];
+  difficulty?: DifficultyLevel;
 }
 
 export interface Attachment {

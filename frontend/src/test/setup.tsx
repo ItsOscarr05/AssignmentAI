@@ -10,26 +10,14 @@ import { AuthProvider } from '../contexts/AuthContext';
 import { theme } from '../theme';
 import { server } from './mocks/server';
 
-// Add jest-dom matchers
-expect.extend(matchers);
+// Move all mocks and mock definitions to the very top of the file
 
-// Configure testing-library
-configure({
-  testIdAttribute: 'data-testid',
-  asyncUtilTimeout: 1000,
-});
-
-// Extend Vitest's expect with jest-dom matchers
-declare global {
-  namespace Vi {
-    interface Assertion<T = any> extends jest.Matchers<void, T> {}
-    interface AsymmetricMatchersContaining extends jest.Matchers<void, any> {}
-  }
-}
-
-// Mock Material-UI components
 const mockMuiComponents = {
-  Box: (props: any) => createElement('div', props, props.children),
+  Box: (props: any) => createElement('div', { ...props, 'data-testid': 'mui-box' }, props.children),
+  createTheme: (...args: any[]) => ({}),
+  keyframes: (strings: TemplateStringsArray, ..._values: any[]) => ({
+    toString: () => strings.join(''),
+  }),
   Alert: (props: any) =>
     createElement(
       'div',
@@ -281,7 +269,34 @@ const mockMuiComponents = {
       {children}
     </div>
   ),
+  Stack: (props: any) =>
+    createElement('div', { ...props, 'data-testid': 'mui-stack' }, props.children),
+  Link: (props: any) => createElement('a', { ...props, 'data-testid': 'mui-link' }, props.children),
 };
+
+vi.mock('@mui/material', () => ({
+  ...mockMuiComponents,
+  createTheme: (...args: any[]) => ({}),
+  ThemeProvider: ({ children }: any) =>
+    createElement('div', { 'data-testid': 'theme-provider' }, children),
+}));
+
+// Add jest-dom matchers
+expect.extend(matchers);
+
+// Configure testing-library
+configure({
+  testIdAttribute: 'data-testid',
+  asyncUtilTimeout: 1000,
+});
+
+// Extend Vitest's expect with jest-dom matchers
+declare global {
+  namespace Vi {
+    interface Assertion<T = any> extends jest.Matchers<void, T> {}
+    interface AsymmetricMatchersContaining extends jest.Matchers<void, any> {}
+  }
+}
 
 // Mock Material-UI icons
 const mockIcons = {
@@ -349,7 +364,53 @@ const mockIcons = {
   CloudOff: () => createElement('span', { 'data-testid': 'CloudOffIcon' }, 'CloudOff'),
   CloudDone: () => createElement('span', { 'data-testid': 'CloudDoneIcon' }, 'CloudDone'),
   CloudCircle: () => createElement('span', { 'data-testid': 'CloudCircleIcon' }, 'CloudCircle'),
+  ArticleOutlined: () =>
+    createElement('span', { 'data-testid': 'ArticleOutlinedIcon' }, 'ArticleOutlined'),
+  AttachFile: () => createElement('span', { 'data-testid': 'AttachFileIcon' }, 'AttachFile'),
+  ContactSupportOutlined: () =>
+    createElement(
+      'span',
+      { 'data-testid': 'ContactSupportOutlinedIcon' },
+      'ContactSupportOutlined'
+    ),
+  FeedbackOutlined: () =>
+    createElement('span', { 'data-testid': 'FeedbackOutlinedIcon' }, 'FeedbackOutlined'),
+  ForumOutlined: () =>
+    createElement('span', { 'data-testid': 'ForumOutlinedIcon' }, 'ForumOutlined'),
+  HelpOutlineOutlined: () =>
+    createElement('span', { 'data-testid': 'HelpOutlineOutlinedIcon' }, 'HelpOutlineOutlined'),
+  QuestionAnswerOutlined: () =>
+    createElement(
+      'span',
+      { 'data-testid': 'QuestionAnswerOutlinedIcon' },
+      'QuestionAnswerOutlined'
+    ),
+  RateReviewOutlined: () =>
+    createElement('span', { 'data-testid': 'RateReviewOutlinedIcon' }, 'RateReviewOutlined'),
+  SearchOutlined: () =>
+    createElement('span', { 'data-testid': 'SearchOutlinedIcon' }, 'SearchOutlined'),
+  SendOutlined: () => createElement('span', { 'data-testid': 'SendOutlinedIcon' }, 'SendOutlined'),
 };
+
+vi.mock('@mui/icons-material', () => mockIcons);
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => vi.fn(),
+    useLocation: () => ({ pathname: '/', search: '', hash: '', state: null }),
+    useParams: () => ({}),
+    useSearchParams: () => [new URLSearchParams(), vi.fn()],
+    Link: ({ children, to, ...props }: any) =>
+      createElement('a', { href: to, ...props, 'data-testid': 'router-link' }, children),
+    NavLink: ({ children, to, ...props }: any) =>
+      createElement('a', { href: to, ...props, 'data-testid': 'nav-link' }, children),
+    Outlet: () => createElement('div', { 'data-testid': 'outlet' }),
+    Routes: ({ children }: any) => createElement('div', { 'data-testid': 'routes' }, children),
+    Route: ({ children }: any) => createElement('div', { 'data-testid': 'route' }, children),
+  };
+});
 
 // Mock browser APIs
 global.TextDecoder = TextDecoder as any;
@@ -410,8 +471,8 @@ const sessionStorageMock = {
 };
 global.sessionStorage = sessionStorageMock as any;
 
-// Mock fetch
-global.fetch = vi.fn();
+// Mock fetch - let individual tests mock as needed
+// global.fetch = vi.fn();
 
 // Mock WebSocket
 global.WebSocket = vi.fn() as any;
@@ -436,16 +497,6 @@ window.cancelAnimationFrame = vi.fn();
 console.error = vi.fn();
 console.warn = vi.fn();
 console.log = vi.fn();
-
-// Mock react-router-dom
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom');
-  return {
-    ...actual,
-    useNavigate: () => vi.fn(),
-    useLocation: () => ({ pathname: '/', search: '', hash: '', state: null }),
-  };
-});
 
 // Create a custom render function that includes all providers
 const customRender = (ui: React.ReactElement, options = {}) => {
@@ -472,12 +523,6 @@ afterEach(() => {
 
 // Start MSW server before all tests
 beforeAll(() => {
-  // Mock Material-UI
-  vi.mock('@mui/material', () => ({
-    ...vi.importActual('@mui/material'),
-    ...mockMuiComponents,
-  }));
-
   // Mock Material-UI icons
   vi.mock('@mui/icons-material', () => mockIcons);
 

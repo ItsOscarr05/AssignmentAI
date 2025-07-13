@@ -53,11 +53,16 @@ vi.mock('@mui/material', () => ({
   ),
   Grid: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   Divider: () => <hr />,
-  Snackbar: ({ open, children }: { open: boolean; children: React.ReactNode }) => (
-    <div
-      data-testid={open ? 'success-snackbar' : 'error-snackbar'}
-      style={{ display: open ? 'block' : 'none' }}
-    >
+  Snackbar: ({
+    open,
+    children,
+    'data-testid': testId,
+  }: {
+    open: boolean;
+    children: React.ReactNode;
+    'data-testid'?: string;
+  }) => (
+    <div data-testid={testId} style={{ display: open ? 'block' : 'none' }}>
       {children}
     </div>
   ),
@@ -89,47 +94,8 @@ vi.mock('@mui/icons-material', () => ({
 // Mock API calls
 vi.mock('../../services/api', () => ({
   auth: {
-    getProfile: vi.fn().mockResolvedValue({
-      preferences: {
-        notifications: {
-          email: true,
-          push: false,
-          sms: true,
-          inApp: true,
-          assignmentUpdates: {
-            email: true,
-            push: false,
-            sms: true,
-            inApp: true,
-          },
-          feedbackUpdates: {
-            email: true,
-            push: true,
-            sms: true,
-            inApp: true,
-          },
-          gradePosted: {
-            email: true,
-            push: true,
-            sms: true,
-            inApp: true,
-          },
-          commentMentions: {
-            email: true,
-            push: true,
-            sms: true,
-            inApp: true,
-          },
-          systemUpdates: {
-            email: true,
-            push: false,
-            sms: false,
-            inApp: true,
-          },
-        },
-      },
-    }),
-    updateProfile: vi.fn().mockResolvedValue({ success: true }),
+    getProfile: vi.fn(),
+    updateProfile: vi.fn(),
   },
 }));
 
@@ -137,6 +103,50 @@ describe('NotificationPreferences', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
+
+    // Default mock implementation
+    vi.mocked(auth.getProfile).mockResolvedValue({
+      id: '1',
+      firstName: 'Test',
+      lastName: 'User',
+      email: 'test@example.com',
+      preferences: {
+        notifications: {
+          assignment_updates: {
+            email: true,
+            push: false,
+            sms: true,
+            inApp: true,
+          },
+          feedback_updates: {
+            email: true,
+            push: true,
+            sms: true,
+            inApp: true,
+          },
+          grade_posted: {
+            email: true,
+            push: true,
+            sms: true,
+            inApp: true,
+          },
+          comment_mention: {
+            email: true,
+            push: true,
+            sms: true,
+            inApp: true,
+          },
+          system_updates: {
+            email: true,
+            push: false,
+            sms: false,
+            inApp: true,
+          },
+        },
+      },
+    });
+
+    vi.mocked(auth.updateProfile).mockResolvedValue({ success: true });
   });
 
   afterEach(() => {
@@ -175,6 +185,9 @@ describe('NotificationPreferences', () => {
   });
 
   it('loads initial preferences from API', async () => {
+    // Use real timers for this test
+    vi.useRealTimers();
+
     // Mock the API call to resolve immediately with complete preferences
     vi.mocked(auth.getProfile).mockResolvedValueOnce({
       id: '1',
@@ -183,11 +196,13 @@ describe('NotificationPreferences', () => {
       email: 'test@example.com',
       preferences: {
         notifications: {
-          email: true,
-          push: false,
+          assignment_updates: {
+            email: true,
+            push: false,
+            sms: true,
+            inApp: true,
+          },
         },
-        theme: 'light',
-        language: 'en',
       },
     });
 
@@ -226,6 +241,9 @@ describe('NotificationPreferences', () => {
 
     // Check that the API was called with the correct parameters
     expect(auth.getProfile).toHaveBeenCalled();
+
+    // Switch back to fake timers
+    vi.useFakeTimers();
   });
 
   it('shows loading state initially', async () => {
@@ -239,6 +257,9 @@ describe('NotificationPreferences', () => {
   });
 
   it('handles API errors gracefully', async () => {
+    // Use real timers for this test
+    vi.useRealTimers();
+
     // Mock the API call to reject immediately
     vi.mocked(auth.getProfile).mockRejectedValueOnce(new Error('Failed to fetch'));
 
@@ -252,6 +273,9 @@ describe('NotificationPreferences', () => {
     // Check error message
     expect(screen.getByTestId('error-alert')).toHaveAttribute('data-severity', 'error');
     expect(screen.getByText('Failed to load notification preferences')).toBeInTheDocument();
+
+    // Switch back to fake timers
+    vi.useFakeTimers();
   });
 
   it('updates preferences when toggled', async () => {
@@ -265,22 +289,30 @@ describe('NotificationPreferences', () => {
   });
 
   it('saves preferences when save button is clicked', async () => {
+    // Use real timers for this test
+    vi.useRealTimers();
+
     render(<NotificationPreferences />);
-    await waitForLoadingToComplete();
+
+    // Wait for component to load
+    await waitFor(() => {
+      expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument();
+    });
 
     const saveButton = screen.getByRole('button', { name: /save/i });
     fireEvent.click(saveButton);
 
-    // Run timers and flush promises immediately after click
-    await vi.runAllTimersAsync();
-    await flushPromises();
-    await vi.runAllTimersAsync();
+    // Wait for the success snackbar to appear
+    await waitFor(() => {
+      expect(screen.getByTestId('success-snackbar')).toBeVisible();
+    });
 
     // Check for success message
-    const successSnackbar = screen.getByTestId('success-snackbar');
-    expect(successSnackbar).toBeVisible();
     expect(screen.getByTestId('success-alert')).toHaveAttribute('data-severity', 'success');
-  }, 15000);
+
+    // Switch back to fake timers
+    vi.useFakeTimers();
+  });
 
   it('updates all switches when bulk update is triggered', async () => {
     render(<NotificationPreferences />);

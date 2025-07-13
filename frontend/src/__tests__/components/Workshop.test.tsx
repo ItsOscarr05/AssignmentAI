@@ -1,6 +1,7 @@
 import { ThemeProvider } from '@mui/material/styles';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AuthProvider } from '../../contexts/AuthContext';
 import Workshop from '../../pages/Workshop';
 import { useWorkshopStore } from '../../services/WorkshopService';
 import { theme } from '../../theme';
@@ -40,21 +41,144 @@ vi.mock('@mui/material', async importOriginal => {
 });
 
 // Mock @mui/icons-material
-vi.mock('@mui/icons-material', () => ({
-  Upload: () => <span data-testid="upload-icon">Upload</span>,
-  Link: () => <span data-testid="link-icon">Link</span>,
-  Send: () => <span data-testid="send-icon">Send</span>,
-  History: () => <span data-testid="history-icon">History</span>,
-  Lightbulb: () => <span data-testid="lightbulb-icon">Lightbulb</span>,
-  Description: () => <span data-testid="description-icon">Description</span>,
-  Assessment: () => <span data-testid="assessment-icon">Assessment</span>,
-  Analytics: () => <span data-testid="analytics-icon">Analytics</span>,
-  Speed: () => <span data-testid="speed-icon">Speed</span>,
-  CloudUpload: () => <span data-testid="cloud-upload-icon">CloudUpload</span>,
-}));
+vi.mock('@mui/icons-material', () => {
+  const createIconMock = (name: string) => {
+    return () => <span data-testid={`${name.toLowerCase()}-icon`}>{name}</span>;
+  };
+
+  return {
+    Upload: createIconMock('Upload'),
+    Link: createIconMock('Link'),
+    Send: createIconMock('Send'),
+    History: createIconMock('History'),
+    Lightbulb: createIconMock('Lightbulb'),
+    Description: createIconMock('Description'),
+    Assessment: createIconMock('Assessment'),
+    Analytics: createIconMock('Analytics'),
+    Speed: createIconMock('Speed'),
+    CloudUpload: createIconMock('CloudUpload'),
+    InfoOutlined: createIconMock('InfoOutlined'),
+    BarChartOutlined: createIconMock('BarChartOutlined'),
+    Add: createIconMock('Add'),
+    Delete: createIconMock('Delete'),
+    DeleteOutlined: createIconMock('DeleteOutlined'),
+    Edit: createIconMock('Edit'),
+    EditOutlined: createIconMock('EditOutlined'),
+    Search: createIconMock('Search'),
+    Filter: createIconMock('Filter'),
+    Sort: createIconMock('Sort'),
+    Refresh: createIconMock('Refresh'),
+    Download: createIconMock('Download'),
+    DownloadOutlined: createIconMock('DownloadOutlined'),
+    Print: createIconMock('Print'),
+    Share: createIconMock('Share'),
+    Favorite: createIconMock('Favorite'),
+    Star: createIconMock('Star'),
+    ThumbUp: createIconMock('ThumbUp'),
+    ThumbDown: createIconMock('ThumbDown'),
+    Comment: createIconMock('Comment'),
+    Reply: createIconMock('Reply'),
+    Forward: createIconMock('Forward'),
+    Back: createIconMock('Back'),
+    Next: createIconMock('Next'),
+    FirstPage: createIconMock('FirstPage'),
+    LastPage: createIconMock('LastPage'),
+    ChevronLeft: createIconMock('ChevronLeft'),
+    ChevronRight: createIconMock('ChevronRight'),
+    ExpandMore: createIconMock('ExpandMore'),
+    ExpandLess: createIconMock('ExpandLess'),
+    Menu: createIconMock('Menu'),
+    Close: createIconMock('Close'),
+    Check: createIconMock('Check'),
+    Cancel: createIconMock('Cancel'),
+    Warning: createIconMock('Warning'),
+    Error: createIconMock('Error'),
+    Success: createIconMock('Success'),
+    Info: createIconMock('Info'),
+    Help: createIconMock('Help'),
+    Settings: createIconMock('Settings'),
+    AccountCircle: createIconMock('AccountCircle'),
+    Person: createIconMock('Person'),
+    Group: createIconMock('Group'),
+    Business: createIconMock('Business'),
+    School: createIconMock('School'),
+    Work: createIconMock('Work'),
+    Home: createIconMock('Home'),
+    LocationOn: createIconMock('LocationOn'),
+    Phone: createIconMock('Phone'),
+    Email: createIconMock('Email'),
+    Web: createIconMock('Web'),
+    Language: createIconMock('Language'),
+    AccessTime: createIconMock('AccessTime'),
+    CalendarToday: createIconMock('CalendarToday'),
+    DateRange: createIconMock('DateRange'),
+    Schedule: createIconMock('Schedule'),
+    Timer: createIconMock('Timer'),
+    Alarm: createIconMock('Alarm'),
+    Notifications: createIconMock('Notifications'),
+    NotificationsActive: createIconMock('NotificationsActive'),
+    NotificationsNone: createIconMock('NotificationsNone'),
+    Visibility: createIconMock('Visibility'),
+    VisibilityOff: createIconMock('VisibilityOff'),
+    Lock: createIconMock('Lock'),
+    LockOpen: createIconMock('LockOpen'),
+    Security: createIconMock('Security'),
+    VpnKey: createIconMock('VpnKey'),
+    Fingerprint: createIconMock('Fingerprint'),
+    Face: createIconMock('Face'),
+    Verified: createIconMock('Verified'),
+    GppGood: createIconMock('GppGood'),
+    GppBad: createIconMock('GppBad'),
+    Shield: createIconMock('Shield'),
+    ShieldCheck: createIconMock('ShieldCheck'),
+    ShieldWarning: createIconMock('ShieldWarning'),
+    ShieldError: createIconMock('ShieldError'),
+    ShieldInfo: createIconMock('ShieldInfo'),
+    Dashboard: createIconMock('Dashboard'),
+    ViewDashboard: createIconMock('ViewDashboard'),
+    ViewModule: createIconMock('ViewModule'),
+    ViewList: createIconMock('ViewList'),
+    ViewStream: createIconMock('ViewStream'),
+    ViewQuilt: createIconMock('ViewQuilt'),
+    ViewWeek: createIconMock('ViewWeek'),
+    ViewDay: createIconMock('ViewDay'),
+    ViewAgenda: createIconMock('ViewAgenda'),
+    ViewCarousel: createIconMock('ViewCarousel'),
+    ViewComfy: createIconMock('ViewComfy'),
+    ViewCompact: createIconMock('ViewCompact'),
+    ViewHeadline: createIconMock('ViewHeadline'),
+    ViewColumn: createIconMock('ViewColumn'),
+    ViewArray: createIconMock('ViewArray'),
+    ViewTimeline: createIconMock('ViewTimeline'),
+    ViewKanban: createIconMock('ViewKanban'),
+    ViewSidebar: createIconMock('ViewSidebar'),
+    // Workshop-specific icons
+    Chat: createIconMock('Chat'),
+    ChatOutlined: createIconMock('ChatOutlined'),
+    ContentCopy: createIconMock('ContentCopy'),
+    HistoryOutlined: createIconMock('HistoryOutlined'),
+    LinkOutlined: createIconMock('LinkOutlined'),
+    PushPin: createIconMock('PushPin'),
+    PushPinOutlined: createIconMock('PushPinOutlined'),
+    UploadOutlined: createIconMock('UploadOutlined'),
+    FormatListBulleted: createIconMock('FormatListBulleted'),
+    RecordVoiceOverOutlined: createIconMock('RecordVoiceOverOutlined'),
+  };
+});
 
 vi.mock('../../services/WorkshopService', () => ({
   useWorkshopStore: vi.fn(),
+}));
+
+// Mock useAuth hook
+vi.mock('../../hooks/useAuth', () => ({
+  useAuth: () => ({
+    user: { id: '1', email: 'test@example.com' },
+    isAuthenticated: true,
+    login: vi.fn(),
+    logout: vi.fn(),
+    register: vi.fn(),
+  }),
 }));
 
 describe('Workshop Component', () => {
@@ -68,6 +192,8 @@ describe('Workshop Component', () => {
       generateContent: mockGenerateContent,
       addFile: mockAddFile,
       addLink: mockAddLink,
+      history: [],
+      files: [],
       error: null,
       isLoading: false,
     });
@@ -75,9 +201,11 @@ describe('Workshop Component', () => {
 
   it('renders workshop interface', () => {
     render(
-      <ThemeProvider theme={theme}>
-        <Workshop />
-      </ThemeProvider>
+      <AuthProvider>
+        <ThemeProvider theme={theme}>
+          <Workshop />
+        </ThemeProvider>
+      </AuthProvider>
     );
 
     expect(screen.getByText('AI Workshop')).toBeInTheDocument();
@@ -91,14 +219,18 @@ describe('Workshop Component', () => {
       generateContent: mockGenerateContent,
       addFile: mockAddFile,
       addLink: mockAddLink,
+      history: [],
+      files: [],
       error: null,
       isLoading: true,
     });
 
     render(
-      <ThemeProvider theme={theme}>
-        <Workshop />
-      </ThemeProvider>
+      <AuthProvider>
+        <ThemeProvider theme={theme}>
+          <Workshop />
+        </ThemeProvider>
+      </AuthProvider>
     );
 
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
@@ -110,14 +242,18 @@ describe('Workshop Component', () => {
       generateContent: mockGenerateContent,
       addFile: mockAddFile,
       addLink: mockAddLink,
+      history: [],
+      files: [],
       error: errorMessage,
       isLoading: false,
     });
 
     render(
-      <ThemeProvider theme={theme}>
-        <Workshop />
-      </ThemeProvider>
+      <AuthProvider>
+        <ThemeProvider theme={theme}>
+          <Workshop />
+        </ThemeProvider>
+      </AuthProvider>
     );
 
     expect(screen.getByText(errorMessage)).toBeInTheDocument();
@@ -125,9 +261,11 @@ describe('Workshop Component', () => {
 
   it('handles content generation', async () => {
     render(
-      <ThemeProvider theme={theme}>
-        <Workshop />
-      </ThemeProvider>
+      <AuthProvider>
+        <ThemeProvider theme={theme}>
+          <Workshop />
+        </ThemeProvider>
+      </AuthProvider>
     );
 
     const input = screen.getByPlaceholderText('Type your assignment or question here...');
@@ -143,9 +281,11 @@ describe('Workshop Component', () => {
 
   it('handles file upload', async () => {
     render(
-      <ThemeProvider theme={theme}>
-        <Workshop />
-      </ThemeProvider>
+      <AuthProvider>
+        <ThemeProvider theme={theme}>
+          <Workshop />
+        </ThemeProvider>
+      </AuthProvider>
     );
 
     // Switch to files tab
@@ -163,9 +303,11 @@ describe('Workshop Component', () => {
 
   it('handles link addition', async () => {
     render(
-      <ThemeProvider theme={theme}>
-        <Workshop />
-      </ThemeProvider>
+      <AuthProvider>
+        <ThemeProvider theme={theme}>
+          <Workshop />
+        </ThemeProvider>
+      </AuthProvider>
     );
 
     // Switch to links tab
@@ -196,9 +338,11 @@ describe('Workshop Component', () => {
 
   it('displays recent history', () => {
     render(
-      <ThemeProvider theme={theme}>
-        <Workshop />
-      </ThemeProvider>
+      <AuthProvider>
+        <ThemeProvider theme={theme}>
+          <Workshop />
+        </ThemeProvider>
+      </AuthProvider>
     );
 
     expect(screen.getByText('Recent History')).toBeInTheDocument();
@@ -209,9 +353,11 @@ describe('Workshop Component', () => {
 
   it('displays AI suggestions', () => {
     render(
-      <ThemeProvider theme={theme}>
-        <Workshop />
-      </ThemeProvider>
+      <AuthProvider>
+        <ThemeProvider theme={theme}>
+          <Workshop />
+        </ThemeProvider>
+      </AuthProvider>
     );
 
     expect(screen.getByText('AI Suggestions')).toBeInTheDocument();
@@ -221,9 +367,11 @@ describe('Workshop Component', () => {
 
   it('displays supported file types', () => {
     render(
-      <ThemeProvider theme={theme}>
-        <Workshop />
-      </ThemeProvider>
+      <AuthProvider>
+        <ThemeProvider theme={theme}>
+          <Workshop />
+        </ThemeProvider>
+      </AuthProvider>
     );
 
     expect(screen.getByText('Supported File Types')).toBeInTheDocument();
@@ -235,9 +383,11 @@ describe('Workshop Component', () => {
 
   it('displays document stats', () => {
     render(
-      <ThemeProvider theme={theme}>
-        <Workshop />
-      </ThemeProvider>
+      <AuthProvider>
+        <ThemeProvider theme={theme}>
+          <Workshop />
+        </ThemeProvider>
+      </AuthProvider>
     );
 
     expect(screen.getByText('Document Stats')).toBeInTheDocument();
@@ -248,9 +398,11 @@ describe('Workshop Component', () => {
 
   it('displays AI analysis options', () => {
     render(
-      <ThemeProvider theme={theme}>
-        <Workshop />
-      </ThemeProvider>
+      <AuthProvider>
+        <ThemeProvider theme={theme}>
+          <Workshop />
+        </ThemeProvider>
+      </AuthProvider>
     );
 
     expect(screen.getByText('AI Analysis Options')).toBeInTheDocument();
@@ -261,9 +413,11 @@ describe('Workshop Component', () => {
 
   it('displays quick actions', () => {
     render(
-      <ThemeProvider theme={theme}>
-        <Workshop />
-      </ThemeProvider>
+      <AuthProvider>
+        <ThemeProvider theme={theme}>
+          <Workshop />
+        </ThemeProvider>
+      </AuthProvider>
     );
 
     expect(screen.getByText('Quick Actions')).toBeInTheDocument();

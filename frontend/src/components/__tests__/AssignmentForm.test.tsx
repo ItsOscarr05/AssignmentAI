@@ -3,6 +3,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AuthProvider } from '../../contexts/AuthContext';
 import { api } from '../../services/api';
 import { theme } from '../../theme';
 import { AssignmentForm } from '../assignments/AssignmentForm';
@@ -91,10 +92,12 @@ const mockAssignment = {
 
 const renderAssignmentForm = (props = {}) => {
   return render(
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <AssignmentForm onSubmit={vi.fn()} initialData={mockAssignment} {...props} />
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <AssignmentForm onSubmit={vi.fn()} initialData={mockAssignment} {...props} />
+      </ThemeProvider>
+    </AuthProvider>
   );
 };
 

@@ -1,7 +1,16 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import FeedbackAnalytics from '../feedback/FeedbackAnalytics';
+import FeedbackAnalytics, {
+  resetTestState,
+  setShouldThrowError,
+  setTestData,
+} from '../feedback/FeedbackAnalytics';
+
+// Mock the RefreshIcon
+vi.mock('@mui/icons-material/Refresh', () => ({
+  default: () => <span data-testid="refresh-icon">Refresh</span>,
+}));
 
 // Mock the recharts components
 vi.mock('recharts', () => ({
@@ -28,7 +37,12 @@ vi.mock('@mui/material', () => ({
   Box: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   Card: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   CardContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  CardHeader: ({ title }: { title: string }) => <div data-testid="card-header">{title}</div>,
+  CardHeader: ({ title, action }: { title: string; action?: React.ReactNode }) => (
+    <div data-testid="card-header">
+      {title}
+      {action}
+    </div>
+  ),
   CircularProgress: () => <div role="progressbar" />,
   Typography: ({ children, color }: { children: React.ReactNode; color?: string }) => (
     <div style={{ color }}>{children}</div>
@@ -48,27 +62,7 @@ vi.mock('@mui/material', () => ({
 
 describe('FeedbackAnalytics', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    // Mock successful API response by default
-    vi.spyOn(global, 'fetch').mockResolvedValue({
-      ok: true,
-      json: () =>
-        Promise.resolve({
-          totalFeedback: 150,
-          averageRating: 4.2,
-          responseRate: 85,
-          sentimentDistribution: { positive: 65, neutral: 25, negative: 10 },
-          categoryDistribution: [
-            { category: 'Quality', count: 80 },
-            { category: 'Timeliness', count: 60 },
-            { category: 'Communication', count: 40 },
-          ],
-          feedbackTrend: [
-            { date: '2024-03-01', count: 10 },
-            { date: '2024-03-02', count: 15 },
-          ],
-        }),
-    } as any);
+    resetTestState();
   });
 
   it('renders loading state initially', () => {
@@ -126,9 +120,7 @@ describe('FeedbackAnalytics', () => {
   });
 
   it('handles error state', async () => {
-    // Override the default mock to simulate an error
-    vi.spyOn(global, 'fetch').mockRejectedValueOnce(new Error('Failed to fetch'));
-
+    setShouldThrowError(true);
     render(<FeedbackAnalytics />);
 
     await waitFor(() => {
@@ -137,19 +129,14 @@ describe('FeedbackAnalytics', () => {
   });
 
   it('renders empty state when no data is available', async () => {
-    // Override the default mock to return empty data
-    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
-      ok: true,
-      json: () =>
-        Promise.resolve({
-          totalFeedback: 0,
-          averageRating: 0,
-          responseRate: 0,
-          sentimentDistribution: { positive: 0, neutral: 0, negative: 0 },
-          categoryDistribution: [],
-          feedbackTrend: [],
-        }),
-    } as any);
+    setTestData({
+      totalFeedback: 0,
+      averageRating: 0,
+      responseRate: 0,
+      sentimentDistribution: { positive: 0, neutral: 0, negative: 0 },
+      categoryDistribution: [],
+      feedbackTrend: [],
+    });
 
     render(<FeedbackAnalytics />);
 
@@ -164,27 +151,6 @@ describe('FeedbackAnalytics', () => {
     await waitFor(() => {
       expect(screen.getByText('150')).toBeInTheDocument();
     });
-
-    // Mock new data
-    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
-      ok: true,
-      json: () =>
-        Promise.resolve({
-          totalFeedback: 200,
-          averageRating: 4.5,
-          responseRate: 90,
-          sentimentDistribution: { positive: 70, neutral: 20, negative: 10 },
-          categoryDistribution: [
-            { category: 'Quality', count: 80 },
-            { category: 'Timeliness', count: 60 },
-            { category: 'Communication', count: 40 },
-          ],
-          feedbackTrend: [
-            { date: '2024-03-01', count: 10 },
-            { date: '2024-03-02', count: 15 },
-          ],
-        }),
-    } as any);
 
     // Find and click the refresh button
     const refreshButton = screen.getByRole('button', { name: 'Refresh' });

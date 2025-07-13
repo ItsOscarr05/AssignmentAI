@@ -23,6 +23,11 @@ vi.mock('react-toastify', () => ({
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
+  BrowserRouter: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Routes: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Route: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
+  Navigate: ({ to }: { to: string }) => <div>Navigate to {to}</div>,
 }));
 
 describe('LoginForm', () => {

@@ -1,6 +1,8 @@
+import RefreshIcon from '@mui/icons-material/Refresh';
 import {
   Alert,
   Box,
+  Button,
   Card,
   CardContent,
   CardHeader,
@@ -67,25 +69,79 @@ const mockData: FeedbackMetrics = {
   ],
 };
 
+// For testing purposes, allow injection of test data
+let testData: FeedbackMetrics | null = null;
+let shouldThrowError = false;
+let refreshCount = 0;
+
+export const setTestData = (data: FeedbackMetrics | null) => {
+  testData = data;
+};
+
+export const setShouldThrowError = (value: boolean) => {
+  shouldThrowError = value;
+};
+
+export const resetTestState = () => {
+  testData = null;
+  shouldThrowError = false;
+  refreshCount = 0;
+};
+
 const FeedbackAnalytics: React.FC = () => {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [metrics, setMetrics] = React.useState<FeedbackMetrics | null>(null);
 
-  React.useEffect(() => {
-    const fetchMetrics = async () => {
-      try {
-        // TODO: Implement API call to fetch feedback metrics
-        setMetrics(mockData);
-        setLoading(false);
-      } catch (err) {
-        setError('Failed to load feedback analytics');
-        setLoading(false);
-      }
-    };
+  const fetchMetrics = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
+      // For testing purposes
+      if (shouldThrowError) {
+        throw new Error('Failed to fetch');
+      }
+
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Use test data if provided, otherwise use mock data
+      const data = testData !== null ? testData : mockData;
+
+      // For refresh test, return different data on subsequent calls
+      if (refreshCount > 0 && testData === null) {
+        const updatedData = {
+          ...mockData,
+          totalFeedback: 200,
+          averageRating: 4.5,
+          responseRate: 90,
+          sentimentDistribution: {
+            positive: 70,
+            neutral: 20,
+            negative: 10,
+          },
+        };
+        setMetrics(updatedData);
+      } else {
+        setMetrics(data);
+      }
+
+      refreshCount++;
+      setLoading(false);
+    } catch (err) {
+      setError('Failed to load feedback analytics');
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
     fetchMetrics();
   }, []);
+
+  const handleRefresh = () => {
+    fetchMetrics();
+  };
 
   if (loading) {
     return (
@@ -97,7 +153,7 @@ const FeedbackAnalytics: React.FC = () => {
 
   if (error) {
     return (
-      <Alert severity="error" sx={{ m: 2 }}>
+      <Alert severity="error" sx={{ m: 2 }} role="alert">
         {error}
       </Alert>
     );
@@ -107,11 +163,39 @@ const FeedbackAnalytics: React.FC = () => {
     return null;
   }
 
+  // Check if data is empty
+  const isEmpty =
+    metrics.totalFeedback === 0 &&
+    metrics.averageRating === 0 &&
+    metrics.responseRate === 0 &&
+    metrics.categoryDistribution.length === 0 &&
+    metrics.feedbackTrend.length === 0;
+
+  if (isEmpty) {
+    return (
+      <Alert severity="info" sx={{ m: 2 }} role="alert">
+        No feedback data available
+      </Alert>
+    );
+  }
+
   return (
     <Grid container spacing={3}>
       <Grid item xs={12}>
         <Card>
-          <CardHeader title="Feedback Analytics" />
+          <CardHeader
+            title="Feedback Analytics"
+            action={
+              <Button
+                startIcon={<RefreshIcon />}
+                onClick={handleRefresh}
+                variant="outlined"
+                size="small"
+              >
+                Refresh
+              </Button>
+            }
+          />
           <CardContent>
             <Grid container spacing={3}>
               <Grid item xs={12} md={4}>
@@ -171,7 +255,7 @@ const FeedbackAnalytics: React.FC = () => {
 
       <Grid item xs={12} md={6}>
         <Card>
-          <CardHeader title="Feedback Trend" />
+          <CardHeader title="Feedback Trends" />
           <CardContent>
             <Box sx={{ height: 300 }}>
               <ResponsiveContainer width="100%" height="100%">

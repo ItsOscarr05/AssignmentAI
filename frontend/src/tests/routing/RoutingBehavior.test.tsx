@@ -8,6 +8,9 @@ import { useAuth } from '../../hooks/useAuth';
 // Mock useAuth hook
 vi.mock('../../hooks/useAuth');
 
+// Unmock react-router-dom for these tests to allow real navigation
+vi.unmock('react-router-dom');
+
 describe('Routing Behavior', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -77,6 +80,7 @@ describe('Routing Behavior', () => {
   });
 
   describe('Navigation', () => {
+    // Create a test component that properly uses the router context
     const NavigationTestComponent = () => {
       const navigate = useNavigate();
       const location = useLocation();
@@ -93,7 +97,11 @@ describe('Routing Behavior', () => {
     it('should handle forward navigation', async () => {
       render(
         <MemoryRouter initialEntries={['/']}>
-          <NavigationTestComponent />
+          <Routes>
+            <Route path="/" element={<NavigationTestComponent />} />
+            <Route path="/dashboard" element={<NavigationTestComponent />} />
+            <Route path="/profile" element={<NavigationTestComponent />} />
+          </Routes>
         </MemoryRouter>
       );
 
@@ -106,7 +114,10 @@ describe('Routing Behavior', () => {
     it('should handle back navigation', async () => {
       render(
         <MemoryRouter initialEntries={['/', '/dashboard']}>
-          <NavigationTestComponent />
+          <Routes>
+            <Route path="/" element={<NavigationTestComponent />} />
+            <Route path="/dashboard" element={<NavigationTestComponent />} />
+          </Routes>
         </MemoryRouter>
       );
 
@@ -119,7 +130,10 @@ describe('Routing Behavior', () => {
     it('should handle replace navigation', async () => {
       render(
         <MemoryRouter initialEntries={['/']}>
-          <NavigationTestComponent />
+          <Routes>
+            <Route path="/" element={<NavigationTestComponent />} />
+            <Route path="/profile" element={<NavigationTestComponent />} />
+          </Routes>
         </MemoryRouter>
       );
 

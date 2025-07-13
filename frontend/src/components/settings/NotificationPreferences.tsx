@@ -23,6 +23,7 @@ import {
   Typography,
 } from '@mui/material';
 import React from 'react';
+import { auth } from '../../services/api';
 
 interface NotificationChannel {
   id: string;
@@ -136,8 +137,26 @@ const NotificationPreferences: React.FC = () => {
   React.useEffect(() => {
     const loadPreferences = async () => {
       try {
-        // TODO: Implement proper API call to load notification preferences
-        // For now, just set loading to false
+        const profile = await auth.getProfile();
+        if (profile?.preferences?.notifications) {
+          const prefs = profile.preferences.notifications;
+
+          // Update notification types based on API response
+          setNotificationTypes(prevTypes =>
+            prevTypes.map(type => {
+              const typePrefs = prefs[type.id] || {};
+              return {
+                ...type,
+                channels: {
+                  email: typePrefs.email ?? type.channels.email,
+                  push: typePrefs.push ?? type.channels.push,
+                  sms: typePrefs.sms ?? type.channels.sms,
+                  in_app: typePrefs.inApp ?? type.channels.in_app,
+                },
+              };
+            })
+          );
+        }
         setLoading(false);
       } catch (err) {
         setError('Failed to load notification preferences');
@@ -165,7 +184,18 @@ const NotificationPreferences: React.FC = () => {
 
   const handleSave = async () => {
     try {
-      // TODO: Implement API call to save notification preferences
+      // Convert notification types to API format
+      const preferences = notificationTypes.reduce((acc, type) => {
+        acc[type.id] = {
+          email: type.channels.email,
+          push: type.channels.push,
+          sms: type.channels.sms,
+          inApp: type.channels.in_app,
+        };
+        return acc;
+      }, {} as any);
+
+      await auth.updateProfile({ preferences: { notifications: preferences } });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
@@ -303,12 +333,26 @@ const NotificationPreferences: React.FC = () => {
         </Box>
       </CardContent>
 
-      <Snackbar open={saved} autoHideDuration={3000} onClose={() => setSaved(false)}>
-        <Alert severity="success">Preferences saved successfully</Alert>
+      <Snackbar
+        open={saved}
+        autoHideDuration={3000}
+        onClose={() => setSaved(false)}
+        data-testid="success-snackbar"
+      >
+        <Alert severity="success" data-testid="success-alert">
+          Preferences saved successfully
+        </Alert>
       </Snackbar>
 
-      <Snackbar open={!!error} autoHideDuration={3000} onClose={() => setError(null)}>
-        <Alert severity="error">{error}</Alert>
+      <Snackbar
+        open={!!error}
+        autoHideDuration={3000}
+        onClose={() => setError(null)}
+        data-testid="error-snackbar"
+      >
+        <Alert severity="error" data-testid="error-alert">
+          {error}
+        </Alert>
       </Snackbar>
 
       <Dialog open={showResetDialog} onClose={() => setShowResetDialog(false)}>

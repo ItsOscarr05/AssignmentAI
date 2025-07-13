@@ -9,11 +9,6 @@ import { useAuth } from '../../hooks/useAuth';
 import { theme } from '../../theme';
 
 // Mock @mui/material
-vi.mock('@mui/material', () => ({
-  keyframes: (strings: TemplateStringsArray, ..._values: any[]) => ({
-    toString: () => strings.join(''),
-  }),
-}));
 
 // Mock @mui/icons-material
 vi.mock('@mui/icons-material', () => ({
@@ -41,6 +36,17 @@ describe('Authentication Flow', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockLogin.mockImplementation(async data => {
+      mockNavigate('/dashboard');
+      return { user: { id: '1', email: data.email } };
+    });
+    mockRegister.mockImplementation(async data => {
+      mockNavigate('/dashboard');
+      return { user: { id: '1', email: data.email } };
+    });
+    mockLogout.mockImplementation(async () => {
+      mockNavigate('/login');
+    });
     (useAuth as any).mockReturnValue({
       login: mockLogin,
       register: mockRegister,

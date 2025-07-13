@@ -16,9 +16,9 @@ vi.mock('@mui/material', async () => {
     Button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
     IconButton: ({ children, ...props }: any) => <button {...props}>{children}</button>,
     Chip: ({ label, color, ...props }: any) => (
-      <div className={`MuiChip-root MuiChip-color${color?.toLowerCase()}`} {...props}>
-        {label}
-      </div>
+      <span className={`MuiChip-root MuiChip-color${color?.toLowerCase()}`} {...props}>
+        <span data-testid="chip-label">{label}</span>
+      </span>
     ),
     Dialog: ({ children, ...props }: any) => (
       <div role="dialog" {...props}>
@@ -73,6 +73,7 @@ vi.mock('@mui/icons-material', () => ({
   Warning: () => <span>Warning</span>,
   Info: () => <span>Info</span>,
   Close: () => <span>Close</span>,
+  Google: () => <span>Google</span>,
 }));
 
 const mockAssignment: Assignment = {
@@ -110,6 +111,7 @@ const mockAssignment: Assignment = {
       attachments: [],
     },
   ],
+  difficulty: 'Easy', // <-- fix capitalization
 };
 
 const renderAssignmentDetail = (props = {}) => {
@@ -197,32 +199,40 @@ describe('AssignmentDetail', () => {
       renderAssignmentDetail({
         assignment: { ...mockAssignment, status: 'active' },
       });
-      const statusChip = screen.getByText('active');
-      expect(statusChip).toHaveClass('MuiChip-colorSuccess');
+      const chipLabels = screen.getAllByTestId('chip-label');
+      const statusChip = chipLabels.find(el => el.textContent === 'active');
+      expect(statusChip).toBeDefined();
+      expect(statusChip!.parentElement).toHaveClass('MuiChip-colorSuccess');
     });
 
     it('renders easy difficulty with success color', () => {
       renderAssignmentDetail({
-        assignment: { ...mockAssignment, difficulty: 'easy' },
+        assignment: { ...mockAssignment, difficulty: 'Easy' },
       });
-      const difficultyChip = screen.getByText('easy');
-      expect(difficultyChip).toHaveClass('MuiChip-colorsuccess');
+      const chipLabels = screen.getAllByTestId('chip-label');
+      const difficultyChipEasy = chipLabels.find(el => el.textContent === 'Easy');
+      expect(difficultyChipEasy).toBeDefined();
+      expect(difficultyChipEasy!.parentElement).toHaveClass('MuiChip-colorsuccess');
     });
 
     it('renders medium difficulty with warning color', () => {
       renderAssignmentDetail({
-        assignment: { ...mockAssignment, difficulty: 'medium' },
+        assignment: { ...mockAssignment, difficulty: 'Medium' },
       });
-      const difficultyChip = screen.getByText('medium');
-      expect(difficultyChip).toHaveClass('MuiChip-colorwarning');
+      const chipLabels = screen.getAllByTestId('chip-label');
+      const difficultyChipMedium = chipLabels.find(el => el.textContent === 'Medium');
+      expect(difficultyChipMedium).toBeDefined();
+      expect(difficultyChipMedium!.parentElement).toHaveClass('MuiChip-colorwarning');
     });
 
     it('renders hard difficulty with error color', () => {
       renderAssignmentDetail({
-        assignment: { ...mockAssignment, difficulty: 'hard' },
+        assignment: { ...mockAssignment, difficulty: 'Hard' },
       });
-      const difficultyChip = screen.getByText('hard');
-      expect(difficultyChip).toHaveClass('MuiChip-colorerror');
+      const chipLabels = screen.getAllByTestId('chip-label');
+      const difficultyChipHard = chipLabels.find(el => el.textContent === 'Hard');
+      expect(difficultyChipHard).toBeDefined();
+      expect(difficultyChipHard!.parentElement).toHaveClass('MuiChip-colorerror');
     });
   });
 
@@ -272,7 +282,12 @@ describe('AssignmentDetail', () => {
       renderAssignmentDetail({ onSubmit });
 
       const file = new File(['test'], 'test.txt', { type: 'text/plain' });
-      const input = screen.getByLabelText(/upload file/i);
+      // Use getAllByLabelText and filter for input[type="file"]
+      const input = screen
+        .getAllByLabelText(/upload file/i)
+        .find(
+          el => el.tagName === 'INPUT' && (el as HTMLInputElement).type === 'file'
+        ) as HTMLInputElement;
       fireEvent.change(input, { target: { files: [file] } });
 
       // Find the submit button in the submit dialog
@@ -295,7 +310,12 @@ describe('AssignmentDetail', () => {
       const largeFile = new File(['x'.repeat(11 * 1024 * 1024)], 'large.txt', {
         type: 'text/plain',
       });
-      const input = screen.getByLabelText(/upload file/i);
+      // Use getAllByLabelText and filter for input[type="file"]
+      const input = screen
+        .getAllByLabelText(/upload file/i)
+        .find(
+          el => el.tagName === 'INPUT' && (el as HTMLInputElement).type === 'file'
+        ) as HTMLInputElement;
       fireEvent.change(input, { target: { files: [largeFile] } });
 
       await waitFor(() => {
@@ -310,7 +330,12 @@ describe('AssignmentDetail', () => {
       renderAssignmentDetail({ onSubmit });
 
       const file = new File(['test'], 'test.txt', { type: 'text/plain' });
-      const input = screen.getByLabelText(/upload file/i);
+      // Use getAllByLabelText and filter for input[type="file"]
+      const input = screen
+        .getAllByLabelText(/upload file/i)
+        .find(
+          el => el.tagName === 'INPUT' && (el as HTMLInputElement).type === 'file'
+        ) as HTMLInputElement;
       fireEvent.change(input, { target: { files: [file] } });
 
       // Find the submit button in the submit dialog

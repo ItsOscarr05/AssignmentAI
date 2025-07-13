@@ -92,8 +92,25 @@ const FileUpload: React.FC<FileUploadProps> = ({
     [onUploadComplete, onUploadError]
   );
 
+  // Handle rejected files (type/size validation)
+  const onDropRejected = useCallback(
+    (fileRejections: any[]) => {
+      let errorMsg = 'File rejected: ';
+      if (fileRejections && fileRejections.length > 0) {
+        const reasons = fileRejections[0].errors.map((e: any) => e.message).join(', ');
+        errorMsg += reasons;
+      } else {
+        errorMsg += 'Invalid file.';
+      }
+      setError(errorMsg);
+      onUploadError(errorMsg);
+    },
+    [onUploadError]
+  );
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
+    onDropRejected,
     maxSize,
     accept: acceptedFileTypes.reduce((acc, type) => ({ ...acc, [type]: [] }), {}),
     multiple,
@@ -118,7 +135,10 @@ const FileUpload: React.FC<FileUploadProps> = ({
         }}
       >
         <input {...getInputProps()} />
-        <CloudUploadIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
+        <CloudUploadIcon
+          sx={{ fontSize: 48, color: 'primary.main', mb: 2 }}
+          data-testid="CloudUploadIcon"
+        />
         <Typography variant="h6" gutterBottom>
           {isDragActive ? 'Drop the files here' : 'Drag & drop files here'}
         </Typography>
@@ -137,14 +157,14 @@ const FileUpload: React.FC<FileUploadProps> = ({
       </Paper>
 
       {error && (
-        <Alert severity="error" sx={{ mt: 2 }}>
+        <Alert severity="error" sx={{ mt: 2 }} data-testid="alert">
           {error}
         </Alert>
       )}
 
       {uploading && (
         <Box sx={{ mt: 2 }}>
-          <LinearProgress variant="determinate" value={progress} />
+          <LinearProgress variant="determinate" value={progress} data-testid="linear-progress" />
           <Typography variant="body2" color="textSecondary" align="center" sx={{ mt: 1 }}>
             Uploading... {Math.round(progress)}%
           </Typography>

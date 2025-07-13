@@ -1,4 +1,3 @@
-import { Box } from '@mui/material';
 import React, { useState } from 'react';
 
 interface SkipLinkProps {
@@ -47,10 +46,22 @@ const SkipLink: React.FC<SkipLinkProps> = ({
 
   // Merge custom style with focus style when focused
   const mergedStyle = {
+    background: 'var(--color-primary, #1976d2)',
+    color: 'white',
     ...style,
     ...(isFocused && focusStyle ? focusStyle : {}),
     ...(color && { color }),
     ...(variant === 'outlined' && { border: '1px solid currentColor' }),
+    position,
+    top: isFocused ? 0 : -40,
+    left: 0,
+    padding: 8,
+    zIndex,
+    transition: 'top 0.2s',
+    textDecoration: 'none',
+    outline: isFocused ? 'none' : undefined,
+    boxShadow: isFocused ? '0 0 0 2px var(--color-primary, #1976d2)' : undefined,
+    ...((isFocused && focusStyle) || {}),
   };
 
   // Merge classes, including focus class when focused
@@ -65,8 +76,7 @@ const SkipLink: React.FC<SkipLinkProps> = ({
     .join(' ');
 
   return (
-    <Box
-      component="a"
+    <a
       href={`#${target}`}
       className={classes}
       style={mergedStyle}
@@ -75,27 +85,10 @@ const SkipLink: React.FC<SkipLinkProps> = ({
       onBlur={handleBlur}
       aria-label={text}
       tabIndex={0}
-      sx={{
-        position,
-        top: isFocused ? 0 : -40,
-        left: 0,
-        background: 'primary.main',
-        color: 'white',
-        padding: 1,
-        zIndex,
-        transition: 'top 0.2s',
-        textDecoration: 'none',
-        '&:focus': {
-          top: 0,
-          outline: 'none',
-          boxShadow: '0 0 0 2px',
-          boxShadowColor: 'primary.main',
-        },
-      }}
       {...props}
     >
       {text.includes('<') ? <span dangerouslySetInnerHTML={{ __html: text }} /> : text}
-    </Box>
+    </a>
   );
 };
 

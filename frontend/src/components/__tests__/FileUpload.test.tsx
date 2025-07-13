@@ -56,10 +56,12 @@ vi.mock('@mui/material', () => ({
 vi.mock('react-dropzone', () => ({
   useDropzone: ({
     onDrop,
+    onDropRejected,
     maxSize,
     accept,
   }: {
     onDrop?: (files: File[]) => void;
+    onDropRejected?: (fileRejections: any[]) => void;
     maxSize?: number;
     accept?: Record<string, string[]>;
   }) => ({
@@ -68,6 +70,7 @@ vi.mock('react-dropzone', () => ({
       onDragOver: vi.fn(),
       onDrop: (e: any) => {
         const files = e.dataTransfer.files;
+        let rejected = false;
         // Validate file type
         if (accept && files[0]) {
           const fileType = files[0].type;
@@ -76,21 +79,26 @@ vi.mock('react-dropzone', () => ({
               type === fileType || (type.endsWith('/*') && fileType.startsWith(type.slice(0, -2)))
           );
           if (!isValid) {
-            onDrop?.([]);
+            rejected = true;
+            onDropRejected?.([{ file: files[0], errors: [{ message: 'Invalid file type' }] }]);
             return;
           }
         }
         // Validate file size
         if (maxSize && files[0] && files[0].size > maxSize) {
-          onDrop?.([]);
+          rejected = true;
+          onDropRejected?.([{ file: files[0], errors: [{ message: 'File is too large' }] }]);
           return;
         }
-        onDrop?.(files);
+        if (!rejected) {
+          onDrop?.(files);
+        }
       },
     }),
     getInputProps: () => ({
       onChange: (e: any) => {
         const files = e.target.files;
+        let rejected = false;
         // Validate file type
         if (accept && files[0]) {
           const fileType = files[0].type;
@@ -99,16 +107,20 @@ vi.mock('react-dropzone', () => ({
               type === fileType || (type.endsWith('/*') && fileType.startsWith(type.slice(0, -2)))
           );
           if (!isValid) {
-            onDrop?.([]);
+            rejected = true;
+            onDropRejected?.([{ file: files[0], errors: [{ message: 'Invalid file type' }] }]);
             return;
           }
         }
         // Validate file size
         if (maxSize && files[0] && files[0].size > maxSize) {
-          onDrop?.([]);
+          rejected = true;
+          onDropRejected?.([{ file: files[0], errors: [{ message: 'File is too large' }] }]);
           return;
         }
-        onDrop?.(files);
+        if (!rejected) {
+          onDrop?.(files);
+        }
       },
       'aria-label': 'Select Files',
     }),
@@ -116,24 +128,33 @@ vi.mock('react-dropzone', () => ({
   }),
 }));
 
-// Mock XMLHttpRequest
-const mockXHR = {
-  open: vi.fn(),
-  send: vi.fn(() => {
-    // Simulate successful upload
-    mockXHR.onload?.();
-    return Promise.resolve();
-  }),
-  upload: {
+// Improved XMLHttpRequest mock
+class MockXHR {
+  static lastInstance: any;
+  onload: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  upload = {
     onprogress: null as ((event: ProgressEvent) => void) | null,
-  },
-  onload: null as (() => void) | null,
-  onerror: null as (() => void) | null,
-  status: 200,
-  responseText: JSON.stringify({ url: 'https://example.com/test.txt' }),
-};
-
-global.XMLHttpRequest = vi.fn(() => mockXHR) as any;
+  };
+  status = 200;
+  responseText = JSON.stringify({ url: 'https://example.com/test.txt' });
+  open = vi.fn();
+  send = vi.fn(() => {
+    setTimeout(() => {
+      if (this.status === 200) {
+        this.onload?.();
+      } else {
+        this.onerror?.();
+      }
+    }, 10);
+    return Promise.resolve();
+  });
+}
+global.XMLHttpRequest = vi.fn(() => {
+  const xhr = new MockXHR();
+  MockXHR.lastInstance = xhr;
+  return xhr;
+}) as any;
 
 // Mock data
 const mockTextFile = new File(['test content'], 'test.txt', { type: 'text/plain' });
@@ -143,10 +164,6 @@ const mockLargeFile = new File(['x'.repeat(11 * 1024 * 1024)], 'large.txt', { ty
 describe('FileUpload', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockXHR.status = 200;
-    mockXHR.responseText = JSON.stringify({ url: 'https://example.com/test.txt' });
-    mockXHR.onload = vi.fn();
-    mockXHR.onerror = vi.fn();
   });
 
   it('renders upload button', () => {
@@ -160,13 +177,21 @@ describe('FileUpload', () => {
 
     const input = screen.getByLabelText('Select Files');
     fireEvent.change(input, { target: { files: [mockTextFile] } });
+    // Wait for MockXHR instance
+    await waitFor(() => {
+      if (!MockXHR.lastInstance) throw new Error('No XHR instance yet');
+    });
+    MockXHR.lastInstance.status = 200;
+    MockXHR.lastInstance.responseText = JSON.stringify({ url: 'https://example.com/test.txt' });
+    MockXHR.lastInstance.onload = vi.fn();
+    MockXHR.lastInstance.onerror = vi.fn();
 
     // Simulate upload progress
     const progressEvent = new ProgressEvent('progress', {
       loaded: 50,
       total: 100,
     });
-    mockXHR.upload.onprogress?.(progressEvent);
+    MockXHR.lastInstance.upload.onprogress?.(progressEvent);
 
     await waitFor(
       () => {
@@ -185,7 +210,7 @@ describe('FileUpload', () => {
         acceptedFileTypes={['text/plain']}
       />
     );
-
+    // No XHR needed for this test
     const input = screen.getByLabelText('Select Files');
     fireEvent.change(input, { target: { files: [mockImageFile] } });
 
@@ -206,7 +231,7 @@ describe('FileUpload', () => {
         maxSize={10 * 1024 * 1024}
       />
     );
-
+    // No XHR needed for this test
     const input = screen.getByLabelText('Select Files');
     fireEvent.change(input, { target: { files: [mockLargeFile] } });
 
@@ -223,13 +248,21 @@ describe('FileUpload', () => {
 
     const input = screen.getByLabelText('Select Files');
     fireEvent.change(input, { target: { files: [mockTextFile] } });
+    // Wait for MockXHR instance
+    await waitFor(() => {
+      if (!MockXHR.lastInstance) throw new Error('No XHR instance yet');
+    });
+    MockXHR.lastInstance.status = 200;
+    MockXHR.lastInstance.responseText = JSON.stringify({ url: 'https://example.com/test.txt' });
+    MockXHR.lastInstance.onload = vi.fn();
+    MockXHR.lastInstance.onerror = vi.fn();
 
     // Simulate upload progress
     const progressEvent = new ProgressEvent('progress', {
       loaded: 50,
       total: 100,
     });
-    mockXHR.upload.onprogress?.(progressEvent);
+    MockXHR.lastInstance.upload.onprogress?.(progressEvent);
 
     await waitFor(
       () => {
@@ -241,16 +274,21 @@ describe('FileUpload', () => {
 
   it('handles upload errors', async () => {
     const onUploadError = vi.fn();
-    mockXHR.status = 500;
-    mockXHR.responseText = 'Server Error';
-
     render(<FileUpload onUploadComplete={() => {}} onUploadError={onUploadError} />);
 
     const input = screen.getByLabelText('Select Files');
     fireEvent.change(input, { target: { files: [mockTextFile] } });
+    // Wait for MockXHR instance
+    await waitFor(() => {
+      if (!MockXHR.lastInstance) throw new Error('No XHR instance yet');
+    });
+    MockXHR.lastInstance.status = 500;
+    MockXHR.lastInstance.responseText = 'Server Error';
+    MockXHR.lastInstance.onload = vi.fn();
+    MockXHR.lastInstance.onerror = vi.fn();
 
     // Simulate XHR error
-    mockXHR.onerror?.();
+    MockXHR.lastInstance.onerror?.();
 
     await waitFor(
       () => {
@@ -264,16 +302,27 @@ describe('FileUpload', () => {
     const onUploadComplete = vi.fn();
     render(<FileUpload onUploadComplete={onUploadComplete} onUploadError={() => {}} />);
 
-    const dropZone = screen.getByText(/drag & drop files here/i);
-    fireEvent.dragOver(dropZone);
-    fireEvent.drop(dropZone, { dataTransfer: { files: [mockTextFile] } });
+    // Simulate drag and drop
+    const root = screen.getByText(/drag & drop files here/i).parentElement;
+    const dataTransfer = {
+      files: [mockTextFile],
+    };
+    fireEvent.drop(root!, { dataTransfer });
+    // Wait for MockXHR instance
+    await waitFor(() => {
+      if (!MockXHR.lastInstance) throw new Error('No XHR instance yet');
+    });
+    MockXHR.lastInstance.status = 200;
+    MockXHR.lastInstance.responseText = JSON.stringify({ url: 'https://example.com/test.txt' });
+    MockXHR.lastInstance.onload = vi.fn();
+    MockXHR.lastInstance.onerror = vi.fn();
 
     // Simulate upload progress
     const progressEvent = new ProgressEvent('progress', {
       loaded: 50,
       total: 100,
     });
-    mockXHR.upload.onprogress?.(progressEvent);
+    MockXHR.lastInstance.upload.onprogress?.(progressEvent);
 
     await waitFor(
       () => {
@@ -287,8 +336,7 @@ describe('FileUpload', () => {
     render(
       <FileUpload onUploadComplete={() => {}} onUploadError={() => {}} maxSize={5 * 1024 * 1024} />
     );
-
-    expect(screen.getByText(/maximum file size: 5mb/i)).toBeInTheDocument();
+    expect(screen.getByText(/maximum file size/i)).toHaveTextContent('Maximum file size: 5MB');
   });
 
   it('shows accepted file types', () => {
@@ -296,12 +344,11 @@ describe('FileUpload', () => {
       <FileUpload
         onUploadComplete={() => {}}
         onUploadError={() => {}}
-        acceptedFileTypes={['text/plain', 'application/pdf']}
+        acceptedFileTypes={['application/pdf', 'image/*']}
       />
     );
-
-    expect(
-      screen.getByText(/accepted file types: text\/plain, application\/pdf/i)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/accepted file types/i)).toHaveTextContent(
+      'Accepted file types: application/pdf, image/*'
+    );
   });
 });
