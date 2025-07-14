@@ -5,15 +5,19 @@ vi.mock('../../services/api', () => ({
   },
 }));
 
+import type { AxiosInstance } from 'axios';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-let api, AuthService;
+let api: AxiosInstance;
+let AuthService: any;
 
 beforeEach(async () => {
   vi.resetModules();
   vi.clearAllMocks();
-  api = (await import('../../services/api')).api;
-  AuthService = (await import('../../services/auth/AuthService')).AuthService;
+  const apiModule = await import('../../services/api');
+  const authModule = await import('../../services/auth/AuthService');
+  api = apiModule.api;
+  AuthService = authModule.AuthService;
 });
 
 describe('AuthService', () => {
@@ -29,7 +33,7 @@ describe('AuthService', () => {
         token: 'mock-token',
       },
     };
-    api.post.mockResolvedValue(mockResponse);
+    (api.post as any).mockResolvedValue(mockResponse);
 
     const result = await AuthService.login('test@example.com', 'password');
     expect(api.post).toHaveBeenCalledWith('/auth/login', {
@@ -51,7 +55,7 @@ describe('AuthService', () => {
         token: 'mock-token',
       },
     };
-    api.post.mockResolvedValue(mockResponse);
+    (api.post as any).mockResolvedValue(mockResponse);
 
     const userData = {
       firstName: 'Test',
@@ -77,7 +81,7 @@ describe('AuthService', () => {
       fullName: 'Test User',
       role: 'student',
     };
-    api.get.mockResolvedValue({ data: mockUser });
+    (api.get as any).mockResolvedValue({ data: mockUser });
 
     const result = await AuthService.getCurrentUser();
     expect(api.get).toHaveBeenCalledWith('/auth/me');

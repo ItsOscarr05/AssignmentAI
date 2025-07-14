@@ -9,7 +9,6 @@ import { AuthContext } from '../contexts/AuthContext';
 const mockLogin = vi.fn();
 const mockHandleCallback = vi.fn();
 const mockLogout = vi.fn();
-const mockIsAuthenticated = vi.fn();
 const mockGetToken = vi.fn();
 const mockRefreshToken = vi.fn();
 

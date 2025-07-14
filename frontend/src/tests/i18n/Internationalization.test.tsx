@@ -174,7 +174,7 @@ describe('Internationalization', () => {
 
   describe('Date and Number Formatting', () => {
     const DateDisplay = ({ date }: { date: Date }) => {
-      const { t } = useTranslation();
+      useTranslation();
       // Format the date manually since i18n date formatting requires additional setup
       const formattedDate = date.toLocaleDateString('en-GB', {
         day: '2-digit',

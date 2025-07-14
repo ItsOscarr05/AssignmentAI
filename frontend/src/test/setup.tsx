@@ -14,7 +14,7 @@ import { server } from './mocks/server';
 
 const mockMuiComponents = {
   Box: (props: any) => createElement('div', { ...props, 'data-testid': 'mui-box' }, props.children),
-  createTheme: (...args: any[]) => ({}),
+  createTheme: (..._args: any[]) => ({}),
   keyframes: (strings: TemplateStringsArray, ..._values: any[]) => ({
     toString: () => strings.join(''),
   }),
@@ -213,16 +213,13 @@ const mockMuiComponents = {
   InputLabel: (props: any) =>
     createElement('label', { ...props, 'data-testid': 'input-label' }, props.children),
   OutlinedInput: (props: any) =>
-    createElement('input', {
-      ...props,
-      'data-testid': props['data-testid'] || 'outlined-input',
-    }),
+    createElement('input', { ...props, 'data-testid': 'outlined-input' }),
   InputAdornment: (props: any) =>
     createElement('div', { ...props, 'data-testid': 'input-adornment' }, props.children),
+  Chip: (props: any) => createElement('div', { ...props, 'data-testid': 'chip' }, props.children),
   Avatar: (props: any) =>
     createElement('div', { ...props, 'data-testid': 'avatar' }, props.children),
   Badge: (props: any) => createElement('div', { ...props, 'data-testid': 'badge' }, props.children),
-  Chip: (props: any) => createElement('div', { ...props, 'data-testid': 'chip' }, props.children),
   Tabs: (props: any) => createElement('div', { ...props, 'data-testid': 'tabs' }, props.children),
   Tab: (props: any) => createElement('button', { ...props, 'data-testid': 'tab' }, props.children),
   TabPanel: (props: any) =>
@@ -233,50 +230,82 @@ const mockMuiComponents = {
     createElement('div', { ...props, 'data-testid': 'accordion-summary' }, props.children),
   AccordionDetails: (props: any) =>
     createElement('div', { ...props, 'data-testid': 'accordion-details' }, props.children),
-  TableContainer: (props: any) =>
-    createElement('div', { ...props, 'data-testid': 'table-container' }, props.children),
-  Table: (props: any) =>
-    createElement('table', { ...props, 'data-testid': 'table' }, props.children),
-  TableHead: (props: any) =>
-    createElement('thead', { ...props, 'data-testid': 'table-head' }, props.children),
-  TableBody: (props: any) =>
-    createElement('tbody', { ...props, 'data-testid': 'table-body' }, props.children),
-  TableRow: (props: any) =>
-    createElement('tr', { ...props, 'data-testid': 'table-row' }, props.children),
-  TableCell: (props: any) =>
-    createElement('td', { ...props, 'data-testid': 'table-cell' }, props.children),
-  TablePagination: ({ count, page, rowsPerPage, onPageChange, onRowsPerPageChange }: any) => (
-    <div data-testid="table-pagination">
-      <div>Total: {count}</div>
-      <div>Page: {page}</div>
-      <div>Rows per page: {rowsPerPage}</div>
-      <button onClick={() => onPageChange({}, page + 1)}>Next</button>
-      <button onClick={() => onPageChange({}, page - 1)}>Previous</button>
-      <select onChange={e => onRowsPerPageChange({ target: { value: e.target.value } })}>
-        <option value={5}>5</option>
-        <option value={10}>10</option>
-        <option value={25}>25</option>
-      </select>
-    </div>
-  ),
-  TableSortLabel: ({ active, direction, onClick, children }: any) => (
-    <div
-      data-testid="table-sort-label"
-      data-active={active}
-      data-direction={direction}
-      onClick={onClick}
-    >
-      {children}
-    </div>
-  ),
-  Stack: (props: any) =>
-    createElement('div', { ...props, 'data-testid': 'mui-stack' }, props.children),
+  Stepper: (props: any) =>
+    createElement('div', { ...props, 'data-testid': 'stepper' }, props.children),
+  Step: (props: any) => createElement('div', { ...props, 'data-testid': 'step' }, props.children),
+  StepLabel: (props: any) =>
+    createElement('div', { ...props, 'data-testid': 'step-label' }, props.children),
+  StepContent: (props: any) =>
+    createElement('div', { ...props, 'data-testid': 'step-content' }, props.children),
+  Breadcrumbs: (props: any) =>
+    createElement('nav', { ...props, 'data-testid': 'breadcrumbs' }, props.children),
   Link: (props: any) => createElement('a', { ...props, 'data-testid': 'mui-link' }, props.children),
+  AlertTitle: (props: any) =>
+    createElement('div', { ...props, 'data-testid': 'alert-title' }, props.children),
+  Collapse: (props: any) =>
+    createElement('div', { ...props, 'data-testid': 'collapse' }, props.children),
+  Fade: (props: any) => createElement('div', { ...props, 'data-testid': 'fade' }, props.children),
+  Grow: (props: any) => createElement('div', { ...props, 'data-testid': 'grow' }, props.children),
+  Slide: (props: any) => createElement('div', { ...props, 'data-testid': 'slide' }, props.children),
+  Zoom: (props: any) => createElement('div', { ...props, 'data-testid': 'zoom' }, props.children),
+  Skeleton: (props: any) =>
+    createElement('div', { ...props, 'data-testid': 'skeleton' }, props.children),
+  Backdrop: (props: any) =>
+    createElement('div', { ...props, 'data-testid': 'backdrop' }, props.children),
+  Modal: (props: any) => createElement('div', { ...props, 'data-testid': 'modal' }, props.children),
+  Popover: (props: any) =>
+    createElement('div', { ...props, 'data-testid': 'popover' }, props.children),
+  Popper: (props: any) =>
+    createElement('div', { ...props, 'data-testid': 'popper' }, props.children),
+  ClickAwayListener: ({ children }: any) => children,
+  NoSsr: ({ children }: any) => children,
+  Portal: ({ children }: any) => children,
+  ScopedCssBaseline: ({ children }: any) => children,
+  CssBaseline: () => null,
+  StyledEngineProvider: ({ children }: any) => children,
+  ThemeProvider: ({ children }: any) =>
+    createElement('div', { 'data-testid': 'theme-provider' }, children),
+  useTheme: () => theme,
+  useMediaQuery: (_query: string) => false,
+  useScrollTrigger: (_options?: any) => false,
+  useAutocomplete: (_options?: any) => ({
+    getRootProps: () => ({}),
+    getInputProps: () => ({}),
+    getListboxProps: () => ({}),
+    getOptionProps: () => ({}),
+    inputValue: '',
+    value: null,
+    focused: false,
+    anchorEl: null,
+    setAnchorEl: () => {},
+    popupOpen: false,
+    highlightedIndex: -1,
+    selectedOptions: [],
+    groupedOptions: [],
+  }),
+  usePagination: (_options?: any) => ({
+    items: [],
+    getItemAriaLabel: () => '',
+  }),
+  useTabPanel: (_options?: any) => ({
+    hidden: false,
+    id: '',
+    'aria-labelledby': '',
+  }),
+  useTab: (_options?: any) => ({
+    selected: false,
+    indicator: null,
+    ..._options,
+  }),
+  useAccordion: (_options?: any) => ({
+    expanded: false,
+    onChange: () => {},
+  }),
 };
 
 vi.mock('@mui/material', () => ({
   ...mockMuiComponents,
-  createTheme: (...args: any[]) => ({}),
+  createTheme: (..._args: any[]) => ({}),
   ThemeProvider: ({ children }: any) =>
     createElement('div', { 'data-testid': 'theme-provider' }, children),
 }));

@@ -68,7 +68,7 @@ describe('Help Page', () => {
     fireEvent.click(accordions[0]);
     // Use getAllByText for the answer text
     const answers = screen.getAllByText(
-      (content, node) => typeof content === 'string' && content.toLowerCase().includes('ai tokens')
+      content => typeof content === 'string' && content.toLowerCase().includes('ai tokens')
     );
     expect(answers.length).toBeGreaterThan(0);
   });

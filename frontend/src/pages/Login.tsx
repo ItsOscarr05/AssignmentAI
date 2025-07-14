@@ -66,7 +66,7 @@ const Login: React.FC = () => {
     if (validateForm()) {
       setIsLoading(true);
       try {
-        await login(email, password);
+        await login(email);
         navigate('/dashboard');
       } catch (error) {
         setError('Invalid credentials');

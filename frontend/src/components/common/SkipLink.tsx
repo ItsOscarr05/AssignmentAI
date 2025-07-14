@@ -45,14 +45,14 @@ const SkipLink: React.FC<SkipLinkProps> = ({
   };
 
   // Merge custom style with focus style when focused
-  const mergedStyle = {
+  const mergedStyle: React.CSSProperties = {
     background: 'var(--color-primary, #1976d2)',
     color: 'white',
     ...style,
     ...(isFocused && focusStyle ? focusStyle : {}),
     ...(color && { color }),
     ...(variant === 'outlined' && { border: '1px solid currentColor' }),
-    position,
+    position: position as React.CSSProperties['position'],
     top: isFocused ? 0 : -40,
     left: 0,
     padding: 8,

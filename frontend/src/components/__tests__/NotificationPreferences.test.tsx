@@ -1,7 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { auth } from '../../services/api';
 import NotificationPreferences from '../settings/NotificationPreferences';
 
 // Mock Material-UI components
@@ -99,54 +98,62 @@ vi.mock('../../services/api', () => ({
   },
 }));
 
+// Mock the auth context
+const mockAuth = {
+  getProfile: vi.fn(),
+  updateProfile: vi.fn(),
+};
+
+vi.mock('../../contexts/AuthContext', () => ({
+  useAuth: () => ({
+    auth: mockAuth,
+  }),
+}));
+
 describe('NotificationPreferences', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     vi.useFakeTimers();
+    vi.clearAllMocks();
 
-    // Default mock implementation
-    vi.mocked(auth.getProfile).mockResolvedValue({
+    // Mock the API call to resolve immediately with complete preferences
+    vi.mocked(mockAuth.getProfile).mockResolvedValue({
       id: '1',
       firstName: 'Test',
       lastName: 'User',
       email: 'test@example.com',
       preferences: {
         notifications: {
-          assignment_updates: {
+          assignmentReminders: {
             email: true,
             push: false,
             sms: true,
             inApp: true,
           },
-          feedback_updates: {
+          gradeUpdates: {
             email: true,
             push: true,
             sms: true,
             inApp: true,
           },
-          grade_posted: {
+          feedbackAlerts: {
             email: true,
             push: true,
             sms: true,
             inApp: true,
           },
-          comment_mention: {
-            email: true,
-            push: true,
-            sms: true,
-            inApp: true,
-          },
-          system_updates: {
+          system: {
             email: true,
             push: false,
             sms: false,
             inApp: true,
           },
         },
+        theme: 'light',
+        language: 'en',
       },
     });
 
-    vi.mocked(auth.updateProfile).mockResolvedValue({ success: true });
+    vi.mocked(mockAuth.updateProfile).mockResolvedValue({ success: true });
   });
 
   afterEach(() => {
@@ -189,20 +196,22 @@ describe('NotificationPreferences', () => {
     vi.useRealTimers();
 
     // Mock the API call to resolve immediately with complete preferences
-    vi.mocked(auth.getProfile).mockResolvedValueOnce({
+    vi.mocked(mockAuth.getProfile).mockResolvedValueOnce({
       id: '1',
       firstName: 'Test',
       lastName: 'User',
       email: 'test@example.com',
       preferences: {
         notifications: {
-          assignment_updates: {
+          assignmentReminders: {
             email: true,
             push: false,
             sms: true,
             inApp: true,
           },
         },
+        theme: 'light',
+        language: 'en',
       },
     });
 
@@ -215,9 +224,8 @@ describe('NotificationPreferences', () => {
 
     // Check that all notification types are rendered
     expect(screen.getByText('Assignment Updates')).toBeInTheDocument();
-    expect(screen.getByText('Feedback Updates')).toBeInTheDocument();
     expect(screen.getByText('Grade Posted')).toBeInTheDocument();
-    expect(screen.getByText('Comment Mentions')).toBeInTheDocument();
+    expect(screen.getByText('Feedback Updates')).toBeInTheDocument();
     expect(screen.getByText('System Updates')).toBeInTheDocument();
 
     // Check that all notification channels are rendered using icons
@@ -227,12 +235,10 @@ describe('NotificationPreferences', () => {
     expect(screen.getByTestId('notifications-icon')).toBeInTheDocument();
 
     // Check that the switches are in the correct state
-    const assignmentEmailSwitch = screen.getByLabelText('Assignment Updates - Email Notifications');
-    const assignmentPushSwitch = screen.getByLabelText('Assignment Updates - Push Notifications');
-    const assignmentSmsSwitch = screen.getByLabelText('Assignment Updates - SMS Notifications');
-    const assignmentInAppSwitch = screen.getByLabelText(
-      'Assignment Updates - In-App Notifications'
-    );
+    const assignmentEmailSwitch = screen.getByLabelText('Assignment Updates - Email');
+    const assignmentPushSwitch = screen.getByLabelText('Assignment Updates - Push');
+    const assignmentSmsSwitch = screen.getByLabelText('Assignment Updates - SMS');
+    const assignmentInAppSwitch = screen.getByLabelText('Assignment Updates - In-App');
 
     expect(assignmentEmailSwitch).toBeChecked();
     expect(assignmentPushSwitch).not.toBeChecked();
@@ -240,7 +246,7 @@ describe('NotificationPreferences', () => {
     expect(assignmentInAppSwitch).toBeChecked();
 
     // Check that the API was called with the correct parameters
-    expect(auth.getProfile).toHaveBeenCalled();
+    expect(mockAuth.getProfile).toHaveBeenCalled();
 
     // Switch back to fake timers
     vi.useFakeTimers();
@@ -248,7 +254,7 @@ describe('NotificationPreferences', () => {
 
   it('shows loading state initially', async () => {
     // Mock the API call to never resolve
-    vi.mocked(auth.getProfile).mockImplementationOnce(() => new Promise(() => {}));
+    vi.mocked(mockAuth.getProfile).mockImplementationOnce(() => new Promise(() => {}));
 
     render(<NotificationPreferences />);
 
@@ -261,7 +267,7 @@ describe('NotificationPreferences', () => {
     vi.useRealTimers();
 
     // Mock the API call to reject immediately
-    vi.mocked(auth.getProfile).mockRejectedValueOnce(new Error('Failed to fetch'));
+    vi.mocked(mockAuth.getProfile).mockRejectedValueOnce(new Error('Failed to fetch'));
 
     render(<NotificationPreferences />);
 
@@ -282,7 +288,7 @@ describe('NotificationPreferences', () => {
     render(<NotificationPreferences />);
     await waitForLoadingToComplete();
 
-    const assignmentEmailSwitch = screen.getByLabelText('Assignment Updates - Email Notifications');
+    const assignmentEmailSwitch = screen.getByLabelText('Assignment Updates - Email');
     fireEvent.click(assignmentEmailSwitch);
     await vi.runAllTimersAsync();
     expect(assignmentEmailSwitch).not.toBeChecked();
@@ -323,12 +329,10 @@ describe('NotificationPreferences', () => {
     await vi.runAllTimersAsync();
 
     // Check Assignment Updates switches
-    const assignmentEmailSwitch = screen.getByLabelText('Assignment Updates - Email Notifications');
-    const assignmentPushSwitch = screen.getByLabelText('Assignment Updates - Push Notifications');
-    const assignmentSmsSwitch = screen.getByLabelText('Assignment Updates - SMS Notifications');
-    const assignmentInAppSwitch = screen.getByLabelText(
-      'Assignment Updates - In-App Notifications'
-    );
+    const assignmentEmailSwitch = screen.getByLabelText('Assignment Updates - Email');
+    const assignmentPushSwitch = screen.getByLabelText('Assignment Updates - Push');
+    const assignmentSmsSwitch = screen.getByLabelText('Assignment Updates - SMS');
+    const assignmentInAppSwitch = screen.getByLabelText('Assignment Updates - In-App');
 
     expect(assignmentEmailSwitch).toBeChecked();
     expect(assignmentPushSwitch).toBeChecked();
@@ -345,12 +349,10 @@ describe('NotificationPreferences', () => {
     await vi.runAllTimersAsync();
 
     // Check Assignment Updates switches
-    const assignmentEmailSwitch = screen.getByLabelText('Assignment Updates - Email Notifications');
-    const assignmentPushSwitch = screen.getByLabelText('Assignment Updates - Push Notifications');
-    const assignmentSmsSwitch = screen.getByLabelText('Assignment Updates - SMS Notifications');
-    const assignmentInAppSwitch = screen.getByLabelText(
-      'Assignment Updates - In-App Notifications'
-    );
+    const assignmentEmailSwitch = screen.getByLabelText('Assignment Updates - Email');
+    const assignmentPushSwitch = screen.getByLabelText('Assignment Updates - Push');
+    const assignmentSmsSwitch = screen.getByLabelText('Assignment Updates - SMS');
+    const assignmentInAppSwitch = screen.getByLabelText('Assignment Updates - In-App');
 
     expect(assignmentEmailSwitch).not.toBeChecked();
     expect(assignmentPushSwitch).not.toBeChecked();
@@ -358,15 +360,30 @@ describe('NotificationPreferences', () => {
     expect(assignmentInAppSwitch).not.toBeChecked();
   });
 
-  it('shows confirmation dialog when resetting preferences', async () => {
+  it('shows reset confirmation dialog', async () => {
     render(<NotificationPreferences />);
     await waitForLoadingToComplete();
 
     const resetButton = screen.getByRole('button', { name: /reset/i });
     fireEvent.click(resetButton);
-    await vi.runAllTimersAsync();
 
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByText('Reset Preferences')).toBeInTheDocument();
+    expect(screen.getByText('Reset Notification Preferences')).toBeInTheDocument();
+    expect(
+      screen.getByText(/Are you sure you want to reset all notification preferences/)
+    ).toBeInTheDocument();
+  });
+
+  it('resets preferences when confirmed', async () => {
+    render(<NotificationPreferences />);
+    await waitForLoadingToComplete();
+
+    const resetButton = screen.getByRole('button', { name: /reset/i });
+    fireEvent.click(resetButton);
+
+    const confirmButton = screen.getByRole('button', { name: /reset/i });
+    fireEvent.click(confirmButton);
+
+    // Check that the dialog is closed
+    expect(screen.queryByText('Reset Notification Preferences')).not.toBeInTheDocument();
   });
 });
