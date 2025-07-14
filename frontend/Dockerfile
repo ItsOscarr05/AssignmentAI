@@ -13,7 +13,7 @@ RUN npm install --legacy-peer-deps
 COPY . .
 
 # Build the application with error handling
-RUN npm run build || (echo "Build failed. Showing errors:" && cat /app/tsconfig.tsbuildinfo 2>/dev/null || true && exit 1)
+RUN npm run build
 
 # Production stage
 FROM nginx:alpine

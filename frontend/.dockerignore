@@ -62,8 +62,3 @@ coverage
 README.md
 docs
 *.md
-
-# Docker
-Dockerfile
-.dockerignore
-docker-compose*.yml 
