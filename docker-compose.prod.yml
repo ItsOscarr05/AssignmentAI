@@ -10,11 +10,11 @@ services:
         - NODE_ENV=production
     restart: always
     env_file:
-      - ./frontend/.env
+      - ./frontend/.env.production
     environment:
       - NODE_ENV=production
       - VITE_API_URL=https://api.assignmentai.app
-      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
+      - STRIPE_PUBLISHABLE_KEY
     networks:
       - app-network
     depends_on:

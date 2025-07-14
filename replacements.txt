@@ -1,0 +1,6 @@
+sk-proj-==>your-openai-key-here
+sk_live_==>your-stripe-key-here
+AKIAQNHSRQWOEQAKSCPJ==>your-aws-access-key-id-here
+vxRFFD0rXSDCbaZw+Lz/Bg7PKO9vSJ223usJk/WL==>your-aws-secret-access-key-here
+169236017542-nj7h3dddl04mipvn854pekrh793gnm3c.apps.googleusercontent.com==>your-google-client-id-here
+your-sendgrid-key-here==>your-sendgrid-key-here
