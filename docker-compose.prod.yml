@@ -9,13 +9,12 @@ services:
       args:
         - NODE_ENV=production
     restart: always
+    env_file:
+      - ./frontend/.env
     environment:
       - NODE_ENV=production
       - VITE_API_URL=https://api.assignmentai.app
-      - VITE_STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
-      - VITE_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      - VITE_SENTRY_DSN=${SENTRY_DSN}
-      - VITE_GA_TRACKING_ID=${GA_TRACKING_ID}
+      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
     networks:
       - app-network
     depends_on:
@@ -44,16 +43,17 @@ services:
       - SECRET_KEY=${SECRET_KEY}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - AWS_BUCKET_NAME=${AWS_BUCKET_NAME}
+      - AWS_BUCKET_NAME=${AWS_S3_BUCKET}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
-      - FACEBOOK_CLIENT_SECRET=${FACEBOOK_CLIENT_SECRET}
-      - APPLE_CLIENT_SECRET=${APPLE_CLIENT_SECRET}
       - SMTP_PASSWORD=${SMTP_PASSWORD}
       - SENTRY_DSN=${SENTRY_DSN}
+      - VITE_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - VITE_SENTRY_DSN=${SENTRY_DSN}
+      - GA_TRACKING_ID=${VITE_GA_TRACKING_ID}
     networks:
       - app-network
     depends_on:
@@ -75,6 +75,8 @@ services:
   db:
     image: postgres:14-alpine
     restart: always
+    env_file:
+      - ./backend/.env.production
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -162,6 +164,8 @@ services:
   grafana:
     image: grafana/grafana:latest
     restart: always
+    env_file:
+      - ./backend/.env.production
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
       - GF_SERVER_ROOT_URL=https://monitoring.assignmentai.app
@@ -185,6 +189,8 @@ services:
   backup:
     image: postgres:14-alpine
     restart: 'no'
+    env_file:
+      - ./backend/.env.production
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
