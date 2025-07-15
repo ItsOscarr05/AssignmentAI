@@ -8,8 +8,8 @@ export interface RegisterData {
   confirm_password: string;
 }
 
-class AuthService {
-  private static instance: AuthService;
+class AuthManager {
+  private static instance: AuthManager;
   private token: string | null = null;
   private refreshTokenTimeout: NodeJS.Timeout | null = null;
 
@@ -17,11 +17,11 @@ class AuthService {
     this.token = localStorage.getItem('token');
   }
 
-  public static getInstance(): AuthService {
-    if (!AuthService.instance) {
-      AuthService.instance = new AuthService();
+  public static getInstance(): AuthManager {
+    if (!AuthManager.instance) {
+      AuthManager.instance = new AuthManager();
     }
-    return AuthService.instance;
+    return AuthManager.instance;
   }
 
   async login(provider: string): Promise<void> {
@@ -168,4 +168,4 @@ class AuthService {
   }
 }
 
-export { AuthService };
+export { AuthManager };
