@@ -6,14 +6,14 @@ import {
 } from '@mui/icons-material';
 import { Box, Button, Divider, Typography } from '@mui/material';
 import React from 'react';
-import { AuthService } from '../../services/auth';
+import { AuthManager } from '../../services/authManager';
 
 interface SocialLoginProps {
   isLoading?: boolean;
 }
 
 export const SocialLogin: React.FC<SocialLoginProps> = ({ isLoading = false }) => {
-  const authService = AuthService.getInstance();
+  const authService = AuthManager.getInstance();
 
   const handleSocialLogin = async (provider: string) => {
     try {
