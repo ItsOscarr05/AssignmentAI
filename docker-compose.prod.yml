@@ -40,20 +40,20 @@ services:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
-      - SECRET_KEY=${SECRET_KEY}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - SECRET_KEY
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
       - AWS_BUCKET_NAME=${AWS_S3_BUCKET}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
-      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
-      - SMTP_PASSWORD=${SMTP_PASSWORD}
-      - SENTRY_DSN=${SENTRY_DSN}
-      - VITE_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - OPENAI_API_KEY
+      - STRIPE_SECRET_KEY
+      - STRIPE_WEBHOOK_SECRET
+      - GOOGLE_CLIENT_SECRET
+      - GITHUB_CLIENT_SECRET
+      - SMTP_PASSWORD
+      - SENTRY_DSN
+      - VITE_GOOGLE_CLIENT_ID
       - VITE_SENTRY_DSN=${SENTRY_DSN}
-      - GA_TRACKING_ID=${VITE_GA_TRACKING_ID}
+      - GA_TRACKING_ID
     networks:
       - app-network
     depends_on:
@@ -78,9 +78,9 @@ services:
     env_file:
       - ./backend/.env.production
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backups:/backups
@@ -192,9 +192,10 @@ services:
     env_file:
       - ./backend/.env.production
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+      - BACKUP_BUCKET
     volumes:
       - ./backups:/backups
     networks:
@@ -209,6 +210,12 @@ services:
       - db
     labels:
       - 'traefik.enable=false'
+
+  testenv:
+    image: alpine
+    env_file:
+      - ./backend/.env.production
+    command: sh -c 'env | grep -E "BACKUP_BUCKET|POSTGRES_DB|SENTRY_DSN"'
 
 networks:
   app-network:
