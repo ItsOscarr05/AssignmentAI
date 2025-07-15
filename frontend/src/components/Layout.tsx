@@ -57,8 +57,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <Toolbar sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2 }}>
         {user && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Avatar src={user.avatar} alt={user.name} />
-            <Typography variant="body1">{user.name}</Typography>
+            <Avatar src={user.avatarUrl || user.avatar} alt={user.fullName || user.name} />
+            <Typography variant="body1">{user.fullName || user.name}</Typography>
           </Box>
         )}
       </Toolbar>

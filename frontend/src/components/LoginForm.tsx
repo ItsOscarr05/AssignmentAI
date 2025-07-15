@@ -30,7 +30,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, testLoginError }
     const { name, value, type, checked } = e.target;
 
     // Update form data
-    setFormData(prev => ({
+    setFormData((prev: ExtendedLoginCredentials) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));

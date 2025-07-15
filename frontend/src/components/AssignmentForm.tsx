@@ -23,7 +23,7 @@ interface Assignment {
 
 const AssignmentForm: React.FC<AssignmentFormProps> = ({ assignmentId }) => {
   const navigate = useNavigate();
-  const { data: assignment, isLoading } = useAssignment(assignmentId);
+  const { data: assignment, isLoading } = useAssignment(assignmentId || undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<Partial<Assignment>>({
     title: '',
@@ -49,7 +49,7 @@ const AssignmentForm: React.FC<AssignmentFormProps> = ({ assignmentId }) => {
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev: Partial<Assignment>) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

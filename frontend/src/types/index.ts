@@ -3,11 +3,19 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  fullName?: string;
   role: UserRole;
   bio?: string;
   location?: string;
   website?: string;
   avatar?: string;
+  avatarUrl?: string;
+  institution?: string;
+  preferences?: {
+    theme: 'light' | 'dark';
+    notifications: boolean;
+    language: string;
+  };
   createdAt: string;
   updatedAt: string;
   firstName?: string;
@@ -65,6 +73,7 @@ export interface Assignment {
   gradeLevel: string;
   priority: 'low' | 'medium' | 'high';
   subject: string;
+  difficulty?: string;
   createdAt: string;
   updatedAt: string;
   allowLateSubmissions: boolean;

@@ -29,6 +29,8 @@ interface PlagiarismResult {
   analysis: string;
   raw_response: string;
   probability: number;
+  score: number;
+  details: string;
 }
 
 interface GradeResult {
