@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api, { auth } from '../config/api';
-import { RegisterData } from '../services/auth';
 import { AuthService } from '../services/auth/AuthService';
+import { RegisterData } from '../services/authManager';
 import { AuthContextType, User } from '../types';
 
 export const AuthContext = createContext<AuthContextType | null>(null);

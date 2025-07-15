@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../../services/AuthService';
+import { useAuthStore } from '../../services/authStore';
 
 const Register = () => {
   const navigate = useNavigate();
