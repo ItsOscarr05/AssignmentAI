@@ -24,9 +24,10 @@ providers:
 certificatesResolvers:
   myresolver:
     acme:
-      email: ${ACME_EMAIL}
+      email: admin@assignmentai.app
       storage: /etc/traefik/acme.json
-      tlsChallenge: {}
+      httpChallenge:
+        entryPoint: web
 
 log:
   level: INFO

@@ -132,7 +132,9 @@ services:
       - '--providers.docker.exposedbydefault=false'
       - '--entrypoints.web.address=:80'
       - '--entrypoints.websecure.address=:443'
-      - '--certificatesresolvers.myresolver.acme.tlschallenge=true'
+      - '--certificatesresolvers.myresolver.acme.httpchallenge=true'
+      - '--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web'
+      - '--certificatesresolvers.myresolver.acme.email=admin@assignmentai.app'
       - '--certificatesresolvers.myresolver.acme.storage=/etc/traefik/acme.json'
       - '--log.level=INFO'
     labels:
