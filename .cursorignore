@@ -127,7 +127,6 @@ prometheus.yml
 infrastructure/
 cloudfront-*.json
 web.config
-nginx.conf
 *.service
 deploy.sh
 setup_*.sh
@@ -154,7 +153,6 @@ AssignmentAIMobile/
 
 # Configuration
 *.config.*
-*.conf
 *.ini
 *.rc
 !package.json
