@@ -118,6 +118,8 @@ services:
     ports:
       - '80:80'
       - '443:443'
+    env_file:
+      - ./backend/.env.production
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik:/etc/traefik
@@ -131,7 +133,6 @@ services:
       - '--entrypoints.web.address=:80'
       - '--entrypoints.websecure.address=:443'
       - '--certificatesresolvers.myresolver.acme.tlschallenge=true'
-      - '--certificatesresolvers.myresolver.acme.email=${ACME_EMAIL}'
       - '--certificatesresolvers.myresolver.acme.storage=/etc/traefik/acme.json'
       - '--log.level=INFO'
     labels:
