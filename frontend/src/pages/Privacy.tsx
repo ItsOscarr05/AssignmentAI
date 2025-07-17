@@ -1,41 +1,64 @@
-import { Container, Divider, Paper, Typography } from '@mui/material';
+import { Box, Container, Divider, Paper, Typography } from '@mui/material';
+import { useEffect, useRef, useState } from 'react';
+import RedStarField from '../components/RedStarField';
 
-const Privacy = () => (
-  <Container sx={{ py: { xs: 8, md: 12 } }}>
-    <Paper
-      sx={{
-        p: { xs: 3, md: 6 },
-        borderRadius: 4,
-        maxWidth: 1200,
-        mx: 'auto',
-        textAlign: 'left',
-        backgroundColor: 'grey.50',
-        boxShadow: '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
-        border: '2px solid',
-        borderColor: 'primary.main',
-      }}
+const Privacy = () => {
+  // Starfield logic
+  const mainContentRef = useRef<HTMLDivElement>(null);
+  const [contentHeight, setContentHeight] = useState<number>(0);
+  useEffect(() => {
+    const updateHeight = () => {
+      if (mainContentRef.current) {
+        setContentHeight(mainContentRef.current.offsetHeight);
+      }
+    };
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    return () => window.removeEventListener('resize', updateHeight);
+  }, []);
+
+  return (
+    <Box
+      ref={mainContentRef}
+      sx={{ position: 'relative', bgcolor: 'white', width: '100%', overflow: 'hidden' }}
     >
-      <Typography
-        variant="h3"
-        component="h1"
-        sx={{ mb: 3, fontWeight: 700, color: 'primary.main', letterSpacing: 1 }}
-      >
-        Privacy Policy
-      </Typography>
-      <Divider sx={{ mb: 4, borderColor: 'primary.main', opacity: 0.2 }} />
-      <Typography variant="body1" sx={{ mb: 3, fontSize: '1.15rem', color: 'text.secondary' }}>
-        At AssignmentAI, we take your privacy seriously. This Privacy Policy ("Policy") constitutes
-        a legally binding agreement between you ("User," "you," or "your") and AssignmentAI
-        ("Company," "we," "us," or "our") regarding the collection, use, disclosure, and
-        safeguarding of your information when you access or use our platform. This Policy is
-        designed to provide transparency about our data practices and your privacy rights. By
-        accessing or using AssignmentAI, you expressly consent to the practices described herein and
-        acknowledge that you have read, understood, and agree to be bound by this Policy.
-      </Typography>
-      {[
-        {
-          title: '1. Information We Collect',
-          content: `We collect and process various categories of information to provide, maintain, and improve our services. This includes, but is not limited to:
+      <RedStarField starCount={2500} contentHeight={contentHeight} />
+      <Container sx={{ py: { xs: 8, md: 12 }, position: 'relative', zIndex: 1 }}>
+        <Paper
+          sx={{
+            p: { xs: 3, md: 6 },
+            borderRadius: 4,
+            maxWidth: 1200,
+            mx: 'auto',
+            textAlign: 'left',
+            backgroundColor: 'grey.50',
+            boxShadow: '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
+            border: '2px solid',
+            borderColor: 'primary.main',
+          }}
+        >
+          <Typography
+            variant="h3"
+            component="h1"
+            sx={{ mb: 3, fontWeight: 700, color: 'primary.main', letterSpacing: 1 }}
+          >
+            Privacy Policy
+          </Typography>
+          <Divider sx={{ mb: 4, borderColor: 'primary.main', opacity: 0.2 }} />
+          <Typography variant="body1" sx={{ mb: 3, fontSize: '1.15rem', color: 'text.secondary' }}>
+            At AssignmentAI, we take your privacy seriously. This Privacy Policy ("Policy")
+            constitutes a legally binding agreement between you ("User," "you," or "your") and
+            AssignmentAI ("Company," "we," "us," or "our") regarding the collection, use,
+            disclosure, and safeguarding of your information when you access or use our platform.
+            This Policy is designed to provide transparency about our data practices and your
+            privacy rights. By accessing or using AssignmentAI, you expressly consent to the
+            practices described herein and acknowledge that you have read, understood, and agree to
+            be bound by this Policy.
+          </Typography>
+          {[
+            {
+              title: '1. Information We Collect',
+              content: `We collect and process various categories of information to provide, maintain, and improve our services. This includes, but is not limited to:
 
           • Personal Identifiable Information (PII):
             - Full name and contact details
@@ -68,10 +91,10 @@ const Privacy = () => (
             - Preference and customization cookies
             - Third-party tracking technologies (subject to your consent)
             - Local storage and cache data`,
-        },
-        {
-          title: '2. How We Use Your Information',
-          content: `We process your information for various legitimate business purposes, including but not limited to:
+            },
+            {
+              title: '2. How We Use Your Information',
+              content: `We process your information for various legitimate business purposes, including but not limited to:
 
           • Service Provision and Enhancement:
             - Delivering and maintaining core platform functionality
@@ -100,10 +123,10 @@ const Privacy = () => (
             - Complying with legal obligations
             - Enforcing our terms and policies
             - Protecting our rights and interests`,
-        },
-        {
-          title: '3. Information Sharing and Disclosure',
-          content: `We may disclose your information in the following circumstances, subject to appropriate safeguards and confidentiality obligations:
+            },
+            {
+              title: '3. Information Sharing and Disclosure',
+              content: `We may disclose your information in the following circumstances, subject to appropriate safeguards and confidentiality obligations:
 
           • Service Providers and Partners:
             - Cloud infrastructure and hosting providers
@@ -133,10 +156,10 @@ const Privacy = () => (
             - For marketing or promotional purposes
 
           We maintain strict controls over information sharing and never sell your personal information to third parties.`,
-        },
-        {
-          title: '4. Data Security',
-          content: `We implement a comprehensive, multi-layered security framework to protect your information:
+            },
+            {
+              title: '4. Data Security',
+              content: `We implement a comprehensive, multi-layered security framework to protect your information:
 
           • Technical Safeguards:
             - Industry-standard encryption (AES-256, TLS 1.3)
@@ -163,10 +186,10 @@ const Privacy = () => (
             - Backup and redundancy systems
 
           While we implement robust security measures, no system is completely secure. We continuously monitor and update our security practices to address emerging threats.`,
-        },
-        {
-          title: '5. Data Retention',
-          content: `We maintain a comprehensive data retention framework that balances operational needs with privacy considerations:
+            },
+            {
+              title: '5. Data Retention',
+              content: `We maintain a comprehensive data retention framework that balances operational needs with privacy considerations:
 
           • Retention Periods:
             - Active user data: Retained while account is active
@@ -191,10 +214,10 @@ const Privacy = () => (
             - Historical trend analysis
 
           We regularly review our retention practices to ensure compliance with applicable laws and best practices.`,
-        },
-        {
-          title: '6. Your Rights and Choices',
-          content: `Under applicable data protection laws, you may have the following rights:
+            },
+            {
+              title: '6. Your Rights and Choices',
+              content: `Under applicable data protection laws, you may have the following rights:
 
           • Access and Portability:
             - Right to access your personal information
@@ -221,10 +244,10 @@ const Privacy = () => (
             - Right to request review
 
           To exercise these rights, please contact our Data Protection Officer at privacy@assignmentai.app. We will respond to your request within 30 days.`,
-        },
-        {
-          title: "7. Children's Privacy",
-          content: `We maintain strict compliance with children's privacy protection laws and regulations:
+            },
+            {
+              title: "7. Children's Privacy",
+              content: `We maintain strict compliance with children's privacy protection laws and regulations:
 
           • Age Restrictions:
             - Platform limited to users 13 years and older
@@ -251,10 +274,10 @@ const Privacy = () => (
             - Staff training on child protection
 
           We do not knowingly collect or process information from children under 13. If we discover such information, we will promptly delete it.`,
-        },
-        {
-          title: '8. International Data Transfers',
-          content: `We maintain a robust framework for international data transfers:
+            },
+            {
+              title: '8. International Data Transfers',
+              content: `We maintain a robust framework for international data transfers:
 
           • Transfer Mechanisms:
             - Standard Contractual Clauses (SCCs)
@@ -281,10 +304,10 @@ const Privacy = () => (
             - Compliance documentation
 
           We ensure appropriate safeguards are in place for all international data transfers.`,
-        },
-        {
-          title: '9. Changes to This Privacy Policy',
-          content: `We maintain a transparent process for policy updates:
+            },
+            {
+              title: '9. Changes to This Privacy Policy',
+              content: `We maintain a transparent process for policy updates:
 
           • Update Procedures:
             - Regular policy reviews
@@ -311,10 +334,10 @@ const Privacy = () => (
             - Grandfathering provisions
 
           We encourage regular review of this Policy for updates.`,
-        },
-        {
-          title: '10. Contact Us',
-          content: `For privacy-related inquiries and requests, please contact us through the following channels:
+            },
+            {
+              title: '10. Contact Us',
+              content: `For privacy-related inquiries and requests, please contact us through the following channels:
 
           • Data Protection Officer:
             Email: privacy@assignmentai.app
@@ -338,33 +361,38 @@ const Privacy = () => (
             - Knowledge base
 
           We are committed to addressing your privacy concerns promptly and effectively.`,
-        },
-      ].map((section, idx) => (
-        <div key={section.title}>
-          <Typography
-            variant="h5"
-            sx={{
-              mt: idx === 0 ? 0 : 5,
-              mb: 1,
-              fontWeight: 600,
-              color: 'primary.main',
-              letterSpacing: 0.5,
-            }}
-          >
-            {section.title}
+            },
+          ].map((section, idx) => (
+            <div key={section.title}>
+              <Typography
+                variant="h5"
+                sx={{
+                  mt: idx === 0 ? 0 : 5,
+                  mb: 1,
+                  fontWeight: 600,
+                  color: 'primary.main',
+                  letterSpacing: 0.5,
+                }}
+              >
+                {section.title}
+              </Typography>
+              <Divider sx={{ mb: 2, borderColor: 'primary.main', opacity: 0.12 }} />
+              <Typography
+                variant="body2"
+                sx={{ mb: 2, fontSize: '1.08rem', color: 'text.primary' }}
+              >
+                {section.content}
+              </Typography>
+            </div>
+          ))}
+          <Divider sx={{ my: 4, borderColor: 'primary.main', opacity: 0.12 }} />
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 2, fontStyle: 'italic' }}>
+            Last Updated: 7/16/2025
           </Typography>
-          <Divider sx={{ mb: 2, borderColor: 'primary.main', opacity: 0.12 }} />
-          <Typography variant="body2" sx={{ mb: 2, fontSize: '1.08rem', color: 'text.primary' }}>
-            {section.content}
-          </Typography>
-        </div>
-      ))}
-      <Divider sx={{ my: 4, borderColor: 'primary.main', opacity: 0.12 }} />
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 2, fontStyle: 'italic' }}>
-        Last Updated: {new Date().toLocaleDateString()}
-      </Typography>
-    </Paper>
-  </Container>
-);
+        </Paper>
+      </Container>
+    </Box>
+  );
+};
 
 export default Privacy;

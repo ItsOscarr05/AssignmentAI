@@ -22,6 +22,7 @@ import {
 } from '@mui/material';
 import React, { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import HeroParticles from '../components/HeroParticles';
 import { useAuth } from '../contexts/AuthContext';
 
 const Login: React.FC = () => {
@@ -140,11 +141,12 @@ const Login: React.FC = () => {
               position: 'relative',
             }}
           >
+            <HeroParticles />
             <Box
               sx={{
                 position: 'relative',
                 textAlign: 'center',
-                zIndex: 1,
+                zIndex: 2,
                 width: '100%',
                 maxWidth: 480,
                 display: 'flex',

@@ -1,10 +1,12 @@
 'use client';
 
 import { styled } from '@mui/material/styles';
-import React, { lazy, useEffect, useState } from 'react';
-import { useInView } from 'react-intersection-observer';
+import React, { lazy, useEffect, useRef, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
+import HeroParticles from '../components/HeroParticles';
+import RedStarField from '../components/RedStarField';
 import { getAdminStats } from '../services/AdminService';
+import './LandingStars.css';
 
 // Remove the Next.js Link wrapper and use MUI's styled directly
 
@@ -60,7 +62,7 @@ import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
 import Container from '@mui/material/Container';
 import Divider from '@mui/material/Divider';
-import Fade from '@mui/material/Fade';
+
 import MuiLink from '@mui/material/Link';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
@@ -272,39 +274,18 @@ const blogPosts = [
 const Landing: React.FC = () => {
   const [] = useState<null | HTMLElement>(null);
   const [totalUsers, setTotalUsers] = useState<number>(0);
+  const mainContentRef = useRef<HTMLDivElement>(null);
+  const [contentHeight, setContentHeight] = useState<number>(0);
 
-  // Fade-in hooks for each section
-  const [] = useInView({ threshold: 0.15, triggerOnce: true });
-  const [comparisonRef, comparisonInView] = useInView({
-    threshold: 0.15,
-    triggerOnce: true,
-  });
-  const [trendingRef, trendingInView] = useInView({
-    threshold: 0.15,
-    triggerOnce: true,
-  });
-  const [resourcesRef, resourcesInView] = useInView({
-    threshold: 0.15,
-    triggerOnce: true,
-  });
-  const [pricingRef, pricingInView] = useInView({
-    threshold: 0.15,
-    triggerOnce: true,
-  });
-  const [faqRef, faqInView] = useInView({ threshold: 0.15, triggerOnce: true });
-  const [, whyChooseInView] = useInView({ threshold: 0.15, triggerOnce: true });
-  const [screenshotsRef, screenshotsInView] = useInView({
-    threshold: 0.15,
-    triggerOnce: true,
-  });
-  const [generateRef, generateInView] = useInView({
-    threshold: 0.15,
-    triggerOnce: true,
-  });
-  const [starredStatsRef, starredStatsInView] = useInView({
-    threshold: 0.15,
-    triggerOnce: true,
-  });
+  // Section refs
+  const comparisonRef = useRef<HTMLDivElement>(null);
+  const trendingRef = useRef<HTMLDivElement>(null);
+  const resourcesRef = useRef<HTMLDivElement>(null);
+  const pricingRef = useRef<HTMLDivElement>(null);
+  const faqRef = useRef<HTMLDivElement>(null);
+  const screenshotsRef = useRef<HTMLDivElement>(null);
+  const generateRef = useRef<HTMLDivElement>(null);
+  const starredStatsRef = useRef<HTMLDivElement>(null);
   const footerRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -326,7 +307,16 @@ const Landing: React.FC = () => {
     fetchStats();
   }, []);
 
-  console.log('whyChooseInView', whyChooseInView);
+  useEffect(() => {
+    const updateHeight = () => {
+      if (mainContentRef.current) {
+        setContentHeight(mainContentRef.current.offsetHeight);
+      }
+    };
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    return () => window.removeEventListener('resize', updateHeight);
+  }, []);
 
   return (
     <>
@@ -346,6 +336,7 @@ const Landing: React.FC = () => {
           mt: 0,
         }}
       >
+        <HeroParticles />
         {/* Navigation Bar at top of hero section */}
         <Box
           sx={{
@@ -608,26 +599,41 @@ const Landing: React.FC = () => {
 
       {/* All main content sections go here, e.g. features, pricing, faq, etc. */}
       <Box
+        ref={mainContentRef}
         sx={{
           bgcolor: 'white',
           width: '100%',
-          minHeight: '100vh',
           position: 'relative',
           zIndex: 1,
-          overflowX: 'hidden',
+          overflow: 'hidden',
         }}
       >
+        <RedStarField starCount={2500} contentHeight={contentHeight} />
         {/* What Can You Generate With AssignmentAI? Section */}
-        <Container id="features" sx={{ backgroundColor: 'white' }}>
+        <Container id="features" sx={{ position: 'relative', zIndex: 1, overflow: 'hidden' }}>
           <Box ref={generateRef} sx={{ py: 8 }}>
-            <Fade in={generateInView} timeout={800} exit={false}>
-              <Box>
+            <Box>
+              <Paper
+                elevation={0}
+                sx={{
+                  width: 'fit-content',
+                  maxWidth: '100%',
+                  margin: '0 auto',
+                  p: 3,
+                  mb: 8,
+                  textAlign: 'center',
+                  backgroundColor: 'white',
+                  border: '2px solid transparent',
+                  borderRadius: 2,
+                  position: 'relative',
+                  zIndex: 1,
+                }}
+              >
                 <Typography
                   variant="h2"
                   component="h2"
                   align="center"
                   sx={{
-                    mb: 8,
                     fontWeight: 800,
                     background: 'linear-gradient(45deg, #D32F2F 30%, #FF5252 90%)',
                     backgroundClip: 'text',
@@ -639,117 +645,129 @@ const Landing: React.FC = () => {
                 >
                   What Can You Generate With AssignmentAI?
                 </Typography>
-                <Typography variant="h6" align="center" color="text.secondary" paragraph>
-                  Our AI is trained by experts in content creation and conversions. With the help of
-                  this busy work eliminator, students & teachers don't have to struggle to complete
-                  what they need quickly. Say goodbye to wasted time! Get quick, complimentary
-                  assistance now!
-                </Typography>
-                <Grid container spacing={4} mt={4} justifyContent="center">
-                  {[
-                    {
-                      title: 'Assignment Expert',
-                      description:
-                        'Use AssignmentAI for quick and accurate answers to study questions. Essential for students striving for high grades.',
-                      icon: '📚',
-                    },
-                    {
-                      title: 'Grammar Guru',
-                      description:
-                        'Improve your writing with instant grammar, style, and punctuation suggestions. Ideal for crafting flawless essays and emails.',
-                      icon: '✍️',
-                    },
-                    {
-                      title: 'Diagram Maker',
-                      description:
-                        'Easily generate diagrams and charts to visually represent data and concepts, making complex information clear and engaging.',
-                      icon: '📊',
-                    },
-                    {
-                      title: 'Image to Answer',
-                      description:
-                        'Take a photo of your problem and get the answer instantly – a revolutionary tool for homework and studies.',
-                      icon: '📷',
-                    },
-                    {
-                      title: 'AI Detector & Humanizer',
-                      description:
-                        'AssignmentWriter adds a human touch to AI text, making engaging and relatable content for your audience.',
-                      icon: '🤖',
-                    },
-                    {
-                      title: 'Creative Code Generator',
-                      description:
-                        'Need help with code? Generate unique codes for your projects and seamlessly integrate them into your products.',
-                      icon: '💻',
-                    },
-                  ].map((feature, index) => (
-                    <Grid item xs={12} sm={6} md={4} key={index}>
-                      <Paper
-                        elevation={3}
+              </Paper>
+
+              <Grid container spacing={4} mt={4} justifyContent="center">
+                {[
+                  {
+                    title: 'Assignment Expert',
+                    description:
+                      'Use AssignmentAI for quick and accurate answers to study questions. Essential for students striving for high grades.',
+                    icon: '📚',
+                  },
+                  {
+                    title: 'Grammar Guru',
+                    description:
+                      'Improve your writing with instant grammar, style, and punctuation suggestions. Ideal for crafting flawless essays and emails.',
+                    icon: '✍️',
+                  },
+                  {
+                    title: 'Diagram Maker',
+                    description:
+                      'Easily generate diagrams and charts to visually represent data and concepts, making complex information clear and engaging.',
+                    icon: '📊',
+                  },
+                  {
+                    title: 'Image to Answer',
+                    description:
+                      'Take a photo of your problem and get the answer instantly – a revolutionary tool for homework and studies.',
+                    icon: '📷',
+                  },
+                  {
+                    title: 'AI Detector & Humanizer',
+                    description:
+                      'AssignmentWriter adds a human touch to AI text, making engaging and relatable content for your audience.',
+                    icon: '🤖',
+                  },
+                  {
+                    title: 'Creative Code Generator',
+                    description:
+                      'Need help with code? Generate unique codes for your projects and seamlessly integrate them into your products.',
+                    icon: '💻',
+                  },
+                ].map((feature, index) => (
+                  <Grid item xs={12} sm={6} md={4} key={index}>
+                    <Paper
+                      elevation={3}
+                      sx={{
+                        p: { xs: 2, md: 3 },
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        textAlign: 'center',
+                        border: '2.25px solid #D32F2F',
+                        borderRadius: 3,
+                        transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
+                        backgroundColor: 'white',
+                        position: 'relative',
+                        zIndex: 1,
+                        '&:hover': {
+                          transform: 'translateY(-6px) scale(1.03)',
+                          boxShadow:
+                            '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
+                          borderColor: '#B71C1C',
+                        },
+                      }}
+                    >
+                      <Box sx={{ mb: 2, fontSize: { xs: '2.5rem', md: '2.5rem' } }}>
+                        {feature.icon}
+                      </Box>
+                      <Typography
+                        variant="h5"
+                        component="h3"
                         sx={{
-                          p: { xs: 2, md: 3 },
-                          height: '100%',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          textAlign: 'center',
-                          border: '2.25px solid #D32F2F',
-                          borderRadius: 3,
-                          transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
-                          '&:hover': {
-                            transform: 'translateY(-6px) scale(1.03)',
-                            boxShadow:
-                              '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
-                            borderColor: '#B71C1C',
-                          },
+                          mb: 2,
+                          fontWeight: 600,
+                          fontSize: { xs: '1.4rem', md: '1.6rem' },
+                          color: 'text.primary',
                         }}
                       >
-                        <Box sx={{ mb: 2, fontSize: { xs: '2.5rem', md: '2.5rem' } }}>
-                          {feature.icon}
-                        </Box>
-                        <Typography
-                          variant="h5"
-                          component="h3"
-                          sx={{
-                            mb: 2,
-                            fontWeight: 600,
-                            fontSize: { xs: '1.4rem', md: '1.6rem' },
-                            color: 'text.primary',
-                          }}
-                        >
-                          {feature.title}
-                        </Typography>
-                        <Typography
-                          variant="body1"
-                          color="text.secondary"
-                          sx={{
-                            fontSize: { xs: '1.0rem', md: '1.15rem' },
-                            lineHeight: 1.6,
-                          }}
-                        >
-                          {feature.description}
-                        </Typography>
-                      </Paper>
-                    </Grid>
-                  ))}
-                </Grid>
-              </Box>
-            </Fade>
+                        {feature.title}
+                      </Typography>
+                      <Typography
+                        variant="body1"
+                        color="text.secondary"
+                        sx={{
+                          fontSize: { xs: '1.0rem', md: '1.15rem' },
+                          lineHeight: 1.6,
+                        }}
+                      >
+                        {feature.description}
+                      </Typography>
+                    </Paper>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
           </Box>
         </Container>
 
         {/* Why AssignmentAI is Better than ChatGPT? Section */}
-        <Container sx={{ backgroundColor: 'white' }}>
+        <Container sx={{ position: 'relative', zIndex: 1, overflow: 'hidden' }}>
           <Box ref={comparisonRef} sx={{ py: 8 }}>
-            <Fade in={comparisonInView} timeout={800} exit={false}>
-              <Box>
+            <Box>
+              <Paper
+                elevation={0}
+                sx={{
+                  width: 'fit-content',
+                  maxWidth: '100%',
+                  margin: '0 auto',
+                  p: 3,
+                  mb: 8,
+                  textAlign: 'center',
+                  backgroundColor: 'white',
+                  border: '2px solid transparent',
+                  borderRadius: 2,
+                  position: 'relative',
+                  zIndex: 1,
+                }}
+              >
                 <Typography
                   variant="h2"
                   component="h2"
                   align="center"
                   sx={{
-                    mb: 8,
                     fontWeight: 800,
                     background: 'linear-gradient(45deg, #D32F2F 30%, #FF5252 90%)',
                     backgroundClip: 'text',
@@ -761,200 +779,220 @@ const Landing: React.FC = () => {
                 >
                   Why AssignmentAI is Better than ChatGPT?
                 </Typography>
-                <Grid container spacing={4} component="div" alignItems="stretch">
-                  <Grid item xs={12} md={6} sx={{ pl: { md: 4 } }} component="div">
-                    <Card
+              </Paper>
+              <Grid container spacing={4} component="div" alignItems="stretch">
+                <Grid item xs={12} md={6} sx={{ pl: { md: 4 } }} component="div">
+                  <Card
+                    sx={{
+                      p: { xs: 2, md: 3 },
+                      height: '100%',
+                      borderRadius: 2,
+                      boxShadow: 3,
+                      border: '2.25px solid #D32F2F',
+                      backgroundColor: 'white',
+                      position: 'relative',
+                      zIndex: 1,
+                      transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
+                      '&:hover': {
+                        transform: 'translateY(-6px) scale(1.03)',
+                        boxShadow:
+                          '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
+                        borderColor: '#B71C1C',
+                      },
+                    }}
+                  >
+                    <Typography
+                      variant="h5"
+                      component="h3"
                       sx={{
-                        p: { xs: 2, md: 3 },
-                        height: '100%',
-                        borderRadius: 2,
-                        boxShadow: 3,
-                        border: '2.25px solid #D32F2F',
-                        transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
-                        '&:hover': {
-                          transform: 'translateY(-6px) scale(1.03)',
-                          boxShadow:
-                            '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
-                          borderColor: '#B71C1C',
-                        },
+                        mb: 3,
+                        fontWeight: 600,
+                        fontSize: { xs: '1.4rem', md: '1.6rem' },
+                        color: 'text.primary',
                       }}
                     >
-                      <Typography
-                        variant="h5"
-                        component="h3"
-                        sx={{
-                          mb: 3,
-                          fontWeight: 600,
-                          fontSize: { xs: '1.4rem', md: '1.6rem' },
-                          color: 'text.primary',
-                        }}
-                      >
-                        AssignmentAI
-                      </Typography>
-                      <List>
-                        <ListItem>
-                          <ListItemIcon sx={{ minWidth: 40 }}>
-                            <span style={{ fontSize: '1.75rem' }}>🎓</span>
-                          </ListItemIcon>
-                          <ListItemText
-                            primary="Designed for Students & Academia"
-                            primaryTypographyProps={{
-                              fontSize: { xs: '1.0rem', md: '1.15rem' },
-                            }}
-                          />
-                        </ListItem>
-                        <ListItem>
-                          <ListItemIcon sx={{ minWidth: 40 }}>
-                            <span style={{ fontSize: '1.75rem' }}>🧠</span>
-                          </ListItemIcon>
-                          <ListItemText
-                            primary="Superior AI Model Built for Students & Academia"
-                            primaryTypographyProps={{
-                              fontSize: { xs: '1.0rem', md: '1.15rem' },
-                            }}
-                          />
-                        </ListItem>
-                        <ListItem>
-                          <ListItemIcon sx={{ minWidth: 40 }}>
-                            <span style={{ fontSize: '1.75rem' }}>📖</span>
-                          </ListItemIcon>
-                          <ListItemText
-                            primary="Enriched with 20+ Academia Use Cases"
-                            primaryTypographyProps={{
-                              fontSize: { xs: '1.0rem', md: '1.15rem' },
-                            }}
-                          />
-                        </ListItem>
-                        <ListItem>
-                          <ListItemIcon sx={{ minWidth: 40 }}>
-                            <span style={{ fontSize: '1.75rem' }}>✔</span>
-                          </ListItemIcon>
-                          <ListItemText
-                            primary="Specialized Tools: AI Diagram Maker, Code Generation/Programming, Math Solver"
-                            primaryTypographyProps={{
-                              fontSize: { xs: '1.0rem', md: '1.15rem' },
-                            }}
-                          />
-                        </ListItem>
-                        <ListItem>
-                          <ListItemIcon sx={{ minWidth: 40 }}>
-                            <span style={{ fontSize: '1.75rem' }}>👍</span>
-                          </ListItemIcon>
-                          <ListItemText
-                            primary="Real-Time Reference: Answers with Real-Time References"
-                            primaryTypographyProps={{
-                              fontSize: { xs: '1.0rem', md: '1.15rem' },
-                            }}
-                          />
-                        </ListItem>
-                      </List>
-                    </Card>
-                  </Grid>
-                  <Grid item xs={12} md={6} component="div">
-                    <Card
-                      sx={{
-                        p: { xs: 2, md: 3 },
-                        height: '100%',
-                        borderRadius: 2,
-                        boxShadow: 3,
-                        border: '2.25px solid #D32F2F',
-                        transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
-                        '&:hover': {
-                          transform: 'translateY(-6px) scale(1.03)',
-                          boxShadow:
-                            '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
-                          borderColor: '#B71C1C',
-                        },
-                      }}
-                    >
-                      <Typography
-                        variant="h5"
-                        component="h3"
-                        sx={{
-                          mb: 3,
-                          fontWeight: 600,
-                          fontSize: { xs: '1.4rem', md: '1.6rem' },
-                          color: 'text.primary',
-                        }}
-                      >
-                        ChatGPT
-                      </Typography>
-                      <List>
-                        <ListItem>
-                          <ListItemIcon sx={{ minWidth: 40 }}>
-                            <span style={{ fontSize: '1.75rem' }}>🌐</span>
-                          </ListItemIcon>
-                          <ListItemText
-                            primary="Designed for General-Purpose"
-                            primaryTypographyProps={{
-                              fontSize: { xs: '1.0rem', md: '1.15rem' },
-                            }}
-                          />
-                        </ListItem>
-                        <ListItem>
-                          <ListItemIcon sx={{ minWidth: 40 }}>
-                            <span style={{ fontSize: '1.75rem' }}>🤖</span>
-                          </ListItemIcon>
-                          <ListItemText
-                            primary="General-Purpose AI Model"
-                            primaryTypographyProps={{
-                              fontSize: { xs: '1.0rem', md: '1.15rem' },
-                            }}
-                          />
-                        </ListItem>
-                        <ListItem>
-                          <ListItemIcon sx={{ minWidth: 40 }}>
-                            <span style={{ fontSize: '1.75rem' }}>📃</span>
-                          </ListItemIcon>
-                          <ListItemText
-                            primary="Limited Academic Focus"
-                            primaryTypographyProps={{
-                              fontSize: { xs: '1.0rem', md: '1.15rem' },
-                            }}
-                          />
-                        </ListItem>
-                        <ListItem>
-                          <ListItemIcon sx={{ minWidth: 40 }}>
-                            <span style={{ fontSize: '1.75rem' }}>❌</span>
-                          </ListItemIcon>
-                          <ListItemText
-                            primary="Specialized Tools: N/A"
-                            primaryTypographyProps={{
-                              fontSize: { xs: '1.0rem', md: '1.15rem' },
-                            }}
-                          />
-                        </ListItem>
-                        <ListItem>
-                          <ListItemIcon sx={{ minWidth: 40 }}>
-                            <span style={{ fontSize: '1.75rem' }}>👎</span>
-                          </ListItemIcon>
-                          <ListItemText
-                            primary="References may not be real-time"
-                            primaryTypographyProps={{
-                              fontSize: { xs: '1.0rem', md: '1.15rem' },
-                            }}
-                          />
-                        </ListItem>
-                      </List>
-                    </Card>
-                  </Grid>
+                      AssignmentAI
+                    </Typography>
+                    <List>
+                      <ListItem>
+                        <ListItemIcon sx={{ minWidth: 40 }}>
+                          <span style={{ fontSize: '1.75rem' }}>🎓</span>
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="Designed for Students & Academia"
+                          primaryTypographyProps={{
+                            fontSize: { xs: '1.0rem', md: '1.15rem' },
+                          }}
+                        />
+                      </ListItem>
+                      <ListItem>
+                        <ListItemIcon sx={{ minWidth: 40 }}>
+                          <span style={{ fontSize: '1.75rem' }}>🧠</span>
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="Superior AI Model Built for Students & Academia"
+                          primaryTypographyProps={{
+                            fontSize: { xs: '1.0rem', md: '1.15rem' },
+                          }}
+                        />
+                      </ListItem>
+                      <ListItem>
+                        <ListItemIcon sx={{ minWidth: 40 }}>
+                          <span style={{ fontSize: '1.75rem' }}>📖</span>
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="Enriched with 20+ Academia Use Cases"
+                          primaryTypographyProps={{
+                            fontSize: { xs: '1.0rem', md: '1.15rem' },
+                          }}
+                        />
+                      </ListItem>
+                      <ListItem>
+                        <ListItemIcon sx={{ minWidth: 40 }}>
+                          <span style={{ fontSize: '1.75rem' }}>✔</span>
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="Specialized Tools: AI Diagram Maker, Code Generation/Programming, Math Solver"
+                          primaryTypographyProps={{
+                            fontSize: { xs: '1.0rem', md: '1.15rem' },
+                          }}
+                        />
+                      </ListItem>
+                      <ListItem>
+                        <ListItemIcon sx={{ minWidth: 40 }}>
+                          <span style={{ fontSize: '1.75rem' }}>👍</span>
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="Real-Time Reference: Answers with Real-Time References"
+                          primaryTypographyProps={{
+                            fontSize: { xs: '1.0rem', md: '1.15rem' },
+                          }}
+                        />
+                      </ListItem>
+                    </List>
+                  </Card>
                 </Grid>
-              </Box>
-            </Fade>
+                <Grid item xs={12} md={6} component="div">
+                  <Card
+                    sx={{
+                      p: { xs: 2, md: 3 },
+                      height: '100%',
+                      borderRadius: 2,
+                      boxShadow: 3,
+                      border: '2.25px solid #D32F2F',
+                      backgroundColor: 'white',
+                      position: 'relative',
+                      zIndex: 1,
+                      transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
+                      '&:hover': {
+                        transform: 'translateY(-6px) scale(1.03)',
+                        boxShadow:
+                          '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
+                        borderColor: '#B71C1C',
+                      },
+                    }}
+                  >
+                    <Typography
+                      variant="h5"
+                      component="h3"
+                      sx={{
+                        mb: 3,
+                        fontWeight: 600,
+                        fontSize: { xs: '1.4rem', md: '1.6rem' },
+                        color: 'text.primary',
+                      }}
+                    >
+                      ChatGPT
+                    </Typography>
+                    <List>
+                      <ListItem>
+                        <ListItemIcon sx={{ minWidth: 40 }}>
+                          <span style={{ fontSize: '1.75rem' }}>🌐</span>
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="Designed for General-Purpose"
+                          primaryTypographyProps={{
+                            fontSize: { xs: '1.0rem', md: '1.15rem' },
+                          }}
+                        />
+                      </ListItem>
+                      <ListItem>
+                        <ListItemIcon sx={{ minWidth: 40 }}>
+                          <span style={{ fontSize: '1.75rem' }}>🤖</span>
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="General-Purpose AI Model"
+                          primaryTypographyProps={{
+                            fontSize: { xs: '1.0rem', md: '1.15rem' },
+                          }}
+                        />
+                      </ListItem>
+                      <ListItem>
+                        <ListItemIcon sx={{ minWidth: 40 }}>
+                          <span style={{ fontSize: '1.75rem' }}>📃</span>
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="Limited Academic Focus"
+                          primaryTypographyProps={{
+                            fontSize: { xs: '1.0rem', md: '1.15rem' },
+                          }}
+                        />
+                      </ListItem>
+                      <ListItem>
+                        <ListItemIcon sx={{ minWidth: 40 }}>
+                          <span style={{ fontSize: '1.75rem' }}>❌</span>
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="Specialized Tools: N/A"
+                          primaryTypographyProps={{
+                            fontSize: { xs: '1.0rem', md: '1.15rem' },
+                          }}
+                        />
+                      </ListItem>
+                      <ListItem>
+                        <ListItemIcon sx={{ minWidth: 40 }}>
+                          <span style={{ fontSize: '1.75rem' }}>👎</span>
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="References may not be real-time"
+                          primaryTypographyProps={{
+                            fontSize: { xs: '1.0rem', md: '1.15rem' },
+                          }}
+                        />
+                      </ListItem>
+                    </List>
+                  </Card>
+                </Grid>
+              </Grid>
+            </Box>
           </Box>
         </Container>
 
         {/* Trending Features of AssignmentAI Section */}
-        <Container sx={{ backgroundColor: 'white' }}>
+        <Container sx={{ position: 'relative', zIndex: 1, overflow: 'hidden' }}>
           <Box ref={trendingRef} sx={{ py: 8 }}>
-            <Fade in={trendingInView} timeout={800} exit={false}>
-              <Box>
+            <Box>
+              <Paper
+                elevation={0}
+                sx={{
+                  width: 'fit-content',
+                  maxWidth: '100%',
+                  margin: '0 auto',
+                  p: 3,
+                  mb: 8,
+                  textAlign: 'center',
+                  backgroundColor: 'white',
+                  border: '2px solid transparent',
+                  borderRadius: 2,
+                  position: 'relative',
+                  zIndex: 1,
+                }}
+              >
                 <Typography
                   variant="h2"
                   component="h2"
                   align="center"
                   sx={{
-                    mb: 8,
                     fontWeight: 800,
                     background: 'linear-gradient(45deg, #D32F2F 30%, #FF5252 90%)',
                     backgroundClip: 'text',
@@ -966,98 +1004,111 @@ const Landing: React.FC = () => {
                 >
                   Trending Features of AssignmentAI
                 </Typography>
-                <Typography variant="h6" align="center" color="text.secondary" paragraph>
-                  Discover the latest trending features of AssignmentAI, a tool designed to elevate
-                  modern student's academic experiences. It is the most powerful AI homework helper
-                  built to improve the abilities of the students.
-                </Typography>
-                <Grid container spacing={4} mt={4}>
-                  {[
-                    {
-                      title: 'Quick Photo Answers',
-                      description:
-                        'Snap a photo of your homework and get the answer right away. No more scratching your head over tough questions!',
-                      icon: '📷',
-                    },
-                    {
-                      title: 'Easy Diagram Maker',
-                      description:
-                        'Create diagrams for your assignments with just a few clicks. No need for drawing or fancy software.',
-                      icon: '📊',
-                    },
-                    {
-                      title: 'Math Problem Solver',
-                      description:
-                        'Stuck on a math problem? AssignmentAI can solve it for free! Simply upload your problem and receive high-quality, precise answers within seconds.',
-                      icon: '🔢',
-                    },
-                  ].map((feature, index) => (
-                    <Grid item xs={12} sm={6} md={4} key={index}>
-                      <Paper
-                        elevation={3}
+              </Paper>
+
+              <Grid container spacing={4} mt={4}>
+                {[
+                  {
+                    title: 'Quick Photo Answers',
+                    description:
+                      'Snap a photo of your homework and get the answer right away. No more scratching your head over tough questions!',
+                    icon: '📷',
+                  },
+                  {
+                    title: 'Easy Diagram Maker',
+                    description:
+                      'Create diagrams for your assignments with just a few clicks. No need for drawing or fancy software.',
+                    icon: '📊',
+                  },
+                  {
+                    title: 'Math Problem Solver',
+                    description:
+                      'Stuck on a math problem? AssignmentAI can solve it for free! Simply upload your problem and receive high-quality, precise answers within seconds.',
+                    icon: '🔢',
+                  },
+                ].map((feature, index) => (
+                  <Grid item xs={12} sm={6} md={4} key={index}>
+                    <Paper
+                      elevation={3}
+                      sx={{
+                        p: { xs: 2, md: 3 },
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        textAlign: 'center',
+                        border: '2.25px solid #D32F2F',
+                        borderRadius: 3,
+                        transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
+                        backgroundColor: 'white',
+                        position: 'relative',
+                        zIndex: 1,
+                        '&:hover': {
+                          transform: 'translateY(-6px) scale(1.03)',
+                          boxShadow:
+                            '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
+                          borderColor: '#B71C1C',
+                        },
+                      }}
+                    >
+                      <Box sx={{ mb: 2, fontSize: { xs: '2.5rem', md: '2.5rem' } }}>
+                        {feature.icon}
+                      </Box>
+                      <Typography
+                        variant="h5"
+                        component="h3"
                         sx={{
-                          p: { xs: 2, md: 3 },
-                          height: '100%',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          textAlign: 'center',
-                          border: '2.25px solid #D32F2F',
-                          borderRadius: 3,
-                          transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
-                          '&:hover': {
-                            transform: 'translateY(-6px) scale(1.03)',
-                            boxShadow:
-                              '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
-                            borderColor: '#B71C1C',
-                          },
+                          mb: 2,
+                          fontWeight: 600,
+                          fontSize: { xs: '1.4rem', md: '1.6rem' },
+                          color: 'text.primary',
                         }}
                       >
-                        <Box sx={{ mb: 2, fontSize: { xs: '2.5rem', md: '2.5rem' } }}>
-                          {feature.icon}
-                        </Box>
-                        <Typography
-                          variant="h5"
-                          component="h3"
-                          sx={{
-                            mb: 2,
-                            fontWeight: 600,
-                            fontSize: { xs: '1.4rem', md: '1.6rem' },
-                            color: 'text.primary',
-                          }}
-                        >
-                          {feature.title}
-                        </Typography>
-                        <Typography
-                          variant="body1"
-                          color="text.secondary"
-                          sx={{
-                            fontSize: { xs: '1.0rem', md: '1.15rem' },
-                            lineHeight: 1.6,
-                          }}
-                        >
-                          {feature.description}
-                        </Typography>
-                      </Paper>
-                    </Grid>
-                  ))}
-                </Grid>
-              </Box>
-            </Fade>
+                        {feature.title}
+                      </Typography>
+                      <Typography
+                        variant="body1"
+                        color="text.secondary"
+                        sx={{
+                          fontSize: { xs: '1.0rem', md: '1.15rem' },
+                          lineHeight: 1.6,
+                        }}
+                      >
+                        {feature.description}
+                      </Typography>
+                    </Paper>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
           </Box>
         </Container>
 
         {/* Features Section */}
         {/* App Screenshots Section (now Modern Feature Grid) */}
-        <Container sx={{ py: { xs: 8, md: 12 }, backgroundColor: 'white' }}>
-          <Fade in={screenshotsInView} timeout={800} exit={false}>
-            <Box ref={screenshotsRef}>
+        <Container sx={{ py: { xs: 8, md: 12 }, position: 'relative', zIndex: 1 }}>
+          <Box ref={screenshotsRef}>
+            <Paper
+              elevation={0}
+              sx={{
+                width: 'fit-content',
+                maxWidth: '100%',
+                margin: '0 auto',
+                p: 3,
+                mb: 8,
+                textAlign: 'center',
+                backgroundColor: 'white',
+                border: '2px solid transparent',
+                borderRadius: 2,
+                position: 'relative',
+                zIndex: 1,
+              }}
+            >
               <Typography
                 variant="h2"
                 component="h2"
                 align="center"
                 sx={{
-                  mb: 8,
                   fontWeight: 800,
                   background: 'linear-gradient(45deg, #D32F2F 30%, #FF5252 90%)',
                   backgroundClip: 'text',
@@ -1069,88 +1120,105 @@ const Landing: React.FC = () => {
               >
                 Why We Love AssignmentAI
               </Typography>
-              <Grid container spacing={4} justifyContent="center">
-                {[
-                  {
-                    icon: <AssignmentOutlined sx={{ fontSize: 48, color: '#D32F2F' }} />,
-                    color: '#D32F2F',
-                    title: 'Instant Assignment Solutions',
-                    desc: 'Get accurate, AI-powered answers to your homework and study questions in seconds.',
-                  },
-                  {
-                    icon: <DiamondOutlined sx={{ fontSize: 48, color: '#FFA000' }} />,
-                    color: '#FFA000',
-                    title: 'Premium Features',
-                    desc: 'Unlock advanced tools like AI diagram maker, code generator, and more.',
-                  },
-                  {
-                    icon: <BoltOutlined sx={{ fontSize: 48, color: '#FFD600' }} />,
-                    color: '#FFD600',
-                    title: 'Lightning Fast Feedback',
-                    desc: 'Receive instant feedback and suggestions to boost your academic performance.',
-                  },
-                  {
-                    icon: <PsychologyOutlined sx={{ fontSize: 48, color: '#e91e63' }} />,
-                    color: '#e91e63',
-                    title: 'Smart Writing Assistance',
-                    desc: 'Improve your essays and reports with advanced grammar, style, and structure suggestions.',
-                  },
-                  {
-                    icon: <SecurityOutlined sx={{ fontSize: 48, color: '#0288d1' }} />,
-                    color: '#0288d1',
-                    title: 'Secure & Private',
-                    desc: 'Your data and assignments are protected with enterprise-grade security.',
-                  },
-                  {
-                    icon: <CheckCircleOutlineOutlined sx={{ fontSize: 48, color: '#43a047' }} />,
-                    color: '#43a047',
-                    title: 'Trusted by Students & Teachers',
-                    desc: 'Join thousands of students and teachers who rely on AssignmentAI for academic success.',
-                  },
-                ].map((feature, idx) => (
-                  <Grid item xs={12} sm={6} md={4} key={idx}>
-                    <Paper
-                      sx={{
-                        height: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        p: 3,
-                        borderRadius: 4,
-                        boxShadow: 3,
-                        textAlign: 'center',
-                        border: '2.25px solid',
+            </Paper>
+            <Grid container spacing={4} justifyContent="center">
+              {[
+                {
+                  icon: <AssignmentOutlined sx={{ fontSize: 48, color: '#D32F2F' }} />,
+                  color: '#D32F2F',
+                  title: 'Instant Assignment Solutions',
+                  desc: 'Get accurate, AI-powered answers to your homework and study questions in seconds.',
+                },
+                {
+                  icon: <DiamondOutlined sx={{ fontSize: 48, color: '#FFA000' }} />,
+                  color: '#FFA000',
+                  title: 'Premium Features',
+                  desc: 'Unlock advanced tools like AI diagram maker, code generator, and more.',
+                },
+                {
+                  icon: <BoltOutlined sx={{ fontSize: 48, color: '#FFD600' }} />,
+                  color: '#FFD600',
+                  title: 'Lightning Fast Feedback',
+                  desc: 'Receive instant feedback and suggestions to boost your academic performance.',
+                },
+                {
+                  icon: <PsychologyOutlined sx={{ fontSize: 48, color: '#e91e63' }} />,
+                  color: '#e91e63',
+                  title: 'Smart Writing Assistance',
+                  desc: 'Improve your essays and reports with advanced grammar, style, and structure suggestions.',
+                },
+                {
+                  icon: <SecurityOutlined sx={{ fontSize: 48, color: '#0288d1' }} />,
+                  color: '#0288d1',
+                  title: 'Secure & Private',
+                  desc: 'Your data and assignments are protected with enterprise-grade security.',
+                },
+                {
+                  icon: <CheckCircleOutlineOutlined sx={{ fontSize: 48, color: '#43a047' }} />,
+                  color: '#43a047',
+                  title: 'Trusted by Students & Teachers',
+                  desc: 'Join thousands of students and teachers who rely on AssignmentAI for academic success.',
+                },
+              ].map((feature, idx) => (
+                <Grid item xs={12} sm={6} md={4} key={idx}>
+                  <Paper
+                    sx={{
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      p: 3,
+                      borderRadius: 4,
+                      boxShadow: 3,
+                      textAlign: 'center',
+                      border: '2.25px solid #D32F2F',
+                      borderColor: feature.color,
+                      transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
+                      backgroundColor: 'white',
+                      position: 'relative',
+                      zIndex: 1,
+                      '&:hover': {
+                        transform: 'translateY(-6px) scale(1.03)',
+                        boxShadow: `0 0 32px ${feature.color}40, 0 0 64px ${feature.color}30`,
                         borderColor: feature.color,
-                        transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
-                        '&:hover': {
-                          transform: 'translateY(-6px) scale(1.03)',
-                          boxShadow: `0 0 32px ${feature.color}40, 0 0 64px ${feature.color}30`,
-                          borderColor: feature.color,
-                        },
-                      }}
-                    >
-                      <Box sx={{ mb: 1.5 }}>{feature.icon}</Box>
-                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
-                        {feature.title}
-                      </Typography>
-                      <Typography color="text.secondary">{feature.desc}</Typography>
-                    </Paper>
-                  </Grid>
-                ))}
-              </Grid>
-            </Box>
-          </Fade>
+                      },
+                    }}
+                  >
+                    <Box sx={{ mb: 1.5 }}>{feature.icon}</Box>
+                    <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
+                      {feature.title}
+                    </Typography>
+                    <Typography color="text.secondary">{feature.desc}</Typography>
+                  </Paper>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
         </Container>
 
         {/* Starred Statistics Section */}
-        <Fade in={starredStatsInView} timeout={800} exit={false}>
-          <Box ref={starredStatsRef} sx={{ py: { xs: 6, md: 8 }, backgroundColor: 'white' }}>
-            <Container>
+        <Box ref={starredStatsRef} sx={{ py: { xs: 6, md: 8 }, position: 'relative', zIndex: 1 }}>
+          <Container>
+            <Paper
+              elevation={0}
+              sx={{
+                width: 'fit-content',
+                maxWidth: '100%',
+                margin: '0 auto',
+                p: 3,
+                mb: 6,
+                textAlign: 'center',
+                backgroundColor: 'white',
+                border: '2px solid transparent',
+                borderRadius: 2,
+                position: 'relative',
+                zIndex: 1,
+              }}
+            >
               <Typography
                 variant="h2"
                 align="center"
                 sx={{
-                  mb: 6,
                   fontWeight: 800,
                   background: 'linear-gradient(45deg, #D32F2F 30%, #FF5252 90%)',
                   backgroundClip: 'text',
@@ -1162,111 +1230,127 @@ const Landing: React.FC = () => {
               >
                 Key Statistics
               </Typography>
-              <Grid container spacing={4} justifyContent="center">
-                {[
-                  {
-                    number:
-                      totalUsers < 100
-                        ? totalUsers.toLocaleString()
-                        : `${totalUsers.toLocaleString()}+`,
-                    label: totalUsers === 1 ? 'Student Helped' : 'Students Helped',
-                    icon: '👨‍🎓',
-                    color: '#2196f3',
-                  },
-                  {
-                    number: '95%',
-                    label: 'Success Rate',
-                    icon: '📈',
-                    color: '#4caf50',
-                  },
-                  {
-                    number: '24/7',
-                    label: 'AI Support',
-                    icon: '🤖',
-                    color: '#9c27b0',
-                  },
-                  {
-                    number: '50+',
-                    label: 'Subject Areas',
-                    icon: '📚',
-                    color: '#ff9800',
-                  },
-                ].map((stat, index) => (
-                  <Grid item xs={6} sm={6} md={3} key={index}>
-                    <Paper
-                      elevation={2}
+            </Paper>
+            <Grid container spacing={4} justifyContent="center">
+              {[
+                {
+                  number:
+                    totalUsers < 100
+                      ? totalUsers.toLocaleString()
+                      : `${totalUsers.toLocaleString()}+`,
+                  label: totalUsers === 1 ? 'Student Helped' : 'Students Helped',
+                  icon: '👨‍🎓',
+                  color: '#2196f3',
+                },
+                {
+                  number: '95%',
+                  label: 'Success Rate',
+                  icon: '📈',
+                  color: '#4caf50',
+                },
+                {
+                  number: '24/7',
+                  label: 'AI Support',
+                  icon: '🤖',
+                  color: '#9c27b0',
+                },
+                {
+                  number: '50+',
+                  label: 'Subject Areas',
+                  icon: '📚',
+                  color: '#ff9800',
+                },
+              ].map((stat, index) => (
+                <Grid item xs={6} sm={6} md={3} key={index}>
+                  <Paper
+                    elevation={2}
+                    sx={{
+                      p: { xs: 2, sm: 3, md: 5 },
+                      minHeight: { xs: 160, sm: 180, md: 220 },
+                      textAlign: 'center',
+                      backgroundColor: 'white',
+                      boxShadow: 3,
+                      transition: 'transform 0.2s, box-shadow 0.2s',
+                      border: '2.25px solid #D32F2F',
+                      borderColor: stat.color,
+                      borderRadius: 4,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      position: 'relative',
+                      zIndex: 1,
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: `0 0 32px ${stat.color}40, 0 0 64px ${stat.color}30`,
+                      },
+                    }}
+                  >
+                    <Typography
+                      variant="h2"
+                      component="div"
                       sx={{
-                        p: { xs: 2, sm: 3, md: 5 },
-                        minHeight: { xs: 160, sm: 180, md: 220 },
-                        textAlign: 'center',
-                        backgroundColor: 'white',
-                        boxShadow: 3,
-                        transition: 'transform 0.2s, box-shadow 0.2s',
-                        border: '2.25px solid',
-                        borderColor: stat.color,
-                        borderRadius: 4,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'center',
-                        '&:hover': {
-                          transform: 'translateY(-4px)',
-                          boxShadow: `0 0 32px ${stat.color}40, 0 0 64px ${stat.color}30`,
-                        },
+                        fontWeight: 700,
+                        color: stat.color,
+                        mb: 1,
+                        fontSize: { xs: '2rem', sm: '2.5rem', md: '3.5rem' },
+                        lineHeight: 1.2,
                       }}
                     >
-                      <Typography
-                        variant="h2"
-                        component="div"
-                        sx={{
-                          fontWeight: 700,
-                          color: stat.color,
-                          mb: 1,
-                          fontSize: { xs: '2rem', sm: '2.5rem', md: '3.5rem' },
-                          lineHeight: 1.2,
-                        }}
-                      >
-                        {stat.number}
-                      </Typography>
-                      <Typography
-                        variant="h3"
-                        sx={{
-                          mb: 1,
-                          fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
-                          lineHeight: 1.2,
-                        }}
-                      >
-                        {stat.icon}
-                      </Typography>
-                      <Typography
-                        variant="h5"
-                        sx={{
-                          color: 'text.secondary',
-                          fontWeight: 600,
-                          fontSize: { xs: '1rem', sm: '1.1rem', md: '1.25rem' },
-                          lineHeight: 1.2,
-                          px: 1,
-                        }}
-                      >
-                        {stat.label}
-                      </Typography>
-                    </Paper>
-                  </Grid>
-                ))}
-              </Grid>
-            </Container>
-          </Box>
-        </Fade>
+                      {stat.number}
+                    </Typography>
+                    <Typography
+                      variant="h3"
+                      sx={{
+                        mb: 1,
+                        fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      {stat.icon}
+                    </Typography>
+                    <Typography
+                      variant="h5"
+                      sx={{
+                        color: 'text.secondary',
+                        fontWeight: 600,
+                        fontSize: { xs: '1rem', sm: '1.1rem', md: '1.25rem' },
+                        lineHeight: 1.2,
+                        px: 1,
+                      }}
+                    >
+                      {stat.label}
+                    </Typography>
+                  </Paper>
+                </Grid>
+              ))}
+            </Grid>
+          </Container>
+        </Box>
 
         {/* Pricing Preview Section */}
-        <Container id="pricing" sx={{ py: { xs: 8, md: 12 }, backgroundColor: 'white' }}>
-          <Fade in={pricingInView} timeout={800} exit={false}>
-            <Box ref={pricingRef}>
+        <Container id="pricing" sx={{ py: { xs: 8, md: 12 }, position: 'relative', zIndex: 1 }}>
+          <Box ref={pricingRef}>
+            <Paper
+              elevation={0}
+              sx={{
+                width: 'fit-content',
+                maxWidth: '100%',
+                margin: '0 auto',
+                p: 3,
+                mb: 8,
+                textAlign: 'center',
+                backgroundColor: 'white',
+                border: '2px solid transparent',
+                borderRadius: 2,
+                position: 'relative',
+                zIndex: 1,
+              }}
+            >
               <Typography
                 variant="h2"
                 component="h2"
                 align="center"
                 sx={{
-                  mb: 8,
                   fontWeight: 800,
                   background: 'linear-gradient(45deg, #D32F2F 30%, #FF5252 90%)',
                   backgroundClip: 'text',
@@ -1278,320 +1362,329 @@ const Landing: React.FC = () => {
               >
                 Pricing Plans
               </Typography>
-              <Grid container spacing={4} justifyContent="center">
-                {plans.map(plan => (
-                  <Grid item xs={12} sm={6} md={3} key={plan.name}>
-                    <Card
-                      sx={{
-                        height: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        position: 'relative',
-                        border: '2.25px solid',
+            </Paper>
+            <Grid container spacing={4} justifyContent="center">
+              {plans.map(plan => (
+                <Grid item xs={12} sm={6} md={3} key={plan.name}>
+                  <Card
+                    sx={{
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      position: 'relative',
+                      border: '2.25px solid #D32F2F',
+                      borderColor: plan.color,
+                      borderRadius: 3.5,
+                      boxShadow: 3,
+                      backgroundColor: 'white',
+                      zIndex: 1,
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        transform: 'translateY(-8px)',
+                        boxShadow: `0 8px 24px ${plan.color}40`,
                         borderColor: plan.color,
-                        borderRadius: 3.5,
-                        boxShadow: 3,
-                        transition: 'all 0.3s ease',
-                        '&:hover': {
-                          transform: 'translateY(-8px)',
-                          boxShadow: `0 8px 24px ${plan.color}40`,
-                          borderColor: plan.color,
-                        },
-                        minWidth: '240px',
-                        overflow: 'visible',
-                      }}
-                    >
-                      {plan.popular && (
-                        <Chip
-                          icon={<WorkspacePremiumIcon />}
-                          label="Most Popular"
-                          color="primary"
+                      },
+                      minWidth: '240px',
+                      overflow: 'visible',
+                    }}
+                  >
+                    {plan.popular && (
+                      <Chip
+                        icon={<WorkspacePremiumIcon />}
+                        label="Most Popular"
+                        color="primary"
+                        sx={{
+                          position: 'absolute',
+                          top: -18,
+                          left: 0,
+                          right: 0,
+                          mx: 'auto',
+                          width: 'fit-content',
+                          borderRadius: 2,
+                          zIndex: 2,
+                          fontSize: '1.05rem',
+                          boxShadow: 2,
+                          bgcolor: '#D32F2F',
+                          color: 'white',
+                        }}
+                      />
+                    )}
+                    <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                      <Stack spacing={2}>
+                        <Box
                           sx={{
-                            position: 'absolute',
-                            top: -18,
-                            left: 0,
-                            right: 0,
-                            mx: 'auto',
-                            width: 'fit-content',
-                            borderRadius: 2,
-                            zIndex: 2,
-                            fontSize: '1.05rem',
-                            boxShadow: 2,
-                            bgcolor: '#D32F2F',
-                            color: 'white',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 2,
+                            color: plan.color,
                           }}
-                        />
-                      )}
-                      <CardContent sx={{ flexGrow: 1, p: 3 }}>
-                        <Stack spacing={2}>
-                          <Box
+                        >
+                          {plan.icon}
+                          <Typography variant="h4" fontWeight="bold">
+                            {plan.name}
+                          </Typography>
+                        </Box>
+                        <Box>
+                          <Typography
+                            variant="h2"
+                            fontWeight="bold"
+                            gutterBottom
                             sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 2,
-                              color: plan.color,
+                              fontFamily: '"Mike Sans", "Audiowide", Arial, sans-serif',
+                              fontSize: { xs: '2.0rem', md: '2.5rem' },
                             }}
                           >
-                            {plan.icon}
-                            <Typography variant="h4" fontWeight="bold">
-                              {plan.name}
-                            </Typography>
-                          </Box>
-                          <Box>
-                            <Typography
-                              variant="h2"
-                              fontWeight="bold"
-                              gutterBottom
-                              sx={{
-                                fontFamily: '"Mike Sans", "Audiowide", Arial, sans-serif',
-                                fontSize: { xs: '2.0rem', md: '2.5rem' },
-                              }}
-                            >
-                              {plan.price === 0 ? 'Free' : `$${plan.price}`}
-                              {plan.price !== 0 && (
-                                <Typography
-                                  component="span"
-                                  variant="h5"
-                                  color="text.secondary"
-                                  sx={{
-                                    fontFamily: '"Mike Sans", "Audiowide", Arial, sans-serif',
-                                    fontSize: { xs: '1.0rem', md: '1.25rem' },
-                                  }}
-                                >
-                                  /mo
-                                </Typography>
-                              )}
-                            </Typography>
-                            <Typography
-                              color="text.secondary"
-                              sx={{ fontSize: { xs: '1.0rem', md: '1.15rem' } }}
-                            >
-                              {plan.description}
-                            </Typography>
-                          </Box>
-                          <Box
-                            sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, mt: -1 }}
+                            {plan.price === 0 ? 'Free' : `$${plan.price}`}
+                            {plan.price !== 0 && (
+                              <Typography
+                                component="span"
+                                variant="h5"
+                                color="text.secondary"
+                                sx={{
+                                  fontFamily: '"Mike Sans", "Audiowide", Arial, sans-serif',
+                                  fontSize: { xs: '1.0rem', md: '1.25rem' },
+                                }}
+                              >
+                                /mo
+                              </Typography>
+                            )}
+                          </Typography>
+                          <Typography
+                            color="text.secondary"
+                            sx={{ fontSize: { xs: '1.0rem', md: '1.15rem' } }}
                           >
-                            {plan.name === 'Free' && (
-                              <Chip
-                                icon={<SmartToyOutlined />}
-                                label="GPT-4.1 Nano"
-                                size="small"
-                                sx={{
-                                  backgroundColor: '#e3f2fd',
-                                  color: '#1976d2',
-                                  border: '1.25px solid #90caf9',
-                                  fontSize: '0.85rem',
-                                  px: 0.5,
-                                  height: 24,
-                                  minHeight: 20,
-                                  '& .MuiChip-icon': { color: '#1976d2', fontSize: 18 },
-                                }}
-                              />
-                            )}
-                            {plan.name === 'Plus' && (
-                              <Chip
-                                icon={<PsychologyOutlined />}
-                                label="GPT-3.5 Turbo"
-                                size="small"
-                                sx={{
-                                  backgroundColor: '#e8f5e9',
-                                  color: '#388e3c',
-                                  border: '1.25px solid #81c784',
-                                  fontSize: '0.85rem',
-                                  px: 0.5,
-                                  height: 24,
-                                  minHeight: 20,
-                                  '& .MuiChip-icon': { color: '#388e3c', fontSize: 18 },
-                                }}
-                              />
-                            )}
-                            {plan.name === 'Pro' && (
-                              <Chip
-                                icon={<AutoAwesomeOutlined />}
-                                label="GPT-4 Turbo"
-                                size="small"
-                                sx={{
-                                  backgroundColor: '#f3e5f5',
-                                  color: '#8e24aa',
-                                  border: '1.25px solid #ce93d8',
-                                  fontSize: '0.85rem',
-                                  px: 0.5,
-                                  height: 24,
-                                  minHeight: 20,
-                                  '& .MuiChip-icon': { color: '#8e24aa', fontSize: 18 },
-                                }}
-                              />
-                            )}
-                            {plan.name === 'Max' && (
-                              <Chip
-                                icon={<RocketLaunchOutlined />}
-                                label="GPT-4"
-                                size="small"
-                                sx={{
-                                  backgroundColor: '#fff3e0',
-                                  color: '#f57c00',
-                                  border: '1.25px solid #ffb74d',
-                                  fontSize: '0.85rem',
-                                  px: 0.5,
-                                  height: 24,
-                                  minHeight: 20,
-                                  '& .MuiChip-icon': { color: '#f57c00', fontSize: 18 },
-                                }}
-                              />
-                            )}
-                          </Box>
+                            {plan.description}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, mt: -1 }}>
+                          {plan.name === 'Free' && (
+                            <Chip
+                              icon={<SmartToyOutlined />}
+                              label="GPT-4.1 Nano"
+                              size="small"
+                              sx={{
+                                backgroundColor: '#e3f2fd',
+                                color: '#1976d2',
+                                border: '1.25px solid #90caf9',
+                                fontSize: '0.85rem',
+                                px: 0.5,
+                                height: 24,
+                                minHeight: 20,
+                                '& .MuiChip-icon': { color: '#1976d2', fontSize: 18 },
+                              }}
+                            />
+                          )}
+                          {plan.name === 'Plus' && (
+                            <Chip
+                              icon={<PsychologyOutlined />}
+                              label="GPT-3.5 Turbo"
+                              size="small"
+                              sx={{
+                                backgroundColor: '#e8f5e9',
+                                color: '#388e3c',
+                                border: '1.25px solid #81c784',
+                                fontSize: '0.85rem',
+                                px: 0.5,
+                                height: 24,
+                                minHeight: 20,
+                                '& .MuiChip-icon': { color: '#388e3c', fontSize: 18 },
+                              }}
+                            />
+                          )}
+                          {plan.name === 'Pro' && (
+                            <Chip
+                              icon={<AutoAwesomeOutlined />}
+                              label="GPT-4 Turbo"
+                              size="small"
+                              sx={{
+                                backgroundColor: '#f3e5f5',
+                                color: '#8e24aa',
+                                border: '1.25px solid #ce93d8',
+                                fontSize: '0.85rem',
+                                px: 0.5,
+                                height: 24,
+                                minHeight: 20,
+                                '& .MuiChip-icon': { color: '#8e24aa', fontSize: 18 },
+                              }}
+                            />
+                          )}
+                          {plan.name === 'Max' && (
+                            <Chip
+                              icon={<RocketLaunchOutlined />}
+                              label="GPT-4"
+                              size="small"
+                              sx={{
+                                backgroundColor: '#fff3e0',
+                                color: '#f57c00',
+                                border: '1.25px solid #ffb74d',
+                                fontSize: '0.85rem',
+                                px: 0.5,
+                                height: 24,
+                                minHeight: 20,
+                                '& .MuiChip-icon': { color: '#f57c00', fontSize: 18 },
+                              }}
+                            />
+                          )}
+                        </Box>
+                        {plan.name === 'Free' && (
+                          <Typography
+                            variant="caption"
+                            color="error.main"
+                            sx={{
+                              fontSize: { xs: '0.85rem', md: '0.95rem' },
+                              fontWeight: 400,
+                              mt: 0.5,
+                              mb: 0,
+                            }}
+                          >
+                            30,000 tokens/month
+                          </Typography>
+                        )}
+                        {plan.name === 'Plus' && (
+                          <Typography
+                            variant="caption"
+                            color="error.main"
+                            sx={{
+                              fontSize: { xs: '0.85rem', md: '0.95rem' },
+                              fontWeight: 400,
+                              mt: 0.5,
+                              mb: 0,
+                            }}
+                          >
+                            50,000 tokens/month
+                          </Typography>
+                        )}
+                        {plan.name === 'Pro' && (
+                          <Typography
+                            variant="caption"
+                            color="error.main"
+                            sx={{
+                              fontSize: { xs: '0.85rem', md: '0.95rem' },
+                              fontWeight: 400,
+                              mt: 0.5,
+                              mb: 0,
+                            }}
+                          >
+                            75,000 tokens/month
+                          </Typography>
+                        )}
+                        {plan.name === 'Max' && (
+                          <Typography
+                            variant="caption"
+                            color="error.main"
+                            sx={{
+                              fontSize: { xs: '0.85rem', md: '0.95rem' },
+                              fontWeight: 400,
+                              mt: 0.5,
+                              mb: 0,
+                            }}
+                          >
+                            100,000 tokens/month
+                          </Typography>
+                        )}
+                        <Divider />
+                        <Stack spacing={1.5}>
                           {plan.name === 'Free' && (
                             <Typography
                               variant="caption"
-                              color="error.main"
-                              sx={{
-                                fontSize: { xs: '0.85rem', md: '0.95rem' },
-                                fontWeight: 400,
-                                mt: 0.5,
-                                mb: 0,
-                              }}
+                              color="text.secondary"
+                              sx={{ fontSize: { xs: '0.95rem', md: '1.05rem' }, pl: 0.5 }}
                             >
-                              30,000 tokens/month
+                              Free Features
                             </Typography>
                           )}
-                          {plan.name === 'Plus' && (
-                            <Typography
-                              variant="caption"
-                              color="error.main"
-                              sx={{
-                                fontSize: { xs: '0.85rem', md: '0.95rem' },
-                                fontWeight: 400,
-                                mt: 0.5,
-                                mb: 0,
-                              }}
-                            >
-                              50,000 tokens/month
-                            </Typography>
-                          )}
-                          {plan.name === 'Pro' && (
-                            <Typography
-                              variant="caption"
-                              color="error.main"
-                              sx={{
-                                fontSize: { xs: '0.85rem', md: '0.95rem' },
-                                fontWeight: 400,
-                                mt: 0.5,
-                                mb: 0,
-                              }}
-                            >
-                              75,000 tokens/month
-                            </Typography>
-                          )}
-                          {plan.name === 'Max' && (
-                            <Typography
-                              variant="caption"
-                              color="error.main"
-                              sx={{
-                                fontSize: { xs: '0.85rem', md: '0.95rem' },
-                                fontWeight: 400,
-                                mt: 0.5,
-                                mb: 0,
-                              }}
-                            >
-                              100,000 tokens/month
-                            </Typography>
-                          )}
-                          <Divider />
-                          <Stack spacing={1.5}>
-                            {plan.name === 'Free' && (
+                          {plan.features.map(feature =>
+                            feature.startsWith('Everything in') ? (
                               <Typography
+                                key={feature}
                                 variant="caption"
                                 color="text.secondary"
-                                sx={{ fontSize: { xs: '0.95rem', md: '1.05rem' }, pl: 0.5 }}
+                                sx={{
+                                  fontSize: { xs: '0.95rem', md: '1.05rem' },
+                                  fontWeight: 500,
+                                  pl: 0.5,
+                                }}
                               >
-                                Free Features
+                                {feature}
                               </Typography>
-                            )}
-                            {plan.features.map(feature =>
-                              feature.startsWith('Everything in') ? (
+                            ) : (
+                              <Stack key={feature} direction="row" spacing={1} alignItems="center">
+                                {getFeatureIcon(feature, plan.color)}
                                 <Typography
-                                  key={feature}
-                                  variant="caption"
-                                  color="text.secondary"
-                                  sx={{
-                                    fontSize: { xs: '0.95rem', md: '1.05rem' },
-                                    fontWeight: 500,
-                                    pl: 0.5,
-                                  }}
+                                  variant="body2"
+                                  sx={{ fontSize: { xs: '1.0rem', md: '1.1rem' } }}
                                 >
                                   {feature}
                                 </Typography>
-                              ) : (
-                                <Stack
-                                  key={feature}
-                                  direction="row"
-                                  spacing={1}
-                                  alignItems="center"
-                                >
-                                  {getFeatureIcon(feature, plan.color)}
-                                  <Typography
-                                    variant="body2"
-                                    sx={{ fontSize: { xs: '1.0rem', md: '1.1rem' } }}
-                                  >
-                                    {feature}
-                                  </Typography>
-                                </Stack>
-                              )
-                            )}
-                          </Stack>
-                          <Button
-                            variant={plan.popular ? 'contained' : 'outlined'}
-                            color="primary"
-                            size="large"
-                            component={RouterMuiLink}
-                            to="/signup"
-                            sx={{
-                              px: 3.5,
-                              py: 1.8,
-                              fontWeight: 700,
-                              fontSize: '1.0rem',
-                              borderRadius: 2,
-                              ...(plan.popular
-                                ? {
-                                    bgcolor: '#D32F2F',
-                                    color: 'white',
-                                    '&:hover': { bgcolor: '#B71C1C' },
-                                  }
-                                : {
-                                    borderColor: '#D32F2F',
-                                    color: '#D32F2F',
-                                    '&:hover': {
-                                      borderColor: '#B71C1C',
-                                      bgcolor: 'rgba(211, 47, 47, 0.04)',
-                                    },
-                                  }),
-                              textTransform: 'none',
-                            }}
-                          >
-                            {plan.price === 0 ? 'Get Started Free' : 'Choose Plan'}
-                          </Button>
+                              </Stack>
+                            )
+                          )}
                         </Stack>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                ))}
-              </Grid>
-            </Box>
-          </Fade>
+                        <Button
+                          variant={plan.popular ? 'contained' : 'outlined'}
+                          color="primary"
+                          size="large"
+                          component={RouterMuiLink}
+                          to="/signup"
+                          sx={{
+                            px: 3.5,
+                            py: 1.8,
+                            fontWeight: 700,
+                            fontSize: '1.0rem',
+                            borderRadius: 2,
+                            ...(plan.popular
+                              ? {
+                                  bgcolor: '#D32F2F',
+                                  color: 'white',
+                                  '&:hover': { bgcolor: '#B71C1C' },
+                                }
+                              : {
+                                  borderColor: '#D32F2F',
+                                  color: '#D32F2F',
+                                  '&:hover': {
+                                    borderColor: '#B71C1C',
+                                    bgcolor: 'rgba(211, 47, 47, 0.04)',
+                                  },
+                                }),
+                            textTransform: 'none',
+                          }}
+                        >
+                          {plan.price === 0 ? 'Get Started Free' : 'Choose Plan'}
+                        </Button>
+                      </Stack>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
         </Container>
 
         {/* FAQ Section */}
-        <Container id="faq" sx={{ py: { xs: 8, md: 12 }, backgroundColor: 'white' }}>
-          <Fade in={faqInView} timeout={800} exit={false}>
-            <Box ref={faqRef}>
-              <Box>
+        <Container id="faq" sx={{ py: { xs: 8, md: 12 }, position: 'relative', zIndex: 1 }}>
+          <Box ref={faqRef}>
+            <Box>
+              <Paper
+                elevation={0}
+                sx={{
+                  width: 'fit-content',
+                  maxWidth: '100%',
+                  margin: '0 auto',
+                  p: 3,
+                  mb: 8,
+                  textAlign: 'center',
+                  backgroundColor: 'white',
+                  border: '2px solid transparent',
+                  borderRadius: 2,
+                  position: 'relative',
+                  zIndex: 1,
+                }}
+              >
                 <Typography
                   variant="h2"
                   component="h2"
                   align="center"
                   sx={{
-                    mb: 8,
                     fontWeight: 800,
                     background: 'linear-gradient(45deg, #D32F2F 30%, #FF5252 90%)',
                     backgroundClip: 'text',
@@ -1603,87 +1696,10 @@ const Landing: React.FC = () => {
                 >
                   Frequently Asked Questions
                 </Typography>
-                <Grid container spacing={4} justifyContent="center" alignItems="stretch">
-                  {faqs.map((faq, idx) => (
-                    <Grid item xs={12} sm={6} md={4} key={idx} sx={{ height: '100%' }}>
-                      <Paper
-                        sx={{
-                          p: { xs: 2, md: 3 },
-                          borderRadius: 4,
-                          maxWidth: 700,
-                          mx: 'auto',
-                          backgroundColor: 'grey.50',
-                          boxShadow: 3,
-                          textAlign: 'center',
-                          border: '2.25px solid #D32F2F',
-                          transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
-                          height: '100%',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          '&:hover': {
-                            transform: 'translateY(-6px) scale(1.03)',
-                            boxShadow:
-                              '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
-                            borderColor: '#B71C1C',
-                          },
-                        }}
-                      >
-                        <Typography
-                          variant="h5"
-                          fontWeight={600}
-                          sx={{
-                            mb: 1,
-                            fontSize: { xs: '1.2rem', md: '1.4rem' },
-                          }}
-                        >
-                          {faq.question}
-                        </Typography>
-                        <Typography
-                          color="text.secondary"
-                          sx={{
-                            fontSize: { xs: '1.0rem', md: '1.1rem' },
-                            lineHeight: 1.5,
-                          }}
-                        >
-                          {faq.answer}
-                        </Typography>
-                      </Paper>
-                    </Grid>
-                  ))}
-                </Grid>
-              </Box>
-            </Box>
-          </Fade>
-        </Container>
-
-        {/* Blog/Resources Preview Section */}
-        <Container
-          id="resources-tips"
-          ref={resourcesRef}
-          sx={{ py: { xs: 8, md: 12 }, backgroundColor: 'white' }}
-        >
-          <Fade in={resourcesInView} timeout={800} exit={false}>
-            <Box>
-              <Typography
-                variant="h2"
-                component="h2"
-                align="center"
-                sx={{
-                  mb: 8,
-                  fontWeight: 800,
-                  background: 'linear-gradient(45deg, #D32F2F 30%, #FF5252 90%)',
-                  backgroundClip: 'text',
-                  WebkitBackgroundClip: 'text',
-                  color: 'transparent',
-                  fontSize: { xs: '2.0rem', md: '3.0rem' },
-                  letterSpacing: 1,
-                }}
-              >
-                Resources & Tips
-              </Typography>
-              <Grid container spacing={4} justifyContent="center">
-                {blogPosts.map((post, idx) => (
-                  <Grid item xs={12} sm={6} md={4} key={idx}>
+              </Paper>
+              <Grid container spacing={4} justifyContent="center" alignItems="stretch">
+                {faqs.map((faq, idx) => (
+                  <Grid item xs={12} sm={6} md={4} key={idx} sx={{ height: '100%' }}>
                     <Paper
                       sx={{
                         p: { xs: 2, md: 3 },
@@ -1695,6 +1711,11 @@ const Landing: React.FC = () => {
                         textAlign: 'center',
                         border: '2.25px solid #D32F2F',
                         transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        position: 'relative',
+                        zIndex: 1,
                         '&:hover': {
                           transform: 'translateY(-6px) scale(1.03)',
                           boxShadow:
@@ -1704,63 +1725,155 @@ const Landing: React.FC = () => {
                       }}
                     >
                       <Typography
-                        variant="h3"
-                        gutterBottom
+                        variant="h5"
+                        fontWeight={600}
                         sx={{
-                          fontSize: { xs: '1.4rem', md: '1.8rem' },
-                          mb: 2,
-                          fontWeight: 600,
+                          mb: 1,
+                          fontSize: { xs: '1.2rem', md: '1.4rem' },
                         }}
                       >
-                        {post.title}
+                        {faq.question}
                       </Typography>
                       <Typography
                         color="text.secondary"
                         sx={{
-                          mb: 2,
                           fontSize: { xs: '1.0rem', md: '1.1rem' },
                           lineHeight: 1.5,
                         }}
                       >
-                        {post.summary}
-                      </Typography>
-                      <Typography component="span">
-                        <RouterMuiLink
-                          to={post.link}
-                          sx={{
-                            color: '#D32F2F',
-                            transition: 'all 0.2s ease-in-out',
-                            fontSize: '1.0rem',
-                            '&:hover': {
-                              transform: 'translateY(-2px)',
-                              color: '#B71C1C',
-                            },
-                          }}
-                        >
-                          Read More
-                        </RouterMuiLink>
+                        {faq.answer}
                       </Typography>
                     </Paper>
                   </Grid>
                 ))}
               </Grid>
             </Box>
-          </Fade>
+          </Box>
+        </Container>
+
+        {/* Blog/Resources Preview Section */}
+        <Container
+          id="resources-tips"
+          ref={resourcesRef}
+          sx={{ py: { xs: 8, md: 12 }, position: 'relative', zIndex: 1 }}
+        >
+          <Box>
+            <Paper
+              elevation={0}
+              sx={{
+                width: 'fit-content',
+                maxWidth: '100%',
+                margin: '0 auto',
+                p: 3,
+                mb: 8,
+                textAlign: 'center',
+                backgroundColor: 'white',
+                border: '2px solid transparent',
+                borderRadius: 2,
+                position: 'relative',
+                zIndex: 1,
+              }}
+            >
+              <Typography
+                variant="h2"
+                component="h2"
+                align="center"
+                sx={{
+                  fontWeight: 800,
+                  background: 'linear-gradient(45deg, #D32F2F 30%, #FF5252 90%)',
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  color: 'transparent',
+                  fontSize: { xs: '2.0rem', md: '3.0rem' },
+                  letterSpacing: 1,
+                }}
+              >
+                Resources & Tips
+              </Typography>
+            </Paper>
+            <Grid container spacing={4} justifyContent="center">
+              {blogPosts.map((post, idx) => (
+                <Grid item xs={12} sm={6} md={4} key={idx}>
+                  <Paper
+                    sx={{
+                      p: { xs: 2, md: 3 },
+                      borderRadius: 4,
+                      maxWidth: 700,
+                      mx: 'auto',
+                      backgroundColor: 'grey.50',
+                      boxShadow: 3,
+                      textAlign: 'center',
+                      border: '2.25px solid #D32F2F',
+                      transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
+                      position: 'relative',
+                      zIndex: 1,
+                      '&:hover': {
+                        transform: 'translateY(-6px) scale(1.03)',
+                        boxShadow:
+                          '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
+                        borderColor: '#B71C1C',
+                      },
+                    }}
+                  >
+                    <Typography
+                      variant="h3"
+                      gutterBottom
+                      sx={{
+                        fontSize: { xs: '1.4rem', md: '1.8rem' },
+                        mb: 2,
+                        fontWeight: 600,
+                      }}
+                    >
+                      {post.title}
+                    </Typography>
+                    <Typography
+                      color="text.secondary"
+                      sx={{
+                        mb: 2,
+                        fontSize: { xs: '1.0rem', md: '1.1rem' },
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {post.summary}
+                    </Typography>
+                    <Typography component="span">
+                      <RouterMuiLink
+                        to={post.link}
+                        sx={{
+                          color: '#D32F2F',
+                          transition: 'all 0.2s ease-in-out',
+                          fontSize: '1.0rem',
+                          '&:hover': {
+                            transform: 'translateY(-2px)',
+                            color: '#B71C1C',
+                          },
+                        }}
+                      >
+                        Read More
+                      </RouterMuiLink>
+                    </Typography>
+                  </Paper>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
         </Container>
 
         {/* Contact Us Section (above footer) */}
-        <Container sx={{ py: { xs: 8, md: 12 }, backgroundColor: 'white' }}>
+        <Container sx={{ py: { xs: 8, md: 12 }, position: 'relative', zIndex: 1 }}>
           <Paper
             sx={{
               p: { xs: 2, md: 4 },
               borderRadius: 4,
               maxWidth: 950,
               mx: 'auto',
-              backgroundColor: 'grey.50',
+              backgroundColor: 'white',
               boxShadow: 3,
               textAlign: 'center',
               border: '2.25px solid #D32F2F',
               transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
+              position: 'relative',
+              zIndex: 1,
               '&:hover': {
                 transform: 'translateY(-6px) scale(1.03)',
                 boxShadow: '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
@@ -1911,7 +2024,23 @@ const Landing: React.FC = () => {
         <Box
           ref={footerRef}
           component="footer"
-          sx={{ bgcolor: 'grey.900', color: 'grey.100', py: 6 }}
+          sx={{
+            bgcolor: 'grey.900',
+            color: 'grey.100',
+            py: 6,
+            position: 'relative',
+            zIndex: 2,
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              bgcolor: 'grey.900',
+              zIndex: -1,
+            },
+          }}
         >
           <Container maxWidth="lg">
             <Grid container spacing={4}>

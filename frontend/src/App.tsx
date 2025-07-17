@@ -47,7 +47,7 @@ const App: React.FC = () => {
                   <TokenLimitProvider>
                     <CssBaseline />
                     <SnackbarProvider maxSnack={3}>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', overflow: 'hidden' }}>
                         <Navbar />
                         <Box sx={{ display: 'flex', flex: 1 }}>
                           <Box sx={{ flex: 1 }}>

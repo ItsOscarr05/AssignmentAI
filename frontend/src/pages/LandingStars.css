@@ -1,0 +1,85 @@
+/* Stars background effect for the landing page */
+.stars-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  background: transparent;
+}
+
+.stars-bg::before,
+.stars-bg::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100%;
+  background-repeat: no-repeat;
+  background-size: 100vw 100vh;
+  opacity: 0.8;
+}
+
+.stars-bg::before {
+  background-image: radial-gradient(2px 2px at 5% 10%, #d32f2f 100%, transparent 100%),
+    radial-gradient(2.5px 2.5px at 10% 30%, #ff5252 100%, transparent 100%),
+    radial-gradient(2px 2px at 15% 60%, #b71c1c 100%, transparent 100%),
+    radial-gradient(2.5px 2.5px at 20% 80%, #ff5252 100%, transparent 100%),
+    radial-gradient(2px 2px at 25% 15%, #d32f2f 100%, transparent 100%),
+    radial-gradient(2.5px 2.5px at 30% 40%, #b71c1c 100%, transparent 100%),
+    radial-gradient(2px 2px at 35% 70%, #ff5252 100%, transparent 100%),
+    radial-gradient(2.5px 2.5px at 40% 90%, #d32f2f 100%, transparent 100%),
+    radial-gradient(2px 2px at 45% 25%, #b71c1c 100%, transparent 100%),
+    radial-gradient(2.5px 2.5px at 50% 50%, #ff5252 100%, transparent 100%),
+    radial-gradient(2px 2px at 55% 75%, #d32f2f 100%, transparent 100%),
+    radial-gradient(2.5px 2.5px at 60% 20%, #b71c1c 100%, transparent 100%),
+    radial-gradient(2px 2px at 65% 35%, #ff5252 100%, transparent 100%),
+    radial-gradient(2.5px 2.5px at 70% 60%, #d32f2f 100%, transparent 100%),
+    radial-gradient(2px 2px at 75% 85%, #b71c1c 100%, transparent 100%),
+    radial-gradient(2.5px 2.5px at 80% 10%, #ff5252 100%, transparent 100%),
+    radial-gradient(2px 2px at 85% 30%, #d32f2f 100%, transparent 100%),
+    radial-gradient(2.5px 2.5px at 90% 55%, #b71c1c 100%, transparent 100%),
+    radial-gradient(2px 2px at 95% 80%, #ff5252 100%, transparent 100%),
+    radial-gradient(2.5px 2.5px at 12% 22%, #d32f2f 100%, transparent 100%),
+    radial-gradient(2px 2px at 22% 42%, #b71c1c 100%, transparent 100%),
+    radial-gradient(2.5px 2.5px at 32% 62%, #ff5252 100%, transparent 100%),
+    radial-gradient(2px 2px at 42% 82%, #d32f2f 100%, transparent 100%),
+    radial-gradient(2.5px 2.5px at 52% 12%, #b71c1c 100%, transparent 100%),
+    radial-gradient(2px 2px at 62% 32%, #ff5252 100%, transparent 100%),
+    radial-gradient(2.5px 2.5px at 72% 52%, #d32f2f 100%, transparent 100%),
+    radial-gradient(2px 2px at 82% 72%, #b71c1c 100%, transparent 100%),
+    radial-gradient(2.5px 2.5px at 92% 92%, #ff5252 100%, transparent 100%);
+}
+
+.stars-bg::after {
+  background-image: radial-gradient(2px 2px at 8% 18%, #b71c1c 100%, transparent 100%),
+    radial-gradient(2.5px 2.5px at 18% 38%, #ff5252 100%, transparent 100%),
+    radial-gradient(2px 2px at 28% 58%, #d32f2f 100%, transparent 100%),
+    radial-gradient(2.5px 2.5px at 38% 78%, #b71c1c 100%, transparent 100%),
+    radial-gradient(2px 2px at 48% 98%, #ff5252 100%, transparent 100%),
+    radial-gradient(2.5px 2.5px at 58% 18%, #d32f2f 100%, transparent 100%),
+    radial-gradient(2px 2px at 68% 38%, #b71c1c 100%, transparent 100%),
+    radial-gradient(2.5px 2.5px at 78% 58%, #ff5252 100%, transparent 100%),
+    radial-gradient(2px 2px at 88% 78%, #d32f2f 100%, transparent 100%),
+    radial-gradient(2.5px 2.5px at 98% 98%, #b71c1c 100%, transparent 100%),
+    radial-gradient(2px 2px at 15% 25%, #ff5252 100%, transparent 100%),
+    radial-gradient(2.5px 2.5px at 25% 45%, #d32f2f 100%, transparent 100%),
+    radial-gradient(2px 2px at 35% 65%, #b71c1c 100%, transparent 100%),
+    radial-gradient(2.5px 2.5px at 45% 85%, #ff5252 100%, transparent 100%),
+    radial-gradient(2px 2px at 55% 5%, #d32f2f 100%, transparent 100%),
+    radial-gradient(2.5px 2.5px at 65% 25%, #b71c1c 100%, transparent 100%),
+    radial-gradient(2px 2px at 75% 45%, #ff5252 100%, transparent 100%),
+    radial-gradient(2.5px 2.5px at 85% 65%, #d32f2f 100%, transparent 100%),
+    radial-gradient(2px 2px at 95% 85%, #b71c1c 100%, transparent 100%),
+    radial-gradient(2.5px 2.5px at 20% 50%, #ff5252 100%, transparent 100%),
+    radial-gradient(2px 2px at 40% 70%, #d32f2f 100%, transparent 100%),
+    radial-gradient(2.5px 2.5px at 60% 90%, #b71c1c 100%, transparent 100%),
+    radial-gradient(2px 2px at 80% 10%, #ff5252 100%, transparent 100%),
+    radial-gradient(2.5px 2.5px at 30% 60%, #d32f2f 100%, transparent 100%),
+    radial-gradient(2px 2px at 50% 80%, #b71c1c 100%, transparent 100%),
+    radial-gradient(2.5px 2.5px at 70% 20%, #ff5252 100%, transparent 100%),
+    radial-gradient(2px 2px at 90% 40%, #d32f2f 100%, transparent 100%);
+}

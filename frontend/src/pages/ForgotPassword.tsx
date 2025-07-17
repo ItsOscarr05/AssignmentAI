@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import React, { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
+import HeroParticles from '../components/HeroParticles';
 import { useAuth } from '../contexts/AuthContext';
 
 const ForgotPassword: React.FC = () => {
@@ -79,11 +80,12 @@ const ForgotPassword: React.FC = () => {
               position: 'relative',
             }}
           >
+            <HeroParticles />
             <Box
               sx={{
                 position: 'relative',
                 textAlign: 'center',
-                zIndex: 1,
+                zIndex: 2,
                 width: '100%',
                 maxWidth: 480,
                 display: 'flex',

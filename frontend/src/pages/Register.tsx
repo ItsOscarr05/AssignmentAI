@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import HeroParticles from '../components/HeroParticles';
 import { useAuth } from '../contexts/AuthContext';
 
 const Register: React.FC = () => {
@@ -92,14 +93,18 @@ const Register: React.FC = () => {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        height: '100vh',
         display: 'flex',
         background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.dark} 90%)`,
-        overflowY: 'auto',
+        overflow: 'hidden',
       }}
     >
-      <Container maxWidth={false} disableGutters>
-        <Grid container direction={{ xs: 'column', md: 'row' }} sx={{ borderRadius: 0 }}>
+      <Container maxWidth={false} disableGutters sx={{ height: '100%' }}>
+        <Grid
+          container
+          direction={{ xs: 'column', md: 'row' }}
+          sx={{ height: '100%', borderRadius: 0 }}
+        >
           {/* Left side - Branding */}
           <Grid
             item
@@ -107,22 +112,22 @@ const Register: React.FC = () => {
             md={5}
             sx={{
               background: 'radial-gradient(circle at center, #FF5252 0%,rgb(84, 8, 8) 100%)',
-              p: 6,
+              p: { xs: 4, md: 6 },
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
               alignItems: 'center',
               color: 'white',
               position: 'relative',
-              minHeight: { md: '100vh' },
-              height: { md: '100%' },
+              height: '100%',
             }}
           >
+            <HeroParticles />
             <Box
               sx={{
                 position: 'relative',
                 textAlign: 'center',
-                zIndex: 1,
+                zIndex: 2,
                 width: '100%',
                 maxWidth: 480,
                 display: 'flex',
@@ -134,8 +139,8 @@ const Register: React.FC = () => {
                 src="/AssignmentAI_Logo-transparent-white.png"
                 alt="Logo"
                 style={{
-                  height: 320,
-                  marginBottom: 32,
+                  height: 280,
+                  marginBottom: 24,
                   width: 'auto',
                   maxWidth: '100%',
                   objectFit: 'contain',
@@ -149,9 +154,9 @@ const Register: React.FC = () => {
                 gutterBottom
                 sx={{
                   fontFamily: "'Playfair Display', serif",
-                  fontSize: { xs: '3rem', md: '4rem' },
+                  fontSize: { xs: '2.5rem', md: '3.5rem' },
                   letterSpacing: '-0.02em',
-                  mb: 2,
+                  mb: 1.5,
                 }}
               >
                 AssignmentAI
@@ -160,11 +165,11 @@ const Register: React.FC = () => {
                 variant="h6"
                 sx={{
                   opacity: 0.9,
-                  mb: 3,
+                  mb: 2,
                   fontFamily: "'Inter', sans-serif",
                   fontWeight: 300,
                   letterSpacing: '0.02em',
-                  fontSize: '1.5rem',
+                  fontSize: '1.3rem',
                 }}
               >
                 Your AI-powered assignment companion
@@ -177,12 +182,13 @@ const Register: React.FC = () => {
                   fontWeight: 300,
                   letterSpacing: '0.01em',
                   lineHeight: 1.4,
-                  fontSize: '1.2rem',
+                  fontSize: '1.1rem',
                 }}
               >
                 Get intelligent help with your assignments using advanced AI technology.
               </Typography>
             </Box>
+            <HeroParticles />
           </Grid>
 
           {/* Right side - Register Form */}
@@ -196,13 +202,16 @@ const Register: React.FC = () => {
               justifyContent: 'center',
               alignItems: 'center',
               background: 'white',
-              p: { xs: 2, md: 6 },
+              p: { xs: 3, md: 4 },
+              height: '100%',
+              overflowY: 'auto',
             }}
           >
             <Box
               sx={{
                 width: '100%',
                 maxWidth: 480,
+                py: 2,
               }}
             >
               <Typography
@@ -211,9 +220,10 @@ const Register: React.FC = () => {
                 gutterBottom
                 sx={{
                   fontFamily: "'Playfair Display', serif",
-                  fontSize: { xs: '2rem', md: '2.4rem' },
+                  fontSize: { xs: '1.8rem', md: '2.2rem' },
                   letterSpacing: '-0.02em',
                   color: 'text.primary',
+                  mb: 2,
                 }}
               >
                 Create Account
@@ -221,11 +231,11 @@ const Register: React.FC = () => {
               <Typography
                 color="text.secondary"
                 sx={{
-                  mb: 2,
+                  mb: 4,
                   fontFamily: "'Inter', sans-serif",
                   fontWeight: 300,
                   letterSpacing: '0.01em',
-                  fontSize: '1rem',
+                  fontSize: '0.95rem',
                 }}
               >
                 Join AssignmentAI to start managing your assignments
@@ -233,7 +243,7 @@ const Register: React.FC = () => {
 
               <form onSubmit={handleSubmit}>
                 {error && (
-                  <Alert severity="error" sx={{ mb: 2 }} role="alert">
+                  <Alert severity="error" sx={{ mb: 3 }} role="alert">
                     {error}
                   </Alert>
                 )}
@@ -246,6 +256,11 @@ const Register: React.FC = () => {
                   autoComplete="given-name"
                   value={formData.firstName}
                   onChange={handleChange}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      height: '62px',
+                    },
+                  }}
                 />
                 <TextField
                   margin="normal"
@@ -256,6 +271,11 @@ const Register: React.FC = () => {
                   autoComplete="family-name"
                   value={formData.lastName}
                   onChange={handleChange}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      height: '62px',
+                    },
+                  }}
                 />
                 <TextField
                   margin="normal"
@@ -266,6 +286,11 @@ const Register: React.FC = () => {
                   autoComplete="email"
                   value={formData.email}
                   onChange={handleChange}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      height: '62px',
+                    },
+                  }}
                 />
                 <TextField
                   margin="normal"
@@ -277,11 +302,17 @@ const Register: React.FC = () => {
                   autoComplete="new-password"
                   value={formData.password}
                   onChange={handleChange}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      height: '62px',
+                    },
+                  }}
                   InputProps={{
                     endAdornment: (
                       <Button
                         onClick={() => setShowPassword(!showPassword)}
-                        sx={{ minWidth: 'auto', p: 1 }}
+                        sx={{ minWidth: 'auto', p: 0.5 }}
+                        size="small"
                       >
                         {showPassword ? 'Hide' : 'Show'}
                       </Button>
@@ -298,11 +329,17 @@ const Register: React.FC = () => {
                   autoComplete="new-password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      height: '62px',
+                    },
+                  }}
                   InputProps={{
                     endAdornment: (
                       <Button
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        sx={{ minWidth: 'auto', p: 1 }}
+                        sx={{ minWidth: 'auto', p: 0.5 }}
+                        size="small"
                       >
                         {showConfirmPassword ? 'Hide' : 'Show'}
                       </Button>
@@ -315,33 +352,34 @@ const Register: React.FC = () => {
                   fullWidth
                   variant="contained"
                   sx={{
-                    mt: 2,
-                    mb: 1.5,
+                    mt: 3,
+                    mb: 2,
                     py: 1.2,
                     fontFamily: "'Inter', sans-serif",
                     fontWeight: 500,
-                    fontSize: '1rem',
+                    fontSize: '0.95rem',
                     textTransform: 'none',
                   }}
                   disabled={isLoading}
                 >
-                  {isLoading ? <CircularProgress size={24} /> : 'Register'}
+                  {isLoading ? <CircularProgress size={20} /> : 'Register'}
                 </Button>
 
-                <Divider sx={{ my: 2 }}>
+                <Divider sx={{ my: 3 }}>
                   <Typography
                     variant="body2"
                     sx={{
                       color: 'text.secondary',
                       fontFamily: "'Inter', sans-serif",
                       fontWeight: 400,
+                      fontSize: '0.85rem',
                     }}
                   >
                     or register with
                   </Typography>
                 </Divider>
 
-                <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+                <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
                   <Button
                     fullWidth
                     variant="outlined"
@@ -350,12 +388,13 @@ const Register: React.FC = () => {
                       /* Implement Google registration */
                     }}
                     sx={{
-                      py: 1.5,
+                      py: 1.2,
                       fontFamily: "'Inter', sans-serif",
                       fontWeight: 500,
-                      fontSize: '1rem',
+                      fontSize: '0.9rem',
                       textTransform: 'none',
                     }}
+                    size="small"
                   >
                     Google
                   </Button>
@@ -367,12 +406,13 @@ const Register: React.FC = () => {
                       /* Implement GitHub registration */
                     }}
                     sx={{
-                      py: 1.5,
+                      py: 1.2,
                       fontFamily: "'Inter', sans-serif",
                       fontWeight: 500,
-                      fontSize: '1rem',
+                      fontSize: '0.9rem',
                       textTransform: 'none',
                     }}
+                    size="small"
                   >
                     GitHub
                   </Button>
@@ -385,6 +425,7 @@ const Register: React.FC = () => {
                     mt: 2,
                     fontFamily: "'Inter', sans-serif",
                     fontWeight: 400,
+                    fontSize: '0.9rem',
                   }}
                 >
                   Already have an account?{' '}
