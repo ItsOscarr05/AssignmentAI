@@ -1,4 +1,10 @@
-import { AccessTime, EmailOutlined, HelpOutline, SupportAgent } from '@mui/icons-material';
+import {
+  AccessTime,
+  ArrowBack as ArrowBackIcon,
+  EmailOutlined,
+  HelpOutline,
+  SupportAgent,
+} from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -11,9 +17,16 @@ import {
   Typography,
 } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import RedStarField from '../components/RedStarField';
 
 const Contact = () => {
+  const navigate = useNavigate();
+
+  const handleGoBack = () => {
+    navigate(-1);
+  };
+
   const [submitted, setSubmitted] = useState(false);
 
   // Starfield logic
@@ -48,8 +61,38 @@ const Contact = () => {
             boxShadow: '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
             border: '2px solid',
             borderColor: 'primary.main',
+            position: 'relative',
           }}
         >
+          {/* Back Button - Far right */}
+          <Button
+            startIcon={<ArrowBackIcon />}
+            onClick={handleGoBack}
+            sx={{
+              position: 'absolute',
+              top: 40,
+              right: 20,
+              color: '#D32F2F',
+              backgroundColor: 'white',
+              border: '2px solid #D32F2F',
+              borderRadius: '8px',
+              fontFamily: "'Inter', sans-serif",
+              fontWeight: 500,
+              letterSpacing: '0.01em',
+              textTransform: 'none',
+              fontSize: '1rem',
+              py: 1,
+              px: 2,
+              '&:hover': {
+                backgroundColor: '#f5f5f5',
+                border: '2px solid #B71C1C',
+                color: '#B71C1C',
+              },
+            }}
+          >
+            Back
+          </Button>
+
           <Typography
             variant="h3"
             component="h1"

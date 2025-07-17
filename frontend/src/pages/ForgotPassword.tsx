@@ -1,3 +1,4 @@
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import {
   Box,
   Button,
@@ -10,7 +11,7 @@ import {
   useTheme,
 } from '@mui/material';
 import React, { useState } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import HeroParticles from '../components/HeroParticles';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -20,7 +21,12 @@ const ForgotPassword: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const { resetPassword } = useAuth();
+  const navigate = useNavigate();
   const theme = useTheme();
+
+  const handleGoBack = () => {
+    navigate(-1);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,7 +166,36 @@ const ForgotPassword: React.FC = () => {
               justifyContent: 'flex-start',
             }}
           >
-            <Box sx={{ maxWidth: 420, mx: 'auto', pb: { xs: 2, md: 3 } }}>
+            <Box sx={{ maxWidth: 420, mx: 'auto', pb: { xs: 2, md: 3 }, position: 'relative' }}>
+              {/* Back Button - Far right */}
+              <Button
+                startIcon={<ArrowBackIcon />}
+                onClick={handleGoBack}
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  right: -100,
+                  color: '#D32F2F',
+                  backgroundColor: 'white',
+                  border: '2px solid #D32F2F',
+                  borderRadius: '8px',
+                  fontFamily: "'Inter', sans-serif",
+                  fontWeight: 500,
+                  letterSpacing: '0.01em',
+                  textTransform: 'none',
+                  fontSize: '1rem',
+                  py: 1,
+                  px: 2,
+                  '&:hover': {
+                    backgroundColor: '#f5f5f5',
+                    border: '2px solid #B71C1C',
+                    color: '#B71C1C',
+                  },
+                }}
+              >
+                Back
+              </Button>
+
               <Typography
                 variant="h4"
                 fontWeight="bold"

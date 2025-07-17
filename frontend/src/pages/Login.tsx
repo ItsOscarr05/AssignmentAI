@@ -1,4 +1,5 @@
 import {
+  ArrowBack as ArrowBackIcon,
   GitHub as GitHubIcon,
   Google as GoogleIcon,
   Visibility as VisibilityIcon,
@@ -96,6 +97,10 @@ const Login: React.FC = () => {
 
   const handlePasswordBlur = () => {
     validatePassword(password);
+  };
+
+  const handleGoBack = () => {
+    navigate(-1);
   };
 
   return (
@@ -211,7 +216,36 @@ const Login: React.FC = () => {
 
           {/* Right side - Login Form */}
           <Grid item xs={12} md={7} sx={{ p: { xs: 4, md: 6 } }}>
-            <Box sx={{ maxWidth: 480, mx: 'auto' }}>
+            <Box sx={{ maxWidth: 480, mx: 'auto', position: 'relative' }}>
+              {/* Back Button - Far right */}
+              <Button
+                startIcon={<ArrowBackIcon />}
+                onClick={handleGoBack}
+                sx={{
+                  position: 'absolute',
+                  top: -16,
+                  right: -100,
+                  color: '#D32F2F',
+                  backgroundColor: 'white',
+                  border: '2px solid #D32F2F',
+                  borderRadius: '8px',
+                  fontFamily: "'Inter', sans-serif",
+                  fontWeight: 500,
+                  letterSpacing: '0.01em',
+                  textTransform: 'none',
+                  fontSize: '1rem',
+                  py: 1,
+                  px: 2,
+                  '&:hover': {
+                    backgroundColor: '#f5f5f5',
+                    border: '2px solid #B71C1C',
+                    color: '#B71C1C',
+                  },
+                }}
+              >
+                Back
+              </Button>
+
               <Typography
                 variant="h4"
                 fontWeight="bold"

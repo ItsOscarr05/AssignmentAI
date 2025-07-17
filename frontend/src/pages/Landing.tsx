@@ -6,8 +6,6 @@ import { Link as RouterLink } from 'react-router-dom';
 import HeroParticles from '../components/HeroParticles';
 import RedStarField from '../components/RedStarField';
 import { getAdminStats } from '../services/AdminService';
-import './LandingStars.css';
-
 // Remove the Next.js Link wrapper and use MUI's styled directly
 
 // For MUI Links that need to use React Router
@@ -62,7 +60,6 @@ import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
 import Container from '@mui/material/Container';
 import Divider from '@mui/material/Divider';
-
 import MuiLink from '@mui/material/Link';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
@@ -71,7 +68,6 @@ import ListItemText from '@mui/material/ListItemText';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-
 // Lazy load icons
 const EmailIcon = lazy(() =>
   import('@mui/icons-material/Email').then(module => ({
@@ -257,17 +253,17 @@ const blogPosts = [
   {
     title: '5 Tips to Ace Your Next Assignment',
     summary: 'Discover proven strategies to improve your academic performance.',
-    link: '/blog/5-tips-ace-assignment',
+    link: 'https://www.burketalent.com/blog/2018/1/31/top-5-tips-to-ace-that-take-home-assignment',
   },
   {
     title: 'How AI is Changing Education',
     summary: 'Explore the impact of artificial intelligence on modern learning.',
-    link: '/blog/ai-changing-education',
+    link: 'https://usdla.org/blog/ai-education/',
   },
   {
     title: 'Staying Organized: Tools for Students',
     summary: 'A roundup of the best digital tools to keep you on track.',
-    link: '/blog/tools-for-students',
+    link: 'https://uwaterloo.ca/future-students/missing-manual/high-school/top-10-best-productivity-apps-students',
   },
 ];
 
@@ -555,10 +551,8 @@ const Landing: React.FC = () => {
                     boxShadow: 'none',
                   },
                 }}
-                component="a"
-                href="/register"
-                target="_blank"
-                rel="noopener noreferrer"
+                component={RouterMuiLink}
+                to="/register"
               >
                 Get Started
               </Button>
@@ -585,10 +579,8 @@ const Landing: React.FC = () => {
                     boxShadow: 'none',
                   },
                 }}
-                component="a"
-                href="/login"
-                target="_blank"
-                rel="noopener noreferrer"
+                component={RouterMuiLink}
+                to="/login"
               >
                 Sign In
               </Button>
@@ -1625,7 +1617,7 @@ const Landing: React.FC = () => {
                           color="primary"
                           size="large"
                           component={RouterMuiLink}
-                          to="/signup"
+                          to="/register"
                           sx={{
                             px: 3.5,
                             py: 1.8,
@@ -1649,7 +1641,7 @@ const Landing: React.FC = () => {
                             textTransform: 'none',
                           }}
                         >
-                          {plan.price === 0 ? 'Get Started Free' : 'Choose Plan'}
+                          {plan.price === 0 ? 'Get Started Free' : `Get Started ${plan.name}`}
                         </Button>
                       </Stack>
                     </CardContent>
@@ -1837,8 +1829,10 @@ const Landing: React.FC = () => {
                       {post.summary}
                     </Typography>
                     <Typography component="span">
-                      <RouterMuiLink
-                        to={post.link}
+                      <MuiLink
+                        href={post.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         sx={{
                           color: '#D32F2F',
                           transition: 'all 0.2s ease-in-out',
@@ -1850,7 +1844,7 @@ const Landing: React.FC = () => {
                         }}
                       >
                         Read More
-                      </RouterMuiLink>
+                      </MuiLink>
                     </Typography>
                   </Paper>
                 </Grid>
@@ -1937,8 +1931,6 @@ const Landing: React.FC = () => {
                 <Typography component="span" color="text.secondary" sx={{ fontWeight: 700 }}>
                   <RouterMuiLink
                     to="/about"
-                    target="_blank"
-                    rel="noopener noreferrer"
                     sx={{
                       color: 'text.secondary',
                       transition: 'all 0.2s ease-in-out',
@@ -1971,8 +1963,6 @@ const Landing: React.FC = () => {
               size="large"
               component={RouterMuiLink}
               to="/contact"
-              target="_blank"
-              rel="noopener noreferrer"
               sx={{
                 px: 4.5,
                 py: 2.2,
@@ -2102,8 +2092,6 @@ const Landing: React.FC = () => {
                 <Stack spacing={1}>
                   <RouterMuiLink
                     to="/about"
-                    target="_blank"
-                    rel="noopener noreferrer"
                     sx={{
                       color: '#D32F2F',
                       transition: 'all 0.2s ease-in-out',
@@ -2117,8 +2105,6 @@ const Landing: React.FC = () => {
                   </RouterMuiLink>
                   <RouterMuiLink
                     to="/contact"
-                    target="_blank"
-                    rel="noopener noreferrer"
                     sx={{
                       color: '#D32F2F',
                       transition: 'all 0.2s ease-in-out',
@@ -2139,8 +2125,6 @@ const Landing: React.FC = () => {
                 <Stack spacing={1}>
                   <RouterMuiLink
                     to="/privacy"
-                    target="_blank"
-                    rel="noopener noreferrer"
                     sx={{
                       color: '#D32F2F',
                       transition: 'all 0.2s ease-in-out',
@@ -2154,8 +2138,6 @@ const Landing: React.FC = () => {
                   </RouterMuiLink>
                   <RouterMuiLink
                     to="/terms"
-                    target="_blank"
-                    rel="noopener noreferrer"
                     sx={{
                       color: '#D32F2F',
                       transition: 'all 0.2s ease-in-out',
