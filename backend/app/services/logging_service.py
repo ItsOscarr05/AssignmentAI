@@ -7,7 +7,7 @@ from app.core.config import settings
 
 # Safe fallback for LOG_FORMAT
 DEFAULT_LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-log_format = settings.LOG_FORMAT
+log_format = getattr(settings, 'LOG_FORMAT', DEFAULT_LOG_FORMAT)
 if log_format == 'json':
     # To enable real JSON logging, install python-json-logger and use:
     # from pythonjsonlogger import jsonlogger
@@ -17,14 +17,25 @@ if log_format == 'json':
     # For now, fallback to default format to avoid errors
     log_format = DEFAULT_LOG_FORMAT
 
+# Safe fallback for LOG_LEVEL
+log_level_str = getattr(settings, 'LOG_LEVEL', 'INFO')
+try:
+    log_level = getattr(logging, log_level_str.upper())
+except (AttributeError, TypeError):
+    log_level = logging.INFO
+
+# Ensure logs directory exists
+logs_dir = getattr(settings, 'LOGS_DIR', 'logs')
+os.makedirs(logs_dir, exist_ok=True)
+
 # Configure logging
 logging.basicConfig(
-    level=getattr(logging, settings.LOG_LEVEL),
+    level=log_level,
     format=log_format,
     handlers=[
         logging.StreamHandler(),
         logging.FileHandler(
-            os.path.join(settings.LOGS_DIR, f"app_{datetime.now().strftime('%Y%m%d')}.log")
+            os.path.join(logs_dir, f"app_{datetime.now().strftime('%Y%m%d')}.log")
         )
     ]
 )

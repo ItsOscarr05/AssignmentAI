@@ -56,7 +56,7 @@ def run_migrations_offline() -> None:
 
     """
     # Prefer alembic config URL if set, else use settings
-    url = config.get_main_option("sqlalchemy.url") or str(settings.SQLALCHEMY_DATABASE_URI)
+    url = config.get_main_option("sqlalchemy.url") or str(settings.database_uri)
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -77,7 +77,7 @@ def run_migrations_online() -> None:
     """
     configuration = config.get_section(config.config_ini_section)
     # Prefer alembic config URL if set, else use settings
-    configuration["sqlalchemy.url"] = configuration.get("sqlalchemy.url") or str(settings.SQLALCHEMY_DATABASE_URI)
+    configuration["sqlalchemy.url"] = configuration.get("sqlalchemy.url") or str(settings.database_uri)
     connectable = engine_from_config(
         configuration,
         prefix="sqlalchemy.",

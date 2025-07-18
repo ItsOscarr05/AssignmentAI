@@ -64,7 +64,11 @@ export const useAuthStore = create<AuthState>(set => ({
   login: async data => {
     try {
       set({ isLoading: true, error: null });
-      const response = await api.post<AuthResponse>('/auth/login', data);
+      // OAuth2PasswordRequestForm expects username and password
+      const response = await api.post<AuthResponse>('/auth/login', {
+        username: data.email,
+        password: data.password,
+      });
       set({
         user: response.data.user,
         token: response.data.token,
@@ -123,7 +127,11 @@ export const register = async (data: RegisterData): Promise<AuthResponse> => {
 };
 
 export const login = async (data: LoginData): Promise<AuthResponse> => {
-  const response = await api.post<AuthResponse>('/auth/login', data);
+  // OAuth2PasswordRequestForm expects username and password
+  const response = await api.post<AuthResponse>('/auth/login', {
+    username: data.email,
+    password: data.password,
+  });
   return response.data;
 };
 

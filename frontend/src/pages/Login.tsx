@@ -68,8 +68,8 @@ const Login: React.FC = () => {
     if (validateForm()) {
       setIsLoading(true);
       try {
-        await login(email);
-        navigate('/dashboard');
+        await login(email, password);
+        // Navigation is handled by the login function in AuthContext
       } catch (error) {
         setError('Invalid credentials');
       }

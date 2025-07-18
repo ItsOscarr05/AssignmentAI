@@ -8,7 +8,7 @@ import {
 } from '../services/api/types';
 
 // Use environment variable with fallback - standardize to match backend
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL;
 
 const api = axios.create({
   baseURL: `${API_URL}/api/v1`,
@@ -80,7 +80,11 @@ api.interceptors.response.use(
 export const auth = {
   login: async (email: string, password: string) => {
     try {
-      const response = await api.post('/auth/login', { email, password });
+      // OAuth2PasswordRequestForm expects username and password
+      const response = await api.post('/auth/login', { 
+        username: email, 
+        password: password 
+      });
       if (response.data.access_token) {
         localStorage.setItem('token', response.data.access_token);
         api.defaults.headers.common['Authorization'] = `Bearer ${response.data.access_token}`;

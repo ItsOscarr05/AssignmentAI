@@ -30,6 +30,7 @@ const Register: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { register, user } = useAuth();
   const navigate = useNavigate();
@@ -83,7 +84,10 @@ const Register: React.FC = () => {
         password: formData.password,
         confirm_password: formData.confirmPassword,
       });
-      navigate('/dashboard');
+      setSuccess('Registration successful! Please log in with your credentials.');
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred during registration');
     } finally {
@@ -286,6 +290,11 @@ const Register: React.FC = () => {
                     {error}
                   </Alert>
                 )}
+                {success && (
+                  <Alert severity="success" sx={{ mb: 3 }} role="alert">
+                    {success}
+                  </Alert>
+                )}
                 <TextField
                   margin="normal"
                   required
@@ -425,7 +434,7 @@ const Register: React.FC = () => {
                     startIcon={<GoogleIcon />}
                     onClick={() => {
                       window.location.href = `${
-                        import.meta.env.VITE_API_URL || ''
+                        import.meta.env.VITE_API_URL
                       }/api/auth/google/login`;
                     }}
                     sx={{
@@ -445,7 +454,7 @@ const Register: React.FC = () => {
                     startIcon={<GitHubIcon />}
                     onClick={() => {
                       window.location.href = `${
-                        import.meta.env.VITE_API_URL || ''
+                        import.meta.env.VITE_API_URL
                       }/api/auth/github/login`;
                     }}
                     sx={{

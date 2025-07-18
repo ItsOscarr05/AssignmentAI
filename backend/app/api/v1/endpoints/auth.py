@@ -308,10 +308,14 @@ def register(
     Create new user.
     """
     try:
+        print(f"Registration request received: {user_in}")
+        
         # Extract fields from the request
         email = user_in.get("email")
         password = user_in.get("password")
         full_name = user_in.get("full_name")
+        
+        print(f"Extracted fields - email: {email}, full_name: {full_name}, password_length: {len(password) if password else 0}")
         
         if not email or not password or not full_name:
             raise HTTPException(
@@ -327,6 +331,8 @@ def register(
                 detail="Email already registered"
             )
         
+        print("Creating new user...")
+        
         # Create new user
         hashed_password = get_password_hash(password)
         user = User(
@@ -335,9 +341,15 @@ def register(
             name=full_name,
             updated_at=datetime.utcnow()
         )
+        
+        print(f"User object created: {user}")
+        
         db.add(user)
         db.commit()
         db.refresh(user)
+        
+        print(f"User saved successfully with ID: {user.id}")
+        
         return {"message": "User registered successfully"}
     except HTTPException:
         raise
@@ -345,6 +357,8 @@ def register(
         db.rollback()
         print(f"Registration error: {str(e)}")
         print(f"Error type: {type(e).__name__}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
             status_code=500,
             detail="An unexpected error occurred"

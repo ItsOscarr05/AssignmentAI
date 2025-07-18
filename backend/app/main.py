@@ -3,6 +3,7 @@ import sys
 import logging
 import psutil
 import redis
+import uvicorn
 from datetime import datetime
 from contextlib import asynccontextmanager
 
@@ -164,16 +165,28 @@ app = FastAPI(
 )
 
 # Setup error handling
-app.add_exception_handler(HTTPException, http_exception_handler)
-app.add_exception_handler(ValidationError, validation_exception_handler)
-app.add_exception_handler(SQLAlchemyError, database_error_handler)
-app.add_exception_handler(Exception, general_exception_handler)
-app.add_exception_handler(RequestValidationError, validation_error_handler)
+app.add_exception_handler(HTTPException, http_exception_handler)  # type: ignore
+app.add_exception_handler(ValidationError, validation_exception_handler)  # type: ignore
+app.add_exception_handler(SQLAlchemyError, database_error_handler)  # type: ignore
+app.add_exception_handler(Exception, general_exception_handler)  # type: ignore
+app.add_exception_handler(RequestValidationError, validation_error_handler)  # type: ignore
 
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_URL] if settings.FRONTEND_URL else ["*"],
+    allow_origins=[
+        settings.FRONTEND_URL,
+        "http://localhost:3001",
+        "http://localhost:3000",
+        "http://127.0.0.1:3001",
+        "http://127.0.0.1:3000"
+    ] if settings.FRONTEND_URL else [
+        "http://localhost:3001",
+        "http://localhost:3000", 
+        "http://127.0.0.1:3001",
+        "http://127.0.0.1:3000",
+        "*"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

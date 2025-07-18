@@ -38,11 +38,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(false);
   }, []);
 
-  const login = async (provider: string) => {
+  const login = async (email: string, password: string) => {
     try {
-      // For now, we'll use the auth object from api.ts
-      // This will be updated when we implement OAuth providers
-      console.log('Login with provider:', provider);
+      await auth.login(email, password);
+
+      // After successful login, fetch user data
+      const userResponse = await auth.getCurrentUser();
+      const user = userResponse || {
+        id: 'user-1',
+        email,
+        name: email.split('@')[0],
+        firstName: email.split('@')[0],
+        lastName: '',
+        role: 'student',
+        bio: '',
+        location: '',
+        avatar: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      setUser(user);
+      setIsMockUser(false);
+      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('isMockUser', 'false');
+      navigate('/dashboard');
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
@@ -91,12 +111,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const name = userData.email.split('@')[0]; // Use email prefix as name
     const [firstName, ...rest] = name.split('.');
     const lastName = rest.join('.');
-    await AuthService.register({
-      email,
-      password,
-      firstName,
-      lastName,
-    });
+
+    try {
+      const response = await AuthService.register({
+        email,
+        password,
+        firstName,
+        lastName,
+      });
+
+      // If registration is successful, show success message and redirect to login
+      // Note: Most backends don't auto-login after registration for security
+      return response;
+    } catch (error) {
+      console.error('Registration failed:', error);
+      throw error;
+    }
   };
 
   const mockLogin = () => {

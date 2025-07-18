@@ -3,7 +3,8 @@ import { api } from './api';
 
 export const auth = {
   login: async (email: string, password: string): Promise<AuthResponse> => {
-    const response = await api.post<AuthResponse>('/auth/login', { email, password });
+    // OAuth2PasswordRequestForm expects username and password
+    const response = await api.post<AuthResponse>('/auth/login', { username: email, password });
     return response.data;
   },
 

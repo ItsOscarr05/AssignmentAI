@@ -45,6 +45,9 @@ class Settings(BaseSettings):
         database_url = os.getenv("DATABASE_URL")
         if database_url:
             return database_url
+        # For development without DATABASE_URL, use SQLite
+        if not database_url and os.getenv("ENVIRONMENT", "development") == "development":
+            return "sqlite:///./assignmentai.db"
         # Use environment variables if available, otherwise use defaults
         db_host = os.getenv("DB_HOST", self.DB_HOST)
         db_port = os.getenv("DB_PORT", str(self.DB_PORT))

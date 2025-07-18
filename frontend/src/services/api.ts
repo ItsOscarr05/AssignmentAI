@@ -136,7 +136,8 @@ export const api = mockAxiosInstance;
 // Auth endpoints
 export const auth = {
   login: async (email: string, password: string) => {
-    const response = await api.post('/auth/login', { email, password });
+    // OAuth2PasswordRequestForm expects username and password
+    const response = await api.post('/auth/login', { username: email, password });
     return response.data;
   },
 

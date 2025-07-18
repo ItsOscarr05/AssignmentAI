@@ -214,14 +214,14 @@ export interface AuthContextType {
   isLoading: boolean;
   error: string | null;
   isMockUser: boolean;
-  login: (provider: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   handleCallback: (code: string, state: string) => Promise<void>;
   logout: () => Promise<void>;
   register: (userData: {
     email: string;
     password: string;
     confirm_password: string;
-  }) => Promise<void>;
+  }) => Promise<any>;
   updateUser: (userData: Partial<User>) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updatePassword: (token: string, newPassword: string) => Promise<void>;

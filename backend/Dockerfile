@@ -11,8 +11,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Bundle app source
 COPY . .
 
+# Set Python path
+ENV PYTHONPATH=/usr/src/app
+
 # Expose port
 EXPOSE 3000
 
 # Start the application
-CMD ["python", "app/main.py"] 
+CMD ["python", "app/main.py"]

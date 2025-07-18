@@ -546,7 +546,10 @@ export { customRender as render };
 
 // Cleanup after each test
 afterEach(() => {
-  cleanup();
+  // Only cleanup if we're in development mode
+  if (process.env.NODE_ENV === 'development') {
+    cleanup();
+  }
   vi.clearAllMocks();
 });
 

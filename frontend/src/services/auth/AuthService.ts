@@ -1,9 +1,13 @@
+import { api } from '../../lib/api';
 import { AuthResponse, User } from '../../types';
-import { api } from '../api';
 
 export class AuthService {
   static async login(email: string, password: string): Promise<AuthResponse> {
-    const response = await api.post<AuthResponse>('/auth/login', { email, password });
+    // OAuth2PasswordRequestForm expects username and password
+    const response = await api.post<AuthResponse>('/auth/login', {
+      username: email,
+      password: password,
+    });
     return response.data;
   }
 
@@ -13,7 +17,15 @@ export class AuthService {
     email: string;
     password: string;
   }): Promise<AuthResponse> {
-    const response = await api.post<AuthResponse>('/auth/register', userData);
+    console.log('AuthService.register called with:', userData);
+    console.log('API base URL:', api.defaults.baseURL);
+    console.log('Full URL will be:', `${api.defaults.baseURL}/auth/register`);
+
+    const response = await api.post<AuthResponse>('/auth/register', {
+      email: userData.email,
+      password: userData.password,
+      full_name: `${userData.firstName} ${userData.lastName}`.trim(),
+    });
     return response.data;
   }
 
