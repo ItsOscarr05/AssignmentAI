@@ -160,7 +160,7 @@ class AuthManager {
 
   async register(data: { email: string; password: string; firstName: string; lastName: string }) {
     const name = `${data.firstName} ${data.lastName}`.trim();
-    return api.post('/api/v1/auth/register', {
+    return api.post('/auth/register', {
       email: data.email,
       password: data.password,
       name: name,

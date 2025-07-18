@@ -3,7 +3,7 @@ import { api } from './api';
 
 export const auth = {
   login: async (email: string, password: string): Promise<AuthResponse> => {
-    const response = await api.post<AuthResponse>('/api/v1/auth/login', { email, password });
+    const response = await api.post<AuthResponse>('/auth/login', { email, password });
     return response.data;
   },
 
@@ -13,21 +13,21 @@ export const auth = {
     email: string;
     password: string;
   }): Promise<AuthResponse> => {
-    const response = await api.post<AuthResponse>('/api/v1/auth/register', userData);
+    const response = await api.post<AuthResponse>('/auth/register', userData);
     return response.data;
   },
 
   logout: async (): Promise<void> => {
-    await api.post('/api/v1/auth/logout');
+    await api.post('/auth/logout');
   },
 
   refreshToken: async (): Promise<AuthResponse> => {
-    const response = await api.post<AuthResponse>('/api/v1/auth/refresh-token');
+    const response = await api.post<AuthResponse>('/auth/refresh-token');
     return response.data;
   },
 
   getCurrentUser: async (): Promise<User> => {
-    const response = await api.get<User>('/api/v1/auth/me');
+    const response = await api.get<User>('/auth/me');
     return response.data;
   },
 };

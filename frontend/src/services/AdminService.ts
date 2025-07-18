@@ -10,6 +10,6 @@ export interface AdminStats {
 }
 
 export const getAdminStats = async (): Promise<AdminStats> => {
-  const response = await api.get('/api/v1/admin/stats');
+  const response = await api.get('/admin/stats');
   return response.data;
 };

@@ -1,6 +1,10 @@
 const CACHE_NAME = 'assignment-ai-cache-v1';
 const urlsToCache = ['/', '/index.html', '/manifest.json', '/favicon.ico', '/assets/logo.svg'];
 
+// Get API URL from environment or use production default
+const API_URL =
+  self.location.hostname === 'localhost' ? 'http://localhost:8000' : 'https://api.assignmentai.app';
+
 // Install event - cache static assets
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache)));
@@ -21,6 +25,11 @@ self.addEventListener('activate', event => {
 
 // Fetch event - handle requests
 self.addEventListener('fetch', event => {
+  // Skip API requests for caching
+  if (event.request.url.includes('/api/')) {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then(response => {
       if (response) {
@@ -91,7 +100,7 @@ async function syncSubmissions() {
 
   for (const submission of submissions) {
     try {
-      const response = await fetch('/api/submissions', {
+      const response = await fetch(`${API_URL}/api/v1/submissions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

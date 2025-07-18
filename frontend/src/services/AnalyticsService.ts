@@ -187,7 +187,7 @@ export class AnalyticsService {
     enabled: true,
     debug: false,
     sampleRate: 1.0,
-    endpoint: '/api/v1/analytics',
+    endpoint: '/analytics',
     batchSize: 10,
     flushInterval: 5000,
   };
