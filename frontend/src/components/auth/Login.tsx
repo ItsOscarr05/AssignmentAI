@@ -1,15 +1,14 @@
 import { Box, Button, Container, Typography } from '@mui/material';
 import React from 'react';
-import { useAuth } from '../../hooks/useAuth';
 
 export const Login: React.FC = () => {
-  const { login } = useAuth();
-
   const handleOAuthLogin = async (provider: string) => {
     try {
-      await login(provider);
+      // Redirect to OAuth provider
+      const apiUrl = import.meta.env.VITE_API_URL;
+      window.location.href = `${apiUrl}/api/auth/${provider}/login`;
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error('OAuth login failed:', error);
     }
   };
 

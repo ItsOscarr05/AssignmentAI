@@ -65,7 +65,7 @@ const TestComponent = () => {
   const handleLogin = async () => {
     try {
       setError(null);
-      await login('google'); // Using OAuth provider for login
+      await login('test@example.com', 'password'); // Using email and password for login
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     }
@@ -128,7 +128,7 @@ describe('AuthContext', () => {
   it('handles login in development mode', async () => {
     renderWithAuth(<TestComponent />);
     await userEvent.click(screen.getByText('Login'));
-    expect(mockLogin).toHaveBeenCalledWith('google');
+    expect(mockLogin).toHaveBeenCalledWith('test@example.com', 'password');
   });
 
   it('handles registration', async () => {

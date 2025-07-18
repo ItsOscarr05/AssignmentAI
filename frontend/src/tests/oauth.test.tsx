@@ -5,6 +5,13 @@ import { Login } from '../components/auth/Login';
 import { OAuthCallback } from '../components/auth/OAuthCallback';
 import { AuthContext } from '../contexts/AuthContext';
 
+// Mock window.location.href
+const mockLocation = { href: '' };
+Object.defineProperty(window, 'location', {
+  value: mockLocation,
+  writable: true,
+});
+
 // Mock the auth context methods
 const mockLogin = vi.fn();
 const mockHandleCallback = vi.fn();
@@ -41,6 +48,7 @@ vi.mock('../contexts/AuthContext', async () => {
 describe('OAuth Flow', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockLocation.href = ''; // Reset mock location
   });
 
   describe('Login Component', () => {
@@ -69,7 +77,8 @@ describe('OAuth Flow', () => {
       fireEvent.click(googleButton);
 
       await waitFor(() => {
-        expect(mockLogin).toHaveBeenCalledWith('google');
+        // OAuth login now redirects to provider URL, doesn't call login function
+        expect(window.location.href).toContain('/api/auth/google/login');
       });
     });
   });
