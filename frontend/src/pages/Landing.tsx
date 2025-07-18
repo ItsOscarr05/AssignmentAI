@@ -352,10 +352,10 @@ const Landing: React.FC = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', marginRight: -10 }}>
             <Box
               component="img"
-              src="/AssignmentAI_Logo-transparent-white.png"
+              src="/New_AssignmentAI_Logo_Transparent.png"
               alt="AI Logo"
               sx={{
-                height: { xs: '4.5rem', md: '5rem' },
+                height: { xs: '5.5rem', md: '6rem' },
                 width: 'auto',
                 display: 'block',
               }}

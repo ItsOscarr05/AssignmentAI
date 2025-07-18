@@ -138,14 +138,18 @@ const Register: React.FC = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
+                justifyContent: 'flex-start',
+                minHeight: '100%',
+                pt: 4,
+                pb: 2,
               }}
             >
               <img
-                src="/AssignmentAI_Logo-transparent-white.png"
+                src="/New_AssignmentAI_Logo_Transparent.png"
                 alt="Logo"
                 style={{
-                  height: 280,
-                  marginBottom: 24,
+                  height: 450,
+                  marginBottom: -20,
                   width: 'auto',
                   maxWidth: '100%',
                   objectFit: 'contain',
@@ -161,7 +165,7 @@ const Register: React.FC = () => {
                   fontFamily: "'Playfair Display', serif",
                   fontSize: { xs: '2.5rem', md: '3.5rem' },
                   letterSpacing: '-0.02em',
-                  mb: 1.5,
+                  mb: 1,
                 }}
               >
                 AssignmentAI
@@ -170,7 +174,7 @@ const Register: React.FC = () => {
                 variant="h6"
                 sx={{
                   opacity: 0.9,
-                  mb: 2,
+                  mb: 1.5,
                   fontFamily: "'Inter', sans-serif",
                   fontWeight: 300,
                   letterSpacing: '0.02em',

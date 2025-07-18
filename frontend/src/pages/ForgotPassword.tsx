@@ -77,13 +77,14 @@ const ForgotPassword: React.FC = () => {
             md={5}
             sx={{
               background: 'radial-gradient(circle at center, #FF5252 0%,rgb(84, 8, 8) 100%)',
-              p: 6,
+              p: { xs: 4, md: 6 },
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
               alignItems: 'center',
               color: 'white',
               position: 'relative',
+              height: '100%',
             }}
           >
             <HeroParticles />
@@ -97,14 +98,18 @@ const ForgotPassword: React.FC = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
+                justifyContent: 'flex-start',
+                minHeight: '100%',
+                pt: 4,
+                pb: 2,
               }}
             >
               <img
-                src="/AssignmentAI_Logo-transparent-white.png"
+                src="/New_AssignmentAI_Logo_Transparent.png"
                 alt="Logo"
                 style={{
-                  height: 320,
-                  marginBottom: 32,
+                  height: 450,
+                  marginBottom: -20,
                   width: 'auto',
                   maxWidth: '100%',
                   objectFit: 'contain',
@@ -118,9 +123,9 @@ const ForgotPassword: React.FC = () => {
                 gutterBottom
                 sx={{
                   fontFamily: "'Playfair Display', serif",
-                  fontSize: { xs: '3rem', md: '4rem' },
+                  fontSize: { xs: '2.5rem', md: '3.5rem' },
                   letterSpacing: '-0.02em',
-                  mb: 2,
+                  mb: 1,
                 }}
               >
                 AssignmentAI
@@ -129,11 +134,11 @@ const ForgotPassword: React.FC = () => {
                 variant="h6"
                 sx={{
                   opacity: 0.9,
-                  mb: 3,
+                  mb: 1.5,
                   fontFamily: "'Inter', sans-serif",
                   fontWeight: 300,
                   letterSpacing: '0.02em',
-                  fontSize: '1.5rem',
+                  fontSize: '1.3rem',
                 }}
               >
                 Your AI-powered assignment companion
@@ -146,12 +151,13 @@ const ForgotPassword: React.FC = () => {
                   fontWeight: 300,
                   letterSpacing: '0.01em',
                   lineHeight: 1.4,
-                  fontSize: '1.2rem',
+                  fontSize: '1.1rem',
                 }}
               >
                 Get intelligent help with your assignments using advanced AI technology.
               </Typography>
             </Box>
+            <HeroParticles />
           </Grid>
 
           {/* Right side - Forgot Password Form */}

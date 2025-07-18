@@ -157,7 +157,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <img
-              src="/AssignmentAI_Logo-transparent-white.png"
+              src="/New_AssignmentAI_Logo_Transparent.png"
               alt="Logo"
               style={{
                 height: 32,
