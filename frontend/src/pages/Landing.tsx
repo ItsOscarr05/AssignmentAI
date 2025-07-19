@@ -338,24 +338,34 @@ const Landing: React.FC = () => {
           sx={{
             width: '100%',
             display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
+            flexDirection: { xs: 'column', sm: 'row' },
+            justifyContent: { xs: 'center', sm: 'space-between' },
+            alignItems: { xs: 'center', sm: 'center' },
             px: { xs: 2, sm: 3, md: 4, lg: 10 },
-            pt: 3,
+            pt: { xs: 2, sm: 3 },
+            pb: { xs: 1, sm: 0 },
             position: 'absolute',
             top: 0,
             left: 0,
             zIndex: 10,
+            gap: { xs: 1, sm: 0 },
           }}
         >
           {/* Brand/Logo on the left */}
-          <Box sx={{ display: 'flex', alignItems: 'center', marginRight: -10 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              marginRight: { xs: 0, sm: -10 },
+              flexShrink: 0,
+            }}
+          >
             <Box
               component="img"
               src="/New_AssignmentAI_Logo_Transparent.png"
               alt="AI Logo"
               sx={{
-                height: { xs: '5.5rem', md: '6rem' },
+                height: { xs: '4rem', sm: '5.5rem', md: '6rem' },
                 width: 'auto',
                 display: 'block',
               }}
@@ -366,17 +376,30 @@ const Landing: React.FC = () => {
                 fontWeight: 800,
                 color: 'common.white',
                 letterSpacing: 1,
-                fontSize: { xs: '2.2rem', md: '3rem' },
+                fontSize: { xs: '2.1rem', sm: '2.4rem', md: '3rem' },
                 textShadow: '0 0 32px rgba(255,255,255,0.25), 0 0 64px rgba(255,255,255,0.18)',
                 userSelect: 'none',
                 textDecoration: 'none',
+                whiteSpace: 'nowrap',
               }}
             >
               AssignmentAI
             </Typography>
           </Box>
           {/* Navigation links on the right */}
-          <Stack direction="row" spacing={{ xs: 3, md: 4 }} alignItems="center">
+          <Stack
+            direction="row"
+            spacing={{ xs: 2, sm: 3, md: 4 }}
+            alignItems="center"
+            sx={{
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              width: 'fit-content',
+              mx: { xs: 'auto', sm: 0 },
+              ml: { xs: 'auto', sm: 'auto' },
+              mr: { xs: '60px', sm: 0 },
+            }}
+          >
             <MuiLink
               href="#features"
               onClick={e => {
@@ -384,11 +407,12 @@ const Landing: React.FC = () => {
                 document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
               }}
               sx={{
-                fontSize: { xs: '1.5rem', md: '1.5rem' },
+                fontSize: { xs: '1.4rem', sm: '1.6rem', md: '1.5rem' },
                 fontWeight: 600,
                 color: 'white',
                 textDecoration: 'none',
                 transition: 'all 0.2s ease-in-out',
+                whiteSpace: 'nowrap',
                 '&:hover': {
                   transform: 'translateY(-2px)',
                   color: '#FFFFFF',
@@ -404,11 +428,12 @@ const Landing: React.FC = () => {
                 document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
               }}
               sx={{
-                fontSize: { xs: '1.5rem', md: '1.5rem' },
+                fontSize: { xs: '1.4rem', sm: '1.6rem', md: '1.5rem' },
                 fontWeight: 600,
                 color: 'white',
                 textDecoration: 'none',
                 transition: 'all 0.2s ease-in-out',
+                whiteSpace: 'nowrap',
                 '&:hover': {
                   transform: 'translateY(-2px)',
                   color: '#FFFFFF',
@@ -424,11 +449,12 @@ const Landing: React.FC = () => {
                 document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' });
               }}
               sx={{
-                fontSize: { xs: '1.5rem', md: '1.5rem' },
+                fontSize: { xs: '1.4rem', sm: '1.6rem', md: '1.5rem' },
                 fontWeight: 600,
                 color: 'white',
                 textDecoration: 'none',
                 transition: 'all 0.2s ease-in-out',
+                whiteSpace: 'nowrap',
                 '&:hover': {
                   transform: 'translateY(-2px)',
                   color: '#FFFFFF',
@@ -444,11 +470,12 @@ const Landing: React.FC = () => {
                 document.getElementById('resources-tips')?.scrollIntoView({ behavior: 'smooth' });
               }}
               sx={{
-                fontSize: { xs: '1.5rem', md: '1.5rem' },
+                fontSize: { xs: '1.4rem', sm: '1.6rem', md: '1.5rem' },
                 fontWeight: 600,
                 color: 'white',
                 textDecoration: 'none',
                 transition: 'all 0.2s ease-in-out',
+                whiteSpace: 'nowrap',
                 '&:hover': {
                   transform: 'translateY(-2px)',
                   color: '#FFFFFF',
@@ -468,7 +495,7 @@ const Landing: React.FC = () => {
             alignItems: 'stretch',
             justifyContent: 'space-between',
             px: { xs: 2, sm: 4, md: 8, lg: 16 },
-            pt: { xs: 10, md: 12 },
+            pt: { xs: 14, sm: 10, md: 12 },
             pb: { xs: 6, md: 8 },
             minHeight: '80vh',
           }}

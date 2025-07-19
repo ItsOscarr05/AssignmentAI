@@ -49,25 +49,22 @@ const ForgotPassword: React.FC = () => {
         minHeight: '100vh',
         display: 'flex',
         background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.dark} 90%)`,
-        overflowY: 'auto',
+        overflow: { xs: 'auto', md: 'hidden' },
       }}
     >
       <Container
         maxWidth={false}
         disableGutters
         sx={{
-          display: 'flex',
-          alignItems: 'stretch',
-          width: '100vw',
+          height: { xs: 'auto', md: '100%' },
         }}
       >
         <Grid
           container
-          component={Paper}
+          direction={{ xs: 'column', md: 'row' }}
           sx={{
+            height: { xs: 'auto', md: '100%' },
             borderRadius: 0,
-            overflow: 'hidden',
-            flex: 1,
           }}
         >
           {/* Left side - Branding */}
@@ -77,14 +74,15 @@ const ForgotPassword: React.FC = () => {
             md={5}
             sx={{
               background: 'radial-gradient(circle at center, #FF5252 0%,rgb(84, 8, 8) 100%)',
-              p: { xs: 4, md: 6 },
+              p: { xs: 3, md: 6 },
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
               alignItems: 'center',
               color: 'white',
               position: 'relative',
-              height: '100%',
+              height: { xs: 'auto', md: '100%' },
+              minHeight: { xs: '35vh', md: '100%' },
             }}
           >
             <HeroParticles />
@@ -99,17 +97,18 @@ const ForgotPassword: React.FC = () => {
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'flex-start',
-                minHeight: '100%',
-                pt: 4,
-                pb: 2,
+                minHeight: { xs: 'auto', md: '100%' },
+                pt: { xs: 2, md: 4 },
+                pb: { xs: 2, md: 2 },
               }}
             >
-              <img
+              <Box
+                component="img"
                 src="/New_AssignmentAI_Logo_Transparent.png"
                 alt="Logo"
-                style={{
-                  height: 450,
-                  marginBottom: -20,
+                sx={{
+                  height: { xs: 200, md: 450 },
+                  mb: { xs: -1, md: -2.5 },
                   width: 'auto',
                   maxWidth: '100%',
                   objectFit: 'contain',
@@ -123,7 +122,7 @@ const ForgotPassword: React.FC = () => {
                 gutterBottom
                 sx={{
                   fontFamily: "'Playfair Display', serif",
-                  fontSize: { xs: '2.5rem', md: '3.5rem' },
+                  fontSize: { xs: '2rem', md: '3.5rem' },
                   letterSpacing: '-0.02em',
                   mb: 1,
                 }}
@@ -138,7 +137,7 @@ const ForgotPassword: React.FC = () => {
                   fontFamily: "'Inter', sans-serif",
                   fontWeight: 300,
                   letterSpacing: '0.02em',
-                  fontSize: '1.3rem',
+                  fontSize: { xs: '1.1rem', md: '1.3rem' },
                 }}
               >
                 Your AI-powered assignment companion
@@ -151,7 +150,7 @@ const ForgotPassword: React.FC = () => {
                   fontWeight: 300,
                   letterSpacing: '0.01em',
                   lineHeight: 1.4,
-                  fontSize: '1.1rem',
+                  fontSize: { xs: '1rem', md: '1.1rem' },
                 }}
               >
                 Get intelligent help with your assignments using advanced AI technology.
@@ -166,13 +165,16 @@ const ForgotPassword: React.FC = () => {
             xs={12}
             md={7}
             sx={{
-              p: { xs: 2, md: 3 },
+              p: { xs: 4, md: 6 },
               display: 'flex',
               flexDirection: 'column',
-              justifyContent: 'flex-start',
+              justifyContent: 'center',
+              height: { xs: 'auto', md: '100%' },
+              minHeight: { xs: '65vh', md: '100%' },
+              background: 'white',
             }}
           >
-            <Box sx={{ maxWidth: 420, mx: 'auto', pb: { xs: 2, md: 3 }, position: 'relative' }}>
+            <Box sx={{ maxWidth: 420, mx: 'auto', pb: { xs: 1, md: 2 }, position: 'relative' }}>
               {/* Back Button - Far right */}
               <Button
                 startIcon={<ArrowBackIcon />}
@@ -180,7 +182,7 @@ const ForgotPassword: React.FC = () => {
                 sx={{
                   position: 'absolute',
                   top: 0,
-                  right: -100,
+                  right: { xs: -10, md: -100 },
                   color: '#D32F2F',
                   backgroundColor: 'white',
                   border: '2px solid #D32F2F',
@@ -315,13 +317,13 @@ const ForgotPassword: React.FC = () => {
                     {loading ? 'Sending...' : 'Send Reset Link'}
                   </Button>
 
-                  <Divider sx={{ my: 2 }} />
+                  <Divider sx={{ my: 1.5 }} />
 
                   <Typography
                     variant="body2"
                     align="center"
                     sx={{
-                      mt: 2,
+                      mt: 1,
                       fontFamily: "'Inter', sans-serif",
                       fontWeight: 400,
                     }}

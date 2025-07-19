@@ -15,7 +15,6 @@ import {
   IconButton,
   InputAdornment,
   Link,
-  Paper,
   Stack,
   TextField,
   Typography,
@@ -109,25 +108,22 @@ const Login: React.FC = () => {
         minHeight: '100vh',
         display: 'flex',
         background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.dark} 90%)`,
-        overflowY: 'auto',
+        overflow: { xs: 'auto', md: 'hidden' },
       }}
     >
       <Container
         maxWidth={false}
         disableGutters
         sx={{
-          display: 'flex',
-          alignItems: 'stretch',
-          width: '100vw',
+          height: { xs: 'auto', md: '100%' },
         }}
       >
         <Grid
           container
-          component={Paper}
+          direction={{ xs: 'column', md: 'row' }}
           sx={{
+            height: { xs: 'auto', md: '100%' },
             borderRadius: 0,
-            overflow: 'hidden',
-            flex: 1,
           }}
         >
           {/* Left side - Branding */}
@@ -137,14 +133,15 @@ const Login: React.FC = () => {
             md={5}
             sx={{
               background: 'radial-gradient(circle at center, #FF5252 0%,rgb(84, 8, 8) 100%)',
-              p: { xs: 4, md: 6 },
+              p: { xs: 3, md: 6 },
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
               alignItems: 'center',
               color: 'white',
               position: 'relative',
-              height: '100%',
+              height: { xs: 'auto', md: '100%' },
+              minHeight: { xs: '35vh', md: '100%' },
             }}
           >
             <HeroParticles />
@@ -159,17 +156,18 @@ const Login: React.FC = () => {
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'flex-start',
-                minHeight: '100%',
-                pt: 4,
-                pb: 2,
+                minHeight: { xs: 'auto', md: '100%' },
+                pt: { xs: 2, md: 4 },
+                pb: { xs: 2, md: 2 },
               }}
             >
-              <img
+              <Box
+                component="img"
                 src="/New_AssignmentAI_Logo_Transparent.png"
                 alt="Logo"
-                style={{
-                  height: 450,
-                  marginBottom: -20,
+                sx={{
+                  height: { xs: 200, md: 450 },
+                  mb: { xs: -1, md: -2.5 },
                   width: 'auto',
                   maxWidth: '100%',
                   objectFit: 'contain',
@@ -183,7 +181,7 @@ const Login: React.FC = () => {
                 gutterBottom
                 sx={{
                   fontFamily: "'Playfair Display', serif",
-                  fontSize: { xs: '2.5rem', md: '3.5rem' },
+                  fontSize: { xs: '2rem', md: '3.5rem' },
                   letterSpacing: '-0.02em',
                   mb: 1,
                 }}
@@ -198,7 +196,7 @@ const Login: React.FC = () => {
                   fontFamily: "'Inter', sans-serif",
                   fontWeight: 300,
                   letterSpacing: '0.02em',
-                  fontSize: '1.3rem',
+                  fontSize: { xs: '1.1rem', md: '1.3rem' },
                 }}
               >
                 Your AI-powered assignment companion
@@ -211,7 +209,7 @@ const Login: React.FC = () => {
                   fontWeight: 300,
                   letterSpacing: '0.01em',
                   lineHeight: 1.4,
-                  fontSize: '1.1rem',
+                  fontSize: { xs: '1rem', md: '1.1rem' },
                 }}
               >
                 Get intelligent help with your assignments using advanced AI technology.
@@ -221,7 +219,20 @@ const Login: React.FC = () => {
           </Grid>
 
           {/* Right side - Login Form */}
-          <Grid item xs={12} md={7} sx={{ p: { xs: 4, md: 6 } }}>
+          <Grid
+            item
+            xs={12}
+            md={7}
+            sx={{
+              p: { xs: 4, md: 6 },
+              height: { xs: 'auto', md: '100%' },
+              minHeight: { xs: '65vh', md: '100%' },
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              background: 'white',
+            }}
+          >
             <Box sx={{ maxWidth: 480, mx: 'auto', position: 'relative' }}>
               {/* Back Button - Far right */}
               <Button
@@ -229,8 +240,8 @@ const Login: React.FC = () => {
                 onClick={handleGoBack}
                 sx={{
                   position: 'absolute',
-                  top: -16,
-                  right: -100,
+                  top: 0,
+                  right: { xs: -10, md: -100 },
                   color: '#D32F2F',
                   backgroundColor: 'white',
                   border: '2px solid #D32F2F',
@@ -263,9 +274,7 @@ const Login: React.FC = () => {
                   color: 'text.primary',
                 }}
               >
-                {user && (user.firstName || (user.name && user.name.split(' ')[0]))
-                  ? `Welcome Back, ${user.firstName || user.name.split(' ')[0]}`
-                  : 'Welcome Back'}
+                Welcome Back!
               </Typography>
               <Typography
                 color="text.secondary"
@@ -401,7 +410,7 @@ const Login: React.FC = () => {
                   )}
                 </Button>
 
-                <Button
+                {/* <Button
                   variant="contained"
                   color="primary"
                   fullWidth
@@ -409,7 +418,7 @@ const Login: React.FC = () => {
                   sx={{ mt: 2 }}
                 >
                   Mock Login
-                </Button>
+                </Button> */}
 
                 <Divider sx={{ my: 3 }}>
                   <Typography

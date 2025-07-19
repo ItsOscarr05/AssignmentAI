@@ -1,4 +1,9 @@
-import { GitHub as GitHubIcon, Google as GoogleIcon } from '@mui/icons-material';
+import {
+  GitHub as GitHubIcon,
+  Google as GoogleIcon,
+  Visibility,
+  VisibilityOff,
+} from '@mui/icons-material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import {
   Alert,
@@ -102,17 +107,17 @@ const Register: React.FC = () => {
   return (
     <Box
       sx={{
-        height: '100vh',
+        minHeight: '100vh',
         display: 'flex',
         background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.dark} 90%)`,
-        overflow: 'hidden',
+        overflow: { xs: 'auto', md: 'hidden' },
       }}
     >
-      <Container maxWidth={false} disableGutters sx={{ height: '100%' }}>
+      <Container maxWidth={false} disableGutters sx={{ height: { xs: 'auto', md: '100%' } }}>
         <Grid
           container
           direction={{ xs: 'column', md: 'row' }}
-          sx={{ height: '100%', borderRadius: 0 }}
+          sx={{ height: { xs: 'auto', md: '100%' }, borderRadius: 0 }}
         >
           {/* Left side - Branding */}
           <Grid
@@ -121,14 +126,15 @@ const Register: React.FC = () => {
             md={5}
             sx={{
               background: 'radial-gradient(circle at center, #FF5252 0%,rgb(84, 8, 8) 100%)',
-              p: { xs: 4, md: 6 },
+              p: { xs: 3, md: 6 },
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
               alignItems: 'center',
               color: 'white',
               position: 'relative',
-              height: '100%',
+              height: { xs: 'auto', md: '100%' },
+              minHeight: { xs: '35vh', md: '100%' },
             }}
           >
             <HeroParticles />
@@ -143,17 +149,18 @@ const Register: React.FC = () => {
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'flex-start',
-                minHeight: '100%',
-                pt: 4,
-                pb: 2,
+                minHeight: { xs: 'auto', md: '100%' },
+                pt: { xs: 2, md: 4 },
+                pb: { xs: 2, md: 2 },
               }}
             >
-              <img
+              <Box
+                component="img"
                 src="/New_AssignmentAI_Logo_Transparent.png"
                 alt="Logo"
-                style={{
-                  height: 450,
-                  marginBottom: -20,
+                sx={{
+                  height: { xs: 200, md: 450 },
+                  mb: { xs: -1, md: -2.5 },
                   width: 'auto',
                   maxWidth: '100%',
                   objectFit: 'contain',
@@ -167,7 +174,7 @@ const Register: React.FC = () => {
                 gutterBottom
                 sx={{
                   fontFamily: "'Playfair Display', serif",
-                  fontSize: { xs: '2.5rem', md: '3.5rem' },
+                  fontSize: { xs: '2rem', md: '3.5rem' },
                   letterSpacing: '-0.02em',
                   mb: 1,
                 }}
@@ -182,7 +189,7 @@ const Register: React.FC = () => {
                   fontFamily: "'Inter', sans-serif",
                   fontWeight: 300,
                   letterSpacing: '0.02em',
-                  fontSize: '1.3rem',
+                  fontSize: { xs: '1.1rem', md: '1.3rem' },
                 }}
               >
                 Your AI-powered assignment companion
@@ -195,7 +202,7 @@ const Register: React.FC = () => {
                   fontWeight: 300,
                   letterSpacing: '0.01em',
                   lineHeight: 1.4,
-                  fontSize: '1.1rem',
+                  fontSize: { xs: '1rem', md: '1.1rem' },
                 }}
               >
                 Get intelligent help with your assignments using advanced AI technology.
@@ -216,7 +223,8 @@ const Register: React.FC = () => {
               alignItems: 'center',
               background: 'white',
               p: { xs: 3, md: 4 },
-              height: '100%',
+              height: { xs: 'auto', md: '100%' },
+              minHeight: { xs: '65vh', md: '100%' },
               overflowY: 'auto',
             }}
           >
@@ -235,7 +243,7 @@ const Register: React.FC = () => {
                 sx={{
                   position: 'absolute',
                   top: 0,
-                  right: -100,
+                  right: { xs: -10, md: -100 },
                   color: '#D32F2F',
                   backgroundColor: 'white',
                   border: '2px solid #D32F2F',
@@ -359,10 +367,17 @@ const Register: React.FC = () => {
                     endAdornment: (
                       <Button
                         onClick={() => setShowPassword(!showPassword)}
-                        sx={{ minWidth: 'auto', p: 0.5 }}
+                        sx={{
+                          minWidth: 'auto',
+                          p: 0.5,
+                          color: 'grey.600',
+                          '&:hover': {
+                            color: 'grey.800',
+                          },
+                        }}
                         size="small"
                       >
-                        {showPassword ? 'Hide' : 'Show'}
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
                       </Button>
                     ),
                   }}
@@ -386,10 +401,17 @@ const Register: React.FC = () => {
                     endAdornment: (
                       <Button
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        sx={{ minWidth: 'auto', p: 0.5 }}
+                        sx={{
+                          minWidth: 'auto',
+                          p: 0.5,
+                          color: 'grey.600',
+                          '&:hover': {
+                            color: 'grey.800',
+                          },
+                        }}
                         size="small"
                       >
-                        {showConfirmPassword ? 'Hide' : 'Show'}
+                        {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
                       </Button>
                     ),
                   }}
