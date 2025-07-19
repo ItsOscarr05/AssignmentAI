@@ -33,7 +33,7 @@ const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
-  const { login, mockLogin, user } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
   const theme = useTheme();
 
