@@ -290,8 +290,6 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=8000,
         reload=settings.DEBUG,
-        workers=4,
-        ssl_keyfile=settings.SSL_KEYFILE,
-        ssl_certfile=settings.SSL_CERTFILE,
+        workers=1,
         log_level="info"
-    ) 
+    )
