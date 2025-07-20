@@ -48,13 +48,35 @@ const WorkshopFileUpload: React.FC = () => {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
+      // Document formats
       'application/pdf': ['.pdf'],
       'application/msword': ['.doc'],
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
       'text/plain': ['.txt'],
       'application/rtf': ['.rtf'],
+      // Image formats for analysis
+      'image/jpeg': ['.jpg', '.jpeg'],
+      'image/png': ['.png'],
+      'image/gif': ['.gif'],
+      'image/bmp': ['.bmp'],
+      'image/tiff': ['.tiff'],
+      'image/webp': ['.webp'],
+      // Code files for analysis
+      'text/x-python': ['.py'],
+      'text/javascript': ['.js'],
+      'text/x-java-source': ['.java'],
+      'text/x-c++src': ['.cpp', '.cc'],
+      'text/x-csrc': ['.c'],
+      'text/html': ['.html', '.htm'],
+      'text/css': ['.css'],
+      'application/json': ['.json'],
+      'text/xml': ['.xml'],
+      // Data files
+      'text/csv': ['.csv'],
+      'application/vnd.ms-excel': ['.xls'],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
     },
-    maxSize: 10 * 1024 * 1024, // 10MB
+    maxSize: 25 * 1024 * 1024, // 25MB (increased for images)
     multiple: true,
   });
 
@@ -70,6 +92,9 @@ const WorkshopFileUpload: React.FC = () => {
   const getFileIcon = (fileType: string) => {
     if (fileType === 'application/pdf') return <PdfIcon />;
     if (fileType.includes('word') || fileType.includes('document')) return <DescriptionIcon />;
+    if (fileType.includes('image')) return <FileIcon />; // For images
+    if (fileType.includes('code')) return <FileIcon />; // For code files
+    if (fileType.includes('data')) return <FileIcon />; // For data files
     return <FileIcon />;
   };
 
@@ -122,7 +147,8 @@ const WorkshopFileUpload: React.FC = () => {
           or click to browse files
         </Typography>
         <Typography variant="caption" color="text.secondary">
-          Supported formats: PDF, DOCX, DOC, TXT, RTF • Max size: 10MB
+          Supported formats: PDF, DOCX, DOC, TXT, RTF, Images (JPG, PNG, GIF, BMP, TIFF), Code files
+          (PY, JS, Java, C++, HTML, CSS), Data files (CSV, XLS, XLSX) • Max size: 25MB
         </Typography>
       </Paper>
 

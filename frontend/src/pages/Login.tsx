@@ -18,7 +18,6 @@ import {
   Stack,
   TextField,
   Typography,
-  useTheme,
 } from '@mui/material';
 import React, { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
@@ -35,7 +34,6 @@ const Login: React.FC = () => {
   const [passwordError, setPasswordError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
-  const theme = useTheme();
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -99,7 +97,12 @@ const Login: React.FC = () => {
   };
 
   const handleGoBack = () => {
-    navigate(-1);
+    // Try to go back, but if there's no history, go to landing page
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
   };
 
   return (
@@ -107,7 +110,7 @@ const Login: React.FC = () => {
       sx={{
         minHeight: '100vh',
         display: 'flex',
-        background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.dark} 90%)`,
+        background: 'white',
         overflow: { xs: 'auto', md: 'hidden' },
       }}
     >
@@ -122,7 +125,7 @@ const Login: React.FC = () => {
           container
           direction={{ xs: 'column', md: 'row' }}
           sx={{
-            height: { xs: 'auto', md: '100%' },
+            height: { xs: 'auto', md: '100vh' },
             borderRadius: 0,
           }}
         >
@@ -166,7 +169,7 @@ const Login: React.FC = () => {
                 src="/New_AssignmentAI_Logo_Transparent.png"
                 alt="Logo"
                 sx={{
-                  height: { xs: 200, md: 450 },
+                  height: { xs: 280, sm: 320, md: 450 },
                   mb: { xs: -1, md: -2.5 },
                   width: 'auto',
                   maxWidth: '100%',
@@ -181,7 +184,7 @@ const Login: React.FC = () => {
                 gutterBottom
                 sx={{
                   fontFamily: "'Playfair Display', serif",
-                  fontSize: { xs: '2rem', md: '3.5rem' },
+                  fontSize: { xs: '2.5rem', sm: '2.8rem', md: '3.5rem' },
                   letterSpacing: '-0.02em',
                   mb: 1,
                 }}
@@ -196,7 +199,7 @@ const Login: React.FC = () => {
                   fontFamily: "'Inter', sans-serif",
                   fontWeight: 300,
                   letterSpacing: '0.02em',
-                  fontSize: { xs: '1.1rem', md: '1.3rem' },
+                  fontSize: { xs: '1.3rem', sm: '1.4rem', md: '1.3rem' },
                 }}
               >
                 Your AI-powered assignment companion
@@ -209,7 +212,7 @@ const Login: React.FC = () => {
                   fontWeight: 300,
                   letterSpacing: '0.01em',
                   lineHeight: 1.4,
-                  fontSize: { xs: '1rem', md: '1.1rem' },
+                  fontSize: { xs: '1.2rem', sm: '1.25rem', md: '1.1rem' },
                 }}
               >
                 Get intelligent help with your assignments using advanced AI technology.
@@ -231,9 +234,20 @@ const Login: React.FC = () => {
               flexDirection: 'column',
               justifyContent: 'center',
               background: 'white',
+              position: 'relative',
             }}
           >
-            <Box sx={{ maxWidth: 480, mx: 'auto', position: 'relative' }}>
+            <Box
+              sx={{
+                maxWidth: 480,
+                mx: 'auto',
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                minHeight: { xs: 'auto', md: '100%' },
+              }}
+            >
               {/* Back Button - Far right */}
               <Button
                 startIcon={<ArrowBackIcon />}
@@ -241,7 +255,7 @@ const Login: React.FC = () => {
                 sx={{
                   position: 'absolute',
                   top: 0,
-                  right: { xs: -10, md: -100 },
+                  right: { xs: -10, md: -10 },
                   color: '#D32F2F',
                   backgroundColor: 'white',
                   border: '2px solid #D32F2F',

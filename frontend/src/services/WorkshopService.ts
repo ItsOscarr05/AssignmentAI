@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { api } from './api';
 
-interface WorkshopFile {
+export interface WorkshopFile {
   id: string;
   name: string;
   size: number;
@@ -14,7 +14,7 @@ interface WorkshopFile {
   status?: 'uploading' | 'processing' | 'completed' | 'error';
 }
 
-interface Link {
+export interface Link {
   id: string;
   url: string;
   title: string;
@@ -24,21 +24,32 @@ interface Link {
   extracted_at?: string;
 }
 
-interface HistoryItem {
+export interface HistoryItem {
   id: string;
   prompt: string;
   content: string;
   timestamp: string;
-  type?: 'chat' | 'file' | 'link';
+  type: 'chat' | 'file' | 'link';
   fileId?: string;
-  linkId?: string;
+  serviceUsed?: string;
+  fileCategory?: string;
+  hasDiagram?: boolean;
 }
 
-interface WorkshopState {
+export interface FeatureAccessError {
+  error: string;
+  feature: string;
+  current_plan: string;
+  upgrade_message: string;
+  upgrade_url: string;
+}
+
+export interface WorkshopState {
   prompt: string;
   generatedContent: string;
   isLoading: boolean;
   error: string | null;
+  featureAccessError: FeatureAccessError | null;
   history: HistoryItem[];
   files: WorkshopFile[];
   links: Link[];
@@ -47,7 +58,7 @@ interface WorkshopState {
   saveContent: (content: string) => Promise<void>;
   addFile: (file: globalThis.File) => Promise<void>;
   deleteFile: (id: string) => Promise<void>;
-  addLink: (link: Omit<Link, 'id'>) => Promise<Link>;
+  addLink: (link: Omit<Link, 'id'>) => Promise<void>;
   deleteLink: (id: string) => Promise<void>;
   deleteHistoryItem: (id: string) => Promise<void>;
   processFile: (
@@ -55,22 +66,24 @@ interface WorkshopState {
     action: 'summarize' | 'extract' | 'rewrite' | 'analyze'
   ) => Promise<void>;
   clearWorkshop: () => void;
+  clearFeatureAccessError: () => void;
   setUploadProgress: (fileId: string, progress: number) => void;
   setFileStatus: (fileId: string, status: WorkshopFile['status']) => void;
 }
 
-export const useWorkshopStore = create<WorkshopState>((set, get) => ({
+export const useWorkshopStore = create<WorkshopState>(set => ({
   prompt: '',
   generatedContent: '',
   isLoading: false,
   error: null,
+  featureAccessError: null,
   history: [],
   files: [],
   links: [],
   uploadProgress: {},
 
   generateContent: async (prompt: string) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, featureAccessError: null });
     try {
       const formData = new FormData();
       formData.append('prompt', prompt);
@@ -83,146 +96,138 @@ export const useWorkshopStore = create<WorkshopState>((set, get) => ({
         content,
         timestamp: new Date().toISOString(),
         type: 'chat',
+        serviceUsed: response.data.service_used,
+        hasDiagram: response.data.has_diagram || false,
       };
       set(state => ({
         generatedContent: content,
         history: [...state.history, historyItem],
         isLoading: false,
       }));
-    } catch (error) {
-      set({
-        error: 'Failed to generate content',
-        isLoading: false,
-      });
+    } catch (error: any) {
+      if (error.response?.status === 403 && error.response?.data?.error) {
+        // Feature access error
+        set({
+          featureAccessError: error.response.data,
+          isLoading: false,
+        });
+      } else {
+        set({
+          error: 'Failed to generate content',
+          isLoading: false,
+        });
+      }
     }
   },
 
   saveContent: async (content: string) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, featureAccessError: null });
     try {
       await api.post('/api/workshop/save', { content });
       set({
         generatedContent: content,
         isLoading: false,
       });
-    } catch (error) {
-      set({
-        error: 'Failed to save content',
-        isLoading: false,
-      });
+    } catch (error: any) {
+      if (error.response?.status === 403 && error.response?.data?.error) {
+        set({
+          featureAccessError: error.response.data,
+          isLoading: false,
+        });
+      } else {
+        set({
+          error: 'Failed to save content',
+          isLoading: false,
+        });
+      }
     }
   },
 
   addFile: async (file: globalThis.File) => {
-    const fileId = Math.random().toString(36).substr(2, 9);
-
-    // Add file to state immediately with uploading status
     set(state => ({
       files: [
         ...state.files,
         {
-          id: fileId,
+          id: Date.now().toString(),
           name: file.name,
           size: file.size,
           type: file.type,
-          status: 'uploading',
-          progress: 0,
+          status: 'uploading' as const,
         },
       ],
-      uploadProgress: { ...state.uploadProgress, [fileId]: 0 },
+      error: null,
+      featureAccessError: null,
     }));
 
     try {
       const formData = new FormData();
       formData.append('file', file);
 
-      // Simulate upload progress
-      const progressInterval = setInterval(() => {
-        const currentProgress = get().uploadProgress[fileId] || 0;
-        if (currentProgress < 90) {
-          set(state => ({
-            uploadProgress: { ...state.uploadProgress, [fileId]: currentProgress + 10 },
-          }));
-        }
-      }, 200);
-
-      // Update file status to processing
-      set(state => ({
-        files: state.files.map(f =>
-          f.id === fileId ? { ...f, status: 'processing' as const } : f
-        ),
-      }));
-
-      const response = await api.post('/api/workshop/files', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        onUploadProgress: progressEvent => {
-          if (progressEvent.total) {
-            const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-            set(state => ({
-              uploadProgress: { ...state.uploadProgress, [fileId]: progress },
-            }));
-          }
-        },
-      });
-
-      clearInterval(progressInterval);
-
-      // Update file with response data
-      set(state => ({
-        files: state.files.map(f =>
-          f.id === fileId
-            ? {
-                ...f,
-                ...response.data,
-                status: 'completed' as const,
-                progress: 100,
-              }
-            : f
-        ),
-        uploadProgress: { ...state.uploadProgress, [fileId]: 100 },
-      }));
+      const response = await api.post('/api/workshop/files', formData);
+      const fileData = response.data;
 
       // Add to history
       const historyItem: HistoryItem = {
         id: Date.now().toString(),
         prompt: `Uploaded file: ${file.name}`,
-        content: response.data.analysis || 'File uploaded and processed successfully.',
+        content: fileData.analysis,
         timestamp: new Date().toISOString(),
         type: 'file',
-        fileId: fileId,
+        fileId: fileData.id,
+        serviceUsed: fileData.service_used,
+        fileCategory: fileData.file_category,
       };
 
       set(state => ({
+        files: state.files.map(f =>
+          f.name === file.name ? { ...f, status: 'completed' as const } : f
+        ),
         history: [...state.history, historyItem],
       }));
-    } catch (error) {
-      set(state => ({
-        files: state.files.map(f => (f.id === fileId ? { ...f, status: 'error' as const } : f)),
-        error: 'Failed to add file',
-      }));
+    } catch (error: any) {
+      if (error.response?.status === 403 && error.response?.data?.error) {
+        set(state => ({
+          files: state.files.map(f =>
+            f.name === file.name ? { ...f, status: 'error' as const } : f
+          ),
+          featureAccessError: error.response.data,
+        }));
+      } else {
+        set(state => ({
+          files: state.files.map(f =>
+            f.name === file.name ? { ...f, status: 'error' as const } : f
+          ),
+          error: 'Failed to process file',
+        }));
+      }
     }
   },
 
   deleteFile: async (id: string) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, featureAccessError: null });
     try {
       await api.delete(`/api/workshop/files/${id}`);
       set(state => ({
         files: state.files.filter(file => file.id !== id),
         isLoading: false,
       }));
-    } catch (error) {
-      set({
-        error: 'Failed to delete file',
-        isLoading: false,
-      });
+    } catch (error: any) {
+      if (error.response?.status === 403 && error.response?.data?.error) {
+        set({
+          featureAccessError: error.response.data,
+          isLoading: false,
+        });
+      } else {
+        set({
+          error: 'Failed to delete file',
+          isLoading: false,
+        });
+      }
     }
   },
 
   addLink: async (link: Omit<Link, 'id'>) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, featureAccessError: null });
     try {
       const formData = new FormData();
       formData.append('url', link.url);
@@ -241,7 +246,6 @@ export const useWorkshopStore = create<WorkshopState>((set, get) => ({
         content: response.data.analysis || 'Link processed successfully.',
         timestamp: new Date().toISOString(),
         type: 'link',
-        linkId: response.data.id,
       };
 
       set(state => ({
@@ -249,33 +253,47 @@ export const useWorkshopStore = create<WorkshopState>((set, get) => ({
       }));
 
       return response.data;
-    } catch (error) {
-      set({
-        error: 'Failed to add link',
-        isLoading: false,
-      });
+    } catch (error: any) {
+      if (error.response?.status === 403 && error.response?.data?.error) {
+        set({
+          featureAccessError: error.response.data,
+          isLoading: false,
+        });
+      } else {
+        set({
+          error: 'Failed to add link',
+          isLoading: false,
+        });
+      }
       return null;
     }
   },
 
   deleteLink: async (id: string) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, featureAccessError: null });
     try {
       await api.delete(`/api/workshop/links/${id}`);
       set(state => ({
         links: state.links.filter(link => link.id !== id),
         isLoading: false,
       }));
-    } catch (error) {
-      set({
-        error: 'Failed to delete link',
-        isLoading: false,
-      });
+    } catch (error: any) {
+      if (error.response?.status === 403 && error.response?.data?.error) {
+        set({
+          featureAccessError: error.response.data,
+          isLoading: false,
+        });
+      } else {
+        set({
+          error: 'Failed to delete link',
+          isLoading: false,
+        });
+      }
     }
   },
 
   processFile: async (fileId: string, action: 'summarize' | 'extract' | 'rewrite' | 'analyze') => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, featureAccessError: null });
     try {
       const formData = new FormData();
       formData.append('file_id', fileId);
@@ -297,39 +315,24 @@ export const useWorkshopStore = create<WorkshopState>((set, get) => ({
         history: [...state.history, historyItem],
         isLoading: false,
       }));
-    } catch (error) {
-      set({
-        error: `Failed to ${action} file`,
-        isLoading: false,
-      });
+    } catch (error: any) {
+      if (error.response?.status === 403 && error.response?.data?.error) {
+        set({
+          featureAccessError: error.response.data,
+          isLoading: false,
+        });
+      } else {
+        set({
+          error: 'Failed to process file',
+          isLoading: false,
+        });
+      }
     }
   },
 
   deleteHistoryItem: async (id: string) => {
-    set({ isLoading: true, error: null });
-    try {
-      await api.delete(`/api/workshop/history/${id}`);
-      set(state => ({
-        history: state.history.filter(item => item.id !== id),
-        isLoading: false,
-      }));
-    } catch (error) {
-      set({
-        error: 'Failed to delete history item',
-        isLoading: false,
-      });
-    }
-  },
-
-  setUploadProgress: (fileId: string, progress: number) => {
     set(state => ({
-      uploadProgress: { ...state.uploadProgress, [fileId]: progress },
-    }));
-  },
-
-  setFileStatus: (fileId: string, status: WorkshopFile['status']) => {
-    set(state => ({
-      files: state.files.map(f => (f.id === fileId ? { ...f, status } : f)),
+      history: state.history.filter(item => item.id !== id),
     }));
   },
 
@@ -337,12 +340,32 @@ export const useWorkshopStore = create<WorkshopState>((set, get) => ({
     set({
       prompt: '',
       generatedContent: '',
-      isLoading: false,
-      error: null,
       history: [],
       files: [],
       links: [],
-      uploadProgress: {},
+      error: null,
+      featureAccessError: null,
     });
+  },
+
+  clearFeatureAccessError: () => {
+    set({
+      featureAccessError: null,
+    });
+  },
+
+  setUploadProgress: (fileId: string, progress: number) => {
+    set(state => ({
+      uploadProgress: {
+        ...state.uploadProgress,
+        [fileId]: progress,
+      },
+    }));
+  },
+
+  setFileStatus: (fileId: string, status: WorkshopFile['status']) => {
+    set(state => ({
+      files: state.files.map(file => (file.id === fileId ? { ...file, status } : file)),
+    }));
   },
 }));

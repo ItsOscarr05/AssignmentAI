@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.models.user import User
 from app.models.file import File
+from app.models.subscription import Subscription, SubscriptionStatus
 from datetime import datetime
 import io
 
@@ -17,6 +18,46 @@ def mock_user():
     user.email = "test@example.com"
     user.is_active = True
     return user
+
+
+@pytest.fixture
+def mock_free_subscription():
+    """Create a mock free subscription"""
+    subscription = Mock(spec=Subscription)
+    subscription.user_id = 1
+    subscription.status = SubscriptionStatus.ACTIVE
+    subscription.plan_id = "price_free"
+    return subscription
+
+
+@pytest.fixture
+def mock_plus_subscription():
+    """Create a mock plus subscription"""
+    subscription = Mock(spec=Subscription)
+    subscription.user_id = 1
+    subscription.status = SubscriptionStatus.ACTIVE
+    subscription.plan_id = "price_plus"
+    return subscription
+
+
+@pytest.fixture
+def mock_pro_subscription():
+    """Create a mock pro subscription"""
+    subscription = Mock(spec=Subscription)
+    subscription.user_id = 1
+    subscription.status = SubscriptionStatus.ACTIVE
+    subscription.plan_id = "price_pro"
+    return subscription
+
+
+@pytest.fixture
+def mock_max_subscription():
+    """Create a mock max subscription"""
+    subscription = Mock(spec=Subscription)
+    subscription.user_id = 1
+    subscription.status = SubscriptionStatus.ACTIVE
+    subscription.plan_id = "price_max"
+    return subscription
 
 @pytest.fixture
 def mock_db():
@@ -345,7 +386,7 @@ class TestExtractFileContent:
         
         result = await extract_file_content("/path/to/file.xyz", "application/unknown")
         
-        assert "Format not supported" in result
+        assert "Error extracting content" in result
 
     @patch('builtins.open', create=True)
     async def test_extract_file_error(self, mock_open):
@@ -356,4 +397,286 @@ class TestExtractFileContent:
         
         result = await extract_file_content("/path/to/file.txt", "text/plain")
         
-        assert "Error extracting content" in result 
+        assert "Error extracting content" in result
+
+
+class TestWorkshopFeatureAccess:
+    """Test workshop feature access control"""
+
+    @patch('app.api.v1.endpoints.workshop.has_feature_access')
+    @patch('app.api.v1.endpoints.workshop.get_user_plan')
+    @patch('app.api.v1.endpoints.workshop.ai_service.generate_assignment_content_from_prompt')
+    async def test_generate_content_diagram_free_user_denied(
+        self, 
+        mock_generate_content, 
+        mock_get_plan, 
+        mock_has_access,
+        override_get_current_user, 
+        override_get_db,
+        mock_db,
+        mock_free_subscription
+    ):
+        """Test that free users cannot generate diagrams"""
+        mock_get_plan.return_value = "free"
+        mock_has_access.return_value = False
+        mock_db.query.return_value.filter.return_value.first.return_value = mock_free_subscription
+        
+        response = client.post(
+            "/api/v1/workshop/generate",
+            data={"prompt": "create a diagram of the solar system"}
+        )
+        
+        assert response.status_code == 403
+        data = response.json()
+        assert data["detail"]["error"] == "Diagram generation not available in your plan"
+        assert data["detail"]["feature"] == "diagram_generation"
+        assert data["detail"]["current_plan"] == "free"
+        assert "Upgrade to Pro plan" in data["detail"]["upgrade_message"]
+
+    @patch('app.api.v1.endpoints.workshop.has_feature_access')
+    @patch('app.api.v1.endpoints.workshop.get_user_plan')
+    @patch('app.api.v1.endpoints.workshop.ai_service.generate_assignment_content_from_prompt')
+    async def test_generate_content_code_free_user_denied(
+        self, 
+        mock_generate_content, 
+        mock_get_plan, 
+        mock_has_access,
+        override_get_current_user, 
+        override_get_db,
+        mock_db,
+        mock_free_subscription
+    ):
+        """Test that free users cannot generate code"""
+        mock_get_plan.return_value = "free"
+        mock_has_access.return_value = False
+        mock_db.query.return_value.filter.return_value.first.return_value = mock_free_subscription
+        
+        response = client.post(
+            "/api/v1/workshop/generate",
+            data={"prompt": "write code for a python function"}
+        )
+        
+        assert response.status_code == 403
+        data = response.json()
+        assert data["detail"]["error"] == "Code generation not available in your plan"
+        assert data["detail"]["feature"] == "code_generation"
+        assert data["detail"]["current_plan"] == "free"
+        assert "Upgrade to Pro plan" in data["detail"]["upgrade_message"]
+
+    @patch('app.api.v1.endpoints.workshop.has_feature_access')
+    @patch('app.api.v1.endpoints.workshop.get_user_plan')
+    @patch('app.api.v1.endpoints.workshop.diagram_service')
+    @patch('app.api.v1.endpoints.workshop.ai_service.generate_assignment_content_from_prompt')
+    async def test_generate_content_diagram_pro_user_allowed(
+        self, 
+        mock_generate_content, 
+        mock_diagram_service,
+        mock_get_plan, 
+        mock_has_access,
+        override_get_current_user, 
+        override_get_db,
+        mock_db,
+        mock_pro_subscription
+    ):
+        """Test that pro users can generate diagrams"""
+        mock_get_plan.return_value = "pro"
+        mock_has_access.return_value = True
+        mock_db.query.return_value.filter.return_value.first.return_value = mock_pro_subscription
+        mock_diagram_service.generate_diagram = AsyncMock(return_value="Diagram generated successfully!")
+        
+        response = client.post(
+            "/api/v1/workshop/generate",
+            data={"prompt": "create a diagram of the solar system"}
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert "Diagram generated successfully!" in data["content"]
+        assert data["service_used"] == "diagram_generation"
+
+    @patch('app.api.v1.endpoints.workshop.has_feature_access')
+    @patch('app.api.v1.endpoints.workshop.get_user_plan')
+    @patch('app.api.v1.endpoints.workshop.file_service.save_file')
+    @patch('app.api.v1.endpoints.workshop.extract_file_content')
+    @patch('app.api.v1.endpoints.workshop.ai_service.generate_assignment_content_from_prompt')
+    async def test_upload_image_free_user_denied(
+        self, 
+        mock_generate_content, 
+        mock_extract_content, 
+        mock_save_file,
+        mock_get_plan, 
+        mock_has_access,
+        override_get_current_user, 
+        override_get_db,
+        mock_db,
+        mock_free_subscription
+    ):
+        """Test that free users cannot upload images for analysis"""
+        mock_get_plan.return_value = "free"
+        mock_has_access.return_value = False
+        mock_db.query.return_value.filter.return_value.first.return_value = mock_free_subscription
+        mock_save_file.return_value = ("/path/to/image.jpg", 1024)
+        
+        file_content = io.BytesIO(b"fake image data")
+        
+        response = client.post(
+            "/api/v1/workshop/files",
+            files={"file": ("test.jpg", file_content, "image/jpeg")}
+        )
+        
+        assert response.status_code == 403
+        data = response.json()
+        assert data["detail"]["error"] == "Image analysis not available in your plan"
+        assert data["detail"]["feature"] == "image_analysis"
+        assert data["detail"]["current_plan"] == "free"
+        assert "Upgrade to Pro plan" in data["detail"]["upgrade_message"]
+
+    @patch('app.api.v1.endpoints.workshop.has_feature_access')
+    @patch('app.api.v1.endpoints.workshop.get_user_plan')
+    @patch('app.api.v1.endpoints.workshop.file_service.save_file')
+    @patch('app.api.v1.endpoints.workshop.extract_file_content')
+    @patch('app.api.v1.endpoints.workshop.ai_service.generate_assignment_content_from_prompt')
+    async def test_upload_code_file_free_user_denied(
+        self, 
+        mock_generate_content, 
+        mock_extract_content, 
+        mock_save_file,
+        mock_get_plan, 
+        mock_has_access,
+        override_get_current_user, 
+        override_get_db,
+        mock_db,
+        mock_free_subscription
+    ):
+        """Test that free users cannot upload code files for analysis"""
+        mock_get_plan.return_value = "free"
+        mock_has_access.return_value = False
+        mock_db.query.return_value.filter.return_value.first.return_value = mock_free_subscription
+        mock_save_file.return_value = ("/path/to/code.py", 1024)
+        mock_extract_content.return_value = "def hello(): print('hello')"
+        
+        file_content = io.BytesIO(b"def hello(): print('hello')")
+        
+        response = client.post(
+            "/api/v1/workshop/files",
+            files={"file": ("test.py", file_content, "text/x-python")}
+        )
+        
+        assert response.status_code == 403
+        data = response.json()
+        assert data["detail"]["error"] == "Code analysis not available in your plan"
+        assert data["detail"]["feature"] == "code_generation"
+        assert data["detail"]["current_plan"] == "free"
+        assert "Upgrade to Pro plan" in data["detail"]["upgrade_message"]
+
+    @patch('app.api.v1.endpoints.workshop.has_feature_access')
+    @patch('app.api.v1.endpoints.workshop.get_user_plan')
+    @patch('app.api.v1.endpoints.workshop.file_service.save_file')
+    @patch('app.api.v1.endpoints.workshop.extract_file_content')
+    @patch('app.api.v1.endpoints.workshop.ai_service.generate_assignment_content_from_prompt')
+    async def test_upload_data_file_free_user_denied(
+        self, 
+        mock_generate_content, 
+        mock_extract_content, 
+        mock_save_file,
+        mock_get_plan, 
+        mock_has_access,
+        override_get_current_user, 
+        override_get_db,
+        mock_db,
+        mock_free_subscription
+    ):
+        """Test that free users cannot upload data files for analysis"""
+        mock_get_plan.return_value = "free"
+        mock_has_access.return_value = False
+        mock_db.query.return_value.filter.return_value.first.return_value = mock_free_subscription
+        mock_save_file.return_value = ("/path/to/data.csv", 1024)
+        mock_extract_content.return_value = "name,age\njohn,25"
+        
+        file_content = io.BytesIO(b"name,age\njohn,25")
+        
+        response = client.post(
+            "/api/v1/workshop/files",
+            files={"file": ("test.csv", file_content, "text/csv")}
+        )
+        
+        assert response.status_code == 403
+        data = response.json()
+        assert data["detail"]["error"] == "Data analysis not available in your plan"
+        assert data["detail"]["feature"] == "data_analysis"
+        assert data["detail"]["current_plan"] == "free"
+        assert "Upgrade to Pro plan" in data["detail"]["upgrade_message"]
+
+    @patch('app.api.v1.endpoints.workshop.has_feature_access')
+    @patch('app.api.v1.endpoints.workshop.get_user_plan')
+    @patch('app.api.v1.endpoints.workshop.file_service.save_file')
+    @patch('app.api.v1.endpoints.workshop.extract_file_content')
+    @patch('app.api.v1.endpoints.workshop.ai_service.generate_assignment_content_from_prompt')
+    async def test_upload_document_free_user_allowed(
+        self, 
+        mock_generate_content, 
+        mock_extract_content, 
+        mock_save_file,
+        mock_get_plan, 
+        mock_has_access,
+        override_get_current_user, 
+        override_get_db,
+        mock_db
+    ):
+        """Test that free users can upload documents for analysis"""
+        mock_get_plan.return_value = "free"
+        mock_has_access.return_value = True
+        mock_db.query.return_value.filter.return_value.first.return_value = None
+        mock_save_file.return_value = ("/path/to/doc.txt", 1024)
+        mock_extract_content.return_value = "This is a document"
+        mock_generate_content.return_value = "Document analysis"
+        
+        file_content = io.BytesIO(b"This is a document")
+        
+        response = client.post(
+            "/api/v1/workshop/files",
+            files={"file": ("test.txt", file_content, "text/plain")}
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["name"] == "test.txt"
+        assert data["analysis"] == "Document analysis"
+
+    @patch('app.api.v1.endpoints.workshop.get_available_features')
+    @patch('app.api.v1.endpoints.workshop.get_user_plan')
+    @patch('app.api.v1.endpoints.workshop.get_feature_requirements')
+    async def test_get_user_features(
+        self, 
+        mock_get_requirements, 
+        mock_get_plan, 
+        mock_get_features,
+        override_get_current_user, 
+        override_get_db,
+        mock_db,
+        mock_pro_subscription
+    ):
+        """Test getting user features endpoint"""
+        mock_get_plan.return_value = "pro"
+        mock_get_features.return_value = {
+            "basic_assignment_generation": True,
+            "diagram_generation": True,
+            "image_analysis": True,
+            "unlimited_analysis": False
+        }
+        mock_get_requirements.return_value = {
+            "pro": {
+                "available": ["basic_assignment_generation", "diagram_generation"],
+                "unavailable": ["unlimited_analysis"]
+            }
+        }
+        mock_db.query.return_value.filter.return_value.first.return_value = mock_pro_subscription
+        
+        response = client.get("/api/v1/workshop/features")
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["current_plan"] == "pro"
+        assert data["available_features"]["diagram_generation"] == True
+        assert data["available_features"]["unlimited_analysis"] == False
+        assert "upgrade_url" in data 

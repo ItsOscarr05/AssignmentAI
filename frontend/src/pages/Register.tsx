@@ -101,7 +101,12 @@ const Register: React.FC = () => {
   };
 
   const handleGoBack = () => {
-    navigate(-1);
+    // Try to go back, but if there's no history, go to landing page
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
   };
 
   return (
@@ -133,8 +138,8 @@ const Register: React.FC = () => {
               alignItems: 'center',
               color: 'white',
               position: 'relative',
-              height: { xs: 'auto', md: '100%' },
-              minHeight: { xs: '35vh', md: '100%' },
+              height: { xs: 'auto', md: 'auto' },
+              minHeight: { xs: '35vh', md: 'auto' },
             }}
           >
             <HeroParticles />
@@ -159,7 +164,7 @@ const Register: React.FC = () => {
                 src="/New_AssignmentAI_Logo_Transparent.png"
                 alt="Logo"
                 sx={{
-                  height: { xs: 200, md: 450 },
+                  height: { xs: 280, sm: 320, md: 450 },
                   mb: { xs: -1, md: -2.5 },
                   width: 'auto',
                   maxWidth: '100%',
@@ -174,7 +179,7 @@ const Register: React.FC = () => {
                 gutterBottom
                 sx={{
                   fontFamily: "'Playfair Display', serif",
-                  fontSize: { xs: '2rem', md: '3.5rem' },
+                  fontSize: { xs: '2.5rem', sm: '2.8rem', md: '3.5rem' },
                   letterSpacing: '-0.02em',
                   mb: 1,
                 }}
@@ -189,7 +194,7 @@ const Register: React.FC = () => {
                   fontFamily: "'Inter', sans-serif",
                   fontWeight: 300,
                   letterSpacing: '0.02em',
-                  fontSize: { xs: '1.1rem', md: '1.3rem' },
+                  fontSize: { xs: '1.3rem', sm: '1.4rem', md: '1.3rem' },
                 }}
               >
                 Your AI-powered assignment companion
@@ -202,7 +207,7 @@ const Register: React.FC = () => {
                   fontWeight: 300,
                   letterSpacing: '0.01em',
                   lineHeight: 1.4,
-                  fontSize: { xs: '1rem', md: '1.1rem' },
+                  fontSize: { xs: '1.2rem', sm: '1.25rem', md: '1.1rem' },
                 }}
               >
                 Get intelligent help with your assignments using advanced AI technology.
@@ -223,17 +228,22 @@ const Register: React.FC = () => {
               alignItems: 'center',
               background: 'white',
               p: { xs: 3, md: 4 },
-              height: { xs: 'auto', md: '100%' },
-              minHeight: { xs: '65vh', md: '100%' },
+              height: { xs: 'auto', md: 'auto' },
+              minHeight: { xs: '65vh', md: 'auto' },
               overflowY: 'auto',
+              position: 'relative',
             }}
           >
             <Box
               sx={{
                 width: '100%',
                 maxWidth: 480,
-                py: 2,
+                py: { xs: 2, md: 0 },
                 position: 'relative',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                minHeight: { xs: 'auto', md: '100%' },
               }}
             >
               {/* Back Button - Far right */}
@@ -243,7 +253,7 @@ const Register: React.FC = () => {
                 sx={{
                   position: 'absolute',
                   top: 0,
-                  right: { xs: -10, md: -100 },
+                  right: { xs: -10, md: -10 },
                   color: '#D32F2F',
                   backgroundColor: 'white',
                   border: '2px solid #D32F2F',

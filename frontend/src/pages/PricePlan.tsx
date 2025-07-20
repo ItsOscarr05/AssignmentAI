@@ -242,7 +242,7 @@ const plans: Plan[] = [
   {
     name: 'Free',
     price: 0,
-    description: 'Perfect starting tool with basic writing assistance',
+    description: 'Perfect starting tool with basic assistance',
     icon: <LocalOffer />,
     color: '#2196f3',
     features: [

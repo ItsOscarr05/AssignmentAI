@@ -22,7 +22,9 @@ from app.api.v1.endpoints import (
     classes,
     notifications,
     preferences,
-    usage
+    usage,
+    diagrams,
+    image_analysis
 )
 from app.crud import feedback as feedback_crud
 from app.schemas.feedback import Feedback
@@ -59,6 +61,8 @@ api_router.include_router(classes.router, prefix="/classes", tags=["classes"])
 api_router.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
 api_router.include_router(preferences.router, prefix="/preferences", tags=["preferences"])
 api_router.include_router(usage.router, prefix="/usage", tags=["usage"])
+api_router.include_router(diagrams.router, prefix="/diagrams", tags=["diagrams"])
+api_router.include_router(image_analysis.router, prefix="/image-analysis", tags=["image-analysis"])
 
 @api_router.get("/submissions/{submission_id}/feedback", tags=["Feedback"])
 def get_feedback_by_submission(submission_id: int, db=Depends(get_db)):

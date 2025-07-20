@@ -7,15 +7,19 @@ import { compression } from 'vite-plugin-compression2';
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    react(),
+    react({
+      jsxRuntime: 'automatic',
+      jsxImportSource: '@emotion/react',
+      babel: {
+        plugins: ['@emotion/babel-plugin'],
+      },
+    }),
     compression(), // Enable gzip/brotli compression
     imagetools(), // Enable image optimization
   ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      react: path.resolve(__dirname, 'node_modules/react'),
-      'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
     },
   },
   server: {
@@ -54,19 +58,18 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./test/setup.ts'],
     css: true,
-    pool: 'forks',
-    poolOptions: {
-      forks: {
-        singleFork: true,
-        maxForks: 1,
-        minForks: 1,
-      },
-    },
-    maxThreads: 1,
-    minThreads: 1,
-    isolate: false,
     testTimeout: 10000,
     hookTimeout: 10000,
     teardownTimeout: 10000,
+    env: {
+      NODE_ENV: 'development',
+    },
+    deps: {
+      inline: ['react', 'react-dom'],
+    },
+    define: {
+      'process.env.NODE_ENV': '"development"',
+      __DEV__: true,
+    },
   },
 });

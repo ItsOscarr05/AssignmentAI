@@ -1,26 +1,36 @@
-import { lazy } from 'react';
-import LoadingSpinner from '../components/LoadingSpinner';
+import { Box, CircularProgress } from '@mui/material';
+import React, { lazy } from 'react';
 
-// Lazy load all page components
-export const LazyDashboard = lazy(() => import('../pages/DashboardSidebar'));
-export const LazyAssignments = lazy(() => import('../pages/Assignments'));
-export const LazyHelp = lazy(() => import('../pages/Help'));
-export const LazyLogin = lazy(() => import('../pages/Login'));
-export const LazyPricePlan = lazy(() => import('../pages/PricePlan'));
-export const LazyProfile = lazy(() => import('../pages/Profile'));
-export const LazyRegister = lazy(() => import('../pages/Register'));
-export const LazySettings = lazy(() => import('../pages/Settings'));
+// Lazy load components
+const Login = lazy(() => import('../pages/Login'));
+const Register = lazy(() => import('../pages/Register'));
+const Dashboard = lazy(() => import('../pages/Dashboard'));
+const Assignments = lazy(() => import('../pages/Assignments'));
+const Profile = lazy(() => import('../pages/Profile'));
+const Settings = lazy(() => import('../pages/Settings'));
+const Help = lazy(() => import('../pages/Help'));
+const PricePlan = lazy(() => import('../pages/PricePlan'));
 
-// Loading component for Suspense fallback
-export const LoadingFallback = () => (
-  <div
-    style={{
+// Loading fallback component
+export const LoadingFallback: React.FC = () => (
+  <Box
+    sx={{
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
       height: '100vh',
     }}
   >
-    <LoadingSpinner />
-  </div>
+    <CircularProgress />
+  </Box>
 );
+
+// Export lazy components
+export const LazyLogin = Login;
+export const LazyRegister = Register;
+export const LazyDashboard = Dashboard;
+export const LazyAssignments = Assignments;
+export const LazyProfile = Profile;
+export const LazySettings = Settings;
+export const LazyHelp = Help;
+export const LazyPricePlan = PricePlan;

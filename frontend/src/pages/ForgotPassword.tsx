@@ -1,14 +1,5 @@
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import {
-  Box,
-  Button,
-  Container,
-  Divider,
-  Grid,
-  TextField,
-  Typography,
-  useTheme,
-} from '@mui/material';
+import { Box, Button, Container, Divider, Grid, TextField, Typography } from '@mui/material';
 import React, { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import HeroParticles from '../components/HeroParticles';
@@ -21,10 +12,14 @@ const ForgotPassword: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const { resetPassword } = useAuth();
   const navigate = useNavigate();
-  const theme = useTheme();
 
   const handleGoBack = () => {
-    navigate(-1);
+    // Try to go back, but if there's no history, go to landing page
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -47,7 +42,7 @@ const ForgotPassword: React.FC = () => {
       sx={{
         minHeight: '100vh',
         display: 'flex',
-        background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.dark} 90%)`,
+        background: 'white',
         overflow: { xs: 'auto', md: 'hidden' },
       }}
     >
@@ -62,7 +57,7 @@ const ForgotPassword: React.FC = () => {
           container
           direction={{ xs: 'column', md: 'row' }}
           sx={{
-            height: { xs: 'auto', md: '100%' },
+            height: { xs: 'auto', md: '100vh' },
             borderRadius: 0,
           }}
         >
@@ -106,7 +101,7 @@ const ForgotPassword: React.FC = () => {
                 src="/New_AssignmentAI_Logo_Transparent.png"
                 alt="Logo"
                 sx={{
-                  height: { xs: 200, md: 450 },
+                  height: { xs: 280, sm: 320, md: 450 },
                   mb: { xs: -1, md: -2.5 },
                   width: 'auto',
                   maxWidth: '100%',
@@ -121,7 +116,7 @@ const ForgotPassword: React.FC = () => {
                 gutterBottom
                 sx={{
                   fontFamily: "'Playfair Display', serif",
-                  fontSize: { xs: '2rem', md: '3.5rem' },
+                  fontSize: { xs: '2.5rem', sm: '2.8rem', md: '3.5rem' },
                   letterSpacing: '-0.02em',
                   mb: 1,
                 }}
@@ -136,7 +131,7 @@ const ForgotPassword: React.FC = () => {
                   fontFamily: "'Inter', sans-serif",
                   fontWeight: 300,
                   letterSpacing: '0.02em',
-                  fontSize: { xs: '1.1rem', md: '1.3rem' },
+                  fontSize: { xs: '1.3rem', sm: '1.4rem', md: '1.3rem' },
                 }}
               >
                 Your AI-powered assignment companion
@@ -149,7 +144,7 @@ const ForgotPassword: React.FC = () => {
                   fontWeight: 300,
                   letterSpacing: '0.01em',
                   lineHeight: 1.4,
-                  fontSize: { xs: '1rem', md: '1.1rem' },
+                  fontSize: { xs: '1.2rem', sm: '1.25rem', md: '1.1rem' },
                 }}
               >
                 Get intelligent help with your assignments using advanced AI technology.
@@ -171,9 +166,21 @@ const ForgotPassword: React.FC = () => {
               height: { xs: 'auto', md: '100%' },
               minHeight: { xs: '65vh', md: '100%' },
               background: 'white',
+              position: 'relative',
             }}
           >
-            <Box sx={{ maxWidth: 420, mx: 'auto', pb: { xs: 1, md: 2 }, position: 'relative' }}>
+            <Box
+              sx={{
+                maxWidth: 420,
+                mx: 'auto',
+                pb: { xs: 1, md: 0 },
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                minHeight: { xs: 'auto', md: '100%' },
+              }}
+            >
               {/* Back Button - Far right */}
               <Button
                 startIcon={<ArrowBackIcon />}
@@ -181,7 +188,7 @@ const ForgotPassword: React.FC = () => {
                 sx={{
                   position: 'absolute',
                   top: 0,
-                  right: { xs: -10, md: -100 },
+                  right: { xs: -10, md: -10 },
                   color: '#D32F2F',
                   backgroundColor: 'white',
                   border: '2px solid #D32F2F',

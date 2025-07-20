@@ -151,7 +151,7 @@ const plans = [
   {
     name: 'Free',
     price: 0,
-    description: 'Perfect starting tool with basic writing assistance',
+    description: 'Perfect starting tool with basic assistance',
     icon: <LocalOffer sx={{ color: '#2196f3' }} />,
     color: '#2196f3',
     features: [
@@ -338,17 +338,17 @@ const Landing: React.FC = () => {
           sx={{
             width: '100%',
             display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row' },
-            justifyContent: { xs: 'center', sm: 'space-between' },
-            alignItems: { xs: 'center', sm: 'center' },
+            flexDirection: { xs: 'column', sm: 'row', md: 'row' },
+            justifyContent: { xs: 'center', sm: 'space-between', md: 'space-between' },
+            alignItems: { xs: 'center', sm: 'center', md: 'center' },
             px: { xs: 2, sm: 3, md: 4, lg: 10 },
-            pt: { xs: 2, sm: 3 },
-            pb: { xs: 1, sm: 0 },
+            pt: { xs: 3, sm: 3 },
+            pb: { xs: 2, sm: 0, md: 0 },
             position: 'absolute',
             top: 0,
             left: 0,
             zIndex: 10,
-            gap: { xs: 1, sm: 0 },
+            gap: { xs: 2, sm: 0, md: 0 },
           }}
         >
           {/* Brand/Logo on the left */}
@@ -356,8 +356,10 @@ const Landing: React.FC = () => {
             sx={{
               display: 'flex',
               alignItems: 'center',
-              marginRight: { xs: 0, sm: -10 },
+              marginRight: { xs: 0, sm: -10, md: -10 },
+              marginLeft: { xs: 0, sm: -4, md: -2 },
               flexShrink: 0,
+              mb: { xs: 1, sm: 0, md: 0 },
             }}
           >
             <Box
@@ -376,7 +378,7 @@ const Landing: React.FC = () => {
                 fontWeight: 800,
                 color: 'common.white',
                 letterSpacing: 1,
-                fontSize: { xs: '2.1rem', sm: '2.4rem', md: '3rem' },
+                fontSize: { xs: '2.5rem', sm: '2.7rem', md: '3rem' },
                 textShadow: '0 0 32px rgba(255,255,255,0.25), 0 0 64px rgba(255,255,255,0.18)',
                 userSelect: 'none',
                 textDecoration: 'none',
@@ -389,15 +391,15 @@ const Landing: React.FC = () => {
           {/* Navigation links on the right */}
           <Stack
             direction="row"
-            spacing={{ xs: 2, sm: 3, md: 4 }}
+            spacing={{ xs: 1.5, sm: 2, md: 4 }}
             alignItems="center"
             sx={{
               flexWrap: 'wrap',
               justifyContent: 'center',
               width: 'fit-content',
-              mx: { xs: 'auto', sm: 0 },
-              ml: { xs: 'auto', sm: 'auto' },
-              mr: { xs: '60px', sm: 0 },
+              mx: { xs: 'auto', sm: 0, md: 0 },
+              ml: { xs: 'auto', sm: 'auto', md: 'auto' },
+              mr: { xs: '60px', sm: 0, md: 0 },
             }}
           >
             <MuiLink
@@ -407,7 +409,7 @@ const Landing: React.FC = () => {
                 document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
               }}
               sx={{
-                fontSize: { xs: '1.4rem', sm: '1.6rem', md: '1.5rem' },
+                fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.5rem' },
                 fontWeight: 600,
                 color: 'white',
                 textDecoration: 'none',
@@ -428,7 +430,7 @@ const Landing: React.FC = () => {
                 document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
               }}
               sx={{
-                fontSize: { xs: '1.4rem', sm: '1.6rem', md: '1.5rem' },
+                fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.5rem' },
                 fontWeight: 600,
                 color: 'white',
                 textDecoration: 'none',
@@ -449,7 +451,7 @@ const Landing: React.FC = () => {
                 document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' });
               }}
               sx={{
-                fontSize: { xs: '1.4rem', sm: '1.6rem', md: '1.5rem' },
+                fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.5rem' },
                 fontWeight: 600,
                 color: 'white',
                 textDecoration: 'none',
@@ -470,7 +472,7 @@ const Landing: React.FC = () => {
                 document.getElementById('resources-tips')?.scrollIntoView({ behavior: 'smooth' });
               }}
               sx={{
-                fontSize: { xs: '1.4rem', sm: '1.6rem', md: '1.5rem' },
+                fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.5rem' },
                 fontWeight: 600,
                 color: 'white',
                 textDecoration: 'none',

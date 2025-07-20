@@ -53,7 +53,7 @@ def test_validate_password_no_special_chars():
 
 def test_validate_password_no_numbers():
     """Test password validation without numbers"""
-    password = "SecurePass!"
+    password = "SecurePassword!"  # 16 characters, no numbers
     is_valid, error = validate_password(password)
     if settings.PASSWORD_REQUIRE_NUMBERS:
         assert not is_valid

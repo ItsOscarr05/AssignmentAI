@@ -17,8 +17,6 @@ import {
   RecordVoiceOverOutlined,
   Refresh as RefreshIcon,
   Send as SendIcon,
-  ThumbDown as ThumbDownIcon,
-  ThumbUp as ThumbUpIcon,
   UploadOutlined as UploadOutlinedIcon,
 } from '@mui/icons-material';
 import {
@@ -28,6 +26,7 @@ import {
   Button,
   Card,
   CardContent,
+  Chip,
   CircularProgress,
   Divider,
   Drawer,
@@ -60,6 +59,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { FeatureAccessErrorComponent } from '../components/workshop/FeatureAccessError';
 import WorkshopFileUpload from '../components/workshop/WorkshopFileUpload';
 import WorkshopLiveModal from '../components/workshop/WorkshopLiveModal';
 import { useAuth } from '../contexts/AuthContext';
@@ -187,10 +187,12 @@ const Workshop: React.FC = () => {
     history: workshopHistory,
     isLoading,
     error,
+    featureAccessError,
     files,
     addLink,
     processFile,
     clearWorkshop,
+    clearFeatureAccessError,
   } = useWorkshopStore();
   const [input, setInput] = useState('');
   const [linkInput, setLinkInput] = useState('');
@@ -247,10 +249,6 @@ const Workshop: React.FC = () => {
   const rewriteTabRef = useRef<HTMLDivElement>(null);
   // Modal state for live AI response
   const [liveModalOpen, setLiveModalOpen] = useState(false);
-  const [liveModalContent, setLiveModalContent] = useState('');
-  const [liveModalTitle, setLiveModalTitle] = useState('');
-  const [liveModalAI, setLiveModalAI] = useState('');
-  const [liveModalLoading, setLiveModalLoading] = useState(false);
 
   // Use real or mock token usage for the circular progress bar
   const tokenUsage = isMockUser
@@ -343,17 +341,6 @@ const Workshop: React.FC = () => {
     }
   }, [error]);
 
-  // File complete notification when liveModalLoading finishes
-  useEffect(() => {
-    if (!liveModalLoading && liveModalOpen && liveModalAI.length > 0) {
-      setSnackbar({
-        open: true,
-        message: 'File processing complete!',
-        severity: 'success',
-      });
-    }
-  }, [liveModalLoading, liveModalOpen, liveModalAI]);
-
   // Custom styles
   const cardStyle = {
     backgroundColor: '#fff',
@@ -377,16 +364,13 @@ const Workshop: React.FC = () => {
   const handleLinkSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (linkInput.trim()) {
-      const processedLink = await addLink({ url: linkInput, title: linkInput });
+      await addLink({ url: linkInput, title: linkInput });
       setLinkInput('');
       setSnackbar({
         open: true,
         message: 'Link processed successfully!',
         severity: 'success',
       });
-      if (processedLink) {
-        handleLinkUploadComplete(processedLink);
-      }
     }
   };
 
@@ -453,32 +437,6 @@ const Workshop: React.FC = () => {
 
   const handleClearChat = () => {
     clearWorkshop();
-  };
-
-  // Helper to simulate live AI response (for demo, chunk by chunk)
-  const simulateLiveAI = (fullText: string) => {
-    setLiveModalAI('');
-    setLiveModalLoading(true);
-    let i = 0;
-    const chunkSize = 30;
-    function nextChunk() {
-      if (i < fullText.length) {
-        setLiveModalAI(prev => prev + fullText.slice(i, i + chunkSize));
-        i += chunkSize;
-        setTimeout(nextChunk, 40);
-      } else {
-        setLiveModalLoading(false);
-      }
-    }
-    nextChunk();
-  };
-
-  // Handler for link upload completion (simulate similar to file)
-  const handleLinkUploadComplete = (link: any) => {
-    setLiveModalTitle(link.title || 'Processed Link');
-    setLiveModalContent(link.content || '');
-    setLiveModalOpen(true);
-    simulateLiveAI(link.analysis || '');
   };
 
   // Add a download handler
@@ -707,6 +665,15 @@ const Workshop: React.FC = () => {
           </Box>
         </CardContent>
       </Card>
+
+      {/* Feature Access Error Display */}
+      {featureAccessError && (
+        <FeatureAccessErrorComponent
+          error={featureAccessError}
+          onUpgrade={() => window.open('/dashboard/price-plan', '_blank')}
+          onDismiss={clearFeatureAccessError}
+        />
+      )}
 
       <Grid container spacing={3}>
         {/* Main Content */}
@@ -1079,24 +1046,63 @@ const Workshop: React.FC = () => {
                       sx={{
                         p: 2,
                         mb: 2,
-                        backgroundColor: '#fff',
+                        backgroundColor: 'rgba(76, 175, 80, 0.04)',
                         borderRadius: '8px',
-                        border: '1px solid red',
+                        border: '1px solid #4caf50',
+                        position: 'relative',
                       }}
                     >
-                      <Typography variant="body1">{item.content}</Typography>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-start',
+                          mb: 1,
+                        }}
+                      >
+                        <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', flex: 1 }}>
+                          {item.content}
+                        </Typography>
+                        {item.serviceUsed && (
+                          <Chip
+                            label={item.serviceUsed.replace('_', ' ').toUpperCase()}
+                            size="small"
+                            sx={{
+                              ml: 1,
+                              backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                              color: '#4caf50',
+                              fontWeight: 500,
+                            }}
+                          />
+                        )}
+                      </Box>
+                      {item.fileCategory && (
+                        <Chip
+                          label={`File: ${item.fileCategory}`}
+                          size="small"
+                          sx={{
+                            mr: 1,
+                            backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                            color: '#2196f3',
+                            fontWeight: 500,
+                          }}
+                        />
+                      )}
+                      {item.hasDiagram && (
+                        <Chip
+                          label="DIAGRAM GENERATED"
+                          size="small"
+                          sx={{
+                            backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                            color: '#ff9800',
+                            fontWeight: 500,
+                          }}
+                        />
+                      )}
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
                         <Typography variant="caption" color="text.secondary">
                           {new Date(item.timestamp).toLocaleTimeString()}
                         </Typography>
-                        <Box>
-                          <IconButton size="small">
-                            <ThumbUpIcon fontSize="small" />
-                          </IconButton>
-                          <IconButton size="small">
-                            <ThumbDownIcon fontSize="small" />
-                          </IconButton>
-                        </Box>
                       </Box>
                     </Paper>
                   </React.Fragment>
@@ -1174,50 +1180,82 @@ const Workshop: React.FC = () => {
           </Paper>
 
           {/* AI Suggestions */}
-          <Paper sx={{ ...cardStyle, p: 3, mb: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography variant="h6" gutterBottom>
-                Try These
-              </Typography>
-              <Tooltip
-                title="To use it, click a button and press send message in the upload content card"
-                arrow
-              >
-                <InfoOutlinedIcon
-                  sx={{
-                    color: 'text.secondary',
-                    fontSize: 18,
-                    cursor: 'pointer',
-                    position: 'relative',
-                    top: '-4px',
-                  }}
-                />
-              </Tooltip>
-            </Box>
+          <Paper sx={{ ...cardStyle, p: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              AI Suggestions
+            </Typography>
             <List>
-              <ListItem button onClick={() => handleSuggestionClick('Summarize this document.', 3)}>
+              <ListItem
+                button
+                onClick={() =>
+                  handleSuggestionClick(
+                    'Create a bar chart showing student performance across different subjects',
+                    0
+                  )
+                }
+              >
                 <ListItemIcon>
-                  <RecordVoiceOverOutlined sx={{ color: '#ff9800' }} />
+                  <BarChartOutlinedIcon sx={{ color: '#ff9800' }} />
                 </ListItemIcon>
-                <ListItemText primary="Summarize this document." />
+                <ListItemText
+                  primary="Generate a Diagram"
+                  secondary="Create charts, graphs, and visualizations"
+                />
               </ListItem>
               <ListItem
                 button
-                onClick={() => handleSuggestionClick('Extract key points from this essay.', 2)}
+                onClick={() =>
+                  handleSuggestionClick(
+                    'Write a Python function to calculate the factorial of a number with proper error handling',
+                    0
+                  )
+                }
               >
                 <ListItemIcon>
-                  <FormatListBulletedIcon sx={{ color: '#ffc107' }} />
+                  <BarChartOutlinedIcon sx={{ color: '#4caf50' }} />
                 </ListItemIcon>
-                <ListItemText primary="Extract key points from this essay." />
+                <ListItemText
+                  primary="Generate Code"
+                  secondary="Create functions, scripts, and programs"
+                />
               </ListItem>
               <ListItem
                 button
-                onClick={() => handleSuggestionClick('Rewrite in more academic tone.', 1)}
+                onClick={() => handleSuggestionClick('Solve this math problem: 2x + 5 = 13', 0)}
               >
                 <ListItemIcon>
-                  <EditOutlinedIcon sx={{ color: '#2196f3' }} />
+                  <BarChartOutlinedIcon sx={{ color: '#2196f3' }} />
                 </ListItemIcon>
-                <ListItemText primary="Rewrite in more academic tone." />
+                <ListItemText
+                  primary="Solve Math Problems"
+                  secondary="Get step-by-step solutions"
+                />
+              </ListItem>
+              <ListItem
+                button
+                onClick={() => handleSuggestionClick('Analyze this image and provide insights', 1)}
+              >
+                <ListItemIcon>
+                  <BarChartOutlinedIcon sx={{ color: '#9c27b0' }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Upload Images"
+                  secondary="Analyze photos, diagrams, and documents"
+                />
+              </ListItem>
+              <ListItem
+                button
+                onClick={() =>
+                  handleSuggestionClick('Review this code and suggest improvements', 1)
+                }
+              >
+                <ListItemIcon>
+                  <BarChartOutlinedIcon sx={{ color: '#ff5722' }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Upload Code Files"
+                  secondary="Get code reviews and suggestions"
+                />
               </ListItem>
             </List>
           </Paper>
@@ -1436,10 +1474,10 @@ const Workshop: React.FC = () => {
       <WorkshopLiveModal
         open={liveModalOpen}
         onClose={() => setLiveModalOpen(false)}
-        content={liveModalContent}
-        aiResponse={liveModalAI}
-        isLoading={liveModalLoading}
-        title={liveModalTitle}
+        content=""
+        aiResponse=""
+        isLoading={false}
+        title="AI Response"
       />
     </Box>
   );
