@@ -24,6 +24,7 @@ services:
       - 'traefik.http.routers.frontend.rule=Host(`assignmentai.app`)'
       - 'traefik.http.routers.frontend.entrypoints=websecure'
       - 'traefik.http.routers.frontend.tls=true'
+      - 'traefik.http.routers.frontend.tls.certresolver=letsencrypt'
       - 'traefik.http.services.frontend.loadbalancer.server.port=80'
 
   # Backend Service
@@ -48,6 +49,7 @@ services:
       - 'traefik.http.routers.backend.rule=Host(`api.assignmentai.app`)'
       - 'traefik.http.routers.backend.entrypoints=websecure'
       - 'traefik.http.routers.backend.tls=true'
+      - 'traefik.http.routers.backend.tls.certresolver=letsencrypt'
       - 'traefik.http.services.backend.loadbalancer.server.port=8000'
 
   # Database Service
@@ -81,6 +83,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
       - ./ssl:/ssl:ro
+      - ./acme.json:/acme.json
     networks:
       - app-network
     labels:
@@ -101,6 +104,7 @@ services:
       - 'traefik.http.routers.prometheus.rule=Host(`monitoring.assignmentai.app`)'
       - 'traefik.http.routers.prometheus.entrypoints=websecure'
       - 'traefik.http.routers.prometheus.tls=true'
+      - 'traefik.http.routers.prometheus.tls.certresolver=letsencrypt'
       - 'traefik.http.services.prometheus.loadbalancer.server.port=9090'
 
   # Grafana Service
@@ -120,6 +124,7 @@ services:
       - 'traefik.http.routers.grafana.rule=Host(`monitoring.assignmentai.app`) && PathPrefix(`/grafana`)'
       - 'traefik.http.routers.grafana.entrypoints=websecure'
       - 'traefik.http.routers.grafana.tls=true'
+      - 'traefik.http.routers.grafana.tls.certresolver=letsencrypt'
       - 'traefik.http.services.grafana.loadbalancer.server.port=3000'
 
 volumes:
