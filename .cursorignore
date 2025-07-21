@@ -221,18 +221,6 @@ query
 *.xls
 *.xlsx
 
-# Large media files
-*.jpg
-*.jpeg
-*.png
-*.gif
-*.bmp
-*.tiff
-*.ico
-*.svg
-*.webp
-*.webm
-
 # Large binary assets
 *.ttf
 *.otf
@@ -245,3 +233,7 @@ query
 *.egg-info/
 *.egg
 *.whl 
+
+!frontend/public/favicon.ico
+!frontend/public/favicon.png
+!frontend/public/favicon.svg 
