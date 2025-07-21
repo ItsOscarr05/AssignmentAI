@@ -20,58 +20,13 @@ providers:
     exposedByDefault: false
     network: assignmentai_app-network
 
-http:
-  routers:
-    frontend:
-      rule: 'Host(`assignmentai.app`)'
-      service: frontend
-      entryPoints:
-        - websecure
-      tls:
+# Static TLS configuration
+tls:
+  stores:
+    default:
+      defaultCertificate:
         certFile: /ssl/fullchain.pem
         keyFile: /ssl/privkey.pem
-    backend:
-      rule: 'Host(`api.assignmentai.app`)'
-      service: backend
-      entryPoints:
-        - websecure
-      tls:
-        certFile: /ssl/fullchain.pem
-        keyFile: /ssl/privkey.pem
-    prometheus:
-      rule: 'Host(`monitoring.assignmentai.app`)'
-      service: prometheus
-      entryPoints:
-        - websecure
-      tls:
-        certFile: /ssl/fullchain.pem
-        keyFile: /ssl/privkey.pem
-    grafana:
-      rule: 'Host(`monitoring.assignmentai.app`) && PathPrefix(`/grafana`)'
-      service: grafana
-      entryPoints:
-        - websecure
-      tls:
-        certFile: /ssl/fullchain.pem
-        keyFile: /ssl/privkey.pem
-
-  services:
-    frontend:
-      loadBalancer:
-        servers:
-          - url: 'http://assignmentai_frontend_1:80'
-    backend:
-      loadBalancer:
-        servers:
-          - url: 'http://assignmentai_backend_1:8000'
-    prometheus:
-      loadBalancer:
-        servers:
-          - url: 'http://assignmentai_prometheus_1:9090'
-    grafana:
-      loadBalancer:
-        servers:
-          - url: 'http://assignmentai_grafana_1:3000'
 
 log:
   level: INFO
