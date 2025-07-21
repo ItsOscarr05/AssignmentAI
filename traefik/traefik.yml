@@ -20,14 +20,6 @@ providers:
     exposedByDefault: false
     network: assignmentai_app-network
 
-certificatesResolvers:
-  myresolver:
-    acme:
-      email: admin@assignmentai.app
-      storage: /etc/traefik/acme.json
-      httpChallenge:
-        entryPoint: web
-
 http:
   routers:
     frontend:
@@ -36,28 +28,32 @@ http:
       entryPoints:
         - websecure
       tls:
-        certResolver: myresolver
+        certFile: /ssl/fullchain.pem
+        keyFile: /ssl/privkey.pem
     backend:
       rule: 'Host(`api.assignmentai.app`)'
       service: backend
       entryPoints:
         - websecure
       tls:
-        certResolver: myresolver
+        certFile: /ssl/fullchain.pem
+        keyFile: /ssl/privkey.pem
     prometheus:
       rule: 'Host(`monitoring.assignmentai.app`)'
       service: prometheus
       entryPoints:
         - websecure
       tls:
-        certResolver: myresolver
+        certFile: /ssl/fullchain.pem
+        keyFile: /ssl/privkey.pem
     grafana:
       rule: 'Host(`monitoring.assignmentai.app`) && PathPrefix(`/grafana`)'
       service: grafana
       entryPoints:
         - websecure
       tls:
-        certResolver: myresolver
+        certFile: /ssl/fullchain.pem
+        keyFile: /ssl/privkey.pem
 
   services:
     frontend:

@@ -239,7 +239,7 @@ class DiagramService:
             }
         return {"labels": [], "values": []}
 
-    def _safe_json_parse(self, content: str | None, fallback: Dict[str, Any]) -> Dict[str, Any]:
+    def _safe_json_parse(self, content: Optional[str], fallback: Dict[str, Any]) -> Dict[str, Any]:
         """Safely parse JSON content with fallback."""
         try:
             if content:
