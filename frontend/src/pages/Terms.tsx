@@ -1,16 +1,9 @@
-import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
-import { Box, Button, Container, Divider, Paper, Typography } from '@mui/material';
+import { Box, Container, Divider, Paper, Typography } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import RedStarField from '../components/RedStarField';
+import PageHeader from '../components/common/PageHeader';
 
 const Terms = () => {
-  const navigate = useNavigate();
-
-  const handleGoBack = () => {
-    navigate(-1);
-  };
-
   // Starfield logic
   const mainContentRef = useRef<HTMLDivElement>(null);
   const [contentHeight, setContentHeight] = useState<number>(0);
@@ -46,42 +39,7 @@ const Terms = () => {
             position: 'relative',
           }}
         >
-          {/* Back Button - Far right */}
-          <Button
-            startIcon={<ArrowBackIcon />}
-            onClick={handleGoBack}
-            sx={{
-              position: 'absolute',
-              top: 40,
-              right: 20,
-              color: '#D32F2F',
-              backgroundColor: 'white',
-              border: '2px solid #D32F2F',
-              borderRadius: '8px',
-              fontFamily: "'Inter', sans-serif",
-              fontWeight: 500,
-              letterSpacing: '0.01em',
-              textTransform: 'none',
-              fontSize: '1rem',
-              py: 1,
-              px: 2,
-              '&:hover': {
-                backgroundColor: '#f5f5f5',
-                border: '2px solid #B71C1C',
-                color: '#B71C1C',
-              },
-            }}
-          >
-            Back
-          </Button>
-
-          <Typography
-            variant="h3"
-            component="h1"
-            sx={{ mb: 3, fontWeight: 700, color: 'primary.main', letterSpacing: 1 }}
-          >
-            Terms of Service
-          </Typography>
+          <PageHeader title="Terms of Service" />
           <Divider sx={{ mb: 4, borderColor: 'primary.main', opacity: 0.2 }} />
           <Typography variant="body1" sx={{ mb: 3, fontSize: '1.15rem', color: 'text.secondary' }}>
             Welcome to AssignmentAI. By accessing or using our platform, you acknowledge and agree

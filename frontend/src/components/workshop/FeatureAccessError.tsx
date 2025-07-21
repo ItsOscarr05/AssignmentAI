@@ -24,9 +24,9 @@ const getFeatureDisplayName = (feature: string): string => {
     citation_reference_check: 'Citation & Reference Check',
     advanced_plagiarism_detection: 'Advanced Plagiarism Detection',
     unlimited_analysis: 'Unlimited Analysis',
-    custom_ai_training: 'Custom AI Model Training',
-    personalized_insights: 'Personalized Study Insights',
-    dedicated_support: 'Dedicated Account Manager',
+    advanced_analytics_dashboard: 'Advanced Analytics Dashboard',
+    priority_customer_support: 'Priority Customer Support',
+    custom_assignment_templates: 'Custom Assignment Templates',
   };
 
   return featureNames[feature] || feature.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());

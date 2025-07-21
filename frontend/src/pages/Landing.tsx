@@ -26,20 +26,20 @@ import {
   AssignmentOutlined,
   AutoAwesomeOutlined,
   AutoFixHighOutlined,
+  BarChartOutlined,
   BlockOutlined,
   BoltOutlined,
-  BuildOutlined,
   CheckCircle,
   CheckCircleOutlineOutlined,
   CodeOutlined,
+  DesignServicesOutlined,
   Diamond,
   DiamondOutlined,
   FormatQuoteOutlined,
   GppGoodOutlined,
-  InsightsOutlined,
   LibraryBooksOutlined,
+  MilitaryTechOutlined,
   PaletteOutlined,
-  PersonOutlined,
   PsychologyOutlined,
   RocketLaunchOutlined,
   SchoolOutlined,
@@ -132,16 +132,16 @@ const getFeatureIcon = (featureName: string, color: string) => {
       return <AccessTimeOutlined sx={{ color }} />;
     case 'Unlimited Assignment Analysis':
       return <AllInclusive sx={{ color }} />;
-    case 'Custom AI Model Training':
-      return <BuildOutlined sx={{ color }} />;
+    case 'Advanced Analytics Dashboard':
+      return <BarChartOutlined sx={{ color }} />;
+    case 'Priority Customer Support':
+      return <MilitaryTechOutlined sx={{ color }} />;
+    case 'Custom Assignment Templates':
+      return <DesignServicesOutlined sx={{ color }} />;
     case 'API Access':
       return <CodeOutlined sx={{ color }} />;
-    case 'Dedicated Account Manager':
-      return <PersonOutlined sx={{ color }} />;
     case 'Ad-Free Experience':
       return <BlockOutlined sx={{ color }} />;
-    case 'Personalized Study Insights':
-      return <InsightsOutlined sx={{ color }} />;
     default:
       return <CheckCircle sx={{ color }} />;
   }
@@ -202,9 +202,9 @@ const plans = [
     features: [
       'Everything in Pro',
       'Unlimited Assignment Analysis',
-      'Custom AI Model Training',
-      'Personalized Study Insights',
-      'Dedicated Account Manager',
+      'Advanced Analytics Dashboard',
+      'Priority Customer Support',
+      'Custom Assignment Templates',
       'Ad-Free Experience',
     ],
   },
@@ -283,6 +283,32 @@ const Landing: React.FC = () => {
   const generateRef = useRef<HTMLDivElement>(null);
   const starredStatsRef = useRef<HTMLDivElement>(null);
   const footerRef = React.useRef<HTMLDivElement>(null);
+
+  // Function to clear any plan-related storage before registration
+  const handlePlanRegistration = (planName: string) => {
+    // Only clear plan storage if user is not already logged in (first-time registration)
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser) {
+      // Clear any potential plan-related storage
+      localStorage.removeItem('selectedPlan');
+      localStorage.removeItem('planSelection');
+      localStorage.removeItem('pricingPlan');
+      sessionStorage.removeItem('selectedPlan');
+      sessionStorage.removeItem('planSelection');
+      sessionStorage.removeItem('pricingPlan');
+
+      // Clear any URL parameters that might contain plan info
+      const url = new URL(window.location.href);
+      url.searchParams.delete('plan');
+      url.searchParams.delete('planId');
+      url.searchParams.delete('planName');
+      window.history.replaceState({}, '', url.toString());
+
+      console.log(`Cleared plan storage for ${planName} registration (new user)`);
+    } else {
+      console.log(`Existing user clicked ${planName} plan - no storage clearing needed`);
+    }
+  };
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -1645,6 +1671,7 @@ const Landing: React.FC = () => {
                           variant={plan.popular ? 'contained' : 'outlined'}
                           color="primary"
                           size="large"
+                          onClick={() => handlePlanRegistration(plan.name)}
                           component={RouterMuiLink}
                           to="/register"
                           sx={{
@@ -1670,7 +1697,7 @@ const Landing: React.FC = () => {
                             textTransform: 'none',
                           }}
                         >
-                          {plan.price === 0 ? 'Get Started Free' : `Get Started ${plan.name}`}
+                          Get Started
                         </Button>
                       </Stack>
                     </CardContent>

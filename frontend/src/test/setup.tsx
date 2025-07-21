@@ -1,7 +1,7 @@
 import { ThemeProvider } from '@mui/material/styles';
 import '@testing-library/jest-dom';
 import * as matchers from '@testing-library/jest-dom/matchers';
-import { cleanup, configure, render } from '@testing-library/react';
+import { configure, render } from '@testing-library/react';
 import { createElement } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { TextDecoder, TextEncoder } from 'util';
@@ -9,6 +9,28 @@ import { afterEach, beforeAll, expect, vi } from 'vitest';
 import { AuthProvider } from '../contexts/AuthContext';
 import { theme } from '../theme';
 import { server } from './mocks/server';
+
+// Force React into development mode
+process.env.NODE_ENV = 'development';
+process.env.REACT_APP_NODE_ENV = 'development';
+
+// Override React's production check first
+vi.mock('react', async () => {
+  const actual = await vi.importActual('react');
+  return {
+    ...actual,
+    __DEV__: true,
+  };
+});
+
+// Override React DOM's production check
+vi.mock('react-dom', async () => {
+  const actual = await vi.importActual('react-dom');
+  return {
+    ...actual,
+    __DEV__: true,
+  };
+});
 
 // Move all mocks and mock definitions to the very top of the file
 
@@ -72,6 +94,7 @@ const mockMuiComponents = {
     createElement('div', { ...props, role: 'alert', 'data-testid': 'snackbar' }, props.children),
   Dialog: (props: any) => {
     const {
+      open,
       onClose,
       role = 'dialog',
       'aria-label': ariaLabel,
@@ -84,6 +107,11 @@ const mockMuiComponents = {
       dialogStyle,
       children,
     } = props;
+
+    // Don't render if dialog is not open
+    if (!open) {
+      return null;
+    }
 
     const classes = ['MuiDialog-root', dialogClassName, className].filter(Boolean).join(' ');
 
@@ -132,23 +160,36 @@ const mockMuiComponents = {
     ),
   TextField: (props: any) => {
     const inputProps = {
-      ...props,
       type: props.type || 'text',
       'data-testid': props['data-testid'] || 'text-field',
       value: props.value,
+      placeholder: props.placeholder,
+      onChange: props.onChange,
+      id: props.id,
+      'aria-label': props.label,
     };
 
     return createElement('div', null, [
       createElement('input', inputProps),
       props.error &&
+        createElement(
+          'p',
+          { 'data-testid': `${props['data-testid']}-error` },
+          props.helperText || props.error
+        ),
+      !props.error &&
         props.helperText &&
-        createElement('p', { 'data-testid': `${props['data-testid']}-error` }, props.helperText),
+        createElement('p', { 'data-testid': `${props['data-testid']}-helper` }, props.helperText),
     ]);
   },
   Select: (props: any) =>
     createElement(
       'select',
-      { ...props, 'data-testid': props['data-testid'] || 'select' },
+      {
+        ...props,
+        'data-testid': props['data-testid'] || 'select',
+        'aria-labelledby': props.labelId,
+      },
       props.children
     ),
   MenuItem: (props: any) =>
@@ -159,7 +200,19 @@ const mockMuiComponents = {
   ListItem: (props: any) =>
     createElement('li', { ...props, 'data-testid': 'list-item' }, props.children),
   ListItemText: (props: any) =>
-    createElement('div', { ...props, 'data-testid': 'list-item-text' }, props.children),
+    createElement(
+      'div',
+      {
+        ...props,
+        'data-testid': 'list-item-text',
+        primary: props.primary,
+        secondary: props.secondary,
+      },
+      [
+        props.primary && createElement('div', { key: 'primary' }, props.primary),
+        props.secondary && createElement('div', { key: 'secondary' }, props.secondary),
+      ].filter(Boolean)
+    ),
   ListItemIcon: (props: any) =>
     createElement('div', { ...props, 'data-testid': 'list-item-icon' }, props.children),
   Divider: (props: any) => createElement('hr', { ...props, 'data-testid': 'divider' }),
@@ -169,6 +222,7 @@ const mockMuiComponents = {
   CardActions: (props: any) =>
     createElement('div', { ...props, 'data-testid': 'card-actions' }, props.children),
   Grid: (props: any) => createElement('div', { ...props, 'data-testid': 'grid' }, props.children),
+  Stack: (props: any) => createElement('div', { ...props, 'data-testid': 'stack' }, props.children),
   Container: (props: any) =>
     createElement('div', { ...props, 'data-testid': 'container' }, props.children),
   AppBar: (props: any) =>
@@ -216,7 +270,8 @@ const mockMuiComponents = {
     createElement('input', { ...props, 'data-testid': 'outlined-input' }),
   InputAdornment: (props: any) =>
     createElement('div', { ...props, 'data-testid': 'input-adornment' }, props.children),
-  Chip: (props: any) => createElement('div', { ...props, 'data-testid': 'chip' }, props.children),
+  Chip: (props: any) =>
+    createElement('div', { ...props, 'data-testid': 'chip' }, props.label || props.children),
   Avatar: (props: any) =>
     createElement('div', { ...props, 'data-testid': 'avatar' }, props.children),
   Badge: (props: any) => createElement('div', { ...props, 'data-testid': 'badge' }, props.children),
@@ -316,7 +371,7 @@ expect.extend(matchers);
 // Configure testing-library
 configure({
   testIdAttribute: 'data-testid',
-  asyncUtilTimeout: 1000,
+  asyncUtilTimeout: 5000, // Default timeout for async operations
 });
 
 // Extend Vitest's expect with jest-dom matchers
@@ -371,6 +426,7 @@ const mockIcons = {
     createElement('span', { 'data-testid': 'CalendarTodayIcon' }, 'CalendarToday'),
   AccessTime: () => createElement('span', { 'data-testid': 'AccessTimeIcon' }, 'AccessTime'),
   LocationOn: () => createElement('span', { 'data-testid': 'LocationOnIcon' }, 'LocationOn'),
+  Chat: () => createElement('span', { 'data-testid': 'ChatIcon' }, 'Chat'),
   Email: () => createElement('span', { 'data-testid': 'EmailIcon' }, 'Email'),
   Phone: () => createElement('span', { 'data-testid': 'PhoneIcon' }, 'Phone'),
   Language: () => createElement('span', { 'data-testid': 'LanguageIcon' }, 'Language'),
@@ -402,6 +458,17 @@ const mockIcons = {
       { 'data-testid': 'ContactSupportOutlinedIcon' },
       'ContactSupportOutlined'
     ),
+  Support: () => createElement('span', { 'data-testid': 'SupportIcon' }, 'Support'),
+  Insights: () => createElement('span', { 'data-testid': 'InsightsIcon' }, 'Insights'),
+  PriorityHigh: () => createElement('span', { 'data-testid': 'PriorityHighIcon' }, 'PriorityHigh'),
+  TextSnippet: () => createElement('span', { 'data-testid': 'TextSnippetIcon' }, 'TextSnippet'),
+  TrendingUp: () => createElement('span', { 'data-testid': 'TrendingUpIcon' }, 'TrendingUp'),
+  TrendingDown: () => createElement('span', { 'data-testid': 'TrendingDownIcon' }, 'TrendingDown'),
+  Timeline: () => createElement('span', { 'data-testid': 'TimelineIcon' }, 'Timeline'),
+  Send: () => createElement('span', { 'data-testid': 'SendIcon' }, 'Send'),
+  Category: () => createElement('span', { 'data-testid': 'CategoryIcon' }, 'Category'),
+  ContentCopy: () => createElement('span', { 'data-testid': 'ContentCopyIcon' }, 'ContentCopy'),
+  Save: () => createElement('span', { 'data-testid': 'SaveIcon' }, 'Save'),
   FeedbackOutlined: () =>
     createElement('span', { 'data-testid': 'FeedbackOutlinedIcon' }, 'FeedbackOutlined'),
   ForumOutlined: () =>
@@ -500,9 +567,6 @@ const sessionStorageMock = {
 };
 global.sessionStorage = sessionStorageMock as any;
 
-// Mock fetch - let individual tests mock as needed
-// global.fetch = vi.fn();
-
 // Mock WebSocket
 global.WebSocket = vi.fn() as any;
 
@@ -522,10 +586,18 @@ Object.defineProperty(window, 'Notification', {
 window.requestAnimationFrame = vi.fn();
 window.cancelAnimationFrame = vi.fn();
 
-// Mock console methods
-console.error = vi.fn();
-console.warn = vi.fn();
-console.log = vi.fn();
+// Mock console methods in test environment
+if (process.env.NODE_ENV === 'production') {
+  console.error = vi.fn();
+  console.warn = vi.fn();
+  console.log = vi.fn();
+}
+
+// Mock window.confirm
+Object.defineProperty(window, 'confirm', {
+  writable: true,
+  value: vi.fn().mockReturnValue(true),
+});
 
 // Create a custom render function that includes all providers
 const customRender = (ui: React.ReactElement, options = {}) => {
@@ -544,12 +616,8 @@ const customRender = (ui: React.ReactElement, options = {}) => {
 // Export custom render function
 export { customRender as render };
 
-// Cleanup after each test
+// Cleanup after each test - only clear mocks, don't call cleanup()
 afterEach(() => {
-  // Only cleanup if we're in development mode
-  if (process.env.NODE_ENV === 'development') {
-    cleanup();
-  }
   vi.clearAllMocks();
 });
 
@@ -560,6 +628,9 @@ beforeAll(() => {
 
   // Start MSW server
   server.listen();
+
+  // Log current test environment
+  console.log(`🧪 Running tests in ${process.env.NODE_ENV} mode`);
 });
 
 // Export test utilities

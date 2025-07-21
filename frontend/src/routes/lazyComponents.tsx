@@ -4,7 +4,7 @@ import React, { lazy } from 'react';
 // Lazy load components
 const Login = lazy(() => import('../pages/Login'));
 const Register = lazy(() => import('../pages/Register'));
-const Dashboard = lazy(() => import('../pages/Dashboard'));
+const Dashboard = lazy(() => import('../pages/DashboardHome'));
 const Assignments = lazy(() => import('../pages/Assignments'));
 const Profile = lazy(() => import('../pages/Profile'));
 const Settings = lazy(() => import('../pages/Settings'));

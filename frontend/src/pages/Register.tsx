@@ -41,6 +41,30 @@ const Register: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
 
+  // Ensure registration starts with a clean slate - no plan information
+  useEffect(() => {
+    // Only clear plan storage if user is not already logged in (first-time registration)
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser) {
+      // Clear any potential plan-related storage when registration page loads for new users
+      localStorage.removeItem('selectedPlan');
+      localStorage.removeItem('planSelection');
+      localStorage.removeItem('pricingPlan');
+      sessionStorage.removeItem('selectedPlan');
+      sessionStorage.removeItem('planSelection');
+      sessionStorage.removeItem('pricingPlan');
+
+      // Clear any URL parameters that might contain plan info
+      const url = new URL(window.location.href);
+      url.searchParams.delete('plan');
+      url.searchParams.delete('planId');
+      url.searchParams.delete('planName');
+      window.history.replaceState({}, '', url.toString());
+
+      console.log('Registration page loaded for new user - cleared any plan-related storage');
+    }
+  }, []);
+
   useEffect(() => {
     console.log('Current user state:', user);
   }, [user]);

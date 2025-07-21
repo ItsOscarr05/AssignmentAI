@@ -36,11 +36,14 @@ export const useTokenLimit = () => {
     try {
       setLoading(true);
       setError(null);
+
       const response = await api.get<Subscription>('/subscriptions/current');
       setSubscription(response.data);
     } catch (err) {
       console.error('Failed to fetch subscription data:', err);
       setError('Failed to load subscription data');
+      // Ensure we default to free plan if subscription fetch fails
+      setSubscription(null);
     } finally {
       setLoading(false);
     }

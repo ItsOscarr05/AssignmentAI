@@ -1,23 +1,24 @@
+// Material-UI Icons imports
 import {
   AccessTimeOutlined,
   AllInclusive,
   AutoAwesomeOutlined,
   AutoFixHighOutlined,
+  BarChartOutlined,
   BlockOutlined,
-  BuildOutlined,
   CheckCircle,
   Close as CloseIcon,
   CreditCard,
+  DesignServicesOutlined,
   Diamond,
   EmojiEvents,
   FormatQuoteOutlined,
   GppGoodOutlined,
   HelpOutline,
-  InsightsOutlined,
   LibraryBooksOutlined,
   LocalOffer,
+  MilitaryTechOutlined,
   PaletteOutlined,
-  PersonOutlined,
   PsychologyOutlined,
   RocketLaunchOutlined,
   SchoolOutlined,
@@ -213,28 +214,28 @@ const features: Feature[] = [
     description: 'No limits on the number of assignments you can analyze',
   },
   {
-    name: 'Custom AI Model Training',
+    name: 'Advanced Analytics Dashboard',
     free: false,
     plus: false,
     pro: false,
     max: true,
-    description: 'Train custom AI models for your specific needs',
+    description: 'Detailed analytics and insights about your usage and performance',
   },
   {
-    name: 'Dedicated Account Manager',
+    name: 'Priority Customer Support',
     free: false,
     plus: false,
     pro: false,
     max: true,
-    description: 'Personal account manager for enterprise needs',
+    description: 'Faster response times and dedicated support channel',
   },
   {
-    name: 'Personalized Study Insights',
+    name: 'Custom Assignment Templates',
     free: false,
     plus: false,
     pro: false,
     max: true,
-    description: 'Receive personalized study insights',
+    description: 'Create and save custom templates for repeated use',
   },
 ];
 
@@ -302,9 +303,9 @@ const plans: Plan[] = [
     color: '#ff9800',
     features: [
       'Unlimited Assignment Analysis',
-      'Custom AI Model Training',
-      'Personalized Study Insights',
-      'Dedicated Account Manager',
+      'Advanced Analytics Dashboard',
+      'Priority Customer Support',
+      'Custom Assignment Templates',
       'Ad-Free Experience',
     ],
     priceId: 'price_max',
@@ -344,14 +345,14 @@ const getFeatureIcon = (featureName: string, color: string) => {
       return <AccessTimeOutlined sx={{ color }} />;
     case 'Unlimited Assignment Analysis':
       return <AllInclusive sx={{ color }} />;
-    case 'Custom AI Model Training':
-      return <BuildOutlined sx={{ color }} />;
-    case 'Dedicated Account Manager':
-      return <PersonOutlined sx={{ color }} />;
+    case 'Advanced Analytics Dashboard':
+      return <BarChartOutlined sx={{ color }} />;
+    case 'Priority Customer Support':
+      return <MilitaryTechOutlined sx={{ color }} />;
+    case 'Custom Assignment Templates':
+      return <DesignServicesOutlined sx={{ color }} />;
     case 'Ad-Free Experience':
       return <BlockOutlined sx={{ color }} />;
-    case 'Personalized Study Insights':
-      return <InsightsOutlined sx={{ color }} />;
     default:
       return <CheckCircle sx={{ color }} />;
   }

@@ -53,23 +53,7 @@ export default defineConfig({
   optimizeDeps: {
     include: ['react', 'react-dom'],
   },
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: ['./test/setup.ts'],
-    css: true,
-    testTimeout: 10000,
-    hookTimeout: 10000,
-    teardownTimeout: 10000,
-    env: {
-      NODE_ENV: 'development',
-    },
-    deps: {
-      inline: ['react', 'react-dom'],
-    },
-    define: {
-      'process.env.NODE_ENV': '"development"',
-      __DEV__: true,
-    },
+  define: {
+    __DEV__: process.env.NODE_ENV !== 'production',
   },
 });

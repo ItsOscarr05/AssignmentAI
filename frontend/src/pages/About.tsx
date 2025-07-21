@@ -1,5 +1,4 @@
 import {
-  ArrowBack as ArrowBackIcon,
   AutoAwesomeOutlined,
   EmojiObjectsOutlined,
   GroupOutlined,
@@ -7,18 +6,12 @@ import {
   SecurityOutlined,
   SpeedOutlined,
 } from '@mui/icons-material';
-import { Box, Button, Container, Divider, Grid, Paper, Typography } from '@mui/material';
+import { Box, Container, Divider, Grid, Paper, Typography } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import RedStarField from '../components/RedStarField';
+import PageHeader from '../components/common/PageHeader';
 
 const About = () => {
-  const navigate = useNavigate();
-
-  const handleGoBack = () => {
-    navigate(-1);
-  };
-
   const values = [
     {
       icon: <SchoolOutlined sx={{ fontSize: 40, color: 'primary.main' }} />,
@@ -87,42 +80,7 @@ const About = () => {
             position: 'relative',
           }}
         >
-          {/* Back Button - Far right */}
-          <Button
-            startIcon={<ArrowBackIcon />}
-            onClick={handleGoBack}
-            sx={{
-              position: 'absolute',
-              top: 30,
-              right: 20,
-              color: '#D32F2F',
-              backgroundColor: 'white',
-              border: '2px solid #D32F2F',
-              borderRadius: '8px',
-              fontFamily: "'Inter', sans-serif",
-              fontWeight: 500,
-              letterSpacing: '0.01em',
-              textTransform: 'none',
-              fontSize: '1rem',
-              py: 1,
-              px: 2,
-              '&:hover': {
-                backgroundColor: '#f5f5f5',
-                border: '2px solid #B71C1C',
-                color: '#B71C1C',
-              },
-            }}
-          >
-            Back
-          </Button>
-
-          <Typography
-            variant="h3"
-            component="h1"
-            sx={{ mb: 2, fontWeight: 700, color: 'primary.main', letterSpacing: 1 }}
-          >
-            About AssignmentAI
-          </Typography>
+          <PageHeader title="About AssignmentAI" />
           <Divider sx={{ mb: 3, borderColor: 'primary.main', opacity: 0.2 }} />
 
           <Typography variant="h5" sx={{ mb: 1, fontWeight: 600, color: 'text.primary' }}>

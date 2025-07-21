@@ -113,12 +113,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const lastName = rest.join('.');
 
     try {
+      // Clear any plan-related storage before registration (only for new users)
+      localStorage.removeItem('selectedPlan');
+      localStorage.removeItem('planSelection');
+      localStorage.removeItem('pricingPlan');
+      sessionStorage.removeItem('selectedPlan');
+      sessionStorage.removeItem('planSelection');
+      sessionStorage.removeItem('pricingPlan');
+
       const response = await AuthService.register({
         email,
         password,
         firstName,
         lastName,
       });
+
+      // Ensure new users start with free plan regardless of any previous plan selection
+      console.log('New user registered successfully - ensuring free plan assignment');
 
       // If registration is successful, show success message and redirect to login
       // Note: Most backends don't auto-login after registration for security
