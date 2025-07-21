@@ -45,18 +45,22 @@ const testConfig: EnvironmentConfig = {
 };
 
 // Easy mode switching - just change this line!
-const CURRENT_MODE: EnvironmentConfig['mode'] = 'development';
+const CURRENT_MODE = 'production';
 
 // Export the current configuration
 export const config: EnvironmentConfig = (() => {
-  if (CURRENT_MODE === 'development') {
-    return developmentConfig;
-  } else if (CURRENT_MODE === 'production') {
-    return productionConfig;
-  } else if (CURRENT_MODE === 'test') {
-    return testConfig;
+  const mode = CURRENT_MODE as EnvironmentConfig['mode'];
+
+  switch (mode) {
+    case 'development':
+      return developmentConfig;
+    case 'production':
+      return productionConfig;
+    case 'test':
+      return testConfig;
+    default:
+      return developmentConfig;
   }
-  return developmentConfig;
 })();
 
 // Helper functions

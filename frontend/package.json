@@ -4,7 +4,10 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "set NODE_ENV=development && vitest",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest",
     "dev:switch": "node scripts/switch-env.js dev",
     "prod:switch": "node scripts/switch-env.js prod",
     "test:switch": "node scripts/switch-env.js test",
