@@ -14,6 +14,7 @@ export const OAuthCallback: React.FC = () => {
       const code = searchParams.get('code');
       const state = searchParams.get('state');
       const error = searchParams.get('error');
+      const provider = searchParams.get('provider') || 'google'; // Default to google
 
       if (error) {
         setError('Authentication failed');
@@ -26,6 +27,11 @@ export const OAuthCallback: React.FC = () => {
       }
 
       try {
+        // Add provider to the URL so handleCallback can access it
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set('provider', provider);
+        window.history.replaceState({}, '', currentUrl.toString());
+
         await handleCallback(code, state);
         navigate('/dashboard');
       } catch (err) {

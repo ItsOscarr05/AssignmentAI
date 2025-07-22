@@ -1,7 +1,7 @@
 import { gapi } from 'gapi-script';
 import { useEffect, useState } from 'react';
 
-const CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
 
 export const useGoogleAuth = () => {

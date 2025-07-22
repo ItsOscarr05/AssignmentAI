@@ -33,17 +33,8 @@ export const Login: React.FC = () => {
             variant="contained"
             color="primary"
             onClick={() => handleOAuthLogin('github')}
-            sx={{ mb: 2 }}
           >
             Sign in with GitHub
-          </Button>
-          <Button
-            fullWidth
-            variant="contained"
-            color="primary"
-            onClick={() => handleOAuthLogin('microsoft')}
-          >
-            Sign in with Microsoft
           </Button>
         </Box>
       </Box>

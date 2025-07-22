@@ -25,24 +25,6 @@ class OAuthConfig:
                 "scope": "user:email",
                 "redirect_uri": f"{settings.BACKEND_URL}/api/v1/auth/oauth/github/callback",
             },
-            "facebook": {
-                "client_id": settings.FACEBOOK_CLIENT_ID,
-                "client_secret": settings.FACEBOOK_CLIENT_SECRET,
-                "authorize_url": "https://www.facebook.com/v12.0/dialog/oauth",
-                "token_url": "https://graph.facebook.com/v12.0/oauth/access_token",
-                "userinfo_url": "https://graph.facebook.com/v12.0/me",
-                "scope": "email public_profile",
-                "redirect_uri": f"{settings.BACKEND_URL}/api/v1/auth/oauth/facebook/callback",
-            },
-            "apple": {
-                "client_id": settings.APPLE_CLIENT_ID,
-                "client_secret": settings.APPLE_CLIENT_SECRET,
-                "authorize_url": "https://appleid.apple.com/auth/authorize",
-                "token_url": "https://appleid.apple.com/auth/token",
-                "userinfo_url": "https://appleid.apple.com/auth/userinfo",
-                "scope": "email name",
-                "redirect_uri": f"{settings.BACKEND_URL}/api/v1/auth/oauth/apple/callback",
-            },
         }
 
     def get_provider_config(self, provider: str) -> Dict:
@@ -92,18 +74,6 @@ class OAuthConfig:
                     "email": user_info.get("email"),
                     "name": user_info.get("name") or user_info.get("login"),
                     "picture": user_info.get("avatar_url"),
-                })
-            elif provider == "facebook":
-                normalized_info.update({
-                    "email": user_info.get("email"),
-                    "name": user_info.get("name"),
-                    "picture": user_info.get("picture", {}).get("data", {}).get("url"),
-                })
-            elif provider == "apple":
-                normalized_info.update({
-                    "email": user_info.get("email"),
-                    "name": user_info.get("name", {}).get("firstName"),
-                    "picture": None,  # Apple doesn't provide profile pictures
                 })
 
             return normalized_info

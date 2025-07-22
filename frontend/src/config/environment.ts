@@ -45,7 +45,7 @@ const testConfig: EnvironmentConfig = {
 };
 
 // Easy mode switching - just change this line!
-const CURRENT_MODE = 'production';
+const CURRENT_MODE = import.meta.env.MODE || 'development';
 
 // Export the current configuration
 export const config: EnvironmentConfig = (() => {

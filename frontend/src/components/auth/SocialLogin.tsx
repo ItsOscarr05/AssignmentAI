@@ -1,9 +1,4 @@
-import {
-  Apple as AppleIcon,
-  Facebook as FacebookIcon,
-  GitHub as GitHubIcon,
-  Google as GoogleIcon,
-} from '@mui/icons-material';
+import { GitHub as GitHubIcon, Google as GoogleIcon } from '@mui/icons-material';
 import { Box, Button, Divider, Typography } from '@mui/material';
 import React from 'react';
 import { AuthManager } from '../../services/authManager';
@@ -49,24 +44,6 @@ export const SocialLogin: React.FC<SocialLoginProps> = ({ isLoading = false }) =
           fullWidth
         >
           Continue with GitHub
-        </Button>
-        <Button
-          variant="outlined"
-          startIcon={<FacebookIcon />}
-          onClick={() => handleSocialLogin('facebook')}
-          disabled={isLoading}
-          fullWidth
-        >
-          Continue with Facebook
-        </Button>
-        <Button
-          variant="outlined"
-          startIcon={<AppleIcon />}
-          onClick={() => handleSocialLogin('apple')}
-          disabled={isLoading}
-          fullWidth
-        >
-          Continue with Apple
         </Button>
       </Box>
     </Box>

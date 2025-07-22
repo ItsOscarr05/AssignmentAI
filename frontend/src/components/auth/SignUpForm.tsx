@@ -1,14 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  Apple,
-  CheckCircle,
-  Facebook,
-  GitHub,
-  Google,
-  Info,
-  Visibility,
-  VisibilityOff,
-} from '@mui/icons-material';
+import { CheckCircle, GitHub, Google, Info, Visibility, VisibilityOff } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -25,7 +16,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
@@ -57,7 +48,7 @@ const signUpSchema = z
 
 type SignUpFormData = z.infer<typeof signUpSchema>;
 
-type SocialProvider = 'google' | 'facebook' | 'apple' | 'github';
+type SocialProvider = 'google' | 'github';
 
 const SignUpForm: React.FC = () => {
   const {
@@ -721,7 +712,7 @@ const SignUpForm: React.FC = () => {
                   animation: `${fadeIn} 0.5s ease-out 1.8s both`,
                 }}
               >
-                {(['google', 'facebook', 'apple', 'github'] as SocialProvider[]).map(provider => (
+                {(['google', 'github'] as SocialProvider[]).map(provider => (
                   <Tooltip
                     key={provider}
                     title={`Sign up with ${provider.charAt(0).toUpperCase() + provider.slice(1)}`}
@@ -749,8 +740,6 @@ const SignUpForm: React.FC = () => {
                       ) : (
                         {
                           google: <Google sx={{ color: '#DB4437' }} />,
-                          facebook: <Facebook sx={{ color: '#4267B2' }} />,
-                          apple: <Apple sx={{ color: '#000000' }} />,
                           github: <GitHub sx={{ color: '#24292e' }} />,
                         }[provider]
                       )}

@@ -52,7 +52,7 @@ async def google_authorize():
         )
         
         return {
-            "authorization_url": authorization_url,
+            "url": authorization_url,
             "state": state
         }
     except Exception as e:
@@ -86,7 +86,7 @@ async def github_authorize():
         )
         
         return {
-            "authorization_url": authorization_url,
+            "url": authorization_url,
             "state": state
         }
     except Exception as e:
@@ -260,6 +260,174 @@ async def github_callback(
             "error": f"OAuth callback failed: {str(e)}"
         }
 
+@router.post("/facebook/callback")
+async def facebook_callback(
+    request: OAuthCallbackRequest,
+    db: Session = Depends(get_db)
+):
+    """Handle Facebook OAuth callback"""
+    try:
+        # Validate state parameter
+        if request.state not in oauth_states or oauth_states[request.state]["provider"] != "facebook":
+            raise HTTPException(status_code=400, detail="Invalid state parameter")
+        
+        # Clean up state
+        del oauth_states[request.state]
+        
+        # Get Facebook OAuth configuration
+        config = oauth_config.get_provider_config("facebook")
+        
+        # Exchange code for tokens
+        from authlib.integrations.requests_client import OAuth2Session
+        client = OAuth2Session(
+            client_id=config["client_id"],
+            client_secret=config["client_secret"],
+            redirect_uri=config["redirect_uri"]
+        )
+        
+        token = client.fetch_token(
+            config["token_url"],
+            authorization_response=f"?code={request.code}&state={request.state}"
+        )
+        
+        # Get user info
+        user_info = client.get(config["userinfo_url"]).json()
+        
+        # Find or create user
+        user = db.query(User).filter(User.email == user_info["email"]).first()
+        
+        if not user:
+            # Create new user
+            user = User(
+                email=user_info["email"],
+                name=user_info.get("name", ""),
+                hashed_password="oauth_user_no_password",  # Dummy password for OAuth users
+                oauth_provider="facebook",
+                oauth_access_token=token["access_token"],
+                oauth_refresh_token=token.get("refresh_token"),
+                oauth_token_expires_at=datetime.utcnow() + timedelta(seconds=token.get("expires_in", 3600)),
+                is_verified=True,  # OAuth users are pre-verified
+                updated_at=datetime.utcnow()
+            )
+            db.add(user)
+        else:
+            # Update existing user's OAuth info
+            user.oauth_provider = "facebook"
+            user.oauth_access_token = token["access_token"]
+            user.oauth_refresh_token = token.get("refresh_token")
+            user.oauth_token_expires_at = datetime.utcnow() + timedelta(seconds=token.get("expires_in", 3600))
+            user.is_verified = True
+            user.updated_at = datetime.utcnow()
+        
+        db.commit()
+        db.refresh(user)
+        
+        # Create access token
+        access_token = create_access_token(subject=user.id)
+        
+        return {
+            "access_token": access_token,
+            "refresh_token": token.get("refresh_token"),
+            "token_type": "bearer",
+            "expires_in": token.get("expires_in", 3600),
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "name": user.name
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        return {
+            "error": f"OAuth callback failed: {str(e)}"
+        }
+
+@router.post("/apple/callback")
+async def apple_callback(
+    request: OAuthCallbackRequest,
+    db: Session = Depends(get_db)
+):
+    """Handle Apple OAuth callback"""
+    try:
+        # Validate state parameter
+        if request.state not in oauth_states or oauth_states[request.state]["provider"] != "apple":
+            raise HTTPException(status_code=400, detail="Invalid state parameter")
+        
+        # Clean up state
+        del oauth_states[request.state]
+        
+        # Get Apple OAuth configuration
+        config = oauth_config.get_provider_config("apple")
+        
+        # Exchange code for tokens
+        from authlib.integrations.requests_client import OAuth2Session
+        client = OAuth2Session(
+            client_id=config["client_id"],
+            client_secret=config["client_secret"],
+            redirect_uri=config["redirect_uri"]
+        )
+        
+        token = client.fetch_token(
+            config["token_url"],
+            authorization_response=f"?code={request.code}&state={request.state}"
+        )
+        
+        # Get user info
+        user_info = client.get(config["userinfo_url"]).json()
+        
+        # Find or create user
+        user = db.query(User).filter(User.email == user_info["email"]).first()
+        
+        if not user:
+            # Create new user
+            user = User(
+                email=user_info["email"],
+                name=user_info.get("name", ""),
+                hashed_password="oauth_user_no_password",  # Dummy password for OAuth users
+                oauth_provider="apple",
+                oauth_access_token=token["access_token"],
+                oauth_refresh_token=token.get("refresh_token"),
+                oauth_token_expires_at=datetime.utcnow() + timedelta(seconds=token.get("expires_in", 3600)),
+                is_verified=True,  # OAuth users are pre-verified
+                updated_at=datetime.utcnow()
+            )
+            db.add(user)
+        else:
+            # Update existing user's OAuth info
+            user.oauth_provider = "apple"
+            user.oauth_access_token = token["access_token"]
+            user.oauth_refresh_token = token.get("refresh_token")
+            user.oauth_token_expires_at = datetime.utcnow() + timedelta(seconds=token.get("expires_in", 3600))
+            user.is_verified = True
+            user.updated_at = datetime.utcnow()
+        
+        db.commit()
+        db.refresh(user)
+        
+        # Create access token
+        access_token = create_access_token(subject=user.id)
+        
+        return {
+            "access_token": access_token,
+            "refresh_token": token.get("refresh_token"),
+            "token_type": "bearer",
+            "expires_in": token.get("expires_in", 3600),
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "name": user.name
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        return {
+            "error": f"OAuth callback failed: {str(e)}"
+        }
+
 @router.get("/google/callback")
 async def google_callback_get(request: Request, db: Session = Depends(get_db)):
     """Handle Google OAuth callback via GET (for browser redirects)"""
@@ -268,17 +436,105 @@ async def google_callback_get(request: Request, db: Session = Depends(get_db)):
         state = request.query_params.get("state")
         if not code or not state:
             raise HTTPException(status_code=400, detail="Missing code or state in callback")
-        # Reuse the POST logic by creating a dummy request object
+        
+        # Call the POST callback logic
         from pydantic import BaseModel
         class DummyCallbackRequest(BaseModel):
             code: str
             state: str
         dummy_request = DummyCallbackRequest(code=code, state=state)
-        return await google_callback(dummy_request, db)
+        result = await google_callback(dummy_request, db)
+        
+        # Redirect to frontend with the result
+        frontend_url = f"{settings.FRONTEND_URL}/auth/callback?provider=google&code={code}&state={state}"
+        return RedirectResponse(url=frontend_url)
     except HTTPException:
         raise
     except Exception as e:
-        return {"error": f"OAuth callback failed: {str(e)}"}
+        # Redirect to frontend with error
+        frontend_url = f"{settings.FRONTEND_URL}/auth/callback?error=oauth_failed&provider=google"
+        return RedirectResponse(url=frontend_url)
+
+@router.get("/github/callback")
+async def github_callback_get(request: Request, db: Session = Depends(get_db)):
+    """Handle GitHub OAuth callback via GET (for browser redirects)"""
+    try:
+        code = request.query_params.get("code")
+        state = request.query_params.get("state")
+        if not code or not state:
+            raise HTTPException(status_code=400, detail="Missing code or state in callback")
+        
+        # Call the POST callback logic
+        from pydantic import BaseModel
+        class DummyCallbackRequest(BaseModel):
+            code: str
+            state: str
+        dummy_request = DummyCallbackRequest(code=code, state=state)
+        result = await github_callback(dummy_request, db)
+        
+        # Redirect to frontend with the result
+        frontend_url = f"{settings.FRONTEND_URL}/auth/callback?provider=github&code={code}&state={state}"
+        return RedirectResponse(url=frontend_url)
+    except HTTPException:
+        raise
+    except Exception as e:
+        # Redirect to frontend with error
+        frontend_url = f"{settings.FRONTEND_URL}/auth/callback?error=oauth_failed&provider=github"
+        return RedirectResponse(url=frontend_url)
+
+@router.get("/facebook/callback")
+async def facebook_callback_get(request: Request, db: Session = Depends(get_db)):
+    """Handle Facebook OAuth callback via GET (for browser redirects)"""
+    try:
+        code = request.query_params.get("code")
+        state = request.query_params.get("state")
+        if not code or not state:
+            raise HTTPException(status_code=400, detail="Missing code or state in callback")
+        
+        # Call the POST callback logic
+        from pydantic import BaseModel
+        class DummyCallbackRequest(BaseModel):
+            code: str
+            state: str
+        dummy_request = DummyCallbackRequest(code=code, state=state)
+        result = await facebook_callback(dummy_request, db)
+        
+        # Redirect to frontend with the result
+        frontend_url = f"{settings.FRONTEND_URL}/auth/callback?provider=facebook&code={code}&state={state}"
+        return RedirectResponse(url=frontend_url)
+    except HTTPException:
+        raise
+    except Exception as e:
+        # Redirect to frontend with error
+        frontend_url = f"{settings.FRONTEND_URL}/auth/callback?error=oauth_failed&provider=facebook"
+        return RedirectResponse(url=frontend_url)
+
+@router.get("/apple/callback")
+async def apple_callback_get(request: Request, db: Session = Depends(get_db)):
+    """Handle Apple OAuth callback via GET (for browser redirects)"""
+    try:
+        code = request.query_params.get("code")
+        state = request.query_params.get("state")
+        if not code or not state:
+            raise HTTPException(status_code=400, detail="Missing code or state in callback")
+        
+        # Call the POST callback logic
+        from pydantic import BaseModel
+        class DummyCallbackRequest(BaseModel):
+            code: str
+            state: str
+        dummy_request = DummyCallbackRequest(code=code, state=state)
+        result = await apple_callback(dummy_request, db)
+        
+        # Redirect to frontend with the result
+        frontend_url = f"{settings.FRONTEND_URL}/auth/callback?provider=apple&code={code}&state={state}"
+        return RedirectResponse(url=frontend_url)
+    except HTTPException:
+        raise
+    except Exception as e:
+        # Redirect to frontend with error
+        frontend_url = f"{settings.FRONTEND_URL}/auth/callback?error=oauth_failed&provider=apple"
+        return RedirectResponse(url=frontend_url)
 
 @router.post("/google/refresh")
 async def google_refresh(

@@ -137,7 +137,7 @@ class AuthManager {
   }
 
   async getOAuthUrl(provider: string): Promise<{ url: string }> {
-    const response = await api.get<{ url: string }>(`/auth/oauth/${provider}`);
+    const response = await api.get<{ url: string }>(`/auth/oauth/${provider}/authorize`);
     return response.data;
   }
 

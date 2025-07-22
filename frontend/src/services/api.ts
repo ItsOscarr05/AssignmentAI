@@ -232,7 +232,7 @@ export const auth = {
 
   // OAuth methods
   getOAuthUrl: async (provider: string): Promise<{ url: string; state: string }> => {
-    const response = await api.get(`/auth/oauth/${provider}/url`);
+    const response = await api.get(`/auth/oauth/${provider}/authorize`);
     return response.data;
   },
 
