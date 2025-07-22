@@ -260,6 +260,26 @@ async def github_callback(
             "error": f"OAuth callback failed: {str(e)}"
         }
 
+@router.get("/google/callback")
+async def google_callback_get(request: Request, db: Session = Depends(get_db)):
+    """Handle Google OAuth callback via GET (for browser redirects)"""
+    try:
+        code = request.query_params.get("code")
+        state = request.query_params.get("state")
+        if not code or not state:
+            raise HTTPException(status_code=400, detail="Missing code or state in callback")
+        # Reuse the POST logic by creating a dummy request object
+        from pydantic import BaseModel
+        class DummyCallbackRequest(BaseModel):
+            code: str
+            state: str
+        dummy_request = DummyCallbackRequest(code=code, state=state)
+        return await google_callback(dummy_request, db)
+    except HTTPException:
+        raise
+    except Exception as e:
+        return {"error": f"OAuth callback failed: {str(e)}"}
+
 @router.post("/google/refresh")
 async def google_refresh(
     request: OAuthRefreshRequest,

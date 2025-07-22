@@ -11,6 +11,9 @@ RUN pnpm install
 
 COPY . .
 
+# Ensure production env variables are used at build time
+COPY .env.production .env
+
 RUN pnpm run build || (echo "Build failed. Showing errors:" && cat /app/tsconfig.tsbuildinfo 2>/dev/null || true && exit 1)
 
 # Production stage

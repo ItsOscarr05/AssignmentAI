@@ -251,10 +251,10 @@ const Register: React.FC = () => {
               justifyContent: 'center',
               alignItems: 'center',
               background: 'white',
-              p: { xs: 3, md: 4 },
-              height: { xs: 'auto', md: 'auto' },
-              minHeight: { xs: '65vh', md: 'auto' },
-              overflowY: 'auto',
+              p: { xs: 2, md: 3 },
+              height: { xs: 'auto', md: '100vh' },
+              minHeight: { xs: '65vh', md: '100vh' },
+              overflowY: 'hidden', // Remove scroll on all breakpoints
               position: 'relative',
             }}
           >
@@ -305,7 +305,7 @@ const Register: React.FC = () => {
                 gutterBottom
                 sx={{
                   fontFamily: "'Playfair Display', serif",
-                  fontSize: { xs: '1.8rem', md: '2.2rem' },
+                  fontSize: { xs: '2.2rem', md: '2.7rem' }, // Increase heading size
                   letterSpacing: '-0.02em',
                   color: 'text.primary',
                   mb: 2,
@@ -320,7 +320,7 @@ const Register: React.FC = () => {
                   fontFamily: "'Inter', sans-serif",
                   fontWeight: 300,
                   letterSpacing: '0.01em',
-                  fontSize: '0.95rem',
+                  fontSize: '0.85rem', // Reduce supporting text size
                 }}
               >
                 Join AssignmentAI to start managing your assignments
@@ -348,7 +348,11 @@ const Register: React.FC = () => {
                   onChange={handleChange}
                   sx={{
                     '& .MuiOutlinedInput-root': {
-                      height: '62px',
+                      height: '54px', // Reduced height
+                      fontSize: '0.95rem', // Reduce input text size
+                    },
+                    '& .MuiInputLabel-root': {
+                      fontSize: '0.95rem', // Reduce label size
                     },
                   }}
                 />
@@ -363,7 +367,11 @@ const Register: React.FC = () => {
                   onChange={handleChange}
                   sx={{
                     '& .MuiOutlinedInput-root': {
-                      height: '62px',
+                      height: '54px',
+                      fontSize: '0.95rem',
+                    },
+                    '& .MuiInputLabel-root': {
+                      fontSize: '0.95rem',
                     },
                   }}
                 />
@@ -378,7 +386,11 @@ const Register: React.FC = () => {
                   onChange={handleChange}
                   sx={{
                     '& .MuiOutlinedInput-root': {
-                      height: '62px',
+                      height: '54px',
+                      fontSize: '0.95rem',
+                    },
+                    '& .MuiInputLabel-root': {
+                      fontSize: '0.95rem',
                     },
                   }}
                 />
@@ -394,7 +406,11 @@ const Register: React.FC = () => {
                   onChange={handleChange}
                   sx={{
                     '& .MuiOutlinedInput-root': {
-                      height: '62px',
+                      height: '54px',
+                      fontSize: '0.95rem',
+                    },
+                    '& .MuiInputLabel-root': {
+                      fontSize: '0.95rem',
                     },
                   }}
                   InputProps={{
@@ -428,7 +444,11 @@ const Register: React.FC = () => {
                   onChange={handleChange}
                   sx={{
                     '& .MuiOutlinedInput-root': {
-                      height: '62px',
+                      height: '54px',
+                      fontSize: '0.95rem',
+                    },
+                    '& .MuiInputLabel-root': {
+                      fontSize: '0.95rem',
                     },
                   }}
                   InputProps={{
@@ -458,7 +478,7 @@ const Register: React.FC = () => {
                   sx={{
                     mt: 3,
                     mb: 2,
-                    py: 1.2,
+                    py: 1.0, // Reduced vertical padding
                     fontFamily: "'Inter', sans-serif",
                     fontWeight: 500,
                     fontSize: '0.95rem',
@@ -476,7 +496,7 @@ const Register: React.FC = () => {
                       color: 'text.secondary',
                       fontFamily: "'Inter', sans-serif",
                       fontWeight: 400,
-                      fontSize: '0.85rem',
+                      fontSize: '0.8rem', // Reduce divider text size
                     }}
                   >
                     or register with
@@ -488,16 +508,18 @@ const Register: React.FC = () => {
                     fullWidth
                     variant="outlined"
                     startIcon={<GoogleIcon />}
-                    onClick={() => {
-                      window.location.href = `${
-                        import.meta.env.VITE_API_URL
-                      }/api/auth/google/login`;
+                    onClick={async () => {
+                      const res = await fetch(
+                        `${import.meta.env.VITE_API_URL}/api/v1/auth/oauth/google/authorize`
+                      );
+                      const data = await res.json();
+                      window.location.href = data.authorization_url;
                     }}
                     sx={{
-                      py: 1.2,
+                      py: 1.0, // Reduced vertical padding
                       fontFamily: "'Inter', sans-serif",
                       fontWeight: 500,
-                      fontSize: '0.9rem',
+                      fontSize: '1rem',
                       textTransform: 'none',
                     }}
                     size="small"
@@ -508,16 +530,18 @@ const Register: React.FC = () => {
                     fullWidth
                     variant="outlined"
                     startIcon={<GitHubIcon />}
-                    onClick={() => {
-                      window.location.href = `${
-                        import.meta.env.VITE_API_URL
-                      }/api/auth/github/login`;
+                    onClick={async () => {
+                      const res = await fetch(
+                        `${import.meta.env.VITE_API_URL}/api/v1/auth/oauth/github/authorize`
+                      );
+                      const data = await res.json();
+                      window.location.href = data.authorization_url;
                     }}
                     sx={{
-                      py: 1.2,
+                      py: 1.0, // Reduced vertical padding
                       fontFamily: "'Inter', sans-serif",
                       fontWeight: 500,
-                      fontSize: '0.9rem',
+                      fontSize: '1rem',
                       textTransform: 'none',
                     }}
                     size="small"
@@ -533,7 +557,7 @@ const Register: React.FC = () => {
                     mt: 2,
                     fontFamily: "'Inter', sans-serif",
                     fontWeight: 400,
-                    fontSize: '0.9rem',
+                    fontSize: '0.9rem', // Reduce already have account text size
                   }}
                 >
                   Already have an account?{' '}
@@ -545,6 +569,7 @@ const Register: React.FC = () => {
                     sx={{
                       fontWeight: 500,
                       fontFamily: "'Inter', sans-serif",
+                      fontSize: '0.9rem', // Reduce sign in link size
                     }}
                   >
                     Sign in

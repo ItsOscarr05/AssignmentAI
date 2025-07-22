@@ -452,8 +452,12 @@ const Login: React.FC = () => {
                     fullWidth
                     variant="outlined"
                     startIcon={<GoogleIcon />}
-                    onClick={() => {
-                      /* Implement Google login */
+                    onClick={async () => {
+                      const res = await fetch(
+                        `${import.meta.env.VITE_API_URL}/api/v1/auth/oauth/google/authorize`
+                      );
+                      const data = await res.json();
+                      window.location.href = data.authorization_url;
                     }}
                     sx={{
                       py: 1.5,
@@ -468,8 +472,12 @@ const Login: React.FC = () => {
                     fullWidth
                     variant="outlined"
                     startIcon={<GitHubIcon />}
-                    onClick={() => {
-                      /* Implement GitHub login */
+                    onClick={async () => {
+                      const res = await fetch(
+                        `${import.meta.env.VITE_API_URL}/api/v1/auth/oauth/github/authorize`
+                      );
+                      const data = await res.json();
+                      window.location.href = data.authorization_url;
                     }}
                     sx={{
                       py: 1.5,
