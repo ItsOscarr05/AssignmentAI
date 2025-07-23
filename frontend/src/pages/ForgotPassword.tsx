@@ -117,7 +117,7 @@ const ForgotPassword: React.FC = () => {
                 sx={{
                   fontFamily: "'Playfair Display', serif",
                   fontSize: { xs: '2.5rem', sm: '2.8rem', md: '3.5rem' },
-                  letterSpacing: '-0.02em',
+                  letterSpacing: '0em',
                   mb: 1,
                 }}
               >

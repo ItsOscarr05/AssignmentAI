@@ -434,7 +434,7 @@ const Landing: React.FC = () => {
               width: 'fit-content',
               mx: { xs: 'auto', sm: 0, md: 0 },
               ml: { xs: 'auto', sm: 'auto', md: 'auto' },
-              mr: { xs: '95px', sm: 0, md: 0 },
+              mr: { xs: '75px', sm: 0, md: 0 },
             }}
           >
             <MuiLink

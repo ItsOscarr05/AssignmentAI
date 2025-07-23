@@ -11,11 +11,13 @@ from app.core.security import create_access_token
 from app.database import get_db
 from app.models.user import User
 from app.core.config import settings
+from app.core.redis_client import redis_client
+
+OAUTH_STATE_TTL = 600  # 10 minutes
 
 router = APIRouter()
 
-# Store OAuth states temporarily (in production, use Redis or database)
-oauth_states = {}
+# Remove the in-memory oauth_states dict
 
 class OAuthCallbackRequest(BaseModel):
     code: str
@@ -30,10 +32,7 @@ async def google_authorize():
     try:
         # Generate a secure state parameter
         state = secrets.token_urlsafe(32)
-        oauth_states[state] = {
-            "provider": "google",
-            "created_at": datetime.utcnow()
-        }
+        redis_client.setex(f"oauth_state:{state}", OAUTH_STATE_TTL, "google")
         
         # Get Google OAuth configuration
         config = oauth_config.get_provider_config("google")
@@ -64,10 +63,7 @@ async def github_authorize():
     try:
         # Generate a secure state parameter
         state = secrets.token_urlsafe(32)
-        oauth_states[state] = {
-            "provider": "github",
-            "created_at": datetime.utcnow()
-        }
+        redis_client.setex(f"oauth_state:{state}", OAUTH_STATE_TTL, "github")
         
         # Get GitHub OAuth configuration
         config = oauth_config.get_provider_config("github")
@@ -99,12 +95,11 @@ async def google_callback(
 ):
     """Handle Google OAuth callback"""
     try:
-        # Validate state parameter
-        if request.state not in oauth_states or oauth_states[request.state]["provider"] != "google":
+        # Validate state parameter using Redis
+        provider = redis_client.get(f"oauth_state:{request.state}")
+        if not provider:
             raise HTTPException(status_code=400, detail="Invalid state parameter")
-        
-        # Clean up state
-        del oauth_states[request.state]
+        redis_client.delete(f"oauth_state:{request.state}")
         
         # Get Google OAuth configuration
         config = oauth_config.get_provider_config("google")
@@ -183,12 +178,11 @@ async def github_callback(
 ):
     """Handle GitHub OAuth callback"""
     try:
-        # Validate state parameter
-        if request.state not in oauth_states or oauth_states[request.state]["provider"] != "github":
+        # Validate state parameter using Redis
+        provider = redis_client.get(f"oauth_state:{request.state}")
+        if not provider:
             raise HTTPException(status_code=400, detail="Invalid state parameter")
-        
-        # Clean up state
-        del oauth_states[request.state]
+        redis_client.delete(f"oauth_state:{request.state}")
         
         # Get GitHub OAuth configuration
         config = oauth_config.get_provider_config("github")
@@ -268,11 +262,10 @@ async def facebook_callback(
     """Handle Facebook OAuth callback"""
     try:
         # Validate state parameter
-        if request.state not in oauth_states or oauth_states[request.state]["provider"] != "facebook":
+        provider = redis_client.get(f"oauth_state:{request.state}")
+        if not provider:
             raise HTTPException(status_code=400, detail="Invalid state parameter")
-        
-        # Clean up state
-        del oauth_states[request.state]
+        redis_client.delete(f"oauth_state:{request.state}")
         
         # Get Facebook OAuth configuration
         config = oauth_config.get_provider_config("facebook")
@@ -352,11 +345,10 @@ async def apple_callback(
     """Handle Apple OAuth callback"""
     try:
         # Validate state parameter
-        if request.state not in oauth_states or oauth_states[request.state]["provider"] != "apple":
+        provider = redis_client.get(f"oauth_state:{request.state}")
+        if not provider:
             raise HTTPException(status_code=400, detail="Invalid state parameter")
-        
-        # Clean up state
-        del oauth_states[request.state]
+        redis_client.delete(f"oauth_state:{request.state}")
         
         # Get Apple OAuth configuration
         config = oauth_config.get_provider_config("apple")
