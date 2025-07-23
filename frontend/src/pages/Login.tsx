@@ -453,11 +453,20 @@ const Login: React.FC = () => {
                     variant="outlined"
                     startIcon={<GoogleIcon />}
                     onClick={async () => {
-                      const res = await fetch(
-                        `${import.meta.env.VITE_API_URL}/api/v1/auth/oauth/google/authorize`
-                      );
-                      const data = await res.json();
-                      window.location.href = data.authorization_url;
+                      try {
+                        const authService = (
+                          await import('../services/authManager')
+                        ).AuthManager.getInstance();
+                        const response = await authService.getOAuthUrl('google');
+                        if (response && response.url) {
+                          window.location.href = response.url;
+                        } else {
+                          console.error('Invalid OAuth response:', response);
+                        }
+                      } catch (error) {
+                        console.error('Google OAuth error:', error);
+                        setError('Failed to connect to Google. Please try again.');
+                      }
                     }}
                     sx={{
                       py: 1.5,
@@ -473,11 +482,20 @@ const Login: React.FC = () => {
                     variant="outlined"
                     startIcon={<GitHubIcon />}
                     onClick={async () => {
-                      const res = await fetch(
-                        `${import.meta.env.VITE_API_URL}/api/v1/auth/oauth/github/authorize`
-                      );
-                      const data = await res.json();
-                      window.location.href = data.authorization_url;
+                      try {
+                        const authService = (
+                          await import('../services/authManager')
+                        ).AuthManager.getInstance();
+                        const response = await authService.getOAuthUrl('github');
+                        if (response && response.url) {
+                          window.location.href = response.url;
+                        } else {
+                          console.error('Invalid OAuth response:', response);
+                        }
+                      } catch (error) {
+                        console.error('GitHub OAuth error:', error);
+                        setError('Failed to connect to GitHub. Please try again.');
+                      }
                     }}
                     sx={{
                       py: 1.5,
