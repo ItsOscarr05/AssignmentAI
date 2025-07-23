@@ -25,6 +25,9 @@ const Settings = lazy(() => import('./pages/Settings'));
 const Terms = lazy(() => import('./pages/Terms'));
 const Workshop = lazy(() => import('./pages/Workshop'));
 const AssignmentDetail = lazy(() => import('./components/assignments/AssignmentDetail'));
+const OAuthCallback = lazy(() =>
+  import('./components/auth/OAuthCallback').then(module => ({ default: module.OAuthCallback }))
+);
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -90,6 +93,16 @@ export const AppRouter = () => (
               <Suspense fallback={suspenseFallback}>
                 <PageTransition>
                   <ResetPassword />
+                </PageTransition>
+              </Suspense>
+            }
+          />
+          <Route
+            path="/auth/callback"
+            element={
+              <Suspense fallback={suspenseFallback}>
+                <PageTransition>
+                  <OAuthCallback />
                 </PageTransition>
               </Suspense>
             }

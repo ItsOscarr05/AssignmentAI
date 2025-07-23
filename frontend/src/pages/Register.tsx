@@ -254,7 +254,7 @@ const Register: React.FC = () => {
               p: { xs: 2, md: 3 },
               height: { xs: 'auto', md: '100vh' },
               minHeight: { xs: '65vh', md: '100vh' },
-              overflowY: 'hidden', // Remove scroll on all breakpoints
+              overflowY: 'auto', // Enable scrolling
               position: 'relative',
             }}
           >
