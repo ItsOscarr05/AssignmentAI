@@ -323,10 +323,19 @@ const Landing: React.FC = () => {
         setTotalUsers(userCount);
       } catch (error) {
         console.error('Error fetching stats:', error);
+        // Don't redirect on error, just use default value
         setTotalUsers(10000);
       }
     };
-    fetchStats();
+
+    // Only fetch stats if user is authenticated
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetchStats();
+    } else {
+      // Use default value for unauthenticated users
+      setTotalUsers(10000);
+    }
   }, []);
 
   useEffect(() => {
@@ -383,17 +392,17 @@ const Landing: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               marginRight: { xs: 0, sm: -10, md: -10 },
-              marginLeft: { xs: 0, sm: -4, md: -2 },
+              marginLeft: { xs: -1, sm: -1.5, md: 0.5 },
               flexShrink: 0,
               mb: { xs: 1, sm: 0, md: 0 },
             }}
           >
             <Box
               component="img"
-              src="/New_AssignmentAI_Logo_Transparent.png"
+              src="/scroll_transparent.png"
               alt="AI Logo"
               sx={{
-                height: { xs: '4rem', sm: '5.5rem', md: '6rem' },
+                height: { xs: '3rem', sm: '4.5rem', md: '5rem' },
                 width: 'auto',
                 display: 'block',
               }}
@@ -425,7 +434,7 @@ const Landing: React.FC = () => {
               width: 'fit-content',
               mx: { xs: 'auto', sm: 0, md: 0 },
               ml: { xs: 'auto', sm: 'auto', md: 'auto' },
-              mr: { xs: '60px', sm: 0, md: 0 },
+              mr: { xs: '95px', sm: 0, md: 0 },
             }}
           >
             <MuiLink

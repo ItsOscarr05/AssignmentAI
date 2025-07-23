@@ -143,7 +143,11 @@ const ResetPassword: React.FC = () => {
           }}
         >
           <Box sx={{ mb: 3, textAlign: 'center' }}>
-            <img src="/logo.png" alt="Logo" style={{ height: 40, marginBottom: 16 }} />
+            <img
+              src="/scroll_transparent.png"
+              alt="Logo"
+              style={{ height: 35, marginBottom: 16 }}
+            />
             <Typography
               variant="h4"
               component="h1"

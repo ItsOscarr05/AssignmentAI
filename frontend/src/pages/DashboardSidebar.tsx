@@ -79,7 +79,7 @@ const Dashboard: React.FC = () => {
         }}
       >
         <img
-          src="/New_AssignmentAI_Logo_Transparent.png"
+          src="/scroll_transparent.png"
           alt="Logo"
           style={{ maxHeight: 48, width: 'auto', marginRight: -25, display: 'block' }}
         />

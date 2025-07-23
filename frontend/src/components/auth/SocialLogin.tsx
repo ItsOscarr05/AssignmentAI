@@ -13,7 +13,12 @@ export const SocialLogin: React.FC<SocialLoginProps> = ({ isLoading = false }) =
   const handleSocialLogin = async (provider: string) => {
     try {
       const response = await authService.getOAuthUrl(provider);
-      window.location.href = response.url;
+      console.log('OAuth response:', response); // Debug log
+      if (response && response.url) {
+        window.location.href = response.url;
+      } else {
+        console.error('Invalid OAuth response:', response);
+      }
     } catch (error) {
       console.error(`Failed to initiate ${provider} login:`, error);
     }

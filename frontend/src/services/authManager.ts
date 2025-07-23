@@ -137,8 +137,18 @@ class AuthManager {
   }
 
   async getOAuthUrl(provider: string): Promise<{ url: string }> {
-    const response = await api.get<{ url: string }>(`/auth/oauth/${provider}/authorize`);
-    return response.data;
+    console.log(`Getting OAuth URL for provider: ${provider}`);
+    console.log(`API base URL: ${import.meta.env.VITE_API_URL}`);
+
+    try {
+      const response = await api.get<{ url: string }>(`/auth/oauth/${provider}/authorize`);
+      console.log('OAuth response:', response);
+      console.log('Response data:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('OAuth URL error:', error);
+      throw error;
+    }
   }
 
   async handleOAuthCallback(provider: string, code: string, state: string): Promise<Token> {

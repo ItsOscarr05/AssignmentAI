@@ -45,8 +45,15 @@ api.interceptors.response.use(
           // Clear invalid token
           localStorage.removeItem('token');
           delete api.defaults.headers.common['Authorization'];
-          // Only redirect if not already on login page
-          if (!window.location.pathname.includes('/login')) {
+          // Only redirect if not already on login page and not on landing page
+          const currentPath = window.location.pathname;
+          if (
+            !currentPath.includes('/login') &&
+            !currentPath.includes('/landing') &&
+            currentPath !== '/' &&
+            !currentPath.includes('/register') &&
+            !currentPath.includes('/forgot-password')
+          ) {
             window.location.href = '/login';
           }
           break;
@@ -81,9 +88,9 @@ export const auth = {
   login: async (email: string, password: string) => {
     try {
       // OAuth2PasswordRequestForm expects username and password
-      const response = await api.post('/auth/login', { 
-        username: email, 
-        password: password 
+      const response = await api.post('/auth/login', {
+        username: email,
+        password: password,
       });
       if (response.data.access_token) {
         localStorage.setItem('token', response.data.access_token);

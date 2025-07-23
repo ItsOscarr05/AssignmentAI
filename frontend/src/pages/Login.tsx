@@ -166,10 +166,10 @@ const Login: React.FC = () => {
             >
               <Box
                 component="img"
-                src="/New_AssignmentAI_Logo_Transparent.png"
+                src="/scroll_transparent.png"
                 alt="Logo"
                 sx={{
-                  height: { xs: 280, sm: 320, md: 450 },
+                  height: { xs: 220, sm: 260, md: 360 },
                   mb: { xs: -1, md: -2.5 },
                   width: 'auto',
                   maxWidth: '100%',

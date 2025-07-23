@@ -1,12 +1,19 @@
 import { Box, Button, Container, Typography } from '@mui/material';
 import React from 'react';
+import { AuthManager } from '../../services/authManager';
 
 export const Login: React.FC = () => {
+  const authService = AuthManager.getInstance();
+
   const handleOAuthLogin = async (provider: string) => {
     try {
-      // Redirect to OAuth provider
-      const apiUrl = import.meta.env.VITE_API_URL;
-      window.location.href = `${apiUrl}/api/auth/${provider}/login`;
+      const response = await authService.getOAuthUrl(provider);
+      console.log('OAuth response:', response); // Debug log
+      if (response && response.url) {
+        window.location.href = response.url;
+      } else {
+        console.error('Invalid OAuth response:', response);
+      }
     } catch (error) {
       console.error('OAuth login failed:', error);
     }
