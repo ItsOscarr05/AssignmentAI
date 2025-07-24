@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import secrets
 from typing import Optional
 from pydantic import BaseModel
+import logging
 
 from app.core.oauth import oauth_config
 from app.core.security import create_access_token
@@ -16,6 +17,8 @@ from app.core.redis_client import redis_client
 OAUTH_STATE_TTL = 600  # 10 minutes
 
 router = APIRouter()
+
+logger = logging.getLogger(__name__)
 
 # Remove the in-memory oauth_states dict
 
@@ -32,7 +35,9 @@ async def google_authorize():
     try:
         # Generate a secure state parameter
         state = secrets.token_urlsafe(32)
+        logger.info(f"Generated OAuth state: {state} for provider: google")
         redis_client.setex(f"oauth_state:{state}", OAUTH_STATE_TTL, "google")
+        logger.info(f"Storing in Redis: oauth_state:{state} -> google")
         
         # Get Google OAuth configuration
         config = oauth_config.get_provider_config("google")
@@ -95,11 +100,17 @@ async def google_callback(
 ):
     """Handle Google OAuth callback"""
     try:
+        # Log all states in Redis before checking
+        all_states = redis_client.keys('oauth_state:*')
+        logger.info(f"All states in Redis at callback: {all_states}")
+        logger.info(f"State received in callback: {request.state}")
         # Validate state parameter using Redis
         provider = redis_client.get(f"oauth_state:{request.state}")
         if not provider:
+            logger.error(f"State {request.state} not found in Redis!")
             raise HTTPException(status_code=400, detail="Invalid state parameter")
         redis_client.delete(f"oauth_state:{request.state}")
+        logger.info(f"Deleted state from Redis: oauth_state:{request.state}")
         
         # Get Google OAuth configuration
         config = oauth_config.get_provider_config("google")
