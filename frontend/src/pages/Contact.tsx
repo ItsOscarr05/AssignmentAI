@@ -1,5 +1,6 @@
 import { AccessTime, EmailOutlined, HelpOutline, SupportAgent } from '@mui/icons-material';
 import {
+  Alert,
   Box,
   Button,
   Container,
@@ -13,9 +14,23 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import RedStarField from '../components/RedStarField';
 import PageHeader from '../components/common/PageHeader';
+import { contactService } from '../services/contactService';
+
+interface ContactFormData {
+  name: string;
+  email: string;
+  message: string;
+}
 
 const Contact = () => {
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [formData, setFormData] = useState<ContactFormData>({
+    name: '',
+    email: '',
+    message: '',
+  });
 
   // Starfield logic
   const mainContentRef = useRef<HTMLDivElement>(null);
@@ -31,13 +46,40 @@ const Contact = () => {
     return () => window.removeEventListener('resize', updateHeight);
   }, []);
 
+  const handleInputChange =
+    (field: keyof ContactFormData) =>
+    (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setFormData((prev: ContactFormData) => ({
+        ...prev,
+        [field]: event.target.value,
+      }));
+      setError(null); // Clear error when user starts typing
+    };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setIsSubmitting(true);
+
+    try {
+      await contactService.submitContactForm(formData);
+      setSubmitted(true);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to send message. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <Box
       ref={mainContentRef}
       sx={{ position: 'relative', bgcolor: 'white', width: '100%', overflow: 'hidden' }}
     >
       <RedStarField starCount={2500} contentHeight={contentHeight} />
-      <Container sx={{ py: { xs: 8, md: 12 }, position: 'relative', zIndex: 1 }}>
+      <Container
+        sx={{ pt: { xs: 4, md: 6 }, pb: { xs: 8, md: 12 }, position: 'relative', zIndex: 1 }}
+      >
         <Paper
           sx={{
             p: { xs: 3, md: 6 },
@@ -70,52 +112,72 @@ const Contact = () => {
                   <Typography variant="h6" sx={{ mb: 2 }}>
                     Thank you for reaching out!
                   </Typography>
-                  <Typography variant="body1" color="text.secondary">
+                  <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
                     Your message has been received. Our team will get back to you as soon as
                     possible.
                   </Typography>
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    onClick={() => {
+                      setSubmitted(false);
+                      setFormData({ name: '', email: '', message: '' });
+                      setError(null);
+                    }}
+                    sx={{ fontWeight: 600 }}
+                  >
+                    Send Another Message
+                  </Button>
                 </Box>
               ) : (
-                <Box
-                  component="form"
-                  onSubmit={e => {
-                    e.preventDefault();
-                    setSubmitted(true);
-                  }}
-                  sx={{ width: '100%' }}
-                >
+                <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
+                  {error && (
+                    <Alert severity="error" sx={{ mb: 2 }}>
+                      {error}
+                    </Alert>
+                  )}
                   <Stack spacing={2}>
                     <TextField
                       label="Your Name"
                       name="name"
+                      value={formData.name}
+                      onChange={handleInputChange('name')}
                       required
                       fullWidth
                       variant="outlined"
+                      disabled={isSubmitting}
                     />
                     <TextField
                       label="Your Email Address"
                       name="email"
                       type="email"
+                      value={formData.email}
+                      onChange={handleInputChange('email')}
                       required
                       fullWidth
                       variant="outlined"
+                      disabled={isSubmitting}
                     />
                     <TextField
                       label="Your Message"
                       name="message"
+                      value={formData.message}
+                      onChange={handleInputChange('message')}
                       required
                       fullWidth
                       multiline
                       minRows={4}
                       variant="outlined"
+                      disabled={isSubmitting}
                     />
                     <Button
                       type="submit"
                       variant="contained"
                       color="primary"
+                      disabled={isSubmitting}
                       sx={{ px: 4, fontWeight: 600, alignSelf: 'flex-end' }}
                     >
-                      Send Message
+                      {isSubmitting ? 'Sending...' : 'Send Message'}
                     </Button>
                   </Stack>
                 </Box>
@@ -124,7 +186,7 @@ const Contact = () => {
             <Grid item xs={12} md={5}>
               <Box sx={{ pl: { md: 2 }, pt: { xs: 4, md: 0 } }}>
                 <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: 'primary.main' }}>
-                  Other Ways to Reach Us
+                  Support Contact Info
                 </Typography>
                 <Stack spacing={2}>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
