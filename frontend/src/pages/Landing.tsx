@@ -35,6 +35,7 @@ import {
   DesignServicesOutlined,
   Diamond,
   DiamondOutlined,
+  EmailOutlined,
   FormatQuoteOutlined,
   GppGoodOutlined,
   LibraryBooksOutlined,
@@ -69,11 +70,6 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 // Lazy load icons
-const EmailIcon = lazy(() =>
-  import('@mui/icons-material/Email').then(module => ({
-    default: module.default,
-  }))
-);
 const EmojiEvents = lazy(() =>
   import('@mui/icons-material/EmojiEvents').then(module => ({
     default: module.default,
@@ -1972,7 +1968,7 @@ const Landing: React.FC = () => {
               sx={{ mb: 4 }}
             >
               <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
-                <EmailIcon sx={{ color: '#D32F2F' }} />
+                <EmailOutlined sx={{ color: '#D32F2F' }} />
                 <Typography
                   variant="h6"
                   color="text.secondary"
