@@ -21,8 +21,8 @@ import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
-import { getSocialLoginUrl } from '../../config/socialLogin';
 import { useAuth } from '../../contexts/AuthContext';
+import { AuthManager } from '../../services/authManager';
 import { errorShake, fadeIn, pulse, scaleIn, slideIn, successCheck } from '../../styles/animations';
 import { responsiveStyles } from '../../styles/breakpoints';
 import '../../styles/transitions.css';
@@ -107,8 +107,13 @@ const SignUpForm: React.FC = () => {
     try {
       setIsSubmittingSocial(true);
       setCurrentProvider(provider);
-      const url = getSocialLoginUrl(provider);
-      window.location.href = url;
+      const authManager = AuthManager.getInstance();
+      const response = await authManager.getOAuthUrl(provider);
+      if (response && response.url) {
+        window.location.href = response.url;
+      } else {
+        throw new Error('Failed to get OAuth URL');
+      }
     } catch (error) {
       setError(`Failed to initiate ${provider} registration. Please try again.`);
     } finally {
