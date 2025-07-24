@@ -1,11 +1,15 @@
 import { Box, Button, Container, Typography } from '@mui/material';
-import React from 'react';
+import React, { useState } from 'react';
 import { AuthManager } from '../../services/authManager';
 
 export const Login: React.FC = () => {
   const authService = AuthManager.getInstance();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleOAuthLogin = async (provider: string) => {
+    if (isLoading) return; // Prevent multiple requests
+
+    setIsLoading(true);
     try {
       const response = await authService.getOAuthUrl(provider);
       console.log('OAuth response:', response); // Debug log
@@ -13,9 +17,11 @@ export const Login: React.FC = () => {
         window.location.href = response.url;
       } else {
         console.error('Invalid OAuth response:', response);
+        setIsLoading(false);
       }
     } catch (error) {
       console.error('OAuth login failed:', error);
+      setIsLoading(false);
     }
   };
 
@@ -31,17 +37,19 @@ export const Login: React.FC = () => {
             variant="contained"
             color="primary"
             onClick={() => handleOAuthLogin('google')}
+            disabled={isLoading}
             sx={{ mb: 2 }}
           >
-            Sign in with Google
+            {isLoading ? 'Redirecting...' : 'Sign in with Google'}
           </Button>
           <Button
             fullWidth
             variant="contained"
             color="primary"
             onClick={() => handleOAuthLogin('github')}
+            disabled={isLoading}
           >
-            Sign in with GitHub
+            {isLoading ? 'Redirecting...' : 'Sign in with GitHub'}
           </Button>
         </Box>
       </Box>
