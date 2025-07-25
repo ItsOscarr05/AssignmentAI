@@ -37,7 +37,6 @@ services:
       - ./backend/.env.production
     environment:
       - ENVIRONMENT=production
-      - DATABASE_URL=postgresql://assignmentai_user:WCaPS+l7rs8mmsjw74yn+a6n4rEvrzfo0K4G2Xebn50=@db:5432/assignmentai_prod
       - REDIS_URL=redis://redis:6379
     networks:
       - app-network
