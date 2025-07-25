@@ -177,7 +177,20 @@ def login(
             "access_token": access_token,
             "token_type": "bearer",
             "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,  # Convert to seconds
-            "requires_2fa": False
+            "requires_2fa": False,
+            "user": {
+                "id": str(user.id),
+                "email": user.email,
+                "name": user.name,
+                "role": "student",
+                "firstName": user.name.split(" ")[0] if user.name else "",
+                "lastName": " ".join(user.name.split(" ")[1:]) if user.name and len(user.name.split(" ")) > 1 else "",
+                "bio": user.bio or "",
+                "location": user.location or "",
+                "avatar": user.avatar or "",
+                "createdAt": user.created_at.isoformat() if user.created_at else "",
+                "updatedAt": user.updated_at.isoformat() if user.updated_at else ""
+            }
         }
     except HTTPException:
         raise
