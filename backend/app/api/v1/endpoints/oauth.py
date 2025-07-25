@@ -297,11 +297,15 @@ async def github_callback(
 @router.get("/google/callback")
 async def google_callback_get(request: Request, db: Session = Depends(get_db)):
     """Handle Google OAuth callback via GET (for browser redirects)"""
+    print("=== GET CALLBACK ENDPOINT ENTERED (PRINT) ===")
+    logger.info("=== GET CALLBACK ENDPOINT ENTERED (LOGGER) ===")
     try:
-        logger.info("GET callback endpoint called")
+        print("GET callback endpoint called (PRINT)")
+        logger.info("GET callback endpoint called (LOGGER)")
         code = request.query_params.get("code")
         state = request.query_params.get("state")
-        logger.info(f"Code: {code[:20]}... State: {state}")
+        print(f"Code: {code[:20]}... State: {state} (PRINT)")
+        logger.info(f"Code: {code[:20]}... State: {state} (LOGGER)")
         
         if not code or not state:
             logger.error("Missing code or state in callback")
