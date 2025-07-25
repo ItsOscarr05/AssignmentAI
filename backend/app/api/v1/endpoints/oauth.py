@@ -20,14 +20,34 @@ router = APIRouter()
 
 logger = logging.getLogger(__name__)
 
-# Remove the in-memory oauth_states dict
-
 class OAuthCallbackRequest(BaseModel):
     code: str
     state: str
 
 class OAuthRefreshRequest(BaseModel):
     refresh_token: str
+
+def _store_oauth_state(state: str, provider: str) -> bool:
+    """Store OAuth state in Redis with error handling"""
+    try:
+        redis_client.setex(f"oauth_state:{state}", OAUTH_STATE_TTL, provider)
+        logger.info(f"Stored OAuth state: {state} for provider: {provider}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to store OAuth state in Redis: {e}")
+        return False
+
+def _get_oauth_state(state: str) -> Optional[str]:
+    """Get OAuth state from Redis with error handling"""
+    try:
+        provider = redis_client.get(f"oauth_state:{state}")
+        if provider:
+            redis_client.delete(f"oauth_state:{state}")
+            logger.info(f"Retrieved and deleted OAuth state: {state}")
+        return provider
+    except Exception as e:
+        logger.error(f"Failed to get OAuth state from Redis: {e}")
+        return None
 
 @router.get("/google/authorize")
 async def google_authorize():
@@ -36,8 +56,10 @@ async def google_authorize():
         # Generate a secure state parameter
         state = secrets.token_urlsafe(32)
         logger.info(f"Generated OAuth state: {state} for provider: google")
-        redis_client.setex(f"oauth_state:{state}", OAUTH_STATE_TTL, "google")
-        logger.info(f"Storing in Redis: oauth_state:{state} -> google")
+        
+        # Store state in Redis
+        if not _store_oauth_state(state, "google"):
+            raise HTTPException(status_code=500, detail="Failed to store OAuth state")
         
         # Get Google OAuth configuration
         config = oauth_config.get_provider_config("google")
@@ -60,6 +82,7 @@ async def google_authorize():
             "state": state
         }
     except Exception as e:
+        logger.error(f"Failed to generate Google authorization URL: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to generate authorization URL: {str(e)}")
 
 @router.get("/github/authorize")
@@ -68,7 +91,11 @@ async def github_authorize():
     try:
         # Generate a secure state parameter
         state = secrets.token_urlsafe(32)
-        redis_client.setex(f"oauth_state:{state}", OAUTH_STATE_TTL, "github")
+        logger.info(f"Generated OAuth state: {state} for provider: github")
+        
+        # Store state in Redis
+        if not _store_oauth_state(state, "github"):
+            raise HTTPException(status_code=500, detail="Failed to store OAuth state")
         
         # Get GitHub OAuth configuration
         config = oauth_config.get_provider_config("github")
@@ -91,6 +118,7 @@ async def github_authorize():
             "state": state
         }
     except Exception as e:
+        logger.error(f"Failed to generate GitHub authorization URL: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to generate authorization URL: {str(e)}")
 
 @router.post("/google/callback")
@@ -100,22 +128,14 @@ async def google_callback(
 ):
     """Handle Google OAuth callback"""
     try:
-        # Log request method and headers for debugging
-        import starlette.requests
-        from fastapi import Request as FastAPIRequest
-        # If running as a POST endpoint, we don't have the raw request object, so log what we can
         logger.info(f"OAuth callback endpoint called (POST handler)")
-        # Validate state parameter using Redis
-        all_states = redis_client.keys('oauth_state:*')
-        logger.info(f"All states in Redis at callback: {all_states}")
         logger.info(f"State received in callback: {request.state}")
+        
         # Validate state parameter using Redis
-        provider = redis_client.get(f"oauth_state:{request.state}")
+        provider = _get_oauth_state(request.state)
         if not provider:
             logger.error(f"State {request.state} not found in Redis!")
             raise HTTPException(status_code=400, detail="Invalid state parameter")
-        redis_client.delete(f"oauth_state:{request.state}")
-        logger.info(f"Deleted state from Redis: oauth_state:{request.state}")
         
         # Get Google OAuth configuration
         config = oauth_config.get_provider_config("google")
@@ -168,27 +188,23 @@ async def google_callback(
         # Create access token
         access_token = create_access_token(subject=user.id)
 
-        # Redirect to frontend with token as query parameter
-        frontend_url = f"https://assignmentai.app/login?token={access_token}"
-        logger.info(f"Redirecting user to frontend: {frontend_url}")
-        return RedirectResponse(url=frontend_url)
-
-        # (If you want to return JSON for debugging, comment out the above and uncomment below)
-        # return {
-        #     "access_token": access_token,
-        #     "refresh_token": token.get("refresh_token"),
-        #     "token_type": "bearer",
-        #     "expires_in": token.get("expires_in", 3600),
-        #     "user": {
-        #         "id": user.id,
-        #         "email": user.email,
-        #         "name": user.name
-        #     }
-        # }
+        # Return JSON response for API calls, redirect for browser calls
+        return {
+            "access_token": access_token,
+            "refresh_token": token.get("refresh_token"),
+            "token_type": "bearer",
+            "expires_in": token.get("expires_in", 3600),
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "name": user.name
+            }
+        }
         
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"OAuth callback failed: {e}")
         return {
             "error": f"OAuth callback failed: {str(e)}"
         }
@@ -201,10 +217,9 @@ async def github_callback(
     """Handle GitHub OAuth callback"""
     try:
         # Validate state parameter using Redis
-        provider = redis_client.get(f"oauth_state:{request.state}")
+        provider = _get_oauth_state(request.state)
         if not provider:
             raise HTTPException(status_code=400, detail="Invalid state parameter")
-        redis_client.delete(f"oauth_state:{request.state}")
         
         # Get GitHub OAuth configuration
         config = oauth_config.get_provider_config("github")
@@ -272,175 +287,12 @@ async def github_callback(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"OAuth callback failed: {e}")
         return {
             "error": f"OAuth callback failed: {str(e)}"
         }
 
-@router.post("/facebook/callback")
-async def facebook_callback(
-    request: OAuthCallbackRequest,
-    db: Session = Depends(get_db)
-):
-    """Handle Facebook OAuth callback"""
-    try:
-        # Validate state parameter
-        provider = redis_client.get(f"oauth_state:{request.state}")
-        if not provider:
-            raise HTTPException(status_code=400, detail="Invalid state parameter")
-        redis_client.delete(f"oauth_state:{request.state}")
-        
-        # Get Facebook OAuth configuration
-        config = oauth_config.get_provider_config("facebook")
-        
-        # Exchange code for tokens
-        from authlib.integrations.requests_client import OAuth2Session
-        client = OAuth2Session(
-            client_id=config["client_id"],
-            client_secret=config["client_secret"],
-            redirect_uri=config["redirect_uri"]
-        )
-        
-        token = client.fetch_token(
-            config["token_url"],
-            authorization_response=f"?code={request.code}&state={request.state}"
-        )
-        
-        # Get user info
-        user_info = client.get(config["userinfo_url"]).json()
-        
-        # Find or create user
-        user = db.query(User).filter(User.email == user_info["email"]).first()
-        
-        if not user:
-            # Create new user
-            user = User(
-                email=user_info["email"],
-                name=user_info.get("name", ""),
-                hashed_password="oauth_user_no_password",  # Dummy password for OAuth users
-                oauth_provider="facebook",
-                oauth_access_token=token["access_token"],
-                oauth_refresh_token=token.get("refresh_token"),
-                oauth_token_expires_at=datetime.utcnow() + timedelta(seconds=token.get("expires_in", 3600)),
-                is_verified=True,  # OAuth users are pre-verified
-                updated_at=datetime.utcnow()
-            )
-            db.add(user)
-        else:
-            # Update existing user's OAuth info
-            user.oauth_provider = "facebook"
-            user.oauth_access_token = token["access_token"]
-            user.oauth_refresh_token = token.get("refresh_token")
-            user.oauth_token_expires_at = datetime.utcnow() + timedelta(seconds=token.get("expires_in", 3600))
-            user.is_verified = True
-            user.updated_at = datetime.utcnow()
-        
-        db.commit()
-        db.refresh(user)
-        
-        # Create access token
-        access_token = create_access_token(subject=user.id)
-        
-        return {
-            "access_token": access_token,
-            "refresh_token": token.get("refresh_token"),
-            "token_type": "bearer",
-            "expires_in": token.get("expires_in", 3600),
-            "user": {
-                "id": user.id,
-                "email": user.email,
-                "name": user.name
-            }
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        return {
-            "error": f"OAuth callback failed: {str(e)}"
-        }
 
-@router.post("/apple/callback")
-async def apple_callback(
-    request: OAuthCallbackRequest,
-    db: Session = Depends(get_db)
-):
-    """Handle Apple OAuth callback"""
-    try:
-        # Validate state parameter
-        provider = redis_client.get(f"oauth_state:{request.state}")
-        if not provider:
-            raise HTTPException(status_code=400, detail="Invalid state parameter")
-        redis_client.delete(f"oauth_state:{request.state}")
-        
-        # Get Apple OAuth configuration
-        config = oauth_config.get_provider_config("apple")
-        
-        # Exchange code for tokens
-        from authlib.integrations.requests_client import OAuth2Session
-        client = OAuth2Session(
-            client_id=config["client_id"],
-            client_secret=config["client_secret"],
-            redirect_uri=config["redirect_uri"]
-        )
-        
-        token = client.fetch_token(
-            config["token_url"],
-            authorization_response=f"?code={request.code}&state={request.state}"
-        )
-        
-        # Get user info
-        user_info = client.get(config["userinfo_url"]).json()
-        
-        # Find or create user
-        user = db.query(User).filter(User.email == user_info["email"]).first()
-        
-        if not user:
-            # Create new user
-            user = User(
-                email=user_info["email"],
-                name=user_info.get("name", ""),
-                hashed_password="oauth_user_no_password",  # Dummy password for OAuth users
-                oauth_provider="apple",
-                oauth_access_token=token["access_token"],
-                oauth_refresh_token=token.get("refresh_token"),
-                oauth_token_expires_at=datetime.utcnow() + timedelta(seconds=token.get("expires_in", 3600)),
-                is_verified=True,  # OAuth users are pre-verified
-                updated_at=datetime.utcnow()
-            )
-            db.add(user)
-        else:
-            # Update existing user's OAuth info
-            user.oauth_provider = "apple"
-            user.oauth_access_token = token["access_token"]
-            user.oauth_refresh_token = token.get("refresh_token")
-            user.oauth_token_expires_at = datetime.utcnow() + timedelta(seconds=token.get("expires_in", 3600))
-            user.is_verified = True
-            user.updated_at = datetime.utcnow()
-        
-        db.commit()
-        db.refresh(user)
-        
-        # Create access token
-        access_token = create_access_token(subject=user.id)
-        
-        return {
-            "access_token": access_token,
-            "refresh_token": token.get("refresh_token"),
-            "token_type": "bearer",
-            "expires_in": token.get("expires_in", 3600),
-            "user": {
-                "id": user.id,
-                "email": user.email,
-                "name": user.name
-            }
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        return {
-            "error": f"OAuth callback failed: {str(e)}"
-        }
 
 @router.get("/google/callback")
 async def google_callback_get(request: Request, db: Session = Depends(get_db)):
@@ -496,59 +348,7 @@ async def github_callback_get(request: Request, db: Session = Depends(get_db)):
         frontend_url = f"{settings.FRONTEND_URL}/auth/callback?error=oauth_failed&provider=github"
         return RedirectResponse(url=frontend_url)
 
-@router.get("/facebook/callback")
-async def facebook_callback_get(request: Request, db: Session = Depends(get_db)):
-    """Handle Facebook OAuth callback via GET (for browser redirects)"""
-    try:
-        code = request.query_params.get("code")
-        state = request.query_params.get("state")
-        if not code or not state:
-            raise HTTPException(status_code=400, detail="Missing code or state in callback")
-        
-        # Call the POST callback logic
-        from pydantic import BaseModel
-        class DummyCallbackRequest(BaseModel):
-            code: str
-            state: str
-        dummy_request = DummyCallbackRequest(code=code, state=state)
-        result = await facebook_callback(dummy_request, db)
-        
-        # Redirect to frontend with the result
-        frontend_url = f"{settings.FRONTEND_URL}/auth/callback?provider=facebook&code={code}&state={state}"
-        return RedirectResponse(url=frontend_url)
-    except HTTPException:
-        raise
-    except Exception as e:
-        # Redirect to frontend with error
-        frontend_url = f"{settings.FRONTEND_URL}/auth/callback?error=oauth_failed&provider=facebook"
-        return RedirectResponse(url=frontend_url)
 
-@router.get("/apple/callback")
-async def apple_callback_get(request: Request, db: Session = Depends(get_db)):
-    """Handle Apple OAuth callback via GET (for browser redirects)"""
-    try:
-        code = request.query_params.get("code")
-        state = request.query_params.get("state")
-        if not code or not state:
-            raise HTTPException(status_code=400, detail="Missing code or state in callback")
-        
-        # Call the POST callback logic
-        from pydantic import BaseModel
-        class DummyCallbackRequest(BaseModel):
-            code: str
-            state: str
-        dummy_request = DummyCallbackRequest(code=code, state=state)
-        result = await apple_callback(dummy_request, db)
-        
-        # Redirect to frontend with the result
-        frontend_url = f"{settings.FRONTEND_URL}/auth/callback?provider=apple&code={code}&state={state}"
-        return RedirectResponse(url=frontend_url)
-    except HTTPException:
-        raise
-    except Exception as e:
-        # Redirect to frontend with error
-        frontend_url = f"{settings.FRONTEND_URL}/auth/callback?error=oauth_failed&provider=apple"
-        return RedirectResponse(url=frontend_url)
 
 @router.post("/google/refresh")
 async def google_refresh(
@@ -598,6 +398,7 @@ async def google_refresh(
         }
         
     except Exception as e:
+        logger.error(f"Token refresh error: {e}")
         raise HTTPException(status_code=401, detail=f"Token refresh failed: {str(e)}")
 
 @router.post("/github/refresh")

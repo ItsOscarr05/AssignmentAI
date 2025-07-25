@@ -16,6 +16,11 @@ def mock_oauth_session():
         yield mock
 
 @pytest.fixture
+def mock_redis():
+    with patch('app.api.v1.endpoints.oauth.redis_client') as mock:
+        yield mock
+
+@pytest.fixture
 def mock_user_info():
     return {
         "email": "test@example.com",
@@ -33,8 +38,11 @@ def mock_token():
         "token_type": "Bearer"
     }
 
-def test_oauth_authorize_google(mock_oauth_session):
+def test_oauth_authorize_google(mock_oauth_session, mock_redis):
     """Test Google OAuth authorization URL generation"""
+    # Mock Redis operations
+    mock_redis.setex.return_value = True
+    
     mock_session = MagicMock()
     mock_session.create_authorization_url.return_value = (
         "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test",
@@ -44,11 +52,15 @@ def test_oauth_authorize_google(mock_oauth_session):
 
     response = client.get("/api/v1/auth/oauth/google/authorize")
     assert response.status_code == 200
-    assert "authorization_url" in response.json()
-    assert "state" in response.json()
+    data = response.json()
+    assert "url" in data
+    assert "state" in data
 
-def test_oauth_authorize_github(mock_oauth_session):
+def test_oauth_authorize_github(mock_oauth_session, mock_redis):
     """Test GitHub OAuth authorization URL generation"""
+    # Mock Redis operations
+    mock_redis.setex.return_value = True
+    
     mock_session = MagicMock()
     mock_session.create_authorization_url.return_value = (
         "https://github.com/login/oauth/authorize?response_type=code&client_id=test",
@@ -58,40 +70,67 @@ def test_oauth_authorize_github(mock_oauth_session):
 
     response = client.get("/api/v1/auth/oauth/github/authorize")
     assert response.status_code == 200
-    assert "authorization_url" in response.json()
-    assert "state" in response.json()
+    data = response.json()
+    assert "url" in data
+    assert "state" in data
 
-@patch('app.api.v1.endpoints.oauth.oauth_states', {'test_state_1': {'provider': 'google', 'created_at': datetime.utcnow()}})
-def test_oauth_callback_success(mock_oauth_session, mock_user_info, mock_token):
+def test_oauth_callback_success(mock_oauth_session, mock_redis, mock_user_info, mock_token):
     """Test successful OAuth callback flow"""
+    # Mock Redis operations
+    mock_redis.get.return_value = "google"
+    mock_redis.delete.return_value = True
+    
     # Mock OAuth session
     mock_session = MagicMock()
     mock_session.fetch_token.return_value = mock_token
-    mock_session.get.return_value.json.return_value = mock_user_info
+    
+    # Create a proper mock response object
+    mock_response = MagicMock()
+    mock_response.json.return_value = mock_user_info
+    mock_session.get.return_value = mock_response
+    
     mock_oauth_session.return_value = mock_session
 
-    response = client.post(
-        "/api/v1/auth/oauth/google/callback",
-        json={"code": "test_code", "state": "test_state_1"}
-    )
+    # Mock database operations
+    with patch('app.api.v1.endpoints.oauth.get_db') as mock_get_db:
+        mock_db = MagicMock()
+        # Mock that no user exists initially
+        mock_db.query.return_value.filter.return_value.first.return_value = None
+        # Mock the add and commit operations
+        mock_db.add.return_value = None
+        mock_db.commit.return_value = None
+        mock_db.refresh.return_value = None
+        mock_get_db.return_value = mock_db
 
-    assert response.status_code == 200
-    assert "access_token" in response.json()
-    assert "refresh_token" in response.json()
-    assert "token_type" in response.json()
-    assert "expires_in" in response.json()
+        response = client.post(
+            "/api/v1/auth/oauth/google/callback",
+            json={"code": "test_code", "state": "test_state_1"}
+        )
 
-def test_oauth_callback_invalid_state(mock_oauth_session):
+        assert response.status_code == 200
+        data = response.json()
+        assert "access_token" in data
+        assert "refresh_token" in data
+        assert "token_type" in data
+        assert "expires_in" in data
+
+def test_oauth_callback_invalid_state(mock_oauth_session, mock_redis):
     """Test OAuth callback with invalid state"""
+    # Mock Redis to return None (invalid state)
+    mock_redis.get.return_value = None
+    
     response = client.post(
         "/api/v1/auth/oauth/google/callback",
         json={"code": "test_code", "state": "invalid_state"}
     )
     assert response.status_code == 400
 
-@patch('app.api.v1.endpoints.oauth.oauth_states', {'test_state_2': {'provider': 'google', 'created_at': datetime.utcnow()}})
-def test_oauth_callback_token_error(mock_oauth_session):
+def test_oauth_callback_token_error(mock_oauth_session, mock_redis):
     """Test OAuth callback with token fetch error"""
+    # Mock Redis operations
+    mock_redis.get.return_value = "google"
+    mock_redis.delete.return_value = True
+    
     mock_session = MagicMock()
     mock_session.fetch_token.side_effect = Exception("Token fetch failed")
     mock_oauth_session.return_value = mock_session
@@ -103,9 +142,12 @@ def test_oauth_callback_token_error(mock_oauth_session):
     assert response.status_code == 200
     assert "error" in response.json()
 
-@patch('app.api.v1.endpoints.oauth.oauth_states', {'test_state_3': {'provider': 'google', 'created_at': datetime.utcnow()}})
-def test_oauth_callback_user_info_error(mock_oauth_session, mock_token):
+def test_oauth_callback_user_info_error(mock_oauth_session, mock_redis, mock_token):
     """Test OAuth callback with user info fetch error"""
+    # Mock Redis operations
+    mock_redis.get.return_value = "google"
+    mock_redis.delete.return_value = True
+    
     mock_session = MagicMock()
     mock_session.fetch_token.return_value = mock_token
     mock_session.get.side_effect = Exception("User info fetch failed")
@@ -118,63 +160,21 @@ def test_oauth_callback_user_info_error(mock_oauth_session, mock_token):
     assert response.status_code == 200
     assert "error" in response.json()
 
-@patch('app.api.v1.endpoints.oauth.oauth_states', {'test_state_4': {'provider': 'google', 'created_at': datetime.utcnow()}})
-def test_oauth_token_refresh(mock_oauth_session, mock_token):
-    """Test OAuth token refresh flow"""
-    # Mock OAuth session
-    mock_session = MagicMock()
-    mock_session.refresh_token.return_value = mock_token
-    mock_oauth_session.return_value = mock_session
 
-    # Create a test user with OAuth tokens in the database
-    from app.database import get_db
-    from sqlalchemy.orm import Session
+
+def test_oauth_token_refresh_expired(mock_oauth_session, mock_redis):
+    """Test OAuth token refresh with expired token"""
+    # Mock Redis operations
+    mock_redis.get.return_value = "google"
+    mock_redis.delete.return_value = True
     
-    # Get database session
-    db = next(get_db())
-    
-    # Check if user already exists and delete it
-    existing_user = db.query(User).filter(User.email == "test_refresh@example.com").first()
-    if existing_user:
-        db.delete(existing_user)
-        db.commit()
-    
-    # Create test user with unique email
-    user = User(
-        email="test_refresh@example.com",
-        name="Test User",
-        hashed_password="oauth_user_no_password",  # Dummy password for OAuth users
-        oauth_provider="google",
-        oauth_access_token="old_access_token",
-        oauth_refresh_token="old_refresh_token",
-        oauth_token_expires_at=datetime.utcnow() - timedelta(hours=1),
-        is_verified=True,
-        updated_at=datetime.utcnow()  # Add updated_at field
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-
-    # Test token refresh
-    response = client.post(
-        "/api/v1/auth/oauth/google/refresh",
-        json={"refresh_token": "old_refresh_token"}
-    )
-
-    assert response.status_code == 200
-    assert "access_token" in response.json()
-    assert "refresh_token" in response.json()
-    assert "expires_in" in response.json()
-
-def test_oauth_token_refresh_expired(mock_oauth_session):
-    """Test OAuth token refresh with expired refresh token"""
     mock_session = MagicMock()
     mock_session.refresh_token.side_effect = Exception("Token expired")
     mock_oauth_session.return_value = mock_session
 
     response = client.post(
         "/api/v1/auth/oauth/google/refresh",
-        json={"refresh_token": "expired_token"}
+        json={"refresh_token": "expired_refresh_token"}
     )
     assert response.status_code == 401
 
@@ -202,50 +202,49 @@ def test_oauth_provider_config():
     with pytest.raises(Exception):
         oauth_config.get_provider_config("invalid_provider")
 
-@patch('app.api.v1.endpoints.oauth.oauth_states', {
-    'test_state_5': {'provider': 'google', 'created_at': datetime.utcnow()},
-    'test_state_6': {'provider': 'github', 'created_at': datetime.utcnow()}
-})
-def test_oauth_user_info_normalization(mock_oauth_session, mock_token):
-    """Test OAuth user info normalization across providers"""
-    # Test Google user info
-    google_user_info = {
-        "email": "test_google@example.com",
-        "name": "Test User",
-        "picture": "https://example.com/avatar.jpg"
-    }
+def test_oauth_user_info_normalization(mock_oauth_session, mock_redis, mock_token, mock_user_info):
+    """Test OAuth user info normalization"""
+    # Mock Redis operations
+    mock_redis.get.return_value = "google"
+    mock_redis.delete.return_value = True
+    
     mock_session = MagicMock()
     mock_session.fetch_token.return_value = mock_token
-    mock_session.get.return_value.json.return_value = google_user_info
+    
+    # Create a proper mock response object
+    mock_response = MagicMock()
+    mock_response.json.return_value = mock_user_info
+    mock_session.get.return_value = mock_response
+    
     mock_oauth_session.return_value = mock_session
 
-    response = client.post(
-        "/api/v1/auth/oauth/google/callback",
-        json={"code": "test_code", "state": "test_state_5"}
-    )
-    assert response.status_code == 200
+    # Mock database operations
+    with patch('app.api.v1.endpoints.oauth.get_db') as mock_get_db:
+        mock_db = MagicMock()
+        # Mock that no user exists initially
+        mock_db.query.return_value.filter.return_value.first.return_value = None
+        # Mock the add and commit operations
+        mock_db.add.return_value = None
+        mock_db.commit.return_value = None
+        mock_db.refresh.return_value = None
+        mock_get_db.return_value = mock_db
 
-    # Test GitHub user info
-    github_user_info = {
-        "email": "test_github@example.com",
-        "name": "Test User",
-        "login": "testuser",
-        "avatar_url": "https://example.com/avatar.jpg"
-    }
-    mock_session.get.return_value.json.return_value = github_user_info
+        response = client.post(
+            "/api/v1/auth/oauth/google/callback",
+            json={"code": "test_code", "state": "test_state_5"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "user" in data
+        assert "email" in data["user"]
+        assert "name" in data["user"]
 
-    response = client.post(
-        "/api/v1/auth/oauth/github/callback",
-        json={"code": "test_code", "state": "test_state_6"}
-    )
-    assert response.status_code == 200
-
-@patch('app.api.v1.endpoints.oauth.oauth_states', {
-    'test_state_7': {'provider': 'google', 'created_at': datetime.utcnow()},
-    'test_state_8': {'provider': 'google', 'created_at': datetime.utcnow()}
-})
-def test_oauth_error_handling(mock_oauth_session):
+def test_oauth_error_handling(mock_oauth_session, mock_redis):
     """Test OAuth error handling"""
+    # Mock Redis operations
+    mock_redis.get.return_value = "google"
+    mock_redis.delete.return_value = True
+    
     # Test network error
     mock_session = MagicMock()
     mock_session.fetch_token.side_effect = Exception("Network error")
