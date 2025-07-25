@@ -294,6 +294,13 @@ async def github_callback(
 
 
 
+@router.get("/test")
+async def test_route():
+    """Test route to verify router is working"""
+    print("=== TEST ROUTE CALLED (PRINT) ===")
+    logger.info("=== TEST ROUTE CALLED (LOGGER) ===")
+    return {"message": "Test route working"}
+
 @router.get("/google/callback")
 async def google_callback_get(request: Request, db: Session = Depends(get_db)):
     """Handle Google OAuth callback via GET (for browser redirects)"""
