@@ -311,9 +311,16 @@ async def google_callback_get(request: Request, db: Session = Depends(get_db)):
         dummy_request = DummyCallbackRequest(code=code, state=state)
         result = await google_callback(dummy_request, db)
         
-        # Redirect to frontend with the result
-        frontend_url = f"{settings.FRONTEND_URL}/auth/callback?provider=google&code={code}&state={state}"
-        return RedirectResponse(url=frontend_url)
+        # Extract the access token from the result
+        if isinstance(result, dict) and "access_token" in result:
+            access_token = result["access_token"]
+            # Redirect to frontend with the token
+            frontend_url = f"{settings.FRONTEND_URL}/auth/callback?provider=google&token={access_token}"
+            return RedirectResponse(url=frontend_url)
+        else:
+            # Something went wrong, redirect with error
+            frontend_url = f"{settings.FRONTEND_URL}/auth/callback?error=oauth_failed&provider=google"
+            return RedirectResponse(url=frontend_url)
     except HTTPException:
         raise
     except Exception as e:
@@ -338,9 +345,16 @@ async def github_callback_get(request: Request, db: Session = Depends(get_db)):
         dummy_request = DummyCallbackRequest(code=code, state=state)
         result = await github_callback(dummy_request, db)
         
-        # Redirect to frontend with the result
-        frontend_url = f"{settings.FRONTEND_URL}/auth/callback?provider=github&code={code}&state={state}"
-        return RedirectResponse(url=frontend_url)
+        # Extract the access token from the result
+        if isinstance(result, dict) and "access_token" in result:
+            access_token = result["access_token"]
+            # Redirect to frontend with the token
+            frontend_url = f"{settings.FRONTEND_URL}/auth/callback?provider=github&token={access_token}"
+            return RedirectResponse(url=frontend_url)
+        else:
+            # Something went wrong, redirect with error
+            frontend_url = f"{settings.FRONTEND_URL}/auth/callback?error=oauth_failed&provider=github"
+            return RedirectResponse(url=frontend_url)
     except HTTPException:
         raise
     except Exception as e:
