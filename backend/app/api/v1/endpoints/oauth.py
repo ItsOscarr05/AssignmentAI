@@ -298,9 +298,13 @@ async def github_callback(
 async def google_callback_get(request: Request, db: Session = Depends(get_db)):
     """Handle Google OAuth callback via GET (for browser redirects)"""
     try:
+        logger.info("GET callback endpoint called")
         code = request.query_params.get("code")
         state = request.query_params.get("state")
+        logger.info(f"Code: {code[:20]}... State: {state}")
+        
         if not code or not state:
+            logger.error("Missing code or state in callback")
             raise HTTPException(status_code=400, detail="Missing code or state in callback")
         
         # Call the POST callback logic
@@ -309,21 +313,28 @@ async def google_callback_get(request: Request, db: Session = Depends(get_db)):
             code: str
             state: str
         dummy_request = DummyCallbackRequest(code=code, state=state)
+        logger.info("Calling POST callback logic")
         result = await google_callback(dummy_request, db)
+        logger.info(f"POST callback result type: {type(result)}")
+        logger.info(f"POST callback result: {result}")
         
         # Extract the access token from the result
         if isinstance(result, dict) and "access_token" in result:
             access_token = result["access_token"]
+            logger.info(f"Access token extracted: {access_token[:20]}...")
             # Redirect to frontend with the token
             frontend_url = f"{settings.FRONTEND_URL}/auth/callback?provider=google&token={access_token}"
+            logger.info(f"Redirecting to: {frontend_url}")
             return RedirectResponse(url=frontend_url)
         else:
+            logger.error(f"Invalid result format: {result}")
             # Something went wrong, redirect with error
             frontend_url = f"{settings.FRONTEND_URL}/auth/callback?error=oauth_failed&provider=google"
             return RedirectResponse(url=frontend_url)
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"GET callback exception: {e}")
         # Redirect to frontend with error
         frontend_url = f"{settings.FRONTEND_URL}/auth/callback?error=oauth_failed&provider=google"
         return RedirectResponse(url=frontend_url)
