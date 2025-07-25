@@ -69,50 +69,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const handleCallback = async (code: string, state: string) => {
-    try {
-      // Determine the provider from the state or URL parameters
-      // For now, we'll try to detect it from the current URL or use a default
-      const urlParams = new URLSearchParams(window.location.search);
-      const provider = urlParams.get('provider') || 'google'; // Default to google
-
-      // Call the backend OAuth callback endpoint
-      const response = await api.post(`/auth/oauth/${provider}/callback`, {
-        code,
-        state,
-      });
-
-      if (response.data.access_token) {
-        // Store the token
-        localStorage.setItem('token', response.data.access_token);
-        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.access_token}`;
-
-        // Set the user
-        const user = response.data.user || {
-          id: response.data.user?.id || 'oauth-user',
-          email: response.data.user?.email || 'oauth@example.com',
-          name: response.data.user?.name || 'OAuth User',
-          firstName: response.data.user?.name?.split(' ')[0] || 'OAuth',
-          lastName: response.data.user?.name?.split(' ').slice(1).join(' ') || 'User',
-          role: 'student',
-          bio: '',
-          location: '',
-          avatar: '',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-
-        setUser(user);
-        setIsMockUser(false);
-        localStorage.setItem('user', JSON.stringify(user));
-        localStorage.setItem('isMockUser', 'false');
-      }
-
-      return response.data;
-    } catch (error) {
-      console.error('Callback handling failed:', error);
-      throw error;
-    }
+  // Remove unused parameters from handleCallback
+  const handleCallback = async () => {
+    // This function is now a no-op since the backend handles the callback and redirects with the token.
+    return;
   };
 
   const logout = async () => {

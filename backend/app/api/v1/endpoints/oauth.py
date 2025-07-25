@@ -100,7 +100,12 @@ async def google_callback(
 ):
     """Handle Google OAuth callback"""
     try:
-        # Log all states in Redis before checking
+        # Log request method and headers for debugging
+        import starlette.requests
+        from fastapi import Request as FastAPIRequest
+        # If running as a POST endpoint, we don't have the raw request object, so log what we can
+        logger.info(f"OAuth callback endpoint called (POST handler)")
+        # Validate state parameter using Redis
         all_states = redis_client.keys('oauth_state:*')
         logger.info(f"All states in Redis at callback: {all_states}")
         logger.info(f"State received in callback: {request.state}")

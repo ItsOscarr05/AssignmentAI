@@ -32,7 +32,7 @@ const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
-  const { login } = useAuth();
+  const { login, mockLogin } = useAuth();
   const navigate = useNavigate();
 
   const validateEmail = (email: string) => {
@@ -507,6 +507,18 @@ const Login: React.FC = () => {
                     GitHub
                   </Button>
                 </Stack>
+                <Button
+                  type="button"
+                  fullWidth
+                  variant="outlined"
+                  color="secondary"
+                  sx={{ mt: 1, mb: 2 }}
+                  onClick={() => {
+                    mockLogin();
+                  }}
+                >
+                  Mock Login (Dev Only)
+                </Button>
 
                 <Typography
                   variant="body2"
