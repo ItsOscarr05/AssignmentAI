@@ -1,5 +1,5 @@
 import { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
-import { Assignment, AuthResponse, Class, Submission, User } from '../types';
+import { Assignment, Class, Submission, User } from '../types';
 import {
   AssignmentGenerationRequest,
   AssignmentGenerationResponse,
@@ -233,16 +233,6 @@ export const auth = {
   // OAuth methods
   getOAuthUrl: async (provider: string): Promise<{ url: string; state: string }> => {
     const response = await api.get(`/auth/oauth/${provider}/authorize`);
-    return response.data;
-  },
-
-  oauthCallback: async (provider: string, code: string, state: string): Promise<AuthResponse> => {
-    const response = await api.post<AuthResponse>(`/auth/oauth/${provider}/callback`, {
-      code,
-      state,
-    });
-    const { token } = response.data;
-    localStorage.setItem('token', token);
     return response.data;
   },
 };

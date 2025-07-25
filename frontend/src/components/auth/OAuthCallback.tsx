@@ -1,12 +1,10 @@
 import { Box, CircularProgress, Container, Typography } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
 
 export const OAuthCallback: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { handleCallback } = useAuth();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -14,33 +12,35 @@ export const OAuthCallback: React.FC = () => {
       const code = searchParams.get('code');
       const state = searchParams.get('state');
       const error = searchParams.get('error');
-      const provider = searchParams.get('provider') || 'google'; // Default to google
+      const token = searchParams.get('token');
 
       if (error) {
         setError('Authentication failed');
         return;
       }
 
-      if (!code || !state) {
-        setError('Invalid OAuth parameters');
+      // If we have a token, the backend has already processed the OAuth flow
+      if (token) {
+        localStorage.setItem('token', token);
+        navigate('/dashboard');
         return;
       }
 
-      try {
-        // Add provider to the URL so handleCallback can access it
-        const currentUrl = new URL(window.location.href);
-        currentUrl.searchParams.set('provider', provider);
-        window.history.replaceState({}, '', currentUrl.toString());
+      // If we have code and state but no token, something went wrong
+      if (code && state) {
+        setError('OAuth flow incomplete - no token received');
+        return;
+      }
 
-        await handleCallback(code, state);
-        navigate('/dashboard');
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Authentication failed');
+      // If we have no parameters at all, this might be a direct visit
+      if (!code && !state && !token) {
+        setError('Invalid OAuth parameters');
+        return;
       }
     };
 
     handleOAuthCallback();
-  }, [searchParams, handleCallback, navigate]);
+  }, [searchParams, navigate]);
 
   if (error) {
     return (

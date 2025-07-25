@@ -151,23 +151,6 @@ class AuthManager {
     }
   }
 
-  async handleOAuthCallback(provider: string, code: string, state: string): Promise<Token> {
-    const response = await api.post<Token>(`/auth/oauth/${provider}/callback`, {
-      code,
-      state,
-    });
-
-    if (response.data.access_token) {
-      this.setToken(response.data.access_token);
-      if (response.data.refresh_token) {
-        localStorage.setItem(REFRESH_TOKEN_KEY, response.data.refresh_token);
-        this.startRefreshTokenTimer(response.data.expires_in);
-      }
-    }
-
-    return response.data;
-  }
-
   async register(data: { email: string; password: string; firstName: string; lastName: string }) {
     const name = `${data.firstName} ${data.lastName}`.trim();
     return api.post('/auth/register', {
