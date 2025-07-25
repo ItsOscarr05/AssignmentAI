@@ -1,26 +1,35 @@
 import { Box, Button, Container, Typography } from '@mui/material';
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { AuthManager } from '../../services/authManager';
 
 export const Login: React.FC = () => {
   const authService = AuthManager.getInstance();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token');
+    if (token) {
+      localStorage.setItem('token', token);
+      // Optionally: set API auth header, fetch user profile, etc.
+      navigate('/dashboard');
+    }
+  }, [location, navigate]);
 
   const handleOAuthLogin = async (provider: string) => {
     if (isLoading) return; // Prevent multiple requests
-
     setIsLoading(true);
     try {
       const response = await authService.getOAuthUrl(provider);
-      console.log('OAuth response:', response); // Debug log
       if (response && response.url) {
         window.location.href = response.url;
       } else {
-        console.error('Invalid OAuth response:', response);
         setIsLoading(false);
       }
     } catch (error) {
-      console.error('OAuth login failed:', error);
       setIsLoading(false);
     }
   };

@@ -162,18 +162,24 @@ async def google_callback(
         
         # Create access token
         access_token = create_access_token(subject=user.id)
-        
-        return {
-            "access_token": access_token,
-            "refresh_token": token.get("refresh_token"),
-            "token_type": "bearer",
-            "expires_in": token.get("expires_in", 3600),
-            "user": {
-                "id": user.id,
-                "email": user.email,
-                "name": user.name
-            }
-        }
+
+        # Redirect to frontend with token as query parameter
+        frontend_url = f"https://assignmentai.app/login?token={access_token}"
+        logger.info(f"Redirecting user to frontend: {frontend_url}")
+        return RedirectResponse(url=frontend_url)
+
+        # (If you want to return JSON for debugging, comment out the above and uncomment below)
+        # return {
+        #     "access_token": access_token,
+        #     "refresh_token": token.get("refresh_token"),
+        #     "token_type": "bearer",
+        #     "expires_in": token.get("expires_in", 3600),
+        #     "user": {
+        #         "id": user.id,
+        #         "email": user.email,
+        #         "name": user.name
+        #     }
+        # }
         
     except HTTPException:
         raise
