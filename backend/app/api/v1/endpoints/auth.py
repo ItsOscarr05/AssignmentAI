@@ -61,6 +61,9 @@ def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):
+    # Debug: Print what we received
+    print(f"DEBUG: Received form_data: {form_data}")
+    print(f"DEBUG: username={form_data.username}, password={'*'*len(form_data.password) if form_data.password else 'None'}, grant_type={form_data.grant_type}")
     try:
         # Check rate limiting
         from app.core.rate_limit import get_rate_limiter
