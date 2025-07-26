@@ -55,7 +55,7 @@ async def get_csrf_token():
     csrf_token = secrets.token_urlsafe(32)
     return {"csrf_token": csrf_token}
 
-@router.post("/login")
+@router.post("/login", include_in_schema=False)
 async def login(
     request: Request,
 ):

@@ -165,12 +165,12 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Setup error handling
-app.add_exception_handler(HTTPException, http_exception_handler)  # type: ignore
-app.add_exception_handler(ValidationError, validation_exception_handler)  # type: ignore
-app.add_exception_handler(SQLAlchemyError, database_error_handler)  # type: ignore
-app.add_exception_handler(Exception, general_exception_handler)  # type: ignore
-app.add_exception_handler(RequestValidationError, request_validation_error_handler)  # type: ignore
+# Setup error handling - temporarily disabled for debugging
+# app.add_exception_handler(HTTPException, http_exception_handler)  # type: ignore
+# app.add_exception_handler(ValidationError, validation_exception_handler)  # type: ignore
+# app.add_exception_handler(SQLAlchemyError, database_error_handler)  # type: ignore
+# app.add_exception_handler(Exception, general_exception_handler)  # type: ignore
+# app.add_exception_handler(RequestValidationError, request_validation_error_handler)  # type: ignore
 
 # Configure CORS
 app.add_middleware(
