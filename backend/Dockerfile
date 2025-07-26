@@ -18,4 +18,4 @@ ENV PYTHONPATH=/usr/src/app
 EXPOSE 3000
 
 # Start the application
-CMD ["python", "app/main.py"]
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
