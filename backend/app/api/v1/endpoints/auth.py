@@ -55,7 +55,7 @@ async def get_csrf_token():
     csrf_token = secrets.token_urlsafe(32)
     return {"csrf_token": csrf_token}
 
-@router.post("/login", response_model=TokenWith2FA)
+@router.post("/login")
 def login(
     request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
@@ -176,6 +176,8 @@ def login(
         return {
             "access_token": access_token,
             "token_type": "bearer",
+            "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            "requires_2fa": False,
             "user": {
                 "id": str(user.id),
                 "email": user.email,
