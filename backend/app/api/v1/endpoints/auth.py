@@ -59,6 +59,7 @@ async def get_csrf_token():
 async def login(
     request: Request,
 ):
+    print("DEBUG: LOGIN FUNCTION CALLED!")
     # Debug: Let's see what we're actually receiving
     print(f"DEBUG: Request method: {request.method}")
     print(f"DEBUG: Request headers: {dict(request.headers)}")
