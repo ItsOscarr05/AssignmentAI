@@ -82,6 +82,9 @@ async def login(
     grant_type = form_data.get("grant_type", "")
     
     print(f"DEBUG: username={username}, password={'*'*len(password) if password else 'None'}, grant_type={grant_type}")
+    
+    # For now, just return success to see if we get here
+    return {"message": "Debug endpoint reached", "received_data": {"username": username, "grant_type": grant_type}}
     try:
         # Check rate limiting
         from app.core.rate_limit import get_rate_limiter
