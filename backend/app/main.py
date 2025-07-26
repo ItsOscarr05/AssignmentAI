@@ -1,3 +1,4 @@
+print("DEBUG: app/main.py is being imported!")
 import os
 import sys
 import logging
@@ -45,7 +46,11 @@ async def lifespan(app: FastAPI):
     # Startup
     print("DEBUG: Application startup beginning...")
     logging_service.info("Starting up AssignmentAI application")
-    await init_rate_limiter()
+    try:
+        await init_rate_limiter()
+        print("DEBUG: Rate limiter initialized successfully")
+    except Exception as e:
+        print(f"DEBUG: Rate limiter initialization failed: {e}")
     print("DEBUG: Application startup complete!")
     # Add any additional startup initialization here
     
@@ -53,7 +58,10 @@ async def lifespan(app: FastAPI):
     
     # Shutdown
     logging_service.info("Shutting down AssignmentAI application")
-    await close_rate_limiter()
+    try:
+        await close_rate_limiter()
+    except Exception as e:
+        print(f"DEBUG: Rate limiter shutdown failed: {e}")
     # Add any cleanup code here
 
 app = FastAPI(
