@@ -47,7 +47,7 @@ import base64
 from io import BytesIO
 
 router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
+# oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
 
 @router.get("/csrf-token")
 async def get_csrf_token():
