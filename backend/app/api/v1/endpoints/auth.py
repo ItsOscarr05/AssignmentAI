@@ -88,7 +88,7 @@ async def login(
         rate_limiter = get_rate_limiter(app=request.app)
         client_id = request.client.host
         # Try to find user by email
-        user = db.query(User).filter(User.email == form_data.username).first()
+        user = db.query(User).filter(User.email == username).first()
         # Check if rate limit exceeded
         if rate_limiter.is_rate_limited(client_id, "/api/v1/auth/login"):
             alert = SecurityAlert(
@@ -96,7 +96,7 @@ async def login(
                 alert_type="rate_limit_exceeded",
                 description=f"Rate limit exceeded for IP: {client_id}",
                 severity="medium",
-                alert_metadata={"ip_address": client_id, "username": form_data.username}
+                alert_metadata={"ip_address": client_id, "username": username}
             )
             db.add(alert)
             db.commit()
@@ -115,9 +115,9 @@ async def login(
             alert = SecurityAlert(
                 user_id=None,  # No user found
                 alert_type="failed_login",
-                description=f"Failed login attempt for email: {form_data.username}",
+                description=f"Failed login attempt for email: {username}",
                 severity="high",
-                alert_metadata={"ip_address": client_id, "username": form_data.username}
+                alert_metadata={"ip_address": client_id, "username": username}
             )
             db.add(alert)
             
@@ -136,7 +136,7 @@ async def login(
                 detail="Incorrect email or password"
             )
         
-        if not verify_password(form_data.password, str(user.hashed_password)):
+        if not verify_password(password, str(user.hashed_password)):
             # Log failed login attempt
             from app.models.security import AuditLog
             
@@ -145,7 +145,7 @@ async def login(
                 alert_type="failed_login",
                 description=f"Failed login attempt for user: {user.email}",
                 severity="high",
-                alert_metadata={"ip_address": client_id, "username": form_data.username}
+                alert_metadata={"ip_address": client_id, "username": username}
             )
             db.add(alert)
             
