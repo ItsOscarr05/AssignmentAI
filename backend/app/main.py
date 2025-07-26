@@ -195,40 +195,42 @@ app.add_middleware(
 )
 
 # Add security headers middleware
-app.add_middleware(SecurityMiddleware)
+# app.add_middleware(SecurityMiddleware)
 
 # Add rate limiting middleware
-app.add_middleware(RateLimitMiddleware, requests_per_minute=60)
+# app.add_middleware(RateLimitMiddleware, requests_per_minute=60)
 
 # Add other middleware
-app.add_middleware(ErrorHandlerMiddleware)
-app.add_middleware(LoggingMiddleware)
+# app.add_middleware(ErrorHandlerMiddleware)
+# app.add_middleware(LoggingMiddleware)
 
 # Add performance middleware
-app.add_middleware(
-    PerformanceMiddleware,
-    cache_ttl=settings.CACHE_TTL,
-    cache_enabled=settings.CACHE_ENABLED,
-    query_optimization_enabled=settings.QUERY_OPTIMIZATION_ENABLED
-)
+# app.add_middleware(
+#     PerformanceMiddleware,
+#     cache_ttl=settings.CACHE_TTL,
+#     cache_enabled=settings.CACHE_ENABLED,
+#     query_optimization_enabled=settings.QUERY_OPTIMIZATION_ENABLED
+# )
 
-app.add_middleware(
-    QueryOptimizationMiddleware,
-    enabled=settings.QUERY_OPTIMIZATION_ENABLED,
-    slow_query_threshold=settings.SLOW_QUERY_THRESHOLD
-)
+# app.add_middleware(
+#     QueryOptimizationMiddleware,
+#     enabled=settings.QUERY_OPTIMIZATION_ENABLED,
+#     slow_query_threshold=settings.SLOW_QUERY_THRESHOLD
+# )
 
 # Add file size limit middleware
-app.middleware("http")(file_size_limit_middleware)
+# app.middleware("http")(file_size_limit_middleware)
 
 # Add compression middleware
-app.add_middleware(GZipMiddleware, minimum_size=1000)
+# app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Include API router
+print("DEBUG: Including API router...")
 app.include_router(api_router, prefix=settings.API_V1_STR)
+print("DEBUG: API router included successfully")
 
 @app.get("/")
 async def root():
