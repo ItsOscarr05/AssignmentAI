@@ -56,14 +56,32 @@ async def get_csrf_token():
     return {"csrf_token": csrf_token}
 
 @router.post("/login")
-def login(
+async def login(
     request: Request,
-    form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):
-    # Debug: Print what we received
-    print(f"DEBUG: Received form_data: {form_data}")
-    print(f"DEBUG: username={form_data.username}, password={'*'*len(form_data.password) if form_data.password else 'None'}, grant_type={form_data.grant_type}")
+    # Debug: Let's see what we're actually receiving
+    print(f"DEBUG: Request method: {request.method}")
+    print(f"DEBUG: Request headers: {dict(request.headers)}")
+    
+    # Get raw body
+    body = await request.body()
+    print(f"DEBUG: Raw body: {body}")
+    
+    # Try to parse form data manually
+    try:
+        form_data = await request.form()
+        print(f"DEBUG: Form data: {form_data}")
+    except Exception as e:
+        print(f"DEBUG: Error parsing form: {e}")
+        form_data = {}
+    
+    # Extract values
+    username = form_data.get("username", "")
+    password = form_data.get("password", "")
+    grant_type = form_data.get("grant_type", "")
+    
+    print(f"DEBUG: username={username}, password={'*'*len(password) if password else 'None'}, grant_type={grant_type}")
     try:
         # Check rate limiting
         from app.core.rate_limit import get_rate_limiter
