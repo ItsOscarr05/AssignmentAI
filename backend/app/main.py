@@ -24,7 +24,8 @@ from app.core.error_handlers import (
     validation_exception_handler,
     database_error_handler,
     general_exception_handler,
-    validation_error_handler
+    validation_error_handler,
+    request_validation_error_handler
 )
 from app.middleware.security import SecurityMiddleware
 from app.middleware.rate_limit import RateLimitMiddleware
@@ -169,7 +170,7 @@ app.add_exception_handler(HTTPException, http_exception_handler)  # type: ignore
 app.add_exception_handler(ValidationError, validation_exception_handler)  # type: ignore
 app.add_exception_handler(SQLAlchemyError, database_error_handler)  # type: ignore
 app.add_exception_handler(Exception, general_exception_handler)  # type: ignore
-app.add_exception_handler(RequestValidationError, validation_error_handler)  # type: ignore
+app.add_exception_handler(RequestValidationError, request_validation_error_handler)  # type: ignore
 
 # Configure CORS
 app.add_middleware(

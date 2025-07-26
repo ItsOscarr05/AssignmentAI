@@ -1,5 +1,6 @@
 from fastapi import Request, HTTPException, status
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from sqlalchemy.exc import SQLAlchemyError
 from pydantic import ValidationError
 import logging
@@ -50,6 +51,21 @@ async def validation_error_handler(request: Request, exc: ValueError):
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={"detail": str(exc)}
+    )
+
+async def request_validation_error_handler(request: Request, exc: RequestValidationError):
+    """Handle request validation errors"""
+    extra = {"error": str(exc), "errors": exc.errors()}
+    if hasattr(request.state, "db"):
+        extra["db"] = request.state.db
+    
+    logging_service.warning(
+        "Request validation error occurred",
+        extra=extra
+    )
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={"detail": exc.errors()}
     )
 
 async def general_exception_handler(request: Request, exc: Exception):
