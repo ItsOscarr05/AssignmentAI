@@ -43,8 +43,10 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """Lifespan context manager for startup and shutdown events"""
     # Startup
+    print("DEBUG: Application startup beginning...")
     logging_service.info("Starting up AssignmentAI application")
     await init_rate_limiter()
+    print("DEBUG: Application startup complete!")
     # Add any additional startup initialization here
     
     yield
@@ -231,6 +233,12 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 print("DEBUG: Including API router...")
 app.include_router(api_router, prefix=settings.API_V1_STR)
 print("DEBUG: API router included successfully")
+
+# Add a simple test endpoint directly to the main app
+@app.post("/test")
+async def test_endpoint():
+    print("DEBUG: TEST ENDPOINT CALLED!")
+    return {"message": "Test endpoint works"}
 
 @app.get("/")
 async def root():
