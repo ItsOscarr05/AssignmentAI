@@ -1,7 +1,7 @@
 from datetime import timedelta, datetime
 from typing import Any, Optional
 from fastapi import APIRouter, Body, Depends, HTTPException, status, Request, Response
-from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from jose import jwt, JWTError
 from passlib.context import CryptContext
@@ -58,7 +58,6 @@ async def get_csrf_token():
 @router.post("/login")
 async def login(
     request: Request,
-    db: Session = Depends(get_db),
 ):
     # Debug: Let's see what we're actually receiving
     print(f"DEBUG: Request method: {request.method}")
