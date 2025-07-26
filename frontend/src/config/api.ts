@@ -85,23 +85,6 @@ api.interceptors.response.use(
 );
 
 export const auth = {
-  login: async (email: string, password: string) => {
-    try {
-      // OAuth2PasswordRequestForm expects username and password
-      const response = await api.post('/auth/login', {
-        username: email,
-        password: password,
-      });
-      if (response.data.access_token) {
-        localStorage.setItem('token', response.data.access_token);
-        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.access_token}`;
-      }
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
   register: async (userData: any) => {
     try {
       const response = await api.post('/auth/register', userData);

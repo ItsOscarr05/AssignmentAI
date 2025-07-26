@@ -142,6 +142,13 @@ class Settings(BaseSettings):
     SESSION_TIMEOUT_MINUTES: int = int(os.getenv("SESSION_TIMEOUT_MINUTES", "30"))
     ENABLE_2FA: bool = os.getenv("ENABLE_2FA", "false").lower() == "true"
     ENABLE_EMAIL_VERIFICATION: bool = os.getenv("ENABLE_EMAIL_VERIFICATION", "true").lower() == "true"
+    REQUIRE_EMAIL_VERIFICATION: bool = os.getenv("REQUIRE_EMAIL_VERIFICATION", "false").lower() == "true"
+    
+    # Session Management Settings
+    SESSION_EXPIRE_DAYS: int = int(os.getenv("SESSION_EXPIRE_DAYS", "30"))
+    SESSION_CLEANUP_INTERVAL_HOURS: int = int(os.getenv("SESSION_CLEANUP_INTERVAL_HOURS", "24"))
+    MAX_CONCURRENT_SESSIONS: int = int(os.getenv("MAX_CONCURRENT_SESSIONS", "10"))
+    SESSION_ACTIVITY_TIMEOUT_MINUTES: int = int(os.getenv("SESSION_ACTIVITY_TIMEOUT_MINUTES", "30"))
     ENABLE_PASSWORD_RESET: bool = os.getenv("ENABLE_PASSWORD_RESET", "true").lower() == "true"
     ENABLE_SOCIAL_LOGIN: bool = os.getenv("ENABLE_SOCIAL_LOGIN", "false").lower() == "true"
     

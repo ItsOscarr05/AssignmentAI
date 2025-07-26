@@ -46,6 +46,40 @@ export interface LoginCredentials {
   password: string;
 }
 
+// Enhanced Authentication Types
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface TokenWith2FA {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  requires_2fa: boolean;
+  refresh_token?: string;
+  user?: {
+    id: string;
+    email: string;
+    name: string;
+    is_verified: boolean;
+    is_active: boolean;
+  };
+}
+
+export interface TwoFactorSetup {
+  message: string;
+  qr_code: string;
+  secret: string;
+  manual_entry: string;
+}
+
+export interface TwoFactorVerify {
+  message: string;
+  backup_codes: string[];
+  warning: string;
+}
+
 export interface Token {
   access_token: string;
   refresh_token: string;
@@ -214,9 +248,13 @@ export interface AuthContextType {
   isLoading: boolean;
   error: string | null;
   isMockUser: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  requires2FA: boolean;
+  tempToken: string | null;
   handleCallback: (code: string, state: string) => Promise<void>;
+  login: (credentials: LoginRequest) => Promise<TokenWith2FA>;
+  verify2FA: (code: string, isBackupCode?: boolean) => Promise<void>;
   logout: () => Promise<void>;
+  logoutAll: () => Promise<void>;
   register: (userData: {
     email: string;
     password: string;
@@ -225,7 +263,6 @@ export interface AuthContextType {
   updateUser: (userData: Partial<User>) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updatePassword: (token: string, newPassword: string) => Promise<void>;
-  testLogin: (email: string, password: string) => Promise<void>;
   mockLogin: () => void;
 }
 

@@ -1,148 +1,287 @@
-import { QRCodeSVG } from 'qrcode.react';
-import React, { useState } from 'react';
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { api } from '../services/api';
+import {
+  CheckCircle as CheckCircleIcon,
+  QrCode as QrCodeIcon,
+  Security as SecurityIcon,
+} from '@mui/icons-material';
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Grid,
+  Step,
+  StepLabel,
+  Stepper,
+  TextField,
+  Typography,
+} from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import { AuthService } from '../services/auth/AuthService';
 
 interface TwoFactorSetupProps {
-  onComplete: () => void;
+  onSetupComplete?: () => void;
 }
 
-export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onComplete }) => {
-  const [step, setStep] = useState<'setup' | 'confirm'>('setup');
-  const [secret, setSecret] = useState<string>('');
-  const [qrCode, setQrCode] = useState<string>('');
-  const [code, setCode] = useState<string>('');
+const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onSetupComplete }) => {
+  const [activeStep, setActiveStep] = useState(0);
+  const [setupData, setSetupData] = useState<any>(null);
+  const [verificationCode, setVerificationCode] = useState('');
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showBackupCodes, setShowBackupCodes] = useState(false);
 
-  const startSetup = async () => {
+  const steps = ['Generate QR Code', 'Verify Setup', 'Save Backup Codes'];
+
+  useEffect(() => {
+    if (activeStep === 0) {
+      initializeSetup();
+    }
+  }, [activeStep]);
+
+  const initializeSetup = async () => {
     try {
-      setIsLoading(true);
-      const response = await api.post('/auth/2fa/setup');
-      setSecret(response.data.secret);
-      setQrCode(response.data.qr_code);
-      setStep('confirm');
-      toast.success('2FA setup initiated successfully');
-    } catch (error) {
-      console.error('2FA setup error:', error);
-      toast.error('Failed to start 2FA setup. Please try again.');
+      setLoading(true);
+      setError('');
+      const data = await AuthService.setup2FA();
+      setSetupData(data);
+    } catch (error: any) {
+      setError(error.message || 'Failed to initialize 2FA setup');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const confirmSetup = async () => {
-    if (!code || code.length !== 6) {
-      toast.error('Please enter a valid 6-digit code');
+  const handleVerifyCode = async () => {
+    if (!verificationCode.trim()) {
+      setError('Please enter the verification code');
       return;
     }
 
     try {
-      setIsLoading(true);
-      const response = await api.post('/auth/2fa/confirm', { code });
-      setBackupCodes(response.data.backup_codes);
-      toast.success('2FA setup completed successfully');
-      onComplete();
-    } catch (error) {
-      console.error('2FA confirmation error:', error);
-      toast.error('Failed to confirm 2FA setup. Please check your code and try again.');
+      setLoading(true);
+      setError('');
+      const response = await AuthService.verify2FASetup(verificationCode);
+      setBackupCodes(response.backup_codes);
+      setActiveStep(2);
+    } catch (error: any) {
+      setError(error.message || 'Invalid verification code');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-6">Two-Factor Authentication Setup</h2>
+  const handleCloseBackupCodes = () => {
+    setShowBackupCodes(false);
+    if (onSetupComplete) {
+      onSetupComplete();
+    }
+  };
 
-      {step === 'setup' && (
-        <div>
-          <p className="mb-4">
-            Two-factor authentication adds an extra layer of security to your account. You'll need
-            to enter a code from your authenticator app each time you log in.
-          </p>
-          <button
-            onClick={startSetup}
-            disabled={isLoading}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 disabled:opacity-50"
-          >
-            {isLoading ? 'Starting Setup...' : 'Start Setup'}
-          </button>
-        </div>
-      )}
+  const handleNext = () => {
+    if (activeStep === 1) {
+      handleVerifyCode();
+    } else {
+      setActiveStep(prevStep => prevStep + 1);
+    }
+  };
 
-      {step === 'confirm' && (
-        <div>
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-2">1. Install an Authenticator App</h3>
-            <p className="mb-4">
-              Install an authenticator app like Google Authenticator, Authy, or Microsoft
-              Authenticator on your mobile device.
-            </p>
-          </div>
+  const handleBack = () => {
+    setActiveStep(prevStep => prevStep - 1);
+  };
 
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-2">2. Scan the QR Code</h3>
-            <div className="flex justify-center mb-4">
-              {qrCode && (
-                <QRCodeSVG
-                  value={`otpauth://totp/${encodeURIComponent(
-                    secret
-                  )}?secret=${secret}&issuer=AssignmentAI`}
-                  size={200}
-                  level="H"
-                  includeMargin={true}
+  const renderStepContent = () => {
+    switch (activeStep) {
+      case 0:
+        return (
+          <Box>
+            <Typography variant="h6" gutterBottom>
+              Step 1: Scan QR Code
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)
+            </Typography>
+
+            {setupData && (
+              <Box sx={{ textAlign: 'center', mb: 3 }}>
+                <img
+                  src={setupData.qr_code}
+                  alt="2FA QR Code"
+                  style={{ maxWidth: '200px', height: 'auto' }}
                 />
-              )}
-            </div>
-            <p className="text-sm text-gray-600">
-              If you can't scan the QR code, enter this code manually in your authenticator app:
-              <code className="block mt-2 p-2 bg-gray-100 rounded">{secret}</code>
-            </p>
-          </div>
+              </Box>
+            )}
 
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-2">3. Enter the Code</h3>
-            <input
-              type="text"
-              value={code}
-              onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              placeholder="Enter 6-digit code"
-              className="w-full p-2 border rounded"
-              maxLength={6}
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Or enter this code manually in your authenticator app:
+            </Typography>
+            <TextField
+              fullWidth
+              value={setupData?.secret || ''}
+              InputProps={{ readOnly: true }}
+              sx={{ mb: 2 }}
             />
-          </div>
 
-          <button
-            onClick={confirmSetup}
-            disabled={isLoading || code.length !== 6}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 disabled:opacity-50"
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Make sure your authenticator app is ready before proceeding to the next step.
+            </Alert>
+          </Box>
+        );
+
+      case 1:
+        return (
+          <Box>
+            <Typography variant="h6" gutterBottom>
+              Step 2: Verify Setup
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Enter the 6-digit code from your authenticator app to verify the setup.
+            </Typography>
+
+            <TextField
+              fullWidth
+              label="Verification Code"
+              value={verificationCode}
+              onChange={e => setVerificationCode(e.target.value)}
+              inputProps={{ maxLength: 6, pattern: '[0-9]{6}' }}
+              placeholder="Enter 6-digit code"
+              sx={{ mb: 2 }}
+            />
+          </Box>
+        );
+
+      case 2:
+        return (
+          <Box>
+            <Typography variant="h6" gutterBottom>
+              Step 3: Backup Codes
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Save these backup codes in a secure location. You can use them to access your account
+              if you lose your authenticator device.
+            </Typography>
+
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              <Typography variant="body2">
+                <strong>Important:</strong> These backup codes will only be shown once. Make sure to
+                save them securely.
+              </Typography>
+            </Alert>
+
+            <Button
+              variant="outlined"
+              onClick={() => setShowBackupCodes(true)}
+              startIcon={<QrCodeIcon />}
+            >
+              View Backup Codes
+            </Button>
+          </Box>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  if (loading && activeStep === 0) {
+    return (
+      <Box display="flex" justifyContent="center" p={3}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  return (
+    <Card>
+      <CardContent>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+          <SecurityIcon sx={{ mr: 1 }} />
+          <Typography variant="h5">Two-Factor Authentication Setup</Typography>
+        </Box>
+
+        <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
+          {steps.map(label => (
+            <Step key={label}>
+              <StepLabel>{label}</StepLabel>
+            </Step>
+          ))}
+        </Stepper>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+
+        {renderStepContent()}
+
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
+          <Button disabled={activeStep === 0} onClick={handleBack}>
+            Back
+          </Button>
+
+          <Button
+            variant="contained"
+            onClick={handleNext}
+            disabled={loading || (activeStep === 1 && !verificationCode.trim())}
+            sx={{
+              backgroundColor: '#8B0000',
+              '&:hover': {
+                backgroundColor: '#660000',
+              },
+            }}
           >
-            {isLoading ? 'Confirming...' : 'Confirm Setup'}
-          </button>
-        </div>
-      )}
+            {loading ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : activeStep === steps.length - 1 ? (
+              'Complete Setup'
+            ) : (
+              'Next'
+            )}
+          </Button>
+        </Box>
+      </CardContent>
 
-      {backupCodes.length > 0 && (
-        <div className="mt-6 p-4 bg-yellow-50 rounded">
-          <h3 className="text-lg font-semibold mb-2">Backup Codes</h3>
-          <p className="mb-4">
-            Save these backup codes in a secure place. You can use them to access your account if
-            you lose your authenticator app.
-          </p>
-          <div className="grid grid-cols-2 gap-2">
+      {/* Backup Codes Dialog */}
+      <Dialog open={showBackupCodes} onClose={handleCloseBackupCodes} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <CheckCircleIcon sx={{ mr: 1, color: 'success.main' }} />
+            Backup Codes
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Save these backup codes in a secure location. Each code can only be used once.
+          </Typography>
+
+          <Grid container spacing={1}>
             {backupCodes.map((code, index) => (
-              <code key={index} className="block p-2 bg-gray-100 rounded text-center">
-                {code}
-              </code>
+              <Grid item xs={6} sm={4} key={index}>
+                <Chip
+                  label={code}
+                  variant="outlined"
+                  sx={{ fontFamily: 'monospace', fontSize: '0.9rem' }}
+                />
+              </Grid>
             ))}
-          </div>
-          <p className="mt-4 text-sm text-red-600">
-            These codes will only be shown once. Make sure to save them now!
-          </p>
-        </div>
-      )}
-    </div>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseBackupCodes} variant="contained">
+            I've Saved My Codes
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Card>
   );
 };
+
+export default TwoFactorSetup;

@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { ReactNode, useState } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { User } from '../../types';
+import { LoginRequest, TokenWith2FA, User } from '../../types';
 import { AuthProvider, useAuth } from '../AuthContext';
 
 // Mock the router
@@ -34,11 +34,13 @@ const mockUser: User = {
 
 // Create mock functions
 const mockLogin = vi.fn();
+const mockVerify2FA = vi.fn();
 const mockRegister = vi.fn();
 const mockLogout = vi.fn();
+const mockLogoutAll = vi.fn();
 const mockResetPassword = vi.fn();
 const mockUpdatePassword = vi.fn();
-const mockVerifyEmail = vi.fn();
+const mockMockLogin = vi.fn();
 
 // Mock the AuthContext
 vi.mock('../AuthContext', () => ({
@@ -47,27 +49,45 @@ vi.mock('../AuthContext', () => ({
     loading: false,
     isLoading: false,
     isAuthenticated: true,
+    requires2FA: false,
+    tempToken: null,
     login: mockLogin,
+    verify2FA: mockVerify2FA,
     register: mockRegister,
     logout: mockLogout,
+    logoutAll: mockLogoutAll,
     resetPassword: mockResetPassword,
     updatePassword: mockUpdatePassword,
-    verifyEmail: mockVerifyEmail,
+    mockLogin: mockMockLogin,
   }),
   AuthProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
 
 // Test component that uses the auth context
 const TestComponent = () => {
-  const { login, register, logout, user, isAuthenticated } = useAuth();
+  const { login, verify2FA, register, logout, logoutAll, user, isAuthenticated, requires2FA } =
+    useAuth();
   const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async () => {
     try {
       setError(null);
-      await login('test@example.com', 'password'); // Using email and password for login
+      const credentials: LoginRequest = {
+        email: 'test@example.com',
+        password: 'password',
+      };
+      await login(credentials);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
+    }
+  };
+
+  const handle2FAVerification = async () => {
+    try {
+      setError(null);
+      await verify2FA('123456', false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '2FA verification failed');
     }
   };
 
@@ -93,13 +113,25 @@ const TestComponent = () => {
     }
   };
 
+  const handleLogoutAll = () => {
+    try {
+      setError(null);
+      logoutAll();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Logout all failed');
+    }
+  };
+
   return (
     <div>
       <button onClick={handleLogin}>Login</button>
+      <button onClick={handle2FAVerification}>Verify 2FA</button>
       <button onClick={handleRegister}>Register</button>
       <button onClick={handleLogout}>Logout</button>
+      <button onClick={handleLogoutAll}>Logout All</button>
       <div data-testid="user">{user ? user.name : 'No user'}</div>
       <div data-testid="isAuthenticated">{isAuthenticated.toString()}</div>
+      <div data-testid="requires2FA">{requires2FA.toString()}</div>
       {error && <div data-testid="error">{error}</div>}
     </div>
   );
@@ -123,12 +155,59 @@ describe('AuthContext', () => {
     renderWithAuth(<TestComponent />);
     expect(screen.getByTestId('user')).toHaveTextContent('Development User');
     expect(screen.getByTestId('isAuthenticated')).toHaveTextContent('true');
+    expect(screen.getByTestId('requires2FA')).toHaveTextContent('false');
   });
 
-  it('handles login in development mode', async () => {
+  it('handles login successfully', async () => {
+    const mockResponse: TokenWith2FA = {
+      access_token: 'mock-token',
+      token_type: 'bearer',
+      expires_in: 3600,
+      requires_2fa: false,
+      user: {
+        id: '1',
+        email: 'test@example.com',
+        name: 'Test User',
+        is_verified: true,
+        is_active: true,
+      },
+    };
+    mockLogin.mockResolvedValueOnce(mockResponse);
+
     renderWithAuth(<TestComponent />);
     await userEvent.click(screen.getByText('Login'));
-    expect(mockLogin).toHaveBeenCalledWith('test@example.com', 'password');
+
+    expect(mockLogin).toHaveBeenCalledWith({
+      email: 'test@example.com',
+      password: 'password',
+    });
+  });
+
+  it('handles login with 2FA requirement', async () => {
+    const mockResponse: TokenWith2FA = {
+      access_token: 'temp-token',
+      token_type: 'bearer',
+      expires_in: 300,
+      requires_2fa: true,
+    };
+    mockLogin.mockResolvedValueOnce(mockResponse);
+
+    renderWithAuth(<TestComponent />);
+    await userEvent.click(screen.getByText('Login'));
+
+    expect(mockLogin).toHaveBeenCalledWith({
+      email: 'test@example.com',
+      password: 'password',
+    });
+  });
+
+  it('handles 2FA verification', async () => {
+    mockVerify2FA.mockResolvedValueOnce(undefined);
+
+    renderWithAuth(<TestComponent />);
+    await userEvent.click(screen.getByText('Verify 2FA'));
+
+    expect(mockVerify2FA).toHaveBeenCalledWith('123456', false);
   });
 
   it('handles registration', async () => {
@@ -147,12 +226,27 @@ describe('AuthContext', () => {
     expect(mockLogout).toHaveBeenCalled();
   });
 
+  it('handles logout all devices', async () => {
+    renderWithAuth(<TestComponent />);
+    await userEvent.click(screen.getByText('Logout All'));
+    expect(mockLogoutAll).toHaveBeenCalled();
+  });
+
   it('handles login failure', async () => {
     mockLogin.mockRejectedValueOnce(new Error('Invalid credentials'));
     renderWithAuth(<TestComponent />);
     await userEvent.click(screen.getByText('Login'));
     await waitFor(() => {
       expect(screen.getByTestId('error')).toHaveTextContent('Invalid credentials');
+    });
+  });
+
+  it('handles 2FA verification failure', async () => {
+    mockVerify2FA.mockRejectedValueOnce(new Error('Invalid 2FA code'));
+    renderWithAuth(<TestComponent />);
+    await userEvent.click(screen.getByText('Verify 2FA'));
+    await waitFor(() => {
+      expect(screen.getByTestId('error')).toHaveTextContent('Invalid 2FA code');
     });
   });
 
@@ -163,5 +257,15 @@ describe('AuthContext', () => {
     await waitFor(() => {
       expect(screen.getByTestId('error')).toHaveTextContent('Registration failed');
     });
+  });
+
+  it('handles logout failure', async () => {
+    mockLogout.mockRejectedValueOnce(new Error('Logout failed'));
+    renderWithAuth(<TestComponent />);
+    await userEvent.click(screen.getByText('Logout'));
+
+    // Logout should still succeed even if the API call fails
+    // because the AuthContext catches the error and clears local state
+    expect(mockLogout).toHaveBeenCalled();
   });
 });

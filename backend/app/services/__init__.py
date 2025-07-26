@@ -14,11 +14,17 @@ try:
 except ImportError:
     image_analysis_service = None
 
+try:
+    from .device_fingerprinting import device_fingerprint_service
+except ImportError:
+    device_fingerprint_service = None
+
 __all__ = [
     "LoggingService",
     "EmailService",
     "AIService",
     "StorageService",
     "diagram_service",
-    "image_analysis_service"
+    "image_analysis_service",
+    "device_fingerprint_service"
 ] 

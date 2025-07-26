@@ -91,14 +91,6 @@ export class ApiClient {
 
   // Auth endpoints
   public auth = {
-    login: async (email: string, password: string): Promise<AuthResponse> => {
-      return this.request<AuthResponse>({
-        method: 'POST',
-        url: '/auth/login',
-        data: { email, password },
-      });
-    },
-
     register: async (userData: Partial<User>): Promise<AuthResponse> => {
       return this.request<AuthResponse>({
         method: 'POST',

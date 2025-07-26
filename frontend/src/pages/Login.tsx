@@ -64,13 +64,21 @@ const Login: React.FC = () => {
     e.preventDefault();
     if (validateForm()) {
       setIsLoading(true);
+      setError('');
+
       try {
-        await login(email, password);
-        // Navigation is handled by the login function in AuthContext
-      } catch (error) {
-        setError('Invalid credentials');
+        const response = await login({ email, password });
+
+        if (response.requires_2fa) {
+          // Redirect to 2FA verification page
+          navigate('/verify-2fa');
+        }
+        // If no 2FA required, the login function will handle navigation to dashboard
+      } catch (error: any) {
+        setError(error.message || 'Login failed. Please check your credentials.');
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     }
   };
 
@@ -293,7 +301,7 @@ const Login: React.FC = () => {
               <Typography
                 color="text.secondary"
                 sx={{
-                  mb: 5,
+                  mb: 2,
                   fontFamily: "'Inter', sans-serif",
                   fontWeight: 300,
                   letterSpacing: '0.01em',
@@ -301,6 +309,24 @@ const Login: React.FC = () => {
                 }}
               >
                 Sign in to continue to AssignmentAI
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  mb: 5,
+                  color: 'warning.main',
+                  fontFamily: "'Inter', sans-serif",
+                  fontWeight: 500,
+                  fontSize: '0.875rem',
+                  textAlign: 'center',
+                  backgroundColor: 'warning.light',
+                  py: 1,
+                  px: 2,
+                  borderRadius: 1,
+                }}
+              >
+                ⚠️ Login functionality is temporarily disabled for maintenance. Please use the Mock
+                Login button below.
               </Typography>
 
               <Box component="form" onSubmit={handleSubmit}>
@@ -420,11 +446,11 @@ const Login: React.FC = () => {
                   {isLoading ? (
                     <CircularProgress size={24} color="inherit" role="progressbar" />
                   ) : (
-                    'Sign In'
+                    'Sign In (Temporarily Disabled)'
                   )}
                 </Button>
 
-                {/* <Button
+                <Button
                   variant="contained"
                   color="primary"
                   fullWidth
@@ -432,7 +458,7 @@ const Login: React.FC = () => {
                   sx={{ mt: 2 }}
                 >
                   Mock Login
-                </Button> */}
+                </Button>
 
                 <Divider sx={{ my: 3 }}>
                   <Typography

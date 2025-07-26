@@ -45,7 +45,7 @@ async def validation_error_handler(request: Request, exc: ValueError):
         extra["db"] = request.state.db
     
     logging_service.warning(
-        "Validation error occurred",
+        f"Validation error occurred: {str(exc)}",
         extra=extra
     )
     return JSONResponse(
@@ -60,7 +60,7 @@ async def request_validation_error_handler(request: Request, exc: RequestValidat
         extra["db"] = request.state.db
     
     logging_service.warning(
-        "Request validation error occurred",
+        f"Request validation error occurred: {str(exc)}",
         extra=extra
     )
     return JSONResponse(

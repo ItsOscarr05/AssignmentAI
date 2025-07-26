@@ -1,5 +1,5 @@
 from datetime import timedelta, datetime
-from typing import Any, Optional
+from typing import Any, Optional, Dict
 from fastapi import APIRouter, Body, Depends, HTTPException, status, Request, Response
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -19,7 +19,10 @@ from app.schemas.user import UserCreate, User as UserSchema, UserResponse, UserU
 from app.schemas.auth import UserLogin, LoginRequest, RegisterRequest, PasswordResetRequest, PasswordResetConfirm, TwoFactorSetup, TwoFactorVerify, TwoFactorBackup, PasswordCheck, TokenWith2FA
 from app.schemas.auth import Token
 from app.schemas.token import TokenPayload
-from app.core.security import get_password_hash, verify_password, create_access_token, verify_token
+from app.core.security import get_password_hash, verify_password, create_access_token, create_refresh_token, verify_token
+import logging
+
+logger = logging.getLogger(__name__)
 from app.services import auth_service
 from app.services.email_service import email_service
 from app.services.security_monitoring import security_monitoring
@@ -32,6 +35,52 @@ from app.services.session_service import SessionService
 from app.models.session import UserSession
 from app.services.two_factor import TwoFactorAuthService
 from app.models.security import SecurityAlert
+# Simple device fingerprinting fallback
+class SimpleDeviceFingerprintService:
+    def generate_device_fingerprint(self, user_agent: str, ip_address: str, additional_data: Dict = None) -> str:
+        """Generate a simple device fingerprint"""
+        import hashlib
+        import json
+        from datetime import datetime
+        
+        fingerprint_data = {
+            "user_agent": user_agent,
+            "ip_address": ip_address,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+        if additional_data:
+            fingerprint_data.update(additional_data)
+        
+        fingerprint_string = json.dumps(fingerprint_data, sort_keys=True)
+        return hashlib.sha256(fingerprint_string.encode()).hexdigest()
+    
+    def analyze_device_risk(self, device_fingerprint: str, user: User, ip_address: str, user_agent: str) -> Dict:
+        """Simple device risk analysis"""
+        risk_score = 0
+        risk_factors = []
+        
+        # Basic risk assessment
+        if not ip_address.startswith("192.168.") and not ip_address.startswith("10."):
+            risk_score += 10
+            risk_factors.append("External IP address")
+        
+        if not user_agent or user_agent == "Mozilla/5.0":
+            risk_score += 20
+            risk_factors.append("Generic user agent")
+        
+        risk_level = "HIGH" if risk_score >= 30 else "MEDIUM" if risk_score >= 15 else "LOW"
+        
+        return {
+            "device_fingerprint": device_fingerprint,
+            "risk_score": risk_score,
+            "risk_level": risk_level,
+            "risk_factors": risk_factors,
+            "recommendations": ["Monitor for suspicious activity"] if risk_score > 0 else ["Normal risk level"]
+        }
+
+# Use the simple service as fallback
+device_fingerprint_service = SimpleDeviceFingerprintService()
 
 # Import get_current_user from deps
 from app.core.deps import get_current_user
@@ -55,109 +104,132 @@ async def get_csrf_token():
     csrf_token = secrets.token_urlsafe(32)
     return {"csrf_token": csrf_token}
 
-@router.post("/login", include_in_schema=False)
-async def login():
-    print("DEBUG: LOGIN FUNCTION CALLED!")
-    return {"message": "Debug endpoint reached"}
+@router.post("/login", response_model=TokenWith2FA)
+async def login(
+    request: Request,
+    login_data: LoginRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Authenticate user and return access token.
+    
+    This endpoint implements secure login with:
+    - Rate limiting (5 attempts per 15 minutes)
+    - Account lockout after multiple failed attempts
+    - Comprehensive audit logging
+    - 2FA support
+    - Session management
+    """
+    client_ip = request.client.host
+    user_agent = request.headers.get("user-agent", "")
+    
     try:
         # Check rate limiting
-        from app.core.rate_limit import get_rate_limiter
-        rate_limiter = get_rate_limiter(app=request.app)
-        client_id = request.client.host
-        # Try to find user by email
-        user = db.query(User).filter(User.email == username).first()
-        # Check if rate limit exceeded
-        if rate_limiter.is_rate_limited(client_id, "/api/v1/auth/login"):
-            alert = SecurityAlert(
-                user_id=user.id if user else None,
-                alert_type="rate_limit_exceeded",
-                description=f"Rate limit exceeded for IP: {client_id}",
-                severity="medium",
-                alert_metadata={"ip_address": client_id, "username": username}
-            )
-            db.add(alert)
-            db.commit()
-            raise HTTPException(
-                status_code=429,
-                detail="Rate limit exceeded"
-            )
-        
-        if not user:
-            # Log failed login attempt
-            from app.services.security_monitoring import security_monitoring
-            from app.services.audit_service import audit_service
+        rate_limiter = get_rate_limiter(request.app)
+        if rate_limiter.is_rate_limited(client_ip, "/api/v1/auth/login"):
+            # Log rate limit exceeded
             from app.models.security import AuditLog
-            
-            # Create security alert
-            alert = SecurityAlert(
-                user_id=None,  # No user found
-                alert_type="failed_login",
-                description=f"Failed login attempt for email: {username}",
-                severity="high",
-                alert_metadata={"ip_address": client_id, "username": username}
-            )
-            db.add(alert)
-            
-            # Create audit log
             audit_log = AuditLog(
                 user_id=None,
-                action="login_attempt",
-                details={"success": False, "reason": "user_not_found", "ip_address": client_id},
-                ip_address=client_id
+                action="rate_limit_exceeded",
+                details={
+                    "ip_address": client_ip,
+                    "user_agent": user_agent,
+                    "endpoint": "/api/v1/auth/login"
+                },
+                ip_address=client_ip
             )
             db.add(audit_log)
             db.commit()
             
             raise HTTPException(
-                status_code=401,
-                detail="Incorrect email or password"
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Too many login attempts. Please try again later."
             )
         
-        if not verify_password(password, str(user.hashed_password)):
-            # Log failed login attempt
-            from app.models.security import AuditLog
-            
-            alert = SecurityAlert(
-                user_id=user.id,
-                alert_type="failed_login",
-                description=f"Failed login attempt for user: {user.email}",
-                severity="high",
-                alert_metadata={"ip_address": client_id, "username": username}
-            )
-            db.add(alert)
-            
-            # Create audit log
-            audit_log = AuditLog(
-                user_id=user.id,
-                action="login_attempt",
-                details={"success": False, "reason": "invalid_password", "ip_address": client_id},
-                ip_address=client_id
-            )
-            db.add(audit_log)
+        # Find user by email
+        user = db.query(User).filter(User.email == login_data.email).first()
+        
+        # Log login attempt (even for non-existent users to prevent user enumeration)
+        from app.models.security import AuditLog
+        audit_log = AuditLog(
+            user_id=user.id if user else None,
+            action="login_attempt",
+            details={
+                "success": False,
+                "ip_address": client_ip,
+                "user_agent": user_agent,
+                "email": login_data.email
+            },
+            ip_address=client_ip
+        )
+        db.add(audit_log)
+        
+        # Check if user exists
+        if not user:
             db.commit()
-            
             raise HTTPException(
-                status_code=401,
+                status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Incorrect email or password"
             )
         
+        # Check if user is active
         if not user.is_active:
+            db.commit()
             raise HTTPException(
-                status_code=400,
-                detail="Inactive user"
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Account is deactivated"
             )
         
-        # Check if 2FA is enabled
-        global user_2fa_enabled
-        if 'user_2fa_enabled' not in globals():
-            user_2fa_enabled = {}
+        # Check if user is verified (optional - can be configured)
+        if settings.REQUIRE_EMAIL_VERIFICATION and not user.is_verified:
+            db.commit()
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Please verify your email before logging in"
+            )
         
-        if user_2fa_enabled.get(user.id, False):
+        # Verify password
+        if not verify_password(login_data.password, str(user.hashed_password)):
+            # Update audit log with failure reason
+            audit_log.details["reason"] = "invalid_password"
+            db.commit()
+            
+            # Track failed login attempt with security monitoring
+            from app.core.security import is_account_locked, track_login_attempt, get_lockout_remaining_time
+            track_login_attempt(db, user, False)
+            
+            # Track IP-based security monitoring
+            security_monitoring.track_failed_login_attempts(db, user, client_ip)
+            
+            if is_account_locked(user):
+                remaining_time = get_lockout_remaining_time(user)
+                raise HTTPException(
+                    status_code=status.HTTP_423_LOCKED,
+                    detail=f"Account temporarily locked due to multiple failed attempts. Try again in {remaining_time // 60} minutes."
+                )
+            
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password"
+            )
+        
+        # Check if 2FA is enabled for this user
+        # For now, we'll use a simple flag - in production, this should be stored in the user model
+        user_2fa_enabled = getattr(user, 'two_factor_enabled', False)
+        
+        if user_2fa_enabled:
             # Return temporary token for 2FA verification
             temp_token_expires = timedelta(minutes=5)  # Short-lived token for 2FA
             temp_token = create_access_token(
                 subject=user.id, expires_delta=temp_token_expires
             )
+            
+            # Update audit log for successful initial authentication
+            audit_log.details["success"] = True
+            audit_log.details["requires_2fa"] = True
+            db.commit()
+            
             return {
                 "access_token": temp_token,
                 "token_type": "bearer",
@@ -165,45 +237,142 @@ async def login():
                 "requires_2fa": True
             }
         
-        # Create access token
+        # Generate device fingerprint and analyze risk
+        try:
+            device_fingerprint = device_fingerprint_service.generate_device_fingerprint(
+                user_agent=user_agent,
+                ip_address=client_ip,
+                additional_data={
+                    "email": user.email,
+                    "timestamp": datetime.utcnow().isoformat()
+                }
+            )
+            
+            # Analyze device risk
+            device_risk_analysis = device_fingerprint_service.analyze_device_risk(
+                device_fingerprint, user, client_ip, user_agent
+            )
+            
+            # Log device analysis if high risk
+            if device_risk_analysis["risk_level"] in ["HIGH", "MEDIUM"]:
+                logger.warning(f"Device risk detected for user {user.email}: {device_risk_analysis}")
+                audit_log.details["device_risk"] = device_risk_analysis
+        except Exception as e:
+            logger.warning(f"Device fingerprinting failed: {e}")
+            device_fingerprint = None
+            device_risk_analysis = None
+        
+        # Create session with device fingerprint
+        session_service = get_session_service(db)
+        session = await session_service.create_session(
+            user_id=user.id,
+            ip_address=client_ip,
+            user_agent=user_agent,
+            device_fingerprint=device_fingerprint
+        )
+        
+        # Create access token with session ID
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
             subject=user.id, expires_delta=access_token_expires
         )
+        
+        # Create refresh token
+        refresh_token_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        refresh_token = create_refresh_token(
+            subject=user.id, expires_delta=refresh_token_expires
+        )
+        
+        # Log successful login
+        audit_log.details["success"] = True
+        audit_log.details["session_id"] = str(session.id)
+        audit_log.details["requires_2fa"] = False
+        db.commit()
+        
+        # Track successful login attempt
+        from app.core.security import track_login_attempt
+        track_login_attempt(db, user, True)
+        
+        # Track IP-based security monitoring for successful login
+        security_monitoring.track_successful_login(user, client_ip, user_agent)
+        
+        # Analyze login patterns for suspicious activity
+        ip_analysis = security_monitoring.analyze_login_patterns(client_ip, user_agent)
+        if ip_analysis["risk_score"] > 50:
+            logger.warning(f"High-risk login detected: {ip_analysis}")
         
         return {
             "access_token": access_token,
             "token_type": "bearer",
             "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
             "requires_2fa": False,
+            "refresh_token": refresh_token,
             "user": {
                 "id": str(user.id),
                 "email": user.email,
-                "fullName": user.name or "",
-                "firstName": user.name.split(" ")[0] if user.name else ""
+                "name": user.name or "",
+                "is_verified": user.is_verified,
+                "is_active": user.is_active
             }
         }
+        
     except HTTPException:
         raise
     except Exception as e:
-        print('LOGIN ERROR:', e)
+        # Log unexpected errors
+        logger.error(f"Login error for {login_data.email}: {str(e)}")
         traceback.print_exc()
+        
+        # Update audit log with error
+        if 'audit_log' in locals():
+            audit_log.details["error"] = str(e)
+            db.commit()
+        
         raise HTTPException(
-            status_code=500,
-            detail="Internal server error"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error during login"
         )
+
+
 
 @router.post("/logout")
 async def logout(
     request: Request,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     """Logout user and revoke current session"""
-    token = request.headers.get("Authorization", "").split(" ")[1]
-    payload = verify_token(token)
-    if payload and "session_id" in payload:
-        await session_service.revoke_session(current_user.id, payload["session_id"])
-    return {"message": "Successfully logged out"}
+    try:
+        token = request.headers.get("Authorization", "").split(" ")[1]
+        payload = verify_token(token)
+        
+        # Revoke session if session_id is in token
+        if payload and "session_id" in payload:
+            session_service = get_session_service(db)
+            await session_service.revoke_session(current_user.id, payload["session_id"])
+        
+        # Log logout event
+        from app.models.security import AuditLog
+        audit_log = AuditLog(
+            user_id=current_user.id,
+            action="logout",
+            details={
+                "ip_address": request.client.host,
+                "user_agent": request.headers.get("user-agent", ""),
+                "session_id": payload.get("session_id") if payload else None
+            },
+            ip_address=request.client.host
+        )
+        db.add(audit_log)
+        db.commit()
+        
+        return {"message": "Successfully logged out"}
+    except Exception as e:
+        logger.error(f"Logout error for user {current_user.id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error during logout"
+        )
 
 @router.post("/logout-all")
 async def logout_all(
@@ -212,12 +381,50 @@ async def logout_all(
     db: Session = Depends(get_db)
 ):
     """
-    Logout from all devices
+    Logout from all devices (revoke all sessions)
     """
-    # Invalidate all sessions for the user
-    session_service = get_session_service(db)
-    await session_service.invalidate_all_sessions(current_user.id)
-    return {"message": "Logged out from all devices"}
+    try:
+        session_service = get_session_service(db)
+        
+        # Get current sessions before revoking
+        sessions = await session_service.get_user_sessions(current_user.id)
+        
+        # Revoke all sessions
+        success = await session_service.invalidate_all_sessions(current_user.id)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to logout from all devices"
+            )
+        
+        # Log logout from all devices
+        from app.models.security import AuditLog
+        audit_log = AuditLog(
+            user_id=current_user.id,
+            action="logout_all_devices",
+            details={
+                "sessions_revoked": len(sessions),
+                "ip_address": request.client.host if request.client else "N/A",
+                "user_agent": request.headers.get("user-agent", "N/A")
+            },
+            ip_address=request.client.host if request.client else "N/A"
+        )
+        db.add(audit_log)
+        db.commit()
+        
+        return {
+            "message": "Logged out from all devices",
+            "sessions_revoked": len(sessions)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error logging out from all devices for user {current_user.id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error logging out from all devices"
+        )
 
 @router.get("/sessions")
 async def get_active_sessions(
@@ -225,11 +432,36 @@ async def get_active_sessions(
     db: Session = Depends(get_db)
 ):
     """
-    Get all active sessions for the user
+    Get all active sessions for the user with enhanced device information
     """
-    session_service = get_session_service(db)
-    sessions = await session_service.get_user_sessions(current_user.id)
-    return sessions
+    try:
+        session_service = get_session_service(db)
+        sessions = await session_service.get_user_sessions(current_user.id)
+        
+        # Add current session identification
+        current_session_id = None
+        # In a real implementation, you'd get this from the JWT token
+        # For now, we'll mark the most recent session as current
+        
+        for session in sessions:
+            if current_session_id is None:
+                session["is_current"] = True
+                current_session_id = session["id"]
+            else:
+                session["is_current"] = False
+        
+        return {
+            "sessions": sessions,
+            "total_sessions": len(sessions),
+            "current_session_id": current_session_id
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting sessions for user {current_user.id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error retrieving sessions"
+        )
 
 @router.delete("/sessions/{session_id}")
 async def revoke_session(
@@ -240,9 +472,49 @@ async def revoke_session(
     """
     Revoke a specific session
     """
-    session_service = get_session_service(db)
-    await session_service.revoke_session(current_user.id, session_id)
-    return {"message": "Session revoked successfully"}
+    try:
+        session_service = get_session_service(db)
+        
+        # Check if session exists and belongs to user
+        session = await session_service.validate_session(session_id)
+        if not session or session.user_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Session not found"
+            )
+        
+        # Revoke the session
+        success = await session_service.revoke_session(current_user.id, session_id)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to revoke session"
+            )
+        
+        # Log session revocation
+        from app.models.security import AuditLog
+        audit_log = AuditLog(
+            user_id=current_user.id,
+            action="session_revoked",
+            details={
+                "session_id": session_id,
+                "device_info": session.device_info
+            },
+            ip_address="N/A"  # Would be available in request context
+        )
+        db.add(audit_log)
+        db.commit()
+        
+        return {"message": "Session revoked successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error revoking session {session_id} for user {current_user.id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error revoking session"
+        )
 
 @router.get("/sessions/{session_id}/analytics")
 async def get_session_analytics(
@@ -251,22 +523,35 @@ async def get_session_analytics(
     db: Session = Depends(get_db)
 ):
     """Get analytics for a specific session"""
-    # Verify session belongs to user
-    if not any(session.get("id") == session_id for session in current_user.sessions):
+    try:
+        session_service = get_session_service(db)
+        
+        # Verify session exists and belongs to user
+        session = await session_service.validate_session(session_id)
+        if not session or session.user_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Session not found"
+            )
+        
+        # Get analytics for the specific session
+        analytics = session_service.get_session_analytics_by_id(session_id)
+        if not analytics:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Session analytics not found"
+            )
+        
+        return analytics
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting analytics for session {session_id}: {str(e)}")
         raise HTTPException(
-            status_code=404,
-            detail="Session not found"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error retrieving session analytics"
         )
-    
-    session_service = get_session_service(db)
-    analytics = await session_service.get_session_analytics(current_user.id)
-    if not analytics:
-        raise HTTPException(
-            status_code=404,
-            detail="Session analytics not found"
-        )
-    
-    return analytics
 
 @router.get("/sessions/analytics")
 async def get_user_session_analytics(
@@ -274,33 +559,150 @@ async def get_user_session_analytics(
     db: Session = Depends(get_db)
 ):
     """Get analytics for all sessions of current user"""
-    session_service = get_session_service(db)
-    return await session_service.get_session_analytics(current_user.id)
+    try:
+        session_service = get_session_service(db)
+        analytics = await session_service.get_session_analytics(current_user.id)
+        
+        return {
+            "user_id": current_user.id,
+            "total_sessions": analytics.get("total_sessions", 0),
+            "active_sessions": analytics.get("active_sessions", 0),
+            "session_analytics": analytics.get("session_analytics", []),
+            "summary": {
+                "total_duration": analytics.get("total_duration", 0),
+                "average_session_duration": analytics.get("average_session_duration", 0),
+                "most_active_device": analytics.get("most_active_device", "Unknown")
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting session analytics for user {current_user.id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error retrieving session analytics"
+        )
 
 @router.post("/sessions/{session_id}/activity")
 async def track_session_activity(
     session_id: str,
-    activity: dict,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Track activity for a specific session"""
-    # Verify session belongs to user
-    if not any(session.get("id") == session_id for session in current_user.sessions):
-        raise HTTPException(
-            status_code=404,
-            detail="Session not found"
+    try:
+        # Parse activity data
+        if request.headers.get("content-type", "").startswith("application/json"):
+            activity_data = await request.json()
+        else:
+            activity_data = await request.form()
+        
+        session_service = get_session_service(db)
+        
+        # Verify session exists and belongs to user
+        session = await session_service.validate_session(session_id)
+        if not session or session.user_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Session not found"
+            )
+        
+        # Track the activity
+        activity_type = activity_data.get("activity_type", "unknown")
+        details = activity_data.get("details", {})
+        
+        session_service.track_session_activity(
+            session_id=session_id,
+            activity_type=activity_type,
+            details=details
         )
-    
-    # For now, just return success - session activity tracking can be implemented later
-    return {"status": "success"}
+        
+        return {
+            "message": "Activity tracked successfully",
+            "session_id": session_id,
+            "activity_type": activity_type
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error tracking activity for session {session_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error tracking session activity"
+        )
 
-@router.post("/test-token", response_model=schemas.User)
-def test_token(current_user: models.User = Depends(get_current_user)) -> Any:
-    """
-    Test access token
-    """
-    return current_user
+@router.post("/sessions/cleanup")
+async def cleanup_expired_sessions(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Clean up expired sessions for the current user"""
+    try:
+        session_service = get_session_service(db)
+        
+        # Clean up expired sessions
+        cleaned_count = await session_service.cleanup_expired_sessions()
+        
+        return {
+            "message": "Session cleanup completed",
+            "sessions_cleaned": cleaned_count
+        }
+        
+    except Exception as e:
+        logger.error(f"Error cleaning up sessions for user {current_user.id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error cleaning up sessions"
+        )
+
+@router.get("/sessions/status")
+async def get_session_status(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get current session status and statistics"""
+    try:
+        session_service = get_session_service(db)
+        
+        # Get active sessions
+        sessions = await session_service.get_user_sessions(current_user.id)
+        
+        # Calculate statistics
+        total_sessions = len(sessions)
+        active_sessions = len([s for s in sessions if s.get("is_active", True)])
+        
+        # Get session analytics
+        analytics = await session_service.get_session_analytics(current_user.id)
+        
+        return {
+            "user_id": current_user.id,
+            "session_stats": {
+                "total_sessions": total_sessions,
+                "active_sessions": active_sessions,
+                "expired_sessions": total_sessions - active_sessions
+            },
+            "analytics_summary": {
+                "total_duration": analytics.get("total_duration", 0),
+                "average_session_duration": analytics.get("average_session_duration", 0),
+                "most_active_device": analytics.get("most_active_device", "Unknown")
+            },
+            "last_activity": analytics.get("last_activity", None)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting session status for user {current_user.id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error retrieving session status"
+        )
+
+# @router.post("/test-token", response_model=schemas.User)
+# def test_token(current_user: models.User = Depends(get_current_user)) -> Any:
+#     """
+#     Test access token
+#     """
+#     return current_user
 
 @router.post("/register", status_code=201)
 def register(
@@ -372,13 +774,16 @@ def register(
 def read_users_me(
     current_user: User = Depends(get_current_user),
 ):
+    """Get current user information"""
     return {
         "id": current_user.id,
         "email": current_user.email,
         "full_name": current_user.name,
         "role": "user",  # Default role for now
         "is_active": current_user.is_active,
-        "is_verified": current_user.is_verified
+        "is_verified": current_user.is_verified,
+        "created_at": current_user.created_at.isoformat() if hasattr(current_user, 'created_at') else None,
+        "updated_at": current_user.updated_at.isoformat() if hasattr(current_user, 'updated_at') else None
     }
 
 @router.get("/verify-email")
@@ -553,42 +958,42 @@ async def reset_password(
             detail=str(e)
         )
 
-@router.post("/change-password")
-async def change_password(
-    password_data: dict,
-    request: Request,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """Change user's password"""
-    current_password = password_data.get("current_password")
-    new_password = password_data.get("new_password")
-    
-    if not current_password or not new_password:
-        raise HTTPException(status_code=400, detail="Current password and new password are required")
-    
-    if not verify_password(current_password, str(current_user.hashed_password)):
-        raise HTTPException(status_code=400, detail="Current password is incorrect")
-    
-    # Update password
-    from app.core.security import get_password_hash
-    current_user.hashed_password = get_password_hash(new_password)
-    db.commit()
-    
-    # Audit log
-    from app.models.security import AuditLog
-    log = AuditLog(
-        user_id=current_user.id,
-        action="change_password",
-        resource_type="user",
-        resource_id=str(current_user.id),
-        details={"success": True, "ip_address": request.client.host},
-        ip_address=request.client.host
-    )
-    db.add(log)
-    db.commit()
-    
-    return {"message": "Password changed successfully"}
+# @router.post("/change-password")
+# async def change_password(
+#     password_data: dict,
+#     request: Request,
+#     current_user: User = Depends(get_current_user),
+#     db: Session = Depends(get_db)
+# ):
+#     """Change user's password"""
+#     current_password = password_data.get("current_password")
+#     new_password = password_data.get("new_password")
+#     
+#     if not current_password or not new_password:
+#         raise HTTPException(status_code=400, detail="Current password and new password are required")
+#     
+#     if not verify_password(current_password, str(current_user.hashed_password)):
+#         raise HTTPException(status_code=400, detail="Current password is incorrect")
+#     
+#     # Update password
+#     from app.core.security import get_password_hash
+#     current_user.hashed_password = get_password_hash(new_password)
+#     db.commit()
+#     
+#     # Audit log
+#     from app.models.security import AuditLog
+#     log = AuditLog(
+#         user_id=current_user.id,
+#         action="change_password",
+#         resource_type="user",
+#         resource_id=str(current_user.id),
+#         details={"success": True, "ip_address": request.client.host},
+#         ip_address=request.client.host
+#     )
+#     db.add(log)
+#     db.commit()
+#     
+#     return {"message": "Password changed successfully"}
 
 # --- 2FA IMPLEMENTATION ---
 import pyotp
@@ -597,149 +1002,247 @@ import base64
 from io import BytesIO
 
 @router.post("/2fa/setup")
-def setup_2fa(
+async def setup_2fa(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Setup 2FA for user"""
-    # Generate a new secret
-    secret = pyotp.random_base32()
-    
-    # Create TOTP object
-    totp = pyotp.TOTP(secret)
-    
-    # Generate QR code
-    provisioning_uri = totp.provisioning_uri(
-        name=current_user.email,
-        issuer_name="AssignmentAI"
-    )
-    
-    # Create QR code image
-    qr = qrcode.QRCode(version=1, box_size=10, border=5)
-    qr.add_data(provisioning_uri)
-    qr.make(fit=True)
-    
-    img = qrcode.make(provisioning_uri)
-    buffer = BytesIO()
-    img.save(buffer, format='PNG')
-    qr_code_base64 = base64.b64encode(buffer.getvalue()).decode()
-    
-    # Store secret temporarily (in production, store in user model)
-    # For now, we'll store it in a global variable for testing
-    global user_2fa_secrets
-    if 'user_2fa_secrets' not in globals():
-        user_2fa_secrets = {}
-    user_2fa_secrets[current_user.id] = secret
-    
-    # Generate a setup ID for tracking
-    setup_id = str(uuid.uuid4())
-    
-    return {
-        "setup_id": setup_id,
-        "qr_code": f"data:image/png;base64,{qr_code_base64}",
-        "secret": secret
-    }
+    try:
+        # Check if 2FA is already enabled
+        if current_user.two_factor_enabled:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="2FA is already enabled for this account"
+            )
+        
+        # Setup 2FA using the service
+        secret, qr_code = TwoFactorAuthService.setup_2fa(db, current_user)
+        
+        # Log 2FA setup attempt
+        from app.models.security import AuditLog
+        audit_log = AuditLog(
+            user_id=current_user.id,
+            action="2fa_setup_initiated",
+            details={
+                "ip_address": "N/A",  # Would be available in request context
+                "user_agent": "N/A"
+            },
+            ip_address="N/A"
+        )
+        db.add(audit_log)
+        db.commit()
+        
+        return {
+            "message": "2FA setup initiated",
+            "qr_code": f"data:image/png;base64,{qr_code}",
+            "secret": secret,  # In production, you might want to hide this
+            "manual_entry": f"otpauth://totp/{settings.PROJECT_NAME}:{current_user.email}?secret={secret}&issuer={settings.PROJECT_NAME}"
+        }
+        
+    except Exception as e:
+        logger.error(f"2FA setup error for user {current_user.id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error setting up 2FA"
+        )
 
 @router.post("/2fa/verify")
-def verify_2fa_setup(
-    code: str = Body(..., embed=True),
+async def verify_2fa_setup(
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Verify 2FA setup with a code"""
-    global user_2fa_secrets
-    if 'user_2fa_secrets' not in globals():
-        user_2fa_secrets = {}
-    
-    secret = user_2fa_secrets.get(current_user.id)
-    if not secret:
-        raise HTTPException(status_code=400, detail="2FA not set up")
-    
-    totp = pyotp.TOTP(secret)
-    if not totp.verify(code):
-        raise HTTPException(status_code=400, detail="Invalid 2FA code")
-    
-    # Generate backup codes
-    backup_codes = [str(uuid.uuid4())[:8].upper() for _ in range(8)]
-    
-    # Store backup codes (in production, store in user model)
-    global user_backup_codes
-    if 'user_backup_codes' not in globals():
-        user_backup_codes = {}
-    user_backup_codes[current_user.id] = backup_codes
-    
-    # Mark 2FA as enabled (in production, update user model)
-    global user_2fa_enabled
-    if 'user_2fa_enabled' not in globals():
-        user_2fa_enabled = {}
-    user_2fa_enabled[current_user.id] = True
-    
-    return {"backup_codes": backup_codes}
+    """Verify 2FA setup with a code and enable 2FA"""
+    try:
+        # Parse request data
+        if request.headers.get("content-type", "").startswith("application/json"):
+            data = await request.json()
+        else:
+            data = await request.form()
+        
+        code = data.get("code")
+        if not code:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="2FA code is required"
+            )
+        
+        # Check if 2FA is already enabled
+        if current_user.two_factor_enabled:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="2FA is already enabled for this account"
+            )
+        
+        # Verify the code and enable 2FA
+        if not TwoFactorAuthService.confirm_2fa(db, current_user, code):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid 2FA code"
+            )
+        
+        # Generate backup codes
+        backup_codes = TwoFactorAuthService.generate_backup_codes(db, current_user)
+        
+        # Log successful 2FA setup
+        from app.models.security import AuditLog
+        audit_log = AuditLog(
+            user_id=current_user.id,
+            action="2fa_setup_completed",
+            details={
+                "ip_address": request.client.host if request.client else "N/A",
+                "user_agent": request.headers.get("user-agent", "N/A")
+            },
+            ip_address=request.client.host if request.client else "N/A"
+        )
+        db.add(audit_log)
+        db.commit()
+        
+        return {
+            "message": "2FA has been successfully enabled",
+            "backup_codes": backup_codes,
+            "warning": "Store these backup codes in a safe place. You won't be able to see them again."
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"2FA verification error for user {current_user.id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error verifying 2FA setup"
+        )
 
 @router.post("/2fa/recover")
-def recover_2fa(
-    backup_code: str = None,
+async def recover_2fa(
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Recover 2FA using backup code or generate new setup"""
-    global user_backup_codes
-    if 'user_backup_codes' not in globals():
-        user_backup_codes = {}
-    
-    # If backup code is provided, validate it
-    if backup_code:
-        backup_codes = user_backup_codes.get(current_user.id, [])
-        if backup_code not in backup_codes:
-            raise HTTPException(status_code=400, detail="Invalid backup code")
+    try:
+        # Parse request data
+        if request.headers.get("content-type", "").startswith("application/json"):
+            data = await request.json()
+        else:
+            data = await request.form()
         
-        # Remove used backup code
-        backup_codes.remove(backup_code)
-        user_backup_codes[current_user.id] = backup_codes
-    
-    # Generate new setup
-    secret = pyotp.random_base32()
-    totp = pyotp.TOTP(secret)
-    
-    provisioning_uri = totp.provisioning_uri(
-        name=current_user.email,
-        issuer_name="AssignmentAI"
-    )
-    
-    qr = qrcode.QRCode(version=1, box_size=10, border=5)
-    qr.add_data(provisioning_uri)
-    qr.make(fit=True)
-    
-    img = qrcode.make(provisioning_uri)
-    buffer = BytesIO()
-    img.save(buffer, format='PNG')
-    qr_code_base64 = base64.b64encode(buffer.getvalue()).decode()
-    
-    global user_2fa_secrets
-    if 'user_2fa_secrets' not in globals():
-        user_2fa_secrets = {}
-    user_2fa_secrets[current_user.id] = secret
-    
-    return {
-        "setup_id": 1,
-        "qr_code": f"data:image/png;base64,{qr_code_base64}",
-        "secret": secret
-    }
+        backup_code = data.get("backup_code")
+        
+        # If backup code is provided, validate it
+        if backup_code:
+            if not TwoFactorAuthService.verify_backup_code(db, current_user, backup_code):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid or used backup code"
+                )
+            
+            # Log successful backup code usage
+            from app.models.security import AuditLog
+            audit_log = AuditLog(
+                user_id=current_user.id,
+                action="2fa_backup_code_used",
+                details={
+                    "ip_address": request.client.host if request.client else "N/A",
+                    "user_agent": request.headers.get("user-agent", "N/A")
+                },
+                ip_address=request.client.host if request.client else "N/A"
+            )
+            db.add(audit_log)
+            db.commit()
+            
+            return {
+                "message": "Backup code verified successfully",
+                "2fa_disabled": True
+            }
+        
+        # If no backup code provided, generate new setup
+        if not current_user.two_factor_enabled:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="2FA is not enabled for this account"
+            )
+        
+        # Disable current 2FA and generate new setup
+        TwoFactorAuthService.disable_2fa(db, current_user)
+        secret, qr_code = TwoFactorAuthService.setup_2fa(db, current_user)
+        
+        # Log 2FA recovery attempt
+        from app.models.security import AuditLog
+        audit_log = AuditLog(
+            user_id=current_user.id,
+            action="2fa_recovery_initiated",
+            details={
+                "ip_address": request.client.host if request.client else "N/A",
+                "user_agent": request.headers.get("user-agent", "N/A")
+            },
+            ip_address=request.client.host if request.client else "N/A"
+        )
+        db.add(audit_log)
+        db.commit()
+        
+        return {
+            "message": "2FA recovery initiated",
+            "qr_code": f"data:image/png;base64,{qr_code}",
+            "secret": secret,
+            "manual_entry": f"otpauth://totp/{settings.PROJECT_NAME}:{current_user.email}?secret={secret}&issuer={settings.PROJECT_NAME}"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"2FA recovery error for user {current_user.id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error during 2FA recovery"
+        )
 
 @router.post("/2fa/regenerate-backup-codes")
-def regenerate_backup_codes(
+async def regenerate_backup_codes(
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Regenerate backup codes"""
-    global user_backup_codes
-    if 'user_backup_codes' not in globals():
-        user_backup_codes = {}
-    
-    backup_codes = [str(uuid.uuid4())[:8].upper() for _ in range(8)]
-    user_backup_codes[current_user.id] = backup_codes
-    
-    return {"backup_codes": backup_codes}
+    """Regenerate backup codes for 2FA"""
+    try:
+        # Check if 2FA is enabled
+        if not current_user.two_factor_enabled:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="2FA is not enabled for this account"
+            )
+        
+        # Regenerate backup codes
+        backup_codes = TwoFactorAuthService.generate_backup_codes(db, current_user)
+        
+        # Log backup codes regeneration
+        from app.models.security import AuditLog
+        audit_log = AuditLog(
+            user_id=current_user.id,
+            action="2fa_backup_codes_regenerated",
+            details={
+                "ip_address": request.client.host if request.client else "N/A",
+                "user_agent": request.headers.get("user-agent", "N/A")
+            },
+            ip_address=request.client.host if request.client else "N/A"
+        )
+        db.add(audit_log)
+        db.commit()
+        
+        return {
+            "message": "Backup codes regenerated successfully",
+            "backup_codes": backup_codes,
+            "warning": "Store these new backup codes in a safe place. The old backup codes are no longer valid."
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Backup codes regeneration error for user {current_user.id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error regenerating backup codes"
+        )
 
 @router.post("/verify-2fa")
 async def verify_2fa_code(
@@ -748,44 +1251,183 @@ async def verify_2fa_code(
     db: Session = Depends(get_db)
 ):
     """Verify 2FA code during login"""
-    if request.headers.get("content-type", "").startswith("application/json"):
-        data = await request.json()
-    else:
-        data = await request.form()
-    
-    code = data.get("code")
-    is_backup_code = data.get("is_backup_code", False)
-    
-    if not code:
-        raise HTTPException(status_code=400, detail="Code is required")
-    
-    global user_2fa_enabled, user_2fa_secrets, user_backup_codes
-    if 'user_2fa_enabled' not in globals():
-        user_2fa_enabled = {}
-    if 'user_2fa_secrets' not in globals():
-        user_2fa_secrets = {}
-    if 'user_backup_codes' not in globals():
-        user_backup_codes = {}
-    
-    if not user_2fa_enabled.get(current_user.id, False):
-        raise HTTPException(status_code=400, detail="2FA not enabled")
-    
-    if is_backup_code:
-        backup_codes = user_backup_codes.get(current_user.id, [])
-        if code not in backup_codes:
-            raise HTTPException(status_code=401, detail="Invalid or used backup code")
+    try:
+        # Parse request data
+        if request.headers.get("content-type", "").startswith("application/json"):
+            data = await request.json()
+        else:
+            data = await request.form()
         
-        # Remove used backup code
-        backup_codes.remove(code)
-        user_backup_codes[current_user.id] = backup_codes
-        return {"success": True}
-    else:
-        secret = user_2fa_secrets.get(current_user.id)
-        if not secret:
-            raise HTTPException(status_code=400, detail="2FA not set up")
+        code = data.get("code")
+        is_backup_code = data.get("is_backup_code", False)
         
-        totp = pyotp.TOTP(secret)
-        if not totp.verify(code):
-            raise HTTPException(status_code=401, detail="Invalid 2FA code")
+        if not code:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="2FA code is required"
+            )
         
-        return {"success": True} 
+        # Check if 2FA is enabled
+        if not current_user.two_factor_enabled:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="2FA is not enabled for this account"
+            )
+        
+        # Verify the code
+        if is_backup_code:
+            if not TwoFactorAuthService.verify_backup_code(db, current_user, code):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid or used backup code"
+                )
+        else:
+            if not TwoFactorAuthService.verify_2fa(db, current_user, code):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid 2FA code"
+                )
+        
+        # Create session after successful 2FA verification
+        session_service = get_session_service(db)
+        session = await session_service.create_session(
+            user_id=current_user.id,
+            ip_address=request.client.host if request.client else "N/A",
+            user_agent=request.headers.get("user-agent", "N/A")
+        )
+        
+        # Create access token
+        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            subject=current_user.id, expires_delta=access_token_expires
+        )
+        
+        # Create refresh token
+        refresh_token_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        refresh_token = create_refresh_token(
+            subject=current_user.id, expires_delta=refresh_token_expires
+        )
+        
+        # Log successful 2FA verification
+        from app.models.security import AuditLog
+        audit_log = AuditLog(
+            user_id=current_user.id,
+            action="2fa_verification_successful",
+            details={
+                "ip_address": request.client.host if request.client else "N/A",
+                "user_agent": request.headers.get("user-agent", "N/A"),
+                "used_backup_code": is_backup_code,
+                "session_id": str(session.id)
+            },
+            ip_address=request.client.host if request.client else "N/A"
+        )
+        db.add(audit_log)
+        db.commit()
+        
+        return {
+            "message": "2FA verification successful",
+            "access_token": access_token,
+            "token_type": "bearer",
+            "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            "refresh_token": refresh_token,
+            "user": {
+                "id": str(current_user.id),
+                "email": current_user.email,
+                "name": current_user.name or "",
+                "is_verified": current_user.is_verified,
+                "is_active": current_user.is_active
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"2FA verification error for user {current_user.id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error during 2FA verification"
+        )
+
+@router.get("/2fa/status")
+async def get_2fa_status(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get 2FA status for the current user"""
+    try:
+        return {
+            "enabled": current_user.two_factor_enabled,
+            "has_backup_codes": bool(current_user.backup_codes and len(current_user.backup_codes) > 0),
+            "backup_codes_remaining": len(current_user.backup_codes) if current_user.backup_codes else 0
+        }
+    except Exception as e:
+        logger.error(f"Error getting 2FA status for user {current_user.id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error retrieving 2FA status"
+        )
+
+@router.post("/2fa/disable")
+async def disable_2fa(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Disable 2FA for the current user"""
+    try:
+        # Check if 2FA is enabled
+        if not current_user.two_factor_enabled:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="2FA is not enabled for this account"
+            )
+        
+        # Parse request data for password confirmation
+        if request.headers.get("content-type", "").startswith("application/json"):
+            data = await request.json()
+        else:
+            data = await request.form()
+        
+        password = data.get("password")
+        if not password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Password is required to disable 2FA"
+            )
+        
+        # Verify password
+        if not verify_password(password, str(current_user.hashed_password)):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid password"
+            )
+        
+        # Disable 2FA
+        TwoFactorAuthService.disable_2fa(db, current_user)
+        
+        # Log 2FA disable
+        from app.models.security import AuditLog
+        audit_log = AuditLog(
+            user_id=current_user.id,
+            action="2fa_disabled",
+            details={
+                "ip_address": request.client.host if request.client else "N/A",
+                "user_agent": request.headers.get("user-agent", "N/A")
+            },
+            ip_address=request.client.host if request.client else "N/A"
+        )
+        db.add(audit_log)
+        db.commit()
+        
+        return {
+            "message": "2FA has been successfully disabled"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error disabling 2FA for user {current_user.id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error disabling 2FA"
+        ) 

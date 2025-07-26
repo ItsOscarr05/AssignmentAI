@@ -20,6 +20,12 @@ class SecurityMonitoringService:
         self.alert_log_file = self.log_dir / "security_alerts.log"
         self.metrics_file = self.log_dir / "security_metrics.json"
         self.alert_thresholds = settings.ALERT_THRESHOLDS
+        
+        # IP-based monitoring
+        self.ip_activity = {}  # Track IP activity
+        self.suspicious_ips = set()  # Known suspicious IPs
+        self.ip_failed_attempts = {}  # Track failed attempts per IP
+        self.ip_successful_logins = {}  # Track successful logins per IP
 
     def log_security_alert(
         self,
@@ -89,13 +95,34 @@ class SecurityMonitoringService:
 
     def track_failed_login_attempts(self, db: Session, user: User, ip_address: str) -> None:
         """Track failed login attempts and generate alerts"""
+        # Track IP-based failed attempts
+        if ip_address not in self.ip_failed_attempts:
+            self.ip_failed_attempts[ip_address] = 0
+        self.ip_failed_attempts[ip_address] += 1
+        
+        # Check for suspicious IP activity
+        if self.ip_failed_attempts[ip_address] >= 10:  # 10 failed attempts from same IP
+            self.suspicious_ips.add(ip_address)
+            self.log_security_alert(
+                "SUSPICIOUS_IP_ACTIVITY",
+                "HIGH",
+                {
+                    "ip_address": ip_address,
+                    "failed_attempts": self.ip_failed_attempts[ip_address],
+                    "action": "IP marked as suspicious"
+                },
+                user.id if user else None,
+                ip_address
+            )
+        
         if user.failed_login_attempts >= settings.MAX_LOGIN_ATTEMPTS:
             self.log_security_alert(
                 "ACCOUNT_LOCKED",
                 "HIGH",
                 {
                     "failed_attempts": user.failed_login_attempts,
-                    "lockout_duration": settings.LOGIN_TIMEOUT_MINUTES
+                    "lockout_duration": settings.LOGIN_TIMEOUT_MINUTES,
+                    "ip_address": ip_address
                 },
                 user.id,
                 ip_address
@@ -112,6 +139,85 @@ class SecurityMonitoringService:
             },
             user.id
         )
+    
+    def track_successful_login(self, user: User, ip_address: str, user_agent: str) -> None:
+        """Track successful login and analyze for suspicious patterns"""
+        # Track successful logins per IP
+        if ip_address not in self.ip_successful_logins:
+            self.ip_successful_logins[ip_address] = 0
+        self.ip_successful_logins[ip_address] += 1
+        
+        # Check if IP was previously suspicious
+        if ip_address in self.suspicious_ips:
+            self.log_security_alert(
+                "SUCCESSFUL_LOGIN_FROM_SUSPICIOUS_IP",
+                "MEDIUM",
+                {
+                    "ip_address": ip_address,
+                    "user_agent": user_agent,
+                    "previous_failed_attempts": self.ip_failed_attempts.get(ip_address, 0)
+                },
+                user.id,
+                ip_address
+            )
+        
+        # Check for unusual login patterns (multiple successful logins from same IP)
+        if self.ip_successful_logins[ip_address] > 5:  # More than 5 successful logins from same IP
+            self.log_security_alert(
+                "MULTIPLE_SUCCESSFUL_LOGINS_FROM_IP",
+                "LOW",
+                {
+                    "ip_address": ip_address,
+                    "successful_logins": self.ip_successful_logins[ip_address],
+                    "user_agent": user_agent
+                },
+                user.id,
+                ip_address
+            )
+    
+    def is_ip_suspicious(self, ip_address: str) -> bool:
+        """Check if an IP address is marked as suspicious"""
+        return ip_address in self.suspicious_ips
+    
+    def get_ip_risk_score(self, ip_address: str) -> int:
+        """Calculate risk score for an IP address (0-100)"""
+        score = 0
+        
+        # Failed attempts contribute to risk
+        failed_attempts = self.ip_failed_attempts.get(ip_address, 0)
+        score += min(failed_attempts * 10, 50)  # Max 50 points for failed attempts
+        
+        # Suspicious IP status
+        if ip_address in self.suspicious_ips:
+            score += 30
+        
+        # Multiple successful logins (potential shared account)
+        successful_logins = self.ip_successful_logins.get(ip_address, 0)
+        if successful_logins > 3:
+            score += min((successful_logins - 3) * 5, 20)  # Max 20 points
+        
+        return min(score, 100)
+    
+    def analyze_login_patterns(self, ip_address: str, user_agent: str) -> Dict:
+        """Analyze login patterns for suspicious activity"""
+        analysis = {
+            "ip_address": ip_address,
+            "risk_score": self.get_ip_risk_score(ip_address),
+            "is_suspicious": self.is_ip_suspicious(ip_address),
+            "failed_attempts": self.ip_failed_attempts.get(ip_address, 0),
+            "successful_logins": self.ip_successful_logins.get(ip_address, 0),
+            "recommendations": []
+        }
+        
+        # Generate recommendations based on analysis
+        if analysis["risk_score"] > 70:
+            analysis["recommendations"].append("Consider blocking this IP address")
+        elif analysis["risk_score"] > 50:
+            analysis["recommendations"].append("Monitor this IP address closely")
+        elif analysis["risk_score"] > 30:
+            analysis["recommendations"].append("Consider additional verification for this IP")
+        
+        return analysis
 
     def track_rate_limit_violation(self, ip_address: str, endpoint: str, attempts: int) -> None:
         """Track rate limit violations"""

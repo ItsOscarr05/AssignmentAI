@@ -9,18 +9,7 @@ const mockUser = {
 
 // Mock auth service
 export const mockAuth = {
-  login: async (email: string, password: string) => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
 
-    // Mock authentication
-    if (email === 'test@example.com' && password === 'password') {
-      const token = 'mock-jwt-token';
-      return { token, user: mockUser };
-    }
-
-    throw new Error('Invalid credentials');
-  },
 
   register: async (userData: {
     firstName: string;

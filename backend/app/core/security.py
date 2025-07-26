@@ -155,24 +155,57 @@ def update_password_history(db: Session, user: User, new_password: str) -> None:
     db.commit()
 
 def track_login_attempt(db: Session, user: User, success: bool) -> None:
-    """Track login attempts and handle account locking"""
+    """Track login attempts and handle account locking with progressive delays"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
     if success:
+        # Reset on successful login
         user.failed_login_attempts = 0
         user.account_locked_until = None
         user.last_login = datetime.utcnow()
+        logger.info(f"Successful login for user {user.email}")
     else:
         user.failed_login_attempts += 1
+        
+        # Progressive lockout: longer delays for repeated failures
         if user.failed_login_attempts >= settings.MAX_LOGIN_ATTEMPTS:
-            user.account_locked_until = datetime.utcnow() + timedelta(minutes=settings.LOGIN_TIMEOUT_MINUTES)
+            # Calculate progressive delay: 15min, 30min, 1hr, 2hr, 4hr, 8hr, 24hr
+            delay_minutes = min(15 * (2 ** (user.failed_login_attempts - settings.MAX_LOGIN_ATTEMPTS)), 1440)
+            user.account_locked_until = datetime.utcnow() + timedelta(minutes=delay_minutes)
+            
+            logger.warning(
+                f"Account locked for user {user.email} after {user.failed_login_attempts} failed attempts. "
+                f"Locked until {user.account_locked_until}"
+            )
+        else:
+            logger.warning(
+                f"Failed login attempt {user.failed_login_attempts}/{settings.MAX_LOGIN_ATTEMPTS} for user {user.email}"
+            )
+    
     db.commit()
 
 def is_account_locked(user: User) -> bool:
-    """Check if account is locked"""
+    """Check if account is locked and return lockout information"""
     if not user.account_locked_until:
         return False
     
     if datetime.utcnow() > user.account_locked_until:
+        # Lockout expired, reset
         user.account_locked_until = None
         user.failed_login_attempts = 0
+        # Note: db.commit() should be called by the calling function
         return False
-    return True 
+    
+    return True
+
+def get_lockout_remaining_time(user: User) -> Optional[int]:
+    """Get remaining lockout time in seconds"""
+    if not user.account_locked_until:
+        return None
+    
+    remaining = user.account_locked_until - datetime.utcnow()
+    if remaining.total_seconds() <= 0:
+        return None
+    
+    return int(remaining.total_seconds()) 

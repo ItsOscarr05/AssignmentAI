@@ -125,7 +125,7 @@ mockAxiosInstance.interceptors.response.use(
   (error: any) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     return Promise.reject(error);
   }
@@ -135,12 +135,6 @@ export const api = mockAxiosInstance;
 
 // Auth endpoints
 export const auth = {
-  login: async (email: string, password: string) => {
-    // OAuth2PasswordRequestForm expects username and password
-    const response = await api.post('/auth/login', { username: email, password });
-    return response.data;
-  },
-
   register: async (userData: {
     firstName: string;
     lastName: string;

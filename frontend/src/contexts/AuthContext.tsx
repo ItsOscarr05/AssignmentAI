@@ -1,9 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api, { auth } from '../config/api';
+import { auth } from '../config/api';
 import { AuthService } from '../services/auth/AuthService';
+import { tokenManager } from '../services/auth/TokenManager';
 import { RegisterData } from '../services/authManager';
-import { AuthContextType, User } from '../types';
+import { securityMonitor } from '../services/security/SecurityMonitor';
+import { AuthContextType, LoginRequest, TokenWith2FA, User } from '../types';
+import { InputValidation } from '../utils/security';
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -19,7 +22,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isMockUser, setIsMockUser] = useState(false);
-  const [error] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [requires2FA, setRequires2FA] = useState(false);
+  const [tempToken, setTempToken] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -38,185 +43,323 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(false);
   }, []);
 
-  const login = async (email: string, password: string) => {
-    try {
-      await auth.login(email, password);
-
-      // After successful login, fetch user data
-      const userResponse = await auth.getCurrentUser();
-      const user = userResponse || {
-        id: 'user-1',
-        email,
-        name: email.split('@')[0],
-        firstName: email.split('@')[0],
-        lastName: '',
-        role: 'student',
-        bio: '',
-        location: '',
-        avatar: '',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      setUser(user);
-      setIsMockUser(false);
-      localStorage.setItem('user', JSON.stringify(user));
-      localStorage.setItem('isMockUser', 'false');
-      navigate('/dashboard');
-    } catch (error) {
-      console.error('Login failed:', error);
-      throw error;
-    }
-  };
-
   // Remove unused parameters from handleCallback
   const handleCallback = async () => {
     // This function is now a no-op since the backend handles the callback and redirects with the token.
     return;
   };
 
+  const login = async (credentials: LoginRequest): Promise<TokenWith2FA> => {
+    try {
+      setError(null);
+      setIsLoading(true);
+
+      // Validate input
+      if (!InputValidation.isValidEmail(credentials.email)) {
+        throw new Error('Invalid email format');
+      }
+
+      // Log login attempt
+      securityMonitor.logLoginAttempt(credentials.email, false, 'Attempting login');
+
+      const response = await AuthService.login(credentials);
+
+      // Log successful login
+      securityMonitor.logLoginAttempt(credentials.email, true);
+
+      if (response.requires_2fa) {
+        // Store temporary token for 2FA verification
+        setTempToken(response.access_token);
+        setRequires2FA(true);
+
+        // Log 2FA requirement
+        securityMonitor.log2FAEvent('2fa_verification', false, undefined, '2FA required for login');
+
+        return response;
+      } else {
+        // Regular login successful
+        await handleSuccessfulLogin(response);
+        return response;
+      }
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.detail || error.message || 'Login failed';
+      setError(errorMessage);
+
+      // Log failed login attempt
+      securityMonitor.logLoginAttempt(credentials.email, false, errorMessage);
+
+      throw new Error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const verify2FA = async (code: string, isBackupCode: boolean = false): Promise<void> => {
+    try {
+      setError(null);
+      setIsLoading(true);
+
+      // Validate 2FA code format
+      if (!isBackupCode && !InputValidation.isValid2FACode(code)) {
+        throw new Error('Invalid 2FA code format');
+      }
+      if (isBackupCode && !InputValidation.isValidBackupCode(code)) {
+        throw new Error('Invalid backup code format');
+      }
+
+      const response = await AuthService.verify2FA(code, isBackupCode);
+
+      // Log successful 2FA verification
+      securityMonitor.log2FAEvent('2fa_verification', true);
+
+      await handleSuccessfulLogin(response);
+      setRequires2FA(false);
+      setTempToken(null);
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.detail || error.message || '2FA verification failed';
+      setError(errorMessage);
+
+      // Log failed 2FA verification
+      securityMonitor.log2FAEvent('2fa_verification', false, undefined, errorMessage);
+
+      throw new Error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSuccessfulLogin = async (response: TokenWith2FA) => {
+    // Store tokens using token manager
+    tokenManager.storeTokens({
+      access_token: response.access_token,
+      refresh_token: response.refresh_token,
+      expires_in: response.expires_in,
+      token_type: response.token_type,
+    });
+
+    // Get user data
+    let userData = response.user;
+    if (!userData) {
+      try {
+        const currentUser = await AuthService.getCurrentUser();
+        // Convert the current user response to match the expected format
+        userData = {
+          id: currentUser.id,
+          email: currentUser.email,
+          name: currentUser.name,
+          is_verified: true, // Assume verified if we can get current user
+          is_active: true,
+        };
+      } catch (error) {
+        console.error('Failed to get current user:', error);
+      }
+    }
+
+    if (userData) {
+      // Convert API user data to User type
+      const user: User = {
+        id: userData.id,
+        email: userData.email,
+        name: userData.name,
+        role: 'student', // Default role, can be updated from user profile
+        firstName: userData.name.split(' ')[0] || '',
+        lastName: userData.name.split(' ').slice(1).join(' ') || '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      setUser(user);
+      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('isMockUser', 'false');
+      setIsMockUser(false);
+
+      // Log session creation
+      securityMonitor.logSessionEvent('session_created', 'session-id', user.id);
+    }
+
+    navigate('/dashboard');
+  };
+
   const logout = async () => {
     try {
-      await auth.logout();
+      await AuthService.logout();
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
+      // Clear all authentication data
       setUser(null);
+      setRequires2FA(false);
+      setTempToken(null);
+      setError(null);
       setIsMockUser(false);
+
+      // Clear tokens using token manager
+      tokenManager.clearTokens();
+
+      // Clear localStorage
       localStorage.removeItem('user');
       localStorage.removeItem('isMockUser');
-      navigate('/login');
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+
+      // Log logout event
+      securityMonitor.logEvent('logout', 'low', {});
+
+      navigate('/');
+    }
+  };
+
+  const logoutAll = async () => {
+    try {
+      await AuthService.logoutAll();
+    } catch (error) {
+      console.error('Logout all error:', error);
+    } finally {
+      // Clear all authentication data
+      setUser(null);
+      setRequires2FA(false);
+      setTempToken(null);
+      setError(null);
+      setIsMockUser(false);
+
+      // Clear tokens using token manager
+      tokenManager.clearTokens();
+
+      // Clear localStorage
+      localStorage.removeItem('user');
+      localStorage.removeItem('isMockUser');
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+
+      // Log logout all event
+      securityMonitor.logEvent('logout', 'low', { logoutAll: true });
+
+      navigate('/');
     }
   };
 
   const updateUser = async (userData: Partial<User>) => {
-    try {
-      const response = await api.patch('/users/me', userData);
-      setUser(response.data);
-    } catch (error) {
-      console.error('Failed to update user:', error);
-      throw error;
+    setUser(prev => (prev ? { ...prev, ...userData } : null));
+    if (user) {
+      localStorage.setItem('user', JSON.stringify({ ...user, ...userData }));
     }
   };
 
   const register = async (userData: RegisterData) => {
-    const { email, password, confirm_password } = userData;
-    if (password !== confirm_password) {
-      throw new Error('Passwords do not match');
-    }
-    const name = userData.email.split('@')[0]; // Use email prefix as name
-    const [firstName, ...rest] = name.split('.');
-    const lastName = rest.join('.');
-
     try {
-      // Clear any plan-related storage before registration (only for new users)
-      localStorage.removeItem('selectedPlan');
-      localStorage.removeItem('planSelection');
-      localStorage.removeItem('pricingPlan');
-      sessionStorage.removeItem('selectedPlan');
-      sessionStorage.removeItem('planSelection');
-      sessionStorage.removeItem('pricingPlan');
+      setError(null);
+      setIsLoading(true);
 
-      const response = await AuthService.register({
-        email,
-        password,
-        firstName,
-        lastName,
+      // Validate input
+      if (!InputValidation.isValidEmail(userData.email)) {
+        throw new Error('Invalid email format');
+      }
+
+      const passwordValidation = InputValidation.validatePassword(userData.password);
+      if (!passwordValidation.isValid) {
+        throw new Error(passwordValidation.errors.join(', '));
+      }
+
+      if (userData.password !== userData.confirm_password) {
+        throw new Error('Passwords do not match');
+      }
+
+      const response = await auth.register(userData);
+
+      // Log successful registration
+      securityMonitor.logEvent('profile_update', 'low', {
+        action: 'registration',
+        email: userData.email,
       });
 
-      // Ensure new users start with free plan regardless of any previous plan selection
-      console.log('New user registered successfully - ensuring free plan assignment');
-
-      // If registration is successful, show success message and redirect to login
-      // Note: Most backends don't auto-login after registration for security
       return response;
-    } catch (error) {
-      console.error('Registration failed:', error);
-      throw error;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.detail || error.message || 'Registration failed';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const mockLogin = () => {
-    console.log('Mock login called');
     const mockUser: User = {
-      id: 'mock-1',
-      email: 'mock@example.com',
-      name: 'Mock User',
-      role: 'student',
-      firstName: 'Mock',
+      id: 'mock-user-id',
+      email: 'dev@example.com',
+      name: 'Development User',
+      role: 'teacher',
+      firstName: 'Development',
       lastName: 'User',
-      bio: 'Student at Example University',
-      location: 'New York, USA',
-      avatar: 'https://via.placeholder.com/150',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
+
     setUser(mockUser);
     setIsMockUser(true);
     localStorage.setItem('user', JSON.stringify(mockUser));
     localStorage.setItem('isMockUser', 'true');
-    console.log('Mock user set:', mockUser);
-    navigate('/dashboard');
-  };
 
-  const testLogin = async (email: string, password: string) => {
-    try {
-      const response = await auth.login(email, password);
-      const realUser = response.user || {
-        id: 'real-1',
-        email,
-        name: 'Real User',
-        firstName: 'Real',
-        lastName: 'User',
-        role: 'student',
-        bio: 'Real user from backend',
-        location: 'Real Location',
-        avatar: 'https://via.placeholder.com/150',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      setUser(realUser);
-      setIsMockUser(false);
-      localStorage.setItem('user', JSON.stringify(realUser));
-      localStorage.setItem('isMockUser', 'false');
-      navigate('/dashboard');
-    } catch (error) {
-      console.error('Login failed:', error);
-      throw error;
-    }
+    // Log mock login
+    securityMonitor.logEvent('login_success', 'low', {
+      isMockUser: true,
+      email: mockUser.email,
+    });
+
+    navigate('/dashboard');
   };
 
   const resetPassword = async (email: string) => {
     try {
-      await auth.forgotPassword(email);
-    } catch (error) {
-      console.error('Reset password failed:', error);
-      throw error;
+      await AuthService.forgotPassword(email);
+
+      // Log password reset request
+      securityMonitor.logEvent('password_reset', 'low', {
+        email: InputValidation.isValidEmail(email) ? email : 'invalid-email',
+      });
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.detail || error.message || 'Password reset failed';
+      setError(errorMessage);
+      throw new Error(errorMessage);
     }
   };
 
   const updatePassword = async (token: string, newPassword: string) => {
     try {
-      await auth.resetPassword(token, newPassword);
-    } catch (error) {
-      console.error('Update password failed:', error);
-      throw error;
+      // Validate password
+      const passwordValidation = InputValidation.validatePassword(newPassword);
+      if (!passwordValidation.isValid) {
+        throw new Error(passwordValidation.errors.join(', '));
+      }
+
+      await AuthService.resetPassword(token, newPassword);
+
+      // Log password change
+      securityMonitor.logEvent('password_change', 'medium', {});
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.detail || error.message || 'Password update failed';
+      setError(errorMessage);
+      throw new Error(errorMessage);
     }
   };
 
-  const value = {
+  const value: AuthContextType = {
     user,
     isAuthenticated: !!user,
     isLoading,
     error,
     isMockUser,
-    login,
+    requires2FA,
+    tempToken,
     handleCallback,
+    login,
+    verify2FA,
     logout,
+    logoutAll,
     updateUser,
     register,
     mockLogin,
-    testLogin,
     resetPassword,
     updatePassword,
   };
