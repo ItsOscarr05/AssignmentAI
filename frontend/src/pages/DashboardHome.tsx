@@ -544,7 +544,7 @@ const DashboardHome: React.FC = () => {
     <Box sx={{ overflow: 'hidden', width: '100%' }}>
       {/* Top Section: Welcome & Quick Start */}
       <Grid container spacing={{ xs: 0.5, md: 3 }} sx={{ mb: 2, width: '100%' }}>
-        <Grid item xs={11.5} md={6}>
+        <Grid item xs={11.5} md={12}>
           <Paper
             sx={{
               p: { xs: 1, md: 3 },
@@ -801,10 +801,46 @@ const DashboardHome: React.FC = () => {
               <Table sx={{ width: '100%' }}>
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ color: '#D32F2F', fontWeight: 700 }}>Assignment</TableCell>
-                    <TableCell sx={{ color: '#D32F2F', fontWeight: 700 }}>Status</TableCell>
-                    <TableCell sx={{ color: '#D32F2F', fontWeight: 700 }}>Last Used</TableCell>
-                    <TableCell sx={{ color: '#D32F2F', fontWeight: 700 }}>Actions</TableCell>
+                    <TableCell
+                      sx={{
+                        color: '#D32F2F',
+                        fontWeight: 700,
+                        width: { xs: '40%', md: 'auto' },
+                        p: { xs: 1, md: 2 },
+                      }}
+                    >
+                      Assignment
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        color: '#D32F2F',
+                        fontWeight: 700,
+                        width: { xs: '20%', md: 'auto' },
+                        p: { xs: 1, md: 2 },
+                      }}
+                    >
+                      Status
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        color: '#D32F2F',
+                        fontWeight: 700,
+                        width: { xs: '20%', md: 'auto' },
+                        p: { xs: 1, md: 2 },
+                      }}
+                    >
+                      Last Used
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        color: '#D32F2F',
+                        fontWeight: 700,
+                        width: { xs: '20%', md: 'auto' },
+                        p: { xs: 1, md: 2 },
+                      }}
+                    >
+                      Actions
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -834,7 +870,7 @@ const DashboardHome: React.FC = () => {
                   ) : (
                     filteredAssignments.slice(page * 5, page * 5 + 5).map(assignment => (
                       <TableRow key={assignment.id}>
-                        <TableCell>
+                        <TableCell sx={{ p: { xs: 1, md: 2 } }}>
                           <span
                             style={{ cursor: 'pointer', fontWeight: 500, textDecoration: 'none' }}
                             onClick={() => setSelectedAssignment(assignment)}
@@ -844,7 +880,7 @@ const DashboardHome: React.FC = () => {
                             {assignment.title}
                           </span>
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ p: { xs: 1, md: 2 } }}>
                           <span
                             style={{
                               color:
@@ -861,8 +897,10 @@ const DashboardHome: React.FC = () => {
                             {assignment.status}
                           </span>
                         </TableCell>
-                        <TableCell>{new Date(assignment.createdAt).toLocaleDateString()}</TableCell>
-                        <TableCell>
+                        <TableCell sx={{ p: { xs: 1, md: 2 } }}>
+                          {new Date(assignment.createdAt).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell sx={{ p: { xs: 1, md: 2 } }}>
                           <Button
                             size="small"
                             sx={{ color: '#009688' }}

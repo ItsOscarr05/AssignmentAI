@@ -646,19 +646,46 @@ const Workshop: React.FC = () => {
   const progressColor = getProgressColor(tokenUsage.percentUsed);
 
   return (
-    <Box sx={{ p: 3, backgroundColor: 'white', minHeight: '100vh' }}>
+    <Box
+      sx={{
+        p: { xs: 1, md: 3 },
+        backgroundColor: 'white',
+        minHeight: '100vh',
+        overflow: 'hidden',
+        width: '100%',
+      }}
+    >
       {/* Header */}
-      <Card sx={{ ...cardStyle, mb: 4 }}>
-        <CardContent>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h4" sx={{ color: theme.palette.primary.main }}>
+      <Card sx={{ ...cardStyle, mb: { xs: 2, md: 4 } }}>
+        <CardContent sx={{ p: { xs: 1, md: 2 } }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', md: 'row' },
+              justifyContent: 'space-between',
+              alignItems: { xs: 'flex-start', md: 'center' },
+              gap: { xs: 1, md: 0 },
+            }}
+          >
+            <Typography
+              variant="h4"
+              sx={{
+                color: theme.palette.primary.main,
+                fontSize: { xs: '1.5rem', md: '2.125rem' },
+              }}
+            >
               AI Workshop
             </Typography>
             <Button
               variant="outlined"
               startIcon={<HistoryIcon />}
               onClick={() => setIsDrawerOpen(true)}
-              sx={{ borderColor: 'red', color: 'red', '&:hover': { borderColor: 'red' } }}
+              sx={{
+                borderColor: 'red',
+                color: 'red',
+                '&:hover': { borderColor: 'red' },
+                fontSize: { xs: '0.75rem', md: '0.875rem' },
+              }}
             >
               History
             </Button>
@@ -675,11 +702,11 @@ const Workshop: React.FC = () => {
         />
       )}
 
-      <Grid container spacing={3}>
+      <Grid container spacing={{ xs: 1, md: 3 }}>
         {/* Main Content */}
         <Grid item xs={12} md={9}>
           {/* Activity Chart */}
-          <Paper sx={{ ...cardStyle, p: 3, mb: 3 }}>
+          <Paper sx={{ ...cardStyle, p: { xs: 1, md: 3 }, mb: { xs: 2, md: 3 } }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
               <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
                 Weekly Activity Overview
@@ -718,7 +745,7 @@ const Workshop: React.FC = () => {
                 </Typography>
               </Box>
             ) : (
-              <Box sx={{ height: 350 }}>
+              <Box sx={{ height: { xs: 250, md: 350 } }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={activityData}
@@ -827,8 +854,8 @@ const Workshop: React.FC = () => {
             ref={uploadContentRef}
             id="upload-content-card"
             sx={{
-              p: 3,
-              mb: 3,
+              p: { xs: 1, md: 3 },
+              mb: { xs: 2, md: 3 },
               border: '2px solid #D32F2F',
               boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
             }}
@@ -904,7 +931,7 @@ const Workshop: React.FC = () => {
           </Paper>
 
           {/* AI Response Area */}
-          <Paper ref={aiResponseRef} sx={{ ...cardStyle, p: 3 }}>
+          <Paper ref={aiResponseRef} sx={{ ...cardStyle, p: { xs: 1, md: 3 } }}>
             <Box
               sx={{
                 display: 'flex',
@@ -1153,8 +1180,8 @@ const Workshop: React.FC = () => {
 
         {/* Sidebar */}
         <Grid item xs={12} md={3}>
-          <Paper sx={{ ...cardStyle, p: 3, mb: 3 }}>
-            <Typography variant="h6" gutterBottom>
+          <Paper sx={{ ...cardStyle, p: { xs: 1, md: 3 }, mb: { xs: 2, md: 3 } }}>
+            <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}>
               Quick Actions
             </Typography>
             <List>
@@ -1180,8 +1207,8 @@ const Workshop: React.FC = () => {
           </Paper>
 
           {/* AI Suggestions */}
-          <Paper sx={{ ...cardStyle, p: 3 }}>
-            <Typography variant="h6" gutterBottom>
+          <Paper sx={{ ...cardStyle, p: { xs: 1, md: 3 } }}>
+            <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}>
               AI Suggestions
             </Typography>
             <List>
@@ -1262,8 +1289,12 @@ const Workshop: React.FC = () => {
 
           {/* File Actions */}
           {files.length > 0 && (
-            <Paper sx={{ ...cardStyle, p: 3, mb: 3 }}>
-              <Typography variant="h6" gutterBottom>
+            <Paper sx={{ ...cardStyle, p: { xs: 1, md: 3 }, mb: { xs: 2, md: 3 } }}>
+              <Typography
+                variant="h6"
+                gutterBottom
+                sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}
+              >
                 File Actions
               </Typography>
               <List>
@@ -1290,15 +1321,20 @@ const Workshop: React.FC = () => {
           )}
 
           {/* Assignment Tokens */}
-          <Paper sx={{ ...cardStyle, p: 3 }}>
-            <Typography variant="h6" gutterBottom>
+          <Paper sx={{ ...cardStyle, p: { xs: 1, md: 3 } }}>
+            <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}>
               Assignment Tokens
             </Typography>
             <Box
               sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, pt: 2 }}
             >
               <Box
-                sx={{ position: 'relative', width: 160, height: 160, cursor: 'pointer' }}
+                sx={{
+                  position: 'relative',
+                  width: { xs: 120, md: 160 },
+                  height: { xs: 120, md: 160 },
+                  cursor: 'pointer',
+                }}
                 onMouseEnter={() => setIsTokenChartHovered(true)}
                 onMouseLeave={() => setIsTokenChartHovered(false)}
               >
@@ -1313,6 +1349,8 @@ const Workshop: React.FC = () => {
                     position: 'absolute',
                     top: 0,
                     left: 0,
+                    width: { xs: 120, md: 160 },
+                    height: { xs: 120, md: 160 },
                   }}
                 />
                 {/* Actual progress */}
@@ -1326,6 +1364,8 @@ const Workshop: React.FC = () => {
                     position: 'absolute',
                     top: 0,
                     left: 0,
+                    width: { xs: 120, md: 160 },
+                    height: { xs: 120, md: 160 },
                     [`& .MuiCircularProgress-circle`]: {
                       strokeLinecap: 'round',
                     },

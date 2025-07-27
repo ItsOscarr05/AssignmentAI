@@ -6,6 +6,7 @@ import {
   Delete as DeleteIcon,
   Edit as EditIcon,
   HourglassEmpty as HourglassIcon,
+  InfoOutlined as InfoIcon,
   MoreVert as MoreVertIcon,
   Refresh as RefreshIcon,
   Search as SearchIcon,
@@ -39,6 +40,7 @@ import {
   TablePagination,
   TableRow,
   TextField,
+  Tooltip,
   Typography,
   useTheme,
 } from '@mui/material';
@@ -430,11 +432,27 @@ const Assignments: React.FC = () => {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <Box sx={{ p: 3, backgroundColor: '#fafafa', minHeight: '100vh' }}>
+      <Box
+        sx={{
+          p: { xs: 1, md: 3 },
+          backgroundColor: '#fafafa',
+          minHeight: '100vh',
+          overflow: 'hidden',
+          width: '100%',
+        }}
+      >
         {/* Header Section */}
-        <Card sx={{ ...cardStyle, mb: 4 }}>
-          <CardContent>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Card sx={{ ...cardStyle, mb: { xs: 2, md: 4 }, p: { xs: 1, md: 2 } }}>
+          <CardContent sx={{ p: { xs: 1, md: 2 } }}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', md: 'row' },
+                justifyContent: 'space-between',
+                alignItems: { xs: 'flex-start', md: 'center' },
+                gap: { xs: 1, md: 0 },
+              }}
+            >
               <Box>
                 <Typography
                   variant="h4"
@@ -444,19 +462,32 @@ const Assignments: React.FC = () => {
                     borderBottom: 'none',
                     pb: 0,
                     display: 'inline-block',
+                    fontSize: { xs: '1.5rem', md: '2.125rem' },
                   }}
                 >
                   Assignments
                 </Typography>
-                <Typography variant="subtitle1" color="text.secondary" sx={{ mt: 1 }}>
+                <Typography
+                  variant="subtitle1"
+                  color="text.secondary"
+                  sx={{ mt: 1, fontSize: { xs: '0.875rem', md: '1rem' } }}
+                >
                   Organize and manage your saved AI-generated work.
                 </Typography>
               </Box>
-              <Box sx={{ textAlign: 'right' }}>
-                <Typography variant="body2" color="text.primary">
+              <Box sx={{ textAlign: { xs: 'left', md: 'right' } }}>
+                <Typography
+                  variant="body2"
+                  color="text.primary"
+                  sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}
+                >
                   Total Assignments: {stats.total}
                 </Typography>
-                <Typography variant="body2" color="text.primary">
+                <Typography
+                  variant="body2"
+                  color="text.primary"
+                  sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}
+                >
                   Completed Assignments: {stats.completed}
                 </Typography>
               </Box>
@@ -465,36 +496,12 @@ const Assignments: React.FC = () => {
         </Card>
 
         {/* Filters and Search */}
-        <Grid container spacing={2} sx={{ mb: 3, alignItems: 'center' }}>
-          <Grid item xs={12} md={2}>
-            <FormControl fullWidth>
-              <InputLabel sx={{ color: 'red' }}>Status</InputLabel>
-              <Select
-                value={filterStatus}
-                label="Status"
-                onChange={e => setFilterStatus(e.target.value)}
-                sx={{
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: 'red',
-                    borderWidth: '2px',
-                  },
-                  '&:hover .MuiOutlinedInput-notchedOutline': {
-                    borderColor: 'red',
-                    borderWidth: '2px',
-                  },
-                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    borderColor: 'red',
-                    borderWidth: '2px',
-                  },
-                }}
-              >
-                <MenuItem value="all">All</MenuItem>
-                <MenuItem value="Not Started">Not Started</MenuItem>
-                <MenuItem value="Completed">Completed</MenuItem>
-                <MenuItem value="In Progress">In Progress</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
+        <Grid
+          container
+          spacing={{ xs: 1, md: 2 }}
+          sx={{ mb: { xs: 2, md: 3 }, alignItems: 'center' }}
+        >
+          {/* Search Bar - Full Width on Mobile, First Position */}
           <Grid item xs={12} md={3}>
             <TextField
               placeholder="Filter by name..."
@@ -538,7 +545,38 @@ const Assignments: React.FC = () => {
               }}
             />
           </Grid>
-          <Grid item xs={12} md={2}>
+
+          {/* 2x2 Grid for Mobile: Status, Subject, Timeframe, Date Filter */}
+          <Grid item xs={6} md={2}>
+            <FormControl fullWidth>
+              <InputLabel sx={{ color: 'red' }}>Status</InputLabel>
+              <Select
+                value={filterStatus}
+                label="Status"
+                onChange={e => setFilterStatus(e.target.value)}
+                sx={{
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'red',
+                    borderWidth: '2px',
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'red',
+                    borderWidth: '2px',
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'red',
+                    borderWidth: '2px',
+                  },
+                }}
+              >
+                <MenuItem value="all">All</MenuItem>
+                <MenuItem value="Not Started">Not Started</MenuItem>
+                <MenuItem value="Completed">Completed</MenuItem>
+                <MenuItem value="In Progress">In Progress</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={6} md={2}>
             <FormControl fullWidth>
               <InputLabel sx={{ color: 'red' }}>Subject</InputLabel>
               <Select
@@ -569,7 +607,7 @@ const Assignments: React.FC = () => {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={2}>
+          <Grid item xs={6} md={2}>
             <FormControl fullWidth>
               <InputLabel sx={{ color: 'red' }}>Timeframe</InputLabel>
               <Select
@@ -599,7 +637,7 @@ const Assignments: React.FC = () => {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid item xs={6} md={3}>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
               <DatePicker
                 label="Filter by date"
@@ -645,15 +683,89 @@ const Assignments: React.FC = () => {
         </Grid>
 
         {/* Assignments Table */}
-        <TableContainer component={Paper} sx={tableStyle}>
-          <Table>
+        <TableContainer
+          component={Paper}
+          sx={{ ...tableStyle, overflow: 'hidden', maxWidth: '100%', width: '100%' }}
+        >
+          <Table sx={{ width: '100%' }}>
             <TableHead>
               <TableRow>
-                <TableCell>Title</TableCell>
-                <TableCell>Subject</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Date Created</TableCell>
-                <TableCell>Actions</TableCell>
+                <TableCell
+                  sx={{
+                    fontSize: { xs: '0.75rem', md: '1rem' },
+                    width: { xs: '40%', md: 'auto' },
+                    p: { xs: 1, md: 2 },
+                  }}
+                >
+                  Title
+                </TableCell>
+                <TableCell
+                  sx={{
+                    fontSize: { xs: '0.75rem', md: '1rem' },
+                    width: { xs: '20%', md: 'auto' },
+                    p: { xs: 1, md: 2 },
+                  }}
+                >
+                  Subject
+                </TableCell>
+                <TableCell
+                  sx={{
+                    fontSize: { xs: '0.75rem', md: '1rem' },
+                    width: { xs: '15%', md: 'auto' },
+                    p: { xs: 1, md: 2 },
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    Status
+                    <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+                      <Tooltip
+                        title={
+                          <Box>
+                            <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                              Status Icons Legend:
+                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                              <CheckCircleIcon sx={{ color: 'success.main', fontSize: 16 }} />
+                              <Typography variant="body2">Completed</Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                              <AutorenewIcon sx={{ color: 'info.main', fontSize: 16 }} />
+                              <Typography variant="body2">In Progress</Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <HourglassIcon sx={{ color: 'warning.main', fontSize: 16 }} />
+                              <Typography variant="body2">Not Started</Typography>
+                            </Box>
+                          </Box>
+                        }
+                        arrow
+                        placement="top"
+                      >
+                        <IconButton size="small" sx={{ p: 0.5 }}>
+                          <InfoIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </Box>
+                </TableCell>
+                <TableCell
+                  sx={{
+                    fontSize: { xs: '0.75rem', md: '1rem' },
+                    width: { xs: '15%', md: 'auto' },
+                    p: { xs: 1, md: 2 },
+                  }}
+                >
+                  Date Created
+                </TableCell>
+                <TableCell
+                  sx={{
+                    fontSize: { xs: '0.75rem', md: '1rem' },
+                    width: { xs: '10%', md: 'auto' },
+                    p: { xs: 1, md: 2 },
+                  }}
+                >
+                  Actions
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -683,27 +795,52 @@ const Assignments: React.FC = () => {
               ) : (
                 displayedRows.map(assignment => (
                   <TableRow key={assignment.id}>
-                    <TableCell>
+                    <TableCell sx={{ p: { xs: 1, md: 2 } }}>
                       <Box>
-                        <Typography variant="body1">{assignment.title}</Typography>
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography
+                          variant="body1"
+                          sx={{ fontSize: { xs: '0.75rem', md: '1rem' } }}
+                        >
+                          {assignment.title}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ fontSize: { xs: '0.625rem', md: '0.75rem' } }}
+                        >
                           {assignment.description}
                         </Typography>
                       </Box>
                     </TableCell>
-                    <TableCell>
-                      <Typography sx={{ color: getSubjectColor(assignment.subject) }}>
+                    <TableCell sx={{ p: { xs: 1, md: 2 } }}>
+                      <Typography
+                        sx={{
+                          color: getSubjectColor(assignment.subject),
+                          fontSize: { xs: '0.75rem', md: '1rem' },
+                        }}
+                      >
                         {assignment.subject}
                       </Typography>
                     </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <TableCell sx={{ p: { xs: 1, md: 2 } }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0, md: 1 } }}>
                         {getStatusIcon(assignment.status)}
-                        {assignment.status}
+                        <Typography
+                          sx={{
+                            fontSize: { xs: '0.75rem', md: '1rem' },
+                            display: { xs: 'none', md: 'inline' },
+                          }}
+                        >
+                          {assignment.status}
+                        </Typography>
                       </Box>
                     </TableCell>
-                    <TableCell>{new Date(assignment.createdAt).toLocaleDateString()}</TableCell>
-                    <TableCell>
+                    <TableCell sx={{ p: { xs: 1, md: 2 } }}>
+                      <Typography sx={{ fontSize: { xs: '0.75rem', md: '1rem' } }}>
+                        {new Date(assignment.createdAt).toLocaleDateString()}
+                      </Typography>
+                    </TableCell>
+                    <TableCell sx={{ p: { xs: 1, md: 2 } }}>
                       <IconButton onClick={e => handleMenuClick(e, assignment.id)} size="small">
                         <MoreVertIcon />
                       </IconButton>
