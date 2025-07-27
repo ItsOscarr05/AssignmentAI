@@ -188,6 +188,10 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             onClick={handleDrawerOpen}
             sx={{
               color: 'white',
+              position: 'fixed',
+              top: 8,
+              right: 16,
+              zIndex: 9999,
               '&:hover': {
                 background: 'rgba(255,255,255,0.1)',
               },

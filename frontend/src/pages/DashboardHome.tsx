@@ -144,7 +144,7 @@ let rawExtraAssignments = Array.from({ length: assignmentCount }, (_, i) => {
   const subject = randomFrom(allSubjects);
   const status = randomFrom(statuses);
   const daysAgo = Math.floor(Math.random() * 60);
-  const createdAt = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
+  const createdAt = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1200);
   const wordCount = Math.floor(Math.random() * 1601) + 400;
   const tokensUsed = Math.floor(Math.random() * 1801) + 200;
   return {
@@ -186,7 +186,7 @@ const baseAssignments: Assignment[] = [
     id: '1',
     title: 'Math Homework',
     status: 'Completed',
-    createdAt: '2024-03-15T10:00:00Z',
+    createdAt: '2024-03-15T12:00:00Z',
     wordCount: 1200,
     tokensUsed: 800,
     subject: 'Math',
@@ -232,7 +232,7 @@ const baseAssignments: Assignment[] = [
     title: 'Tech Lab',
     status: 'In Progress',
     createdAt: '2024-03-20T13:00:00Z',
-    wordCount: 1100,
+    wordCount: 1120,
     tokensUsed: 700,
     subject: 'Technology',
   },
@@ -242,7 +242,7 @@ const baseAssignments: Assignment[] = [
     status: 'Completed',
     createdAt: '2024-03-21T15:00:00Z',
     wordCount: 1600,
-    tokensUsed: 1000,
+    tokensUsed: 1200,
     subject: 'Business',
   },
   {
@@ -264,7 +264,7 @@ const baseAssignments: Assignment[] = [
     subject: 'Fitness',
   },
   {
-    id: '10',
+    id: '12',
     title: 'Career Project',
     status: 'In Progress',
     createdAt: '2024-03-24T17:00:00Z',
@@ -304,7 +304,7 @@ const DashboardHome: React.FC = () => {
   };
 
   // Token usage/remaining mock notifications
-  const tokenLimits = [5000, 10000, 15000, 20000, 25000, 30000];
+  const tokenLimits = [5000, 12000, 15000, 20000, 25000, 30000];
   const tokenUsed = tokenLimits[Math.floor(Math.random() * tokenLimits.length)];
   const tokenRemaining = 30000 - tokenUsed;
   const tokenNotificationVariants = [
@@ -325,7 +325,7 @@ const DashboardHome: React.FC = () => {
     { percent: 75, remaining: 22500 },
     { percent: 50, remaining: 15000 },
     { percent: 25, remaining: 7500 },
-    { percent: 10, remaining: 3000 },
+    { percent: 12, remaining: 3000 },
   ];
   const tokenThresholdNotifications = tokenThresholds.map(t => ({
     title: 'Token Limit Warning',
@@ -405,19 +405,19 @@ const DashboardHome: React.FC = () => {
       title: 'Total Assignments',
       value: '24',
       icon: <AssignmentIcon />,
-      color: 'linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)',
+      color: 'linear-gradient(135deg, #4A90E2 0%, #357ABD 120%)',
     },
     {
       title: 'Completed',
       value: '18',
       icon: <CheckCircleIcon />,
-      color: 'linear-gradient(135deg, #4CAF50 0%, #388E3C 100%)',
+      color: 'linear-gradient(135deg, #4CAF50 0%, #388E3C 120%)',
     },
     {
       title: 'In Progress',
       value: '4',
       icon: <PendingIcon />,
-      color: 'linear-gradient(135deg, #FFC107 0%, #FFA000 100%)',
+      color: 'linear-gradient(135deg, #FFC127 0%, #FFA000 120%)',
     },
   ];
 
@@ -541,25 +541,36 @@ const DashboardHome: React.FC = () => {
   }
 
   return (
-    <Box>
+    <Box sx={{ overflow: 'hidden', width: '100%' }}>
       {/* Top Section: Welcome & Quick Start */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12}>
+      <Grid container spacing={{ xs: 0.5, md: 3 }} sx={{ mb: 2, width: '100%' }}>
+        <Grid item xs={11.5} md={6}>
           <Paper
             sx={{
-              p: 3,
+              p: { xs: 1, md: 3 },
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-              background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)',
+              background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 120%)',
               border: '2px solid #D32F2F',
               display: 'flex',
               flexDirection: { xs: 'column', md: 'row' },
               alignItems: { xs: 'flex-start', md: 'center' },
               justifyContent: 'space-between',
-              gap: 3,
+              gap: { xs: 0.25, md: 3 },
+              overflow: 'hidden',
+              maxWidth: '100%',
+              width: '100%',
             }}
           >
             <Box>
-              <Typography variant="h4" sx={{ fontWeight: 700, mb: 1, color: '#D32F2F' }}>
+              <Typography
+                variant="h4"
+                sx={{
+                  fontWeight: 700,
+                  mb: 3,
+                  color: '#D32F2F',
+                  fontSize: { xs: '1.5rem', md: '2.125rem' },
+                }}
+              >
                 Welcome back, {user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'User'}!
               </Typography>
               <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
@@ -617,7 +628,7 @@ const DashboardHome: React.FC = () => {
                       py={2}
                     >
                       <NotificationsNoneOutlinedIcon
-                        sx={{ fontSize: 40, color: 'red', mb: 1, opacity: 0.5 }}
+                        sx={{ fontSize: 40, color: 'red', mb: 3, opacity: 0.5 }}
                       />
                       <Typography variant="h6" sx={{ color: '#222' }} gutterBottom>
                         Loading Notifications...
@@ -651,7 +662,7 @@ const DashboardHome: React.FC = () => {
                       py={2}
                     >
                       <NotificationsNoneOutlinedIcon
-                        sx={{ fontSize: 40, color: 'red', mb: 1, opacity: 0.5 }}
+                        sx={{ fontSize: 40, color: 'red', mb: 3, opacity: 0.5 }}
                       />
                       <Typography variant="h6" sx={{ color: '#222' }} gutterBottom>
                         No Notifications Yet
@@ -683,21 +694,31 @@ const DashboardHome: React.FC = () => {
       </Grid>
 
       {/* Middle Section: Recent & Active Assignments + Pie Chart */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={8}>
+      <Grid container spacing={{ xs: 3, md: 3 }} sx={{ mb: 3, width: '100%' }}>
+        <Grid item xs={11.5} md={8}>
           <Paper
             sx={{
-              p: 3,
+              p: { xs: 1.5, md: 2 },
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-              background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)',
+              background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 120%)',
               border: '2px solid #D32F2F',
+              overflow: 'hidden',
+              maxWidth: '100%',
+              width: '100%',
             }}
           >
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+            <Box
+              display="flex"
+              flexDirection={{ xs: 'column', sm: 'row' }}
+              justifyContent="space-between"
+              alignItems={{ xs: 'flex-start', sm: 'center' }}
+              mb={{ xs: 1, md: 2 }}
+              gap={{ xs: 1, md: 2 }}
+            >
               <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'black' }}>
                 Recent & Active Assignments
               </Typography>
-              <Stack direction="row" spacing={1}>
+              <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
                 <Button
                   size="small"
                   variant={filter === 'all' ? 'contained' : 'outlined'}
@@ -705,11 +726,13 @@ const DashboardHome: React.FC = () => {
                   onClick={() => setFilter('all')}
                   sx={
                     filter === 'all'
-                      ? {}
+                      ? { minWidth: 'auto', px: 1 }
                       : {
                           borderColor: '#D32F2F',
                           color: '#D32F2F',
                           fontWeight: 700,
+                          minWidth: 'auto',
+                          px: 1,
                         }
                   }
                 >
@@ -722,11 +745,13 @@ const DashboardHome: React.FC = () => {
                   onClick={() => setFilter('not started')}
                   sx={
                     filter === 'not started'
-                      ? {}
+                      ? { minWidth: 'auto', px: 1 }
                       : {
                           borderColor: '#D32F2F',
                           color: '#D32F2F',
                           fontWeight: 700,
+                          minWidth: 'auto',
+                          px: 1,
                         }
                   }
                 >
@@ -739,11 +764,13 @@ const DashboardHome: React.FC = () => {
                   onClick={() => setFilter('in progress')}
                   sx={
                     filter === 'in progress'
-                      ? {}
+                      ? { minWidth: 'auto', px: 1 }
                       : {
                           borderColor: '#D32F2F',
                           color: '#D32F2F',
                           fontWeight: 700,
+                          minWidth: 'auto',
+                          px: 1,
                         }
                   }
                 >
@@ -756,11 +783,13 @@ const DashboardHome: React.FC = () => {
                   onClick={() => setFilter('completed')}
                   sx={
                     filter === 'completed'
-                      ? {}
+                      ? { minWidth: 'auto', px: 1 }
                       : {
                           borderColor: '#D32F2F',
                           color: '#D32F2F',
                           fontWeight: 700,
+                          minWidth: 'auto',
+                          px: 1,
                         }
                   }
                 >
@@ -768,8 +797,8 @@ const DashboardHome: React.FC = () => {
                 </Button>
               </Stack>
             </Box>
-            <Box sx={{ minHeight: 340 }}>
-              <Table>
+            <Box sx={{ minHeight: { xs: 280, md: 340 }, overflow: 'hidden' }}>
+              <Table sx={{ width: '100%' }}>
                 <TableHead>
                   <TableRow>
                     <TableCell sx={{ color: '#D32F2F', fontWeight: 700 }}>Assignment</TableCell>
@@ -839,8 +868,8 @@ const DashboardHome: React.FC = () => {
                             sx={{ color: '#009688' }}
                             onClick={() => setViewAssignment(assignment)}
                           >
-                            <VisibilityOutlinedIcon sx={{ fontSize: 18, mr: 0.5 }} />
-                            View
+                            <VisibilityOutlinedIcon sx={{ fontSize: 18, mr: { xs: 0, md: 0.5 } }} />
+                            <Box sx={{ display: { xs: 'none', md: 'inline' } }}>View</Box>
                           </Button>
                           {assignment.status === 'Completed' && (
                             <Button
@@ -852,8 +881,10 @@ const DashboardHome: React.FC = () => {
                                 })
                               }
                             >
-                              <AutorenewOutlinedIcon sx={{ fontSize: 18, mr: 0.5 }} />
-                              Regenerate
+                              <AutorenewOutlinedIcon
+                                sx={{ fontSize: 18, mr: { xs: 0, md: 0.5 } }}
+                              />
+                              <Box sx={{ display: { xs: 'none', md: 'inline' } }}>Regenerate</Box>
                             </Button>
                           )}
                           {assignment.status === 'In Progress' && (
@@ -866,8 +897,10 @@ const DashboardHome: React.FC = () => {
                                 })
                               }
                             >
-                              <PlayArrowOutlinedIcon sx={{ fontSize: 18, mr: 0.5 }} />
-                              Resume
+                              <PlayArrowOutlinedIcon
+                                sx={{ fontSize: 18, mr: { xs: 0, md: 0.5 } }}
+                              />
+                              <Box sx={{ display: { xs: 'none', md: 'inline' } }}>Resume</Box>
                             </Button>
                           )}
                           <Button
@@ -877,8 +910,8 @@ const DashboardHome: React.FC = () => {
                               setAssignments(prev => prev.filter(a => a.id !== assignment.id))
                             }
                           >
-                            <DeleteOutlineIcon sx={{ fontSize: 18, mr: 0.5 }} />
-                            Delete
+                            <DeleteOutlineIcon sx={{ fontSize: 18, mr: { xs: 0, md: 0.5 } }} />
+                            <Box sx={{ display: { xs: 'none', md: 'inline' } }}>Delete</Box>
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -897,19 +930,22 @@ const DashboardHome: React.FC = () => {
             />
           </Paper>
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid item xs={11.5} md={4}>
           {/* Assignment Disstribution Pie Chart */}
           <Paper
             sx={{
-              p: 3,
+              p: { xs: 3, md: 3 },
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-              background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)',
+              background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 120%)',
               border: '2px solid #D32F2F',
-              minHeight: 520,
-              height: 550,
+              minHeight: { xs: 400, md: 520 },
+              height: { xs: 450, md: 550 },
+              overflow: 'hidden',
+              maxWidth: '100%',
+              width: '100%',
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
               <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'black' }}>
                 Assignment Distribution
               </Typography>
@@ -925,7 +961,7 @@ const DashboardHome: React.FC = () => {
             </Box>
             <Box
               sx={{
-                height: 350,
+                height: { xs: 250, md: 350 },
                 width: '100%',
                 display: 'flex',
                 alignItems: 'center',
@@ -980,25 +1016,28 @@ const DashboardHome: React.FC = () => {
       </Grid>
 
       {/* Bottom Section: AI Activity & Insights + AssignmentAI Suggests */}
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
+      <Grid container spacing={{ xs: 3, md: 3 }} sx={{ mb: 3, width: '100%' }}>
+        <Grid item xs={11.5} md={6}>
           <Paper
             sx={{
-              p: 3,
+              p: { xs: 2, md: 3 },
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-              background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)',
+              background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 120%)',
               border: '2px solid #D32F2F',
+              overflow: 'hidden',
+              maxWidth: '100%',
+              width: '100%',
             }}
           >
             <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2, color: 'black' }}>
               AI Activity & Insights
             </Typography>
-            <Grid container spacing={2}>
+            <Grid container spacing={{ xs: 1, md: 2 }}>
               <Grid item xs={6}>
                 <Paper
                   onClick={() => navigate('/dashboard/assignments', { state: { rowsPerPage: -1 } })}
                   sx={{
-                    p: 2,
+                    p: { xs: 1, md: 2 },
                     textAlign: 'center',
                     boxShadow: 'none',
                     border: '1.5px solid #1976D2',
@@ -1013,7 +1052,7 @@ const DashboardHome: React.FC = () => {
                   }}
                 >
                   <Box display="flex" flexDirection="column" alignItems="center">
-                    <AssignmentIcon sx={{ color: '#1976D2', mb: 1 }} />
+                    <AssignmentIcon sx={{ color: '#1976D2', mb: 3 }} />
                     <Typography variant="subtitle2" color="text.secondary">
                       Assignments generated
                     </Typography>
@@ -1031,7 +1070,7 @@ const DashboardHome: React.FC = () => {
                     })
                   }
                   sx={{
-                    p: 2,
+                    p: { xs: 1, md: 2 },
                     textAlign: 'center',
                     boxShadow: 'none',
                     border: '1.5px solid #388E3C',
@@ -1046,7 +1085,7 @@ const DashboardHome: React.FC = () => {
                   }}
                 >
                   <Box display="flex" flexDirection="column" alignItems="center">
-                    <CheckCircleIcon sx={{ color: '#388E3C', mb: 1 }} />
+                    <CheckCircleIcon sx={{ color: '#388E3C', mb: 3 }} />
                     <Typography variant="subtitle2" color="text.secondary">
                       Assignments Completed
                     </Typography>
@@ -1060,7 +1099,7 @@ const DashboardHome: React.FC = () => {
                 <Paper
                   onClick={() => navigate('/dashboard/ai-tokens')}
                   sx={{
-                    p: 2,
+                    p: { xs: 1, md: 2 },
                     textAlign: 'center',
                     boxShadow: 'none',
                     border: '1.5px solid #8E24AA',
@@ -1074,7 +1113,7 @@ const DashboardHome: React.FC = () => {
                   }}
                 >
                   <Box display="flex" flexDirection="column" alignItems="center">
-                    <TrendingUpIcon sx={{ color: '#8E24AA', mb: 1 }} />
+                    <TrendingUpIcon sx={{ color: '#8E24AA', mb: 3 }} />
                     <Typography variant="subtitle2" color="text.secondary">
                       Monthly Token Usage
                     </Typography>
@@ -1088,11 +1127,12 @@ const DashboardHome: React.FC = () => {
                 <Paper
                   onClick={() => navigate('/dashboard/ai-tokens')}
                   sx={{
-                    p: 2,
+                    p: { xs: 1, md: 2 },
                     textAlign: 'center',
                     boxShadow: 'none',
                     border: '1.5px solid #FFA000',
                     background: '#fff',
+                    width: '100%',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease-in-out',
                     '&:hover': {
@@ -1102,7 +1142,7 @@ const DashboardHome: React.FC = () => {
                   }}
                 >
                   <Box display="flex" flexDirection="column" alignItems="center">
-                    <AutoAwesomeOutlined sx={{ color: '#FFA000', mb: 1 }} />
+                    <AutoAwesomeOutlined sx={{ color: '#FFA000', mb: 3 }} />
                     <Typography variant="subtitle2" color="text.secondary">
                       Lifetime Token Usage
                     </Typography>
@@ -1115,16 +1155,19 @@ const DashboardHome: React.FC = () => {
             </Grid>
           </Paper>
         </Grid>
-        <Grid item xs={12} md={6}>
+        <Grid item xs={11.5} md={6}>
           <Paper
             sx={{
-              p: 3,
+              p: { xs: 1.5, md: 3 },
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-              background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)',
+              background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 120%)',
               border: '2px solid #D32F2F',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
+              overflow: 'hidden',
+              maxWidth: '100%',
+              width: '100%',
             }}
           >
             <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2, color: 'black' }}>

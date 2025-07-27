@@ -183,16 +183,17 @@ const Dashboard: React.FC = () => {
           sx={{
             position: 'fixed',
             top: 16,
-            left: mobileOpen ? 'auto' : 16,
-            right: mobileOpen ? 16 : 'auto',
+            right: 16,
             zIndex: theme.zIndex.drawer + 3,
-            background: 'rgba(255,255,255,0.85)',
+            background: 'rgba(255,255,255,1)',
             color: theme.palette.primary.main,
             boxShadow: 2,
             width: 48,
             height: 48,
+            border: '2px solid #D32F2F',
             '&:hover': {
               background: 'rgba(255,255,255,1)',
+              borderColor: '#B71C1C',
             },
           }}
         >
