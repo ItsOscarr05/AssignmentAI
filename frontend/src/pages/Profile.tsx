@@ -362,18 +362,12 @@ const Profile: React.FC = () => {
         sx={{
           mb: 5,
           display: 'flex',
-          alignItems: 'center',
-          gap: 3,
-          position: 'sticky',
-          top: 0,
-          zIndex: 10,
+          flexDirection: { xs: 'column', md: 'row' },
+          alignItems: { xs: 'stretch', md: 'center' },
+          gap: { xs: 2, md: 3 },
           pt: 2,
           pb: 2,
-          background:
-            theme.palette.mode === 'dark'
-              ? 'linear-gradient(180deg, rgba(18,18,18,0.95) 0%, rgba(18,18,18,0.95) 100%)'
-              : 'linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.95) 100%)',
-          backdropFilter: 'blur(10px)',
+          px: { xs: 1, md: 0 },
         }}
       >
         <Typography
@@ -384,7 +378,8 @@ const Profile: React.FC = () => {
             backgroundClip: 'text',
             WebkitBackgroundClip: 'text',
             color: 'transparent',
-            ml: 4,
+            ml: { xs: 0, md: 4 },
+            fontSize: { xs: '1.75rem', md: '2.125rem' },
           }}
         >
           Profile
@@ -394,12 +389,13 @@ const Profile: React.FC = () => {
           startIcon={<EditOutlined />}
           aria-label="Edit Profile"
           sx={{
-            ml: 'auto',
-            px: 4,
+            ml: { xs: 0, md: 'auto' },
+            px: { xs: 2, md: 4 },
             py: 1.5,
             borderRadius: 3,
             backgroundColor: '#ffffff',
             color: theme.palette.primary.main,
+            fontSize: { xs: '0.875rem', md: '1rem' },
             boxShadow: '0 4px 20px 0px rgba(0,0,0,0.14), 0 7px 10px -5px rgba(33,150,243,0.4)',
             transition: 'all 0.3s ease',
             '&:hover': {
@@ -418,12 +414,13 @@ const Profile: React.FC = () => {
           startIcon={<LogoutOutlined />}
           aria-label="Logout"
           sx={{
-            ml: 2,
-            px: 4,
+            ml: { xs: 0, md: 2 },
+            px: { xs: 3, md: 6 },
             py: 1.5,
             borderRadius: 3,
             backgroundColor: theme.palette.error.main,
             color: '#ffffff',
+            fontSize: { xs: '1rem', md: '1.125rem' },
             boxShadow: '0 4px 20px 0px rgba(0,0,0,0.14), 0 7px 10px -5px rgba(244,67,54,0.4)',
             transition: 'all 0.3s ease',
             '&:hover': {
@@ -491,19 +488,52 @@ const Profile: React.FC = () => {
               },
             }}
           >
-            <Tab icon={<AccountCircleOutlined />} label="Overview" sx={{ gap: 1 }} />
-            <Tab icon={<TimelineOutlined />} label="Activity" sx={{ gap: 1 }} />
-            <Tab icon={<BadgeOutlined />} label="Achievements" sx={{ gap: 1 }} />
+            <Tab
+              icon={<AccountCircleOutlined />}
+              label="Overview"
+              sx={{
+                gap: 1,
+                '& .MuiTab-label': {
+                  fontSize: { xs: '0.7rem', md: '0.875rem' },
+                  fontWeight: 500,
+                  lineHeight: 1.2,
+                },
+              }}
+            />
+            <Tab
+              icon={<TimelineOutlined />}
+              label="Activity"
+              sx={{
+                gap: 1,
+                '& .MuiTab-label': {
+                  fontSize: { xs: '0.7rem', md: '0.875rem' },
+                  fontWeight: 500,
+                  lineHeight: 1.2,
+                },
+              }}
+            />
+            <Tab
+              icon={<BadgeOutlined />}
+              label="Achievements"
+              sx={{
+                gap: 1,
+                '& .MuiTab-label': {
+                  fontSize: { xs: '0.7rem', md: '0.875rem' },
+                  fontWeight: 500,
+                  lineHeight: 1.2,
+                },
+              }}
+            />
           </Tabs>
         </Box>
-        <Box sx={{ p: 4 }}>
+        <Box sx={{ p: { xs: 0, md: 4 } }}>
           <TabPanel value={tabValue} index={0}>
             <ProfileSection title="Personal Information" icon={<AccountCircleOutlined />}>
               <Box sx={{ position: 'relative', mb: 4, textAlign: 'center' }}>
                 <Avatar
                   sx={{
-                    width: 120,
-                    height: 120,
+                    width: { xs: 80, md: 120 },
+                    height: { xs: 80, md: 120 },
                     mx: 'auto',
                     mb: 2,
                     border: '4px solid',
@@ -513,13 +543,23 @@ const Profile: React.FC = () => {
                   }}
                   aria-label="User avatar"
                 >
-                  <AccountCircleOutlined sx={{ fontSize: 80, color: theme.palette.error.main }} />
+                  <AccountCircleOutlined
+                    sx={{ fontSize: { xs: 50, md: 80 }, color: theme.palette.error.main }}
+                  />
                 </Avatar>
-                <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
+                <Typography
+                  variant="h5"
+                  gutterBottom
+                  sx={{ fontWeight: 'bold', fontSize: { xs: '1.25rem', md: '1.5rem' } }}
+                >
                   {displayName}
                 </Typography>
                 {memberSince && (
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 1, fontSize: { xs: '0.75rem', md: '0.875rem' } }}
+                  >
                     Member since {memberSince}
                   </Typography>
                 )}
@@ -530,8 +570,8 @@ const Profile: React.FC = () => {
                   sx={{
                     mb: 3,
                     flexWrap: 'wrap',
-                    gap: 1.5,
-                    rowGap: 1.5,
+                    gap: { xs: 1, md: 1.5 },
+                    rowGap: { xs: 1, md: 1.5 },
                   }}
                 >
                   <Tooltip title="Email" arrow>
@@ -543,8 +583,11 @@ const Profile: React.FC = () => {
                         background: 'rgba(255,255,255,0.9)',
                         border: '1px solid',
                         borderColor: theme.palette.primary.main,
+                        fontSize: { xs: '0.75rem', md: '0.875rem' },
+                        height: { xs: 28, md: 32 },
                         '& .MuiChip-icon': {
                           color: theme.palette.primary.main,
+                          fontSize: { xs: '1rem', md: '1.25rem' },
                         },
                         mr: 0.5,
                       }}
@@ -561,8 +604,11 @@ const Profile: React.FC = () => {
                         background: 'rgba(255,255,255,0.9)',
                         border: '1px solid',
                         borderColor: theme.palette.primary.main,
+                        fontSize: { xs: '0.75rem', md: '0.875rem' },
+                        height: { xs: 28, md: 32 },
                         '& .MuiChip-icon': {
                           color: theme.palette.primary.main,
+                          fontSize: { xs: '1rem', md: '1.25rem' },
                         },
                       }}
                     />
@@ -576,8 +622,11 @@ const Profile: React.FC = () => {
                         background: 'rgba(255,255,255,0.9)',
                         border: '1px solid',
                         borderColor: theme.palette.primary.main,
+                        fontSize: { xs: '0.75rem', md: '0.875rem' },
+                        height: { xs: 28, md: 32 },
                         '& .MuiChip-icon': {
                           color: theme.palette.primary.main,
+                          fontSize: { xs: '1rem', md: '1.25rem' },
                         },
                       }}
                     />
@@ -591,8 +640,11 @@ const Profile: React.FC = () => {
                         background: 'rgba(255,255,255,0.9)',
                         border: '1px solid',
                         borderColor: theme.palette.primary.main,
+                        fontSize: { xs: '0.75rem', md: '0.875rem' },
+                        height: { xs: 28, md: 32 },
                         '& .MuiChip-icon': {
                           color: theme.palette.primary.main,
+                          fontSize: { xs: '1rem', md: '1.25rem' },
                         },
                       }}
                     />
@@ -602,7 +654,7 @@ const Profile: React.FC = () => {
 
               <Divider sx={{ my: 4 }} />
 
-              <Grid container spacing={3}>
+              <Grid container spacing={{ xs: 2, md: 3 }}>
                 <Grid item xs={12} sm={6} md={4}>
                   <StatCard
                     icon={<AssignmentOutlined />}

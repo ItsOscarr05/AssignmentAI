@@ -58,7 +58,7 @@ function TabPanel(props: TabPanelProps) {
       aria-labelledby={`help-tab-${index}`}
       {...other}
     >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+      {value === index && <Box sx={{ p: { xs: 1, md: 3 } }}>{children}</Box>}
     </div>
   );
 }
@@ -69,8 +69,8 @@ const HelpSection = ({ title, icon, children }: any) => {
     <Paper
       elevation={0}
       sx={{
-        p: 4,
-        mb: 4,
+        p: { xs: 2, md: 4 },
+        mb: { xs: 3, md: 4 },
         border: '2px solid',
         borderColor: 'error.main',
         borderRadius: 3,
@@ -90,7 +90,7 @@ const HelpSection = ({ title, icon, children }: any) => {
       <Stack direction="row" alignItems="center" spacing={2} mb={3}>
         <Box
           sx={{
-            p: 1.5,
+            p: { xs: 1, md: 1.5 },
             borderRadius: 2,
             background: '#ffffff',
             color: theme.palette.primary.main,
@@ -105,7 +105,12 @@ const HelpSection = ({ title, icon, children }: any) => {
         >
           {icon}
         </Box>
-        <Typography variant="h5" fontWeight="400" color="black">
+        <Typography
+          variant="h5"
+          fontWeight="400"
+          color="black"
+          sx={{ fontSize: { xs: '1.25rem', md: '1.5rem' } }}
+        >
           {title}
         </Typography>
       </Stack>
@@ -120,7 +125,7 @@ const Help: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedFaqs, setExpandedFaqs] = useState<{ [key: string]: boolean }>({});
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [selectedCategory, setSelectedCategory] = useState<string>('All Questions');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
@@ -284,7 +289,7 @@ const Help: React.FC = () => {
   ];
 
   // Category chips
-  const allCategories = ['All', ...faqData.map(c => c.category)];
+  const allCategories = ['All Questions', ...faqData.map(c => c.category)];
 
   // Filtered FAQ data with category and search
   const filteredFaqData = faqData
@@ -292,7 +297,7 @@ const Help: React.FC = () => {
       ...category,
       questions: category.questions.filter(
         faq =>
-          (selectedCategory === 'All' || category.category === selectedCategory) &&
+          (selectedCategory === 'All Questions' || category.category === selectedCategory) &&
           (faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
             faq.answer.toLowerCase().includes(searchQuery.toLowerCase()))
       ),
@@ -433,28 +438,24 @@ const Help: React.FC = () => {
       sx={{
         width: '100%',
         position: 'relative',
-        px: 2,
+        px: { xs: 1, md: 2 },
         pb: 4,
+        overflow: 'hidden',
       }}
     >
-      {/* System status/announcement */}
-      <Alert
-        severity={systemStatus.severity as 'success' | 'info' | 'warning' | 'error'}
-        sx={{ mb: 2, maxWidth: 600, mx: 'auto' }}
-      >
-        {systemStatus.message}
-      </Alert>
       <Box
         sx={{
           mb: 5,
           display: 'flex',
-          alignItems: 'center',
-          gap: 3,
+          flexDirection: { xs: 'column', md: 'row' },
+          alignItems: { xs: 'stretch', md: 'center' },
+          gap: { xs: 2, md: 3 },
           position: 'sticky',
           top: 0,
           zIndex: 10,
           pt: 2,
           pb: 2,
+          px: { xs: 1, md: 0 },
           background:
             theme.palette.mode === 'dark'
               ? 'linear-gradient(180deg, rgba(18,18,18,0.95) 0%, rgba(18,18,18,0.95) 100%)'
@@ -469,6 +470,7 @@ const Help: React.FC = () => {
             backgroundClip: 'text',
             WebkitBackgroundClip: 'text',
             color: 'transparent',
+            fontSize: { xs: '1.75rem', md: '2.125rem' },
           }}
         >
           Help & Support
@@ -478,13 +480,13 @@ const Help: React.FC = () => {
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
           sx={{
-            ml: 'auto',
-            width: '350px',
+            ml: { xs: 0, md: 'auto' },
+            width: { xs: '100%', md: '350px' },
             fontWeight: 600,
             '& .MuiOutlinedInput-root': {
               borderRadius: 3,
               fontWeight: 600,
-              fontSize: '1.1rem',
+              fontSize: { xs: '1rem', md: '1.1rem' },
               '&:hover': {
                 '& > fieldset': {
                   borderColor: theme.palette.primary.main,
@@ -505,29 +507,133 @@ const Help: React.FC = () => {
           }}
         />
       </Box>
-      {/* Category filter chips */}
-      <Stack direction="row" spacing={1} sx={{ mb: 3, flexWrap: 'wrap' }}>
-        {allCategories.map(cat => (
-          <Chip
-            key={cat}
-            label={cat}
-            color={selectedCategory === cat ? 'primary' : 'default'}
-            onClick={() => setSelectedCategory(cat)}
-            sx={{ fontWeight: 500, fontSize: '1rem', borderRadius: 2 }}
-            aria-pressed={selectedCategory === cat}
-            tabIndex={0}
-          />
-        ))}
-      </Stack>
-      {/* Expand/Collapse All */}
-      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-        <Button variant="outlined" onClick={handleExpandAll} aria-label="Expand all FAQs">
-          Expand All
-        </Button>
-        <Button variant="outlined" onClick={handleCollapseAll} aria-label="Collapse all FAQs">
-          Collapse All
-        </Button>
-      </Stack>
+      {/* Category filter chips and controls */}
+      <Box sx={{ mb: 3 }}>
+        {/* Category filter chips */}
+        <Box sx={{ mb: 2 }}>
+          <Typography
+            variant="subtitle2"
+            sx={{
+              mb: 1,
+              color: 'text.secondary',
+              fontSize: { xs: '0.875rem', md: '1rem' },
+              fontWeight: 500,
+            }}
+          >
+            Filter by Category:
+          </Typography>
+          <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+            <Grid 
+              container 
+              spacing={1} 
+              sx={{ 
+                maxWidth: '100%'
+              }}
+            >
+              {allCategories.map(cat => (
+                <Grid item xs={4} key={cat}>
+                  <Chip
+                    label={cat}
+                    color={selectedCategory === cat ? 'primary' : 'default'}
+                    onClick={() => setSelectedCategory(cat)}
+                    sx={{ 
+                      fontWeight: 500, 
+                      fontSize: { xs: '0.75rem', md: '0.875rem' }, 
+                      borderRadius: 2,
+                      height: { xs: 36, md: 40 },
+                      width: '100%',
+                      justifyContent: 'center',
+                      '& .MuiChip-label': {
+                        textAlign: 'center',
+                        whiteSpace: 'normal',
+                        lineHeight: 1.2
+                      }
+                    }}
+                    aria-pressed={selectedCategory === cat}
+                    tabIndex={0}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+          
+          <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{
+                flexWrap: 'wrap',
+                gap: 1,
+                justifyContent: 'flex-start',
+              }}
+            >
+              {allCategories.map(cat => (
+                <Chip
+                  key={cat}
+                  label={cat}
+                  color={selectedCategory === cat ? 'primary' : 'default'}
+                  onClick={() => setSelectedCategory(cat)}
+                  sx={{
+                    fontWeight: 500,
+                    fontSize: '1rem',
+                    borderRadius: 2,
+                    height: 40,
+                  }}
+                  aria-pressed={selectedCategory === cat}
+                  tabIndex={0}
+                />
+              ))}
+            </Stack>
+          </Box>
+        </Box>
+
+        {/* Expand/Collapse All */}
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: { xs: 'flex-start', md: 'flex-end' },
+            borderTop: '1px solid',
+            borderColor: 'divider',
+            pt: 2,
+          }}
+        >
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{
+              flexWrap: 'wrap',
+              gap: { xs: 0.5, md: 1 },
+            }}
+          >
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={handleExpandAll}
+              aria-label="Expand all FAQs"
+              sx={{
+                fontSize: { xs: '0.75rem', md: '0.875rem' },
+                px: { xs: 1.5, md: 2 },
+                py: { xs: 0.5, md: 0.75 },
+              }}
+            >
+              Expand All
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={handleCollapseAll}
+              aria-label="Collapse all FAQs"
+              sx={{
+                fontSize: { xs: '0.75rem', md: '0.875rem' },
+                px: { xs: 1.5, md: 2 },
+                py: { xs: 0.5, md: 0.75 },
+              }}
+            >
+              Collapse All
+            </Button>
+          </Stack>
+        </Box>
+      </Box>
       <Box
         sx={{
           borderRadius: 4,
@@ -551,8 +657,8 @@ const Help: React.FC = () => {
             variant="fullWidth"
             sx={{
               '& .MuiTab-root': {
-                minHeight: 70,
-                fontSize: '1rem',
+                minHeight: { xs: 60, md: 70 },
+                fontSize: { xs: '0.875rem', md: '1rem' },
                 fontWeight: 500,
                 transition: 'all 0.2s',
                 flex: 1,
@@ -564,9 +670,9 @@ const Help: React.FC = () => {
                 },
                 '& .MuiSvgIcon-root': {
                   background: '#ffffff',
-                  padding: '6px',
+                  padding: { xs: '4px', md: '6px' },
                   borderRadius: '8px',
-                  fontSize: '1.3rem',
+                  fontSize: { xs: '1.1rem', md: '1.3rem' },
                   boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                   border: '1px solid',
                   borderColor:
@@ -585,7 +691,7 @@ const Help: React.FC = () => {
             <Tab icon={<ContactSupportOutlined />} label="Contact" sx={{ gap: 1 }} />
           </Tabs>
         </Box>
-        <Box sx={{ p: 4 }}>
+        <Box sx={{ p: { xs: 2, md: 4 } }}>
           <TabPanel value={tabValue} index={0}>
             <HelpSection title="Popular Questions" icon={<QuestionAnswerOutlined />}>
               <Stack spacing={2}>
@@ -784,18 +890,8 @@ const Help: React.FC = () => {
                 </Box>
               )}
             </HelpSection>
-            {/* Back to Top button */}
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 4 }}>
-              <Button
-                variant="outlined"
-                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                aria-label="Back to top"
-              >
-                Back to Top
-              </Button>
-            </Box>
             <HelpSection title="Quick Links" icon={<HelpOutlineOutlined />}>
-              <Grid container spacing={3}>
+              <Grid container spacing={{ xs: 2, md: 3 }}>
                 {quickLinks.map((link, index) => (
                   <Grid item xs={12} sm={6} md={3} key={index}>
                     <Card
@@ -811,18 +907,18 @@ const Help: React.FC = () => {
                         },
                       }}
                     >
-                      <CardContent>
+                      <CardContent sx={{ p: { xs: 2, md: 3 } }}>
                         <Box
                           sx={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: 2,
+                            gap: { xs: 1, md: 2 },
                             mb: 2,
                           }}
                         >
                           <Box
                             sx={{
-                              p: 1,
+                              p: { xs: 0.5, md: 1 },
                               borderRadius: 1.5,
                               background: '#ffffff',
                               color: theme.palette.primary.main,
@@ -830,11 +926,19 @@ const Help: React.FC = () => {
                           >
                             {link.icon}
                           </Box>
-                          <Typography variant="h6" fontWeight="500" color="black">
+                          <Typography
+                            variant="h6"
+                            fontWeight="500"
+                            color="black"
+                            sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}
+                          >
                             {link.title}
                           </Typography>
                         </Box>
-                        <Typography color="text.secondary" sx={{ mb: 2 }}>
+                        <Typography
+                          color="text.secondary"
+                          sx={{ mb: 2, fontSize: { xs: '0.875rem', md: '1rem' } }}
+                        >
                           {link.description}
                         </Typography>
                         <Button
@@ -843,6 +947,7 @@ const Help: React.FC = () => {
                           href={link.link}
                           component="a"
                           sx={{
+                            fontSize: { xs: '0.875rem', md: '1rem' },
                             '&:hover': {
                               background: 'transparent',
                               color: theme.palette.primary.main,
@@ -863,13 +968,17 @@ const Help: React.FC = () => {
 
           <TabPanel value={tabValue} index={1}>
             <HelpSection title="Contact Support" icon={<ContactSupportOutlined />}>
-              <Grid container spacing={4}>
+              <Grid container spacing={{ xs: 2, md: 4 }}>
                 <Grid item xs={12} md={6}>
-                  <Typography variant="h6" gutterBottom>
+                  <Typography
+                    variant="h6"
+                    gutterBottom
+                    sx={{ fontSize: { xs: '1.125rem', md: '1.25rem' } }}
+                  >
                     Send us a Message
                   </Typography>
                   <Box component="form" onSubmit={handleContactSubmit}>
-                    <Stack spacing={3}>
+                    <Stack spacing={{ xs: 2, md: 3 }}>
                       <TextField
                         fullWidth
                         label="Email Address"
@@ -881,6 +990,7 @@ const Help: React.FC = () => {
                         sx={{
                           '& .MuiOutlinedInput-root': {
                             borderRadius: 2,
+                            fontSize: { xs: '0.875rem', md: '1rem' },
                           },
                         }}
                         inputProps={{ 'aria-label': 'Email address' }}
@@ -896,46 +1006,91 @@ const Help: React.FC = () => {
                         sx={{
                           '& .MuiOutlinedInput-root': {
                             borderRadius: 2,
+                            fontSize: { xs: '0.875rem', md: '1rem' },
                           },
                         }}
                         inputProps={{ 'aria-label': 'Subject' }}
                       />
 
                       <FormControl fullWidth>
-                        <InputLabel>Category</InputLabel>
+                        <InputLabel sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
+                          Category
+                        </InputLabel>
                         <Select
                           value={contactForm.category}
                           label="Category"
                           onChange={e => handleContactFormChange('category', e.target.value)}
                           sx={{
                             borderRadius: 2,
+                            fontSize: { xs: '0.875rem', md: '1rem' },
                           }}
                           inputProps={{ 'aria-label': 'Category' }}
                         >
-                          <MenuItem value="">Select a category</MenuItem>
-                          <MenuItem value="technical">Technical Support</MenuItem>
-                          <MenuItem value="billing">Billing & Subscription</MenuItem>
-                          <MenuItem value="feature">Feature Request</MenuItem>
-                          <MenuItem value="bug">Bug Report</MenuItem>
-                          <MenuItem value="general">General Inquiry</MenuItem>
+                          <MenuItem value="" sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
+                            Select a category
+                          </MenuItem>
+                          <MenuItem
+                            value="technical"
+                            sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
+                          >
+                            Technical Support
+                          </MenuItem>
+                          <MenuItem
+                            value="billing"
+                            sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
+                          >
+                            Billing & Subscription
+                          </MenuItem>
+                          <MenuItem
+                            value="feature"
+                            sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
+                          >
+                            Feature Request
+                          </MenuItem>
+                          <MenuItem value="bug" sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
+                            Bug Report
+                          </MenuItem>
+                          <MenuItem
+                            value="general"
+                            sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
+                          >
+                            General Inquiry
+                          </MenuItem>
                         </Select>
                       </FormControl>
 
                       <FormControl fullWidth>
-                        <InputLabel>Priority</InputLabel>
+                        <InputLabel sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
+                          Priority
+                        </InputLabel>
                         <Select
                           value={contactForm.priority}
                           label="Priority"
                           onChange={e => handleContactFormChange('priority', e.target.value)}
                           sx={{
                             borderRadius: 2,
+                            fontSize: { xs: '0.875rem', md: '1rem' },
                           }}
                           inputProps={{ 'aria-label': 'Priority' }}
                         >
-                          <MenuItem value="low">Low</MenuItem>
-                          <MenuItem value="medium">Medium</MenuItem>
-                          <MenuItem value="high">High</MenuItem>
-                          <MenuItem value="urgent">Urgent</MenuItem>
+                          <MenuItem value="low" sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
+                            Low
+                          </MenuItem>
+                          <MenuItem
+                            value="medium"
+                            sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
+                          >
+                            Medium
+                          </MenuItem>
+                          <MenuItem value="high" sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
+                            High
+                          </MenuItem>
+                          <MenuItem
+                            value="urgent"
+                            sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
+                          >
+                            Urgent
+                          </MenuItem>
                         </Select>
                       </FormControl>
 
@@ -952,6 +1107,7 @@ const Help: React.FC = () => {
                         sx={{
                           '& .MuiOutlinedInput-root': {
                             borderRadius: 2,
+                            fontSize: { xs: '0.875rem', md: '1rem' },
                           },
                         }}
                         inputProps={{
@@ -987,7 +1143,7 @@ const Help: React.FC = () => {
                         )}
                       </Button>
 
-                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
                         <Button
                           type="submit"
                           variant="contained"
@@ -996,9 +1152,10 @@ const Help: React.FC = () => {
                           }
                           disabled={isSubmitting}
                           sx={{
-                            px: 4,
-                            py: 1.5,
+                            px: { xs: 3, md: 4 },
+                            py: { xs: 1, md: 1.5 },
                             borderRadius: 3,
+                            fontSize: { xs: '0.875rem', md: '1rem' },
                             background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
                             boxShadow:
                               '0 4px 20px 0px rgba(0,0,0,0.14), 0 7px 10px -5px rgba(33,150,243,0.4)',
@@ -1019,6 +1176,7 @@ const Help: React.FC = () => {
                             color="error"
                             size="small"
                             icon={<ContactSupportOutlined />}
+                            sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}
                           />
                         )}
                       </Box>
@@ -1037,7 +1195,7 @@ const Help: React.FC = () => {
                 <Grid item xs={12} md={6}>
                   <Paper
                     sx={{
-                      p: 3,
+                      p: { xs: 2, md: 3 },
                       background:
                         theme.palette.mode === 'dark'
                           ? 'rgba(255,255,255,0.05)'
@@ -1050,33 +1208,62 @@ const Help: React.FC = () => {
                       },
                     }}
                   >
-                    <Typography variant="h6" gutterBottom color="black">
+                    <Typography
+                      variant="h6"
+                      gutterBottom
+                      color="black"
+                      sx={{ fontSize: { xs: '1.125rem', md: '1.25rem' } }}
+                    >
                       Contact Information
                     </Typography>
                     <Stack spacing={2}>
                       <Box>
-                        <Typography color="text.secondary" gutterBottom>
+                        <Typography
+                          color="text.secondary"
+                          gutterBottom
+                          sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
+                        >
                           Email
                         </Typography>
-                        <Typography>support@assignmentai.com</Typography>
+                        <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
+                          support@assignmentai.com
+                        </Typography>
                       </Box>
                       <Box>
-                        <Typography color="text.secondary" gutterBottom>
+                        <Typography
+                          color="text.secondary"
+                          gutterBottom
+                          sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
+                        >
                           Response Time
                         </Typography>
-                        <Typography>Within 24 hours</Typography>
+                        <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
+                          Within 24 hours
+                        </Typography>
                       </Box>
                       <Box>
-                        <Typography color="text.secondary" gutterBottom>
+                        <Typography
+                          color="text.secondary"
+                          gutterBottom
+                          sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
+                        >
                           Office Hours
                         </Typography>
-                        <Typography>Monday - Friday: 9 AM - 6 PM EST</Typography>
+                        <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
+                          Monday - Friday: 9 AM - 6 PM EST
+                        </Typography>
                       </Box>
                       <Box>
-                        <Typography color="text.secondary" gutterBottom>
+                        <Typography
+                          color="text.secondary"
+                          gutterBottom
+                          sx={{ fontSize: '0.875rem', md: '1rem' }}
+                        >
                           Emergency Support
                         </Typography>
-                        <Typography>Available 24/7 for urgent issues</Typography>
+                        <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
+                          Available 24/7 for urgent issues
+                        </Typography>
                       </Box>
                     </Stack>
                   </Paper>
@@ -1085,6 +1272,41 @@ const Help: React.FC = () => {
             </HelpSection>
           </TabPanel>
         </Box>
+      </Box>
+
+      {/* Back to Top button */}
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          mt: 4,
+          mb: 2,
+          pt: 4,
+          borderTop: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
+        <Button
+          variant="contained"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          aria-label="Back to top"
+          sx={{
+            px: { xs: 4, md: 6 },
+            py: { xs: 1.5, md: 2 },
+            fontSize: { xs: '1rem', md: '1.25rem' },
+            borderRadius: 3,
+            fontWeight: 600,
+            background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
+            boxShadow: '0 4px 20px 0px rgba(0,0,0,0.14), 0 7px 10px -5px rgba(33,150,243,0.4)',
+            transition: 'all 0.3s ease',
+            '&:hover': {
+              transform: 'translateY(-2px)',
+              boxShadow: '0 7px 30px -10px rgba(33,150,243,0.6)',
+            },
+          }}
+        >
+          Back to Top
+        </Button>
       </Box>
 
       {/* Snackbar for notifications */}

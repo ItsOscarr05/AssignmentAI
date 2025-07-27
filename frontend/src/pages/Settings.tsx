@@ -375,18 +375,12 @@ const Settings: React.FC = () => {
         sx={{
           mb: 5,
           display: 'flex',
-          alignItems: 'center',
-          gap: 3,
-          position: 'sticky',
-          top: 0,
-          zIndex: 10,
+          flexDirection: { xs: 'column', md: 'row' },
+          alignItems: { xs: 'stretch', md: 'center' },
+          gap: { xs: 2, md: 3 },
           pt: 2,
           pb: 2,
-          background:
-            theme.palette.mode === 'dark'
-              ? 'linear-gradient(180deg, rgba(18,18,18,0.95) 0%, rgba(18,18,18,0.95) 100%)'
-              : 'linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.95) 100%)',
-          backdropFilter: 'blur(10px)',
+          px: { xs: 1, md: 0 },
         }}
       >
         <Typography
@@ -397,7 +391,8 @@ const Settings: React.FC = () => {
             backgroundClip: 'text',
             WebkitBackgroundClip: 'text',
             color: 'transparent',
-            ml: 4,
+            ml: { xs: 0, md: 4 },
+            fontSize: { xs: '1.75rem', md: '2.125rem' },
           }}
         >
           Settings
@@ -412,7 +407,7 @@ const Settings: React.FC = () => {
           onChange={e => setSearchQuery(e.target.value)}
           sx={{
             flex: 1,
-            maxWidth: 400,
+            maxWidth: { xs: '100%', md: 400 },
             '& .MuiOutlinedInput-root': {
               borderRadius: 3,
               backgroundColor:
@@ -433,8 +428,8 @@ const Settings: React.FC = () => {
           startIcon={<Save />}
           onClick={handleSave}
           sx={{
-            ml: 'auto',
-            px: 4,
+            ml: { xs: 0, md: 'auto' },
+            px: { xs: 2, md: 4 },
             py: 1.5,
             borderRadius: 3,
             background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
@@ -501,45 +496,16 @@ const Settings: React.FC = () => {
                 borderRadius: '3px 3px 0 0',
                 background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
               },
-              '& .MuiTabs-flexContainer': {
-                display: 'flex',
-                justifyContent: 'space-between',
-                width: '100%',
-              },
             }}
           >
-            <Tab
-              icon={<Tune />}
-              label="General"
-              sx={{
-                gap: 1,
-              }}
-            />
-            <Tab
-              icon={<Psychology />}
-              label="AI & Learning"
-              sx={{
-                gap: 1,
-              }}
-            />
-            <Tab
-              icon={<Notifications />}
-              label="Notifications"
-              sx={{
-                gap: 1,
-              }}
-            />
-            <Tab
-              icon={<SecurityOutlined />}
-              label="Privacy & Security"
-              sx={{
-                gap: 1,
-              }}
-            />
+            <Tab icon={<Tune />} label="General" sx={{ gap: 1 }} />
+            <Tab icon={<Psychology />} label="AI & Learning" sx={{ gap: 1 }} />
+            <Tab icon={<Notifications />} label="Notifications" sx={{ gap: 1 }} />
+            <Tab icon={<SecurityOutlined />} label="Privacy & Security" sx={{ gap: 1 }} />
           </Tabs>
         </Box>
 
-        <Box sx={{ p: 4 }}>
+        <Box sx={{ p: { xs: 2, md: 4 } }}>
           <TabPanel value={tabValue} index={0}>
             <SettingsSection
               title="Appearance"
@@ -1389,10 +1355,16 @@ const Settings: React.FC = () => {
               icon={<SecurityOutlined sx={{ color: theme.palette.primary.main }} />}
             >
               <Box sx={{ mb: 4 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <Typography variant="h6" sx={{ mr: 2 }}>
-                    Security Score
-                  </Typography>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    mb: 2,
+                    gap: { xs: 1, sm: 2 },
+                  }}
+                >
+                  <Typography variant="h6">Security Score</Typography>
                   <Typography
                     variant="h4"
                     sx={{
@@ -1436,24 +1408,48 @@ const Settings: React.FC = () => {
               <List>
                 {securityChecklist.map(item => (
                   <React.Fragment key={item.id}>
-                    <ListItem>
-                      <ListItemIcon>{item.icon}</ListItemIcon>
-                      <ListItemText
-                        primary={item.title}
-                        secondary={item.description}
-                        primaryTypographyProps={{
-                          sx: {
-                            color:
-                              item.status === 'success'
-                                ? 'success.main'
-                                : item.status === 'warning'
-                                ? 'warning.main'
-                                : item.status === 'error'
-                                ? 'error.main'
-                                : 'text.primary',
-                          },
+                    <ListItem
+                      sx={{
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        alignItems: { xs: 'flex-start', sm: 'center' },
+                        gap: { xs: 1, sm: 0 },
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          width: '100%',
+                          mb: { xs: 1, sm: 0 },
                         }}
-                      />
+                      >
+                        <ListItemIcon sx={{ minWidth: { xs: 40, sm: 56 } }}>
+                          {item.icon}
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={item.title}
+                          secondary={item.description}
+                          primaryTypographyProps={{
+                            sx: {
+                              color:
+                                item.status === 'success'
+                                  ? 'success.main'
+                                  : item.status === 'warning'
+                                  ? 'warning.main'
+                                  : item.status === 'error'
+                                  ? 'error.main'
+                                  : 'text.primary',
+                              fontSize: { xs: '0.875rem', sm: '1rem' },
+                            },
+                          }}
+                          secondaryTypographyProps={{
+                            sx: {
+                              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                              wordBreak: 'break-word',
+                            },
+                          }}
+                        />
+                      </Box>
                       <Button
                         variant="outlined"
                         size="small"
@@ -1471,6 +1467,11 @@ const Settings: React.FC = () => {
                             <Info color="info" />
                           )
                         }
+                        sx={{
+                          alignSelf: { xs: 'flex-start', sm: 'center' },
+                          fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                          px: { xs: 1, sm: 2 },
+                        }}
                       >
                         {item.action}
                       </Button>
@@ -1485,7 +1486,7 @@ const Settings: React.FC = () => {
               title="Privacy Settings"
               icon={<PrivacyTipOutlined sx={{ color: theme.palette.primary.main }} />}
             >
-              <Grid container spacing={3}>
+              <Grid container spacing={{ xs: 2, md: 3 }}>
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
                     Data & Privacy
@@ -1504,9 +1505,13 @@ const Settings: React.FC = () => {
                         />
                       }
                       label={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box
+                          sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}
+                        >
                           <DataUsageOutlined fontSize="small" />
-                          <Typography>Allow Data Collection</Typography>
+                          <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
+                            Allow Data Collection
+                          </Typography>
                         </Box>
                       }
                     />
@@ -1523,9 +1528,13 @@ const Settings: React.FC = () => {
                         />
                       }
                       label={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box
+                          sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}
+                        >
                           <AnalyticsOutlined fontSize="small" />
-                          <Typography>Share Analytics</Typography>
+                          <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
+                            Share Analytics
+                          </Typography>
                         </Box>
                       }
                     />
@@ -1542,9 +1551,13 @@ const Settings: React.FC = () => {
                         />
                       }
                       label={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box
+                          sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}
+                        >
                           <VisibilityOutlined fontSize="small" />
-                          <Typography>Show Online Status</Typography>
+                          <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
+                            Show Online Status
+                          </Typography>
                         </Box>
                       }
                     />
@@ -1561,9 +1574,13 @@ const Settings: React.FC = () => {
                         />
                       }
                       label={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box
+                          sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}
+                        >
                           <VisibilityOffOutlined fontSize="small" />
-                          <Typography>Allow Activity Tracking</Typography>
+                          <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
+                            Allow Activity Tracking
+                          </Typography>
                         </Box>
                       }
                     />
@@ -1588,9 +1605,13 @@ const Settings: React.FC = () => {
                         />
                       }
                       label={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box
+                          sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}
+                        >
                           <ShieldOutlined fontSize="small" />
-                          <Typography>Two-Factor Authentication</Typography>
+                          <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
+                            Two-Factor Authentication
+                          </Typography>
                         </Box>
                       }
                     />
@@ -1607,9 +1628,13 @@ const Settings: React.FC = () => {
                         />
                       }
                       label={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box
+                          sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}
+                        >
                           <FingerprintOutlined fontSize="small" />
-                          <Typography>Biometric Login</Typography>
+                          <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
+                            Biometric Login
+                          </Typography>
                         </Box>
                       }
                     />
@@ -1626,9 +1651,13 @@ const Settings: React.FC = () => {
                         />
                       }
                       label={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box
+                          sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}
+                        >
                           <LockOutlined fontSize="small" />
-                          <Typography>Auto-Lock Account</Typography>
+                          <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
+                            Auto-Lock Account
+                          </Typography>
                         </Box>
                       }
                     />
@@ -1670,6 +1699,7 @@ const Settings: React.FC = () => {
                       color="primary"
                       startIcon={<DownloadOutlined />}
                       fullWidth
+                      sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
                     >
                       Download My Data
                     </Button>
@@ -1681,6 +1711,7 @@ const Settings: React.FC = () => {
                       sx={{
                         bgcolor: 'error.main',
                         color: 'white',
+                        fontSize: { xs: '0.875rem', md: '1rem' },
                         '&:hover': {
                           bgcolor: 'error.dark',
                         },
@@ -1696,31 +1727,49 @@ const Settings: React.FC = () => {
                     Security Information
                   </Typography>
                   <List dense>
-                    <ListItem>
-                      <ListItemIcon>
+                    <ListItem sx={{ px: { xs: 0, md: 2 } }}>
+                      <ListItemIcon sx={{ minWidth: { xs: 40, md: 56 } }}>
                         <VpnKeyOutlined />
                       </ListItemIcon>
                       <ListItemText
                         primary="Password Strength"
                         secondary={securitySettings.passwordStrength}
+                        primaryTypographyProps={{
+                          sx: { fontSize: { xs: '0.875rem', md: '1rem' } },
+                        }}
+                        secondaryTypographyProps={{
+                          sx: { fontSize: { xs: '0.75rem', md: '0.875rem' } },
+                        }}
                       />
                     </ListItem>
-                    <ListItem>
-                      <ListItemIcon>
+                    <ListItem sx={{ px: { xs: 0, md: 2 } }}>
+                      <ListItemIcon sx={{ minWidth: { xs: 40, md: 56 } }}>
                         <HistoryOutlined />
                       </ListItemIcon>
                       <ListItemText
                         primary="Last Password Change"
                         secondary={securitySettings.lastPasswordChange}
+                        primaryTypographyProps={{
+                          sx: { fontSize: { xs: '0.875rem', md: '1rem' } },
+                        }}
+                        secondaryTypographyProps={{
+                          sx: { fontSize: { xs: '0.75rem', md: '0.875rem' } },
+                        }}
                       />
                     </ListItem>
-                    <ListItem>
-                      <ListItemIcon>
+                    <ListItem sx={{ px: { xs: 0, md: 2 } }}>
+                      <ListItemIcon sx={{ minWidth: { xs: 40, md: 56 } }}>
                         <VerifiedUserOutlined />
                       </ListItemIcon>
                       <ListItemText
                         primary="Active Sessions"
                         secondary={`${securitySettings.activeSessions} devices`}
+                        primaryTypographyProps={{
+                          sx: { fontSize: { xs: '0.875rem', md: '1rem' } },
+                        }}
+                        secondaryTypographyProps={{
+                          sx: { fontSize: { xs: '0.75rem', md: '0.875rem' } },
+                        }}
                       />
                     </ListItem>
                   </List>

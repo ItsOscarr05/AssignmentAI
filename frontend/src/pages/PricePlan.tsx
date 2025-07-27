@@ -417,32 +417,59 @@ const PricePlan: React.FC = () => {
         onClose={() => setShowDetailedComparison(false)}
         maxWidth="lg"
         fullWidth
+        PaperProps={{
+          sx: {
+            width: { xs: '95vw', md: 'auto' },
+            maxWidth: { xs: '95vw', md: 'lg' },
+          },
+        }}
       >
-        <DialogTitle>Detailed Feature Comparison</DialogTitle>
-        <DialogContent>
-          <Box sx={{ mt: 2 }}>
-            <Grid container spacing={2}>
+        <DialogTitle sx={{ fontSize: { xs: '1.25rem', md: '1.5rem' }, p: { xs: 2, md: 3 } }}>
+          Detailed Feature Comparison
+        </DialogTitle>
+        <DialogContent sx={{ p: { xs: 2, md: 3 } }}>
+          <Box sx={{ mt: { xs: 1, md: 2 } }}>
+            <Grid container spacing={{ xs: 1, md: 2 }}>
               <Grid item xs={12}>
-                <Box sx={{ display: 'flex', mb: 2 }}>
+                <Box sx={{ display: 'flex', mb: { xs: 2, md: 2 } }}>
                   <Box sx={{ flex: 1 }} /> {/* Empty space for feature names */}
                   {plansWithCurrentPlan.map(plan => (
-                    <Box key={plan.name} sx={{ flex: 1, textAlign: 'center' }}>
+                    <Box
+                      key={plan.name}
+                      sx={{ flex: 1, textAlign: 'center', px: { xs: 0.5, md: 1 } }}
+                    >
                       <Box
                         sx={{
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          gap: 1,
+                          gap: { xs: 0.5, md: 1 },
+                          mb: { xs: 0.5, md: 0 },
                         }}
                       >
                         {React.cloneElement(plan.icon as React.ReactElement, {
-                          sx: { color: plan.color },
+                          sx: {
+                            color: plan.color,
+                            fontSize: { xs: 20, md: 24 },
+                          },
                         })}
-                        <Typography variant="h6" sx={{ color: plan.color }}>
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            color: plan.color,
+                            fontSize: { xs: '1rem', md: '1.25rem' },
+                          }}
+                        >
                           {plan.name}
                         </Typography>
                       </Box>
-                      <Typography variant="subtitle2" color="text.secondary">
+                      <Typography
+                        variant="subtitle2"
+                        color="text.secondary"
+                        sx={{
+                          fontSize: { xs: '0.75rem', md: '0.875rem' },
+                        }}
+                      >
                         ${plan.price}/month
                       </Typography>
                     </Box>
@@ -451,13 +478,30 @@ const PricePlan: React.FC = () => {
               </Grid>
               {features.map(feature => (
                 <Grid item xs={12} key={feature.name}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Box sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-                      <Typography>{feature.name}</Typography>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      mb: { xs: 1, md: 1 },
+                      py: { xs: 0.5, md: 0 },
+                    }}
+                  >
+                    <Box
+                      sx={{ flex: 1, display: 'flex', alignItems: 'center', pr: { xs: 1, md: 0 } }}
+                    >
+                      <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
+                        {feature.name}
+                      </Typography>
                       {feature.description && (
                         <Tooltip title={feature.description} arrow placement="top">
-                          <IconButton size="small" sx={{ ml: 0.5 }}>
-                            <HelpOutline fontSize="small" sx={{ color: 'error.main' }} />
+                          <IconButton size="small" sx={{ ml: { xs: 0.5, md: 0.5 } }}>
+                            <HelpOutline
+                              fontSize="small"
+                              sx={{
+                                color: 'error.main',
+                                fontSize: { xs: 16, md: 20 },
+                              }}
+                            />
                           </IconButton>
                         </Tooltip>
                       )}
@@ -471,9 +515,21 @@ const PricePlan: React.FC = () => {
                       return (
                         <Box key={plan.name} sx={{ flex: 1, textAlign: 'center' }}>
                           {isIncluded ? (
-                            <CheckCircle sx={{ color: plan.color }} />
+                            <CheckCircle
+                              sx={{
+                                color: plan.color,
+                                fontSize: { xs: 20, md: 24 },
+                              }}
+                            />
                           ) : (
-                            <Typography color="text.disabled">—</Typography>
+                            <Typography
+                              color="text.disabled"
+                              sx={{
+                                fontSize: { xs: '0.875rem', md: '1rem' },
+                              }}
+                            >
+                              —
+                            </Typography>
                           )}
                         </Box>
                       );
@@ -527,7 +583,7 @@ const PricePlan: React.FC = () => {
         <Stack spacing={6}>
           <Grid container spacing={6}>
             {plansWithCurrentPlan.map(plan => (
-              <Grid item xs={12} md={6} lg={3} key={plan.name}>
+              <Grid item xs={11} md={6} lg={3} key={plan.name}>
                 <Card
                   sx={{
                     height: '100%',
