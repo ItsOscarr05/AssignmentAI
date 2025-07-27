@@ -37,10 +37,55 @@ const Register: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
   const { register, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
+
+  // Password validation requirements
+  const passwordRequirements = {
+    minLength: formData.password.length >= 8,
+    hasUpperCase: /[A-Z]/.test(formData.password),
+    hasLowerCase: /[a-z]/.test(formData.password),
+    hasNumber: /\d/.test(formData.password),
+    hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(formData.password),
+  };
+
+  const validatePassword = (password: string) => {
+    if (password.length < 8) {
+      setPasswordError('Password must be at least 8 characters');
+      return false;
+    }
+    if (!/[A-Z]/.test(password)) {
+      setPasswordError('Password must contain at least one uppercase letter');
+      return false;
+    }
+    if (!/[a-z]/.test(password)) {
+      setPasswordError('Password must contain at least one lowercase letter');
+      return false;
+    }
+    if (!/\d/.test(password)) {
+      setPasswordError('Password must contain at least one number');
+      return false;
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      setPasswordError('Password must contain at least one special character');
+      return false;
+    }
+    setPasswordError('');
+    return true;
+  };
+
+  const validateConfirmPassword = (confirmPassword: string) => {
+    if (confirmPassword && formData.password !== confirmPassword) {
+      setConfirmPasswordError('Passwords do not match');
+      return false;
+    }
+    setConfirmPasswordError('');
+    return true;
+  };
 
   // Ensure registration starts with a clean slate - no plan information
   useEffect(() => {
@@ -85,6 +130,28 @@ const Register: React.FC = () => {
       ...prev,
       [name]: value,
     }));
+
+    // Validate password when it changes
+    if (name === 'password') {
+      validatePassword(value);
+      // Also validate confirm password if it has a value
+      if (formData.confirmPassword) {
+        validateConfirmPassword(formData.confirmPassword);
+      }
+    }
+
+    // Validate confirm password when it changes
+    if (name === 'confirmPassword') {
+      validateConfirmPassword(value);
+    }
+  };
+
+  const handlePasswordBlur = () => {
+    validatePassword(formData.password);
+  };
+
+  const handleConfirmPasswordBlur = () => {
+    validateConfirmPassword(formData.confirmPassword);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -110,9 +177,13 @@ const Register: React.FC = () => {
       return;
     }
 
+    // Validate password
+    if (!validatePassword(formData.password)) {
+      return;
+    }
+
     // Validate password match
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+    if (!validateConfirmPassword(formData.confirmPassword)) {
       return;
     }
 
@@ -258,12 +329,11 @@ const Register: React.FC = () => {
             sx={{
               display: 'flex',
               flexDirection: 'column',
-              justifyContent: 'center',
+              justifyContent: 'flex-start',
               alignItems: 'center',
               background: 'white',
               p: { xs: 2, md: 3 },
               height: { xs: 'auto', md: '100vh' },
-              minHeight: { xs: '65vh', md: '100vh' },
               overflowY: 'auto', // Enable scrolling
               position: 'relative',
             }}
@@ -272,12 +342,13 @@ const Register: React.FC = () => {
               sx={{
                 width: '100%',
                 maxWidth: 480,
-                py: { xs: 2, md: 0 },
+                pt: { xs: 1, md: 1 },
+                pb: { xs: 2, md: 2 },
                 position: 'relative',
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'center',
-                minHeight: { xs: 'auto', md: '100%' },
+                justifyContent: 'flex-start',
+                minHeight: 'auto',
               }}
             >
               {/* Back Button - Far right */}
@@ -404,6 +475,84 @@ const Register: React.FC = () => {
                     },
                   }}
                 />
+
+                {/* Password Requirements Display */}
+                {formData.password && (
+                  <Box sx={{ mt: 2, mb: 1 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: 'text.secondary',
+                        fontFamily: "'Inter', sans-serif",
+                        fontWeight: 400,
+                        fontSize: '0.8rem',
+                        mb: 1,
+                      }}
+                    >
+                      Password Requirements:
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: passwordRequirements.minLength ? 'success.main' : 'error.main',
+                          fontFamily: "'Inter', sans-serif",
+                          fontWeight: 400,
+                          fontSize: '0.75rem',
+                        }}
+                      >
+                        • At least 8 characters {passwordRequirements.minLength ? '✓' : '✗'}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: passwordRequirements.hasUpperCase ? 'success.main' : 'error.main',
+                          fontFamily: "'Inter', sans-serif",
+                          fontWeight: 400,
+                          fontSize: '0.75rem',
+                        }}
+                      >
+                        • One uppercase letter {passwordRequirements.hasUpperCase ? '✓' : '✗'}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: passwordRequirements.hasLowerCase ? 'success.main' : 'error.main',
+                          fontFamily: "'Inter', sans-serif",
+                          fontWeight: 400,
+                          fontSize: '0.75rem',
+                        }}
+                      >
+                        • One lowercase letter {passwordRequirements.hasLowerCase ? '✓' : '✗'}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: passwordRequirements.hasNumber ? 'success.main' : 'error.main',
+                          fontFamily: "'Inter', sans-serif",
+                          fontWeight: 400,
+                          fontSize: '0.75rem',
+                        }}
+                      >
+                        • One number {passwordRequirements.hasNumber ? '✓' : '✗'}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: passwordRequirements.hasSpecialChar
+                            ? 'success.main'
+                            : 'error.main',
+                          fontFamily: "'Inter', sans-serif",
+                          fontWeight: 400,
+                          fontSize: '0.75rem',
+                        }}
+                      >
+                        • One special character {passwordRequirements.hasSpecialChar ? '✓' : '✗'}
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
+
                 <TextField
                   margin="normal"
                   required
@@ -414,6 +563,9 @@ const Register: React.FC = () => {
                   autoComplete="new-password"
                   value={formData.password}
                   onChange={handleChange}
+                  onBlur={handlePasswordBlur}
+                  error={!!passwordError}
+                  helperText={passwordError}
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       height: '54px',
@@ -452,6 +604,9 @@ const Register: React.FC = () => {
                   autoComplete="new-password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
+                  onBlur={handleConfirmPasswordBlur}
+                  error={!!confirmPasswordError}
+                  helperText={confirmPasswordError}
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       height: '54px',

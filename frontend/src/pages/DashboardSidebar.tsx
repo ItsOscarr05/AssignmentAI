@@ -12,7 +12,6 @@ import CloseIcon from '@mui/icons-material/Close';
 import MenuIcon from '@mui/icons-material/Menu';
 import {
   Box,
-  Divider,
   Drawer,
   IconButton,
   List,
@@ -56,13 +55,13 @@ const Dashboard: React.FC = () => {
   const drawer = (
     <Box
       sx={{
-        height: '100%',
+        height: '100vh',
         display: 'flex',
         flexDirection: 'column',
         overflowX: 'hidden',
         alignItems: 'center',
-        justifyContent: 'center',
         position: 'relative',
+        py: 2,
       }}
     >
       {/* Logo and Title */}
@@ -76,6 +75,7 @@ const Dashboard: React.FC = () => {
           width: '100%',
           minHeight: 64,
           overflow: 'visible',
+          mb: 0,
         }}
       >
         <img
@@ -100,66 +100,66 @@ const Dashboard: React.FC = () => {
           AssignmentAI
         </Typography>
       </Box>
-      <Divider sx={{ width: '80%', my: 2 }} />
-      <List
-        sx={{
-          flexGrow: 1,
-          pt: 2,
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          height: 'calc(100% - 180px)',
-          width: '100%',
-        }}
-      >
-        {menuItems.map(item => (
-          <ListItem
-            key={item.text}
-            onClick={() => {
-              navigate(item.path);
-              if (isMobile) setMobileOpen(false);
-            }}
-            sx={{
-              borderRadius: 2,
-              mx: 1,
-              mb: 2,
-              py: 1.8,
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              },
-              '&.Mui-selected': {
-                backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                },
-              },
-              justifyContent: 'flex-start',
-              px: 2,
-            }}
-          >
-            <ListItemIcon
+
+      {/* Menu Items */}
+      <Box sx={{ flex: 1, width: '100%' }}>
+        <List
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            width: '100%',
+          }}
+        >
+          {menuItems.map(item => (
+            <ListItem
+              key={item.text}
+              onClick={() => {
+                navigate(item.path);
+                if (isMobile) setMobileOpen(false);
+              }}
               sx={{
-                minWidth: 0,
-                color: 'inherit',
-                justifyContent: 'center',
-                mr: 2,
+                borderRadius: 2,
+                mx: 1,
+                mb: 1,
+                py: 2,
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                },
+                '&.Mui-selected': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                  },
+                },
+                justifyContent: 'flex-start',
+                px: 2,
               }}
             >
-              {React.cloneElement(item.icon, { sx: { fontSize: 28 } })}
-            </ListItemIcon>
-            <ListItemText
-              primary={item.text}
-              primaryTypographyProps={{
-                color: 'inherit',
-                fontWeight: 500,
-                fontSize: '1.1rem',
-              }}
-            />
-          </ListItem>
-        ))}
-      </List>
-      <Divider sx={{ width: '80%', my: 2 }} />
-      <Box sx={{ p: 2, width: '100%', textAlign: 'center' }}>
+              <ListItemIcon
+                sx={{
+                  minWidth: 0,
+                  color: 'inherit',
+                  justifyContent: 'center',
+                  mr: 2,
+                }}
+              >
+                {React.cloneElement(item.icon, { sx: { fontSize: 28 } })}
+              </ListItemIcon>
+              <ListItemText
+                primary={item.text}
+                primaryTypographyProps={{
+                  color: 'inherit',
+                  fontWeight: 500,
+                  fontSize: '1.1rem',
+                }}
+              />
+            </ListItem>
+          ))}
+        </List>
+      </Box>
+
+      {/* Copyright */}
+      <Box sx={{ p: 1, width: '100%', textAlign: 'center' }}>
         <Typography
           variant="body2"
           color="primary.contrastText"

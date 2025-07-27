@@ -119,21 +119,21 @@ const Login: React.FC = () => {
         minHeight: '100vh',
         display: 'flex',
         background: 'white',
-        overflow: { xs: 'auto', md: 'hidden' },
+        overflow: 'auto',
       }}
     >
       <Container
         maxWidth={false}
         disableGutters
         sx={{
-          height: { xs: 'auto', md: '100%' },
+          height: 'auto',
         }}
       >
         <Grid
           container
           direction={{ xs: 'column', md: 'row' }}
           sx={{
-            height: { xs: 'auto', md: '100vh' },
+            minHeight: '100vh',
             borderRadius: 0,
           }}
         >
@@ -151,8 +151,7 @@ const Login: React.FC = () => {
               alignItems: 'center',
               color: 'white',
               position: 'relative',
-              height: { xs: 'auto', md: '100%' },
-              minHeight: { xs: '35vh', md: '100%' },
+              minHeight: { xs: '35vh', md: '100vh' },
             }}
           >
             <HeroParticles />
@@ -167,7 +166,7 @@ const Login: React.FC = () => {
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'flex-start',
-                minHeight: { xs: 'auto', md: '100%' },
+                minHeight: { xs: 'auto', md: '100vh' },
                 pt: { xs: 2, md: 4 },
                 pb: { xs: 2, md: 2 },
               }}
@@ -236,11 +235,10 @@ const Login: React.FC = () => {
             md={7}
             sx={{
               p: { xs: 4, md: 6 },
-              height: { xs: 'auto', md: '100%' },
-              minHeight: { xs: '65vh', md: '100%' },
+              height: { xs: 'auto', md: '100vh' },
               display: 'flex',
               flexDirection: 'column',
-              justifyContent: 'center',
+              justifyContent: 'flex-start',
               background: 'white',
               position: 'relative',
             }}
@@ -252,8 +250,9 @@ const Login: React.FC = () => {
                 position: 'relative',
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'center',
-                minHeight: { xs: 'auto', md: '100%' },
+                justifyContent: 'flex-start',
+                height: 'auto',
+                pt: { xs: 1, md: 2 },
               }}
             >
               {/* Back Button - Far right */}
@@ -301,7 +300,7 @@ const Login: React.FC = () => {
               <Typography
                 color="text.secondary"
                 sx={{
-                  mb: 2,
+                  mb: 4,
                   fontFamily: "'Inter', sans-serif",
                   fontWeight: 300,
                   letterSpacing: '0.01em',
@@ -309,24 +308,6 @@ const Login: React.FC = () => {
                 }}
               >
                 Sign in to continue to AssignmentAI
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{
-                  mb: 5,
-                  color: 'warning.main',
-                  fontFamily: "'Inter', sans-serif",
-                  fontWeight: 500,
-                  fontSize: '0.875rem',
-                  textAlign: 'center',
-                  backgroundColor: 'warning.light',
-                  py: 1,
-                  px: 2,
-                  borderRadius: 1,
-                }}
-              >
-                ⚠️ Login functionality is temporarily disabled for maintenance. Please use the Mock
-                Login button below.
               </Typography>
 
               <Box component="form" onSubmit={handleSubmit}>
@@ -533,18 +514,6 @@ const Login: React.FC = () => {
                     GitHub
                   </Button>
                 </Stack>
-                <Button
-                  type="button"
-                  fullWidth
-                  variant="outlined"
-                  color="secondary"
-                  sx={{ mt: 1, mb: 2 }}
-                  onClick={() => {
-                    mockLogin();
-                  }}
-                >
-                  Mock Login (Dev Only)
-                </Button>
 
                 <Typography
                   variant="body2"
