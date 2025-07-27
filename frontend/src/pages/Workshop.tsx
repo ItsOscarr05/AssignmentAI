@@ -917,7 +917,7 @@ const Workshop: React.FC = () => {
                 />
               </Tabs>
             </Box>
-            <Box sx={{ p: 2 }}>
+            <Box sx={{ p: 1 }}>
               <TabPanel value={activeTab} index={0}>
                 {renderInputSection()}
               </TabPanel>
@@ -1207,82 +1207,45 @@ const Workshop: React.FC = () => {
           </Paper>
 
           {/* AI Suggestions */}
-          <Paper sx={{ ...cardStyle, p: { xs: 1, md: 3 } }}>
+          <Paper sx={{ ...cardStyle, p: { xs: 1, md: 3 }, mb: { xs: 2, md: 3 } }}>
             <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}>
               AI Suggestions
             </Typography>
             <List>
               <ListItem
                 button
-                onClick={() =>
-                  handleSuggestionClick(
-                    'Create a bar chart showing student performance across different subjects',
-                    0
-                  )
-                }
+                onClick={() => handleSuggestionClick('Summarize this content for me', 3)}
               >
                 <ListItemIcon>
-                  <BarChartOutlinedIcon sx={{ color: '#ff9800' }} />
+                  <RecordVoiceOverOutlined sx={{ color: '#ff9800' }} />
                 </ListItemIcon>
                 <ListItemText
-                  primary="Generate a Diagram"
-                  secondary="Create charts, graphs, and visualizations"
+                  primary="Summarize"
+                  secondary="Create concise summaries of your content"
+                />
+              </ListItem>
+              <ListItem
+                button
+                onClick={() => handleSuggestionClick('Extract key points from this content', 2)}
+              >
+                <ListItemIcon>
+                  <FormatListBulletedIcon sx={{ color: '#ffc107' }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Extract"
+                  secondary="Pull out important information and key points"
                 />
               </ListItem>
               <ListItem
                 button
                 onClick={() =>
-                  handleSuggestionClick(
-                    'Write a Python function to calculate the factorial of a number with proper error handling',
-                    0
-                  )
+                  handleSuggestionClick('Rewrite this content in a different style', 1)
                 }
               >
                 <ListItemIcon>
-                  <BarChartOutlinedIcon sx={{ color: '#4caf50' }} />
+                  <EditOutlinedIcon sx={{ color: '#2196f3' }} />
                 </ListItemIcon>
-                <ListItemText
-                  primary="Generate Code"
-                  secondary="Create functions, scripts, and programs"
-                />
-              </ListItem>
-              <ListItem
-                button
-                onClick={() => handleSuggestionClick('Solve this math problem: 2x + 5 = 13', 0)}
-              >
-                <ListItemIcon>
-                  <BarChartOutlinedIcon sx={{ color: '#2196f3' }} />
-                </ListItemIcon>
-                <ListItemText
-                  primary="Solve Math Problems"
-                  secondary="Get step-by-step solutions"
-                />
-              </ListItem>
-              <ListItem
-                button
-                onClick={() => handleSuggestionClick('Analyze this image and provide insights', 1)}
-              >
-                <ListItemIcon>
-                  <BarChartOutlinedIcon sx={{ color: '#9c27b0' }} />
-                </ListItemIcon>
-                <ListItemText
-                  primary="Upload Images"
-                  secondary="Analyze photos, diagrams, and documents"
-                />
-              </ListItem>
-              <ListItem
-                button
-                onClick={() =>
-                  handleSuggestionClick('Review this code and suggest improvements', 1)
-                }
-              >
-                <ListItemIcon>
-                  <BarChartOutlinedIcon sx={{ color: '#ff5722' }} />
-                </ListItemIcon>
-                <ListItemText
-                  primary="Upload Code Files"
-                  secondary="Get code reviews and suggestions"
-                />
+                <ListItemText primary="Rewrite" secondary="Rephrase and restructure your content" />
               </ListItem>
             </List>
           </Paper>
@@ -1326,7 +1289,14 @@ const Workshop: React.FC = () => {
               Assignment Tokens
             </Typography>
             <Box
-              sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, pt: 2 }}
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 2,
+                pt: 2,
+              }}
             >
               <Box
                 sx={{
@@ -1349,8 +1319,8 @@ const Workshop: React.FC = () => {
                     position: 'absolute',
                     top: 0,
                     left: 0,
-                    width: { xs: 120, md: 160 },
-                    height: { xs: 120, md: 160 },
+                    width: { xs: 80, md: 160 },
+                    height: { xs: 80, md: 160 },
                   }}
                 />
                 {/* Actual progress */}

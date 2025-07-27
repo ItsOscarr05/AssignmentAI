@@ -146,10 +146,335 @@ const WorkshopFileUpload: React.FC = () => {
         <Typography variant="body2" color="text.secondary" gutterBottom>
           or click to browse files
         </Typography>
-        <Typography variant="caption" color="text.secondary">
-          Supported formats: PDF, DOCX, DOC, TXT, RTF, Images (JPG, PNG, GIF, BMP, TIFF), Code files
-          (PY, JS, Java, C++, HTML, CSS), Data files (CSV, XLS, XLSX) • Max size: 25MB
-        </Typography>
+        <Box sx={{ mt: 2 }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ fontWeight: 600, mb: 1, display: 'block' }}
+          >
+            Supported formats:
+          </Typography>
+          <Box
+            sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              gap: { xs: 2, md: 3 },
+              mb: 2,
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  backgroundColor: '#e3f2fd',
+                  color: '#1976d2',
+                  px: 1,
+                  py: 0.5,
+                  borderRadius: 1,
+                  fontWeight: 500,
+                  fontSize: '0.7rem',
+                }}
+              >
+                PDF
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  backgroundColor: '#e3f2fd',
+                  color: '#1976d2',
+                  px: 1,
+                  py: 0.5,
+                  borderRadius: 1,
+                  fontWeight: 500,
+                  fontSize: '0.7rem',
+                }}
+              >
+                DOCX
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  backgroundColor: '#e3f2fd',
+                  color: '#1976d2',
+                  px: 1,
+                  py: 0.5,
+                  borderRadius: 1,
+                  fontWeight: 500,
+                  fontSize: '0.7rem',
+                }}
+              >
+                DOC
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  backgroundColor: '#e3f2fd',
+                  color: '#1976d2',
+                  px: 1,
+                  py: 0.5,
+                  borderRadius: 1,
+                  fontWeight: 500,
+                  fontSize: '0.7rem',
+                }}
+              >
+                TXT
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  backgroundColor: '#e3f2fd',
+                  color: '#1976d2',
+                  px: 1,
+                  py: 0.5,
+                  borderRadius: 1,
+                  fontWeight: 500,
+                  fontSize: '0.7rem',
+                }}
+              >
+                RTF
+              </Typography>
+            </Box>
+          </Box>
+          <Box
+            sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              gap: { xs: 2, md: 3 },
+              mb: 2,
+            }}
+          >
+            <Typography
+              variant="caption"
+              sx={{
+                backgroundColor: '#fff3e0',
+                color: '#f57c00',
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+                fontWeight: 500,
+                fontSize: '0.7rem',
+              }}
+            >
+              JPG
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{
+                backgroundColor: '#fff3e0',
+                color: '#f57c00',
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+                fontWeight: 500,
+                fontSize: '0.7rem',
+              }}
+            >
+              PNG
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{
+                backgroundColor: '#fff3e0',
+                color: '#f57c00',
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+                fontWeight: 500,
+                fontSize: '0.7rem',
+              }}
+            >
+              GIF
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{
+                backgroundColor: '#fff3e0',
+                color: '#f57c00',
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+                fontWeight: 500,
+                fontSize: '0.7rem',
+              }}
+            >
+              BMP
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{
+                backgroundColor: '#fff3e0',
+                color: '#f57c00',
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+                fontWeight: 500,
+                fontSize: '0.7rem',
+              }}
+            >
+              TIFF
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              gap: { xs: 2, md: 3 },
+              mb: 2,
+            }}
+          >
+            <Typography
+              variant="caption"
+              sx={{
+                backgroundColor: '#f3e5f5',
+                color: '#7b1fa2',
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+                fontWeight: 500,
+                fontSize: '0.7rem',
+              }}
+            >
+              PY
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{
+                backgroundColor: '#f3e5f5',
+                color: '#7b1fa2',
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+                fontWeight: 500,
+                fontSize: '0.7rem',
+              }}
+            >
+              JS
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{
+                backgroundColor: '#f3e5f5',
+                color: '#7b1fa2',
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+                fontWeight: 500,
+                fontSize: '0.7rem',
+              }}
+            >
+              Java
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{
+                backgroundColor: '#f3e5f5',
+                color: '#7b1fa2',
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+                fontWeight: 500,
+                fontSize: '0.7rem',
+              }}
+            >
+              C++
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{
+                backgroundColor: '#f3e5f5',
+                color: '#7b1fa2',
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+                fontWeight: 500,
+                fontSize: '0.7rem',
+              }}
+            >
+              HTML
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{
+                backgroundColor: '#f3e5f5',
+                color: '#7b1fa2',
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+                fontWeight: 500,
+                fontSize: '0.7rem',
+              }}
+            >
+              CSS
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              gap: { xs: 2, md: 3 },
+              mb: 2,
+            }}
+          >
+            <Typography
+              variant="caption"
+              sx={{
+                backgroundColor: '#e8f5e8',
+                color: '#388e3c',
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+                fontWeight: 500,
+                fontSize: '0.7rem',
+              }}
+            >
+              CSV
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{
+                backgroundColor: '#e8f5e8',
+                color: '#388e3c',
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+                fontWeight: 500,
+                fontSize: '0.7rem',
+              }}
+            >
+              XLS
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{
+                backgroundColor: '#e8f5e8',
+                color: '#388e3c',
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+                fontWeight: 500,
+                fontSize: '0.7rem',
+              }}
+            >
+              XLSX
+            </Typography>
+          </Box>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{
+              display: 'block',
+              textAlign: 'center',
+              fontWeight: 600,
+              mt: 1,
+            }}
+          >
+            Max size: 25MB
+          </Typography>
+        </Box>
       </Paper>
 
       {/* Uploaded Files List */}

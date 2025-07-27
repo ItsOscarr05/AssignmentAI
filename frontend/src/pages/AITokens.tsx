@@ -569,46 +569,154 @@ const AITokens: React.FC = () => {
             <Grid container spacing={2}>
               <Grid item xs={4}>
                 <Card sx={{ ...redOutline }}>
-                  <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <HistoryIcon sx={{ color: '#1976d2', fontSize: 32 }} />
-                    <Box>
+                  <CardContent
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 1,
+                      textAlign: 'center',
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 1,
+                        width: '100%',
+                        justifyContent: 'center',
+                      }}
+                    >
                       <Tooltip title="Total tokens available in your plan per month">
-                        <Typography color="textSecondary" gutterBottom>
+                        <Typography
+                          color="textSecondary"
+                          sx={{
+                            fontSize: '0.875rem',
+                            fontWeight: 600,
+                          }}
+                        >
                           Total Tokens
                         </Typography>
                       </Tooltip>
-                      <Typography variant="h5">{tokenUsage.total.toLocaleString()}</Typography>
+                      <HistoryIcon
+                        sx={{
+                          color: '#1976d2',
+                          fontSize: 24,
+                        }}
+                      />
                     </Box>
+                    <Typography
+                      variant="h5"
+                      sx={{
+                        fontSize: { xs: '1.1rem', md: '1.5rem' },
+                        textAlign: 'center',
+                      }}
+                    >
+                      {tokenUsage.total.toLocaleString()}
+                    </Typography>
                   </CardContent>
                 </Card>
               </Grid>
               <Grid item xs={4}>
                 <Card sx={{ ...redOutline }}>
-                  <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <CheckCircleIcon sx={{ color: '#388e3c', fontSize: 32 }} />
-                    <Box>
+                  <CardContent
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 1,
+                      textAlign: 'center',
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 1,
+                        width: '100%',
+                        justifyContent: 'center',
+                      }}
+                    >
                       <Tooltip title="Tokens consumed by AI services this month">
-                        <Typography color="textSecondary" gutterBottom>
+                        <Typography
+                          color="textSecondary"
+                          sx={{
+                            fontSize: '0.875rem',
+                            fontWeight: 600,
+                          }}
+                        >
                           Used Tokens
                         </Typography>
                       </Tooltip>
-                      <Typography variant="h5">{tokenUsage.used.toLocaleString()}</Typography>
+                      <CheckCircleIcon
+                        sx={{
+                          color: '#388e3c',
+                          fontSize: 24,
+                        }}
+                      />
                     </Box>
+                    <Typography
+                      variant="h5"
+                      sx={{
+                        fontSize: { xs: '1.1rem', md: '1.5rem' },
+                        textAlign: 'center',
+                      }}
+                    >
+                      {tokenUsage.used.toLocaleString()}
+                    </Typography>
                   </CardContent>
                 </Card>
               </Grid>
               <Grid item xs={4}>
                 <Card sx={{ ...redOutline }}>
-                  <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <HourglassEmptyIcon sx={{ color: '#FFA000', fontSize: 32 }} />
-                    <Box>
+                  <CardContent
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 1,
+                      textAlign: 'center',
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 1,
+                        width: '100%',
+                        justifyContent: 'center',
+                      }}
+                    >
                       <Tooltip title="Tokens you have left for this month">
-                        <Typography color="textSecondary" gutterBottom>
-                          Remaining
+                        <Typography
+                          color="textSecondary"
+                          sx={{
+                            fontSize: '0.875rem',
+                            fontWeight: 600,
+                          }}
+                        >
+                          Remaining Tokens
                         </Typography>
                       </Tooltip>
-                      <Typography variant="h5">{tokenUsage.remaining.toLocaleString()}</Typography>
+                      <HourglassEmptyIcon
+                        sx={{
+                          color: '#FFA000',
+                          fontSize: 24,
+                        }}
+                      />
                     </Box>
+                    <Typography
+                      variant="h5"
+                      sx={{
+                        fontSize: { xs: '1.1rem', md: '1.5rem' },
+                        textAlign: 'center',
+                      }}
+                    >
+                      {tokenUsage.remaining.toLocaleString()}
+                    </Typography>
                   </CardContent>
                 </Card>
               </Grid>
@@ -1288,6 +1396,8 @@ const AITokens: React.FC = () => {
                 borderRadius: 3,
                 border: '2px solid red',
                 maxHeight: '80vh',
+                width: { xs: '95vw', sm: '90vw', md: 'auto' },
+                maxWidth: { xs: '95vw', sm: '90vw', md: 'md' },
               },
             }}
           >
@@ -1301,8 +1411,8 @@ const AITokens: React.FC = () => {
                 </IconButton>
               </Box>
             </DialogTitle>
-            <DialogContent sx={{ p: 0 }}>
-              <List sx={{ py: 0 }}>
+            <DialogContent sx={{ p: 0, overflow: 'hidden' }}>
+              <List sx={{ py: 0, width: '100%' }}>
                 {transactions
                   .filter(t => /purchase/i.test(t.description))
                   .map((transaction, index) => {
