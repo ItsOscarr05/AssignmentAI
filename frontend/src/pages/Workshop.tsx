@@ -648,16 +648,66 @@ const Workshop: React.FC = () => {
   return (
     <Box
       sx={{
-        p: { xs: 1, md: 3 },
+        p: { xs: 0.5, sm: 1, md: 3 },
         backgroundColor: 'white',
         minHeight: '100vh',
         overflow: 'hidden',
         width: '100%',
+        maxWidth: '100vw',
+        boxSizing: 'border-box',
+        '@media (max-width: 480px)': {
+          '& .MuiTab-label': {
+            display: 'none !important',
+            visibility: 'hidden !important',
+            opacity: 0,
+            width: 0,
+            height: 0,
+            overflow: 'hidden',
+            position: 'absolute',
+            left: '-9999px',
+            fontSize: 0,
+            lineHeight: 0,
+          },
+          '& .ai-response-tabs .MuiTab-label': {
+            display: 'none !important',
+            visibility: 'hidden !important',
+            opacity: 0,
+            width: 0,
+            height: 0,
+            overflow: 'hidden',
+            position: 'absolute',
+            left: '-9999px',
+            fontSize: 0,
+            lineHeight: 0,
+          },
+        },
+        '@media (max-width: 360px)': {
+          p: 0.25,
+          '& .MuiCard-root': {
+            width: '99% !important',
+            mx: 'auto !important',
+          },
+          '& .MuiPaper-root': {
+            width: '99% !important',
+            mx: 'auto !important',
+          },
+        },
       }}
     >
       {/* Header */}
-      <Card sx={{ ...cardStyle, mb: { xs: 2, md: 4 } }}>
-        <CardContent sx={{ p: { xs: 1, md: 2 } }}>
+      <Card
+        sx={{
+          ...cardStyle,
+          mb: { xs: 3, sm: 4, md: 6 },
+          width: { xs: '95%', sm: '100%' },
+          mx: { xs: 1.5, sm: 0 },
+          '@media (max-width: 480px)': {
+            width: '98%',
+            mx: 'auto',
+          },
+        }}
+      >
+        <CardContent sx={{ p: { xs: 1, sm: 1, md: 2 } }}>
           <Box
             sx={{
               display: 'flex',
@@ -671,7 +721,8 @@ const Workshop: React.FC = () => {
               variant="h4"
               sx={{
                 color: theme.palette.primary.main,
-                fontSize: { xs: '1.5rem', md: '2.125rem' },
+                fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2.25rem' },
+                fontWeight: { xs: 600, md: 400 },
               }}
             >
               AI Workshop
@@ -680,11 +731,14 @@ const Workshop: React.FC = () => {
               variant="outlined"
               startIcon={<HistoryIcon />}
               onClick={() => setIsDrawerOpen(true)}
+              size="small"
               sx={{
                 borderColor: 'red',
                 color: 'red',
                 '&:hover': { borderColor: 'red' },
-                fontSize: { xs: '0.75rem', md: '0.875rem' },
+                fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.875rem' },
+                px: { xs: 1, sm: 2 },
+                py: { xs: 0.5, sm: 1 },
               }}
             >
               History
@@ -702,23 +756,71 @@ const Workshop: React.FC = () => {
         />
       )}
 
-      <Grid container spacing={{ xs: 1, md: 3 }}>
+      <Grid
+        container
+        spacing={{ xs: 0.5, sm: 1, md: 3 }}
+        sx={{
+          overflow: 'hidden',
+          width: '100%',
+          maxWidth: '100%',
+          boxSizing: 'border-box',
+          '@media (max-width: 360px)': {
+            spacing: 0.25,
+            width: '99%',
+            mx: 'auto',
+          },
+        }}
+      >
         {/* Main Content */}
-        <Grid item xs={12} md={9}>
+        <Grid
+          item
+          xs={12}
+          md={9}
+          sx={{ overflow: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
+        >
           {/* Activity Chart */}
-          <Paper sx={{ ...cardStyle, p: { xs: 1, md: 3 }, mb: { xs: 2, md: 3 } }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+          <Paper
+            sx={{
+              ...cardStyle,
+              p: { xs: 0.75, sm: 1, md: 3 },
+              mb: { xs: 2, sm: 3, md: 4 },
+              overflow: 'hidden',
+              width: { xs: '95%', sm: '100%' },
+              mx: { xs: 'auto', sm: 0 },
+              '@media (max-width: 480px)': {
+                width: '98%',
+                mx: 'auto',
+              },
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: { xs: 0.5, sm: 1 },
+                mb: { xs: 1.5, sm: 2 },
+                flexWrap: 'wrap',
+              }}
+            >
+              <Typography
+                variant="h6"
+                gutterBottom
+                sx={{
+                  fontWeight: 'bold',
+                  fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' },
+                  mb: { xs: 0.5, sm: 1 },
+                }}
+              >
                 Weekly Activity Overview
               </Typography>
               <Tooltip title="Activity based on your assignments and interactions" arrow>
                 <InfoOutlinedIcon
                   sx={{
                     color: 'gray',
-                    fontSize: 20,
+                    fontSize: { xs: 14, sm: 16, md: 20 },
                     cursor: 'pointer',
                     position: 'relative',
-                    top: '-5px',
+                    top: { xs: '-2px', sm: '-5px' },
                   }}
                 />
               </Tooltip>
@@ -745,7 +847,17 @@ const Workshop: React.FC = () => {
                 </Typography>
               </Box>
             ) : (
-              <Box sx={{ height: { xs: 250, md: 350 } }}>
+              <Box
+                sx={{
+                  height: { xs: 280, sm: 320, md: 400 },
+                  overflow: 'hidden',
+                  width: '100%',
+                  '@media (max-width: 360px)': {
+                    width: '98%',
+                    mx: 'auto',
+                  },
+                }}
+              >
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={activityData}
@@ -779,8 +891,16 @@ const Workshop: React.FC = () => {
                           setSelectedArea(prev => (prev === keyAsString ? null : keyAsString));
                         }
                       }}
-                      wrapperStyle={{ paddingTop: 10 }}
+                      wrapperStyle={{
+                        paddingTop: 5,
+                        fontSize: '0.75rem',
+                      }}
                       formatter={renderLegendText}
+                      iconSize={8}
+                      iconType="circle"
+                      layout="horizontal"
+                      verticalAlign="bottom"
+                      align="center"
                     />
                     <Customized component={VerticalDividers} />
                     <Bar
@@ -854,22 +974,37 @@ const Workshop: React.FC = () => {
             ref={uploadContentRef}
             id="upload-content-card"
             sx={{
-              p: { xs: 1, md: 3 },
-              mb: { xs: 2, md: 3 },
+              p: { xs: 0.75, sm: 1, md: 3 },
+              mb: { xs: 2, sm: 3, md: 4 },
               border: '2px solid #D32F2F',
               boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+              overflow: 'hidden',
+              width: { xs: '95%', sm: '100%' },
+              mx: { xs: 'auto', sm: 0 },
+              '@media (max-width: 480px)': {
+                width: '98%',
+                mx: 'auto',
+              },
             }}
           >
             <Box
               sx={{
                 display: 'flex',
-                alignItems: 'center',
-                gap: 2,
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'flex-start', sm: 'center' },
+                gap: { xs: 0.75, sm: 1, md: 2 },
                 borderBottom: '1px solid #e0e0e0',
-                pb: 1,
+                pb: { xs: 0.75, sm: 1 },
               }}
             >
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 700,
+                  fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' },
+                  mb: { xs: 0.5, sm: 0 },
+                }}
+              >
                 Upload Content
               </Typography>
               <Tabs
@@ -891,6 +1026,14 @@ const Workshop: React.FC = () => {
                     '&.Mui-selected': {
                       color: 'red',
                     },
+                    '& .MuiTab-label': {
+                      display: { xs: 'none', sm: 'block' },
+                    },
+                    '@media (max-width: 480px)': {
+                      '& .MuiTab-label': {
+                        display: 'none',
+                      },
+                    },
                   }}
                 />
                 <Tab
@@ -902,6 +1045,14 @@ const Workshop: React.FC = () => {
                     '&.Mui-selected': {
                       color: '#8884d8',
                     },
+                    '& .MuiTab-label': {
+                      display: { xs: 'none', sm: 'block' },
+                    },
+                    '@media (max-width: 480px)': {
+                      '& .MuiTab-label': {
+                        display: 'none',
+                      },
+                    },
                   }}
                 />
                 <Tab
@@ -912,6 +1063,14 @@ const Workshop: React.FC = () => {
                     color: '#82ca9d',
                     '&.Mui-selected': {
                       color: '#82ca9d',
+                    },
+                    '& .MuiTab-label': {
+                      display: { xs: 'none', sm: 'block' },
+                    },
+                    '@media (max-width: 480px)': {
+                      '& .MuiTab-label': {
+                        display: 'none',
+                      },
                     },
                   }}
                 />
@@ -931,119 +1090,212 @@ const Workshop: React.FC = () => {
           </Paper>
 
           {/* AI Response Area */}
-          <Paper ref={aiResponseRef} sx={{ ...cardStyle, p: { xs: 1, md: 3 } }}>
+          <Paper
+            ref={aiResponseRef}
+            sx={{
+              ...cardStyle,
+              p: { xs: 0.75, sm: 1, md: 3 },
+              overflow: 'hidden',
+              width: { xs: '95%', sm: '100%' },
+              mx: { xs: 'auto', sm: 0 },
+              '@media (max-width: 480px)': {
+                width: '98%',
+                mx: 'auto',
+              },
+            }}
+          >
             <Box
               sx={{
                 display: 'flex',
-                flexDirection: { xs: 'column', sm: 'row' },
-                justifyContent: 'space-between',
-                alignItems: { xs: 'stretch', sm: 'center' },
-                mb: 2,
-                width: '100%',
-                gap: 2,
+                flexDirection: 'column',
+                gap: { xs: 0.75, sm: 1 },
+                borderBottom: '1px solid #e0e0e0',
+                pb: { xs: 0.75, sm: 1 },
               }}
             >
+              {/* Top row: Title and Action Buttons */}
               <Box
                 sx={{
                   display: 'flex',
+                  justifyContent: 'space-between',
                   alignItems: 'center',
-                  gap: 2,
-                  width: { xs: '100%', sm: 'auto' },
-                  overflowX: { xs: 'auto', sm: 'visible' },
-                  flexWrap: { xs: 'nowrap', sm: 'wrap' },
-                  pb: { xs: 1, sm: 0 },
                 }}
               >
-                <Typography variant="h6" sx={{ whiteSpace: 'nowrap', mr: 2 }}>
-                  AI Response
-                </Typography>
-                <Tabs
-                  value={responseTab}
-                  onChange={(_e, newValue) => setResponseTab(newValue)}
-                  variant="scrollable"
-                  scrollButtons="auto"
+                <Typography
+                  variant="h6"
                   sx={{
-                    minHeight: 40,
-                    '& .MuiTabs-indicator': {
-                      backgroundColor:
-                        responseTab === 0
-                          ? '#9c27b0'
-                          : responseTab === 1
-                          ? '#2196f3'
-                          : responseTab === 2
-                          ? '#ffc107'
-                          : '#ff9800',
-                    },
+                    fontWeight: 700,
+                    fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' },
                   }}
                 >
-                  <Tab
-                    label="Download"
-                    icon={<DownloadOutlinedIcon sx={{ color: '#9c27b0' }} />}
-                    iconPosition="start"
-                    sx={{
+                  AI Response
+                </Typography>
+                <Box sx={{ display: 'flex', gap: { xs: 0.5, sm: 1 } }}>
+                  <Tooltip title="Clear Chat">
+                    <IconButton
+                      size="small"
+                      sx={{
+                        color: 'red',
+                        width: { xs: 28, sm: 32, md: 36 },
+                        height: { xs: 28, sm: 32, md: 36 },
+                        '& .MuiSvgIcon-root': {
+                          fontSize: { xs: '1rem', sm: '1.1rem', md: '1.25rem' },
+                        },
+                      }}
+                      onClick={handleClearChat}
+                    >
+                      <DeleteOutlined />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title={isCopied ? 'Copied!' : 'Copy'}>
+                    <IconButton
+                      size="small"
+                      sx={{
+                        color: 'red',
+                        width: { xs: 28, sm: 32, md: 36 },
+                        height: { xs: 28, sm: 32, md: 36 },
+                        '& .MuiSvgIcon-root': {
+                          fontSize: { xs: '1rem', sm: '1.1rem', md: '1.25rem' },
+                        },
+                      }}
+                      onClick={handleCopy}
+                    >
+                      <ContentCopyIcon />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Regenerate">
+                    <IconButton
+                      size="small"
+                      sx={{
+                        color: 'red',
+                        width: { xs: 28, sm: 32, md: 36 },
+                        height: { xs: 28, sm: 32, md: 36 },
+                        '& .MuiSvgIcon-root': {
+                          fontSize: { xs: '1rem', sm: '1.1rem', md: '1.25rem' },
+                        },
+                      }}
+                      onClick={handleRegenerate}
+                    >
+                      <RefreshIcon />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              </Box>
+
+              {/* Bottom row: Tabs */}
+              <Tabs
+                value={responseTab}
+                onChange={(_e, newValue) => setResponseTab(newValue)}
+                sx={{
+                  '& .MuiTabs-indicator': {
+                    backgroundColor:
+                      responseTab === 0
+                        ? '#9c27b0'
+                        : responseTab === 1
+                        ? '#2196f3'
+                        : responseTab === 2
+                        ? '#ffc107'
+                        : '#ff9800',
+                  },
+                }}
+              >
+                <Tab
+                  label="Download"
+                  icon={
+                    <DownloadOutlinedIcon
+                      sx={{ color: '#9c27b0', fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                    />
+                  }
+                  iconPosition="start"
+                  sx={{
+                    color: '#9c27b0',
+                    '&.Mui-selected': {
                       color: '#9c27b0',
-                      '&.Mui-selected': {
-                        color: '#9c27b0',
+                    },
+                    minWidth: { xs: 50, sm: 100 },
+                    flex: { xs: 1, sm: 'none' },
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                    '@media (max-width: 480px)': {
+                      '& .MuiTab-label': {
+                        display: 'none !important',
                       },
-                      minWidth: 120,
-                    }}
-                  />
-                  <Tab
-                    label="Rewrite"
-                    icon={<EditOutlinedIcon sx={{ color: '#2196f3' }} />}
-                    iconPosition="start"
-                    sx={{
+                    },
+                  }}
+                />
+                <Tab
+                  label="Rewrite"
+                  icon={
+                    <EditOutlinedIcon
+                      sx={{ color: '#2196f3', fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                    />
+                  }
+                  iconPosition="start"
+                  sx={{
+                    color: '#2196f3',
+                    '&.Mui-selected': {
                       color: '#2196f3',
-                      '&.Mui-selected': {
-                        color: '#2196f3',
+                    },
+                    minWidth: { xs: 50, sm: 100 },
+                    flex: { xs: 1, sm: 'none' },
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                    '@media (max-width: 480px)': {
+                      '& .MuiTab-label': {
+                        display: 'none !important',
                       },
-                      minWidth: 120,
-                    }}
-                    ref={rewriteTabRef}
-                  />
-                  <Tab
-                    label="Extract"
-                    icon={<FormatListBulletedIcon sx={{ color: '#ffc107' }} />}
-                    iconPosition="start"
-                    sx={{
+                    },
+                  }}
+                  ref={rewriteTabRef}
+                />
+                <Tab
+                  label="Extract"
+                  icon={
+                    <FormatListBulletedIcon
+                      sx={{ color: '#ffc107', fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                    />
+                  }
+                  iconPosition="start"
+                  sx={{
+                    color: '#ffc107',
+                    '&.Mui-selected': {
                       color: '#ffc107',
-                      '&.Mui-selected': {
-                        color: '#ffc107',
+                    },
+                    minWidth: { xs: 50, sm: 100 },
+                    flex: { xs: 1, sm: 'none' },
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                    '@media (max-width: 480px)': {
+                      '& .MuiTab-label': {
+                        display: 'none !important',
                       },
-                      minWidth: 120,
-                    }}
-                  />
-                  <Tab
-                    label="Summarize"
-                    icon={<RecordVoiceOverOutlined sx={{ color: '#ff9800' }} />}
-                    iconPosition="start"
-                    sx={{
+                    },
+                  }}
+                />
+                <Tab
+                  label="Summarize"
+                  icon={
+                    <RecordVoiceOverOutlined
+                      sx={{ color: '#ff9800', fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                    />
+                  }
+                  iconPosition="start"
+                  sx={{
+                    color: '#ff9800',
+                    '&.Mui-selected': {
                       color: '#ff9800',
-                      '&.Mui-selected': {
-                        color: '#ff9800',
+                    },
+                    minWidth: { xs: 50, sm: 100 },
+                    flex: { xs: 1, sm: 'none' },
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                    '& .MuiTab-label': {
+                      display: { xs: 'none', sm: 'block' },
+                    },
+                    '@media (max-width: 480px)': {
+                      '& .MuiTab-label': {
+                        display: 'none',
                       },
-                      minWidth: 120,
-                    }}
-                  />
-                </Tabs>
-              </Box>
-              <Box sx={{ flexShrink: 0, mt: { xs: 1, sm: 0 } }}>
-                <Tooltip title="Clear Chat">
-                  <IconButton size="small" sx={{ color: 'red' }} onClick={handleClearChat}>
-                    <DeleteOutlined />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title={isCopied ? 'Copied!' : 'Copy'}>
-                  <IconButton size="small" sx={{ color: 'red' }} onClick={handleCopy}>
-                    <ContentCopyIcon />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Regenerate">
-                  <IconButton size="small" sx={{ color: 'red' }} onClick={handleRegenerate}>
-                    <RefreshIcon />
-                  </IconButton>
-                </Tooltip>
-              </Box>
+                    },
+                  }}
+                />
+              </Tabs>
             </Box>
             <Divider sx={{ mb: 2 }} />
             <Box sx={{ minHeight: '200px', width: '100%', px: { xs: 0, sm: 2 } }}>
@@ -1179,9 +1431,31 @@ const Workshop: React.FC = () => {
         </Grid>
 
         {/* Sidebar */}
-        <Grid item xs={12} md={3}>
-          <Paper sx={{ ...cardStyle, p: { xs: 1, md: 3 }, mb: { xs: 2, md: 3 } }}>
-            <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}>
+        <Grid
+          item
+          xs={12}
+          md={3}
+          sx={{ overflow: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
+        >
+          <Paper
+            sx={{
+              ...cardStyle,
+              p: { xs: 0.75, sm: 1, md: 3 },
+              mb: { xs: 2, sm: 3, md: 4 },
+              overflow: 'hidden',
+              width: { xs: '95%', sm: '100%' },
+              mx: { xs: 'auto', sm: 0 },
+              '@media (max-width: 480px)': {
+                width: '98%',
+                mx: 'auto',
+              },
+            }}
+          >
+            <Typography
+              variant="h6"
+              gutterBottom
+              sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' } }}
+            >
               Quick Actions
             </Typography>
             <List>
@@ -1207,8 +1481,25 @@ const Workshop: React.FC = () => {
           </Paper>
 
           {/* AI Suggestions */}
-          <Paper sx={{ ...cardStyle, p: { xs: 1, md: 3 }, mb: { xs: 2, md: 3 } }}>
-            <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}>
+          <Paper
+            sx={{
+              ...cardStyle,
+              p: { xs: 0.75, sm: 1, md: 3 },
+              mb: { xs: 2, sm: 3, md: 4 },
+              overflow: 'hidden',
+              width: { xs: '95%', sm: '100%' },
+              mx: { xs: 'auto', sm: 0 },
+              '@media (max-width: 480px)': {
+                width: '98%',
+                mx: 'auto',
+              },
+            }}
+          >
+            <Typography
+              variant="h6"
+              gutterBottom
+              sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' } }}
+            >
               AI Suggestions
             </Typography>
             <List>
@@ -1252,11 +1543,24 @@ const Workshop: React.FC = () => {
 
           {/* File Actions */}
           {files.length > 0 && (
-            <Paper sx={{ ...cardStyle, p: { xs: 1, md: 3 }, mb: { xs: 2, md: 3 } }}>
+            <Paper
+              sx={{
+                ...cardStyle,
+                p: { xs: 0.75, sm: 1, md: 3 },
+                mb: { xs: 2, sm: 3, md: 4 },
+                overflow: 'hidden',
+                width: { xs: '95%', sm: '100%' },
+                mx: { xs: 'auto', sm: 0 },
+                '@media (max-width: 480px)': {
+                  width: '98%',
+                  mx: 'auto',
+                },
+              }}
+            >
               <Typography
                 variant="h6"
                 gutterBottom
-                sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}
+                sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' } }}
               >
                 File Actions
               </Typography>
@@ -1284,26 +1588,51 @@ const Workshop: React.FC = () => {
           )}
 
           {/* Assignment Tokens */}
-          <Paper sx={{ ...cardStyle, p: { xs: 1, md: 3 } }}>
-            <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}>
+          <Paper
+            sx={{
+              ...cardStyle,
+              p: { xs: 0.75, sm: 1, md: 3 },
+              overflow: 'hidden',
+              width: { xs: '95%', sm: '100%' },
+              mx: { xs: 'auto', sm: 0 },
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              minHeight: { xs: '380px', sm: '320px', md: '280px' },
+              '@media (max-width: 480px)': {
+                width: '98%',
+                mx: 'auto',
+                minHeight: '380px',
+              },
+            }}
+          >
+            <Typography
+              variant="h6"
+              gutterBottom
+              sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' } }}
+            >
               Assignment Tokens
             </Typography>
             <Box
               sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
+                display: 'grid',
+                placeItems: 'center',
                 gap: 2,
-                pt: 2,
+                flex: 1,
+                width: '100%',
+                textAlign: 'center',
+                '@media (max-width: 480px)': {
+                  gap: 3,
+                },
               }}
             >
               <Box
                 sx={{
                   position: 'relative',
-                  width: { xs: 120, md: 160 },
-                  height: { xs: 120, md: 160 },
+                  width: { xs: 120, md: 200 },
+                  height: { xs: 120, md: 200 },
                   cursor: 'pointer',
+                  margin: '0 auto',
                 }}
                 onMouseEnter={() => setIsTokenChartHovered(true)}
                 onMouseLeave={() => setIsTokenChartHovered(false)}
@@ -1312,30 +1641,36 @@ const Workshop: React.FC = () => {
                 <CircularProgress
                   variant="determinate"
                   value={100}
-                  size={160}
-                  thickness={5}
+                  size={120}
+                  thickness={6}
                   sx={{
                     color: alpha(progressColor, 0.2),
                     position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: { xs: 80, md: 160 },
-                    height: { xs: 80, md: 160 },
+                    top: '20%',
+                    left: '20%',
+                    transform: 'translate(-20%, -20%)',
+                    '@media (min-width: 600px)': {
+                      width: 200,
+                      height: 200,
+                    },
                   }}
                 />
                 {/* Actual progress */}
                 <CircularProgress
                   variant="determinate"
                   value={animatedPercent}
-                  size={160}
-                  thickness={5}
+                  size={120}
+                  thickness={6}
                   sx={{
                     color: progressColor,
                     position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: { xs: 120, md: 160 },
-                    height: { xs: 120, md: 160 },
+                    top: '20%',
+                    left: '20%',
+                    transform: 'translate(-50%, -50%)',
+                    '@media (min-width: 600px)': {
+                      width: 200,
+                      height: 200,
+                    },
                     [`& .MuiCircularProgress-circle`]: {
                       strokeLinecap: 'round',
                     },
@@ -1343,11 +1678,10 @@ const Workshop: React.FC = () => {
                 />
                 <Box
                   sx={{
-                    top: 0,
-                    left: 0,
-                    bottom: 0,
-                    right: 0,
                     position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
@@ -1372,7 +1706,16 @@ const Workshop: React.FC = () => {
                   )}
                 </Box>
               </Box>
-              <Box sx={{ textAlign: 'center', mt: 2 }}>
+              <Box
+                sx={{
+                  textAlign: 'center',
+                  mt: 2,
+                  '@media (max-width: 480px)': {
+                    mt: 3,
+                    mb: 2,
+                  },
+                }}
+              >
                 <Typography variant="body2" color="text.secondary">
                   {tokenUsage.label}
                 </Typography>

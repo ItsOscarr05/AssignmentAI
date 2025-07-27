@@ -133,12 +133,6 @@ const Help: React.FC = () => {
     severity: 'success' | 'error' | 'info' | 'warning';
   }>({ open: false, message: '', severity: 'info' });
 
-  // System status/announcement (placeholder)
-  const systemStatus = {
-    message: 'All systems operational. No known issues.',
-    severity: 'success' as 'success' | 'info' | 'warning' | 'error',
-  };
-
   // FAQ and quick links data
   const faqData = [
     {
@@ -523,11 +517,11 @@ const Help: React.FC = () => {
             Filter by Category:
           </Typography>
           <Box sx={{ display: { xs: 'block', md: 'none' } }}>
-            <Grid 
-              container 
-              spacing={1} 
-              sx={{ 
-                maxWidth: '100%'
+            <Grid
+              container
+              spacing={1}
+              sx={{
+                maxWidth: '100%',
               }}
             >
               {allCategories.map(cat => (
@@ -536,9 +530,9 @@ const Help: React.FC = () => {
                     label={cat}
                     color={selectedCategory === cat ? 'primary' : 'default'}
                     onClick={() => setSelectedCategory(cat)}
-                    sx={{ 
-                      fontWeight: 500, 
-                      fontSize: { xs: '0.75rem', md: '0.875rem' }, 
+                    sx={{
+                      fontWeight: 500,
+                      fontSize: { xs: '0.75rem', md: '0.875rem' },
                       borderRadius: 2,
                       height: { xs: 36, md: 40 },
                       width: '100%',
@@ -546,8 +540,8 @@ const Help: React.FC = () => {
                       '& .MuiChip-label': {
                         textAlign: 'center',
                         whiteSpace: 'normal',
-                        lineHeight: 1.2
-                      }
+                        lineHeight: 1.2,
+                      },
                     }}
                     aria-pressed={selectedCategory === cat}
                     tabIndex={0}
@@ -556,7 +550,7 @@ const Help: React.FC = () => {
               ))}
             </Grid>
           </Box>
-          
+
           <Box sx={{ display: { xs: 'none', md: 'block' } }}>
             <Stack
               direction="row"
