@@ -49,9 +49,11 @@ import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import DashboardPieChart from '../components/dashboard/DashboardPieChart';
 import { useAuth } from '../contexts/AuthContext';
+import { useAspectRatio } from '../hooks/useAspectRatio';
 import { api } from '../services/api';
 import { notificationService } from '../services/notification';
 import { mapToCoreSubject } from '../services/subjectService';
+import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 import { Notification } from '../types';
 
 // Assignment interface to fix TypeScript errors
@@ -286,6 +288,7 @@ const recentAssignmentsWithSubject = recentAssignments.map(a => ({
 const DashboardHome: React.FC = () => {
   const { user, isMockUser } = useAuth();
   const navigate = useNavigate();
+  const { breakpoint } = useAspectRatio();
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'in progress' | 'completed' | 'not started'>('all');
   const [page, setPage] = useState(0);
@@ -541,139 +544,122 @@ const DashboardHome: React.FC = () => {
   }
 
   return (
-    <Box sx={{ overflow: 'hidden', width: '100%' }}>
+    <Box
+      sx={{
+        overflow: 'hidden',
+        width: '100%',
+        padding: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2),
+      }}
+    >
       {/* Top Section: Welcome & Quick Start */}
-      <Grid container spacing={{ xs: 0.5, md: 3 }} sx={{ mb: 2, width: '100%' }}>
+      <Grid
+        container
+        spacing={getAspectRatioStyle(aspectRatioStyles.grid.gap, breakpoint, 2)}
+        sx={{ mb: 2, width: '100%' }}
+      >
         <Grid item xs={11.5} md={12}>
           <Paper
             sx={{
-              p: { xs: 1, md: 3 },
+              p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2),
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
               background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 120%)',
               border: '2px solid #D32F2F',
               display: 'flex',
-              flexDirection: { xs: 'column', md: 'row' },
-              alignItems: { xs: 'flex-start', md: 'center' },
+              flexDirection: breakpoint === 'tall' || breakpoint === 'standard' ? 'column' : 'row',
+              alignItems:
+                breakpoint === 'tall' || breakpoint === 'standard' ? 'flex-start' : 'center',
               justifyContent: 'space-between',
-              gap: { xs: 0.25, md: 3 },
+              gap:
+                breakpoint === 'tall'
+                  ? 1
+                  : breakpoint === 'square'
+                  ? 2
+                  : breakpoint === 'standard'
+                  ? 2
+                  : breakpoint === 'wide'
+                  ? 6
+                  : 8,
               overflow: 'hidden',
               maxWidth: '100%',
               width: '100%',
             }}
           >
             <Box>
-              <Typography
-                variant="h4"
+              <Box
                 sx={{
-                  fontWeight: 700,
-                  mb: 3,
-                  color: '#D32F2F',
-                  fontSize: { xs: '1.5rem', md: '2.125rem' },
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  mb: breakpoint === 'tall' || breakpoint === 'standard' ? 1 : 2,
                 }}
               >
-                Welcome back, {user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'User'}!
-              </Typography>
-              <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+                <Typography
+                  variant={
+                    breakpoint === 'tall'
+                      ? 'h5'
+                      : breakpoint === 'square'
+                      ? 'h4'
+                      : breakpoint === 'standard'
+                      ? 'h3'
+                      : breakpoint === 'wide'
+                      ? 'h2'
+                      : breakpoint === 'ultra-wide'
+                      ? 'h1'
+                      : 'h1'
+                  }
+                  sx={{
+                    fontWeight: 700,
+                    color: '#D32F2F',
+                    fontSize: getAspectRatioStyle(
+                      aspectRatioStyles.typography.h1.fontSize,
+                      breakpoint,
+                      '1.5rem'
+                    ),
+                  }}
+                >
+                  Welcome back, {user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'User'}!
+                </Typography>
+                <IconButton
+                  aria-label="notifications"
+                  onClick={handleBellClick}
+                  sx={{
+                    color: '#D32F2F',
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                      background: '#f5f5f5',
+                    },
+                  }}
+                >
+                  <NotificationsNoneOutlinedIcon fontSize="medium" />
+                </IconButton>
+              </Box>
+              <Typography
+                variant="body1"
+                color="text.secondary"
+                sx={{ mb: breakpoint === 'tall' || breakpoint === 'standard' ? 1 : 2 }}
+              >
                 Ready to tackle your next assignment?
               </Typography>
               <Typography variant="body2" color="primary" sx={{ fontStyle: 'italic' }}>
                 "Tip: Use AI to break down big tasks into manageable steps!"
               </Typography>
             </Box>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
-              <IconButton
-                aria-label="notifications"
-                onClick={handleBellClick}
-                sx={{
-                  color: '#D32F2F',
-                  mr: { xs: 0, sm: 1 },
-                  transition: 'all 0.2s',
-                  '&:hover': {
-                    background: '#f5f5f5',
-                  },
-                }}
-              >
-                <NotificationsNoneOutlinedIcon fontSize="medium" />
-              </IconButton>
-              <Menu
-                anchorEl={anchorEl}
-                open={open}
-                onClose={handleMenuClose}
-                PaperProps={{ sx: { minWidth: 300, maxWidth: 350, p: 1 } }}
-              >
-                {isMockUser && mockNotifications.length > 0 ? (
-                  mockNotifications.map(n => (
-                    <MenuItem key={n.id} onClick={handleMenuClose}>
-                      <ListItemText
-                        primary={
-                          <Typography fontWeight="bold" sx={{ color: '#D32F2F' }}>
-                            {n.title}
-                          </Typography>
-                        }
-                        secondary={
-                          <Typography variant="body2" color="text.secondary">
-                            {n.body}
-                          </Typography>
-                        }
-                      />
-                    </MenuItem>
-                  ))
-                ) : !isMockUser && notificationsLoading ? (
-                  <MenuItem disabled>
-                    <Box
-                      width="100%"
-                      display="flex"
-                      flexDirection="column"
-                      alignItems="center"
-                      py={2}
-                    >
-                      <NotificationsNoneOutlinedIcon
-                        sx={{ fontSize: 40, color: 'red', mb: 3, opacity: 0.5 }}
-                      />
-                      <Typography variant="h6" sx={{ color: '#222' }} gutterBottom>
-                        Loading Notifications...
-                      </Typography>
-                    </Box>
-                  </MenuItem>
-                ) : !isMockUser && realNotifications.length > 0 ? (
-                  realNotifications.map(n => (
-                    <MenuItem key={n.id} onClick={handleMenuClose}>
-                      <ListItemText
-                        primary={
-                          <Typography fontWeight="bold" sx={{ color: '#D32F2F' }}>
-                            {n.title}
-                          </Typography>
-                        }
-                        secondary={
-                          <Typography variant="body2" color="text.secondary">
-                            {n.message}
-                          </Typography>
-                        }
-                      />
-                    </MenuItem>
-                  ))
-                ) : (
-                  <MenuItem disabled>
-                    <Box
-                      width="100%"
-                      display="flex"
-                      flexDirection="column"
-                      alignItems="center"
-                      py={2}
-                    >
-                      <NotificationsNoneOutlinedIcon
-                        sx={{ fontSize: 40, color: 'red', mb: 3, opacity: 0.5 }}
-                      />
-                      <Typography variant="h6" sx={{ color: '#222' }} gutterBottom>
-                        No Notifications Yet
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: '#333' }}>
-                        You're all caught up!
-                      </Typography>
-                    </Box>
-                  </MenuItem>
-                )}
-              </Menu>
+            <Stack
+              direction={breakpoint === 'tall' || breakpoint === 'standard' ? 'row' : 'row'}
+              spacing={
+                breakpoint === 'tall'
+                  ? 1
+                  : breakpoint === 'square'
+                  ? 2
+                  : breakpoint === 'standard'
+                  ? 2
+                  : breakpoint === 'wide'
+                  ? 4
+                  : 6
+              }
+              alignItems="center"
+              sx={{ flexWrap: 'wrap' }}
+            >
               <Button
                 variant="outlined"
                 color="primary"
@@ -689,16 +675,99 @@ const DashboardHome: React.FC = () => {
                 Ask AI About an Assignment
               </Button>
             </Stack>
+            <Menu
+              anchorEl={anchorEl}
+              open={open}
+              onClose={handleMenuClose}
+              PaperProps={{ sx: { minWidth: 300, maxWidth: 350, p: 1 } }}
+            >
+              {isMockUser && mockNotifications.length > 0 ? (
+                mockNotifications.map(n => (
+                  <MenuItem key={n.id} onClick={handleMenuClose}>
+                    <ListItemText
+                      primary={
+                        <Typography fontWeight="bold" sx={{ color: '#D32F2F' }}>
+                          {n.title}
+                        </Typography>
+                      }
+                      secondary={
+                        <Typography variant="body2" color="text.secondary">
+                          {n.body}
+                        </Typography>
+                      }
+                    />
+                  </MenuItem>
+                ))
+              ) : !isMockUser && notificationsLoading ? (
+                <MenuItem disabled>
+                  <Box
+                    width="100%"
+                    display="flex"
+                    flexDirection="column"
+                    alignItems="center"
+                    py={2}
+                  >
+                    <NotificationsNoneOutlinedIcon
+                      sx={{ fontSize: 40, color: 'red', mb: 3, opacity: 0.5 }}
+                    />
+                    <Typography variant="h6" sx={{ color: '#222' }} gutterBottom>
+                      Loading Notifications...
+                    </Typography>
+                  </Box>
+                </MenuItem>
+              ) : !isMockUser && realNotifications.length > 0 ? (
+                realNotifications.map(n => (
+                  <MenuItem key={n.id} onClick={handleMenuClose}>
+                    <ListItemText
+                      primary={
+                        <Typography fontWeight="bold" sx={{ color: '#D32F2F' }}>
+                          {n.title}
+                        </Typography>
+                      }
+                      secondary={
+                        <Typography variant="body2" color="text.secondary">
+                          {n.message}
+                        </Typography>
+                      }
+                    />
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem disabled>
+                  <Box
+                    width="100%"
+                    display="flex"
+                    flexDirection="column"
+                    alignItems="center"
+                    py={2}
+                  >
+                    <NotificationsNoneOutlinedIcon
+                      sx={{ fontSize: 40, color: 'red', mb: 3, opacity: 0.5 }}
+                    />
+                    <Typography variant="h6" sx={{ color: '#222' }} gutterBottom>
+                      No Notifications Yet
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#333' }}>
+                      You're all caught up!
+                    </Typography>
+                  </Box>
+                </MenuItem>
+              )}
+            </Menu>
           </Paper>
         </Grid>
       </Grid>
 
       {/* Middle Section: Recent & Active Assignments + Pie Chart */}
-      <Grid container spacing={{ xs: 3, md: 3 }} sx={{ mb: 3, width: '100%' }}>
-        <Grid item xs={11.5} md={8}>
+      <Grid
+        container
+        spacing={getAspectRatioStyle(aspectRatioStyles.grid.gap, breakpoint, 3)}
+        sx={{ mb: 3, width: '100%' }}
+      >
+        <Grid item xs={11.5} md={breakpoint === 'standard' ? 12 : 8}>
           <Paper
             sx={{
-              p: { xs: 1.5, md: 2 },
+              p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2),
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
               background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 120%)',
               border: '2px solid #D32F2F',
@@ -709,11 +778,33 @@ const DashboardHome: React.FC = () => {
           >
             <Box
               display="flex"
-              flexDirection={{ xs: 'column', sm: 'row' }}
+              flexDirection={breakpoint === 'tall' || breakpoint === 'standard' ? 'column' : 'row'}
               justifyContent="space-between"
-              alignItems={{ xs: 'flex-start', sm: 'center' }}
-              mb={{ xs: 1, md: 2 }}
-              gap={{ xs: 1, md: 2 }}
+              alignItems={
+                breakpoint === 'tall' || breakpoint === 'standard' ? 'flex-start' : 'center'
+              }
+              mb={
+                breakpoint === 'tall'
+                  ? 1
+                  : breakpoint === 'square'
+                  ? 2
+                  : breakpoint === 'standard'
+                  ? 3
+                  : breakpoint === 'wide'
+                  ? 4
+                  : 5
+              }
+              gap={
+                breakpoint === 'tall'
+                  ? 1
+                  : breakpoint === 'square'
+                  ? 2
+                  : breakpoint === 'standard'
+                  ? 3
+                  : breakpoint === 'wide'
+                  ? 4
+                  : 5
+              }
             >
               <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'black' }}>
                 Recent & Active Assignments
@@ -797,7 +888,19 @@ const DashboardHome: React.FC = () => {
                 </Button>
               </Stack>
             </Box>
-            <Box sx={{ minHeight: { xs: 280, md: 340 }, overflow: 'hidden' }}>
+            <Box
+              sx={{
+                minHeight:
+                  breakpoint === 'tall'
+                    ? 250
+                    : breakpoint === 'square'
+                    ? 300
+                    : breakpoint === 'standard'
+                    ? 340
+                    : 400,
+                overflow: 'hidden',
+              }}
+            >
               <Table sx={{ width: '100%' }}>
                 <TableHead>
                   <TableRow>
@@ -836,6 +939,7 @@ const DashboardHome: React.FC = () => {
                         color: '#D32F2F',
                         fontWeight: 700,
                         width: { xs: '20%', md: 'auto' },
+                        minWidth: { xs: '120px', md: '200px' },
                         p: { xs: 1, md: 2 },
                       }}
                     >
@@ -901,56 +1005,111 @@ const DashboardHome: React.FC = () => {
                           {new Date(assignment.createdAt).toLocaleDateString()}
                         </TableCell>
                         <TableCell sx={{ p: { xs: 1, md: 2 } }}>
-                          <Button
-                            size="small"
-                            sx={{ color: '#009688' }}
-                            onClick={() => setViewAssignment(assignment)}
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              flexDirection: { xs: 'column', md: 'row' },
+                              gap: { xs: 0.5, md: 0.5 },
+                              flexWrap: 'nowrap',
+                              alignItems: { xs: 'flex-start', md: 'center' },
+                              minWidth: { md: '180px' },
+                            }}
                           >
-                            <VisibilityOutlinedIcon sx={{ fontSize: 18, mr: { xs: 0, md: 0.5 } }} />
-                            <Box sx={{ display: { xs: 'none', md: 'inline' } }}>View</Box>
-                          </Button>
-                          {assignment.status === 'Completed' && (
                             <Button
                               size="small"
-                              sx={{ color: '#8E24AA' }}
-                              onClick={() =>
-                                navigate('/dashboard/workshop', {
-                                  state: { assignment, responseTab: 1 },
-                                })
-                              }
+                              sx={{
+                                color: '#009688',
+                                minWidth: 'auto',
+                                px: { xs: 1, md: 0.5 },
+                                py: { xs: 0.5, md: 0.25 },
+                              }}
+                              onClick={() => setViewAssignment(assignment)}
                             >
-                              <AutorenewOutlinedIcon
-                                sx={{ fontSize: 18, mr: { xs: 0, md: 0.5 } }}
+                              <VisibilityOutlinedIcon
+                                sx={{ fontSize: 16, mr: { xs: 0, md: 0.25 } }}
                               />
-                              <Box sx={{ display: { xs: 'none', md: 'inline' } }}>Regenerate</Box>
+                              <Box
+                                sx={{ display: { xs: 'none', md: 'inline' }, fontSize: '0.75rem' }}
+                              >
+                                View
+                              </Box>
                             </Button>
-                          )}
-                          {assignment.status === 'In Progress' && (
+                            {assignment.status === 'Completed' && (
+                              <Button
+                                size="small"
+                                sx={{
+                                  color: '#8E24AA',
+                                  minWidth: 'auto',
+                                  px: { xs: 1, md: 0.5 },
+                                  py: { xs: 0.5, md: 0.25 },
+                                }}
+                                onClick={() =>
+                                  navigate('/dashboard/workshop', {
+                                    state: { assignment, responseTab: 1 },
+                                  })
+                                }
+                              >
+                                <AutorenewOutlinedIcon
+                                  sx={{ fontSize: 16, mr: { xs: 0, md: 0.25 } }}
+                                />
+                                <Box
+                                  sx={{
+                                    display: { xs: 'none', md: 'inline' },
+                                    fontSize: '0.75rem',
+                                  }}
+                                >
+                                  Regenerate
+                                </Box>
+                              </Button>
+                            )}
+                            {assignment.status === 'In Progress' && (
+                              <Button
+                                size="small"
+                                sx={{
+                                  color: '#FFA726',
+                                  minWidth: 'auto',
+                                  px: { xs: 1, md: 0.5 },
+                                  py: { xs: 0.5, md: 0.25 },
+                                }}
+                                onClick={() =>
+                                  navigate('/dashboard/workshop', {
+                                    state: { assignment, responseTab: 1 },
+                                  })
+                                }
+                              >
+                                <PlayArrowOutlinedIcon
+                                  sx={{ fontSize: 16, mr: { xs: 0, md: 0.25 } }}
+                                />
+                                <Box
+                                  sx={{
+                                    display: { xs: 'none', md: 'inline' },
+                                    fontSize: '0.75rem',
+                                  }}
+                                >
+                                  Resume
+                                </Box>
+                              </Button>
+                            )}
                             <Button
                               size="small"
-                              sx={{ color: '#FFA726' }}
+                              sx={{
+                                color: '#D32F2F',
+                                minWidth: 'auto',
+                                px: { xs: 1, md: 0.5 },
+                                py: { xs: 0.5, md: 0.25 },
+                              }}
                               onClick={() =>
-                                navigate('/dashboard/workshop', {
-                                  state: { assignment, responseTab: 1 },
-                                })
+                                setAssignments(prev => prev.filter(a => a.id !== assignment.id))
                               }
                             >
-                              <PlayArrowOutlinedIcon
-                                sx={{ fontSize: 18, mr: { xs: 0, md: 0.5 } }}
-                              />
-                              <Box sx={{ display: { xs: 'none', md: 'inline' } }}>Resume</Box>
+                              <DeleteOutlineIcon sx={{ fontSize: 16, mr: { xs: 0, md: 0.25 } }} />
+                              <Box
+                                sx={{ display: { xs: 'none', md: 'inline' }, fontSize: '0.75rem' }}
+                              >
+                                Delete
+                              </Box>
                             </Button>
-                          )}
-                          <Button
-                            size="small"
-                            sx={{ color: '#D32F2F' }}
-                            onClick={() =>
-                              setAssignments(prev => prev.filter(a => a.id !== assignment.id))
-                            }
-                          >
-                            <DeleteOutlineIcon sx={{ fontSize: 18, mr: { xs: 0, md: 0.5 } }} />
-                            <Box sx={{ display: { xs: 'none', md: 'inline' } }}>Delete</Box>
-                          </Button>
+                          </Box>
                         </TableCell>
                       </TableRow>
                     ))
@@ -968,16 +1127,30 @@ const DashboardHome: React.FC = () => {
             />
           </Paper>
         </Grid>
-        <Grid item xs={11.5} md={4}>
+        <Grid item xs={11.5} md={breakpoint === 'standard' ? 12 : 4}>
           {/* Assignment Disstribution Pie Chart */}
           <Paper
             sx={{
-              p: { xs: 3, md: 3 },
+              p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 3),
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
               background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 120%)',
               border: '2px solid #D32F2F',
-              minHeight: { xs: 400, md: 520 },
-              height: { xs: 450, md: 550 },
+              minHeight:
+                breakpoint === 'tall'
+                  ? 350
+                  : breakpoint === 'square'
+                  ? 450
+                  : breakpoint === 'standard'
+                  ? 520
+                  : 600,
+              height:
+                breakpoint === 'tall'
+                  ? 400
+                  : breakpoint === 'square'
+                  ? 500
+                  : breakpoint === 'standard'
+                  ? 550
+                  : 650,
               overflow: 'hidden',
               maxWidth: '100%',
               width: '100%',
@@ -999,7 +1172,14 @@ const DashboardHome: React.FC = () => {
             </Box>
             <Box
               sx={{
-                height: { xs: 250, md: 350 },
+                height:
+                  breakpoint === 'tall'
+                    ? 200
+                    : breakpoint === 'square'
+                    ? 300
+                    : breakpoint === 'standard'
+                    ? 350
+                    : 450,
                 width: '100%',
                 display: 'flex',
                 alignItems: 'center',
@@ -1054,11 +1234,15 @@ const DashboardHome: React.FC = () => {
       </Grid>
 
       {/* Bottom Section: AI Activity & Insights + AssignmentAI Suggests */}
-      <Grid container spacing={{ xs: 3, md: 3 }} sx={{ mb: 3, width: '100%' }}>
-        <Grid item xs={11.5} md={6}>
+      <Grid
+        container
+        spacing={getAspectRatioStyle(aspectRatioStyles.grid.gap, breakpoint, 3)}
+        sx={{ mb: 3, width: '100%' }}
+      >
+        <Grid item xs={11.5} md={breakpoint === 'standard' ? 12 : 6}>
           <Paper
             sx={{
-              p: { xs: 2, md: 3 },
+              p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 3),
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
               background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 120%)',
               border: '2px solid #D32F2F',
@@ -1193,10 +1377,10 @@ const DashboardHome: React.FC = () => {
             </Grid>
           </Paper>
         </Grid>
-        <Grid item xs={11.5} md={6}>
+        <Grid item xs={11.5} md={breakpoint === 'standard' ? 12 : 6}>
           <Paper
             sx={{
-              p: { xs: 1.5, md: 3 },
+              p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 3),
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
               background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 120%)',
               border: '2px solid #D32F2F',

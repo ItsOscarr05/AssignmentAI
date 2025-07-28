@@ -59,8 +59,10 @@ import {
   YAxis,
 } from 'recharts';
 import { useAuth } from '../contexts/AuthContext';
+import { useAspectRatio } from '../hooks/useAspectRatio';
 import { useTokenUsage } from '../hooks/useTokenUsage';
 import { api } from '../services/api';
+import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 import { recentAssignments } from './DashboardHome';
 
 interface Subscription {
@@ -74,6 +76,7 @@ interface Subscription {
 
 const AITokens: React.FC = () => {
   // All hooks at the top
+  const { breakpoint } = useAspectRatio();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [range, setRange] = React.useState<'7' | '30'>('7');
@@ -514,15 +517,54 @@ const AITokens: React.FC = () => {
   return (
     <Box>
       <Typography
-        variant="h4"
+        variant={
+          breakpoint === 'tall'
+            ? 'h5'
+            : breakpoint === 'square'
+            ? 'h4'
+            : breakpoint === 'standard'
+            ? 'h3'
+            : breakpoint === 'wide'
+            ? 'h2'
+            : breakpoint === 'ultra-wide'
+            ? 'h1'
+            : 'h1'
+        }
         gutterBottom
         className="page-title"
-        sx={{ color: 'error.main', mb: 3, ml: 4 }}
+        sx={{
+          color: 'error.main',
+          mb:
+            breakpoint === 'tall'
+              ? 2
+              : breakpoint === 'square'
+              ? 3
+              : breakpoint === 'standard'
+              ? 4
+              : breakpoint === 'wide'
+              ? 5
+              : 6,
+          ml:
+            breakpoint === 'tall'
+              ? 2
+              : breakpoint === 'square'
+              ? 4
+              : breakpoint === 'standard'
+              ? 6
+              : breakpoint === 'wide'
+              ? 8
+              : 10,
+          fontSize: getAspectRatioStyle(
+            aspectRatioStyles.typography.h1.fontSize,
+            breakpoint,
+            '1.5rem'
+          ),
+        }}
       >
         AI Tokens
       </Typography>
       <Grid container spacing={3}>
-        <Grid item xs={12} md={8}>
+        <Grid item xs={12} md={breakpoint === 'standard' ? 12 : 8}>
           <Paper sx={{ p: 2, mb: 2, ...redOutline }}>
             <Typography variant="h6" gutterBottom sx={{ color: 'black', fontWeight: 'normal' }}>
               Token Usage
@@ -1191,7 +1233,7 @@ const AITokens: React.FC = () => {
           <Box sx={{ mb: 4 }} />
         </Grid>
 
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} md={breakpoint === 'standard' ? 12 : 4}>
           <Paper sx={{ p: 3, mb: 4, ...redOutline }} ref={guideRef}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
               <Typography variant="h6" sx={{ color: 'black' }}>

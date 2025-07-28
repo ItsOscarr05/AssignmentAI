@@ -1,12 +1,4 @@
-import {
-  Assignment as AssignmentIcon,
-  ChevronLeft as ChevronLeftIcon,
-  Dashboard as DashboardIcon,
-  Grade as GradeIcon,
-  Menu as MenuIcon,
-  Message as MessageIcon,
-  People as PeopleIcon,
-} from '@mui/icons-material';
+import { Assignment, ChevronLeft, Home, Menu, Person, School, Settings } from '@mui/icons-material';
 import {
   AppBar,
   Box,
@@ -14,19 +6,19 @@ import {
   IconButton,
   List,
   ListItem,
-  ListItemButton,
   ListItemIcon,
   ListItemText,
   Toolbar,
   Typography,
-  useMediaQuery,
   useTheme,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useAspectRatio } from '../hooks/useAspectRatio';
+import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 
-const drawerWidth = 320;
+const drawerWidth = 240;
 
 const Main = styled('main', { shouldForwardProp: prop => prop !== 'open' })<{
   open?: boolean;
@@ -64,8 +56,6 @@ const AppBarStyled = styled(AppBar, {
       duration: theme.transitions.duration.enteringScreen,
     }),
   }),
-  background: 'linear-gradient(135deg, rgba(255,107,107,0.95) 0%, rgba(255,142,142,0.95) 100%)',
-  backdropFilter: 'blur(10px)',
 }));
 
 const DrawerHeader = styled('div')(({ theme }) => ({
@@ -76,59 +66,20 @@ const DrawerHeader = styled('div')(({ theme }) => ({
   justifyContent: 'flex-end',
 }));
 
-const StyledDrawer = styled(Drawer)(() => ({
-  width: drawerWidth,
-  flexShrink: 0,
-  overflowX: 'hidden',
-  '& .MuiDrawer-paper': {
-    width: drawerWidth,
-    boxSizing: 'border-box',
-    background: 'linear-gradient(135deg, rgba(255,107,107,0.95) 0%, rgba(255,142,142,0.95) 100%)',
-    backdropFilter: 'blur(10px)',
-    borderRight: '1px solid',
-    borderColor: 'error.light',
-    boxShadow: '4px 0 12px rgba(255,107,107,0.15)',
-    overflowX: 'hidden',
-    '& .MuiList-root': {
-      overflowX: 'hidden',
-    },
-    '& .MuiListItemButton-root': {
-      '&:hover': {
-        background: 'rgba(255,255,255,0.1)',
-      },
-      '&.Mui-selected': {
-        background: 'rgba(255,255,255,0.2)',
-        '&:hover': {
-          background: 'rgba(255,255,255,0.25)',
-        },
-      },
-    },
-    '& .MuiListItemIcon-root': {
-      color: 'white',
-    },
-    '& .MuiListItemText-primary': {
-      color: 'white',
-      fontWeight: 500,
-    },
-    '& .MuiDivider-root': {
-      borderColor: 'rgba(255,255,255,0.2)',
-    },
-  },
-}));
-
 const menuItems = [
-  { text: 'Overview', icon: <DashboardIcon />, path: '/dashboard' },
-  { text: 'Assignments', icon: <AssignmentIcon />, path: '/dashboard/assignments' },
-  { text: 'Messages', icon: <MessageIcon />, path: '/dashboard/messages' },
-  { text: 'Grades', icon: <GradeIcon />, path: '/dashboard/grades' },
-  { text: 'Students', icon: <PeopleIcon />, path: '/dashboard/students' },
+  { text: 'Dashboard', icon: <Home />, path: '/dashboard' },
+  { text: 'Assignments', icon: <Assignment />, path: '/assignments' },
+  { text: 'Workshop', icon: <School />, path: '/workshop' },
+  { text: 'Profile', icon: <Person />, path: '/profile' },
+  { text: 'Settings', icon: <Settings />, path: '/settings' },
 ];
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
-  const isMobile = useMediaQuery(useTheme().breakpoints.down('md'));
+  const { breakpoint, isMobile, isTablet } = useAspectRatio();
   const [open, setOpen] = useState(!isMobile);
   const navigate = useNavigate();
   const location = useLocation();
+  const theme = useTheme();
 
   const handleDrawerOpen = () => {
     setOpen(true);
@@ -136,6 +87,20 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
   const handleDrawerClose = () => {
     setOpen(false);
+  };
+
+  const getDrawerWidth = () => {
+    return getAspectRatioStyle(aspectRatioStyles.navigation.sidebar.width, breakpoint, '240px');
+  };
+
+  const getHeaderHeight = () => {
+    return getAspectRatioStyle(aspectRatioStyles.navigation.header.height, breakpoint, '64px');
+  };
+
+  const getTypographySize = () => {
+    if (isMobile) return 'h6';
+    if (isTablet) return 'h5';
+    return 'h4';
   };
 
   return (
@@ -147,7 +112,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             alignItems: 'center',
             justifyContent: 'space-between',
             background: 'linear-gradient(135deg, #FF0000 0%, #CC0000 100%)',
-            minHeight: '64px !important',
+            minHeight: `${getHeaderHeight()} !important`,
             position: 'relative',
             px: 2,
             '&::after': {
@@ -166,7 +131,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               }}
             />
             <Typography
-              variant="h4"
+              variant={getTypographySize()}
               noWrap
               component="div"
               sx={{
@@ -174,7 +139,11 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                 fontWeight: 'bold',
                 textShadow: '0 2px 8px rgba(0,0,0,0.2)',
                 letterSpacing: '1px',
-                fontSize: { xs: '1.1rem', sm: '1.25rem' },
+                fontSize: getAspectRatioStyle(
+                  aspectRatioStyles.typography.h2.fontSize,
+                  breakpoint,
+                  '1.25rem'
+                ),
                 textAlign: 'center',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
@@ -185,116 +154,99 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             </Typography>
           </Box>
           <IconButton
+            color="inherit"
+            aria-label="open drawer"
             onClick={handleDrawerOpen}
+            edge="start"
             sx={{
-              color: 'white',
-              position: 'fixed',
-              top: 8,
-              right: 16,
-              zIndex: 9999,
-              '&:hover': {
-                background: 'rgba(255,255,255,0.1)',
-              },
+              marginRight: 5,
+              ...(open && { display: 'none' }),
             }}
           >
-            <MenuIcon />
+            <Menu />
           </IconButton>
         </Toolbar>
       </AppBarStyled>
-      <StyledDrawer
-        variant={isMobile ? 'temporary' : 'persistent'}
+      <Drawer
+        sx={{
+          width: getDrawerWidth(),
+          flexShrink: 0,
+          '& .MuiDrawer-paper': {
+            width: getDrawerWidth(),
+            boxSizing: 'border-box',
+          },
+        }}
+        variant="persistent"
         anchor="left"
         open={open}
-        onClose={handleDrawerClose}
       >
         <DrawerHeader>
-          <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', px: 2 }}>
-            <Typography
-              variant="h6"
+          <Typography
+            variant={getTypographySize()}
+            sx={{
+              flexGrow: 1,
+              fontWeight: 'bold',
+              color: theme.palette.primary.main,
+            }}
+          >
+            Menu
+          </Typography>
+          <IconButton onClick={handleDrawerClose}>
+            <ChevronLeft />
+          </IconButton>
+        </DrawerHeader>
+        <List>
+          {menuItems.map(item => (
+            <ListItem
+              button
+              key={item.text}
+              onClick={() => navigate(item.path)}
+              selected={location.pathname === item.path}
               sx={{
-                flexGrow: 1,
-                color: 'white',
-                fontWeight: 600,
-                textShadow: '0 2px 4px rgba(0,0,0,0.1)',
-              }}
-            >
-              Menu
-            </Typography>
-            <IconButton
-              onClick={handleDrawerClose}
-              sx={{
-                color: 'white',
-                '&:hover': {
-                  background: 'rgba(255,255,255,0.1)',
+                '&.Mui-selected': {
+                  backgroundColor: theme.palette.primary.light,
+                  color: theme.palette.primary.contrastText,
+                  '&:hover': {
+                    backgroundColor: theme.palette.primary.main,
+                  },
                 },
               }}
             >
-              <ChevronLeftIcon />
-            </IconButton>
-          </Box>
-        </DrawerHeader>
-        <List
-          sx={{
-            width: '100%',
-            overflowX: 'hidden',
-            boxSizing: 'border-box',
-          }}
-        >
-          {menuItems.map(item => (
-            <ListItem
-              key={item.text}
-              disablePadding
-              sx={{ width: '100%', overflowX: 'hidden', boxSizing: 'border-box' }}
-            >
-              <ListItemButton
-                selected={location.pathname === item.path}
-                onClick={() => {
-                  navigate(item.path);
-                  if (isMobile) handleDrawerClose();
-                }}
+              <ListItemIcon
                 sx={{
-                  width: '100%',
-                  overflowX: 'hidden',
-                  boxSizing: 'border-box',
-                  '&.Mui-selected': {
-                    backgroundColor: 'primary.main',
-                    '&:hover': {
-                      backgroundColor: 'primary.dark',
-                    },
-                    '& .MuiListItemIcon-root, & .MuiListItemText-primary': {
-                      color: 'white',
-                    },
-                  },
-                  '&:hover': {
-                    backgroundColor: 'primary.light',
-                    '& .MuiListItemIcon-root, & .MuiListItemText-primary': {
-                      color: 'white',
-                    },
-                  },
+                  color: location.pathname === item.path ? 'inherit' : theme.palette.text.secondary,
                 }}
               >
-                <ListItemIcon
-                  sx={{ color: location.pathname === item.path ? 'white' : 'primary.main' }}
-                >
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText primary={item.text} />
-              </ListItemButton>
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText
+                primary={item.text}
+                sx={{
+                  '& .MuiListItemText-primary': {
+                    fontSize: getAspectRatioStyle(
+                      aspectRatioStyles.typography.body1.fontSize,
+                      breakpoint,
+                      '1rem'
+                    ),
+                    fontWeight: 500,
+                  },
+                }}
+              />
             </ListItem>
           ))}
         </List>
-      </StyledDrawer>
+      </Drawer>
       <Main open={open}>
         <DrawerHeader />
         <Box
           sx={{
-            p: 3,
-            background: 'rgba(255, 255, 255, 0.9)',
-            backdropFilter: 'blur(10px)',
-            borderRadius: 2,
-            border: '1px solid',
-            borderColor: 'primary.main',
-            minHeight: 'calc(100vh - 64px - 48px)',
+            p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 3),
+            maxWidth: getAspectRatioStyle(
+              aspectRatioStyles.container.maxWidth,
+              breakpoint,
+              '1200px'
+            ),
+            mx: 'auto',
           }}
         >
           {children}

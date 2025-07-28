@@ -41,7 +41,9 @@ import {
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useAssignments } from '../hooks/useApiQuery';
+import { useAspectRatio } from '../hooks/useAspectRatio';
 import { useProfileStore } from '../services/ProfileService';
+import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -49,8 +51,8 @@ interface TabPanelProps {
   value: number;
 }
 
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
+function TabPanel(props: TabPanelProps & { breakpoint?: string }) {
+  const { children, value, index, breakpoint = 'standard', ...other } = props;
   return (
     <div
       role="tabpanel"
@@ -59,7 +61,11 @@ function TabPanel(props: TabPanelProps) {
       aria-labelledby={`profile-tab-${index}`}
       {...other}
     >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+      {value === index && (
+        <Box sx={{ p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 3) }}>
+          {children}
+        </Box>
+      )}
     </div>
   );
 }
@@ -160,6 +166,7 @@ const StatCard = ({ icon, title, value, color, onClick, sx }: any) => {
 const Profile: React.FC = () => {
   const theme = useTheme();
   const { user, logout } = useAuth();
+  const { breakpoint } = useAspectRatio();
   const { profile, isLoading, error, updateProfile, fetchProfile } = useProfileStore();
 
   const [tabValue, setTabValue] = useState(0);
@@ -527,7 +534,7 @@ const Profile: React.FC = () => {
           </Tabs>
         </Box>
         <Box sx={{ p: { xs: 0, md: 4 } }}>
-          <TabPanel value={tabValue} index={0}>
+          <TabPanel value={tabValue} index={0} breakpoint={breakpoint}>
             <ProfileSection title="Personal Information" icon={<AccountCircleOutlined />}>
               <Box sx={{ position: 'relative', mb: 4, textAlign: 'center' }}>
                 <Avatar
@@ -686,7 +693,7 @@ const Profile: React.FC = () => {
             </ProfileSection>
           </TabPanel>
 
-          <TabPanel value={tabValue} index={1}>
+          <TabPanel value={tabValue} index={1} breakpoint={breakpoint}>
             <Box
               sx={{
                 display: 'flex',
@@ -714,7 +721,7 @@ const Profile: React.FC = () => {
             </Box>
           </TabPanel>
 
-          <TabPanel value={tabValue} index={2}>
+          <TabPanel value={tabValue} index={2} breakpoint={breakpoint}>
             <Box
               sx={{
                 display: 'flex',

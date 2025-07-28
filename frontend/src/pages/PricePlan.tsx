@@ -57,7 +57,9 @@ import { useSnackbar } from 'notistack';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PaymentForm from '../components/payment/PaymentForm';
+import { useAspectRatio } from '../hooks/useAspectRatio';
 import { api } from '../services/api';
+import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
@@ -362,6 +364,7 @@ const PricePlan: React.FC = () => {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
+  const { breakpoint } = useAspectRatio();
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [showDetailedComparison, setShowDetailedComparison] = useState(false);
@@ -545,7 +548,14 @@ const PricePlan: React.FC = () => {
   };
 
   return (
-    <Box sx={{ width: '100%', position: 'relative', px: 2, pb: 4 }}>
+    <Box
+      sx={{
+        width: '100%',
+        position: 'relative',
+        px: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2),
+        pb: 4,
+      }}
+    >
       <Box
         sx={{
           mb: 3,

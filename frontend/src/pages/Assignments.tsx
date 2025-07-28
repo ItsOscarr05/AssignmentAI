@@ -53,8 +53,10 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import AssignmentEditDialog from '../components/assignments/AssignmentEdit';
 import { useAuth } from '../contexts/AuthContext';
+import { useAspectRatio } from '../hooks/useAspectRatio';
 import { assignments } from '../services/api/assignments';
 import { mapToCoreSubject } from '../services/subjectService';
+import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 import { recentAssignments } from './DashboardHome';
 
 interface Assignment {
@@ -77,6 +79,7 @@ const Assignments: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isMockUser } = useAuth();
+  const { breakpoint } = useAspectRatio();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -434,7 +437,7 @@ const Assignments: React.FC = () => {
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box
         sx={{
-          p: { xs: 1, md: 3 },
+          p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2),
           backgroundColor: '#fafafa',
           minHeight: '100vh',
           overflow: 'hidden',
@@ -442,27 +445,39 @@ const Assignments: React.FC = () => {
         }}
       >
         {/* Header Section */}
-        <Card sx={{ ...cardStyle, mb: { xs: 2, md: 4 }, p: { xs: 1, md: 2 } }}>
-          <CardContent sx={{ p: { xs: 1, md: 2 } }}>
+        <Card
+          sx={{
+            ...cardStyle,
+            mb: breakpoint === 'tall' ? 2 : 4,
+            p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2),
+          }}
+        >
+          <CardContent
+            sx={{ p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2) }}
+          >
             <Box
               sx={{
                 display: 'flex',
-                flexDirection: { xs: 'column', md: 'row' },
+                flexDirection: breakpoint === 'tall' ? 'column' : 'row',
                 justifyContent: 'space-between',
-                alignItems: { xs: 'flex-start', md: 'center' },
-                gap: { xs: 1, md: 0 },
+                alignItems: breakpoint === 'tall' ? 'flex-start' : 'center',
+                gap: breakpoint === 'tall' ? 1 : 0,
               }}
             >
               <Box>
                 <Typography
-                  variant="h4"
+                  variant={breakpoint === 'tall' ? 'h5' : breakpoint === 'square' ? 'h4' : 'h3'}
                   sx={{
                     color: theme.palette.primary.main,
                     fontWeight: 400,
                     borderBottom: 'none',
                     pb: 0,
                     display: 'inline-block',
-                    fontSize: { xs: '1.5rem', md: '2.125rem' },
+                    fontSize: getAspectRatioStyle(
+                      aspectRatioStyles.typography.h1.fontSize,
+                      breakpoint,
+                      '1.5rem'
+                    ),
                   }}
                 >
                   Assignments
@@ -470,7 +485,23 @@ const Assignments: React.FC = () => {
                 <Typography
                   variant="subtitle1"
                   color="text.secondary"
-                  sx={{ mt: 1, fontSize: { xs: '0.875rem', md: '1rem' } }}
+                  sx={{
+                    mt:
+                      breakpoint === 'tall'
+                        ? 0.5
+                        : breakpoint === 'square'
+                        ? 1
+                        : breakpoint === 'standard'
+                        ? 1.5
+                        : breakpoint === 'wide'
+                        ? 2
+                        : 2.5,
+                    fontSize: getAspectRatioStyle(
+                      aspectRatioStyles.typography.body1.fontSize,
+                      breakpoint,
+                      '0.875rem'
+                    ),
+                  }}
                 >
                   Organize and manage your saved AI-generated work.
                 </Typography>
@@ -498,8 +529,20 @@ const Assignments: React.FC = () => {
         {/* Filters and Search */}
         <Grid
           container
-          spacing={{ xs: 1, md: 2 }}
-          sx={{ mb: { xs: 2, md: 3 }, alignItems: 'center' }}
+          spacing={getAspectRatioStyle(aspectRatioStyles.grid.gap, breakpoint, 2)}
+          sx={{
+            mb:
+              breakpoint === 'tall'
+                ? 2
+                : breakpoint === 'square'
+                ? 3
+                : breakpoint === 'standard'
+                ? 4
+                : breakpoint === 'wide'
+                ? 5
+                : 6,
+            alignItems: 'center',
+          }}
         >
           {/* Search Bar - Full Width on Mobile, First Position */}
           <Grid item xs={12} md={3}>

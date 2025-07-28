@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { usePerformanceMonitoring } from '../utils/performance';
+import { useAspectRatio } from './useAspectRatio';
 import { useErrorTracking } from './useErrorTracking';
 
 interface Breakpoint {
@@ -21,8 +22,9 @@ interface TouchState {
 interface ResponsiveLayoutOptions {
   breakpoints?: Breakpoint[];
   defaultBreakpoint?: string;
+  useAspectRatio?: boolean;
   onBreakpointChange?: (breakpoint: string) => void;
-  onOrientationChange?: (orientation: 'portrait' | 'landscape') => void;
+  onOrientationChange?: (orientation: 'portrait' | 'landscape' | 'square') => void;
   onSwipe?: (direction: 'left' | 'right' | 'up' | 'down', distance: number) => void;
   touchThreshold?: number;
 }
@@ -42,11 +44,20 @@ export const useResponsiveLayout = (options: ResponsiveLayoutOptions = {}) => {
   const {
     breakpoints = defaultBreakpoints,
     defaultBreakpoint = 'xs',
+    useAspectRatio: useAspectRatioMode = false,
     onBreakpointChange,
     onOrientationChange,
     onSwipe,
     touchThreshold = 50,
   } = options;
+
+  // Use aspect ratio hook if enabled
+  const aspectRatioState = useAspectRatioMode
+    ? useAspectRatio({
+        onBreakpointChange,
+        onOrientationChange,
+      })
+    : null;
 
   // Initialize state based on current window dimensions
   const getInitialState = () => {
@@ -211,6 +222,19 @@ export const useResponsiveLayout = (options: ResponsiveLayoutOptions = {}) => {
     };
   }, [handleResize, handleTouchStart, handleTouchMove, handleTouchEnd]);
 
+  // If aspect ratio mode is enabled, return aspect ratio state with additional properties
+  if (useAspectRatioMode && aspectRatioState) {
+    return {
+      ...aspectRatioState,
+      isTouchDevice,
+      touchState,
+      // Maintain backward compatibility
+      currentBreakpoint: aspectRatioState.breakpoint,
+      isLandscape: aspectRatioState.orientation === 'landscape',
+    };
+  }
+
+  // Return traditional pixel-based responsive state
   return {
     currentBreakpoint,
     isMobile,

@@ -40,7 +40,9 @@ import {
 import CircularProgress from '@mui/material/CircularProgress';
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useAspectRatio } from '../hooks/useAspectRatio';
 import { helpService } from '../services/helpService';
+import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -48,8 +50,8 @@ interface TabPanelProps {
   value: number;
 }
 
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
+function TabPanel(props: TabPanelProps & { breakpoint?: string }) {
+  const { children, value, index, breakpoint = 'standard', ...other } = props;
   return (
     <div
       role="tabpanel"
@@ -58,19 +60,23 @@ function TabPanel(props: TabPanelProps) {
       aria-labelledby={`help-tab-${index}`}
       {...other}
     >
-      {value === index && <Box sx={{ p: { xs: 1, md: 3 } }}>{children}</Box>}
+      {value === index && (
+        <Box sx={{ p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2) }}>
+          {children}
+        </Box>
+      )}
     </div>
   );
 }
 
-const HelpSection = ({ title, icon, children }: any) => {
+const HelpSection = ({ title, icon, children, breakpoint = 'standard' }: any) => {
   const theme = useTheme();
   return (
     <Paper
       elevation={0}
       sx={{
-        p: { xs: 2, md: 4 },
-        mb: { xs: 3, md: 4 },
+        p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 3),
+        mb: getAspectRatioStyle(aspectRatioStyles.spacing.element.margin, breakpoint, 3),
         border: '2px solid',
         borderColor: 'error.main',
         borderRadius: 3,
@@ -122,6 +128,7 @@ const HelpSection = ({ title, icon, children }: any) => {
 const Help: React.FC = () => {
   const theme = useTheme();
   const { user } = useAuth?.() || {};
+  const { breakpoint } = useAspectRatio();
   const [tabValue, setTabValue] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedFaqs, setExpandedFaqs] = useState<{ [key: string]: boolean }>({});
@@ -686,8 +693,12 @@ const Help: React.FC = () => {
           </Tabs>
         </Box>
         <Box sx={{ p: { xs: 2, md: 4 } }}>
-          <TabPanel value={tabValue} index={0}>
-            <HelpSection title="Popular Questions" icon={<QuestionAnswerOutlined />}>
+          <TabPanel value={tabValue} index={0} breakpoint={breakpoint}>
+            <HelpSection
+              title="Popular Questions"
+              icon={<QuestionAnswerOutlined />}
+              breakpoint={breakpoint}
+            >
               <Stack spacing={2}>
                 {popularFaqs.map((faq, idx) => (
                   <Accordion
@@ -960,8 +971,12 @@ const Help: React.FC = () => {
             </HelpSection>
           </TabPanel>
 
-          <TabPanel value={tabValue} index={1}>
-            <HelpSection title="Contact Support" icon={<ContactSupportOutlined />}>
+          <TabPanel value={tabValue} index={1} breakpoint={breakpoint}>
+            <HelpSection
+              title="Contact Support"
+              icon={<ContactSupportOutlined />}
+              breakpoint={breakpoint}
+            >
               <Grid container spacing={{ xs: 2, md: 4 }}>
                 <Grid item xs={12} md={6}>
                   <Typography

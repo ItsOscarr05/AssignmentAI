@@ -71,6 +71,8 @@ import {
   useTheme,
 } from '@mui/material';
 import React, { useState } from 'react';
+import { useAspectRatio } from '../hooks/useAspectRatio';
+import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -78,8 +80,8 @@ interface TabPanelProps {
   value: number;
 }
 
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
+function TabPanel(props: TabPanelProps & { breakpoint?: string }) {
+  const { children, value, index, breakpoint = 'standard', ...other } = props;
   return (
     <div
       role="tabpanel"
@@ -88,7 +90,11 @@ function TabPanel(props: TabPanelProps) {
       aria-labelledby={`settings-tab-${index}`}
       {...other}
     >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+      {value === index && (
+        <Box sx={{ p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 3) }}>
+          {children}
+        </Box>
+      )}
     </div>
   );
 }
@@ -103,6 +109,7 @@ interface SubscriptionConfig {
 
 const Settings: React.FC = () => {
   const theme = useTheme();
+  const { breakpoint } = useAspectRatio();
   const [tabValue, setTabValue] = useState(0);
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -506,7 +513,7 @@ const Settings: React.FC = () => {
         </Box>
 
         <Box sx={{ p: { xs: 2, md: 4 } }}>
-          <TabPanel value={tabValue} index={0}>
+          <TabPanel value={tabValue} index={0} breakpoint={breakpoint}>
             <SettingsSection
               title="Appearance"
               icon={<Brush sx={{ color: theme.palette.primary.main }} />}
@@ -791,7 +798,7 @@ const Settings: React.FC = () => {
             </SettingsSection>
           </TabPanel>
 
-          <TabPanel value={tabValue} index={1}>
+          <TabPanel value={tabValue} index={1} breakpoint={breakpoint}>
             <SettingsSection
               title="AI Model Configuration"
               icon={<Psychology sx={{ color: theme.palette.primary.main }} />}
@@ -987,7 +994,7 @@ const Settings: React.FC = () => {
             </SettingsSection>
           </TabPanel>
 
-          <TabPanel value={tabValue} index={2}>
+          <TabPanel value={tabValue} index={2} breakpoint={breakpoint}>
             <SettingsSection
               title="Notification Preferences"
               icon={<NotificationsOutlined sx={{ color: theme.palette.primary.main }} />}
@@ -1349,7 +1356,7 @@ const Settings: React.FC = () => {
             </SettingsSection>
           </TabPanel>
 
-          <TabPanel value={tabValue} index={3}>
+          <TabPanel value={tabValue} index={3} breakpoint={breakpoint}>
             <SettingsSection
               title="Security Score"
               icon={<SecurityOutlined sx={{ color: theme.palette.primary.main }} />}

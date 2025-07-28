@@ -63,9 +63,11 @@ import { FeatureAccessErrorComponent } from '../components/workshop/FeatureAcces
 import WorkshopFileUpload from '../components/workshop/WorkshopFileUpload';
 import WorkshopLiveModal from '../components/workshop/WorkshopLiveModal';
 import { useAuth } from '../contexts/AuthContext';
+import { useAspectRatio } from '../hooks/useAspectRatio';
 import { useTokenUsage } from '../hooks/useTokenUsage';
 import { api } from '../services/api';
 import { useWorkshopStore } from '../services/WorkshopService';
+import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 import { recentAssignments } from './DashboardHome';
 
 interface HistoryItem {
@@ -182,6 +184,7 @@ const Workshop: React.FC = () => {
   const theme = useTheme();
   const location = useLocation();
   const { isMockUser } = useAuth();
+  const { breakpoint } = useAspectRatio();
   const {
     generateContent,
     history: workshopHistory,
@@ -648,7 +651,7 @@ const Workshop: React.FC = () => {
   return (
     <Box
       sx={{
-        p: { xs: 0.5, sm: 1, md: 3 },
+        p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2),
         backgroundColor: 'white',
         minHeight: '100vh',
         overflow: 'hidden',
@@ -700,7 +703,7 @@ const Workshop: React.FC = () => {
           ...cardStyle,
           mb: { xs: 3, sm: 4, md: 6 },
           width: { xs: '95%', sm: '100%' },
-          mx: { xs: 1.5, sm: 0 },
+          mx: { xs: 'auto', sm: 0 },
           '@media (max-width: 480px)': {
             width: '98%',
             mx: 'auto',
@@ -775,7 +778,7 @@ const Workshop: React.FC = () => {
         <Grid
           item
           xs={12}
-          md={9}
+          md={breakpoint === 'standard' ? 12 : 9}
           sx={{ overflow: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
         >
           {/* Activity Chart */}
@@ -990,8 +993,9 @@ const Workshop: React.FC = () => {
             <Box
               sx={{
                 display: 'flex',
-                flexDirection: { xs: 'column', sm: 'row' },
-                alignItems: { xs: 'flex-start', sm: 'center' },
+                flexDirection: { xs: 'column', sm: breakpoint === 'standard' ? 'column' : 'row' },
+                alignItems: { xs: 'flex-start', sm: 'flex-start' },
+                justifyContent: { xs: 'flex-start', sm: 'flex-start' },
                 gap: { xs: 0.75, sm: 1, md: 2 },
                 borderBottom: '1px solid #e0e0e0',
                 pb: { xs: 0.75, sm: 1 },
@@ -1003,6 +1007,7 @@ const Workshop: React.FC = () => {
                   fontWeight: 700,
                   fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' },
                   mb: { xs: 0.5, sm: 0 },
+                  textAlign: { xs: 'left', sm: 'left' },
                 }}
               >
                 Upload Content
@@ -1434,7 +1439,7 @@ const Workshop: React.FC = () => {
         <Grid
           item
           xs={12}
-          md={3}
+          md={breakpoint === 'standard' ? 12 : 3}
           sx={{ overflow: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
         >
           <Paper
@@ -1629,8 +1634,22 @@ const Workshop: React.FC = () => {
               <Box
                 sx={{
                   position: 'relative',
-                  width: { xs: 120, md: 200 },
-                  height: { xs: 120, md: 200 },
+                  width:
+                    breakpoint === 'tall'
+                      ? 200
+                      : breakpoint === 'square'
+                      ? 300
+                      : breakpoint === 'standard'
+                      ? 350
+                      : 450,
+                  height:
+                    breakpoint === 'tall'
+                      ? 200
+                      : breakpoint === 'square'
+                      ? 300
+                      : breakpoint === 'standard'
+                      ? 350
+                      : 450,
                   cursor: 'pointer',
                   margin: '0 auto',
                 }}
@@ -1641,36 +1660,44 @@ const Workshop: React.FC = () => {
                 <CircularProgress
                   variant="determinate"
                   value={100}
-                  size={120}
+                  size={
+                    breakpoint === 'tall'
+                      ? 200
+                      : breakpoint === 'square'
+                      ? 300
+                      : breakpoint === 'standard'
+                      ? 350
+                      : 450
+                  }
                   thickness={6}
                   sx={{
                     color: alpha(progressColor, 0.2),
                     position: 'absolute',
-                    top: '20%',
-                    left: '20%',
-                    transform: 'translate(-20%, -20%)',
-                    '@media (min-width: 600px)': {
-                      width: 200,
-                      height: 200,
-                    },
+                    top: '0%',
+                    left: '0%',
+                    transform: 'translate(-10%, -10%)',
                   }}
                 />
                 {/* Actual progress */}
                 <CircularProgress
                   variant="determinate"
                   value={animatedPercent}
-                  size={120}
+                  size={
+                    breakpoint === 'tall'
+                      ? 200
+                      : breakpoint === 'square'
+                      ? 300
+                      : breakpoint === 'standard'
+                      ? 350
+                      : 450
+                  }
                   thickness={6}
                   sx={{
                     color: progressColor,
                     position: 'absolute',
-                    top: '20%',
-                    left: '20%',
+                    top: '0%',
+                    left: '0%',
                     transform: 'translate(-50%, -50%)',
-                    '@media (min-width: 600px)': {
-                      width: 200,
-                      height: 200,
-                    },
                     [`& .MuiCircularProgress-circle`]: {
                       strokeLinecap: 'round',
                     },
@@ -1691,16 +1718,54 @@ const Workshop: React.FC = () => {
                 >
                   {isTokenChartHovered ? (
                     <Box sx={{ textAlign: 'center' }}>
-                      <Typography variant="h6" component="div" color={progressColor}>
+                      <Typography
+                        variant={
+                          breakpoint === 'tall'
+                            ? 'h5'
+                            : breakpoint === 'square'
+                            ? 'h4'
+                            : breakpoint === 'standard'
+                            ? 'h3'
+                            : 'h2'
+                        }
+                        component="div"
+                        color={progressColor}
+                        sx={{ fontWeight: 700 }}
+                      >
                         {tokenUsage.used.toLocaleString()}
                       </Typography>
                       <Divider sx={{ my: 0.5, width: '50%', mx: 'auto' }} />
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography
+                        variant={
+                          breakpoint === 'tall'
+                            ? 'body1'
+                            : breakpoint === 'square'
+                            ? 'h6'
+                            : breakpoint === 'standard'
+                            ? 'h5'
+                            : 'h4'
+                        }
+                        color="text.secondary"
+                        sx={{ fontWeight: 600 }}
+                      >
                         {tokenUsage.total.toLocaleString()}
                       </Typography>
                     </Box>
                   ) : (
-                    <Typography variant="h4" component="div" color="text.secondary">
+                    <Typography
+                      variant={
+                        breakpoint === 'tall'
+                          ? 'h3'
+                          : breakpoint === 'square'
+                          ? 'h2'
+                          : breakpoint === 'standard'
+                          ? 'h1'
+                          : 'h1'
+                      }
+                      component="div"
+                      color="text.secondary"
+                      sx={{ fontWeight: 700 }}
+                    >
                       {Math.round(animatedPercent)}%
                     </Typography>
                   )}

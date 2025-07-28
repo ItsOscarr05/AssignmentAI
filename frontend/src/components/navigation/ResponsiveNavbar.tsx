@@ -1,16 +1,7 @@
-import {
-  Assignment,
-  ExitToApp,
-  Home,
-  Menu as MenuIcon,
-  Person,
-  School,
-  Settings,
-} from '@mui/icons-material';
+import { Assignment, Home, Menu, Person, School, Settings } from '@mui/icons-material';
 import {
   AppBar,
   Box,
-  Button,
   Drawer,
   IconButton,
   List,
@@ -19,18 +10,13 @@ import {
   ListItemText,
   Toolbar,
   Typography,
-  useMediaQuery,
   useTheme,
 } from '@mui/material';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import {
-  getAriaControls,
-  getAriaExpanded,
-  getAriaLabel,
-  handleKeyboardNavigation,
-} from '../../utils/accessibility';
+import { useAspectRatio } from '../../hooks/useAspectRatio';
+import { aspectRatioStyles, getAspectRatioStyle } from '../../styles/aspectRatioBreakpoints';
 
 interface NavItem {
   label: string;
@@ -49,18 +35,15 @@ const navItems: NavItem[] = [
 
 const ResponsiveNavbar: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLUListElement>(null);
-  const isMobile = useMediaQuery(useTheme().breakpoints.down('sm'));
+  const { breakpoint, isMobile, isTablet } = useAspectRatio();
   const { isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
+  const theme = useTheme();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
-    if (!mobileOpen) {
-      setFocusedIndex(0);
-    }
   };
 
   const handleNavigation = (path: string) => {
@@ -75,160 +58,215 @@ const ResponsiveNavbar: React.FC = () => {
     navigate('/login');
   };
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>, index: number) => {
-    handleKeyboardNavigation(event, {
-      onEnter: () => {
-        const item = navItems[index];
-        if (item) {
-          handleNavigation(item.path);
-        } else if (index === navItems.length) {
-          handleLogout();
-        }
-      },
-      onArrowUp: () => {
-        if (focusedIndex !== null && focusedIndex > 0) {
-          setFocusedIndex(focusedIndex - 1);
-        }
-      },
-      onArrowDown: () => {
-        if (focusedIndex !== null && focusedIndex < navItems.length) {
-          setFocusedIndex(focusedIndex + 1);
-        }
-      },
-      onEscape: () => {
-        setMobileOpen(false);
-        menuButtonRef.current?.focus();
-      },
-    });
+  const getDrawerWidth = () => {
+    return getAspectRatioStyle(aspectRatioStyles.navigation.sidebar.width, breakpoint, '240px');
   };
 
-  useEffect(() => {
-    if (focusedIndex !== null && drawerRef.current) {
-      const focusableItems = drawerRef.current.querySelectorAll('button');
-      if (focusableItems[focusedIndex]) {
-        (focusableItems[focusedIndex] as HTMLElement).focus();
-      }
-    }
-  }, [focusedIndex]);
+  const getHeaderHeight = () => {
+    return getAspectRatioStyle(aspectRatioStyles.navigation.header.height, breakpoint, '64px');
+  };
+
+  const getTypographySize = () => {
+    if (isMobile) return 'h6';
+    if (isTablet) return 'h5';
+    return 'h4';
+  };
 
   const drawer = (
-    <List ref={drawerRef} role="menu" aria-label={'Mobile menu'}>
-      {navItems.map((item, index) => {
-        if (item.requiresAuth && !isAuthenticated) return null;
-        return (
+    <Box
+      ref={drawerRef}
+      sx={{
+        width: getDrawerWidth(),
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        bgcolor: theme.palette.background.paper,
+        boxShadow: theme.shadows[1],
+      }}
+    >
+      <Box
+        sx={{
+          p: 2,
+          borderBottom: `1px solid ${theme.palette.divider}`,
+        }}
+      >
+        <Typography
+          variant={getTypographySize()}
+          sx={{
+            fontWeight: 'bold',
+            color: theme.palette.primary.main,
+          }}
+        >
+          AssignmentAI
+        </Typography>
+      </Box>
+      <List
+        sx={{
+          flex: 1,
+          pt: 1,
+        }}
+      >
+        {navItems
+          .filter(item => !item.requiresAuth || isAuthenticated)
+          .map(item => (
+            <ListItem
+              key={item.path}
+              button
+              onClick={() => handleNavigation(item.path)}
+              sx={{
+                py: 1.5,
+                px: 2,
+                '&:hover': {
+                  bgcolor: theme.palette.action.hover,
+                },
+                '&.Mui-focused': {
+                  bgcolor: theme.palette.action.selected,
+                },
+              }}
+              tabIndex={mobileOpen ? 0 : -1}
+            >
+              <ListItemIcon
+                sx={{
+                  minWidth: 40,
+                  color: theme.palette.text.secondary,
+                }}
+              >
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText
+                primary={item.label}
+                sx={{
+                  '& .MuiListItemText-primary': {
+                    fontSize: getAspectRatioStyle(
+                      aspectRatioStyles.typography.body1.fontSize,
+                      breakpoint,
+                      '1rem'
+                    ),
+                    fontWeight: 500,
+                  },
+                }}
+              />
+            </ListItem>
+          ))}
+      </List>
+      {isAuthenticated && (
+        <Box
+          sx={{
+            p: 2,
+            borderTop: `1px solid ${theme.palette.divider}`,
+          }}
+        >
           <ListItem
             button
-            key={item.label}
-            onClick={() => handleNavigation(item.path)}
-            onKeyDown={e => handleKeyDown(e, index)}
-            role="menuitem"
-            tabIndex={focusedIndex === index ? 0 : -1}
-            {...getAriaLabel(item.label)}
+            onClick={handleLogout}
+            sx={{
+              py: 1.5,
+              px: 2,
+              '&:hover': {
+                bgcolor: theme.palette.error.light,
+                color: theme.palette.error.contrastText,
+              },
+            }}
           >
-            <ListItemIcon sx={{ color: 'primary.main' }}>{item.icon}</ListItemIcon>
             <ListItemText
-              primary={item.label}
-              primaryTypographyProps={{ color: 'primary.main', fontWeight: 600 }}
+              primary="Logout"
+              sx={{
+                '& .MuiListItemText-primary': {
+                  fontSize: getAspectRatioStyle(
+                    aspectRatioStyles.typography.body1.fontSize,
+                    breakpoint,
+                    '1rem'
+                  ),
+                  fontWeight: 500,
+                },
+              }}
             />
           </ListItem>
-        );
-      })}
-      {isAuthenticated && (
-        <ListItem
-          button
-          onClick={handleLogout}
-          onKeyDown={e => handleKeyDown(e, navItems.length)}
-          role="menuitem"
-          tabIndex={focusedIndex === navItems.length ? 0 : -1}
-          {...getAriaLabel('Logout')}
-        >
-          <ListItemIcon sx={{ color: 'primary.main' }}>
-            <ExitToApp />
-          </ListItemIcon>
-          <ListItemText
-            primary="Logout"
-            primaryTypographyProps={{ color: 'primary.main', fontWeight: 600 }}
-          />
-        </ListItem>
+        </Box>
       )}
-    </List>
+    </Box>
   );
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="static" role="banner">
-        <Toolbar>
-          <IconButton
-            ref={menuButtonRef}
-            color="inherit"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: 'none' } }}
-            {...getAriaExpanded(mobileOpen)}
-            {...getAriaControls('mobile-menu')}
-            {...getAriaLabel('Menu button')}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography
-            variant="h6"
-            component="div"
-            sx={{ flexGrow: 1, cursor: 'pointer' }}
-            onClick={() => handleNavigation('/')}
-            role="heading"
-            aria-level={1}
-          >
-            AssignmentAI
-          </Typography>
-          {!isMobile && (
-            <Box component="nav" role="navigation" aria-label={'Main navigation'}>
-              {navItems.map(item => {
-                if (item.requiresAuth && !isAuthenticated) return null;
-                return (
-                  <Button
-                    key={item.label}
-                    color="inherit"
-                    onClick={() => handleNavigation(item.path)}
-                    startIcon={item.icon}
-                    {...getAriaLabel(item.label)}
-                  >
-                    {item.label}
-                  </Button>
-                );
-              })}
-              {isAuthenticated && (
-                <Button
-                  color="inherit"
-                  onClick={handleLogout}
-                  startIcon={<ExitToApp />}
-                  {...getAriaLabel('Logout')}
-                >
-                  Logout
-                </Button>
-              )}
-            </Box>
-          )}
-        </Toolbar>
-      </AppBar>
-      <Drawer
-        variant="temporary"
-        anchor="left"
-        open={mobileOpen}
-        onClose={handleDrawerToggle}
-        ModalProps={{
-          keepMounted: true,
-        }}
+    <>
+      <AppBar
+        position="fixed"
         sx={{
-          display: { xs: 'block', sm: 'none' },
-          '& .MuiDrawer-paper': {
-            boxSizing: 'border-box',
-            width: 240,
-            backgroundColor: 'grey.50',
-          },
+          width: { sm: `calc(100% - ${getDrawerWidth()})` },
+          ml: { sm: getDrawerWidth() },
+          height: getHeaderHeight(),
+          zIndex: theme.zIndex.drawer + 1,
         }}
       >
-        {drawer}
-      </Drawer>
-    </Box>
+        <Toolbar
+          sx={{
+            height: getHeaderHeight(),
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: 'linear-gradient(135deg, #FF0000 0%, #CC0000 100%)',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <IconButton
+              ref={menuButtonRef}
+              color="inherit"
+              aria-label="open drawer"
+              edge="start"
+              onClick={handleDrawerToggle}
+              sx={{ mr: 2, display: { sm: 'none' } }}
+            >
+              <Menu />
+            </IconButton>
+            <Typography
+              variant={getTypographySize()}
+              noWrap
+              component="div"
+              sx={{
+                color: '#FFFFFF',
+                fontWeight: 'bold',
+                textShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                letterSpacing: '1px',
+              }}
+            >
+              AssignmentAI
+            </Typography>
+          </Box>
+        </Toolbar>
+      </AppBar>
+      <Box component="nav" sx={{ width: { sm: getDrawerWidth() }, flexShrink: { sm: 0 } }}>
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={handleDrawerToggle}
+          ModalProps={{
+            keepMounted: true,
+          }}
+          sx={{
+            display: { xs: 'block', sm: 'none' },
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
+              width: getDrawerWidth(),
+            },
+          }}
+        >
+          {drawer}
+        </Drawer>
+        <Drawer
+          variant="permanent"
+          sx={{
+            display: { xs: 'none', sm: 'block' },
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
+              width: getDrawerWidth(),
+            },
+          }}
+          open
+        >
+          {drawer}
+        </Drawer>
+      </Box>
+    </>
   );
 };
 

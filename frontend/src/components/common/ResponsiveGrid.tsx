@@ -1,71 +1,114 @@
-import { Grid, GridProps } from '@mui/material';
+import { Grid, useTheme } from '@mui/material';
 import React from 'react';
+import { useAspectRatio } from '../../hooks/useAspectRatio';
+import { aspectRatioStyles, getAspectRatioStyle } from '../../styles/aspectRatioBreakpoints';
 
-interface ResponsiveGridProps extends GridProps {
+interface ResponsiveGridProps {
   children: React.ReactNode;
-  columns?: {
-    xs?: number;
-    sm?: number;
-    md?: number;
-    lg?: number;
-    xl?: number;
-  };
-  spacing?: number | { xs?: number; sm?: number; md?: number; lg?: number; xl?: number };
-  container?: boolean;
+  columns?:
+    | {
+        xs?: number;
+        sm?: number;
+        md?: number;
+        lg?: number;
+        xl?: number;
+      }
+    | Record<string, number>;
+  spacing?:
+    | number
+    | { xs?: number; sm?: number; md?: number; lg?: number; xl?: number }
+    | Record<string, number>;
+  className?: string;
+  useAspectRatio?: boolean;
 }
+
+const defaultColumns = {
+  xs: 1,
+  sm: 2,
+  md: 3,
+  lg: 4,
+  xl: 4,
+};
 
 const ResponsiveGrid: React.FC<ResponsiveGridProps> = ({
   children,
-  columns = { xs: 1, sm: 2, md: 3, lg: 4, xl: 4 },
+  columns = defaultColumns,
   spacing = 2,
-  container = true,
-  ...props
+  className,
+  useAspectRatio: useAspectRatioMode = true,
 }) => {
+  const theme = useTheme();
+  const { breakpoint } = useAspectRatio();
+
   const getSpacing = () => {
     if (typeof spacing === 'number') {
-      return spacing;
+      if (useAspectRatioMode) {
+        return getAspectRatioStyle(aspectRatioStyles.grid.gap, breakpoint, spacing);
+      }
+      return theme.spacing(spacing);
     }
+
+    if (useAspectRatioMode) {
+      return getAspectRatioStyle(aspectRatioStyles.grid.gap, breakpoint, 2);
+    }
+
     return {
-      xs: spacing.xs || 2,
-      sm: spacing.sm || 2,
-      md: spacing.md || 2,
-      lg: spacing.lg || 2,
-      xl: spacing.xl || 2,
+      xs: theme.spacing(spacing.xs || 2),
+      sm: theme.spacing(spacing.sm || 2),
+      md: theme.spacing(spacing.md || 3),
+      lg: theme.spacing(spacing.lg || 3),
+      xl: theme.spacing(spacing.xl || 3),
     };
   };
 
-  const getColumnWidth = (breakpoint: keyof typeof columns) => {
-    const cols = columns[breakpoint];
-    if (!cols) return undefined;
-    return Math.floor(12 / cols);
+  const getColumns = () => {
+    if (useAspectRatioMode) {
+      const aspectRatioColumns = getAspectRatioStyle(aspectRatioStyles.grid.columns, breakpoint, 2);
+      return {
+        xs: aspectRatioColumns,
+        sm: aspectRatioColumns,
+        md: aspectRatioColumns,
+        lg: aspectRatioColumns,
+        xl: aspectRatioColumns,
+      };
+    }
+
+    return {
+      xs: columns.xs || defaultColumns.xs,
+      sm: columns.sm || defaultColumns.sm,
+      md: columns.md || defaultColumns.md,
+      lg: columns.lg || defaultColumns.lg,
+      xl: columns.xl || defaultColumns.xl,
+    };
   };
+
+  const currentColumns = getColumns();
 
   return (
     <Grid
-      container={container}
+      container
       spacing={getSpacing()}
+      className={className}
       sx={{
         width: '100%',
-        ...props.sx,
+        margin: 0,
+        '& > .MuiGrid-item': {
+          paddingTop: 0,
+        },
       }}
-      {...props}
     >
-      {React.Children.map(children, child => {
-        if (!React.isValidElement(child)) return null;
-
-        return (
-          <Grid
-            item
-            xs={getColumnWidth('xs')}
-            sm={getColumnWidth('sm')}
-            md={getColumnWidth('md')}
-            lg={getColumnWidth('lg')}
-            xl={getColumnWidth('xl')}
-          >
-            {child}
-          </Grid>
-        );
-      })}
+      {React.Children.map(children, child => (
+        <Grid
+          item
+          xs={12 / (currentColumns.xs || defaultColumns.xs)}
+          sm={12 / (currentColumns.sm || defaultColumns.sm)}
+          md={12 / (currentColumns.md || defaultColumns.md)}
+          lg={12 / (currentColumns.lg || defaultColumns.lg)}
+          xl={12 / (currentColumns.xl || defaultColumns.xl)}
+        >
+          {child}
+        </Grid>
+      ))}
     </Grid>
   );
 };

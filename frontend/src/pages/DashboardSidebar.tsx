@@ -163,9 +163,9 @@ const Dashboard: React.FC = () => {
         <Typography
           variant="body2"
           color="primary.contrastText"
-          sx={{ opacity: 0.7, fontSize: '1rem' }}
+          sx={{ opacity: 0.7, fontSize: '0.9rem' }}
         >
-          © 2025 AssignmentAI
+          © {new Date().getFullYear()} AssignmentAI
         </Typography>
       </Box>
     </Box>
