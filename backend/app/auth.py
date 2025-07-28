@@ -1,5 +1,5 @@
 from fastapi import Depends, HTTPException, status
-# from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import Optional
@@ -8,7 +8,7 @@ from app.database import get_db
 from app.models.user import User
 from app.core.config import settings
 
-# oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()

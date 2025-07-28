@@ -18,12 +18,14 @@ import {
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from '../hooks/useTranslation';
 import LanguageSelector from './LanguageSelector';
 
 const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const { t } = useTranslation();
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -166,7 +168,7 @@ const Navbar: React.FC = () => {
                     navigate('/profile');
                   }}
                 >
-                  Profile
+                  {t('navigation.profile')}
                 </MenuItem>
                 <MenuItem
                   onClick={() => {
@@ -174,9 +176,9 @@ const Navbar: React.FC = () => {
                     navigate('/settings');
                   }}
                 >
-                  Settings
+                  {t('navigation.settings')}
                 </MenuItem>
-                <MenuItem onClick={handleLogout}>Logout</MenuItem>
+                <MenuItem onClick={handleLogout}>{t('auth.logout')}</MenuItem>
               </Menu>
             </>
           ) : (
@@ -192,7 +194,7 @@ const Navbar: React.FC = () => {
               }}
               onClick={() => navigate('/login')}
             >
-              Login
+              {t('auth.login')}
             </Button>
           )}
         </Box>

@@ -1,37 +1,72 @@
+import { match } from '@formatjs/intl-localematcher';
 import i18n from 'i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
-import Backend from 'i18next-http-backend';
+import Negotiator from 'negotiator';
 import { initReactI18next } from 'react-i18next';
 
-export const supportedLanguages = ['en', 'es', 'fr', 'de'] as const;
-export type SupportedLanguage = (typeof supportedLanguages)[number];
+// Import our translation files
+import deTranslations from './locales/de.json';
+import enTranslations from './locales/en.json';
+import esTranslations from './locales/es.json';
+import frTranslations from './locales/fr.json';
 
-export const defaultLanguage: SupportedLanguage = 'en';
+// Supported languages
+export const supportedLanguages = [
+  { code: 'en', name: 'English', flag: '🇺🇸' },
+  { code: 'fr', name: 'Français', flag: '🇫🇷' },
+  { code: 'es', name: 'Español', flag: '🇪🇸' },
+  { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
+  { code: 'it', name: 'Italiano', flag: '🇮🇹' },
+  { code: 'pt', name: 'Português', flag: '🇵🇹' },
+  { code: 'ru', name: 'Русский', flag: '🇷🇺' },
+  { code: 'zh', name: '中文', flag: '🇨🇳' },
+  { code: 'ja', name: '日本語', flag: '🇯🇵' },
+  { code: 'ko', name: '한국어', flag: '🇰🇷' },
+];
 
-export const languageNames: Record<SupportedLanguage, string> = {
-  en: 'English',
-  es: 'Español',
-  fr: 'Français',
-  de: 'Deutsch',
-};
+// Language detection function
+export function getLanguageFromHeaders(headers: Headers): string {
+  const languages = new Negotiator({ headers: Object.fromEntries(headers) }).languages();
+  const locales = supportedLanguages.map(lang => lang.code);
+  const defaultLocale = 'en';
 
+  return match(languages, locales, defaultLocale);
+}
+
+// Initialize i18n
 i18n
-  .use(Backend)
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
-    fallbackLng: defaultLanguage,
-    supportedLngs: supportedLanguages,
+    resources: {
+      en: {
+        translation: enTranslations,
+      },
+      fr: {
+        translation: frTranslations,
+      },
+      es: {
+        translation: esTranslations,
+      },
+      de: {
+        translation: deTranslations,
+      },
+    },
+    fallbackLng: 'en',
     debug: process.env.NODE_ENV === 'development',
+
     interpolation: {
-      escapeValue: false,
+      escapeValue: false, // React already escapes values
     },
-    backend: {
-      loadPath: '/locales/{{lng}}/{{ns}}.json',
-    },
+
     detection: {
-      order: ['localStorage', 'navigator'],
+      order: ['localStorage', 'navigator', 'htmlTag'],
       caches: ['localStorage'],
+      lookupLocalStorage: 'i18nextLng',
+    },
+
+    react: {
+      useSuspense: false, // Disable Suspense for better error handling
     },
   });
 

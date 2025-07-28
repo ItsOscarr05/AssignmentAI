@@ -70,8 +70,9 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAspectRatio } from '../hooks/useAspectRatio';
+import { useTranslation } from '../hooks/useTranslation';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 
 interface TabPanelProps {
@@ -113,9 +114,7 @@ const Settings: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [, setShowModelComparison] = useState(false);
   const [showNotificationPreview, setShowNotificationPreview] = useState(false);
-  const [] = useState(false);
 
   // General Settings
   const [darkMode, setDarkMode] = useState(false);
@@ -143,7 +142,6 @@ const Settings: React.FC = () => {
   const [completionSounds, setCompletionSounds] = useState(true);
 
   // AI Settings
-  const [] = useState('gpt-4');
   const [maxTokens, setMaxTokens] = useState<number>(1000);
   const [temperature, setTemperature] = useState('0.7');
   const [contextLength, setContextLength] = useState(10);
@@ -208,6 +206,9 @@ const Settings: React.FC = () => {
     model: 'gpt-4o-mini',
     tokenLimit: 30000,
   });
+
+  // Use the new i18n translation hook
+  const { t, changeLanguage } = useTranslation();
 
   // Map subscription plans to their respective models and token limits
   const subscriptionConfig: Record<SubscriptionPlan, SubscriptionConfig> = {
@@ -295,9 +296,91 @@ const Settings: React.FC = () => {
     setTabValue(newValue);
   };
 
-  const handleSave = () => {
-    setShowSaveSuccess(true);
-    setTimeout(() => setShowSaveSuccess(false), 3000);
+  const handleSave = async () => {
+    try {
+      // Prepare settings data for backend
+      const settingsData = {
+        appearance: {
+          dark_mode: darkMode,
+          font_size: fontSize,
+          animations: animations,
+          compact_mode: compactMode,
+        },
+        language: {
+          language: language,
+          timezone: timeZone,
+          date_format: dateFormat,
+          auto_translate: autoTranslate,
+          show_original_text: showOriginalText,
+          use_metric_system: useMetricSystem,
+          use_24_hour_format: use24HourFormat,
+        },
+        sound: {
+          sound_effects: soundEffects,
+          haptic_feedback: hapticFeedback,
+          volume: volume,
+          notification_sounds: notificationSounds,
+          typing_sounds: typingSounds,
+          completion_sounds: completionSounds,
+          quiet_hours_start: quietHoursStart,
+          quiet_hours_end: quietHoursEnd,
+        },
+        notifications: {
+          email: notifications.email,
+          desktop: notifications.desktop,
+          sound: notifications.sound,
+          assignments: notifications.assignments,
+          deadlines: notifications.deadlines,
+          feedback: notifications.feedback,
+          updates: notifications.updates,
+          priority_level: notificationPreferences.priorityLevel,
+          group_notifications: notificationPreferences.groupNotifications,
+          show_preview: notificationPreferences.showPreview,
+          show_badge: notificationPreferences.showBadge,
+          show_in_taskbar: notificationPreferences.showInTaskbar,
+          work_hours_start: notificationSchedule.workHoursStart,
+          work_hours_end: notificationSchedule.workHoursEnd,
+          work_days: notificationSchedule.workDays,
+          quiet_hours_start: notificationSchedule.quietHoursStart,
+          quiet_hours_end: notificationSchedule.quietHoursEnd,
+        },
+        privacy: {
+          two_factor_auth: privacySettings.twoFactorAuth,
+          biometric_login: privacySettings.biometricLogin,
+          data_collection: privacySettings.dataCollection,
+          share_analytics: privacySettings.shareAnalytics,
+          show_online_status: privacySettings.showOnlineStatus,
+          allow_tracking: privacySettings.allowTracking,
+          auto_lock: privacySettings.autoLock,
+          lock_timeout: privacySettings.lockTimeout,
+          password_expiry: privacySettings.passwordExpiry,
+          session_timeout: privacySettings.sessionTimeout,
+        },
+        ai: {
+          max_tokens: maxTokens,
+          temperature: parseFloat(temperature),
+          context_length: contextLength,
+          auto_complete: autoComplete,
+          code_snippets: codeSnippets,
+          ai_suggestions: aiSuggestions,
+          real_time_analysis: realTimeAnalysis,
+        },
+      };
+
+      // TODO: Replace with actual API call when backend is ready
+      console.log('Saving settings:', settingsData);
+
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      setShowSaveSuccess(true);
+      setTimeout(() => setShowSaveSuccess(false), 3000);
+
+      console.log('Settings saved successfully!');
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+      // TODO: Show error message to user
+    }
   };
 
   const SettingsSection = ({ title, icon, children }: any) => (
@@ -348,6 +431,305 @@ const Settings: React.FC = () => {
     </Paper>
   );
 
+  useEffect(() => {
+    // Apply font size using CSS custom property for better compatibility
+    document.documentElement.style.setProperty('--app-font-size', `${fontSize}px`);
+  }, [fontSize]);
+
+  // Apply animations setting
+  useEffect(() => {
+    if (!animations) {
+      document.body.style.setProperty('--disable-animations', 'none');
+    } else {
+      document.body.style.removeProperty('--disable-animations');
+    }
+  }, [animations]);
+
+  // Apply compact mode
+  useEffect(() => {
+    if (compactMode) {
+      document.body.classList.add('compact-mode');
+    } else {
+      document.body.classList.remove('compact-mode');
+    }
+  }, [compactMode]);
+
+  // Apply dark mode setting (local effect for now)
+  useEffect(() => {
+    if (darkMode) {
+      document.body.classList.add('dark-mode-local');
+    } else {
+      document.body.classList.remove('dark-mode-local');
+    }
+  }, [darkMode]);
+
+  // Apply language setting
+  useEffect(() => {
+    // Set document language attribute
+    document.documentElement.lang = language;
+
+    // Change language using i18n
+    changeLanguage(language);
+
+    // Apply language-specific changes
+    if (language === 'es') {
+      // Spanish
+      document.body.classList.add('language-es');
+      document.body.classList.remove(
+        'language-fr',
+        'language-de',
+        'language-it',
+        'language-pt',
+        'language-ru',
+        'language-zh',
+        'language-ja',
+        'language-ko'
+      );
+    } else if (language === 'fr') {
+      // French
+      document.body.classList.add('language-fr');
+      document.body.classList.remove(
+        'language-es',
+        'language-de',
+        'language-it',
+        'language-pt',
+        'language-ru',
+        'language-zh',
+        'language-ja',
+        'language-ko'
+      );
+    } else if (language === 'de') {
+      // German
+      document.body.classList.add('language-de');
+      document.body.classList.remove(
+        'language-es',
+        'language-fr',
+        'language-it',
+        'language-pt',
+        'language-ru',
+        'language-zh',
+        'language-ja',
+        'language-ko'
+      );
+    } else if (language === 'it') {
+      // Italian
+      document.body.classList.add('language-it');
+      document.body.classList.remove(
+        'language-es',
+        'language-fr',
+        'language-de',
+        'language-pt',
+        'language-ru',
+        'language-zh',
+        'language-ja',
+        'language-ko'
+      );
+    } else if (language === 'pt') {
+      // Portuguese
+      document.body.classList.add('language-pt');
+      document.body.classList.remove(
+        'language-es',
+        'language-fr',
+        'language-de',
+        'language-it',
+        'language-ru',
+        'language-zh',
+        'language-ja',
+        'language-ko'
+      );
+    } else if (language === 'ru') {
+      // Russian
+      document.body.classList.add('language-ru');
+      document.body.classList.remove(
+        'language-es',
+        'language-fr',
+        'language-de',
+        'language-it',
+        'language-pt',
+        'language-zh',
+        'language-ja',
+        'language-ko'
+      );
+    } else if (language === 'zh') {
+      // Chinese
+      document.body.classList.add('language-zh');
+      document.body.classList.remove(
+        'language-es',
+        'language-fr',
+        'language-de',
+        'language-it',
+        'language-pt',
+        'language-ru',
+        'language-ja',
+        'language-ko'
+      );
+    } else if (language === 'ja') {
+      // Japanese
+      document.body.classList.add('language-ja');
+      document.body.classList.remove(
+        'language-es',
+        'language-fr',
+        'language-de',
+        'language-it',
+        'language-pt',
+        'language-ru',
+        'language-zh',
+        'language-ko'
+      );
+    } else if (language === 'ko') {
+      // Korean
+      document.body.classList.add('language-ko');
+      document.body.classList.remove(
+        'language-es',
+        'language-fr',
+        'language-de',
+        'language-it',
+        'language-pt',
+        'language-ru',
+        'language-zh',
+        'language-ja'
+      );
+    } else {
+      // English (default)
+      document.body.classList.remove(
+        'language-es',
+        'language-fr',
+        'language-de',
+        'language-it',
+        'language-pt',
+        'language-ru',
+        'language-zh',
+        'language-ja',
+        'language-ko'
+      );
+    }
+
+    console.log('Language changed to:', language);
+  }, [language, changeLanguage]);
+
+  // Apply timezone setting
+  useEffect(() => {
+    // Store timezone preference in localStorage for future use
+    localStorage.setItem('userTimezone', timeZone);
+    console.log('Timezone changed to:', timeZone);
+  }, [timeZone]);
+
+  // Apply date format setting
+  useEffect(() => {
+    // Store date format preference in localStorage for future use
+    localStorage.setItem('dateFormat', dateFormat);
+    console.log('Date format changed to:', dateFormat);
+  }, [dateFormat]);
+
+  // Apply 24-hour format setting
+  useEffect(() => {
+    // Store 24-hour format preference in localStorage for future use
+    localStorage.setItem('use24HourFormat', use24HourFormat.toString());
+    console.log('24-hour format:', use24HourFormat);
+  }, [use24HourFormat]);
+
+  // Apply metric system setting
+  useEffect(() => {
+    // Store metric system preference in localStorage for future use
+    localStorage.setItem('useMetricSystem', useMetricSystem.toString());
+    console.log('Metric system:', useMetricSystem);
+  }, [useMetricSystem]);
+
+  // Apply sound effects setting
+  useEffect(() => {
+    // Store sound effects preference in localStorage for future use
+    localStorage.setItem('soundEffects', soundEffects.toString());
+    console.log('Sound effects:', soundEffects);
+  }, [soundEffects]);
+
+  // Apply haptic feedback setting
+  useEffect(() => {
+    // Store haptic feedback preference in localStorage for future use
+    localStorage.setItem('hapticFeedback', hapticFeedback.toString());
+    console.log('Haptic feedback:', hapticFeedback);
+  }, [hapticFeedback]);
+
+  // Apply volume setting
+  useEffect(() => {
+    // Store volume preference in localStorage for future use
+    localStorage.setItem('volume', volume.toString());
+    console.log('Volume:', volume);
+  }, [volume]);
+
+  // Apply notification sounds setting
+  useEffect(() => {
+    // Store notification sounds preference in localStorage for future use
+    localStorage.setItem('notificationSounds', notificationSounds.toString());
+    console.log('Notification sounds:', notificationSounds);
+  }, [notificationSounds]);
+
+  // Apply typing sounds setting
+  useEffect(() => {
+    // Store typing sounds preference in localStorage for future use
+    localStorage.setItem('typingSounds', typingSounds.toString());
+    console.log('Typing sounds:', typingSounds);
+  }, [typingSounds]);
+
+  // Apply completion sounds setting
+  useEffect(() => {
+    // Store completion sounds preference in localStorage for future use
+    localStorage.setItem('completionSounds', completionSounds.toString());
+    console.log('Completion sounds:', completionSounds);
+  }, [completionSounds]);
+
+  // Apply quiet hours settings
+  useEffect(() => {
+    // Store quiet hours preferences in localStorage for future use
+    localStorage.setItem('quietHoursStart', quietHoursStart.toString());
+    localStorage.setItem('quietHoursEnd', quietHoursEnd.toString());
+    console.log('Quiet hours:', quietHoursStart, 'to', quietHoursEnd);
+  }, [quietHoursStart, quietHoursEnd]);
+
+  // Load saved settings from localStorage on component mount
+  useEffect(() => {
+    const loadSavedSettings = () => {
+      // Load language settings
+      const savedLanguage = localStorage.getItem('userTimezone');
+      if (savedLanguage) setTimeZone(savedLanguage);
+
+      const savedDateFormat = localStorage.getItem('dateFormat');
+      if (savedDateFormat) setDateFormat(savedDateFormat);
+
+      const saved24Hour = localStorage.getItem('use24HourFormat');
+      if (saved24Hour) setUse24HourFormat(saved24Hour === 'true');
+
+      const savedMetric = localStorage.getItem('useMetricSystem');
+      if (savedMetric) setUseMetricSystem(savedMetric === 'true');
+
+      // Load sound settings
+      const savedSoundEffects = localStorage.getItem('soundEffects');
+      if (savedSoundEffects) setSoundEffects(savedSoundEffects === 'true');
+
+      const savedHaptic = localStorage.getItem('hapticFeedback');
+      if (savedHaptic) setHapticFeedback(savedHaptic === 'true');
+
+      const savedVolume = localStorage.getItem('volume');
+      if (savedVolume) setVolume(parseInt(savedVolume));
+
+      const savedNotificationSounds = localStorage.getItem('notificationSounds');
+      if (savedNotificationSounds) setNotificationSounds(savedNotificationSounds === 'true');
+
+      const savedTypingSounds = localStorage.getItem('typingSounds');
+      if (savedTypingSounds) setTypingSounds(savedTypingSounds === 'true');
+
+      const savedCompletionSounds = localStorage.getItem('completionSounds');
+      if (savedCompletionSounds) setCompletionSounds(savedCompletionSounds === 'true');
+
+      const savedQuietStart = localStorage.getItem('quietHoursStart');
+      if (savedQuietStart) setQuietHoursStart(parseInt(savedQuietStart));
+
+      const savedQuietEnd = localStorage.getItem('quietHoursEnd');
+      if (savedQuietEnd) setQuietHoursEnd(parseInt(savedQuietEnd));
+    };
+
+    loadSavedSettings();
+  }, []);
+
   return (
     <Box
       sx={{
@@ -374,7 +756,7 @@ const Settings: React.FC = () => {
             },
           }}
         >
-          Settings saved successfully!
+          {t('settings.settingsSavedSuccessfully')}
         </Alert>
       )}
 
@@ -402,12 +784,12 @@ const Settings: React.FC = () => {
             fontSize: { xs: '1.75rem', md: '2.125rem' },
           }}
         >
-          Settings
+          {t('settings.title')}
         </Typography>
 
         {/* Search Bar */}
         <TextField
-          placeholder="Search settings..."
+          placeholder={t('settings.searchSettings')}
           variant="outlined"
           size="small"
           value={searchQuery}
@@ -448,7 +830,7 @@ const Settings: React.FC = () => {
             },
           }}
         >
-          Save Changes
+          {t('settings.saveChanges')}
         </Button>
       </Box>
 
@@ -506,16 +888,20 @@ const Settings: React.FC = () => {
             }}
           >
             <Tab icon={<Tune />} label="General" sx={{ gap: 1 }} />
-            <Tab icon={<Psychology />} label="AI & Learning" sx={{ gap: 1 }} />
-            <Tab icon={<Notifications />} label="Notifications" sx={{ gap: 1 }} />
-            <Tab icon={<SecurityOutlined />} label="Privacy & Security" sx={{ gap: 1 }} />
+            <Tab icon={<Psychology />} label={t('settings.ai.title')} sx={{ gap: 1 }} />
+            <Tab
+              icon={<Notifications />}
+              label={t('settings.notifications.title')}
+              sx={{ gap: 1 }}
+            />
+            <Tab icon={<SecurityOutlined />} label={t('settings.privacy.title')} sx={{ gap: 1 }} />
           </Tabs>
         </Box>
 
         <Box sx={{ p: { xs: 2, md: 4 } }}>
           <TabPanel value={tabValue} index={0} breakpoint={breakpoint}>
             <SettingsSection
-              title="Appearance"
+              title={t('settings.appearance.title')}
               icon={<Brush sx={{ color: theme.palette.primary.main }} />}
             >
               <Grid container spacing={3}>
@@ -523,9 +909,9 @@ const Settings: React.FC = () => {
                   <FormGroup>
                     <FormControlLabel
                       control={
-                        <Switch checked={darkMode} onChange={e => setDarkMode(e.target.checked)} />
+                        <Switch checked={darkMode} onChange={() => setDarkMode(!darkMode)} />
                       }
-                      label="Dark Mode"
+                      label={t('settings.appearance.darkMode')}
                     />
                     <FormControlLabel
                       control={
@@ -534,7 +920,7 @@ const Settings: React.FC = () => {
                           onChange={e => setAnimations(e.target.checked)}
                         />
                       }
-                      label="Enable Animations"
+                      label={t('settings.appearance.enableAnimations')}
                     />
                     <FormControlLabel
                       control={
@@ -543,12 +929,12 @@ const Settings: React.FC = () => {
                           onChange={e => setCompactMode(e.target.checked)}
                         />
                       }
-                      label="Compact Mode"
+                      label={t('settings.appearance.compactMode')}
                     />
                   </FormGroup>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <Typography gutterBottom>Font Size</Typography>
+                  <Typography gutterBottom>{t('settings.appearance.fontSize')}</Typography>
                   <Slider
                     value={fontSize}
                     onChange={(_e, value) => setFontSize(value as number)}
@@ -564,16 +950,16 @@ const Settings: React.FC = () => {
             </SettingsSection>
 
             <SettingsSection
-              title="Language & Region"
+              title={t('settings.language.title')}
               icon={<Language sx={{ color: theme.palette.primary.main }} />}
             >
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
                   <FormControl fullWidth sx={{ mb: 2 }}>
-                    <InputLabel>Language</InputLabel>
+                    <InputLabel>{t('settings.language.language')}</InputLabel>
                     <Select
                       value={language}
-                      label="Language"
+                      label={t('settings.language.language')}
                       onChange={e => setLanguage(e.target.value)}
                     >
                       <MenuItem value="en">English</MenuItem>
@@ -587,13 +973,41 @@ const Settings: React.FC = () => {
                       <MenuItem value="ja">日本語</MenuItem>
                       <MenuItem value="ko">한국어</MenuItem>
                     </Select>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ mt: 1, display: 'block' }}
+                    >
+                      {t('settings.language.currentLanguage')}:{' '}
+                      {language === 'en'
+                        ? 'English'
+                        : language === 'es'
+                        ? 'Español'
+                        : language === 'fr'
+                        ? 'Français'
+                        : language === 'de'
+                        ? 'Deutsch'
+                        : language === 'it'
+                        ? 'Italiano'
+                        : language === 'pt'
+                        ? 'Português'
+                        : language === 'ru'
+                        ? 'Русский'
+                        : language === 'zh'
+                        ? '中文'
+                        : language === 'ja'
+                        ? '日本語'
+                        : language === 'ko'
+                        ? '한국어'
+                        : 'English'}
+                    </Typography>
                   </FormControl>
 
                   <FormControl fullWidth sx={{ mb: 2 }}>
-                    <InputLabel>Time Zone</InputLabel>
+                    <InputLabel>{t('settings.language.timeZone')}</InputLabel>
                     <Select
                       value={timeZone}
-                      label="Time Zone"
+                      label={t('settings.language.timeZone')}
                       onChange={e => setTimeZone(e.target.value)}
                     >
                       <MenuItem value="UTC">UTC</MenuItem>
@@ -608,10 +1022,10 @@ const Settings: React.FC = () => {
                   </FormControl>
 
                   <FormControl fullWidth>
-                    <InputLabel>Date Format</InputLabel>
+                    <InputLabel>{t('settings.language.dateFormat')}</InputLabel>
                     <Select
                       value={dateFormat}
-                      label="Date Format"
+                      label={t('settings.language.dateFormat')}
                       onChange={e => setDateFormat(e.target.value)}
                     >
                       <MenuItem value="MM/DD/YYYY">MM/DD/YYYY</MenuItem>
@@ -624,7 +1038,7 @@ const Settings: React.FC = () => {
 
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
-                    Translation Preferences
+                    {t('settings.language.translationPreferences')}
                   </Typography>
                   <FormGroup>
                     <FormControlLabel
@@ -634,7 +1048,7 @@ const Settings: React.FC = () => {
                           onChange={e => setAutoTranslate(e.target.checked)}
                         />
                       }
-                      label="Auto-translate content"
+                      label={t('settings.language.autoTranslateContent')}
                     />
                     <FormControlLabel
                       control={
@@ -643,12 +1057,12 @@ const Settings: React.FC = () => {
                           onChange={e => setShowOriginalText(e.target.checked)}
                         />
                       }
-                      label="Show original text alongside translation"
+                      label={t('settings.language.showOriginalText')}
                     />
                   </FormGroup>
 
                   <Typography variant="subtitle1" sx={{ mt: 3 }} gutterBottom>
-                    Regional Settings
+                    {t('settings.language.regionalSettings')}
                   </Typography>
                   <FormGroup>
                     <FormControlLabel
@@ -658,7 +1072,7 @@ const Settings: React.FC = () => {
                           onChange={e => setUseMetricSystem(e.target.checked)}
                         />
                       }
-                      label="Use metric system"
+                      label={t('settings.language.useMetricSystem')}
                     />
                     <FormControlLabel
                       control={
@@ -667,7 +1081,7 @@ const Settings: React.FC = () => {
                           onChange={e => setUse24HourFormat(e.target.checked)}
                         />
                       }
-                      label="Use 24-hour time format"
+                      label={t('settings.language.use24HourFormat')}
                     />
                   </FormGroup>
                 </Grid>
@@ -675,13 +1089,13 @@ const Settings: React.FC = () => {
             </SettingsSection>
 
             <SettingsSection
-              title="Sound & Feedback"
+              title={t('settings.sound.title')}
               icon={<VolumeUp sx={{ color: theme.palette.primary.main }} />}
             >
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
-                    Sound Settings
+                    {t('settings.sound.soundSettings')}
                   </Typography>
                   <FormGroup>
                     <FormControlLabel
@@ -691,7 +1105,7 @@ const Settings: React.FC = () => {
                           onChange={e => setSoundEffects(e.target.checked)}
                         />
                       }
-                      label="Sound Effects"
+                      label={t('settings.sound.soundEffects')}
                     />
                     <FormControlLabel
                       control={
@@ -700,12 +1114,12 @@ const Settings: React.FC = () => {
                           onChange={e => setHapticFeedback(e.target.checked)}
                         />
                       }
-                      label="Haptic Feedback"
+                      label={t('settings.sound.hapticFeedback')}
                     />
                   </FormGroup>
 
                   <Typography gutterBottom sx={{ mt: 3 }}>
-                    Volume
+                    {t('settings.sound.volume')}
                   </Typography>
                   <Slider
                     value={volume}
@@ -724,7 +1138,7 @@ const Settings: React.FC = () => {
 
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
-                    Notification Sounds
+                    {t('settings.sound.notificationSounds')}
                   </Typography>
                   <FormGroup>
                     <FormControlLabel
@@ -734,7 +1148,7 @@ const Settings: React.FC = () => {
                           onChange={e => setNotificationSounds(e.target.checked)}
                         />
                       }
-                      label="Enable Notification Sounds"
+                      label={t('settings.sound.enableNotificationSounds')}
                     />
                     <FormControlLabel
                       control={
@@ -743,7 +1157,7 @@ const Settings: React.FC = () => {
                           onChange={e => setTypingSounds(e.target.checked)}
                         />
                       }
-                      label="Typing Sounds"
+                      label={t('settings.sound.typingSounds')}
                     />
                     <FormControlLabel
                       control={
@@ -752,20 +1166,20 @@ const Settings: React.FC = () => {
                           onChange={e => setCompletionSounds(e.target.checked)}
                         />
                       }
-                      label="Task Completion Sounds"
+                      label={t('settings.sound.taskCompletionSounds')}
                     />
                   </FormGroup>
 
                   <Typography variant="subtitle1" sx={{ mt: 3 }} gutterBottom>
-                    Quiet Hours
+                    {t('settings.sound.quietHours')}
                   </Typography>
                   <Grid container spacing={2}>
                     <Grid item xs={6}>
                       <FormControl fullWidth>
-                        <InputLabel>Start Time</InputLabel>
+                        <InputLabel>{t('settings.sound.startTime')}</InputLabel>
                         <Select
                           value={quietHoursStart}
-                          label="Start Time"
+                          label={t('settings.sound.startTime')}
                           onChange={e => setQuietHoursStart(Number(e.target.value))}
                         >
                           {Array.from({ length: 24 }, (_, i) => (
@@ -778,10 +1192,10 @@ const Settings: React.FC = () => {
                     </Grid>
                     <Grid item xs={6}>
                       <FormControl fullWidth>
-                        <InputLabel>End Time</InputLabel>
+                        <InputLabel>{t('settings.sound.endTime')}</InputLabel>
                         <Select
                           value={quietHoursEnd}
-                          label="End Time"
+                          label={t('settings.sound.endTime')}
                           onChange={e => setQuietHoursEnd(Number(e.target.value))}
                         >
                           {Array.from({ length: 24 }, (_, i) => (
@@ -800,16 +1214,16 @@ const Settings: React.FC = () => {
 
           <TabPanel value={tabValue} index={1} breakpoint={breakpoint}>
             <SettingsSection
-              title="AI Model Configuration"
+              title={t('settings.ai.modelConfiguration')}
               icon={<Psychology sx={{ color: theme.palette.primary.main }} />}
             >
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
                   <FormControl fullWidth>
-                    <InputLabel>AI Model</InputLabel>
+                    <InputLabel>{t('settings.ai.aiModel')}</InputLabel>
                     <Select
                       value={subscription.model}
-                      label="AI Model"
+                      label={t('settings.ai.aiModel')}
                       onChange={e => {
                         // Only allow changing to models within the current plan
                         const newModel = e.target.value;
@@ -859,7 +1273,9 @@ const Settings: React.FC = () => {
                     <Button
                       variant="outlined"
                       startIcon={<CompareArrows />}
-                      onClick={() => setShowModelComparison(true)}
+                      onClick={() => {
+                        // This button is no longer used, but keeping it for now
+                      }}
                       size="small"
                     >
                       Compare Models
@@ -868,7 +1284,7 @@ const Settings: React.FC = () => {
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <Typography gutterBottom>
-                    Token Limit (Max: {subscription.tokenLimit.toLocaleString()})
+                    {t('settings.ai.tokenLimit')} (Max: {subscription.tokenLimit.toLocaleString()})
                   </Typography>
                   <Slider
                     value={maxTokens}
@@ -913,7 +1329,7 @@ const Settings: React.FC = () => {
                   </Typography>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <Typography gutterBottom>Temperature (Creativity)</Typography>
+                  <Typography gutterBottom>{t('settings.ai.temperature')}</Typography>
                   <Slider
                     value={parseFloat(temperature)}
                     onChange={(_e, value) => setTemperature(value.toString())}
@@ -926,7 +1342,7 @@ const Settings: React.FC = () => {
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <Typography gutterBottom>Context Length</Typography>
+                  <Typography gutterBottom>{t('settings.ai.contextLength')}</Typography>
                   <Slider
                     value={contextLength}
                     onChange={(_e, value) => setContextLength(value as number)}
@@ -942,7 +1358,7 @@ const Settings: React.FC = () => {
             </SettingsSection>
 
             <SettingsSection
-              title="AI Features"
+              title={t('settings.ai.aiFeatures')}
               icon={<Widgets sx={{ color: theme.palette.primary.main }} />}
             >
               <Grid container spacing={3}>
@@ -955,7 +1371,7 @@ const Settings: React.FC = () => {
                           onChange={e => setAutoComplete(e.target.checked)}
                         />
                       }
-                      label="AI Auto-Complete"
+                      label={t('settings.ai.aiAutoComplete')}
                     />
                     <FormControlLabel
                       control={
@@ -964,7 +1380,7 @@ const Settings: React.FC = () => {
                           onChange={e => setCodeSnippets(e.target.checked)}
                         />
                       }
-                      label="Code Snippets Generation"
+                      label={t('settings.ai.codeSnippetsGeneration')}
                     />
                   </FormGroup>
                 </Grid>
@@ -977,7 +1393,7 @@ const Settings: React.FC = () => {
                           onChange={e => setAiSuggestions(e.target.checked)}
                         />
                       }
-                      label="AI Suggestions"
+                      label={t('settings.ai.aiSuggestions')}
                     />
                     <FormControlLabel
                       control={
@@ -986,7 +1402,7 @@ const Settings: React.FC = () => {
                           onChange={e => setRealTimeAnalysis(e.target.checked)}
                         />
                       }
-                      label="Real-Time Analysis"
+                      label={t('settings.ai.realTimeAnalysis')}
                     />
                   </FormGroup>
                 </Grid>
@@ -996,13 +1412,13 @@ const Settings: React.FC = () => {
 
           <TabPanel value={tabValue} index={2} breakpoint={breakpoint}>
             <SettingsSection
-              title="Notification Preferences"
+              title={t('settings.notifications.notificationPreferences')}
               icon={<NotificationsOutlined sx={{ color: theme.palette.primary.main }} />}
             >
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
-                    Notification Channels
+                    {t('settings.notifications.notificationChannels')}
                   </Typography>
                   <FormGroup>
                     <FormControlLabel
@@ -1017,7 +1433,7 @@ const Settings: React.FC = () => {
                       label={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <EmailOutlined fontSize="small" />
-                          <Typography>Email Notifications</Typography>
+                          <Typography>{t('settings.notifications.emailNotifications')}</Typography>
                         </Box>
                       }
                     />
@@ -1033,7 +1449,9 @@ const Settings: React.FC = () => {
                       label={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <DesktopWindowsOutlined fontSize="small" />
-                          <Typography>Desktop Notifications</Typography>
+                          <Typography>
+                            {t('settings.notifications.desktopNotifications')}
+                          </Typography>
                         </Box>
                       }
                     />
@@ -1049,7 +1467,7 @@ const Settings: React.FC = () => {
                       label={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <VolumeUpOutlined fontSize="small" />
-                          <Typography>Sound Notifications</Typography>
+                          <Typography>{t('settings.notifications.soundNotifications')}</Typography>
                         </Box>
                       }
                     />
@@ -1058,7 +1476,7 @@ const Settings: React.FC = () => {
 
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
-                    Notification Types
+                    {t('settings.notifications.notificationTypes')}
                   </Typography>
                   <FormGroup>
                     <FormControlLabel
@@ -1073,7 +1491,7 @@ const Settings: React.FC = () => {
                       label={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <AssignmentOutlined fontSize="small" />
-                          <Typography>Assignment Updates</Typography>
+                          <Typography>{t('settings.notifications.assignmentUpdates')}</Typography>
                         </Box>
                       }
                     />
@@ -1089,7 +1507,7 @@ const Settings: React.FC = () => {
                       label={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <EventOutlined fontSize="small" />
-                          <Typography>Deadline Reminders</Typography>
+                          <Typography>{t('settings.notifications.deadlineReminders')}</Typography>
                         </Box>
                       }
                     />
@@ -1105,7 +1523,9 @@ const Settings: React.FC = () => {
                       label={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <FeedbackOutlined fontSize="small" />
-                          <Typography>Feedback Notifications</Typography>
+                          <Typography>
+                            {t('settings.notifications.feedbackNotifications')}
+                          </Typography>
                         </Box>
                       }
                     />
@@ -1121,7 +1541,7 @@ const Settings: React.FC = () => {
                       label={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <UpdateOutlined fontSize="small" />
-                          <Typography>System Updates</Typography>
+                          <Typography>{t('settings.notifications.systemUpdates')}</Typography>
                         </Box>
                       }
                     />
@@ -1134,7 +1554,7 @@ const Settings: React.FC = () => {
 
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
-                    Display Preferences
+                    {t('settings.notifications.displayPreferences')}
                   </Typography>
                   <FormGroup>
                     <FormControlLabel
@@ -1149,7 +1569,7 @@ const Settings: React.FC = () => {
                           }
                         />
                       }
-                      label="Show notification preview"
+                      label={t('settings.notifications.showNotificationPreview')}
                     />
                     <FormControlLabel
                       control={
@@ -1163,7 +1583,7 @@ const Settings: React.FC = () => {
                           }
                         />
                       }
-                      label="Show notification badge"
+                      label={t('settings.notifications.showNotificationBadge')}
                     />
                     <FormControlLabel
                       control={
@@ -1177,12 +1597,12 @@ const Settings: React.FC = () => {
                           }
                         />
                       }
-                      label="Group similar notifications"
+                      label={t('settings.notifications.groupSimilarNotifications')}
                     />
                   </FormGroup>
 
                   <Typography variant="subtitle1" sx={{ mt: 3 }} gutterBottom>
-                    Priority Level
+                    {t('settings.notifications.priorityLevel')}
                   </Typography>
                   <FormControl fullWidth>
                     <Select
@@ -1194,24 +1614,26 @@ const Settings: React.FC = () => {
                         })
                       }
                     >
-                      <MenuItem value="low">Low Priority</MenuItem>
-                      <MenuItem value="medium">Medium Priority</MenuItem>
-                      <MenuItem value="high">High Priority</MenuItem>
+                      <MenuItem value="low">{t('settings.notifications.lowPriority')}</MenuItem>
+                      <MenuItem value="medium">
+                        {t('settings.notifications.mediumPriority')}
+                      </MenuItem>
+                      <MenuItem value="high">{t('settings.notifications.highPriority')}</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
 
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
-                    Work Hours
+                    {t('settings.notifications.workHours')}
                   </Typography>
                   <Grid container spacing={2}>
                     <Grid item xs={6}>
                       <FormControl fullWidth>
-                        <InputLabel>Start Time</InputLabel>
+                        <InputLabel>{t('settings.sound.startTime')}</InputLabel>
                         <Select
                           value={notificationSchedule.workHoursStart}
-                          label="Start Time"
+                          label={t('settings.sound.startTime')}
                           onChange={e =>
                             setNotificationSchedule({
                               ...notificationSchedule,
@@ -1229,10 +1651,10 @@ const Settings: React.FC = () => {
                     </Grid>
                     <Grid item xs={6}>
                       <FormControl fullWidth>
-                        <InputLabel>End Time</InputLabel>
+                        <InputLabel>{t('settings.sound.endTime')}</InputLabel>
                         <Select
                           value={notificationSchedule.workHoursEnd}
-                          label="End Time"
+                          label={t('settings.sound.endTime')}
                           onChange={e =>
                             setNotificationSchedule({
                               ...notificationSchedule,
@@ -1251,7 +1673,7 @@ const Settings: React.FC = () => {
                   </Grid>
 
                   <Typography variant="subtitle1" sx={{ mt: 3 }} gutterBottom>
-                    Work Days
+                    {t('settings.notifications.workDays')}
                   </Typography>
                   <FormGroup row>
                     {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, index) => (
@@ -1285,15 +1707,15 @@ const Settings: React.FC = () => {
 
                 <Grid item xs={12}>
                   <Typography variant="subtitle1" gutterBottom>
-                    Quiet Hours
+                    {t('settings.sound.quietHours')}
                   </Typography>
                   <Grid container spacing={2}>
                     <Grid item xs={12} md={6}>
                       <FormControl fullWidth>
-                        <InputLabel>Start Time</InputLabel>
+                        <InputLabel>{t('settings.sound.startTime')}</InputLabel>
                         <Select
                           value={notificationSchedule.quietHoursStart}
-                          label="Start Time"
+                          label={t('settings.sound.startTime')}
                           onChange={e =>
                             setNotificationSchedule({
                               ...notificationSchedule,
@@ -1311,10 +1733,10 @@ const Settings: React.FC = () => {
                     </Grid>
                     <Grid item xs={12} md={6}>
                       <FormControl fullWidth>
-                        <InputLabel>End Time</InputLabel>
+                        <InputLabel>{t('settings.sound.endTime')}</InputLabel>
                         <Select
                           value={notificationSchedule.quietHoursEnd}
-                          label="End Time"
+                          label={t('settings.sound.endTime')}
                           onChange={e =>
                             setNotificationSchedule({
                               ...notificationSchedule,
@@ -1348,7 +1770,7 @@ const Settings: React.FC = () => {
                       startIcon={<NotificationsActiveOutlined />}
                       onClick={() => setShowNotificationPreview(true)}
                     >
-                      Preview Notifications
+                      {t('settings.notifications.previewNotifications')}
                     </Button>
                   </Box>
                 </Grid>
@@ -1358,7 +1780,7 @@ const Settings: React.FC = () => {
 
           <TabPanel value={tabValue} index={3} breakpoint={breakpoint}>
             <SettingsSection
-              title="Security Score"
+              title={t('settings.privacy.securityScore')}
               icon={<SecurityOutlined sx={{ color: theme.palette.primary.main }} />}
             >
               <Box sx={{ mb: 4 }}>
@@ -1371,7 +1793,7 @@ const Settings: React.FC = () => {
                     gap: { xs: 1, sm: 2 },
                   }}
                 >
-                  <Typography variant="h6">Security Score</Typography>
+                  <Typography variant="h6">{t('settings.privacy.securityScore')}</Typography>
                   <Typography
                     variant="h4"
                     sx={{
@@ -1408,7 +1830,7 @@ const Settings: React.FC = () => {
                   color="text.secondary"
                   sx={{ mt: 1, display: 'block' }}
                 >
-                  Last security audit: {securitySettings.lastSecurityAudit}
+                  {t('settings.privacy.lastSecurityAudit')}: {securitySettings.lastSecurityAudit}
                 </Typography>
               </Box>
 
@@ -1490,13 +1912,13 @@ const Settings: React.FC = () => {
             </SettingsSection>
 
             <SettingsSection
-              title="Privacy Settings"
+              title={t('settings.privacy.privacySettings')}
               icon={<PrivacyTipOutlined sx={{ color: theme.palette.primary.main }} />}
             >
               <Grid container spacing={{ xs: 2, md: 3 }}>
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
-                    Data & Privacy
+                    {t('settings.privacy.dataPrivacy')}
                   </Typography>
                   <FormGroup>
                     <FormControlLabel
@@ -1517,7 +1939,7 @@ const Settings: React.FC = () => {
                         >
                           <DataUsageOutlined fontSize="small" />
                           <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
-                            Allow Data Collection
+                            {t('settings.privacy.allowDataCollection')}
                           </Typography>
                         </Box>
                       }
@@ -1540,7 +1962,7 @@ const Settings: React.FC = () => {
                         >
                           <AnalyticsOutlined fontSize="small" />
                           <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
-                            Share Analytics
+                            {t('settings.privacy.shareAnalytics')}
                           </Typography>
                         </Box>
                       }
@@ -1563,7 +1985,7 @@ const Settings: React.FC = () => {
                         >
                           <VisibilityOutlined fontSize="small" />
                           <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
-                            Show Online Status
+                            {t('settings.privacy.showOnlineStatus')}
                           </Typography>
                         </Box>
                       }
@@ -1586,7 +2008,7 @@ const Settings: React.FC = () => {
                         >
                           <VisibilityOffOutlined fontSize="small" />
                           <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
-                            Allow Activity Tracking
+                            {t('settings.privacy.allowActivityTracking')}
                           </Typography>
                         </Box>
                       }
@@ -1596,7 +2018,7 @@ const Settings: React.FC = () => {
 
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
-                    Account Security
+                    {t('settings.privacy.accountSecurity')}
                   </Typography>
                   <FormGroup>
                     <FormControlLabel
@@ -1617,7 +2039,7 @@ const Settings: React.FC = () => {
                         >
                           <ShieldOutlined fontSize="small" />
                           <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
-                            Two-Factor Authentication
+                            {t('settings.privacy.twoFactorAuthentication')}
                           </Typography>
                         </Box>
                       }
@@ -1640,7 +2062,7 @@ const Settings: React.FC = () => {
                         >
                           <FingerprintOutlined fontSize="small" />
                           <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
-                            Biometric Login
+                            {t('settings.privacy.biometricLogin')}
                           </Typography>
                         </Box>
                       }
@@ -1663,7 +2085,7 @@ const Settings: React.FC = () => {
                         >
                           <LockOutlined fontSize="small" />
                           <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
-                            Auto-Lock Account
+                            {t('settings.privacy.autoLockAccount')}
                           </Typography>
                         </Box>
                       }
@@ -1671,7 +2093,7 @@ const Settings: React.FC = () => {
                   </FormGroup>
 
                   <Typography variant="subtitle1" sx={{ mt: 3 }} gutterBottom>
-                    Auto-Lock Timeout
+                    {t('settings.privacy.autoLockTimeout')}
                   </Typography>
                   <FormControl fullWidth>
                     <Select
@@ -1698,7 +2120,7 @@ const Settings: React.FC = () => {
 
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
-                    Account Management
+                    {t('settings.privacy.accountManagement')}
                   </Typography>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     <Button
@@ -1708,7 +2130,7 @@ const Settings: React.FC = () => {
                       fullWidth
                       sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
                     >
-                      Download My Data
+                      {t('settings.privacy.downloadMyData')}
                     </Button>
                     <Button
                       variant="contained"
@@ -1724,14 +2146,14 @@ const Settings: React.FC = () => {
                         },
                       }}
                     >
-                      Delete Account
+                      {t('settings.privacy.deleteAccount')}
                     </Button>
                   </Box>
                 </Grid>
 
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
-                    Security Information
+                    {t('settings.privacy.securityInformation')}
                   </Typography>
                   <List dense>
                     <ListItem sx={{ px: { xs: 0, md: 2 } }}>
@@ -1739,7 +2161,7 @@ const Settings: React.FC = () => {
                         <VpnKeyOutlined />
                       </ListItemIcon>
                       <ListItemText
-                        primary="Password Strength"
+                        primary={t('settings.privacy.passwordStrength')}
                         secondary={securitySettings.passwordStrength}
                         primaryTypographyProps={{
                           sx: { fontSize: { xs: '0.875rem', md: '1rem' } },
@@ -1754,7 +2176,7 @@ const Settings: React.FC = () => {
                         <HistoryOutlined />
                       </ListItemIcon>
                       <ListItemText
-                        primary="Last Password Change"
+                        primary={t('settings.privacy.lastPasswordChange')}
                         secondary={securitySettings.lastPasswordChange}
                         primaryTypographyProps={{
                           sx: { fontSize: { xs: '0.875rem', md: '1rem' } },
@@ -1769,8 +2191,10 @@ const Settings: React.FC = () => {
                         <VerifiedUserOutlined />
                       </ListItemIcon>
                       <ListItemText
-                        primary="Active Sessions"
-                        secondary={`${securitySettings.activeSessions} devices`}
+                        primary={t('settings.privacy.activeSessions')}
+                        secondary={`${securitySettings.activeSessions} ${t(
+                          'settings.privacy.devices'
+                        )}`}
                         primaryTypographyProps={{
                           sx: { fontSize: { xs: '0.875rem', md: '1rem' } },
                         }}
@@ -1858,6 +2282,106 @@ const Settings: React.FC = () => {
         }
         .MuiSlider-markLabel {
           transition: all 0.3s ease;
+        }
+        
+        /* Compact mode styles */
+        .compact-mode .MuiPaper-root {
+          padding: 16px !important;
+          margin-bottom: 16px !important;
+        }
+        .compact-mode .MuiTypography-h5 {
+          font-size: 1.1rem !important;
+        }
+        .compact-mode .MuiFormControlLabel-root {
+          margin-bottom: 8px !important;
+        }
+        
+        /* Animation disable styles */
+        [style*="--disable-animations: none"] * {
+          transition: none !important;
+          animation: none !important;
+        }
+        
+        /* Font size styles */
+        :root {
+          font-size: var(--app-font-size, 14px);
+        }
+        body {
+          font-size: var(--app-font-size, 14px);
+        }
+        
+        /* Local dark mode styles */
+        .dark-mode-local {
+          background-color: #1a1a1a !important;
+          color: #ffffff !important;
+        }
+        .dark-mode-local .MuiPaper-root {
+          background-color: #2d2d2d !important;
+          color: #ffffff !important;
+        }
+        
+        /* Language-specific styles */
+        .language-es {
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .language-es .MuiTypography-root {
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .language-fr {
+          font-family: 'Arial', sans-serif;
+        }
+        .language-fr .MuiTypography-root {
+          font-family: 'Arial', sans-serif;
+        }
+        
+        .language-de {
+          font-family: 'Verdana', Geneva, sans-serif;
+        }
+        .language-de .MuiTypography-root {
+          font-family: 'Verdana', Geneva, sans-serif;
+        }
+        
+        .language-it {
+          font-family: 'Georgia', serif;
+        }
+        .language-it .MuiTypography-root {
+          font-family: 'Georgia', serif;
+        }
+        
+        .language-pt {
+          font-family: 'Times New Roman', serif;
+        }
+        .language-pt .MuiTypography-root {
+          font-family: 'Times New Roman', serif;
+        }
+        
+        .language-ru {
+          font-family: 'Arial', sans-serif;
+        }
+        .language-ru .MuiTypography-root {
+          font-family: 'Arial', sans-serif;
+        }
+        
+        .language-zh {
+          font-family: 'Microsoft YaHei', 'SimSun', sans-serif;
+        }
+        .language-zh .MuiTypography-root {
+          font-family: 'Microsoft YaHei', 'SimSun', sans-serif;
+        }
+        
+        .language-ja {
+          font-family: 'MS Gothic', 'Yu Gothic', sans-serif;
+        }
+        .language-ja .MuiTypography-root {
+          font-family: 'MS Gothic', 'Yu Gothic', sans-serif;
+        }
+        
+        .language-ko {
+          font-family: 'Malgun Gothic', 'Dotum', sans-serif;
+        }
+        .language-ko .MuiTypography-root {
+          font-family: 'Malgun Gothic', 'Dotum', sans-serif;
         }
       `}</style>
     </Box>

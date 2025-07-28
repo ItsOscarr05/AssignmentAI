@@ -46,6 +46,7 @@ import {
 } from '@mui/material';
 import dayjs from 'dayjs';
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import DashboardPieChart from '../components/dashboard/DashboardPieChart';
 import { useAuth } from '../contexts/AuthContext';
@@ -289,6 +290,7 @@ const DashboardHome: React.FC = () => {
   const { user, isMockUser } = useAuth();
   const navigate = useNavigate();
   const { breakpoint } = useAspectRatio();
+  const { t } = useTranslation();
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'in progress' | 'completed' | 'not started'>('all');
   const [page, setPage] = useState(0);
@@ -617,7 +619,8 @@ const DashboardHome: React.FC = () => {
                     ),
                   }}
                 >
-                  Welcome back, {user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'User'}!
+                  {t('dashboard.welcomeBack')},{' '}
+                  {user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'User'}!
                 </Typography>
                 <IconButton
                   aria-label="notifications"
@@ -638,10 +641,10 @@ const DashboardHome: React.FC = () => {
                 color="text.secondary"
                 sx={{ mb: breakpoint === 'tall' || breakpoint === 'standard' ? 1 : 2 }}
               >
-                Ready to tackle your next assignment?
+                {t('dashboard.readyToTackle')}
               </Typography>
               <Typography variant="body2" color="primary" sx={{ fontStyle: 'italic' }}>
-                "Tip: Use AI to break down big tasks into manageable steps!"
+                {t('dashboard.aiTip')}
               </Typography>
             </Box>
             <Stack
@@ -665,14 +668,14 @@ const DashboardHome: React.FC = () => {
                 color="primary"
                 onClick={() => navigate('/dashboard/workshop#upload-content-card')}
               >
-                Upload Content
+                {t('dashboard.uploadContent')}
               </Button>
               <Button
                 variant="outlined"
                 color="secondary"
                 onClick={() => navigate('/dashboard/assignments')}
               >
-                Ask AI About an Assignment
+                {t('dashboard.askAIAboutAssignment')}
               </Button>
             </Stack>
             <Menu

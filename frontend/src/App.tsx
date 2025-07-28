@@ -9,7 +9,8 @@ import { SecurityProvider } from './components/security/SecurityProvider';
 import { AdProvider } from './contexts/AdContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
-import { TokenLimitProvider } from './contexts/TokenLimitProvider';
+import { TokenLimitProvider } from './contexts/TokenLimitContext';
+import './i18n/config'; // Initialize i18n
 import { AppRouter } from './routes';
 import { ThemeProvider } from './theme/ThemeProvider';
 
