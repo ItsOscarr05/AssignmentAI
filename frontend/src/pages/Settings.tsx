@@ -74,6 +74,7 @@ import React, { useEffect, useState } from 'react';
 import TimezoneSelector from '../components/common/TimezoneSelector';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { useTranslation } from '../hooks/useTranslation';
+import { preferences } from '../services/api';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 
 interface TabPanelProps {
@@ -116,6 +117,8 @@ const Settings: React.FC = () => {
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showNotificationPreview, setShowNotificationPreview] = useState(false);
+  const [timezoneError, setTimezoneError] = useState<string | null>(null);
+  const [isLoadingPreferences, setIsLoadingPreferences] = useState(false);
 
   // General Settings
   const [darkMode, setDarkMode] = useState(false);
@@ -299,7 +302,10 @@ const Settings: React.FC = () => {
 
   const handleSave = async () => {
     try {
-      // Prepare settings data for backend
+      // Save to backend first
+      await savePreferencesToBackend();
+
+      // Also save to localStorage as fallback
       const settingsData = {
         appearance: {
           dark_mode: darkMode,
@@ -368,11 +374,7 @@ const Settings: React.FC = () => {
         },
       };
 
-      // TODO: Replace with actual API call when backend is ready
       console.log('Saving settings:', settingsData);
-
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
 
       setShowSaveSuccess(true);
       setTimeout(() => setShowSaveSuccess(false), 3000);
@@ -380,6 +382,8 @@ const Settings: React.FC = () => {
       console.log('Settings saved successfully!');
     } catch (error) {
       console.error('Failed to save settings:', error);
+      // Show error message to user
+      setShowSaveSuccess(false);
       // TODO: Show error message to user
     }
   };
@@ -728,8 +732,88 @@ const Settings: React.FC = () => {
       if (savedQuietEnd) setQuietHoursEnd(parseInt(savedQuietEnd));
     };
 
-    loadSavedSettings();
+    // Try to load from backend first, fall back to localStorage
+    loadPreferencesFromBackend().catch(() => {
+      loadSavedSettings();
+    });
   }, []);
+
+  // Load preferences from backend
+  const loadPreferencesFromBackend = async () => {
+    setIsLoadingPreferences(true);
+    try {
+      const userPreferences = await preferences.get();
+      if (userPreferences.custom_preferences?.timezone) {
+        setTimeZone(userPreferences.custom_preferences.timezone);
+      }
+      if (userPreferences.language) {
+        setLanguage(userPreferences.language);
+      }
+      if (userPreferences.theme) {
+        setDarkMode(userPreferences.theme === 'dark');
+      }
+      if (userPreferences.font_size) {
+        setFontSize(parseInt(userPreferences.font_size) || 14);
+      }
+      if (userPreferences.compact_mode !== undefined) {
+        setCompactMode(userPreferences.compact_mode);
+      }
+      if (userPreferences.email_notifications !== undefined) {
+        setNotifications(prev => ({ ...prev, email: !!userPreferences.email_notifications }));
+      }
+      if (userPreferences.push_notifications !== undefined) {
+        setNotifications(prev => ({ ...prev, desktop: !!userPreferences.push_notifications }));
+      }
+    } catch (error) {
+      console.warn('Failed to load preferences from backend:', error);
+      // Fall back to localStorage
+    } finally {
+      setIsLoadingPreferences(false);
+    }
+  };
+
+  // Save preferences to backend
+  const savePreferencesToBackend = async () => {
+    try {
+      await preferences.update({
+        language,
+        theme: darkMode ? 'dark' : 'light',
+        font_size: fontSize.toString(),
+        compact_mode: compactMode,
+        email_notifications: notifications.email,
+        push_notifications: notifications.desktop,
+        custom_preferences: {
+          timezone: timeZone,
+          dateFormat,
+          autoTranslate,
+          showOriginalText,
+          useMetricSystem,
+          use24HourFormat,
+          soundEffects,
+          hapticFeedback,
+          volume,
+          notificationSounds,
+          typingSounds,
+          completionSounds,
+          quietHoursStart,
+          quietHoursEnd,
+          maxTokens,
+          temperature,
+          contextLength,
+          autoComplete,
+          codeSnippets,
+          aiSuggestions,
+          realTimeAnalysis,
+          notificationPreferences,
+          notificationSchedule,
+          privacySettings,
+        },
+      });
+    } catch (error) {
+      console.error('Failed to save preferences to backend:', error);
+      throw error;
+    }
+  };
 
   return (
     <Box
@@ -758,6 +842,27 @@ const Settings: React.FC = () => {
           }}
         >
           {t('settings.settingsSavedSuccessfully')}
+        </Alert>
+      )}
+
+      {isLoadingPreferences && (
+        <Alert
+          severity="info"
+          sx={{
+            position: 'fixed',
+            top: 20,
+            right: 20,
+            zIndex: 9999,
+            borderRadius: 2,
+            boxShadow: theme.shadows[4],
+            animation: 'slideIn 0.3s ease-out',
+            '@keyframes slideIn': {
+              from: { transform: 'translateX(100%)', opacity: 0 },
+              to: { transform: 'translateX(0)', opacity: 1 },
+            },
+          }}
+        >
+          Loading preferences from server...
         </Alert>
       )}
 
@@ -1008,11 +1113,22 @@ const Settings: React.FC = () => {
                     <TimezoneSelector
                       value={timeZone}
                       onChange={setTimeZone}
+                      onValidationError={setTimezoneError}
                       label={t('settings.language.timeZone')}
                       showExtended={false}
                       fullWidth={true}
                       size="medium"
+                      enableAutoDetection={true}
                     />
+                    {timezoneError && (
+                      <Typography
+                        variant="caption"
+                        color="error"
+                        sx={{ mt: 0.5, display: 'block' }}
+                      >
+                        {timezoneError}
+                      </Typography>
+                    )}
                   </Box>
 
                   <FormControl fullWidth>

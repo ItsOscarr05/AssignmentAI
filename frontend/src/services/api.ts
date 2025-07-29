@@ -7,6 +7,17 @@ import {
 } from '../types/ai';
 
 // Add missing type definitions
+interface UserPreferences {
+  theme?: string;
+  language?: string;
+  timezone?: string;
+  font_size?: string;
+  compact_mode?: boolean;
+  email_notifications?: boolean;
+  push_notifications?: boolean;
+  custom_preferences?: Record<string, any>;
+}
+
 interface ProfileData {
   id: string;
   firstName: string;
@@ -570,5 +581,34 @@ export const analytics = {
       responseType: 'blob',
     });
     return response.data;
+  },
+};
+
+// Preferences endpoints
+export const preferences = {
+  get: async (): Promise<UserPreferences> => {
+    const response = await api.get('/preferences');
+    return response.data;
+  },
+
+  update: async (preferences: Partial<UserPreferences>): Promise<UserPreferences> => {
+    const response = await api.patch('/preferences', preferences);
+    return response.data;
+  },
+
+  updateTimezone: async (timezone: string): Promise<UserPreferences> => {
+    const response = await api.patch('/preferences', {
+      custom_preferences: { timezone },
+    });
+    return response.data;
+  },
+
+  reset: async (): Promise<UserPreferences> => {
+    const response = await api.post('/preferences/reset');
+    return response.data;
+  },
+
+  delete: async (): Promise<void> => {
+    await api.delete('/preferences');
   },
 };

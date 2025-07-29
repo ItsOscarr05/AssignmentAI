@@ -1,27 +1,48 @@
-import { Language } from '@mui/icons-material';
-import { Box, FormControl, InputLabel, MenuItem, Select, Typography } from '@mui/material';
-import React from 'react';
-import { COMMON_TIMEZONES, EXTENDED_TIMEZONES } from '../../utils/timezone';
+import { Language, Refresh } from '@mui/icons-material';
+import {
+  Box,
+  FormControl,
+  IconButton,
+  InputLabel,
+  MenuItem,
+  Select,
+  Tooltip,
+  Typography,
+} from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import {
+  COMMON_TIMEZONES,
+  EXTENDED_TIMEZONES,
+  detectUserTimezone,
+  validateTimezone,
+} from '../../utils/timezone';
 
 interface TimezoneSelectorProps {
   value: string;
   onChange: (timezone: string) => void;
+  onValidationError?: (error: string) => void;
   label?: string;
   showExtended?: boolean;
   fullWidth?: boolean;
   size?: 'small' | 'medium';
   disabled?: boolean;
+  enableAutoDetection?: boolean;
 }
 
 export const TimezoneSelector: React.FC<TimezoneSelectorProps> = ({
   value,
   onChange,
+  onValidationError,
   label = 'Timezone',
   showExtended = false,
   fullWidth = true,
   size = 'medium',
   disabled = false,
+  enableAutoDetection = false,
 }) => {
+  const [isDetecting, setIsDetecting] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
   const timezoneOptions = showExtended ? EXTENDED_TIMEZONES : COMMON_TIMEZONES;
 
   // Group timezones by region
@@ -45,13 +66,53 @@ export const TimezoneSelector: React.FC<TimezoneSelectorProps> = ({
     ]
   );
 
+  // Auto-detect timezone on first visit
+  useEffect(() => {
+    if (enableAutoDetection && !value && !isDetecting) {
+      handleAutoDetect();
+    }
+  }, [enableAutoDetection, value, isDetecting]);
+
+  const handleAutoDetect = async () => {
+    setIsDetecting(true);
+    try {
+      const detectedTimezone = await detectUserTimezone();
+      if (detectedTimezone && detectedTimezone !== 'UTC') {
+        const error = validateTimezone(detectedTimezone);
+        if (!error) {
+          onChange(detectedTimezone);
+        } else {
+          setValidationError(error);
+          onValidationError?.(error);
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to auto-detect timezone:', error);
+    } finally {
+      setIsDetecting(false);
+    }
+  };
+
+  const handleTimezoneChange = (newTimezone: string) => {
+    // Validate timezone before changing
+    const error = validateTimezone(newTimezone);
+    if (error) {
+      setValidationError(error);
+      onValidationError?.(error);
+      return;
+    }
+
+    setValidationError(null);
+    onChange(newTimezone);
+  };
+
   return (
-    <FormControl fullWidth={fullWidth} size={size} disabled={disabled}>
+    <FormControl fullWidth={fullWidth} size={size} disabled={disabled} error={!!validationError}>
       <InputLabel>{label}</InputLabel>
       <Select
         value={value}
         label={label}
-        onChange={e => onChange(e.target.value)}
+        onChange={e => handleTimezoneChange(e.target.value)}
         MenuProps={{
           PaperProps: {
             style: {
@@ -76,6 +137,30 @@ export const TimezoneSelector: React.FC<TimezoneSelectorProps> = ({
               >
                 {timezone?.label || selected}
               </Typography>
+              {enableAutoDetection && (
+                <Tooltip title="Auto-detect timezone">
+                  <IconButton
+                    size="small"
+                    onClick={e => {
+                      e.stopPropagation();
+                      handleAutoDetect();
+                    }}
+                    disabled={isDetecting}
+                    sx={{ flexShrink: 0, ml: 1 }}
+                  >
+                    <Refresh
+                      fontSize="small"
+                      sx={{
+                        animation: isDetecting ? 'spin 1s linear infinite' : 'none',
+                        '@keyframes spin': {
+                          '0%': { transform: 'rotate(0deg)' },
+                          '100%': { transform: 'rotate(360deg)' },
+                        },
+                      }}
+                    />
+                  </IconButton>
+                </Tooltip>
+              )}
             </Box>
           );
         }}
@@ -117,6 +202,11 @@ export const TimezoneSelector: React.FC<TimezoneSelectorProps> = ({
           }
         })}
       </Select>
+      {validationError && (
+        <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+          {validationError}
+        </Typography>
+      )}
     </FormControl>
   );
 };

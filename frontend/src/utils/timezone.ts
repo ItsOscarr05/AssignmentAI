@@ -251,6 +251,31 @@ export const isValidTimezone = (timezone: string): boolean => {
 };
 
 /**
+ * Validate timezone and return error message if invalid
+ * @param timezone - The timezone string to validate
+ * @returns string | null - Error message if invalid, null if valid
+ */
+export const validateTimezone = (timezone: string): string | null => {
+  if (!timezone || timezone.trim() === '') {
+    return 'Timezone is required';
+  }
+
+  if (!isValidTimezone(timezone)) {
+    return 'Invalid timezone format';
+  }
+
+  // Check if timezone is in our supported list
+  const supportedTimezones = [...COMMON_TIMEZONES, ...EXTENDED_TIMEZONES];
+  const isSupported = supportedTimezones.some(tz => tz.value === timezone);
+
+  if (!isSupported) {
+    return 'Timezone not supported';
+  }
+
+  return null;
+};
+
+/**
  * Get timezone options grouped by region
  * @returns Record<string, TimezoneOption[]> - Timezones grouped by region
  */
