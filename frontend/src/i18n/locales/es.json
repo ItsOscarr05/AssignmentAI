@@ -153,7 +153,15 @@
       "showOriginalText": "Mostrar texto original junto con la traducción",
       "regionalSettings": "Configuración regional",
       "useMetricSystem": "Usar sistema métrico",
-      "use24HourFormat": "Usar formato de 24 horas"
+      "use24HourFormat": "Usar formato de 24 horas",
+      "timezoneDetection": "Detección de zona horaria",
+      "detectTimezone": "Detectar zona horaria",
+      "detecting": "Detectando...",
+      "timezoneDetected": "Zona horaria detectada desde tu ubicación",
+      "timezoneUpdated": "¡Zona horaria actualizada a tu ubicación detectada!",
+      "currentTime": "Hora actual en {timezone}: {time}",
+      "showMoreOptions": "Mostrar más opciones",
+      "showLess": "Mostrar menos"
     },
     "sound": {
       "title": "Sonido y retroalimentación",

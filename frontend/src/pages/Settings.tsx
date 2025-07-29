@@ -71,6 +71,7 @@ import {
   useTheme,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
+import TimezoneSelector from '../components/common/TimezoneSelector';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { useTranslation } from '../hooks/useTranslation';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
@@ -1003,23 +1004,16 @@ const Settings: React.FC = () => {
                     </Typography>
                   </FormControl>
 
-                  <FormControl fullWidth sx={{ mb: 2 }}>
-                    <InputLabel>{t('settings.language.timeZone')}</InputLabel>
-                    <Select
+                  <Box sx={{ mb: 2 }}>
+                    <TimezoneSelector
                       value={timeZone}
+                      onChange={setTimeZone}
                       label={t('settings.language.timeZone')}
-                      onChange={e => setTimeZone(e.target.value)}
-                    >
-                      <MenuItem value="UTC">UTC</MenuItem>
-                      <MenuItem value="EST">Eastern Time (EST)</MenuItem>
-                      <MenuItem value="CST">Central Time (CST)</MenuItem>
-                      <MenuItem value="PST">Pacific Time (PST)</MenuItem>
-                      <MenuItem value="GMT">Greenwich Mean Time (GMT)</MenuItem>
-                      <MenuItem value="CET">Central European Time (CET)</MenuItem>
-                      <MenuItem value="IST">Indian Standard Time (IST)</MenuItem>
-                      <MenuItem value="JST">Japan Standard Time (JST)</MenuItem>
-                    </Select>
-                  </FormControl>
+                      showExtended={false}
+                      fullWidth={true}
+                      size="medium"
+                    />
+                  </Box>
 
                   <FormControl fullWidth>
                     <InputLabel>{t('settings.language.dateFormat')}</InputLabel>

@@ -188,7 +188,15 @@
       "showOriginalText": "Show original text alongside translation",
       "regionalSettings": "Regional Settings",
       "useMetricSystem": "Use metric system",
-      "use24HourFormat": "Use 24-hour time format"
+      "use24HourFormat": "Use 24-hour time format",
+      "timezoneDetection": "Timezone Detection",
+      "detectTimezone": "Detect Timezone",
+      "detecting": "Detecting...",
+      "timezoneDetected": "Timezone detected from your location",
+      "timezoneUpdated": "Timezone updated to your detected location!",
+      "currentTime": "Current time in {timezone}: {time}",
+      "showMoreOptions": "Show More Options",
+      "showLess": "Show Less"
     },
     "sound": {
       "title": "Sound & Feedback",

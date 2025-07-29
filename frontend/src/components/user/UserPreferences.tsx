@@ -230,14 +230,21 @@ const UserPreferencesComponent: React.FC = () => {
                 <MenuItem value="fr">French</MenuItem>
               </Select>
             </FormControl>
-            <FormControl fullWidth>
-              <InputLabel>Timezone</InputLabel>
-              <Select value={preferences.timezone} onChange={handleTimezoneChange} label="Timezone">
-                <MenuItem value="UTC">UTC</MenuItem>
-                <MenuItem value="EST">Eastern Time</MenuItem>
-                <MenuItem value="PST">Pacific Time</MenuItem>
-              </Select>
-            </FormControl>
+            <Box>
+              <TimezoneSelector
+                value={preferences.timezone}
+                onChange={(timezone) => {
+                  setPreferences(prev => ({
+                    ...prev!,
+                    timezone: timezone,
+                  }));
+                }}
+                label="Timezone"
+                showExtended={false}
+                fullWidth={true}
+                size="medium"
+              />
+            </Box>
           </Paper>
         </Grid>
 

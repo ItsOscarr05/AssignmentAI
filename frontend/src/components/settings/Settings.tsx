@@ -2,10 +2,8 @@ import {
   Box,
   Card,
   CardContent,
-  CircularProgress,
   FormControl,
   FormControlLabel,
-  FormGroup,
   Grid,
   InputLabel,
   MenuItem,
@@ -15,7 +13,6 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { settingsApi } from '../../services/api/settings';
 import { AppSettings } from '../../types/settings';
 
 interface SettingsProps {
@@ -246,19 +243,14 @@ function Settings({ initialSettings, onUpdate }: SettingsProps) {
                   </FormControl>
                 </Grid>
                 <Grid item xs={12}>
-                  <FormControl fullWidth>
-                    <InputLabel>{t('settings.language.timezone')}</InputLabel>
-                    <Select
-                      value={settings.timezone}
-                      onChange={e => handleSettingChange('timezone', '', e.target.value)}
-                      label={t('settings.language.timezone')}
-                    >
-                      <MenuItem value="UTC">UTC</MenuItem>
-                      <MenuItem value="America/New_York">Eastern Time</MenuItem>
-                      <MenuItem value="Europe/London">London</MenuItem>
-                      <MenuItem value="Asia/Tokyo">Tokyo</MenuItem>
-                    </Select>
-                  </FormControl>
+                  <TimezoneSelector
+                    value={settings.timezone}
+                    onChange={timezone => handleSettingChange('timezone', '', timezone)}
+                    label={t('settings.language.timezone')}
+                    showExtended={false}
+                    fullWidth={true}
+                    size="medium"
+                  />
                 </Grid>
               </Grid>
             </CardContent>
