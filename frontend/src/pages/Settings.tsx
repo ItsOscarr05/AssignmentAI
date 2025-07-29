@@ -71,11 +71,15 @@ import {
   useTheme,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
+import DateFormatSelector from '../components/common/DateFormatSelector';
 import TimezoneSelector from '../components/common/TimezoneSelector';
+import TranslationPreferences from '../components/common/TranslationPreferences';
+import { useTranslationContext } from '../contexts/TranslationContext';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { useTranslation } from '../hooks/useTranslation';
 import { preferences } from '../services/api';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
+import { DateFormat } from '../utils/dateFormat';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -113,11 +117,31 @@ interface SubscriptionConfig {
 const Settings: React.FC = () => {
   const theme = useTheme();
   const { breakpoint } = useAspectRatio();
+
+  // Safely use translation context with fallback
+  let translationContext = null;
+  try {
+    translationContext = useTranslationContext();
+  } catch (error) {
+    console.warn('TranslationContext not available:', error);
+  }
+
+  const {
+    preferences: translationPreferences,
+    setAutoTranslate: setContextAutoTranslate,
+    setShowOriginalText: setContextShowOriginalText,
+  } = translationContext || {
+    preferences: { autoTranslate: false, showOriginalText: true, targetLanguage: 'en' },
+    setAutoTranslate: () => {},
+    setShowOriginalText: () => {},
+  };
+
   const [tabValue, setTabValue] = useState(0);
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showNotificationPreview, setShowNotificationPreview] = useState(false);
   const [timezoneError, setTimezoneError] = useState<string | null>(null);
+  const [dateFormatError, setDateFormatError] = useState<string | null>(null);
   const [isLoadingPreferences, setIsLoadingPreferences] = useState(false);
 
   // General Settings
@@ -133,11 +157,30 @@ const Settings: React.FC = () => {
 
   // Language & Region Settings
   const [timeZone, setTimeZone] = useState('UTC');
-  const [dateFormat, setDateFormat] = useState('MM/DD/YYYY');
+  const [dateFormat, setDateFormat] = useState<DateFormat>('MM/DD/YYYY');
   const [autoTranslate, setAutoTranslate] = useState(false);
   const [showOriginalText, setShowOriginalText] = useState(true);
-  const [useMetricSystem, setUseMetricSystem] = useState(false);
-  const [use24HourFormat, setUse24HourFormat] = useState(false);
+
+  // Sync with translation context
+  useEffect(() => {
+    if (translationContext) {
+      setAutoTranslate(translationPreferences.autoTranslate);
+      setShowOriginalText(translationPreferences.showOriginalText);
+    }
+  }, [translationPreferences, translationContext]);
+
+  // Update context when local state changes
+  useEffect(() => {
+    if (translationContext) {
+      setContextAutoTranslate(autoTranslate);
+    }
+  }, [autoTranslate, setContextAutoTranslate, translationContext]);
+
+  useEffect(() => {
+    if (translationContext) {
+      setContextShowOriginalText(showOriginalText);
+    }
+  }, [showOriginalText, setContextShowOriginalText, translationContext]);
 
   // Sound & Feedback Settings
   const [hapticFeedback, setHapticFeedback] = useState(true);
@@ -319,8 +362,6 @@ const Settings: React.FC = () => {
           date_format: dateFormat,
           auto_translate: autoTranslate,
           show_original_text: showOriginalText,
-          use_metric_system: useMetricSystem,
-          use_24_hour_format: use24HourFormat,
         },
         sound: {
           sound_effects: soundEffects,
@@ -622,23 +663,9 @@ const Settings: React.FC = () => {
   // Apply date format setting
   useEffect(() => {
     // Store date format preference in localStorage for future use
-    localStorage.setItem('dateFormat', dateFormat);
+    localStorage.setItem('dateFormat', dateFormat.toString());
     console.log('Date format changed to:', dateFormat);
   }, [dateFormat]);
-
-  // Apply 24-hour format setting
-  useEffect(() => {
-    // Store 24-hour format preference in localStorage for future use
-    localStorage.setItem('use24HourFormat', use24HourFormat.toString());
-    console.log('24-hour format:', use24HourFormat);
-  }, [use24HourFormat]);
-
-  // Apply metric system setting
-  useEffect(() => {
-    // Store metric system preference in localStorage for future use
-    localStorage.setItem('useMetricSystem', useMetricSystem.toString());
-    console.log('Metric system:', useMetricSystem);
-  }, [useMetricSystem]);
 
   // Apply sound effects setting
   useEffect(() => {
@@ -698,13 +725,12 @@ const Settings: React.FC = () => {
       if (savedLanguage) setTimeZone(savedLanguage);
 
       const savedDateFormat = localStorage.getItem('dateFormat');
-      if (savedDateFormat) setDateFormat(savedDateFormat);
-
-      const saved24Hour = localStorage.getItem('use24HourFormat');
-      if (saved24Hour) setUse24HourFormat(saved24Hour === 'true');
-
-      const savedMetric = localStorage.getItem('useMetricSystem');
-      if (savedMetric) setUseMetricSystem(savedMetric === 'true');
+      if (
+        savedDateFormat &&
+        ['MM/DD/YYYY', 'DD/MM/YYYY', 'YYYY-MM-DD', 'DD.MM.YYYY'].includes(savedDateFormat)
+      ) {
+        setDateFormat(savedDateFormat as DateFormat);
+      }
 
       // Load sound settings
       const savedSoundEffects = localStorage.getItem('soundEffects');
@@ -745,6 +771,12 @@ const Settings: React.FC = () => {
       const userPreferences = await preferences.get();
       if (userPreferences.custom_preferences?.timezone) {
         setTimeZone(userPreferences.custom_preferences.timezone);
+      }
+      if (userPreferences.custom_preferences?.dateFormat) {
+        const format = userPreferences.custom_preferences.dateFormat as string;
+        if (['MM/DD/YYYY', 'DD/MM/YYYY', 'YYYY-MM-DD', 'DD.MM.YYYY'].includes(format)) {
+          setDateFormat(format as DateFormat);
+        }
       }
       if (userPreferences.language) {
         setLanguage(userPreferences.language);
@@ -787,8 +819,6 @@ const Settings: React.FC = () => {
           dateFormat,
           autoTranslate,
           showOriginalText,
-          useMetricSystem,
-          use24HourFormat,
           soundEffects,
           hapticFeedback,
           volume,
@@ -1131,69 +1161,38 @@ const Settings: React.FC = () => {
                     )}
                   </Box>
 
-                  <FormControl fullWidth>
-                    <InputLabel>{t('settings.language.dateFormat')}</InputLabel>
-                    <Select
+                  <Box sx={{ mb: 2 }}>
+                    <DateFormatSelector
                       value={dateFormat}
+                      onChange={setDateFormat}
+                      onValidationError={setDateFormatError}
                       label={t('settings.language.dateFormat')}
-                      onChange={e => setDateFormat(e.target.value)}
-                    >
-                      <MenuItem value="MM/DD/YYYY">MM/DD/YYYY</MenuItem>
-                      <MenuItem value="DD/MM/YYYY">DD/MM/YYYY</MenuItem>
-                      <MenuItem value="YYYY-MM-DD">YYYY-MM-DD</MenuItem>
-                      <MenuItem value="DD.MM.YYYY">DD.MM.YYYY</MenuItem>
-                    </Select>
-                  </FormControl>
+                      fullWidth={true}
+                      size="medium"
+                      enableAutoDetection={true}
+                      showPreview={true}
+                    />
+                    {dateFormatError && (
+                      <Typography
+                        variant="caption"
+                        color="error"
+                        sx={{ mt: 0.5, display: 'block' }}
+                      >
+                        {dateFormatError}
+                      </Typography>
+                    )}
+                  </Box>
                 </Grid>
 
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
                     {t('settings.language.translationPreferences')}
                   </Typography>
-                  <FormGroup>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={autoTranslate}
-                          onChange={e => setAutoTranslate(e.target.checked)}
-                        />
-                      }
-                      label={t('settings.language.autoTranslateContent')}
-                    />
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={showOriginalText}
-                          onChange={e => setShowOriginalText(e.target.checked)}
-                        />
-                      }
-                      label={t('settings.language.showOriginalText')}
-                    />
-                  </FormGroup>
-
-                  <Typography variant="subtitle1" sx={{ mt: 3 }} gutterBottom>
-                    {t('settings.language.regionalSettings')}
-                  </Typography>
-                  <FormGroup>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={useMetricSystem}
-                          onChange={e => setUseMetricSystem(e.target.checked)}
-                        />
-                      }
-                      label={t('settings.language.useMetricSystem')}
-                    />
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={use24HourFormat}
-                          onChange={e => setUse24HourFormat(e.target.checked)}
-                        />
-                      }
-                      label={t('settings.language.use24HourFormat')}
-                    />
-                  </FormGroup>
+                  <TranslationPreferences
+                    showAdvanced={true}
+                    showPreview={true}
+                    showTestSection={true}
+                  />
                 </Grid>
               </Grid>
             </SettingsSection>
