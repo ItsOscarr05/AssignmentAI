@@ -151,6 +151,17 @@ const Settings: React.FC = () => {
   const [isValidatingSettings, setIsValidatingSettings] = useState(false);
   const [showAIFeaturesDemo, setShowAIFeaturesDemo] = useState(false);
 
+  // Notification Settings Validation & Feedback
+  const [notificationSettingsError, setNotificationSettingsError] = useState<string | null>(null);
+  const [showNotificationTest, setShowNotificationTest] = useState(false);
+
+  // Privacy & Security Settings Validation & Feedback
+  const [privacySettingsError, setPrivacySettingsError] = useState<string | null>(null);
+  const [showSecurityAudit, setShowSecurityAudit] = useState(false);
+  const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
+  const [showDownloadDataDialog, setShowDownloadDataDialog] = useState(false);
+  const [showTwoFactorSetup, setShowTwoFactorSetup] = useState(false);
+
   // Notification Settings
   const [notifications, setNotifications] = useState({
     email: true,
@@ -294,6 +305,263 @@ const Settings: React.FC = () => {
     setAiSettingsError(null);
   };
 
+  // Notification Settings Validation Functions
+  const validateNotificationSettings = () => {
+    const errors: string[] = [];
+
+    // Check for time conflicts
+    if (notificationSchedule.workHoursStart >= notificationSchedule.workHoursEnd) {
+      errors.push('Work hours end time must be after start time');
+    }
+
+    if (notificationSchedule.quietHoursStart === notificationSchedule.quietHoursEnd) {
+      errors.push('Quiet hours start and end times cannot be the same');
+    }
+
+    // Check if any notification channels are enabled
+    const hasChannels = notifications.email || notifications.desktop || notifications.sound;
+    if (!hasChannels) {
+      errors.push('At least one notification channel must be enabled');
+    }
+
+    // Check if any notification types are enabled
+    const hasTypes =
+      notifications.assignments ||
+      notifications.deadlines ||
+      notifications.feedback ||
+      notifications.updates;
+    if (!hasTypes) {
+      errors.push('At least one notification type must be enabled');
+    }
+
+    return errors;
+  };
+
+  const resetNotificationSettingsToDefaults = () => {
+    setNotifications({
+      email: true,
+      desktop: true,
+      sound: true,
+      assignments: true,
+      deadlines: true,
+      feedback: true,
+      updates: true,
+    });
+    setNotificationPreferences({
+      priorityLevel: 'medium',
+      groupNotifications: true,
+      showPreview: true,
+      showBadge: true,
+      showInTaskbar: true,
+    });
+    setNotificationSchedule({
+      quietHoursStart: 22,
+      quietHoursEnd: 7,
+      workDays: [1, 2, 3, 4, 5], // Monday to Friday
+      workHoursStart: 9,
+      workHoursEnd: 17,
+    });
+    setNotificationSettingsError(null);
+  };
+
+  const enableAllNotifications = () => {
+    setNotifications({
+      email: true,
+      desktop: true,
+      sound: true,
+      assignments: true,
+      deadlines: true,
+      feedback: true,
+      updates: true,
+    });
+  };
+
+  const disableAllNotifications = () => {
+    setNotifications({
+      email: false,
+      desktop: false,
+      sound: false,
+      assignments: false,
+      deadlines: false,
+      feedback: false,
+      updates: false,
+    });
+  };
+
+  const getNotificationSummary = () => {
+    const channels = [];
+    if (notifications.email) channels.push('Email');
+    if (notifications.desktop) channels.push('Desktop');
+    if (notifications.sound) channels.push('Sound');
+
+    const types = [];
+    if (notifications.assignments) types.push('Assignments');
+    if (notifications.deadlines) types.push('Deadlines');
+    if (notifications.feedback) types.push('Feedback');
+    if (notifications.updates) types.push('Updates');
+
+    return {
+      channels: channels.join(', ') || 'None',
+      types: types.join(', ') || 'None',
+      priority: notificationPreferences.priorityLevel,
+      workHours: `${notificationSchedule.workHoursStart
+        .toString()
+        .padStart(2, '0')}:00 - ${notificationSchedule.workHoursEnd
+        .toString()
+        .padStart(2, '0')}:00`,
+      quietHours: `${notificationSchedule.quietHoursStart
+        .toString()
+        .padStart(2, '0')}:00 - ${notificationSchedule.quietHoursEnd
+        .toString()
+        .padStart(2, '0')}:00`,
+      workDays:
+        notificationSchedule.workDays.length === 7
+          ? 'Every day'
+          : notificationSchedule.workDays.length === 5 &&
+            notificationSchedule.workDays.includes(1) &&
+            notificationSchedule.workDays.includes(5)
+          ? 'Weekdays'
+          : `${notificationSchedule.workDays.length} days selected`,
+    };
+  };
+
+  // Privacy & Security Settings Validation Functions
+  const validatePrivacySettings = () => {
+    const errors: string[] = [];
+
+    // Check for security conflicts
+    if (privacySettings.autoLock && privacySettings.lockTimeout < 1) {
+      errors.push('Auto-lock timeout must be at least 1 minute');
+    }
+
+    // Check for privacy conflicts
+    if (privacySettings.allowTracking && !privacySettings.dataCollection) {
+      errors.push('Activity tracking requires data collection to be enabled');
+    }
+
+    // Check for security recommendations
+    if (!privacySettings.twoFactorAuth) {
+      errors.push('Two-factor authentication is recommended for enhanced security');
+    }
+
+    if (securitySettings.passwordStrength === 'weak') {
+      errors.push('Consider strengthening your password for better security');
+    }
+
+    return errors;
+  };
+
+  const resetPrivacySettingsToDefaults = () => {
+    setPrivacySettings({
+      twoFactorAuth: false,
+      biometricLogin: false,
+      dataCollection: true,
+      shareAnalytics: true,
+      showOnlineStatus: true,
+      allowTracking: false,
+      autoLock: true,
+      lockTimeout: 5,
+      passwordExpiry: 90,
+      sessionTimeout: 30,
+    });
+    setPrivacySettingsError(null);
+  };
+
+  const enableAllSecurityFeatures = () => {
+    setPrivacySettings({
+      ...privacySettings,
+      twoFactorAuth: true,
+      biometricLogin: true,
+      autoLock: true,
+      allowTracking: false, // Keep this off for privacy
+    });
+  };
+
+  const disableAllTracking = () => {
+    setPrivacySettings({
+      ...privacySettings,
+      dataCollection: false,
+      shareAnalytics: false,
+      showOnlineStatus: false,
+      allowTracking: false,
+    });
+  };
+
+  const getSecuritySummary = () => {
+    const enabledFeatures = [];
+    if (privacySettings.twoFactorAuth) enabledFeatures.push('2FA');
+    if (privacySettings.biometricLogin) enabledFeatures.push('Biometric');
+    if (privacySettings.autoLock) enabledFeatures.push('Auto-lock');
+    if (privacySettings.dataCollection) enabledFeatures.push('Data Collection');
+    if (privacySettings.shareAnalytics) enabledFeatures.push('Analytics');
+
+    const securityLevel =
+      privacySettings.twoFactorAuth && privacySettings.autoLock
+        ? 'High'
+        : privacySettings.autoLock
+        ? 'Medium'
+        : 'Low';
+
+    return {
+      enabledFeatures: enabledFeatures.join(', ') || 'None',
+      securityLevel,
+      passwordStrength: securitySettings.passwordStrength,
+      activeSessions: securitySettings.activeSessions,
+      lastAudit: securitySettings.lastSecurityAudit,
+    };
+  };
+
+  const calculateSecurityScore = () => {
+    let score = 0;
+
+    // Base score
+    score += 20;
+
+    // Password strength
+    if (securitySettings.passwordStrength === 'strong') score += 20;
+    else if (securitySettings.passwordStrength === 'medium') score += 10;
+
+    // Two-factor authentication
+    if (privacySettings.twoFactorAuth) score += 25;
+
+    // Biometric login
+    if (privacySettings.biometricLogin) score += 15;
+
+    // Auto-lock
+    if (privacySettings.autoLock) score += 10;
+
+    // Session management
+    if (securitySettings.activeSessions <= 2) score += 10;
+
+    return Math.min(100, score);
+  };
+
+  const getSecurityRecommendations = () => {
+    const recommendations = [];
+
+    if (!privacySettings.twoFactorAuth) {
+      recommendations.push('Enable two-factor authentication for enhanced security');
+    }
+
+    if (securitySettings.passwordStrength === 'weak') {
+      recommendations.push('Strengthen your password with symbols and numbers');
+    }
+
+    if (securitySettings.activeSessions > 3) {
+      recommendations.push('Review and close unused active sessions');
+    }
+
+    if (!privacySettings.autoLock) {
+      recommendations.push('Enable auto-lock to protect your account when inactive');
+    }
+
+    if (privacySettings.allowTracking) {
+      recommendations.push('Consider disabling activity tracking for enhanced privacy');
+    }
+
+    return recommendations;
+  };
+
   // Model comparison data
 
   // Security checklist data
@@ -365,8 +633,24 @@ const Settings: React.FC = () => {
         return;
       }
 
+      // Validate notification settings before saving
+      const notificationErrors = validateNotificationSettings();
+      if (notificationErrors.length > 0) {
+        setNotificationSettingsError(notificationErrors.join(', '));
+        return;
+      }
+
+      // Validate privacy settings before saving
+      const privacyErrors = validatePrivacySettings();
+      if (privacyErrors.length > 0) {
+        setPrivacySettingsError(privacyErrors.join(', '));
+        return;
+      }
+
       setIsValidatingSettings(true);
       setAiSettingsError(null);
+      setNotificationSettingsError(null);
+      setPrivacySettingsError(null);
 
       // Save to backend first
       await savePreferencesToBackend();
@@ -437,6 +721,8 @@ const Settings: React.FC = () => {
     } catch (error) {
       console.error('Failed to save settings:', error);
       setAiSettingsError('Failed to save AI settings. Please try again.');
+      setNotificationSettingsError('Failed to save notification settings. Please try again.');
+      setPrivacySettingsError('Failed to save privacy settings. Please try again.');
       setShowSaveSuccess(false);
     } finally {
       setIsValidatingSettings(false);
@@ -1641,6 +1927,12 @@ const Settings: React.FC = () => {
               title={t('settings.notifications.notificationPreferences')}
               icon={<NotificationsOutlined sx={{ color: theme.palette.primary.main }} />}
             >
+              {notificationSettingsError && (
+                <Alert severity="error" sx={{ mb: 3 }}>
+                  {notificationSettingsError}
+                </Alert>
+              )}
+
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
@@ -1663,6 +1955,15 @@ const Settings: React.FC = () => {
                         </Box>
                       }
                     />
+                    {notifications.email && (
+                      <Typography
+                        variant="caption"
+                        color="success.main"
+                        sx={{ ml: 4, display: 'block' }}
+                      >
+                        ✓ Email notifications will be sent to your registered email
+                      </Typography>
+                    )}
                     <FormControlLabel
                       control={
                         <Switch
@@ -1681,6 +1982,15 @@ const Settings: React.FC = () => {
                         </Box>
                       }
                     />
+                    {notifications.desktop && (
+                      <Typography
+                        variant="caption"
+                        color="success.main"
+                        sx={{ ml: 4, display: 'block' }}
+                      >
+                        ✓ Desktop notifications will appear in your system tray
+                      </Typography>
+                    )}
                     <FormControlLabel
                       control={
                         <Switch
@@ -1697,6 +2007,15 @@ const Settings: React.FC = () => {
                         </Box>
                       }
                     />
+                    {notifications.sound && (
+                      <Typography
+                        variant="caption"
+                        color="success.main"
+                        sx={{ ml: 4, display: 'block' }}
+                      >
+                        ✓ Sound alerts will play for new notifications
+                      </Typography>
+                    )}
                   </FormGroup>
                 </Grid>
 
@@ -1721,6 +2040,15 @@ const Settings: React.FC = () => {
                         </Box>
                       }
                     />
+                    {notifications.assignments && (
+                      <Typography
+                        variant="caption"
+                        color="success.main"
+                        sx={{ ml: 4, display: 'block' }}
+                      >
+                        ✓ Get notified about new assignments and updates
+                      </Typography>
+                    )}
                     <FormControlLabel
                       control={
                         <Switch
@@ -1737,6 +2065,15 @@ const Settings: React.FC = () => {
                         </Box>
                       }
                     />
+                    {notifications.deadlines && (
+                      <Typography
+                        variant="caption"
+                        color="success.main"
+                        sx={{ ml: 4, display: 'block' }}
+                      >
+                        ✓ Receive deadline reminders and alerts
+                      </Typography>
+                    )}
                     <FormControlLabel
                       control={
                         <Switch
@@ -1755,6 +2092,15 @@ const Settings: React.FC = () => {
                         </Box>
                       }
                     />
+                    {notifications.feedback && (
+                      <Typography
+                        variant="caption"
+                        color="success.main"
+                        sx={{ ml: 4, display: 'block' }}
+                      >
+                        ✓ Get notified when feedback is available
+                      </Typography>
+                    )}
                     <FormControlLabel
                       control={
                         <Switch
@@ -1771,13 +2117,62 @@ const Settings: React.FC = () => {
                         </Box>
                       }
                     />
+                    {notifications.updates && (
+                      <Typography
+                        variant="caption"
+                        color="success.main"
+                        sx={{ ml: 4, display: 'block' }}
+                      >
+                        ✓ Receive system updates and announcements
+                      </Typography>
+                    )}
                   </FormGroup>
                 </Grid>
 
                 <Grid item xs={12}>
                   <Divider sx={{ my: 2 }} />
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Active notifications:{' '}
+                      {[
+                        notifications.email && 'Email',
+                        notifications.desktop && 'Desktop',
+                        notifications.sound && 'Sound',
+                      ]
+                        .filter(Boolean)
+                        .join(', ') || 'None'}
+                    </Typography>
+                    <Button variant="outlined" size="small" onClick={enableAllNotifications}>
+                      Enable All
+                    </Button>
+                    <Button variant="outlined" size="small" onClick={disableAllNotifications}>
+                      Disable All
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={resetNotificationSettingsToDefaults}
+                    >
+                      Reset to Defaults
+                    </Button>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={() => setShowNotificationTest(true)}
+                      sx={{ ml: 'auto' }}
+                    >
+                      Test Notifications
+                    </Button>
+                  </Box>
                 </Grid>
+              </Grid>
+            </SettingsSection>
 
+            <SettingsSection
+              title={t('settings.notifications.displayPreferences')}
+              icon={<NotificationsActiveOutlined sx={{ color: theme.palette.primary.main }} />}
+            >
+              <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
                     {t('settings.notifications.displayPreferences')}
@@ -1797,6 +2192,15 @@ const Settings: React.FC = () => {
                       }
                       label={t('settings.notifications.showNotificationPreview')}
                     />
+                    {notificationPreferences.showPreview && (
+                      <Typography
+                        variant="caption"
+                        color="success.main"
+                        sx={{ ml: 4, display: 'block' }}
+                      >
+                        ✓ Notification content will be visible in preview
+                      </Typography>
+                    )}
                     <FormControlLabel
                       control={
                         <Switch
@@ -1811,6 +2215,15 @@ const Settings: React.FC = () => {
                       }
                       label={t('settings.notifications.showNotificationBadge')}
                     />
+                    {notificationPreferences.showBadge && (
+                      <Typography
+                        variant="caption"
+                        color="success.main"
+                        sx={{ ml: 4, display: 'block' }}
+                      >
+                        ✓ Badge will show unread notification count
+                      </Typography>
+                    )}
                     <FormControlLabel
                       control={
                         <Switch
@@ -1825,6 +2238,15 @@ const Settings: React.FC = () => {
                       }
                       label={t('settings.notifications.groupSimilarNotifications')}
                     />
+                    {notificationPreferences.groupNotifications && (
+                      <Typography
+                        variant="caption"
+                        color="success.main"
+                        sx={{ ml: 4, display: 'block' }}
+                      >
+                        ✓ Similar notifications will be grouped together
+                      </Typography>
+                    )}
                   </FormGroup>
 
                   <Typography variant="subtitle1" sx={{ mt: 3 }} gutterBottom>
@@ -1847,8 +2269,102 @@ const Settings: React.FC = () => {
                       <MenuItem value="high">{t('settings.notifications.highPriority')}</MenuItem>
                     </Select>
                   </FormControl>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ mt: 1, display: 'block' }}
+                  >
+                    {notificationPreferences.priorityLevel === 'low' &&
+                      'Low priority notifications will be delivered with minimal interruption'}
+                    {notificationPreferences.priorityLevel === 'medium' &&
+                      'Medium priority notifications will be delivered normally'}
+                    {notificationPreferences.priorityLevel === 'high' &&
+                      'High priority notifications will be delivered immediately and may override quiet hours'}
+                  </Typography>
                 </Grid>
 
+                <Grid item xs={12} md={6}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      height: '100%',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: 2,
+                      background:
+                        theme.palette.mode === 'dark'
+                          ? 'rgba(255,255,255,0.02)'
+                          : 'rgba(0,0,0,0.02)',
+                    }}
+                  >
+                    <Typography
+                      variant="subtitle1"
+                      gutterBottom
+                      sx={{ color: theme.palette.primary.main, mb: 2 }}
+                    >
+                      Current Configuration
+                    </Typography>
+
+                    <Box sx={{ mb: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <NotificationsOutlined fontSize="small" color="action" />
+                        <Typography variant="body2" fontWeight="medium">
+                          Channels: {getNotificationSummary().channels}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <AssignmentOutlined fontSize="small" color="action" />
+                        <Typography variant="body2">
+                          Types: {getNotificationSummary().types}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <EventOutlined fontSize="small" color="action" />
+                        <Typography variant="body2">
+                          Priority: {getNotificationSummary().priority}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <EventOutlined fontSize="small" color="action" />
+                        <Typography variant="body2">
+                          Work Hours: {getNotificationSummary().workHours}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <EventOutlined fontSize="small" color="action" />
+                        <Typography variant="body2">
+                          Quiet Hours: {getNotificationSummary().quietHours}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <EventOutlined fontSize="small" color="action" />
+                        <Typography variant="body2">
+                          Work Days: {getNotificationSummary().workDays}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    <Box>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => setShowNotificationPreview(true)}
+                        sx={{ fontSize: '0.7rem', py: 0.5, px: 1 }}
+                      >
+                        Preview Notifications
+                      </Button>
+                    </Box>
+                  </Paper>
+                </Grid>
+              </Grid>
+            </SettingsSection>
+
+            <SettingsSection
+              title={t('settings.notifications.workHours')}
+              icon={<EventOutlined sx={{ color: theme.palette.primary.main }} />}
+            >
+              <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
                     {t('settings.notifications.workHours')}
@@ -1897,8 +2413,17 @@ const Settings: React.FC = () => {
                       </FormControl>
                     </Grid>
                   </Grid>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ mt: 1, display: 'block' }}
+                  >
+                    Notifications will be prioritized during work hours
+                  </Typography>
+                </Grid>
 
-                  <Typography variant="subtitle1" sx={{ mt: 3 }} gutterBottom>
+                <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle1" gutterBottom>
                     {t('settings.notifications.workDays')}
                   </Typography>
                   <FormGroup row>
@@ -1925,13 +2450,23 @@ const Settings: React.FC = () => {
                       />
                     ))}
                   </FormGroup>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ mt: 1, display: 'block' }}
+                  >
+                    Select the days when you want to receive work-related notifications
+                  </Typography>
                 </Grid>
+              </Grid>
+            </SettingsSection>
 
-                <Grid item xs={12}>
-                  <Divider sx={{ my: 2 }} />
-                </Grid>
-
-                <Grid item xs={12}>
+            <SettingsSection
+              title={t('settings.sound.quietHours')}
+              icon={<NotificationsOutlined sx={{ color: theme.palette.primary.main }} />}
+            >
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
                     {t('settings.sound.quietHours')}
                   </Typography>
@@ -1989,16 +2524,21 @@ const Settings: React.FC = () => {
                   </Typography>
                 </Grid>
 
-                <Grid item xs={12}>
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-                    <Button
-                      variant="outlined"
-                      startIcon={<NotificationsActiveOutlined />}
-                      onClick={() => setShowNotificationPreview(true)}
-                    >
-                      {t('settings.notifications.previewNotifications')}
-                    </Button>
-                  </Box>
+                <Grid item xs={12} md={6}>
+                  <Alert severity="info" sx={{ height: 'fit-content' }}>
+                    <Typography variant="body2" gutterBottom>
+                      <strong>Quiet Hours Tips:</strong>
+                    </Typography>
+                    <Typography variant="caption" component="div">
+                      • High-priority notifications will still be delivered
+                    </Typography>
+                    <Typography variant="caption" component="div">
+                      • Set quiet hours to avoid interruptions during sleep
+                    </Typography>
+                    <Typography variant="caption" component="div">
+                      • Consider setting different hours for weekdays vs weekends
+                    </Typography>
+                  </Alert>
                 </Grid>
               </Grid>
             </SettingsSection>
@@ -2009,6 +2549,12 @@ const Settings: React.FC = () => {
               title={t('settings.privacy.securityScore')}
               icon={<SecurityOutlined sx={{ color: theme.palette.primary.main }} />}
             >
+              {privacySettingsError && (
+                <Alert severity="error" sx={{ mb: 3 }}>
+                  {privacySettingsError}
+                </Alert>
+              )}
+
               <Box sx={{ mb: 4 }}>
                 <Box
                   sx={{
@@ -2024,28 +2570,28 @@ const Settings: React.FC = () => {
                     variant="h4"
                     sx={{
                       color:
-                        securitySettings.securityScore >= 80
+                        calculateSecurityScore() >= 80
                           ? 'success.main'
-                          : securitySettings.securityScore >= 50
+                          : calculateSecurityScore() >= 50
                           ? 'warning.main'
                           : 'error.main',
                     }}
                   >
-                    {securitySettings.securityScore}%
+                    {calculateSecurityScore()}%
                   </Typography>
                 </Box>
                 <LinearProgress
                   variant="determinate"
-                  value={securitySettings.securityScore}
+                  value={calculateSecurityScore()}
                   sx={{
                     height: 10,
                     borderRadius: 5,
                     backgroundColor: 'rgba(0,0,0,0.1)',
                     '& .MuiLinearProgress-bar': {
                       backgroundColor:
-                        securitySettings.securityScore >= 80
+                        calculateSecurityScore() >= 80
                           ? 'success.main'
-                          : securitySettings.securityScore >= 50
+                          : calculateSecurityScore() >= 50
                           ? 'warning.main'
                           : 'error.main',
                     },
@@ -2058,6 +2604,31 @@ const Settings: React.FC = () => {
                 >
                   {t('settings.privacy.lastSecurityAudit')}: {securitySettings.lastSecurityAudit}
                 </Typography>
+              </Box>
+
+              <Box sx={{ mb: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Security Level: {getSecuritySummary().securityLevel}
+                  </Typography>
+                  <Button variant="outlined" size="small" onClick={enableAllSecurityFeatures}>
+                    Enable All Security
+                  </Button>
+                  <Button variant="outlined" size="small" onClick={disableAllTracking}>
+                    Disable All Tracking
+                  </Button>
+                  <Button variant="outlined" size="small" onClick={resetPrivacySettingsToDefaults}>
+                    Reset to Defaults
+                  </Button>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => setShowSecurityAudit(true)}
+                    sx={{ ml: 'auto' }}
+                  >
+                    Security Audit
+                  </Button>
+                </Box>
               </Box>
 
               <List>
@@ -2110,6 +2681,9 @@ const Settings: React.FC = () => {
                         size="small"
                         onClick={() => {
                           // Handle action based on item.id
+                          if (item.id === '2fa') {
+                            setShowTwoFactorSetup(true);
+                          }
                         }}
                         startIcon={
                           item.status === 'success' ? (
@@ -2170,6 +2744,15 @@ const Settings: React.FC = () => {
                         </Box>
                       }
                     />
+                    {privacySettings.dataCollection && (
+                      <Typography
+                        variant="caption"
+                        color="success.main"
+                        sx={{ ml: 4, display: 'block' }}
+                      >
+                        ✓ Data collection helps improve your experience
+                      </Typography>
+                    )}
                     <FormControlLabel
                       control={
                         <Switch
@@ -2193,6 +2776,15 @@ const Settings: React.FC = () => {
                         </Box>
                       }
                     />
+                    {privacySettings.shareAnalytics && (
+                      <Typography
+                        variant="caption"
+                        color="success.main"
+                        sx={{ ml: 4, display: 'block' }}
+                      >
+                        ✓ Analytics help us improve the platform
+                      </Typography>
+                    )}
                     <FormControlLabel
                       control={
                         <Switch
@@ -2216,6 +2808,15 @@ const Settings: React.FC = () => {
                         </Box>
                       }
                     />
+                    {privacySettings.showOnlineStatus && (
+                      <Typography
+                        variant="caption"
+                        color="success.main"
+                        sx={{ ml: 4, display: 'block' }}
+                      >
+                        ✓ Others can see when you're online
+                      </Typography>
+                    )}
                     <FormControlLabel
                       control={
                         <Switch
@@ -2239,6 +2840,15 @@ const Settings: React.FC = () => {
                         </Box>
                       }
                     />
+                    {privacySettings.allowTracking && (
+                      <Typography
+                        variant="caption"
+                        color="warning.main"
+                        sx={{ ml: 4, display: 'block' }}
+                      >
+                        ⚠ Activity tracking is enabled for personalized features
+                      </Typography>
+                    )}
                   </FormGroup>
                 </Grid>
 
@@ -2270,6 +2880,15 @@ const Settings: React.FC = () => {
                         </Box>
                       }
                     />
+                    {privacySettings.twoFactorAuth && (
+                      <Typography
+                        variant="caption"
+                        color="success.main"
+                        sx={{ ml: 4, display: 'block' }}
+                      >
+                        ✓ Two-factor authentication provides extra security
+                      </Typography>
+                    )}
                     <FormControlLabel
                       control={
                         <Switch
@@ -2293,6 +2912,15 @@ const Settings: React.FC = () => {
                         </Box>
                       }
                     />
+                    {privacySettings.biometricLogin && (
+                      <Typography
+                        variant="caption"
+                        color="success.main"
+                        sx={{ ml: 4, display: 'block' }}
+                      >
+                        ✓ Biometric login provides convenient and secure access
+                      </Typography>
+                    )}
                     <FormControlLabel
                       control={
                         <Switch
@@ -2316,6 +2944,16 @@ const Settings: React.FC = () => {
                         </Box>
                       }
                     />
+                    {privacySettings.autoLock && (
+                      <Typography
+                        variant="caption"
+                        color="success.main"
+                        sx={{ ml: 4, display: 'block' }}
+                      >
+                        ✓ Account will auto-lock after {privacySettings.lockTimeout} minutes of
+                        inactivity
+                      </Typography>
+                    )}
                   </FormGroup>
 
                   <Typography variant="subtitle1" sx={{ mt: 3 }} gutterBottom>
@@ -2355,6 +2993,7 @@ const Settings: React.FC = () => {
                       startIcon={<DownloadOutlined />}
                       fullWidth
                       sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
+                      onClick={() => setShowDownloadDataDialog(true)}
                     >
                       {t('settings.privacy.downloadMyData')}
                     </Button>
@@ -2371,10 +3010,98 @@ const Settings: React.FC = () => {
                           bgcolor: 'error.dark',
                         },
                       }}
+                      onClick={() => setShowDeleteAccountDialog(true)}
                     >
                       {t('settings.privacy.deleteAccount')}
                     </Button>
                   </Box>
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      height: '100%',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: 2,
+                      background:
+                        theme.palette.mode === 'dark'
+                          ? 'rgba(255,255,255,0.02)'
+                          : 'rgba(0,0,0,0.02)',
+                    }}
+                  >
+                    <Typography
+                      variant="subtitle1"
+                      gutterBottom
+                      sx={{ color: theme.palette.primary.main, mb: 2 }}
+                    >
+                      Security Summary
+                    </Typography>
+
+                    <Box sx={{ mb: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <SecurityOutlined fontSize="small" color="action" />
+                        <Typography variant="body2" fontWeight="medium">
+                          Level: {getSecuritySummary().securityLevel}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <VpnKeyOutlined fontSize="small" color="action" />
+                        <Typography variant="body2">
+                          Password: {getSecuritySummary().passwordStrength}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <HistoryOutlined fontSize="small" color="action" />
+                        <Typography variant="body2">
+                          Sessions: {getSecuritySummary().activeSessions} active
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <SecurityOutlined fontSize="small" color="action" />
+                        <Typography variant="body2">
+                          Features: {getSecuritySummary().enabledFeatures}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <HistoryOutlined fontSize="small" color="action" />
+                        <Typography variant="body2">
+                          Last Audit: {getSecuritySummary().lastAudit}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    {getSecurityRecommendations().length > 0 && (
+                      <Box sx={{ mb: 2 }}>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          display="block"
+                          gutterBottom
+                        >
+                          Recommendations:
+                        </Typography>
+                        {getSecurityRecommendations()
+                          .slice(0, 2)
+                          .map((rec, index) => (
+                            <Typography
+                              key={index}
+                              variant="caption"
+                              color="warning.main"
+                              sx={{ display: 'block', mb: 0.5 }}
+                            >
+                              • {rec}
+                            </Typography>
+                          ))}
+                      </Box>
+                    )}
+                  </Paper>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Divider sx={{ my: 2 }} />
                 </Grid>
 
                 <Grid item xs={12} md={6}>
@@ -2619,6 +3346,487 @@ const Settings: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowAIFeaturesDemo(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Notification Test Dialog */}
+      <Dialog
+        open={showNotificationTest}
+        onClose={() => setShowNotificationTest(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <NotificationsActiveOutlined />
+            Test Notifications
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Test your notification settings with different types of notifications. This will help
+            you verify that your preferences are working correctly.
+          </Typography>
+
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle1" gutterBottom>
+                Test Notification Types
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Button
+                  variant="outlined"
+                  startIcon={<AssignmentOutlined />}
+                  onClick={() => {
+                    // Simulate assignment notification
+                    if (notifications.desktop) {
+                      new Notification('New Assignment Available', {
+                        body: 'Research Paper assignment has been posted',
+                        icon: '/favicon.ico',
+                        tag: 'assignment',
+                      });
+                    }
+                    if (notifications.sound) {
+                      // Play notification sound
+                      const audio = new Audio('/notification-sound.mp3');
+                      audio.play().catch(() => {
+                        // Fallback: create a simple beep
+                        const context = new (window.AudioContext ||
+                          (window as any).webkitAudioContext)();
+                        const oscillator = context.createOscillator();
+                        const gainNode = context.createGain();
+                        oscillator.connect(gainNode);
+                        gainNode.connect(context.destination);
+                        oscillator.frequency.value = 800;
+                        gainNode.gain.value = 0.1;
+                        oscillator.start();
+                        oscillator.stop(context.currentTime + 0.2);
+                      });
+                    }
+                  }}
+                  disabled={!notifications.assignments}
+                >
+                  Test Assignment Notification
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<EventOutlined />}
+                  onClick={() => {
+                    if (notifications.desktop) {
+                      new Notification('Deadline Reminder', {
+                        body: 'Research Paper is due in 24 hours',
+                        icon: '/favicon.ico',
+                        tag: 'deadline',
+                      });
+                    }
+                    if (notifications.sound) {
+                      const audio = new Audio('/notification-sound.mp3');
+                      audio.play().catch(() => {
+                        const context = new (window.AudioContext ||
+                          (window as any).webkitAudioContext)();
+                        const oscillator = context.createOscillator();
+                        const gainNode = context.createGain();
+                        oscillator.connect(gainNode);
+                        gainNode.connect(context.destination);
+                        oscillator.frequency.value = 600;
+                        gainNode.gain.value = 0.1;
+                        oscillator.start();
+                        oscillator.stop(context.currentTime + 0.3);
+                      });
+                    }
+                  }}
+                  disabled={!notifications.deadlines}
+                >
+                  Test Deadline Notification
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<FeedbackOutlined />}
+                  onClick={() => {
+                    if (notifications.desktop) {
+                      new Notification('Feedback Ready', {
+                        body: 'Your AI analysis for "Research Paper" is now available',
+                        icon: '/favicon.ico',
+                        tag: 'feedback',
+                      });
+                    }
+                    if (notifications.sound) {
+                      const audio = new Audio('/notification-sound.mp3');
+                      audio.play().catch(() => {
+                        const context = new (window.AudioContext ||
+                          (window as any).webkitAudioContext)();
+                        const oscillator = context.createOscillator();
+                        const gainNode = context.createGain();
+                        oscillator.connect(gainNode);
+                        gainNode.connect(context.destination);
+                        oscillator.frequency.value = 1000;
+                        gainNode.gain.value = 0.1;
+                        oscillator.start();
+                        oscillator.stop(context.currentTime + 0.2);
+                      });
+                    }
+                  }}
+                  disabled={!notifications.feedback}
+                >
+                  Test Feedback Notification
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<UpdateOutlined />}
+                  onClick={() => {
+                    if (notifications.desktop) {
+                      new Notification('System Update', {
+                        body: 'New features are available in AssignmentAI',
+                        icon: '/favicon.ico',
+                        tag: 'update',
+                      });
+                    }
+                    if (notifications.sound) {
+                      const audio = new Audio('/notification-sound.mp3');
+                      audio.play().catch(() => {
+                        const context = new (window.AudioContext ||
+                          (window as any).webkitAudioContext)();
+                        const oscillator = context.createOscillator();
+                        const gainNode = context.createGain();
+                        oscillator.connect(gainNode);
+                        gainNode.connect(context.destination);
+                        oscillator.frequency.value = 400;
+                        gainNode.gain.value = 0.1;
+                        oscillator.start();
+                        oscillator.stop(context.currentTime + 0.4);
+                      });
+                    }
+                  }}
+                  disabled={!notifications.updates}
+                >
+                  Test System Update
+                </Button>
+              </Box>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle1" gutterBottom>
+                Current Settings Status
+              </Typography>
+              <Paper sx={{ p: 2, bgcolor: 'background.default' }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <EmailOutlined fontSize="small" />
+                    <Typography variant="body2">
+                      Email: {notifications.email ? '✓ Enabled' : '✗ Disabled'}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <DesktopWindowsOutlined fontSize="small" />
+                    <Typography variant="body2">
+                      Desktop: {notifications.desktop ? '✓ Enabled' : '✗ Disabled'}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <NotificationsOutlined fontSize="small" />
+                    <Typography variant="body2">
+                      Sound: {notifications.sound ? '✓ Enabled' : '✗ Disabled'}
+                    </Typography>
+                  </Box>
+                  <Divider sx={{ my: 1 }} />
+                  <Typography variant="caption" color="text.secondary">
+                    Priority Level: {notificationPreferences.priorityLevel}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Work Hours: {getNotificationSummary().workHours}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Quiet Hours: {getNotificationSummary().quietHours}
+                  </Typography>
+                </Box>
+              </Paper>
+
+              <Alert severity="info" sx={{ mt: 2 }}>
+                <Typography variant="caption">
+                  <strong>Note:</strong> Desktop notifications require browser permission. If you
+                  don't see notifications, check your browser's notification settings.
+                </Typography>
+              </Alert>
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowNotificationTest(false)}>Close</Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              // Request notification permission
+              if ('Notification' in window) {
+                Notification.requestPermission();
+              }
+            }}
+          >
+            Enable Notifications
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Security Audit Dialog */}
+      <Dialog
+        open={showSecurityAudit}
+        onClose={() => setShowSecurityAudit(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <SecurityOutlined />
+            Security Audit Report
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Comprehensive security analysis of your account and settings.
+          </Typography>
+
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle1" gutterBottom>
+                Security Score Breakdown
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2">Base Security</Typography>
+                  <Typography variant="body2">20/20</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2">Password Strength</Typography>
+                  <Typography variant="body2">
+                    {securitySettings.passwordStrength === 'strong'
+                      ? '20/20'
+                      : securitySettings.passwordStrength === 'medium'
+                      ? '10/20'
+                      : '0/20'}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2">Two-Factor Auth</Typography>
+                  <Typography variant="body2">
+                    {privacySettings.twoFactorAuth ? '25/25' : '0/25'}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2">Biometric Login</Typography>
+                  <Typography variant="body2">
+                    {privacySettings.biometricLogin ? '15/15' : '0/15'}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2">Auto-Lock</Typography>
+                  <Typography variant="body2">
+                    {privacySettings.autoLock ? '10/10' : '0/10'}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2">Session Management</Typography>
+                  <Typography variant="body2">
+                    {securitySettings.activeSessions <= 2 ? '10/10' : '5/10'}
+                  </Typography>
+                </Box>
+                <Divider sx={{ my: 1 }} />
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
+                  <Typography variant="body2">Total Score</Typography>
+                  <Typography variant="body2">{calculateSecurityScore()}/100</Typography>
+                </Box>
+              </Box>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle1" gutterBottom>
+                Security Recommendations
+              </Typography>
+              {getSecurityRecommendations().length > 0 ? (
+                <List dense>
+                  {getSecurityRecommendations().map((recommendation, index) => (
+                    <ListItem key={index} sx={{ px: 0 }}>
+                      <ListItemIcon sx={{ minWidth: 32 }}>
+                        <Warning fontSize="small" color="warning" />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={recommendation}
+                        primaryTypographyProps={{ variant: 'body2' }}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              ) : (
+                <Alert severity="success">
+                  <Typography variant="body2">
+                    Great job! Your security settings are well configured.
+                  </Typography>
+                </Alert>
+              )}
+
+              <Typography variant="subtitle1" sx={{ mt: 3 }} gutterBottom>
+                Privacy Analysis
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2">Data Collection</Typography>
+                  <Typography
+                    variant="body2"
+                    color={privacySettings.dataCollection ? 'warning.main' : 'success.main'}
+                  >
+                    {privacySettings.dataCollection ? 'Enabled' : 'Disabled'}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2">Analytics Sharing</Typography>
+                  <Typography
+                    variant="body2"
+                    color={privacySettings.shareAnalytics ? 'warning.main' : 'success.main'}
+                  >
+                    {privacySettings.shareAnalytics ? 'Enabled' : 'Disabled'}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2">Activity Tracking</Typography>
+                  <Typography
+                    variant="body2"
+                    color={privacySettings.allowTracking ? 'warning.main' : 'success.main'}
+                  >
+                    {privacySettings.allowTracking ? 'Enabled' : 'Disabled'}
+                  </Typography>
+                </Box>
+              </Box>
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowSecurityAudit(false)}>Close</Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              setShowSecurityAudit(false);
+              // TODO: Generate and download security report
+            }}
+          >
+            Download Report
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Account Confirmation Dialog */}
+      <Dialog
+        open={showDeleteAccountDialog}
+        onClose={() => setShowDeleteAccountDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <DeleteForeverOutlined color="error" />
+            Delete Account
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Alert severity="error" sx={{ mb: 2 }}>
+            <Typography variant="body2">
+              <strong>Warning:</strong> This action cannot be undone. All your data will be
+              permanently deleted.
+            </Typography>
+          </Alert>
+          <Typography variant="body2" color="text.secondary">
+            Before deleting your account, please consider:
+          </Typography>
+          <List dense>
+            <ListItem sx={{ px: 0 }}>
+              <ListItemIcon sx={{ minWidth: 32 }}>
+                <Warning fontSize="small" color="warning" />
+              </ListItemIcon>
+              <ListItemText
+                primary="All assignments and submissions will be lost"
+                primaryTypographyProps={{ variant: 'body2' }}
+              />
+            </ListItem>
+            <ListItem sx={{ px: 0 }}>
+              <ListItemIcon sx={{ minWidth: 32 }}>
+                <Warning fontSize="small" color="warning" />
+              </ListItemIcon>
+              <ListItemText
+                primary="Your account cannot be recovered"
+                primaryTypographyProps={{ variant: 'body2' }}
+              />
+            </ListItem>
+            <ListItem sx={{ px: 0 }}>
+              <ListItemIcon sx={{ minWidth: 32 }}>
+                <Warning fontSize="small" color="warning" />
+              </ListItemIcon>
+              <ListItemText
+                primary="Consider downloading your data first"
+                primaryTypographyProps={{ variant: 'body2' }}
+              />
+            </ListItem>
+          </List>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowDeleteAccountDialog(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={() => {
+              setShowDeleteAccountDialog(false);
+              // TODO: Implement account deletion
+            }}
+          >
+            Delete Account
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Download Data Dialog */}
+      <Dialog
+        open={showDownloadDataDialog}
+        onClose={() => setShowDownloadDataDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <DownloadOutlined />
+            Download Your Data
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Choose what data you'd like to download from your account.
+          </Typography>
+
+          <FormGroup>
+            <FormControlLabel
+              control={<Switch defaultChecked />}
+              label="Assignments and Submissions"
+            />
+            <FormControlLabel
+              control={<Switch defaultChecked />}
+              label="User Preferences and Settings"
+            />
+            <FormControlLabel control={<Switch defaultChecked />} label="Activity History" />
+            <FormControlLabel control={<Switch />} label="Analytics Data (if enabled)" />
+          </FormGroup>
+
+          <Alert severity="info" sx={{ mt: 2 }}>
+            <Typography variant="caption">
+              Data will be exported in JSON format and may take a few minutes to prepare.
+            </Typography>
+          </Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowDownloadDataDialog(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              setShowDownloadDataDialog(false);
+              // TODO: Implement data export
+            }}
+          >
+            Download Data
+          </Button>
         </DialogActions>
       </Dialog>
 
