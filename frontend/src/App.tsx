@@ -7,6 +7,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import Navbar from './components/Navbar';
 import { SecurityProvider } from './components/security/SecurityProvider';
 import { AdProvider } from './contexts/AdContext';
+import { AIFeaturesProvider } from './contexts/AIFeaturesContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { TokenLimitProvider } from './contexts/TokenLimitContext';
@@ -23,30 +24,39 @@ const App: React.FC = () => {
             <ToastProvider>
               <AdProvider>
                 <TokenLimitProvider>
-                  <CssBaseline />
-                  <SnackbarProvider maxSnack={3}>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        minHeight: '100vh',
-                        overflow: 'hidden',
-                      }}
-                    >
-                      <Navbar />
-                      <Box sx={{ display: 'flex', flex: 1 }}>
-                        <Box sx={{ flex: 1 }}>
-                          <AdComponent position="top" />
-                          <AppRouter />
-                          <AdComponent position="bottom" />
-                        </Box>
-                        <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-                          <AdComponent position="sidebar" />
+                  <AIFeaturesProvider
+                    initialFeatures={{
+                      autoComplete: true,
+                      codeSnippets: true,
+                      aiSuggestions: true,
+                      realTimeAnalysis: false,
+                    }}
+                  >
+                    <CssBaseline />
+                    <SnackbarProvider maxSnack={3}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          minHeight: '100vh',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <Navbar />
+                        <Box sx={{ display: 'flex', flex: 1 }}>
+                          <Box sx={{ flex: 1 }}>
+                            <AdComponent position="top" />
+                            <AppRouter />
+                            <AdComponent position="bottom" />
+                          </Box>
+                          <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+                            <AdComponent position="sidebar" />
+                          </Box>
                         </Box>
                       </Box>
-                    </Box>
-                  </SnackbarProvider>
-                  <Toaster position="top-right" richColors />
+                    </SnackbarProvider>
+                    <Toaster position="top-right" richColors />
+                  </AIFeaturesProvider>
                 </TokenLimitProvider>
               </AdProvider>
             </ToastProvider>

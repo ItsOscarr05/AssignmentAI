@@ -32,8 +32,6 @@ import {
   VerifiedUserOutlined,
   VisibilityOffOutlined,
   VisibilityOutlined,
-  VolumeUp,
-  VolumeUpOutlined,
   VpnKeyOutlined,
   Warning,
   Widgets,
@@ -42,6 +40,8 @@ import {
   Alert,
   Box,
   Button,
+  Chip,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -71,6 +71,7 @@ import {
   useTheme,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
+import AIFeaturesDemo from '../components/ai/AIFeaturesDemo';
 import DateFormatSelector from '../components/common/DateFormatSelector';
 import TimezoneSelector from '../components/common/TimezoneSelector';
 import { useAspectRatio } from '../hooks/useAspectRatio';
@@ -130,20 +131,10 @@ const Settings: React.FC = () => {
   const [fontSize, setFontSize] = useState(14);
   const [animations, setAnimations] = useState(true);
   const [compactMode, setCompactMode] = useState(false);
-  const [soundEffects, setSoundEffects] = useState(true);
-  const [volume, setVolume] = useState(70);
-  const [quietHoursStart, setQuietHoursStart] = useState(22);
-  const [quietHoursEnd, setQuietHoursEnd] = useState(7);
 
   // Language & Region Settings
   const [timeZone, setTimeZone] = useState('UTC');
   const [dateFormat, setDateFormat] = useState<DateFormat>('MM/DD/YYYY');
-
-  // Sound & Feedback Settings
-  const [hapticFeedback, setHapticFeedback] = useState(true);
-  const [notificationSounds, setNotificationSounds] = useState(true);
-  const [typingSounds, setTypingSounds] = useState(false);
-  const [completionSounds, setCompletionSounds] = useState(true);
 
   // AI Settings
   const [maxTokens, setMaxTokens] = useState<number>(1000);
@@ -153,6 +144,12 @@ const Settings: React.FC = () => {
   const [codeSnippets, setCodeSnippets] = useState(true);
   const [aiSuggestions, setAiSuggestions] = useState(true);
   const [realTimeAnalysis, setRealTimeAnalysis] = useState(true);
+
+  // AI Settings Validation & Feedback
+  const [aiSettingsError, setAiSettingsError] = useState<string | null>(null);
+  const [showModelComparison, setShowModelComparison] = useState(false);
+  const [isValidatingSettings, setIsValidatingSettings] = useState(false);
+  const [showAIFeaturesDemo, setShowAIFeaturesDemo] = useState(false);
 
   // Notification Settings
   const [notifications, setNotifications] = useState({
@@ -207,7 +204,7 @@ const Settings: React.FC = () => {
   // Subscription Settings
   const [subscription, setSubscription] = useState({
     plan: 'free' as SubscriptionPlan,
-    model: 'gpt-4o-mini',
+    model: 'gpt-4.1-nano', // Match the free plan model from subscriptionConfig
     tokenLimit: 30000,
   });
 
@@ -236,6 +233,65 @@ const Settings: React.FC = () => {
       tokenLimit: 100000,
       label: 'GPT-4',
     },
+  };
+
+  // AI Settings Validation Functions
+  const validateAISettings = () => {
+    const errors: string[] = [];
+
+    if (maxTokens < 1000 || maxTokens > subscription.tokenLimit) {
+      errors.push(
+        `Token limit must be between 1,000 and ${subscription.tokenLimit.toLocaleString()}`
+      );
+    }
+
+    const tempValue = parseFloat(temperature);
+    if (isNaN(tempValue) || tempValue < 0 || tempValue > 1) {
+      errors.push('Temperature must be between 0 and 1');
+    }
+
+    if (contextLength < 1 || contextLength > 20) {
+      errors.push('Context length must be between 1 and 20');
+    }
+
+    return errors;
+  };
+
+  const handleModelChange = (newModel: string) => {
+    // Find which plan this model belongs to
+    const targetPlan = Object.entries(subscriptionConfig).find(
+      ([_, config]) => config.model === newModel
+    )?.[0] as SubscriptionPlan;
+
+    if (!targetPlan) {
+      setAiSettingsError('Invalid model selected');
+      return;
+    }
+
+    if (targetPlan === subscription.plan) {
+      // Same plan, allow the change
+      setSubscription({
+        ...subscription,
+        model: newModel,
+      });
+      setAiSettingsError(null);
+    } else {
+      // Different plan - show upgrade prompt
+      setAiSettingsError(
+        `This model requires a ${targetPlan} subscription. Please upgrade to use ${subscriptionConfig[targetPlan].label}.`
+      );
+    }
+  };
+
+  const resetAISettingsToDefaults = () => {
+    setMaxTokens(1000);
+    setTemperature('0.7');
+    setContextLength(10);
+    setAutoComplete(true);
+    setCodeSnippets(true);
+    setAiSuggestions(true);
+    setRealTimeAnalysis(true);
+    setAiSettingsError(null);
   };
 
   // Model comparison data
@@ -302,6 +358,16 @@ const Settings: React.FC = () => {
 
   const handleSave = async () => {
     try {
+      // Validate AI settings before saving
+      const aiErrors = validateAISettings();
+      if (aiErrors.length > 0) {
+        setAiSettingsError(aiErrors.join(', '));
+        return;
+      }
+
+      setIsValidatingSettings(true);
+      setAiSettingsError(null);
+
       // Save to backend first
       await savePreferencesToBackend();
 
@@ -317,16 +383,6 @@ const Settings: React.FC = () => {
           language: language,
           timezone: timeZone,
           date_format: dateFormat,
-        },
-        sound: {
-          sound_effects: soundEffects,
-          haptic_feedback: hapticFeedback,
-          volume: volume,
-          notification_sounds: notificationSounds,
-          typing_sounds: typingSounds,
-          completion_sounds: completionSounds,
-          quiet_hours_start: quietHoursStart,
-          quiet_hours_end: quietHoursEnd,
         },
         notifications: {
           email: notifications.email,
@@ -367,6 +423,8 @@ const Settings: React.FC = () => {
           code_snippets: codeSnippets,
           ai_suggestions: aiSuggestions,
           real_time_analysis: realTimeAnalysis,
+          model: subscription.model,
+          plan: subscription.plan,
         },
       };
 
@@ -378,9 +436,10 @@ const Settings: React.FC = () => {
       console.log('Settings saved successfully!');
     } catch (error) {
       console.error('Failed to save settings:', error);
-      // Show error message to user
+      setAiSettingsError('Failed to save AI settings. Please try again.');
       setShowSaveSuccess(false);
-      // TODO: Show error message to user
+    } finally {
+      setIsValidatingSettings(false);
     }
   };
 
@@ -622,56 +681,6 @@ const Settings: React.FC = () => {
     console.log('Date format changed to:', dateFormat);
   }, [dateFormat]);
 
-  // Apply sound effects setting
-  useEffect(() => {
-    // Store sound effects preference in localStorage for future use
-    localStorage.setItem('soundEffects', soundEffects.toString());
-    console.log('Sound effects:', soundEffects);
-  }, [soundEffects]);
-
-  // Apply haptic feedback setting
-  useEffect(() => {
-    // Store haptic feedback preference in localStorage for future use
-    localStorage.setItem('hapticFeedback', hapticFeedback.toString());
-    console.log('Haptic feedback:', hapticFeedback);
-  }, [hapticFeedback]);
-
-  // Apply volume setting
-  useEffect(() => {
-    // Store volume preference in localStorage for future use
-    localStorage.setItem('volume', volume.toString());
-    console.log('Volume:', volume);
-  }, [volume]);
-
-  // Apply notification sounds setting
-  useEffect(() => {
-    // Store notification sounds preference in localStorage for future use
-    localStorage.setItem('notificationSounds', notificationSounds.toString());
-    console.log('Notification sounds:', notificationSounds);
-  }, [notificationSounds]);
-
-  // Apply typing sounds setting
-  useEffect(() => {
-    // Store typing sounds preference in localStorage for future use
-    localStorage.setItem('typingSounds', typingSounds.toString());
-    console.log('Typing sounds:', typingSounds);
-  }, [typingSounds]);
-
-  // Apply completion sounds setting
-  useEffect(() => {
-    // Store completion sounds preference in localStorage for future use
-    localStorage.setItem('completionSounds', completionSounds.toString());
-    console.log('Completion sounds:', completionSounds);
-  }, [completionSounds]);
-
-  // Apply quiet hours settings
-  useEffect(() => {
-    // Store quiet hours preferences in localStorage for future use
-    localStorage.setItem('quietHoursStart', quietHoursStart.toString());
-    localStorage.setItem('quietHoursEnd', quietHoursEnd.toString());
-    console.log('Quiet hours:', quietHoursStart, 'to', quietHoursEnd);
-  }, [quietHoursStart, quietHoursEnd]);
-
   // Load saved settings from localStorage on component mount
   useEffect(() => {
     const loadSavedSettings = () => {
@@ -686,31 +695,6 @@ const Settings: React.FC = () => {
       ) {
         setDateFormat(savedDateFormat as DateFormat);
       }
-
-      // Load sound settings
-      const savedSoundEffects = localStorage.getItem('soundEffects');
-      if (savedSoundEffects) setSoundEffects(savedSoundEffects === 'true');
-
-      const savedHaptic = localStorage.getItem('hapticFeedback');
-      if (savedHaptic) setHapticFeedback(savedHaptic === 'true');
-
-      const savedVolume = localStorage.getItem('volume');
-      if (savedVolume) setVolume(parseInt(savedVolume));
-
-      const savedNotificationSounds = localStorage.getItem('notificationSounds');
-      if (savedNotificationSounds) setNotificationSounds(savedNotificationSounds === 'true');
-
-      const savedTypingSounds = localStorage.getItem('typingSounds');
-      if (savedTypingSounds) setTypingSounds(savedTypingSounds === 'true');
-
-      const savedCompletionSounds = localStorage.getItem('completionSounds');
-      if (savedCompletionSounds) setCompletionSounds(savedCompletionSounds === 'true');
-
-      const savedQuietStart = localStorage.getItem('quietHoursStart');
-      if (savedQuietStart) setQuietHoursStart(parseInt(savedQuietStart));
-
-      const savedQuietEnd = localStorage.getItem('quietHoursEnd');
-      if (savedQuietEnd) setQuietHoursEnd(parseInt(savedQuietEnd));
     };
 
     // Try to load from backend first, fall back to localStorage
@@ -751,6 +735,38 @@ const Settings: React.FC = () => {
       if (userPreferences.push_notifications !== undefined) {
         setNotifications(prev => ({ ...prev, desktop: !!userPreferences.push_notifications }));
       }
+
+      // Load AI settings
+      if (userPreferences.custom_preferences?.maxTokens) {
+        setMaxTokens(Number(userPreferences.custom_preferences.maxTokens) || 1000);
+      }
+      if (userPreferences.custom_preferences?.temperature) {
+        setTemperature(userPreferences.custom_preferences.temperature.toString() || '0.7');
+      }
+      if (userPreferences.custom_preferences?.contextLength) {
+        setContextLength(Number(userPreferences.custom_preferences.contextLength) || 10);
+      }
+      if (userPreferences.custom_preferences?.autoComplete !== undefined) {
+        setAutoComplete(!!userPreferences.custom_preferences.autoComplete);
+      }
+      if (userPreferences.custom_preferences?.codeSnippets !== undefined) {
+        setCodeSnippets(!!userPreferences.custom_preferences.codeSnippets);
+      }
+      if (userPreferences.custom_preferences?.aiSuggestions !== undefined) {
+        setAiSuggestions(!!userPreferences.custom_preferences.aiSuggestions);
+      }
+      if (userPreferences.custom_preferences?.realTimeAnalysis !== undefined) {
+        setRealTimeAnalysis(!!userPreferences.custom_preferences.realTimeAnalysis);
+      }
+      if (userPreferences.custom_preferences?.model) {
+        setSubscription(prev => ({ ...prev, model: userPreferences.custom_preferences!.model }));
+      }
+      if (userPreferences.custom_preferences?.plan) {
+        setSubscription(prev => ({
+          ...prev,
+          plan: userPreferences.custom_preferences!.plan as SubscriptionPlan,
+        }));
+      }
     } catch (error) {
       console.warn('Failed to load preferences from backend:', error);
       // Fall back to localStorage
@@ -772,14 +788,6 @@ const Settings: React.FC = () => {
         custom_preferences: {
           timezone: timeZone,
           dateFormat,
-          soundEffects,
-          hapticFeedback,
-          volume,
-          notificationSounds,
-          typingSounds,
-          completionSounds,
-          quietHoursStart,
-          quietHoursEnd,
           maxTokens,
           temperature,
           contextLength,
@@ -905,6 +913,7 @@ const Settings: React.FC = () => {
           variant="contained"
           startIcon={<Save />}
           onClick={handleSave}
+          disabled={isValidatingSettings}
           sx={{
             ml: { xs: 0, md: 'auto' },
             px: { xs: 2, md: 4 },
@@ -919,7 +928,14 @@ const Settings: React.FC = () => {
             },
           }}
         >
-          {t('settings.saveChanges')}
+          {isValidatingSettings ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <CircularProgress size={16} color="inherit" />
+              Validating...
+            </Box>
+          ) : (
+            t('settings.saveChanges')
+          )}
         </Button>
       </Box>
 
@@ -1259,129 +1275,6 @@ const Settings: React.FC = () => {
                 </Grid>
               </Grid>
             </SettingsSection>
-
-            <SettingsSection
-              title={t('settings.sound.title')}
-              icon={<VolumeUp sx={{ color: theme.palette.primary.main }} />}
-            >
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    {t('settings.sound.soundSettings')}
-                  </Typography>
-                  <FormGroup>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={soundEffects}
-                          onChange={e => setSoundEffects(e.target.checked)}
-                        />
-                      }
-                      label={t('settings.sound.soundEffects')}
-                    />
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={hapticFeedback}
-                          onChange={e => setHapticFeedback(e.target.checked)}
-                        />
-                      }
-                      label={t('settings.sound.hapticFeedback')}
-                    />
-                  </FormGroup>
-
-                  <Typography gutterBottom sx={{ mt: 3 }}>
-                    {t('settings.sound.volume')}
-                  </Typography>
-                  <Slider
-                    value={volume}
-                    onChange={(_e, value) => setVolume(value as number)}
-                    disabled={!soundEffects}
-                    valueLabelDisplay="auto"
-                    step={5}
-                    marks={[
-                      { value: 0, label: 'Mute' },
-                      { value: 50, label: '50%' },
-                      { value: 100, label: '100%' },
-                    ]}
-                    disableSwap
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    {t('settings.sound.notificationSounds')}
-                  </Typography>
-                  <FormGroup>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={notificationSounds}
-                          onChange={e => setNotificationSounds(e.target.checked)}
-                        />
-                      }
-                      label={t('settings.sound.enableNotificationSounds')}
-                    />
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={typingSounds}
-                          onChange={e => setTypingSounds(e.target.checked)}
-                        />
-                      }
-                      label={t('settings.sound.typingSounds')}
-                    />
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={completionSounds}
-                          onChange={e => setCompletionSounds(e.target.checked)}
-                        />
-                      }
-                      label={t('settings.sound.taskCompletionSounds')}
-                    />
-                  </FormGroup>
-
-                  <Typography variant="subtitle1" sx={{ mt: 3 }} gutterBottom>
-                    {t('settings.sound.quietHours')}
-                  </Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={6}>
-                      <FormControl fullWidth>
-                        <InputLabel>{t('settings.sound.startTime')}</InputLabel>
-                        <Select
-                          value={quietHoursStart}
-                          label={t('settings.sound.startTime')}
-                          onChange={e => setQuietHoursStart(Number(e.target.value))}
-                        >
-                          {Array.from({ length: 24 }, (_, i) => (
-                            <MenuItem key={i} value={i}>
-                              {i.toString().padStart(2, '0')}:00
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <FormControl fullWidth>
-                        <InputLabel>{t('settings.sound.endTime')}</InputLabel>
-                        <Select
-                          value={quietHoursEnd}
-                          label={t('settings.sound.endTime')}
-                          onChange={e => setQuietHoursEnd(Number(e.target.value))}
-                        >
-                          {Array.from({ length: 24 }, (_, i) => (
-                            <MenuItem key={i} value={i}>
-                              {i.toString().padStart(2, '0')}:00
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                  </Grid>
-                </Grid>
-              </Grid>
-            </SettingsSection>
           </TabPanel>
 
           <TabPanel value={tabValue} index={1} breakpoint={breakpoint}>
@@ -1389,6 +1282,12 @@ const Settings: React.FC = () => {
               title={t('settings.ai.modelConfiguration')}
               icon={<Psychology sx={{ color: theme.palette.primary.main }} />}
             >
+              {aiSettingsError && (
+                <Alert severity="error" sx={{ mb: 3 }}>
+                  {aiSettingsError}
+                </Alert>
+              )}
+
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
                   <FormControl fullWidth>
@@ -1396,17 +1295,7 @@ const Settings: React.FC = () => {
                     <Select
                       value={subscription.model}
                       label={t('settings.ai.aiModel')}
-                      onChange={e => {
-                        // Only allow changing to models within the current plan
-                        const newModel = e.target.value;
-                        const currentPlanConfig = subscriptionConfig[subscription.plan];
-                        if (newModel === currentPlanConfig.model) {
-                          setSubscription({
-                            ...subscription,
-                            model: newModel,
-                          });
-                        }
-                      }}
+                      onChange={e => handleModelChange(e.target.value)}
                     >
                       {Object.entries(subscriptionConfig).map(([plan, config]) => (
                         <MenuItem
@@ -1441,16 +1330,17 @@ const Settings: React.FC = () => {
                       Model is determined by your subscription plan
                     </Typography>
                   </FormControl>
-                  <Box sx={{ mt: 2 }}>
+                  <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
                     <Button
                       variant="outlined"
                       startIcon={<CompareArrows />}
-                      onClick={() => {
-                        // This button is no longer used, but keeping it for now
-                      }}
+                      onClick={() => setShowModelComparison(true)}
                       size="small"
                     >
                       Compare Models
+                    </Button>
+                    <Button variant="outlined" onClick={resetAISettingsToDefaults} size="small">
+                      Reset to Defaults
                     </Button>
                   </Box>
                 </Grid>
@@ -1497,7 +1387,8 @@ const Settings: React.FC = () => {
                     color="text.secondary"
                     sx={{ mt: 1, display: 'block' }}
                   >
-                    Maximum token limit is determined by your subscription plan
+                    Maximum token limit is determined by your subscription plan. Higher limits allow
+                    for longer, more detailed responses.
                   </Typography>
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -1512,6 +1403,14 @@ const Settings: React.FC = () => {
                     valueLabelDisplay="auto"
                     disableSwap
                   />
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ mt: 1, display: 'block' }}
+                  >
+                    Controls creativity vs consistency. Lower values (0.1-0.3) are more focused,
+                    higher values (0.7-1.0) are more creative.
+                  </Typography>
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <Typography gutterBottom>{t('settings.ai.contextLength')}</Typography>
@@ -1525,6 +1424,14 @@ const Settings: React.FC = () => {
                     valueLabelDisplay="auto"
                     disableSwap
                   />
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ mt: 1, display: 'block' }}
+                  >
+                    Number of previous messages to consider for context. Higher values provide
+                    better continuity but use more tokens.
+                  </Typography>
                 </Grid>
               </Grid>
             </SettingsSection>
@@ -1535,48 +1442,195 @@ const Settings: React.FC = () => {
             >
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Core AI Features
+                  </Typography>
                   <FormGroup>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={autoComplete}
-                          onChange={e => setAutoComplete(e.target.checked)}
-                        />
-                      }
-                      label={t('settings.ai.aiAutoComplete')}
-                    />
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={codeSnippets}
-                          onChange={e => setCodeSnippets(e.target.checked)}
-                        />
-                      }
-                      label={t('settings.ai.codeSnippetsGeneration')}
-                    />
+                    <Box sx={{ mb: 2 }}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={autoComplete}
+                            onChange={e => setAutoComplete(e.target.checked)}
+                          />
+                        }
+                        label={
+                          <Box>
+                            <Typography variant="body2" fontWeight="medium">
+                              {t('settings.ai.aiAutoComplete')}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              Provides intelligent code completion as you type
+                            </Typography>
+                          </Box>
+                        }
+                      />
+                      {autoComplete && (
+                        <Typography
+                          variant="caption"
+                          color="success.main"
+                          sx={{ ml: 4, display: 'block' }}
+                        >
+                          ✓ Auto-complete is active in code editors
+                        </Typography>
+                      )}
+                    </Box>
+
+                    <Box sx={{ mb: 2 }}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={codeSnippets}
+                            onChange={e => setCodeSnippets(e.target.checked)}
+                          />
+                        }
+                        label={
+                          <Box>
+                            <Typography variant="body2" fontWeight="medium">
+                              {t('settings.ai.codeSnippetsGeneration')}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              Generates boilerplate code and common patterns
+                            </Typography>
+                          </Box>
+                        }
+                      />
+                      {codeSnippets && (
+                        <Typography
+                          variant="caption"
+                          color="success.main"
+                          sx={{ ml: 4, display: 'block' }}
+                        >
+                          ✓ Code snippets available in editor
+                        </Typography>
+                      )}
+                    </Box>
                   </FormGroup>
                 </Grid>
+
                 <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Advanced Features
+                  </Typography>
                   <FormGroup>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={aiSuggestions}
-                          onChange={e => setAiSuggestions(e.target.checked)}
-                        />
-                      }
-                      label={t('settings.ai.aiSuggestions')}
-                    />
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={realTimeAnalysis}
-                          onChange={e => setRealTimeAnalysis(e.target.checked)}
-                        />
-                      }
-                      label={t('settings.ai.realTimeAnalysis')}
-                    />
+                    <Box sx={{ mb: 2 }}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={aiSuggestions}
+                            onChange={e => setAiSuggestions(e.target.checked)}
+                          />
+                        }
+                        label={
+                          <Box>
+                            <Typography variant="body2" fontWeight="medium">
+                              {t('settings.ai.aiSuggestions')}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              Provides real-time coding hints and refactoring suggestions
+                            </Typography>
+                          </Box>
+                        }
+                      />
+                      {aiSuggestions && (
+                        <Typography
+                          variant="caption"
+                          color="success.main"
+                          sx={{ ml: 4, display: 'block' }}
+                        >
+                          ✓ AI suggestions active in editor
+                        </Typography>
+                      )}
+                    </Box>
+
+                    <Box sx={{ mb: 2 }}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={realTimeAnalysis}
+                            onChange={e => setRealTimeAnalysis(e.target.checked)}
+                          />
+                        }
+                        label={
+                          <Box>
+                            <Typography variant="body2" fontWeight="medium">
+                              {t('settings.ai.realTimeAnalysis')}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              Analyzes code quality and provides immediate feedback
+                            </Typography>
+                          </Box>
+                        }
+                      />
+                      {realTimeAnalysis && (
+                        <Box sx={{ ml: 4 }}>
+                          <Typography
+                            variant="caption"
+                            color="success.main"
+                            sx={{ display: 'block' }}
+                          >
+                            ✓ Real-time analysis active
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            color="warning.main"
+                            sx={{ display: 'block' }}
+                          >
+                            ⚠ May impact performance on large files
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
                   </FormGroup>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Divider sx={{ my: 2 }} />
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Active features:{' '}
+                      {[
+                        autoComplete && 'Auto-complete',
+                        codeSnippets && 'Code snippets',
+                        aiSuggestions && 'AI suggestions',
+                        realTimeAnalysis && 'Real-time analysis',
+                      ]
+                        .filter(Boolean)
+                        .join(', ') || 'None'}
+                    </Typography>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => {
+                        setAutoComplete(true);
+                        setCodeSnippets(true);
+                        setAiSuggestions(true);
+                        setRealTimeAnalysis(false); // Keep this off by default due to performance
+                      }}
+                    >
+                      Enable All (Recommended)
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => {
+                        setAutoComplete(false);
+                        setCodeSnippets(false);
+                        setAiSuggestions(false);
+                        setRealTimeAnalysis(false);
+                      }}
+                    >
+                      Disable All
+                    </Button>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={() => setShowAIFeaturesDemo(true)}
+                      sx={{ ml: 'auto' }}
+                    >
+                      Test AI Features
+                    </Button>
+                  </Box>
                 </Grid>
               </Grid>
             </SettingsSection>
@@ -1638,7 +1692,7 @@ const Settings: React.FC = () => {
                       }
                       label={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <VolumeUpOutlined fontSize="small" />
+                          <NotificationsOutlined fontSize="small" />
                           <Typography>{t('settings.notifications.soundNotifications')}</Typography>
                         </Box>
                       }
@@ -2418,6 +2472,153 @@ const Settings: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowNotificationPreview(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Model Comparison Dialog */}
+      <Dialog
+        open={showModelComparison}
+        onClose={() => setShowModelComparison(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <CompareArrows />
+            AI Model Comparison
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Grid container spacing={3}>
+            {Object.entries(subscriptionConfig).map(([plan, config]) => (
+              <Grid item xs={12} md={6} key={plan}>
+                <Paper
+                  elevation={2}
+                  sx={{
+                    p: 3,
+                    border: plan === subscription.plan ? '2px solid' : '1px solid',
+                    borderColor: plan === subscription.plan ? 'primary.main' : 'divider',
+                    borderRadius: 2,
+                    position: 'relative',
+                  }}
+                >
+                  {plan === subscription.plan && (
+                    <Chip
+                      label="Current Plan"
+                      color="primary"
+                      size="small"
+                      sx={{ position: 'absolute', top: 8, right: 8 }}
+                    />
+                  )}
+
+                  <Typography variant="h6" gutterBottom>
+                    {config.label}
+                  </Typography>
+
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    {plan.charAt(0).toUpperCase() + plan.slice(1)} Plan
+                  </Typography>
+
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Features:
+                    </Typography>
+                    <List dense>
+                      <ListItem sx={{ px: 0 }}>
+                        <ListItemIcon sx={{ minWidth: 32 }}>
+                          <CheckCircle fontSize="small" color="success" />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={`${config.tokenLimit.toLocaleString()} token limit`}
+                          primaryTypographyProps={{ variant: 'body2' }}
+                        />
+                      </ListItem>
+                      <ListItem sx={{ px: 0 }}>
+                        <ListItemIcon sx={{ minWidth: 32 }}>
+                          <CheckCircle fontSize="small" color="success" />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={plan === 'free' ? 'Basic AI features' : 'Advanced AI features'}
+                          primaryTypographyProps={{ variant: 'body2' }}
+                        />
+                      </ListItem>
+                      <ListItem sx={{ px: 0 }}>
+                        <ListItemIcon sx={{ minWidth: 32 }}>
+                          <CheckCircle fontSize="small" color="success" />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={plan === 'free' ? 'Standard support' : 'Priority support'}
+                          primaryTypographyProps={{ variant: 'body2' }}
+                        />
+                      </ListItem>
+                    </List>
+                  </Box>
+
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Performance:
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {plan === 'free' && 'Good for basic tasks and learning'}
+                      {plan === 'plus' && 'Balanced performance for most use cases'}
+                      {plan === 'pro' && 'High performance for complex assignments'}
+                      {plan === 'max' && 'Maximum performance for advanced analysis'}
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Pricing:
+                    </Typography>
+                    <Typography variant="h6" color="primary.main">
+                      {plan === 'free' && 'Free'}
+                      {plan === 'plus' && '$9.99/month'}
+                      {plan === 'pro' && '$19.99/month'}
+                      {plan === 'max' && '$39.99/month'}
+                    </Typography>
+                  </Box>
+                </Paper>
+              </Grid>
+            ))}
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowModelComparison(false)}>Close</Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              setShowModelComparison(false);
+              // TODO: Add upgrade functionality
+            }}
+          >
+            Upgrade Plan
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* AI Features Demo Dialog */}
+      <Dialog
+        open={showAIFeaturesDemo}
+        onClose={() => setShowAIFeaturesDemo(false)}
+        maxWidth="lg"
+        fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            maxHeight: '90vh',
+          },
+        }}
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Widgets />
+            AI Features Demo
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <AIFeaturesDemo />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowAIFeaturesDemo(false)}>Close</Button>
         </DialogActions>
       </Dialog>
 
