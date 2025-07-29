@@ -223,7 +223,11 @@ const AssignmentList: React.FC<AssignmentListProps> = ({ onDelete }) => {
                 <TableRow key={assignment.id}>
                   <TableCell>{assignment.title}</TableCell>
                   <TableCell>{assignment.subject}</TableCell>
-                  <TableCell>{assignment.dueDate ? format(new Date(assignment.dueDate), 'MMM dd, yyyy') : 'No due date'}</TableCell>
+                  <TableCell>
+                    {assignment.dueDate
+                      ? format(new Date(assignment.dueDate), 'MMM dd, yyyy')
+                      : 'No due date'}
+                  </TableCell>
                   <TableCell>
                     <Chip
                       label={assignment.status}

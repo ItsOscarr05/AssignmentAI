@@ -59,11 +59,11 @@ import {
   YAxis,
 } from 'recharts';
 import { useAuth } from '../contexts/AuthContext';
+import { recentAssignmentsWithSubject } from '../data/mockData';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { useTokenUsage } from '../hooks/useTokenUsage';
 import { api } from '../services/api';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
-import { recentAssignments } from './DashboardHome';
 
 interface Subscription {
   id: string;
@@ -88,7 +88,9 @@ const AITokens: React.FC = () => {
   const [modalOpen, setModalOpen] = React.useState(false);
   const navigate = useNavigate();
   const { isMockUser } = useAuth();
-  const [assignments, setAssignments] = useState<any[]>(isMockUser ? [...recentAssignments] : []);
+  const [assignments, setAssignments] = useState<any[]>(
+    isMockUser ? [...recentAssignmentsWithSubject] : []
+  );
   const [transactions, setTransactions] = useState<any[]>([]);
 
   const { totalTokens, usedTokens, remainingTokens, percentUsed } = useTokenUsage(subscription);
@@ -115,7 +117,7 @@ const AITokens: React.FC = () => {
         })
         .catch(() => setTransactions([]));
     } else {
-      setAssignments([...recentAssignments]);
+      setAssignments([...recentAssignmentsWithSubject]);
       // Use mock transactions for mock users
       setTransactions([
         {

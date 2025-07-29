@@ -54,11 +54,11 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import AssignmentEditDialog from '../components/assignments/AssignmentEdit';
 import { useAuth } from '../contexts/AuthContext';
+import { recentAssignmentsWithSubject } from '../data/mockData';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { assignments } from '../services/api/assignments';
 import { mapToCoreSubject } from '../services/subjectService';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
-import { recentAssignments } from './DashboardHome';
 
 interface Assignment {
   id: string;
@@ -128,7 +128,7 @@ const Assignments: React.FC = () => {
 
   const [assignmentsList, setAssignmentsList] = useState<Assignment[]>(
     isMockUser
-      ? recentAssignments.map((a: any) => ({
+      ? recentAssignmentsWithSubject.map((a: any) => ({
           ...a,
           subject: a.subject || (a.title ? mapToCoreSubject(a.title) : 'Unknown'),
           description: a.description || '',

@@ -103,7 +103,7 @@ const Dashboard: React.FC = () => {
             width: '100%',
           }}
         >
-          AssignmentAI
+          {t('common.appName')}
         </Typography>
       </Box>
 
@@ -171,7 +171,7 @@ const Dashboard: React.FC = () => {
           color="primary.contrastText"
           sx={{ opacity: 0.7, fontSize: '0.9rem' }}
         >
-          © {new Date().getFullYear()} AssignmentAI
+          © {new Date().getFullYear()} {t('common.appName')}
         </Typography>
       </Box>
     </Box>

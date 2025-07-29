@@ -383,7 +383,7 @@ const PricePlan: React.FC = () => {
       // Update plans to mark current plan
       const updatedPlans = plans.map(plan => ({
         ...plan,
-        isCurrentPlan: plan.name.toLowerCase() === response.data.name.toLowerCase(),
+        isCurrentPlan: plan.name.toLowerCase() === (response.data.name || '').toLowerCase(),
       }));
       setPlansWithCurrentPlan(updatedPlans);
     } catch (error) {

@@ -128,7 +128,7 @@ const Settings: React.FC = () => {
   // General Settings
   const [darkMode, setDarkMode] = useState(false);
   const [language, setLanguage] = useState('en');
-  const [fontSize, setFontSize] = useState(14);
+  const [fontSize, setFontSize] = useState(20);
   const [animations, setAnimations] = useState(true);
   const [compactMode, setCompactMode] = useState(false);
 
@@ -160,7 +160,6 @@ const Settings: React.FC = () => {
   const [showSecurityAudit, setShowSecurityAudit] = useState(false);
   const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
   const [showDownloadDataDialog, setShowDownloadDataDialog] = useState(false);
-  const [showTwoFactorSetup, setShowTwoFactorSetup] = useState(false);
 
   // Notification Settings
   const [notifications, setNotifications] = useState({
@@ -1010,7 +1009,7 @@ const Settings: React.FC = () => {
         setDarkMode(userPreferences.theme === 'dark');
       }
       if (userPreferences.font_size) {
-        setFontSize(parseInt(userPreferences.font_size) || 14);
+        setFontSize(parseInt(userPreferences.font_size) || 20);
       }
       if (userPreferences.compact_mode !== undefined) {
         setCompactMode(userPreferences.compact_mode);
@@ -1330,10 +1329,21 @@ const Settings: React.FC = () => {
                     value={fontSize}
                     onChange={(_e, value) => setFontSize(value as number)}
                     min={12}
-                    max={20}
-                    step={1}
-                    marks
+                    max={28}
+                    step={2}
+                    marks={[
+                      { value: 12 },
+                      { value: 14 },
+                      { value: 16 },
+                      { value: 18 },
+                      { value: 20 },
+                      { value: 22 },
+                      { value: 24 },
+                      { value: 26 },
+                      { value: 28 },
+                    ]}
                     valueLabelDisplay="auto"
+                    valueLabelFormat={value => `${value}px`}
                     disableSwap
                   />
                 </Grid>
@@ -1351,7 +1361,11 @@ const Settings: React.FC = () => {
                     <Select
                       value={language}
                       label={t('settings.language.language')}
-                      onChange={e => setLanguage(e.target.value)}
+                      onChange={e => {
+                        const newLanguage = e.target.value;
+                        setLanguage(newLanguage);
+                        changeLanguage(newLanguage);
+                      }}
                     >
                       <MenuItem value="en">English</MenuItem>
                       <MenuItem value="es">Español</MenuItem>
@@ -2682,7 +2696,8 @@ const Settings: React.FC = () => {
                         onClick={() => {
                           // Handle action based on item.id
                           if (item.id === '2fa') {
-                            setShowTwoFactorSetup(true);
+                            // TODO: Implement two-factor authentication setup
+                            console.log('Two-factor authentication setup not yet implemented');
                           }
                         }}
                         startIcon={
@@ -3122,39 +3137,46 @@ const Settings: React.FC = () => {
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    {t('settings.privacy.accountManagement')}
-                  </Typography>
-                  <Box
-                    sx={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center' }}
-                  >
-                    <Button
-                      variant="outlined"
-                      color="primary"
-                      startIcon={<DownloadOutlined />}
-                      fullWidth
-                      sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
-                      onClick={() => setShowDownloadDataDialog(true)}
-                    >
-                      {t('settings.privacy.downloadMyData')}
-                    </Button>
-                    <Button
-                      variant="contained"
-                      color="error"
-                      startIcon={<DeleteForeverOutlined />}
-                      fullWidth
+                  <Box sx={{ textAlign: 'center', width: '100%' }}>
+                    <Typography variant="subtitle1" gutterBottom>
+                      {t('settings.privacy.accountManagement')}
+                    </Typography>
+                    <Box
                       sx={{
-                        bgcolor: 'error.main',
-                        color: 'white',
-                        fontSize: { xs: '0.875rem', md: '1rem' },
-                        '&:hover': {
-                          bgcolor: 'error.dark',
-                        },
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 2,
+                        width: '100%',
                       }}
-                      onClick={() => setShowDeleteAccountDialog(true)}
                     >
-                      {t('settings.privacy.deleteAccount')}
-                    </Button>
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        startIcon={<DownloadOutlined />}
+                        fullWidth
+                        sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
+                        onClick={() => setShowDownloadDataDialog(true)}
+                      >
+                        {t('settings.privacy.downloadMyData')}
+                      </Button>
+                      <Button
+                        variant="contained"
+                        color="error"
+                        startIcon={<DeleteForeverOutlined />}
+                        fullWidth
+                        sx={{
+                          bgcolor: 'error.main',
+                          color: 'white',
+                          fontSize: { xs: '0.875rem', md: '1rem' },
+                          '&:hover': {
+                            bgcolor: 'error.dark',
+                          },
+                        }}
+                        onClick={() => setShowDeleteAccountDialog(true)}
+                      >
+                        {t('settings.privacy.deleteAccount')}
+                      </Button>
+                    </Box>
                   </Box>
                 </Grid>
               </Grid>
@@ -3864,15 +3886,15 @@ const Settings: React.FC = () => {
           transition: all 0.3s ease;
         }
         
-        /* Compact mode styles */
-        .compact-mode .MuiPaper-root {
+        /* Compact mode styles - exclude sidebar */
+        .compact-mode .MuiPaper-root:not(.MuiDrawer-paper) {
           padding: 16px !important;
           margin-bottom: 16px !important;
         }
-        .compact-mode .MuiTypography-h5 {
+        .compact-mode .MuiTypography-h5:not(.MuiDrawer-root .MuiTypography-h5) {
           font-size: 1.1rem !important;
         }
-        .compact-mode .MuiFormControlLabel-root {
+        .compact-mode .MuiFormControlLabel-root:not(.MuiDrawer-root .MuiFormControlLabel-root) {
           margin-bottom: 8px !important;
         }
         
@@ -3882,12 +3904,31 @@ const Settings: React.FC = () => {
           animation: none !important;
         }
         
-        /* Font size styles */
-        :root {
-          font-size: var(--app-font-size, 14px);
+        /* Font size styles - apply to main content areas only */
+        .MuiTypography-root:not(.MuiDrawer-root .MuiTypography-root):not(.MuiAppBar-root .MuiTypography-root),
+        .MuiButton-root:not(.MuiDrawer-root .MuiButton-root):not(.MuiAppBar-root .MuiButton-root),
+        .MuiTextField-root:not(.MuiDrawer-root .MuiTextField-root):not(.MuiAppBar-root .MuiTextField-root),
+        .MuiFormControl-root:not(.MuiDrawer-root .MuiFormControl-root):not(.MuiAppBar-root .MuiFormControl-root) {
+          font-size: var(--app-font-size, 20px);
         }
-        body {
-          font-size: var(--app-font-size, 14px);
+        
+        /* Ensure sidebar and navigation maintain original font sizes */
+        .MuiDrawer-root, .MuiDrawer-paper, .MuiAppBar-root, .MuiToolbar-root, 
+        [class*="sidebar"], [class*="drawer"], [class*="navigation"], [class*="navbar"] {
+          font-size: inherit !important;
+        }
+        
+        /* Restore original sidebar font sizes */
+        .MuiDrawer-root .MuiTypography-h6 {
+          font-size: 1.7rem !important;
+        }
+        
+        .MuiDrawer-root .MuiListItemText-primary {
+          font-size: 1.1rem !important;
+        }
+        
+        .MuiDrawer-root .MuiTypography-body2 {
+          font-size: 0.9rem !important;
         }
         
         /* Local dark mode styles */

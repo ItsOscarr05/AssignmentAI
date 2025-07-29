@@ -9,6 +9,12 @@ import deTranslations from './locales/de.json';
 import enTranslations from './locales/en.json';
 import esTranslations from './locales/es.json';
 import frTranslations from './locales/fr.json';
+import itTranslations from './locales/it.json';
+import jaTranslations from './locales/ja.json';
+import koTranslations from './locales/ko.json';
+import ptTranslations from './locales/pt.json';
+import ruTranslations from './locales/ru.json';
+import zhTranslations from './locales/zh.json';
 
 // Supported languages
 export const supportedLanguages = [
@@ -50,6 +56,24 @@ i18n
       },
       de: {
         translation: deTranslations,
+      },
+      it: {
+        translation: itTranslations,
+      },
+      pt: {
+        translation: ptTranslations,
+      },
+      ru: {
+        translation: ruTranslations,
+      },
+      zh: {
+        translation: zhTranslations,
+      },
+      ja: {
+        translation: jaTranslations,
+      },
+      ko: {
+        translation: koTranslations,
       },
     },
     fallbackLng: 'en',

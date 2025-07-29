@@ -63,12 +63,12 @@ import { FeatureAccessErrorComponent } from '../components/workshop/FeatureAcces
 import WorkshopFileUpload from '../components/workshop/WorkshopFileUpload';
 import WorkshopLiveModal from '../components/workshop/WorkshopLiveModal';
 import { useAuth } from '../contexts/AuthContext';
+import { recentAssignmentsWithSubject } from '../data/mockData';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { useTokenUsage } from '../hooks/useTokenUsage';
 import { api } from '../services/api';
 import { useWorkshopStore } from '../services/WorkshopService';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
-import { recentAssignments } from './DashboardHome';
 
 interface HistoryItem {
   id: string;
@@ -99,7 +99,9 @@ const generateWeeklyActivityData = (): ActivityData[] => {
     const dayStr = date.toISOString().split('T')[0];
     const dayName = dayNames[date.getDay()];
 
-    const files = recentAssignments.filter(a => a.createdAt.split('T')[0] === dayStr).length;
+    const files = recentAssignmentsWithSubject.filter(
+      a => a.createdAt.split('T')[0] === dayStr
+    ).length;
 
     // Simulate other activities for a more dynamic chart
     weekData.push({
@@ -307,7 +309,7 @@ const Workshop: React.FC = () => {
   useEffect(() => {
     // Use the 5 most recent assignments from mock data for history
     if (isMockUser) {
-      const sorted = [...recentAssignments].sort(
+      const sorted = [...recentAssignmentsWithSubject].sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
       const historyItems: HistoryItem[] = sorted.slice(0, 5).map(assignment => ({
