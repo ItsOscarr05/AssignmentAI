@@ -2984,128 +2984,6 @@ const Settings: React.FC = () => {
 
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
-                    {t('settings.privacy.accountManagement')}
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <Button
-                      variant="outlined"
-                      color="primary"
-                      startIcon={<DownloadOutlined />}
-                      fullWidth
-                      sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
-                      onClick={() => setShowDownloadDataDialog(true)}
-                    >
-                      {t('settings.privacy.downloadMyData')}
-                    </Button>
-                    <Button
-                      variant="contained"
-                      color="error"
-                      startIcon={<DeleteForeverOutlined />}
-                      fullWidth
-                      sx={{
-                        bgcolor: 'error.main',
-                        color: 'white',
-                        fontSize: { xs: '0.875rem', md: '1rem' },
-                        '&:hover': {
-                          bgcolor: 'error.dark',
-                        },
-                      }}
-                      onClick={() => setShowDeleteAccountDialog(true)}
-                    >
-                      {t('settings.privacy.deleteAccount')}
-                    </Button>
-                  </Box>
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      p: 2,
-                      height: '100%',
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      borderRadius: 2,
-                      background:
-                        theme.palette.mode === 'dark'
-                          ? 'rgba(255,255,255,0.02)'
-                          : 'rgba(0,0,0,0.02)',
-                    }}
-                  >
-                    <Typography
-                      variant="subtitle1"
-                      gutterBottom
-                      sx={{ color: theme.palette.primary.main, mb: 2 }}
-                    >
-                      Security Summary
-                    </Typography>
-
-                    <Box sx={{ mb: 2 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                        <SecurityOutlined fontSize="small" color="action" />
-                        <Typography variant="body2" fontWeight="medium">
-                          Level: {getSecuritySummary().securityLevel}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                        <VpnKeyOutlined fontSize="small" color="action" />
-                        <Typography variant="body2">
-                          Password: {getSecuritySummary().passwordStrength}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                        <HistoryOutlined fontSize="small" color="action" />
-                        <Typography variant="body2">
-                          Sessions: {getSecuritySummary().activeSessions} active
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                        <SecurityOutlined fontSize="small" color="action" />
-                        <Typography variant="body2">
-                          Features: {getSecuritySummary().enabledFeatures}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <HistoryOutlined fontSize="small" color="action" />
-                        <Typography variant="body2">
-                          Last Audit: {getSecuritySummary().lastAudit}
-                        </Typography>
-                      </Box>
-                    </Box>
-
-                    {getSecurityRecommendations().length > 0 && (
-                      <Box sx={{ mb: 2 }}>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          display="block"
-                          gutterBottom
-                        >
-                          Recommendations:
-                        </Typography>
-                        {getSecurityRecommendations()
-                          .slice(0, 2)
-                          .map((rec, index) => (
-                            <Typography
-                              key={index}
-                              variant="caption"
-                              color="warning.main"
-                              sx={{ display: 'block', mb: 0.5 }}
-                            >
-                              • {rec}
-                            </Typography>
-                          ))}
-                      </Box>
-                    )}
-                  </Paper>
-                </Grid>
-
-                <Grid item xs={12}>
-                  <Divider sx={{ my: 2 }} />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle1" gutterBottom>
                     {t('settings.privacy.securityInformation')}
                   </Typography>
                   <List dense>
@@ -3157,6 +3035,127 @@ const Settings: React.FC = () => {
                       />
                     </ListItem>
                   </List>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      height: '100%',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: 2,
+                      background:
+                        theme.palette.mode === 'dark'
+                          ? 'rgba(255,255,255,0.02)'
+                          : 'rgba(0,0,0,0.02)',
+                    }}
+                  >
+                    <Typography
+                      variant="subtitle1"
+                      gutterBottom
+                      sx={{ color: theme.palette.primary.main, mb: 2 }}
+                    >
+                      Security Summary
+                    </Typography>
+                    <Box sx={{ mb: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <SecurityOutlined fontSize="small" color="action" />
+                        <Typography variant="body2" fontWeight="medium">
+                          Level: {getSecuritySummary().securityLevel}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <VpnKeyOutlined fontSize="small" color="action" />
+                        <Typography variant="body2">
+                          Password: {getSecuritySummary().passwordStrength}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <HistoryOutlined fontSize="small" color="action" />
+                        <Typography variant="body2">
+                          Sessions: {getSecuritySummary().activeSessions} active
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <SecurityOutlined fontSize="small" color="action" />
+                        <Typography variant="body2">
+                          Features: {getSecuritySummary().enabledFeatures}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <HistoryOutlined fontSize="small" color="action" />
+                        <Typography variant="body2">
+                          Last Audit: {getSecuritySummary().lastAudit}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    {getSecurityRecommendations().length > 0 && (
+                      <Box sx={{ mb: 2 }}>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          display="block"
+                          gutterBottom
+                        >
+                          Recommendations:
+                        </Typography>
+                        {getSecurityRecommendations()
+                          .slice(0, 2)
+                          .map((rec, index) => (
+                            <Typography
+                              key={index}
+                              variant="caption"
+                              color="warning.main"
+                              sx={{ display: 'block', mb: 0.5 }}
+                            >
+                              • {rec}
+                            </Typography>
+                          ))}
+                      </Box>
+                    )}
+                  </Paper>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Divider sx={{ my: 2 }} />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    {t('settings.privacy.accountManagement')}
+                  </Typography>
+                  <Box
+                    sx={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center' }}
+                  >
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      startIcon={<DownloadOutlined />}
+                      fullWidth
+                      sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
+                      onClick={() => setShowDownloadDataDialog(true)}
+                    >
+                      {t('settings.privacy.downloadMyData')}
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="error"
+                      startIcon={<DeleteForeverOutlined />}
+                      fullWidth
+                      sx={{
+                        bgcolor: 'error.main',
+                        color: 'white',
+                        fontSize: { xs: '0.875rem', md: '1rem' },
+                        '&:hover': {
+                          bgcolor: 'error.dark',
+                        },
+                      }}
+                      onClick={() => setShowDeleteAccountDialog(true)}
+                    >
+                      {t('settings.privacy.deleteAccount')}
+                    </Button>
+                  </Box>
                 </Grid>
               </Grid>
             </SettingsSection>
