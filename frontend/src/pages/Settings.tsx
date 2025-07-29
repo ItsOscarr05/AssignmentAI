@@ -73,8 +73,6 @@ import {
 import React, { useEffect, useState } from 'react';
 import DateFormatSelector from '../components/common/DateFormatSelector';
 import TimezoneSelector from '../components/common/TimezoneSelector';
-import TranslationPreferences from '../components/common/TranslationPreferences';
-import { useTranslationContext } from '../contexts/TranslationContext';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { useTranslation } from '../hooks/useTranslation';
 import { preferences } from '../services/api';
@@ -118,24 +116,6 @@ const Settings: React.FC = () => {
   const theme = useTheme();
   const { breakpoint } = useAspectRatio();
 
-  // Safely use translation context with fallback
-  let translationContext = null;
-  try {
-    translationContext = useTranslationContext();
-  } catch (error) {
-    console.warn('TranslationContext not available:', error);
-  }
-
-  const {
-    preferences: translationPreferences,
-    setAutoTranslate: setContextAutoTranslate,
-    setShowOriginalText: setContextShowOriginalText,
-  } = translationContext || {
-    preferences: { autoTranslate: false, showOriginalText: true, targetLanguage: 'en' },
-    setAutoTranslate: () => {},
-    setShowOriginalText: () => {},
-  };
-
   const [tabValue, setTabValue] = useState(0);
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -158,29 +138,6 @@ const Settings: React.FC = () => {
   // Language & Region Settings
   const [timeZone, setTimeZone] = useState('UTC');
   const [dateFormat, setDateFormat] = useState<DateFormat>('MM/DD/YYYY');
-  const [autoTranslate, setAutoTranslate] = useState(false);
-  const [showOriginalText, setShowOriginalText] = useState(true);
-
-  // Sync with translation context
-  useEffect(() => {
-    if (translationContext) {
-      setAutoTranslate(translationPreferences.autoTranslate);
-      setShowOriginalText(translationPreferences.showOriginalText);
-    }
-  }, [translationPreferences, translationContext]);
-
-  // Update context when local state changes
-  useEffect(() => {
-    if (translationContext) {
-      setContextAutoTranslate(autoTranslate);
-    }
-  }, [autoTranslate, setContextAutoTranslate, translationContext]);
-
-  useEffect(() => {
-    if (translationContext) {
-      setContextShowOriginalText(showOriginalText);
-    }
-  }, [showOriginalText, setContextShowOriginalText, translationContext]);
 
   // Sound & Feedback Settings
   const [hapticFeedback, setHapticFeedback] = useState(true);
@@ -360,8 +317,6 @@ const Settings: React.FC = () => {
           language: language,
           timezone: timeZone,
           date_format: dateFormat,
-          auto_translate: autoTranslate,
-          show_original_text: showOriginalText,
         },
         sound: {
           sound_effects: soundEffects,
@@ -817,8 +772,6 @@ const Settings: React.FC = () => {
         custom_preferences: {
           timezone: timeZone,
           dateFormat,
-          autoTranslate,
-          showOriginalText,
           soundEffects,
           hapticFeedback,
           volume,
@@ -1185,14 +1138,124 @@ const Settings: React.FC = () => {
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    {t('settings.language.translationPreferences')}
-                  </Typography>
-                  <TranslationPreferences
-                    showAdvanced={true}
-                    showPreview={true}
-                    showTestSection={true}
-                  />
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      height: '100%',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: 2,
+                      background:
+                        theme.palette.mode === 'dark'
+                          ? 'rgba(255,255,255,0.02)'
+                          : 'rgba(0,0,0,0.02)',
+                    }}
+                  >
+                    <Typography
+                      variant="subtitle1"
+                      gutterBottom
+                      sx={{ color: theme.palette.primary.main, mb: 2 }}
+                    >
+                      Current Configuration
+                    </Typography>
+
+                    <Box sx={{ mb: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <Language fontSize="small" color="action" />
+                        <Typography variant="body2" fontWeight="medium">
+                          {language === 'en'
+                            ? 'English'
+                            : language === 'es'
+                            ? 'Español'
+                            : language === 'fr'
+                            ? 'Français'
+                            : language === 'de'
+                            ? 'Deutsch'
+                            : language === 'it'
+                            ? 'Italiano'
+                            : language === 'pt'
+                            ? 'Português'
+                            : language === 'ru'
+                            ? 'Русский'
+                            : language === 'zh'
+                            ? '中文'
+                            : language === 'ja'
+                            ? '日本語'
+                            : language === 'ko'
+                            ? '한국어'
+                            : 'English'}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <EventOutlined fontSize="small" color="action" />
+                        <Typography variant="body2">
+                          {timeZone === 'UTC' ? 'Universal Time (UTC)' : timeZone}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <EventOutlined fontSize="small" color="action" />
+                        <Typography variant="body2">{dateFormat} format</Typography>
+                      </Box>
+                    </Box>
+
+                    <Box sx={{ mb: 2 }}>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        display="block"
+                        gutterBottom
+                      >
+                        Preview:
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontFamily: 'monospace', fontSize: '0.875rem' }}
+                      >
+                        {new Date().toLocaleString(language === 'en' ? 'en-US' : language, {
+                          timeZone: timeZone,
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </Typography>
+                    </Box>
+
+                    <Box>
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => {
+                            try {
+                              const detectedTimezone =
+                                Intl.DateTimeFormat().resolvedOptions().timeZone;
+                              setTimeZone(detectedTimezone);
+                            } catch (error) {
+                              console.warn('Could not detect timezone:', error);
+                            }
+                          }}
+                          sx={{ fontSize: '0.7rem', py: 0.5, px: 1 }}
+                        >
+                          Auto-detect
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => {
+                            setLanguage('en');
+                            setTimeZone('UTC');
+                            setDateFormat('MM/DD/YYYY');
+                          }}
+                          sx={{ fontSize: '0.7rem', py: 0.5, px: 1 }}
+                        >
+                          Reset
+                        </Button>
+                      </Box>
+                    </Box>
+                  </Paper>
                 </Grid>
               </Grid>
             </SettingsSection>

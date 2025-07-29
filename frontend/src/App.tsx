@@ -10,7 +10,6 @@ import { AdProvider } from './contexts/AdContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { TokenLimitProvider } from './contexts/TokenLimitContext';
-import { TranslationProvider } from './contexts/TranslationContext';
 import './i18n/config'; // Initialize i18n
 import { AppRouter } from './routes';
 import { ThemeProvider } from './theme/ThemeProvider';
@@ -24,32 +23,30 @@ const App: React.FC = () => {
             <ToastProvider>
               <AdProvider>
                 <TokenLimitProvider>
-                  <TranslationProvider>
-                    <CssBaseline />
-                    <SnackbarProvider maxSnack={3}>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          minHeight: '100vh',
-                          overflow: 'hidden',
-                        }}
-                      >
-                        <Navbar />
-                        <Box sx={{ display: 'flex', flex: 1 }}>
-                          <Box sx={{ flex: 1 }}>
-                            <AdComponent position="top" />
-                            <AppRouter />
-                            <AdComponent position="bottom" />
-                          </Box>
-                          <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-                            <AdComponent position="sidebar" />
-                          </Box>
+                  <CssBaseline />
+                  <SnackbarProvider maxSnack={3}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        minHeight: '100vh',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <Navbar />
+                      <Box sx={{ display: 'flex', flex: 1 }}>
+                        <Box sx={{ flex: 1 }}>
+                          <AdComponent position="top" />
+                          <AppRouter />
+                          <AdComponent position="bottom" />
+                        </Box>
+                        <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+                          <AdComponent position="sidebar" />
                         </Box>
                       </Box>
-                    </SnackbarProvider>
-                    <Toaster position="top-right" richColors />
-                  </TranslationProvider>
+                    </Box>
+                  </SnackbarProvider>
+                  <Toaster position="top-right" richColors />
                 </TokenLimitProvider>
               </AdProvider>
             </ToastProvider>
