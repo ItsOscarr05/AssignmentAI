@@ -53,7 +53,6 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   mockNotificationTemplates,
   recentAssignmentsWithSubject,
-  tokenLimits,
   type Assignment,
 } from '../data/mockData';
 import { useAspectRatio } from '../hooks/useAspectRatio';
@@ -84,34 +83,6 @@ const DashboardHome: React.FC = () => {
   const handleMenuClose = () => {
     setAnchorEl(null);
   };
-
-  // Token usage/remaining mock notifications
-  const tokenUsed = tokenLimits[Math.floor(Math.random() * tokenLimits.length)];
-  const tokenRemaining = 30000 - tokenUsed;
-  const tokenNotificationVariants = [
-    {
-      title: 'Token Usage',
-      body: `You have used ${tokenUsed.toLocaleString()} tokens this month.`,
-    },
-    {
-      title: 'Token Remaining',
-      body: `You have ${tokenRemaining.toLocaleString()} tokens remaining this month.`,
-    },
-  ];
-  const randomTokenNotification =
-    tokenNotificationVariants[Math.floor(Math.random() * tokenNotificationVariants.length)];
-
-  // Token limit threshold notifications for mock users
-  const tokenThresholds = [
-    { percent: 75, remaining: 22500 },
-    { percent: 50, remaining: 15000 },
-    { percent: 25, remaining: 7500 },
-    { percent: 12, remaining: 3000 },
-  ];
-  const tokenThresholdNotifications = tokenThresholds.map(t => ({
-    title: 'Token Limit Warning',
-    body: `You have ${t.remaining.toLocaleString()} tokens (${t.percent}%) remaining this month.`,
-  }));
 
   // Mock notifications for mock users only
   const mockNotifications = useMemo(() => {
@@ -793,7 +764,10 @@ const DashboardHome: React.FC = () => {
                                 sx={{ fontSize: 16, mr: { xs: 0, md: 0.25 } }}
                               />
                               <Box
-                                sx={{ display: { xs: 'none', md: 'inline' }, fontSize: '0.75rem' }}
+                                sx={{
+                                  display: { xs: 'none', md: 'inline' },
+                                  fontSize: '0.75rem',
+                                }}
                               >
                                 View
                               </Box>
@@ -868,7 +842,10 @@ const DashboardHome: React.FC = () => {
                             >
                               <DeleteOutlineIcon sx={{ fontSize: 16, mr: { xs: 0, md: 0.25 } }} />
                               <Box
-                                sx={{ display: { xs: 'none', md: 'inline' }, fontSize: '0.75rem' }}
+                                sx={{
+                                  display: { xs: 'none', md: 'inline' },
+                                  fontSize: '0.75rem',
+                                }}
                               >
                                 Delete
                               </Box>

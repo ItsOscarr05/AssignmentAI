@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { recentAssignments } from '../pages/DashboardHome';
+import { recentAssignments } from '../data/mockData';
 
 interface Subscription {
   token_limit?: number;
