@@ -3479,20 +3479,22 @@ const Settings: React.FC = () => {
               mb: 2,
             }}
           >
-            <Typography variant="subtitle1" fontWeight="bold">
+            <Typography variant="subtitle1" fontWeight="bold" sx={{ color: 'primary.main' }}>
               {notificationPreview.title}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" color="text.primary">
               {notificationPreview.message}
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
               {notificationPreview.time}
             </Typography>
           </Box>
-          <Typography variant="body2" color="text.secondary">
-            This is how your notifications will appear when enabled. You can customize the
-            appearance and behavior in the settings above.
-          </Typography>
+          <Alert severity="info">
+            <Typography variant="caption">
+              This is how your notifications will appear when enabled. You can customize the
+              appearance and behavior in the settings above.
+            </Typography>
+          </Alert>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowNotificationPreview(false)}>Close</Button>
@@ -3924,13 +3926,14 @@ const Settings: React.FC = () => {
 
           <Grid container spacing={2}>
             <Grid item xs={12} md={6}>
-              <Typography variant="subtitle1" gutterBottom>
+              <Typography variant="subtitle1" gutterBottom sx={{ color: 'primary.main' }}>
                 Test Notification Types
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 <Button
                   variant="outlined"
                   startIcon={<AssignmentOutlined />}
+                  sx={{ color: 'text.primary', borderColor: 'text.primary' }}
                   onClick={() => {
                     // Simulate assignment notification
                     if (notifications.desktop) {
@@ -3965,6 +3968,7 @@ const Settings: React.FC = () => {
                 <Button
                   variant="outlined"
                   startIcon={<EventOutlined />}
+                  sx={{ color: 'text.primary', borderColor: 'text.primary' }}
                   onClick={() => {
                     if (notifications.desktop) {
                       new Notification('Deadline Reminder', {
@@ -3996,6 +4000,7 @@ const Settings: React.FC = () => {
                 <Button
                   variant="outlined"
                   startIcon={<FeedbackOutlined />}
+                  sx={{ color: 'text.primary', borderColor: 'text.primary' }}
                   onClick={() => {
                     if (notifications.desktop) {
                       new Notification('Feedback Ready', {
@@ -4027,6 +4032,7 @@ const Settings: React.FC = () => {
                 <Button
                   variant="outlined"
                   startIcon={<UpdateOutlined />}
+                  sx={{ color: 'text.primary', borderColor: 'text.primary' }}
                   onClick={() => {
                     if (notifications.desktop) {
                       new Notification('System Update', {
@@ -4059,7 +4065,7 @@ const Settings: React.FC = () => {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <Typography variant="subtitle1" gutterBottom>
+              <Typography variant="subtitle1" gutterBottom sx={{ color: 'primary.main' }}>
                 Current Settings Status
               </Typography>
               <Paper sx={{ p: 2, bgcolor: 'background.default' }}>
@@ -4084,7 +4090,9 @@ const Settings: React.FC = () => {
                   </Box>
                   <Divider sx={{ my: 1 }} />
                   <Typography variant="caption" color="text.secondary">
-                    Priority Level: {notificationPreferences.priorityLevel}
+                    Priority Level:{' '}
+                    {notificationPreferences.priorityLevel.charAt(0).toUpperCase() +
+                      notificationPreferences.priorityLevel.slice(1)}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     Work Hours: {getNotificationSummary().workHours}
@@ -4094,15 +4102,17 @@ const Settings: React.FC = () => {
                   </Typography>
                 </Box>
               </Paper>
-
-              <Alert severity="info" sx={{ mt: 2 }}>
-                <Typography variant="caption">
-                  <strong>Note:</strong> Desktop notifications require browser permission. If you
-                  don't see notifications, check your browser's notification settings.
-                </Typography>
-              </Alert>
             </Grid>
           </Grid>
+
+          <Box sx={{ maxWidth: '50%', mr: 'auto', mt: -4 }}>
+            <Alert severity="info">
+              <Typography variant="caption">
+                <strong>Note:</strong> Desktop notifications require browser permission. If you
+                don't see notifications, check your browser's notification settings.
+              </Typography>
+            </Alert>
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowNotificationTest(false)}>Close</Button>
@@ -4711,10 +4721,10 @@ const Settings: React.FC = () => {
         <DialogContent>
           <Stack spacing={3}>
             <Alert
-              severity="error"
+              severity="info"
               sx={{
-                '& .MuiAlert-icon': { color: 'primary.main' },
-                '& .MuiAlert-message': { color: 'primary.main' },
+                '& .MuiAlert-icon': { color: 'info.main' },
+                '& .MuiAlert-message': { color: 'info.main' },
               }}
             >
               View the current status and configuration of your AI features.
