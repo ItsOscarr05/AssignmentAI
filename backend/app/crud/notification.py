@@ -2,7 +2,6 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
-import pytz
 from app.models.notification import Notification
 from app.schemas.notification import NotificationCreate, NotificationUpdate, NotificationFilter
 
@@ -52,7 +51,7 @@ def update_notification(
     
     # Update read_at timestamp if marking as read
     if update_data.get("is_read") and not db_notification.is_read:
-        update_data["read_at"] = datetime.now(pytz.UTC)
+        update_data["read_at"] = datetime.utcnow()
     
     for field, value in update_data.items():
         setattr(db_notification, field, value)
@@ -78,7 +77,7 @@ def mark_all_as_read(db: Session, user_id: str) -> int:
         )
     ).update({
         "is_read": True,
-        "read_at": datetime.now(pytz.UTC)
+        "read_at": datetime.utcnow()
     })
     db.commit()
     return result
@@ -104,7 +103,7 @@ def get_unread_count(db: Session, user_id: str) -> int:
     ).count()
 
 def cleanup_expired_notifications(db: Session, days: int = 30) -> int:
-    utc_now = datetime.now(pytz.UTC)
+    utc_now = datetime.utcnow()
     result = db.query(Notification).filter(
         and_(
             Notification.expires_at != None,

@@ -40,7 +40,6 @@ class UserPreferences(BaseModel):
     pushNotifications: bool = True
     darkMode: bool = False
     language: str = "en"
-    timezone: str = "UTC"
 
 class UserInDBBase(UserBase):
     id: int

@@ -2,7 +2,6 @@ import pytest
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 import uuid
-import pytz
 from sqlalchemy.orm.exc import ObjectDeletedError
 
 from app.crud import notification as notification_crud
@@ -339,8 +338,8 @@ class TestNotificationCRUD:
             type="info",
         )
         notification = notification_crud.create_notification(db, notification_data)
-        # Set expires_at in the past using timezone-aware datetime
-        utc_now = datetime.now(pytz.UTC)
+        # Set expires_at in the past
+        utc_now = datetime.utcnow()
         expired_time = utc_now - timedelta(days=1)
         # Directly update expires_at in the database
         db.query(Notification).filter(Notification.id == notification.id).update({
@@ -368,7 +367,7 @@ class TestNotificationCRUD:
         notification = notification_crud.create_notification(db, notification_data)
         
         # Use proper SQLAlchemy update instead of direct assignment
-        utc_now = datetime.now(pytz.UTC)
+        utc_now = datetime.utcnow()
         future_time = utc_now + timedelta(days=1)
         db.query(Notification).filter(Notification.id == notification.id).update({
             "expires_at": future_time

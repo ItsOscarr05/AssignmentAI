@@ -104,6 +104,12 @@ const theme = createTheme({
       textTransform: 'none',
       fontWeight: 500,
       letterSpacing: '0.01em',
+      fontSize: '0.75rem',
+    },
+    caption: {
+      fontSize: '0.7em',
+      lineHeight: 1.4,
+      fontWeight: 400,
     },
   },
   shape: {
@@ -115,6 +121,7 @@ const theme = createTheme({
         root: {
           borderRadius: 8,
           padding: '8px 16px',
+          fontSize: '0.75rem',
         },
         contained: {
           boxShadow: 'none',
@@ -145,6 +152,15 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+        },
+      },
+    },
+    MuiTypography: {
+      styleOverrides: {
+        caption: {
+          fontSize: '0.7em !important',
+          lineHeight: 1.4,
+          fontWeight: 400,
         },
       },
     },

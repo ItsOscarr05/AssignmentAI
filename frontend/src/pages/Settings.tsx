@@ -73,7 +73,6 @@ import {
 import React, { useEffect, useState } from 'react';
 import AIFeaturesDemo from '../components/ai/AIFeaturesDemo';
 import DateFormatSelector from '../components/common/DateFormatSelector';
-import TimezoneSelector from '../components/common/TimezoneSelector';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { useTranslation } from '../hooks/useTranslation';
 import { preferences } from '../services/api';
@@ -121,7 +120,7 @@ const Settings: React.FC = () => {
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showNotificationPreview, setShowNotificationPreview] = useState(false);
-  const [timezoneError, setTimezoneError] = useState<string | null>(null);
+
   const [dateFormatError, setDateFormatError] = useState<string | null>(null);
   const [isLoadingPreferences, setIsLoadingPreferences] = useState(false);
 
@@ -133,12 +132,11 @@ const Settings: React.FC = () => {
   const [compactMode, setCompactMode] = useState(false);
 
   // Language & Region Settings
-  const [timeZone, setTimeZone] = useState('UTC');
   const [dateFormat, setDateFormat] = useState<DateFormat>('MM/DD/YYYY');
 
   // AI Settings
   const [maxTokens, setMaxTokens] = useState<number>(1000);
-  const [temperature, setTemperature] = useState('0.7');
+  const [temperature, setTemperature] = useState('0.5');
   const [contextLength, setContextLength] = useState(10);
   const [autoComplete, setAutoComplete] = useState(true);
   const [codeSnippets, setCodeSnippets] = useState(true);
@@ -295,7 +293,7 @@ const Settings: React.FC = () => {
 
   const resetAISettingsToDefaults = () => {
     setMaxTokens(1000);
-    setTemperature('0.7');
+    setTemperature('0.5');
     setContextLength(10);
     setAutoComplete(true);
     setCodeSnippets(true);
@@ -563,8 +561,17 @@ const Settings: React.FC = () => {
 
   // Model comparison data
 
-  // Security checklist data
-  const securityChecklist = [
+  // Security checklist data with priority ordering
+  const securityChecklistData = [
+    {
+      id: '2fa',
+      title: 'Two-Factor Authentication',
+      description: 'Add an extra layer of security to your account',
+      status: privacySettings.twoFactorAuth ? 'success' : 'error',
+      action: privacySettings.twoFactorAuth ? '2FA Enabled' : 'Enable 2FA',
+      icon: <ShieldOutlined />,
+      priority: 1, // Highest priority
+    },
     {
       id: 'password',
       title: 'Strong Password',
@@ -572,30 +579,25 @@ const Settings: React.FC = () => {
       status: 'warning',
       action: 'Change Password',
       icon: <VpnKeyOutlined />,
-    },
-    {
-      id: '2fa',
-      title: 'Two-Factor Authentication',
-      description: 'Add an extra layer of security to your account',
-      status: privacySettings.twoFactorAuth ? 'success' : 'error',
-      action: 'Enable 2FA',
-      icon: <ShieldOutlined />,
+      priority: 2, // High priority
     },
     {
       id: 'biometric',
       title: 'Biometric Login',
       description: 'Use fingerprint or face recognition for quick and secure login',
       status: privacySettings.biometricLogin ? 'success' : 'warning',
-      action: 'Setup Biometric',
+      action: privacySettings.biometricLogin ? 'Biometric Enabled' : 'Enable Biometric',
       icon: <FingerprintOutlined />,
+      priority: 3, // Medium priority
     },
     {
-      id: 'sessions',
-      title: 'Active Sessions',
-      description: 'Review and manage your active login sessions',
-      status: 'info',
-      action: 'View Sessions',
-      icon: <HistoryOutlined />,
+      id: 'autolock',
+      title: 'Auto-Lock Account',
+      description: 'Automatically lock your account after inactivity for enhanced security',
+      status: privacySettings.autoLock ? 'success' : 'warning',
+      action: privacySettings.autoLock ? 'Auto-Lock Enabled' : 'Enable Auto-Lock',
+      icon: <LockOutlined />,
+      priority: 4, // Medium priority
     },
     {
       id: 'updates',
@@ -604,8 +606,35 @@ const Settings: React.FC = () => {
       status: 'success',
       action: 'Check Updates',
       icon: <SecurityUpdateOutlined />,
+      priority: 5, // Lower priority
     },
   ];
+
+  // Sort security checklist: enabled items (success) go to bottom, then by priority
+  const securityChecklist = securityChecklistData.sort((a, b) => {
+    // First, sort by status: error/warning items first, then success items
+    const getStatusOrder = (status: string): number => {
+      switch (status) {
+        case 'error':
+          return 0;
+        case 'warning':
+          return 1;
+        case 'success':
+          return 2;
+        default:
+          return 3;
+      }
+    };
+
+    const statusDiff = getStatusOrder(a.status) - getStatusOrder(b.status);
+
+    if (statusDiff !== 0) {
+      return statusDiff;
+    }
+
+    // If same status, sort by priority (lower number = higher priority)
+    return a.priority - b.priority;
+  });
 
   // Calculate security score
 
@@ -664,7 +693,6 @@ const Settings: React.FC = () => {
         },
         language: {
           language: language,
-          timezone: timeZone,
           date_format: dateFormat,
         },
         notifications: {
@@ -768,9 +796,7 @@ const Settings: React.FC = () => {
         >
           {icon}
         </Box>
-        <Typography variant="h5" fontWeight="400">
-          {title}
-        </Typography>
+        <Typography variant="subtitle1">{title}</Typography>
       </Stack>
       {children}
     </Paper>
@@ -952,13 +978,6 @@ const Settings: React.FC = () => {
     console.log('Language changed to:', language);
   }, [language, changeLanguage]);
 
-  // Apply timezone setting
-  useEffect(() => {
-    // Store timezone preference in localStorage for future use
-    localStorage.setItem('userTimezone', timeZone);
-    console.log('Timezone changed to:', timeZone);
-  }, [timeZone]);
-
   // Apply date format setting
   useEffect(() => {
     // Store date format preference in localStorage for future use
@@ -970,8 +989,6 @@ const Settings: React.FC = () => {
   useEffect(() => {
     const loadSavedSettings = () => {
       // Load language settings
-      const savedLanguage = localStorage.getItem('userTimezone');
-      if (savedLanguage) setTimeZone(savedLanguage);
 
       const savedDateFormat = localStorage.getItem('dateFormat');
       if (
@@ -993,9 +1010,7 @@ const Settings: React.FC = () => {
     setIsLoadingPreferences(true);
     try {
       const userPreferences = await preferences.get();
-      if (userPreferences.custom_preferences?.timezone) {
-        setTimeZone(userPreferences.custom_preferences.timezone);
-      }
+
       if (userPreferences.custom_preferences?.dateFormat) {
         const format = userPreferences.custom_preferences.dateFormat as string;
         if (['MM/DD/YYYY', 'DD/MM/YYYY', 'YYYY-MM-DD', 'DD.MM.YYYY'].includes(format)) {
@@ -1026,7 +1041,7 @@ const Settings: React.FC = () => {
         setMaxTokens(Number(userPreferences.custom_preferences.maxTokens) || 1000);
       }
       if (userPreferences.custom_preferences?.temperature) {
-        setTemperature(userPreferences.custom_preferences.temperature.toString() || '0.7');
+        setTemperature(userPreferences.custom_preferences.temperature.toString() || '0.5');
       }
       if (userPreferences.custom_preferences?.contextLength) {
         setContextLength(Number(userPreferences.custom_preferences.contextLength) || 10);
@@ -1071,7 +1086,6 @@ const Settings: React.FC = () => {
         email_notifications: notifications.email,
         push_notifications: notifications.desktop,
         custom_preferences: {
-          timezone: timeZone,
           dateFormat,
           maxTokens,
           temperature,
@@ -1250,6 +1264,7 @@ const Settings: React.FC = () => {
                 minHeight: 70,
                 fontSize: '1rem',
                 fontWeight: 500,
+                textTransform: 'uppercase',
                 transition: 'all 0.2s',
                 flex: 1,
                 '&:hover': {
@@ -1409,28 +1424,6 @@ const Settings: React.FC = () => {
                   </FormControl>
 
                   <Box sx={{ mb: 2 }}>
-                    <TimezoneSelector
-                      value={timeZone}
-                      onChange={setTimeZone}
-                      onValidationError={setTimezoneError}
-                      label={t('settings.language.timeZone')}
-                      showExtended={false}
-                      fullWidth={true}
-                      size="medium"
-                      enableAutoDetection={true}
-                    />
-                    {timezoneError && (
-                      <Typography
-                        variant="caption"
-                        color="error"
-                        sx={{ mt: 0.5, display: 'block' }}
-                      >
-                        {timezoneError}
-                      </Typography>
-                    )}
-                  </Box>
-
-                  <Box sx={{ mb: 2 }}>
                     <DateFormatSelector
                       value={dateFormat}
                       onChange={setDateFormat}
@@ -1503,12 +1496,7 @@ const Settings: React.FC = () => {
                             : 'English'}
                         </Typography>
                       </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                        <EventOutlined fontSize="small" color="action" />
-                        <Typography variant="body2">
-                          {timeZone === 'UTC' ? 'Universal Time (UTC)' : timeZone}
-                        </Typography>
-                      </Box>
+
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <EventOutlined fontSize="small" color="action" />
                         <Typography variant="body2">{dateFormat} format</Typography>
@@ -1529,7 +1517,6 @@ const Settings: React.FC = () => {
                         sx={{ fontFamily: 'monospace', fontSize: '0.875rem' }}
                       >
                         {new Date().toLocaleString(language === 'en' ? 'en-US' : language, {
-                          timeZone: timeZone,
                           year: 'numeric',
                           month: '2-digit',
                           day: '2-digit',
@@ -1545,15 +1532,9 @@ const Settings: React.FC = () => {
                           size="small"
                           variant="outlined"
                           onClick={() => {
-                            try {
-                              const detectedTimezone =
-                                Intl.DateTimeFormat().resolvedOptions().timeZone;
-                              setTimeZone(detectedTimezone);
-                            } catch (error) {
-                              console.warn('Could not detect timezone:', error);
-                            }
+                            // Auto-detect functionality removed
                           }}
-                          sx={{ fontSize: '0.7rem', py: 0.5, px: 1 }}
+                          sx={{ py: 0.5, px: 1 }}
                         >
                           Auto-detect
                         </Button>
@@ -1562,10 +1543,9 @@ const Settings: React.FC = () => {
                           variant="outlined"
                           onClick={() => {
                             setLanguage('en');
-                            setTimeZone('UTC');
                             setDateFormat('MM/DD/YYYY');
                           }}
-                          sx={{ fontSize: '0.7rem', py: 0.5, px: 1 }}
+                          sx={{ py: 0.5, px: 1 }}
                         >
                           Reset
                         </Button>
@@ -1636,10 +1616,24 @@ const Settings: React.FC = () => {
                       startIcon={<CompareArrows />}
                       onClick={() => setShowModelComparison(true)}
                       size="small"
+                      sx={{
+                        py: 0.5,
+                        px: 1.5,
+                        minHeight: '32px',
+                      }}
                     >
                       Compare Models
                     </Button>
-                    <Button variant="outlined" onClick={resetAISettingsToDefaults} size="small">
+                    <Button
+                      variant="outlined"
+                      onClick={resetAISettingsToDefaults}
+                      size="small"
+                      sx={{
+                        py: 0.5,
+                        px: 1.5,
+                        minHeight: '32px',
+                      }}
+                    >
                       Reset to Defaults
                     </Button>
                   </Box>
@@ -1708,7 +1702,7 @@ const Settings: React.FC = () => {
                     color="text.secondary"
                     sx={{ mt: 1, display: 'block' }}
                   >
-                    Controls creativity vs consistency. Lower values (0.1-0.3) are more focused,
+                    Controls consistency vs creativity. Lower values (0.1-0.3) are more focused,
                     higher values (0.7-1.0) are more creative.
                   </Typography>
                 </Grid>
@@ -2146,15 +2140,15 @@ const Settings: React.FC = () => {
                 <Grid item xs={12}>
                   <Divider sx={{ my: 2 }} />
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Active notifications:{' '}
-                      {[
-                        notifications.email && 'Email',
-                        notifications.desktop && 'Desktop',
-                        notifications.sound && 'Sound',
-                      ]
-                        .filter(Boolean)
-                        .join(', ') || 'None'}
+                    <Typography variant="body2" color="text.secondary" sx={{ flexShrink: 0 }}>
+                      Active Channels:{' '}
+                      {
+                        [
+                          notifications.email && 'Email',
+                          notifications.desktop && 'Desktop',
+                          notifications.sound && 'Sound',
+                        ].filter(Boolean).length
+                      }
                     </Typography>
                     <Button variant="outlined" size="small" onClick={enableAllNotifications}>
                       Enable All
@@ -2173,7 +2167,6 @@ const Settings: React.FC = () => {
                       variant="contained"
                       size="small"
                       onClick={() => setShowNotificationTest(true)}
-                      sx={{ ml: 'auto' }}
                     >
                       Test Notifications
                     </Button>
@@ -2336,7 +2329,9 @@ const Settings: React.FC = () => {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                         <EventOutlined fontSize="small" color="action" />
                         <Typography variant="body2">
-                          Priority: {getNotificationSummary().priority}
+                          Priority:{' '}
+                          {getNotificationSummary().priority.charAt(0).toUpperCase() +
+                            getNotificationSummary().priority.slice(1)}
                         </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
@@ -2364,7 +2359,7 @@ const Settings: React.FC = () => {
                         size="small"
                         variant="outlined"
                         onClick={() => setShowNotificationPreview(true)}
-                        sx={{ fontSize: '0.7rem', py: 0.5, px: 1 }}
+                        sx={{ py: 0.5, px: 1 }}
                       >
                         Preview Notifications
                       </Button>
@@ -2621,10 +2616,31 @@ const Settings: React.FC = () => {
               </Box>
 
               <Box sx={{ mb: 3 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Security Level: {getSecuritySummary().securityLevel}
+                <Box sx={{ mb: 2 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: 'text.primary',
+                      fontWeight: 500,
+                    }}
+                  >
+                    Security Level:{' '}
+                    <Box
+                      component="span"
+                      sx={{
+                        color:
+                          getSecuritySummary().securityLevel === 'High'
+                            ? 'success.main'
+                            : getSecuritySummary().securityLevel === 'Medium'
+                            ? 'warning.main'
+                            : 'error.main',
+                      }}
+                    >
+                      {getSecuritySummary().securityLevel}
+                    </Box>
                   </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
                   <Button variant="outlined" size="small" onClick={enableAllSecurityFeatures}>
                     Enable All Security
                   </Button>
@@ -2638,7 +2654,6 @@ const Settings: React.FC = () => {
                     variant="contained"
                     size="small"
                     onClick={() => setShowSecurityAudit(true)}
-                    sx={{ ml: 'auto' }}
                   >
                     Security Audit
                   </Button>
@@ -2653,6 +2668,8 @@ const Settings: React.FC = () => {
                         flexDirection: { xs: 'column', sm: 'row' },
                         alignItems: { xs: 'flex-start', sm: 'center' },
                         gap: { xs: 1, sm: 0 },
+                        transition: 'all 0.3s ease-in-out',
+                        transform: 'translateZ(0)', // Enable hardware acceleration
                       }}
                     >
                       <Box
@@ -2696,8 +2713,23 @@ const Settings: React.FC = () => {
                         onClick={() => {
                           // Handle action based on item.id
                           if (item.id === '2fa') {
-                            // TODO: Implement two-factor authentication setup
-                            console.log('Two-factor authentication setup not yet implemented');
+                            // Toggle two-factor authentication
+                            setPrivacySettings({
+                              ...privacySettings,
+                              twoFactorAuth: !privacySettings.twoFactorAuth,
+                            });
+                          } else if (item.id === 'biometric') {
+                            // Toggle biometric login
+                            setPrivacySettings({
+                              ...privacySettings,
+                              biometricLogin: !privacySettings.biometricLogin,
+                            });
+                          } else if (item.id === 'autolock') {
+                            // Toggle auto-lock account
+                            setPrivacySettings({
+                              ...privacySettings,
+                              autoLock: !privacySettings.autoLock,
+                            });
                           }
                         }}
                         startIcon={
@@ -3008,7 +3040,10 @@ const Settings: React.FC = () => {
                       </ListItemIcon>
                       <ListItemText
                         primary={t('settings.privacy.passwordStrength')}
-                        secondary={securitySettings.passwordStrength}
+                        secondary={
+                          securitySettings.passwordStrength.charAt(0).toUpperCase() +
+                          securitySettings.passwordStrength.slice(1)
+                        }
                         primaryTypographyProps={{
                           sx: { fontSize: { xs: '0.875rem', md: '1rem' } },
                         }}
@@ -3083,7 +3118,9 @@ const Settings: React.FC = () => {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                         <VpnKeyOutlined fontSize="small" color="action" />
                         <Typography variant="body2">
-                          Password: {getSecuritySummary().passwordStrength}
+                          Password:{' '}
+                          {getSecuritySummary().passwordStrength.charAt(0).toUpperCase() +
+                            getSecuritySummary().passwordStrength.slice(1)}
                         </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
@@ -3092,11 +3129,20 @@ const Settings: React.FC = () => {
                           Sessions: {getSecuritySummary().activeSessions} active
                         </Typography>
                       </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                        <SecurityOutlined fontSize="small" color="action" />
-                        <Typography variant="body2">
-                          Features: {getSecuritySummary().enabledFeatures}
-                        </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 0.5 }}>
+                        <SecurityOutlined fontSize="small" color="action" sx={{ mt: 0.5 }} />
+                        <Box>
+                          <Typography variant="body2" sx={{ mb: 0.5 }}>
+                            Features:
+                          </Typography>
+                          {getSecuritySummary()
+                            .enabledFeatures.split(', ')
+                            .map((feature, index) => (
+                              <Typography key={index} variant="body2" sx={{ ml: 1 }}>
+                                - {feature}
+                              </Typography>
+                            ))}
+                        </Box>
                       </Box>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <HistoryOutlined fontSize="small" color="action" />

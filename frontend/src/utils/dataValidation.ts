@@ -73,7 +73,7 @@ export const userPreferencesSchema = z.object({
     desktop: z.boolean(),
   }),
   language: z.string().min(2).max(5),
-  timezone: z.string(),
+
   createdAt: baseSchemas.timestamp,
   updatedAt: baseSchemas.timestamp,
   version: baseSchemas.version,

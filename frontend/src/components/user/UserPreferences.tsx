@@ -74,7 +74,7 @@ const UserPreferencesComponent: React.FC = () => {
       }
 
       // Validate required fields
-      const requiredFields = ['theme', 'language', 'timezone', 'notifications', 'accessibility'];
+      const requiredFields = ['theme', 'language', 'notifications', 'accessibility'];
       const missingFields = requiredFields.filter(field => !(field in data));
 
       if (missingFields.length > 0) {
@@ -144,13 +144,6 @@ const UserPreferencesComponent: React.FC = () => {
     setPreferences(prev => ({
       ...prev!,
       language: event.target.value as string,
-    }));
-  };
-
-  const handleTimezoneChange = (event: SelectChangeEvent) => {
-    setPreferences(prev => ({
-      ...prev!,
-      timezone: event.target.value as string,
     }));
   };
 
@@ -230,21 +223,6 @@ const UserPreferencesComponent: React.FC = () => {
                 <MenuItem value="fr">French</MenuItem>
               </Select>
             </FormControl>
-            <Box>
-              <TimezoneSelector
-                value={preferences.timezone}
-                onChange={(timezone) => {
-                  setPreferences(prev => ({
-                    ...prev!,
-                    timezone: timezone,
-                  }));
-                }}
-                label="Timezone"
-                showExtended={false}
-                fullWidth={true}
-                size="medium"
-              />
-            </Box>
           </Paper>
         </Grid>
 

@@ -10,7 +10,7 @@ import {
 interface UserPreferences {
   theme?: string;
   language?: string;
-  timezone?: string;
+
   font_size?: string;
   compact_mode?: boolean;
   email_notifications?: boolean;
@@ -593,13 +593,6 @@ export const preferences = {
 
   update: async (preferences: Partial<UserPreferences>): Promise<UserPreferences> => {
     const response = await api.patch('/preferences', preferences);
-    return response.data;
-  },
-
-  updateTimezone: async (timezone: string): Promise<UserPreferences> => {
-    const response = await api.patch('/preferences', {
-      custom_preferences: { timezone },
-    });
     return response.data;
   },
 

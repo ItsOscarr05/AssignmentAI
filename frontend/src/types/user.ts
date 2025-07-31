@@ -47,7 +47,7 @@ export interface UserPreferences {
     feedbackAlerts: boolean;
   };
   language: string;
-  timezone: string;
+
   accessibility: {
     highContrast: boolean;
     largeText: boolean;

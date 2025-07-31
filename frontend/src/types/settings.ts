@@ -20,7 +20,7 @@ export interface AppSettings {
   notifications: NotificationSettings;
   appearance: AppearanceSettings;
   language: string;
-  timezone: string;
+
   privacy: PrivacySettings;
 }
 

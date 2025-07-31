@@ -9,7 +9,7 @@ export interface UserSettings {
   };
   language: {
     language: string;
-    timezone: string;
+
     date_format: string;
     auto_translate: boolean;
     show_original_text: boolean;
@@ -238,7 +238,7 @@ class SettingsService {
     if (dateFormat || use24HourFormat || language) {
       settings.language = {
         language: language || 'en',
-        timezone: localStorage.getItem('timezone') || 'UTC',
+
         date_format: dateFormat || 'MM/DD/YYYY',
         auto_translate: localStorage.getItem('autoTranslate') === 'true',
         show_original_text: localStorage.getItem('showOriginalText') !== 'false',
@@ -275,7 +275,7 @@ class SettingsService {
       localStorage.setItem('dateFormat', settings.language.date_format);
       localStorage.setItem('use24HourFormat', settings.language.use_24_hour_format.toString());
       localStorage.setItem('language', settings.language.language);
-      localStorage.setItem('timezone', settings.language.timezone);
+
       localStorage.setItem('autoTranslate', settings.language.auto_translate.toString());
       localStorage.setItem('showOriginalText', settings.language.show_original_text.toString());
       localStorage.setItem('useMetricSystem', settings.language.use_metric_system.toString());

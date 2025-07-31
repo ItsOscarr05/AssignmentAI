@@ -25,9 +25,8 @@ vi.mock('@mui/material', () => ({
   FormControl: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="form-control">{children}</div>
   ),
-  FormControlLabel: ({ control, label }: { control: React.ReactElement; label: string }) => (
-    React.cloneElement(control, { 'aria-label': label })
-  ),
+  FormControlLabel: ({ control, label }: { control: React.ReactElement; label: string }) =>
+    React.cloneElement(control, { 'aria-label': label }),
   FormGroup: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="form-group">{children}</div>
   ),
@@ -36,15 +35,35 @@ vi.mock('@mui/material', () => ({
     <div data-testid="input-label">{children}</div>
   ),
   MenuItem: ({ children, value }: { children: React.ReactNode; value: string }) => (
-    <option value={value} data-testid="menu-item">{children}</option>
+    <option value={value} data-testid="menu-item">
+      {children}
+    </option>
   ),
   Paper: ({ children }: { children: React.ReactNode }) => <div data-testid="paper">{children}</div>,
-  Select: ({ children, value, onChange, label }: { children: React.ReactNode; value: string; onChange: (event: any) => void; label: string }) => (
+  Select: ({
+    children,
+    value,
+    onChange,
+    label,
+  }: {
+    children: React.ReactNode;
+    value: string;
+    onChange: (event: any) => void;
+    label: string;
+  }) => (
     <select data-testid="select" value={value} onChange={onChange} aria-label={label}>
       {children}
     </select>
   ),
-  Switch: ({ checked, onChange, 'aria-label': ariaLabel }: { checked: boolean; onChange: (event: any) => void; 'aria-label'?: string }) => (
+  Switch: ({
+    checked,
+    onChange,
+    'aria-label': ariaLabel,
+  }: {
+    checked: boolean;
+    onChange: (event: any) => void;
+    'aria-label'?: string;
+  }) => (
     <input
       type="checkbox"
       data-testid="switch"
@@ -55,13 +74,27 @@ vi.mock('@mui/material', () => ({
     />
   ),
   Typography: ({ children, variant }: { children: React.ReactNode; variant?: string }) => (
-    <p data-testid="typography" data-variant={variant}>{children}</p>
+    <p data-testid="typography" data-variant={variant}>
+      {children}
+    </p>
   ),
   Box: ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => (
-    <div data-testid="box" {...props}>{children}</div>
+    <div data-testid="box" {...props}>
+      {children}
+    </div>
   ),
-  Button: ({ children, onClick, disabled }: { children: React.ReactNode; onClick: () => void; disabled?: boolean }) => (
-    <button data-testid="button" onClick={onClick} disabled={disabled}>{children}</button>
+  Button: ({
+    children,
+    onClick,
+    disabled,
+  }: {
+    children: React.ReactNode;
+    onClick: () => void;
+    disabled?: boolean;
+  }) => (
+    <button data-testid="button" onClick={onClick} disabled={disabled}>
+      {children}
+    </button>
   ),
   Snackbar: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
     open ? <div data-testid="snackbar">{children}</div> : null,
@@ -76,7 +109,7 @@ vi.mock('@mui/icons-material', () => ({
 const mockPreferences: UserPreferencesType = {
   theme: 'light',
   language: 'en',
-  timezone: 'UTC',
+
   notifications: {
     email: true,
     push: false,

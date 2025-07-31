@@ -36,7 +36,6 @@ export interface UserPreferences {
   pushNotifications: boolean;
   darkMode: boolean;
   language: string;
-  timezone: string;
 }
 
 export type UserRole = 'student' | 'teacher' | 'admin';

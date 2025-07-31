@@ -98,7 +98,7 @@ const mockSettings: AppSettings = {
     density: 'comfortable',
   },
   language: 'en',
-  timezone: 'UTC',
+
   privacy: {
     profileVisibility: 'public',
     activityStatus: true,
@@ -116,7 +116,6 @@ describe('Settings Component', () => {
     expect(screen.getByRole('switch', { name: 'settings.notifications.email' })).toBeChecked();
     expect(screen.getByRole('switch', { name: 'settings.notifications.push' })).not.toBeChecked();
     expect(screen.getByRole('combobox', { name: 'settings.language.language' })).toHaveValue('en');
-    expect(screen.getByRole('combobox', { name: 'settings.language.timezone' })).toHaveValue('UTC');
   });
 
   it('handles setting updates', async () => {

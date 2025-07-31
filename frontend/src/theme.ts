@@ -10,6 +10,17 @@ const baseTheme: ThemeOptions = {
     h4: { fontWeight: 500 },
     h5: { fontWeight: 500 },
     h6: { fontWeight: 500 },
+    caption: {
+      fontSize: '0.7em',
+      lineHeight: 1.4,
+      fontWeight: 400,
+    },
+    button: {
+      textTransform: 'none',
+      fontWeight: 500,
+      letterSpacing: '0.01em',
+      fontSize: '0.65rem',
+    },
   },
   components: {
     MuiAppBar: {
@@ -34,6 +45,14 @@ const baseTheme: ThemeOptions = {
           textTransform: 'none',
           borderRadius: 8,
           variants: [],
+          fontSize: '0.8rem !important',
+          padding: '6px 12px',
+        },
+        sizeSmall: {
+          fontSize: '0.8rem !important',
+          padding: '2px 12px',
+          minHeight: '24px !important',
+          minWidth: 'auto',
         },
         contained: {
           boxShadow: 'none',
@@ -75,6 +94,25 @@ const baseTheme: ThemeOptions = {
       styleOverrides: {
         root: {
           borderRadius: 8,
+        },
+      },
+    },
+    MuiTypography: {
+      styleOverrides: {
+        caption: {
+          fontSize: 'calc(0.7 * var(--app-font-size, 16px)) !important',
+          lineHeight: 1.4,
+          fontWeight: 400,
+        },
+        subtitle1: {
+          fontSize: 'calc(1.3 * var(--app-font-size, 16px)) !important',
+          fontWeight: 600,
+          lineHeight: 1.3,
+        },
+        h6: {
+          fontSize: 'calc(1.4 * var(--app-font-size, 16px)) !important',
+          fontWeight: 600,
+          lineHeight: 1.3,
         },
       },
     },

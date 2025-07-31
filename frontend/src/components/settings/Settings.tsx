@@ -2,8 +2,10 @@ import {
   Box,
   Card,
   CardContent,
+  CircularProgress,
   FormControl,
   FormControlLabel,
+  FormGroup,
   Grid,
   InputLabel,
   MenuItem,
@@ -13,6 +15,7 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { settingsApi } from '../../services/api/settings';
 import { AppSettings } from '../../types/settings';
 
 interface SettingsProps {
@@ -217,7 +220,7 @@ function Settings({ initialSettings, onUpdate }: SettingsProps) {
           </Card>
         </Grid>
 
-        {/* Language and Timezone */}
+        {/* Language */}
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
@@ -241,16 +244,6 @@ function Settings({ initialSettings, onUpdate }: SettingsProps) {
                       <MenuItem value="fr">Français</MenuItem>
                     </Select>
                   </FormControl>
-                </Grid>
-                <Grid item xs={12}>
-                  <TimezoneSelector
-                    value={settings.timezone}
-                    onChange={timezone => handleSettingChange('timezone', '', timezone)}
-                    label={t('settings.language.timezone')}
-                    showExtended={false}
-                    fullWidth={true}
-                    size="medium"
-                  />
                 </Grid>
               </Grid>
             </CardContent>

@@ -338,7 +338,6 @@ export const server = setupServer(
       },
       language: {
         language: 'en',
-        timezone: 'UTC',
       },
       privacy: {
         profileVisibility: 'public',
