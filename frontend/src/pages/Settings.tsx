@@ -3256,29 +3256,19 @@ const Settings: React.FC = () => {
                   <Divider sx={{ my: 2 }} />
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12} md={12} lg={12}>
                   <Box sx={{ textAlign: 'center', width: '100%' }}>
                     <Typography variant="subtitle1" gutterBottom>
                       {t('settings.privacy.accountManagement')}
                     </Typography>
                     <Box
                       sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
+                        display: 'grid',
+                        gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
                         gap: 2,
                         width: '100%',
                       }}
                     >
-                      <Button
-                        variant="outlined"
-                        color="primary"
-                        startIcon={<VpnKeyOutlined />}
-                        fullWidth
-                        sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
-                        onClick={() => setShowChangePasswordDialog(true)}
-                      >
-                        Change Password
-                      </Button>
                       <Button
                         variant="outlined"
                         color="primary"
@@ -3288,6 +3278,16 @@ const Settings: React.FC = () => {
                         onClick={() => setShowAccountInfoDialog(true)}
                       >
                         Account Information
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        startIcon={<VpnKeyOutlined />}
+                        fullWidth
+                        sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
+                        onClick={() => setShowChangePasswordDialog(true)}
+                      >
+                        Change Password
                       </Button>
                       <Button
                         variant="outlined"
