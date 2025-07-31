@@ -79,7 +79,7 @@ import { useAspectRatio } from '../hooks/useAspectRatio';
 import { useTranslation } from '../hooks/useTranslation';
 import { preferences, users } from '../services/api';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
-import { DateFormat } from '../utils/dateFormat';
+import { DateFormat, getDefaultDateFormat, getDefaultTimeFormat } from '../utils/dateFormat';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -134,8 +134,16 @@ const Settings: React.FC = () => {
   const [compactMode, setCompactMode] = useState(false);
 
   // Language & Region Settings
-  const [dateFormat, setDateFormat] = useState<DateFormat>('MM/DD/YYYY');
-  const [use24HourFormat, setUse24HourFormat] = useState<boolean>(false);
+  const [dateFormat, setDateFormat] = useState<DateFormat>(() => {
+    // Get browser locale and set default date format
+    const browserLocale = navigator.language || 'en-US';
+    return getDefaultDateFormat(browserLocale);
+  });
+  const [use24HourFormat, setUse24HourFormat] = useState<boolean>(() => {
+    // Get browser locale and set default time format
+    const browserLocale = navigator.language || 'en-US';
+    return getDefaultTimeFormat(browserLocale);
+  });
 
   // AI Settings
   const [maxTokens, setMaxTokens] = useState<number>(1000);
@@ -1141,11 +1149,19 @@ const Settings: React.FC = () => {
         ['MM/DD/YYYY', 'DD/MM/YYYY', 'YYYY-MM-DD', 'DD.MM.YYYY'].includes(savedDateFormat)
       ) {
         setDateFormat(savedDateFormat as DateFormat);
+      } else {
+        // Use locale-based default if no saved preference
+        const browserLocale = navigator.language || 'en-US';
+        setDateFormat(getDefaultDateFormat(browserLocale));
       }
 
       const savedTimeFormat = localStorage.getItem('use24HourFormat');
       if (savedTimeFormat) {
         setUse24HourFormat(savedTimeFormat === 'true');
+      } else {
+        // Use locale-based default if no saved preference
+        const browserLocale = navigator.language || 'en-US';
+        setUse24HourFormat(getDefaultTimeFormat(browserLocale));
       }
     };
 
@@ -1327,7 +1343,6 @@ const Settings: React.FC = () => {
             WebkitBackgroundClip: 'text',
             color: 'transparent',
             ml: { xs: 0, md: 4 },
-            fontSize: { xs: '1.75rem', md: '2.125rem' },
           }}
         >
           {t('settings.title')}
@@ -1363,18 +1378,9 @@ const Settings: React.FC = () => {
           startIcon={<Save />}
           onClick={handleSave}
           disabled={isValidatingSettings}
+          className="save-changes"
           sx={{
             ml: { xs: 0, md: 'auto' },
-            px: { xs: 2, md: 4 },
-            py: 1.5,
-            borderRadius: 3,
-            background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
-            boxShadow: '0 4px 20px 0px rgba(0,0,0,0.14), 0 7px 10px -5px rgba(33,150,243,0.4)',
-            transition: 'all 0.3s ease',
-            '&:hover': {
-              transform: 'translateY(-2px)',
-              boxShadow: '0 7px 30px -10px rgba(33,150,243,0.6)',
-            },
           }}
         >
           {isValidatingSettings ? (
@@ -1405,43 +1411,7 @@ const Settings: React.FC = () => {
             bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
           }}
         >
-          <Tabs
-            value={tabValue}
-            onChange={handleTabChange}
-            variant="fullWidth"
-            sx={{
-              '& .MuiTab-root': {
-                minHeight: 70,
-                fontSize: '1rem',
-                fontWeight: 500,
-                textTransform: 'uppercase',
-                transition: 'all 0.2s',
-                flex: 1,
-                '&:hover': {
-                  bgcolor: 'action.hover',
-                },
-                '&.Mui-selected': {
-                  color: theme.palette.primary.main,
-                },
-                '& .MuiSvgIcon-root': {
-                  background: '#ffffff',
-                  padding: '6px',
-                  borderRadius: '8px',
-                  fontSize: '1.3rem',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                  border: '1px solid',
-                  borderColor:
-                    theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
-                  color: theme.palette.primary.main,
-                },
-              },
-              '& .MuiTabs-indicator': {
-                height: 3,
-                borderRadius: '3px 3px 0 0',
-                background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
-              },
-            }}
-          >
+          <Tabs value={tabValue} onChange={handleTabChange} variant="fullWidth">
             <Tab icon={<Tune />} label="General" sx={{ gap: 1 }} />
             <Tab icon={<Psychology />} label={t('settings.ai.title')} sx={{ gap: 1 }} />
             <Tab
@@ -1679,13 +1649,13 @@ const Settings: React.FC = () => {
 
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <EventOutlined fontSize="small" color="action" />
-                        <Typography variant="body2">{dateFormat} format</Typography>
+                        <Typography variant="body2">{dateFormat}</Typography>
                       </Box>
 
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <AccessTime fontSize="small" color="action" />
                         <Typography variant="body2">
-                          {use24HourFormat ? '24-hour' : '12-hour (AM/PM)'} format
+                          {use24HourFormat ? '24-hour' : '12-hour (AM/PM)'}
                         </Typography>
                       </Box>
                     </Box>
@@ -1707,13 +1677,16 @@ const Settings: React.FC = () => {
                       </Typography>
                     </Box>
 
-                    <Box>
+                    <Box sx={{ mt: 5 }}>
                       <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                         <Button
                           size="small"
                           variant="outlined"
                           onClick={() => {
-                            // Auto-detect functionality removed
+                            // Auto-detect based on browser locale
+                            const browserLocale = navigator.language || 'en-US';
+                            setDateFormat(getDefaultDateFormat(browserLocale));
+                            setUse24HourFormat(getDefaultTimeFormat(browserLocale));
                           }}
                           sx={{ py: 0.5, px: 1 }}
                         >
@@ -1724,12 +1697,13 @@ const Settings: React.FC = () => {
                           variant="outlined"
                           onClick={() => {
                             setLanguage('en');
-                            setDateFormat('MM/DD/YYYY');
-                            setUse24HourFormat(false);
+                            const browserLocale = navigator.language || 'en-US';
+                            setDateFormat(getDefaultDateFormat(browserLocale));
+                            setUse24HourFormat(getDefaultTimeFormat(browserLocale));
                           }}
                           sx={{ py: 0.5, px: 1 }}
                         >
-                          Reset
+                          Reset to Default
                         </Button>
                       </Box>
                     </Box>

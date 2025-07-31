@@ -59,7 +59,7 @@ import { useAspectRatio } from '../hooks/useAspectRatio';
 import { assignments } from '../services/api/assignments';
 import { mapToCoreSubject } from '../services/subjectService';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
-import { DateFormat } from '../utils/dateFormat';
+import { DateFormat, getDefaultDateFormat } from '../utils/dateFormat';
 
 interface Assignment {
   id: string;
@@ -84,8 +84,10 @@ const Assignments: React.FC = () => {
   const { breakpoint } = useAspectRatio();
   const { t } = useTranslation();
 
-  // Get user's date format preference (default to MM/DD/YYYY if not set)
-  const userDateFormat = (localStorage.getItem('dateFormat') as DateFormat) || 'MM/DD/YYYY';
+  // Get user's date format preference (default to locale-based format if not set)
+  const userDateFormat =
+    (localStorage.getItem('dateFormat') as DateFormat) ||
+    getDefaultDateFormat(navigator.language || 'en-US');
 
   // Simple date formatting function based on user preference
   const formatDateWithPreference = (date: Date) => {

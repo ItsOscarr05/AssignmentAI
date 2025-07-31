@@ -61,7 +61,7 @@ import { notificationService } from '../services/notification';
 import { mapToCoreSubject } from '../services/subjectService';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 import { Notification } from '../types';
-import { DateFormat } from '../utils/dateFormat';
+import { DateFormat, getDefaultDateFormat } from '../utils/dateFormat';
 
 const DashboardHome: React.FC = () => {
   const { user, isMockUser } = useAuth();
@@ -69,8 +69,10 @@ const DashboardHome: React.FC = () => {
   const { breakpoint } = useAspectRatio();
   const { t } = useTranslation();
 
-  // Get user's date format preference (default to MM/DD/YYYY if not set)
-  const userDateFormat = (localStorage.getItem('dateFormat') as DateFormat) || 'MM/DD/YYYY';
+  // Get user's date format preference (default to locale-based format if not set)
+  const userDateFormat =
+    (localStorage.getItem('dateFormat') as DateFormat) ||
+    getDefaultDateFormat(navigator.language || 'en-US');
 
   // Simple date formatting function based on user preference
   const formatDateWithPreference = (date: Date | string) => {

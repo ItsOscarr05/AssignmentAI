@@ -47,6 +47,25 @@ const baseTheme: ThemeOptions = {
           variants: [],
           fontSize: '0.8rem !important',
           padding: '6px 12px',
+          '&.save-changes': {
+            borderRadius: 'calc(0.375 * var(--app-font-size, 16px))',
+            padding: `calc(0.6 * var(--app-font-size, 16px)) calc(1.2 * var(--app-font-size, 16px))`,
+            fontSize: 'calc(0.85 * var(--app-font-size, 16px)) !important',
+            fontWeight: 500,
+            background: 'linear-gradient(45deg, #d32f2f, #ff6659)',
+            boxShadow: '0 4px 20px 0px rgba(0,0,0,0.14), 0 7px 10px -5px rgba(33,150,243,0.4)',
+            transition: 'all 0.3s ease',
+            '&:hover': {
+              transform: 'translateY(-2px)',
+              boxShadow: '0 7px 30px -10px rgba(33,150,243,0.6)',
+            },
+            '&:disabled': {
+              background: 'rgba(0,0,0,0.12)',
+              color: 'rgba(0,0,0,0.38)',
+              transform: 'none',
+              boxShadow: 'none',
+            },
+          },
         },
         sizeSmall: {
           fontSize: '0.8rem !important',
@@ -113,6 +132,46 @@ const baseTheme: ThemeOptions = {
           fontSize: 'calc(1.4 * var(--app-font-size, 16px)) !important',
           fontWeight: 600,
           lineHeight: 1.3,
+        },
+        h4: {
+          fontSize: 'calc(2.5 * var(--app-font-size, 16px)) !important',
+          fontWeight: 500,
+          lineHeight: 1.2,
+        },
+      },
+    },
+    MuiTabs: {
+      styleOverrides: {
+        root: {
+          '& .MuiTab-root': {
+            minHeight: 'calc(4.375 * var(--app-font-size, 16px))',
+            fontSize: 'calc(1 * var(--app-font-size, 16px)) !important',
+            fontWeight: 500,
+            textTransform: 'uppercase',
+            transition: 'all 0.2s',
+            flex: 1,
+            '&:hover': {
+              bgcolor: 'action.hover',
+            },
+            '&.Mui-selected': {
+              color: '#d32f2f',
+            },
+            '& .MuiSvgIcon-root': {
+              background: '#ffffff',
+              padding: 'calc(0.375 * var(--app-font-size, 16px))',
+              borderRadius: 'calc(0.5 * var(--app-font-size, 16px))',
+              fontSize: 'calc(1.3 * var(--app-font-size, 16px)) !important',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              border: '1px solid',
+              borderColor: 'rgba(0,0,0,0.06)',
+              color: '#d32f2f',
+            },
+          },
+          '& .MuiTabs-indicator': {
+            height: 3,
+            borderRadius: '3px 3px 0 0',
+            background: 'linear-gradient(45deg, #d32f2f, #ff6659)',
+          },
         },
       },
     },
