@@ -75,7 +75,7 @@ import AIFeaturesDemo from '../components/ai/AIFeaturesDemo';
 import DateFormatSelector from '../components/common/DateFormatSelector';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { useTranslation } from '../hooks/useTranslation';
-import { preferences } from '../services/api';
+import { preferences, users } from '../services/api';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 import { DateFormat } from '../utils/dateFormat';
 
@@ -158,6 +158,15 @@ const Settings: React.FC = () => {
   const [showSecurityAudit, setShowSecurityAudit] = useState(false);
   const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
   const [showDownloadDataDialog, setShowDownloadDataDialog] = useState(false);
+  const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false);
+  const [showAccountInfoDialog, setShowAccountInfoDialog] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   // Notification Settings
   const [notifications, setNotifications] = useState({
@@ -833,6 +842,68 @@ const Settings: React.FC = () => {
       document.body.classList.remove('dark-mode-local');
     }
   }, [darkMode]);
+
+  // Password change function
+  const handlePasswordChange = async () => {
+    // Reset error state
+    setPasswordError(null);
+
+    // Validate form
+    if (
+      !passwordForm.currentPassword ||
+      !passwordForm.newPassword ||
+      !passwordForm.confirmPassword
+    ) {
+      setPasswordError('All fields are required');
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 8) {
+      setPasswordError('New password must be at least 8 characters long');
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError('New passwords do not match');
+      return;
+    }
+
+    if (passwordForm.currentPassword === passwordForm.newPassword) {
+      setPasswordError('New password must be different from current password');
+      return;
+    }
+
+    try {
+      setIsChangingPassword(true);
+
+      // Call the API
+      await users.changePassword({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      });
+
+      // Success - close dialog and reset form
+      setShowChangePasswordDialog(false);
+      setPasswordForm({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+      setPasswordError(null);
+
+      // Show success message (you could add a snackbar here)
+      console.log('Password changed successfully');
+    } catch (error: any) {
+      console.error('Password change error:', error);
+      setPasswordError(
+        error.response?.data?.detail ||
+          error.message ||
+          'Failed to change password. Please try again.'
+      );
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
 
   // Apply language setting
   useEffect(() => {
@@ -2730,6 +2801,9 @@ const Settings: React.FC = () => {
                               ...privacySettings,
                               autoLock: !privacySettings.autoLock,
                             });
+                          } else if (item.id === 'password') {
+                            // Open change password dialog
+                            setShowChangePasswordDialog(true);
                           }
                         }}
                         startIcon={
@@ -3195,6 +3269,26 @@ const Settings: React.FC = () => {
                         width: '100%',
                       }}
                     >
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        startIcon={<VpnKeyOutlined />}
+                        fullWidth
+                        sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
+                        onClick={() => setShowChangePasswordDialog(true)}
+                      >
+                        Change Password
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        startIcon={<VerifiedUserOutlined />}
+                        fullWidth
+                        sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
+                        onClick={() => setShowAccountInfoDialog(true)}
+                      >
+                        Account Information
+                      </Button>
                       <Button
                         variant="outlined"
                         color="primary"
@@ -3894,6 +3988,317 @@ const Settings: React.FC = () => {
           >
             Download Data
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Change Password Dialog */}
+      <Dialog
+        open={showChangePasswordDialog}
+        onClose={() => setShowChangePasswordDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <VpnKeyOutlined />
+            Change Password
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Enter your current password and choose a new password to update your account security.
+          </Typography>
+
+          {passwordError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {passwordError}
+            </Alert>
+          )}
+
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              label="Current Password"
+              type="password"
+              fullWidth
+              variant="outlined"
+              placeholder="Enter your current password"
+              value={passwordForm.currentPassword}
+              onChange={e =>
+                setPasswordForm({
+                  ...passwordForm,
+                  currentPassword: e.target.value,
+                })
+              }
+              disabled={isChangingPassword}
+            />
+            <TextField
+              label="New Password"
+              type="password"
+              fullWidth
+              variant="outlined"
+              placeholder="Enter your new password"
+              helperText="Password must be at least 8 characters long"
+              value={passwordForm.newPassword}
+              onChange={e =>
+                setPasswordForm({
+                  ...passwordForm,
+                  newPassword: e.target.value,
+                })
+              }
+              disabled={isChangingPassword}
+            />
+            <TextField
+              label="Confirm New Password"
+              type="password"
+              fullWidth
+              variant="outlined"
+              placeholder="Confirm your new password"
+              value={passwordForm.confirmPassword}
+              onChange={e =>
+                setPasswordForm({
+                  ...passwordForm,
+                  confirmPassword: e.target.value,
+                })
+              }
+              disabled={isChangingPassword}
+            />
+          </Box>
+
+          <Alert severity="info" sx={{ mt: 2 }}>
+            <Typography variant="caption">
+              Your password will be updated immediately. You'll need to use your new password for
+              future logins.
+            </Typography>
+          </Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setShowChangePasswordDialog(false);
+              setPasswordForm({
+                currentPassword: '',
+                newPassword: '',
+                confirmPassword: '',
+              });
+              setPasswordError(null);
+            }}
+            disabled={isChangingPassword}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handlePasswordChange}
+            disabled={isChangingPassword}
+            startIcon={isChangingPassword ? <CircularProgress size={16} /> : null}
+          >
+            {isChangingPassword ? 'Changing Password...' : 'Change Password'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Account Information Dialog */}
+      <Dialog
+        open={showAccountInfoDialog}
+        onClose={() => setShowAccountInfoDialog(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <VerifiedUserOutlined />
+            Account Information
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Your account details and current status information.
+          </Typography>
+
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <Typography
+                variant="subtitle2"
+                gutterBottom
+                sx={{ color: theme.palette.primary.main }}
+              >
+                Basic Information
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Box
+                  sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                >
+                  <Typography variant="body2" color="text.secondary">
+                    Username:
+                  </Typography>
+                  <Typography variant="body2" fontWeight="medium">
+                    user@example.com
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                >
+                  <Typography variant="body2" color="text.secondary">
+                    Email:
+                  </Typography>
+                  <Typography variant="body2" fontWeight="medium">
+                    user@example.com
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                >
+                  <Typography variant="body2" color="text.secondary">
+                    Account Created:
+                  </Typography>
+                  <Typography variant="body2" fontWeight="medium">
+                    January 15, 2024
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                >
+                  <Typography variant="body2" color="text.secondary">
+                    Last Login:
+                  </Typography>
+                  <Typography variant="body2" fontWeight="medium">
+                    Today at 2:30 PM
+                  </Typography>
+                </Box>
+              </Box>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Typography
+                variant="subtitle2"
+                gutterBottom
+                sx={{ color: theme.palette.primary.main }}
+              >
+                Subscription & Status
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Box
+                  sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                >
+                  <Typography variant="body2" color="text.secondary">
+                    Current Plan:
+                  </Typography>
+                  <Chip label="Free" size="small" color="primary" />
+                </Box>
+                <Box
+                  sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                >
+                  <Typography variant="body2" color="text.secondary">
+                    Account Status:
+                  </Typography>
+                  <Chip label="Active" size="small" color="success" />
+                </Box>
+                <Box
+                  sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                >
+                  <Typography variant="body2" color="text.secondary">
+                    Email Verified:
+                  </Typography>
+                  <Chip label="Verified" size="small" color="success" />
+                </Box>
+                <Box
+                  sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                >
+                  <Typography variant="body2" color="text.secondary">
+                    2FA Enabled:
+                  </Typography>
+                  <Chip label="Disabled" size="small" color="warning" />
+                </Box>
+              </Box>
+            </Grid>
+
+            <Grid item xs={12}>
+              <Typography
+                variant="subtitle2"
+                gutterBottom
+                sx={{ color: theme.palette.primary.main }}
+              >
+                Usage Statistics
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={6} md={3}>
+                  <Box
+                    sx={{
+                      textAlign: 'center',
+                      p: 2,
+                      border: 1,
+                      borderColor: 'divider',
+                      borderRadius: 1,
+                    }}
+                  >
+                    <Typography variant="h6" color="primary.main">
+                      15
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Assignments
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={6} md={3}>
+                  <Box
+                    sx={{
+                      textAlign: 'center',
+                      p: 2,
+                      border: 1,
+                      borderColor: 'divider',
+                      borderRadius: 1,
+                    }}
+                  >
+                    <Typography variant="h6" color="primary.main">
+                      85%
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Completion Rate
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={6} md={3}>
+                  <Box
+                    sx={{
+                      textAlign: 'center',
+                      p: 2,
+                      border: 1,
+                      borderColor: 'divider',
+                      borderRadius: 1,
+                    }}
+                  >
+                    <Typography variant="h6" color="primary.main">
+                      2
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Active Sessions
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={6} md={3}>
+                  <Box
+                    sx={{
+                      textAlign: 'center',
+                      p: 2,
+                      border: 1,
+                      borderColor: 'divider',
+                      borderRadius: 1,
+                    }}
+                  >
+                    <Typography variant="h6" color="primary.main">
+                      30
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Days Active
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowAccountInfoDialog(false)}>Close</Button>
         </DialogActions>
       </Dialog>
 
