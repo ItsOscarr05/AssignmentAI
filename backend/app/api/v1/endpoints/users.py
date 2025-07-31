@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Dict
 from fastapi import APIRouter, Body, Depends, HTTPException, status, UploadFile, File, Form, Query, Response, Request
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
@@ -103,7 +103,36 @@ async def update_preferences(
     db: Session = Depends(get_db)
 ):
     """Update current user's preferences"""
-    return user_crud.update_preferences(db, str(current_user.id), preferences)
+    try:
+        return user_crud.update_preferences(db, str(current_user.id), preferences)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/ai-settings")
+async def get_ai_settings(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get current user's AI settings"""
+    try:
+        return user_crud.get_ai_settings(db, str(current_user.id))
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@router.put("/ai-settings")
+async def update_ai_settings(
+    ai_settings: Dict[str, Any],
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update current user's AI settings"""
+    try:
+        # Create preferences object with AI settings
+        preferences = UserPreferences(ai_settings=ai_settings)
+        user_crud.update_preferences(db, str(current_user.id), preferences)
+        return {"message": "AI settings updated successfully", "settings": ai_settings}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/avatar")
 async def upload_avatar(

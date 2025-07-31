@@ -40,6 +40,8 @@ class UserPreferences(BaseModel):
     pushNotifications: bool = True
     darkMode: bool = False
     language: str = "en"
+    # AI Settings
+    ai_settings: Optional[Dict[str, Any]] = None
 
 class UserInDBBase(UserBase):
     id: int

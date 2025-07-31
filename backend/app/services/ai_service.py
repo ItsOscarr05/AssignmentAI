@@ -5,6 +5,7 @@ from sqlalchemy import select, func
 from openai import AsyncOpenAI
 from app.crud import ai_assignment as ai_assignment_crud
 from app.crud import feedback as feedback_crud
+from app.crud import user as user_crud
 from app.models.subscription import Subscription, SubscriptionStatus
 from app.schemas.ai_assignment import (
     AssignmentGenerationRequest,
@@ -16,6 +17,7 @@ from app.schemas.ai_assignment import (
 from app.schemas.feedback import FeedbackCreate
 from app.core.config import settings
 from app.core.logger import logger
+from app.core.validation import get_default_ai_settings
 import re
 import asyncio
 from fastapi import HTTPException
@@ -61,7 +63,7 @@ class AIService:
             prompt = self._construct_assignment_prompt(request)
             
             # Call OpenAI API with retry logic
-            response = await self._call_openai_with_retry(prompt)
+            response = await self._call_openai_with_retry(prompt, request.user_id)
             
             # Parse and structure the AI response
             assignment_content = self._parse_assignment_content(response)
@@ -113,6 +115,20 @@ class AIService:
             # Construct the prompt for the AI model
             prompt = self._construct_feedback_prompt(submission_content, feedback_type)
             
+            # Get user's AI settings
+            try:
+                from sqlalchemy.orm import Session
+                sync_db = Session(bind=self.db.bind)
+                user_settings = user_crud.get_ai_settings(sync_db, str(user_id))
+                sync_db.close()
+                
+                max_tokens = user_settings.get('tokenContextLimit', settings.AI_MAX_TOKENS)
+                temperature = user_settings.get('temperature', settings.AI_TEMPERATURE)
+            except Exception as e:
+                logger.warning(f"Failed to get user AI settings for user {user_id}, using defaults: {str(e)}")
+                max_tokens = settings.AI_MAX_TOKENS
+                temperature = settings.AI_TEMPERATURE
+            
             # Call OpenAI API
             response = await self.client.chat.completions.create(
                 model=model,
@@ -120,8 +136,8 @@ class AIService:
                     {"role": "system", "content": "You are a helpful teacher's assistant that provides constructive feedback on student submissions."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=settings.AI_MAX_TOKENS,
-                temperature=settings.AI_TEMPERATURE,
+                max_tokens=max_tokens,
+                temperature=temperature,
                 top_p=settings.AI_TOP_P,
                 frequency_penalty=settings.AI_FREQUENCY_PENALTY,
                 presence_penalty=settings.AI_PRESENCE_PENALTY
@@ -166,8 +182,25 @@ class AIService:
         except Exception:
             return False
 
-    async def _call_openai_with_retry(self, prompt: str, max_retries: int = 3) -> str:
+    async def _call_openai_with_retry(self, prompt: str, user_id: int = None, max_retries: int = 3) -> str:
         """Call OpenAI API with retry logic."""
+        # Get user's AI settings if user_id is provided
+        max_tokens = settings.AI_MAX_TOKENS
+        temperature = settings.AI_TEMPERATURE
+        
+        if user_id:
+            try:
+                # Convert AsyncSession to regular Session for user_crud
+                from sqlalchemy.orm import Session
+                sync_db = Session(bind=self.db.bind)
+                user_settings = user_crud.get_ai_settings(sync_db, str(user_id))
+                sync_db.close()
+                
+                max_tokens = user_settings.get('tokenContextLimit', settings.AI_MAX_TOKENS)
+                temperature = user_settings.get('temperature', settings.AI_TEMPERATURE)
+            except Exception as e:
+                logger.warning(f"Failed to get user AI settings for user {user_id}, using defaults: {str(e)}")
+        
         for attempt in range(max_retries):
             try:
                 response = await self.client.chat.completions.create(
@@ -176,8 +209,8 @@ class AIService:
                         {"role": "system", "content": "You are a helpful teacher's assistant that creates educational assignments."},
                         {"role": "user", "content": prompt}
                     ],
-                    max_tokens=settings.AI_MAX_TOKENS,
-                    temperature=settings.AI_TEMPERATURE,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
                     top_p=settings.AI_TOP_P,
                     frequency_penalty=settings.AI_FREQUENCY_PENALTY,
                     presence_penalty=settings.AI_PRESENCE_PENALTY

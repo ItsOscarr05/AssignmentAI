@@ -587,21 +587,34 @@ export const analytics = {
 // Preferences endpoints
 export const preferences = {
   get: async (): Promise<UserPreferences> => {
-    const response = await api.get('/preferences');
+    const response = await api.get('/users/preferences');
     return response.data;
   },
 
   update: async (preferences: Partial<UserPreferences>): Promise<UserPreferences> => {
-    const response = await api.patch('/preferences', preferences);
+    const response = await api.put('/users/preferences', preferences);
     return response.data;
   },
 
   reset: async (): Promise<UserPreferences> => {
-    const response = await api.post('/preferences/reset');
+    const response = await api.post('/users/preferences/reset');
     return response.data;
   },
 
   delete: async (): Promise<void> => {
-    await api.delete('/preferences');
+    await api.delete('/users/preferences');
+  },
+};
+
+// AI Settings endpoints
+export const aiSettings = {
+  get: async (): Promise<any> => {
+    const response = await api.get('/users/ai-settings');
+    return response.data;
+  },
+
+  update: async (settings: any): Promise<any> => {
+    const response = await api.put('/users/ai-settings', settings);
+    return response.data;
   },
 };

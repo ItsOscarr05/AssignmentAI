@@ -146,7 +146,7 @@ const Settings: React.FC = () => {
   });
 
   // AI Settings
-  const [maxTokens, setMaxTokens] = useState<number>(1000);
+  const [tokenContextLimit, setTokenContextLimit] = useState<number>(1000);
   const [temperature, setTemperature] = useState('0.5');
   const [contextLength, setContextLength] = useState(10);
   const [autoComplete, setAutoComplete] = useState(true);
@@ -309,9 +309,9 @@ const Settings: React.FC = () => {
   const validateAISettings = () => {
     const errors: string[] = [];
 
-    if (maxTokens < 1000 || maxTokens > subscription.tokenLimit) {
+    if (tokenContextLimit < 1000 || tokenContextLimit > subscription.tokenLimit) {
       errors.push(
-        `Token limit must be between 1,000 and ${subscription.tokenLimit.toLocaleString()}`
+        `Token context limit must be between 1,000 and ${subscription.tokenLimit.toLocaleString()}`
       );
     }
 
@@ -354,7 +354,7 @@ const Settings: React.FC = () => {
   };
 
   const resetAISettingsToDefaults = () => {
-    setMaxTokens(1000);
+    setTokenContextLimit(1000);
     setTemperature('0.5');
     setContextLength(10);
     setAutoComplete(true);
@@ -811,7 +811,7 @@ const Settings: React.FC = () => {
           session_timeout: privacySettings.sessionTimeout,
         },
         ai: {
-          max_tokens: maxTokens,
+          max_tokens: tokenContextLimit,
           temperature: parseFloat(temperature),
           context_length: contextLength,
           auto_complete: autoComplete,
@@ -1202,15 +1202,30 @@ const Settings: React.FC = () => {
         setNotifications(prev => ({ ...prev, desktop: !!userPreferences.push_notifications }));
       }
 
-      // Load AI settings
-      if (userPreferences.custom_preferences?.maxTokens) {
-        setMaxTokens(Number(userPreferences.custom_preferences.maxTokens) || 1000);
-      }
-      if (userPreferences.custom_preferences?.temperature) {
-        setTemperature(userPreferences.custom_preferences.temperature.toString() || '0.5');
-      }
-      if (userPreferences.custom_preferences?.contextLength) {
-        setContextLength(Number(userPreferences.custom_preferences.contextLength) || 10);
+      // Load AI settings from dedicated endpoint
+      try {
+        const aiUserSettings = await (await import('../services/api')).aiSettings.get();
+        if (aiUserSettings.tokenContextLimit) {
+          setTokenContextLimit(Number(aiUserSettings.tokenContextLimit));
+        }
+        if (aiUserSettings.temperature) {
+          setTemperature(aiUserSettings.temperature.toString());
+        }
+        if (aiUserSettings.contextLength) {
+          setContextLength(Number(aiUserSettings.contextLength));
+        }
+      } catch (error) {
+        console.warn('Failed to load AI settings, using defaults:', error);
+        // Fallback to custom_preferences if available
+        if (userPreferences.custom_preferences?.maxTokens) {
+          setTokenContextLimit(Number(userPreferences.custom_preferences.maxTokens) || 1000);
+        }
+        if (userPreferences.custom_preferences?.temperature) {
+          setTemperature(userPreferences.custom_preferences.temperature.toString() || '0.5');
+        }
+        if (userPreferences.custom_preferences?.contextLength) {
+          setContextLength(Number(userPreferences.custom_preferences.contextLength) || 10);
+        }
       }
       if (userPreferences.custom_preferences?.autoComplete !== undefined) {
         setAutoComplete(!!userPreferences.custom_preferences.autoComplete);
@@ -1244,6 +1259,16 @@ const Settings: React.FC = () => {
   // Save preferences to backend
   const savePreferencesToBackend = async () => {
     try {
+      // Save AI settings separately
+      await (
+        await import('../services/api')
+      ).aiSettings.update({
+        tokenContextLimit,
+        temperature: parseFloat(temperature),
+        contextLength,
+      });
+
+      // Save other preferences
       await preferences.update({
         language,
         theme: darkMode ? 'dark' : 'light',
@@ -1253,9 +1278,6 @@ const Settings: React.FC = () => {
         push_notifications: notifications.desktop,
         custom_preferences: {
           dateFormat,
-          maxTokens,
-          temperature,
-          contextLength,
           autoComplete,
           codeSnippets,
           aiSuggestions,
@@ -1796,11 +1818,11 @@ const Settings: React.FC = () => {
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <Typography gutterBottom>
-                    {t('settings.ai.tokenLimit')} (Max: {subscription.tokenLimit.toLocaleString()})
+                    Token Context Limit (Max: {subscription.tokenLimit.toLocaleString()})
                   </Typography>
                   <Slider
-                    value={maxTokens}
-                    onChange={(_e, value) => setMaxTokens(value as number)}
+                    value={tokenContextLimit}
+                    onChange={(_e, value) => setTokenContextLimit(value as number)}
                     min={1000}
                     max={subscription.tokenLimit}
                     step={1000}
@@ -1837,8 +1859,9 @@ const Settings: React.FC = () => {
                     color="text.secondary"
                     sx={{ mt: 1, display: 'block' }}
                   >
-                    Maximum token limit is determined by your subscription plan. Higher limits allow
-                    for longer, more detailed responses.
+                    Maximum token context limit is determined by your subscription plan. Higher
+                    limits allow for more context to be considered in AI responses, improving
+                    relevance and continuity.
                   </Typography>
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -2055,7 +2078,7 @@ const Settings: React.FC = () => {
                         setAutoComplete(true);
                         setCodeSnippets(true);
                         setAiSuggestions(true);
-                        setRealTimeAnalysis(false); // Keep this off by default due to performance
+                        setRealTimeAnalysis(true);
                       }}
                     >
                       Enable All (Recommended)

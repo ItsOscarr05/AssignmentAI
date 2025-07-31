@@ -6,6 +6,7 @@ from app.core.security import get_password_hash, verify_password
 from app.crud.base import CRUDBase
 from app.models.user import User
 from app.schemas.user import UserCreate, UserUpdate, UserProfile, UserPreferences
+from app.core.validation import validate_ai_settings, sanitize_ai_settings, get_default_ai_settings
 
 class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
     def get_by_email(self, db: Session, *, email: str) -> Optional[User]:
@@ -114,18 +115,58 @@ def update_profile(db: Session, user_id: str, profile: UserProfile) -> UserProfi
     return get_profile(db, user_id)
 
 def update_preferences(db: Session, user_id: str, preferences: UserPreferences) -> UserPreferences:
-    """Update user preferences"""
+    """Update user preferences with AI settings validation"""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise ValueError("User not found")
     
-    user.preferences = preferences.dict()
+    # Get current preferences
+    current_prefs = user.preferences or {}
+    
+    # Validate AI settings if provided
+    if preferences.ai_settings:
+        # Get user's subscription plan (default to 'free' for now)
+        subscription_plan = current_prefs.get('subscription_plan', 'free')
+        
+        # Validate AI settings
+        validation_errors = validate_ai_settings(preferences.ai_settings, subscription_plan)
+        if validation_errors:
+            raise ValueError(f"AI settings validation failed: {'; '.join(validation_errors)}")
+        
+        # Sanitize AI settings
+        sanitized_ai_settings = sanitize_ai_settings(preferences.ai_settings, subscription_plan)
+        current_prefs['ai_settings'] = sanitized_ai_settings
+    
+    # Update other preferences
+    prefs_dict = preferences.dict(exclude={'ai_settings'})
+    current_prefs.update(prefs_dict)
+    
+    user.preferences = current_prefs
     
     db.add(user)
     db.commit()
     db.refresh(user)
     
     return preferences
+
+def get_ai_settings(db: Session, user_id: str) -> Dict[str, Any]:
+    """Get user's AI settings with fallback to defaults"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise ValueError("User not found")
+    
+    # Get user's subscription plan (default to 'free' for now)
+    subscription_plan = (user.preferences or {}).get('subscription_plan', 'free')
+    
+    # Get AI settings from user preferences
+    ai_settings = (user.preferences or {}).get('ai_settings', {})
+    
+    # If no AI settings, return defaults
+    if not ai_settings:
+        return get_default_ai_settings()
+    
+    # Sanitize existing settings to ensure they're valid
+    return sanitize_ai_settings(ai_settings, subscription_plan)
 
 def update_avatar(db: Session, user_id: str, avatar_url: str) -> None:
     """Update user avatar"""
