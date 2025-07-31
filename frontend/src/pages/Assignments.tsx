@@ -59,6 +59,7 @@ import { useAspectRatio } from '../hooks/useAspectRatio';
 import { assignments } from '../services/api/assignments';
 import { mapToCoreSubject } from '../services/subjectService';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
+import { DateFormat } from '../utils/dateFormat';
 
 interface Assignment {
   id: string;
@@ -82,6 +83,30 @@ const Assignments: React.FC = () => {
   const { isMockUser } = useAuth();
   const { breakpoint } = useAspectRatio();
   const { t } = useTranslation();
+
+  // Get user's date format preference (default to MM/DD/YYYY if not set)
+  const userDateFormat = (localStorage.getItem('dateFormat') as DateFormat) || 'MM/DD/YYYY';
+
+  // Simple date formatting function based on user preference
+  const formatDateWithPreference = (date: Date) => {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+
+    switch (userDateFormat) {
+      case 'MM/DD/YYYY':
+        return `${month}/${day}/${year}`;
+      case 'DD/MM/YYYY':
+        return `${day}/${month}/${year}`;
+      case 'YYYY-MM-DD':
+        return `${year}-${month}-${day}`;
+      case 'DD.MM.YYYY':
+        return `${day}.${month}.${year}`;
+      default:
+        return `${month}/${day}/${year}`;
+    }
+  };
+
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -882,7 +907,7 @@ const Assignments: React.FC = () => {
                     </TableCell>
                     <TableCell sx={{ p: { xs: 1, md: 2 } }}>
                       <Typography sx={{ fontSize: { xs: '0.75rem', md: '1rem' } }}>
-                        {new Date(assignment.createdAt).toLocaleDateString()}
+                        {formatDateWithPreference(new Date(assignment.createdAt))}
                       </Typography>
                     </TableCell>
                     <TableCell sx={{ p: { xs: 1, md: 2 } }}>

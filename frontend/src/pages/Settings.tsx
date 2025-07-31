@@ -1,4 +1,5 @@
 import {
+  AccessTime,
   AnalyticsOutlined,
   AssignmentOutlined,
   Brush,
@@ -74,6 +75,7 @@ import React, { useEffect, useState } from 'react';
 import AIFeaturesDemo from '../components/ai/AIFeaturesDemo';
 import DateFormatSelector from '../components/common/DateFormatSelector';
 import { useAspectRatio } from '../hooks/useAspectRatio';
+
 import { useTranslation } from '../hooks/useTranslation';
 import { preferences, users } from '../services/api';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
@@ -133,6 +135,7 @@ const Settings: React.FC = () => {
 
   // Language & Region Settings
   const [dateFormat, setDateFormat] = useState<DateFormat>('MM/DD/YYYY');
+  const [use24HourFormat, setUse24HourFormat] = useState<boolean>(false);
 
   // AI Settings
   const [maxTokens, setMaxTokens] = useState<number>(1000);
@@ -227,6 +230,48 @@ const Settings: React.FC = () => {
 
   // Use the new i18n translation hook
   const { t, changeLanguage } = useTranslation();
+
+  // Simple date formatting function based on user preference
+  const formatDateWithPreference = (date: Date | string) => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    const year = dateObj.getFullYear();
+    const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+    const day = dateObj.getDate().toString().padStart(2, '0');
+
+    switch (dateFormat) {
+      case 'MM/DD/YYYY':
+        return `${month}/${day}/${year}`;
+      case 'DD/MM/YYYY':
+        return `${day}/${month}/${year}`;
+      case 'YYYY-MM-DD':
+        return `${year}-${month}-${day}`;
+      case 'DD.MM.YYYY':
+        return `${day}.${month}.${year}`;
+      default:
+        return `${month}/${day}/${year}`;
+    }
+  };
+
+  // Simple date time formatting function
+  const formatDateTimeWithPreference = (date: Date | string) => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    const dateStr = formatDateWithPreference(dateObj);
+    const hours = dateObj.getHours();
+    const minutes = dateObj.getMinutes();
+
+    let timeStr: string;
+    if (use24HourFormat) {
+      timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    } else {
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const displayHours = hours % 12 || 12;
+      timeStr = `${displayHours.toString().padStart(2, '0')}:${minutes
+        .toString()
+        .padStart(2, '0')} ${ampm}`;
+    }
+
+    return `${dateStr} ${timeStr}`;
+  };
 
   // Map subscription plans to their respective models and token limits
   const subscriptionConfig: Record<SubscriptionPlan, SubscriptionConfig> = {
@@ -410,16 +455,38 @@ const Settings: React.FC = () => {
       channels: channels.join(', ') || 'None',
       types: types.join(', ') || 'None',
       priority: notificationPreferences.priorityLevel,
-      workHours: `${notificationSchedule.workHoursStart
-        .toString()
-        .padStart(2, '0')}:00 - ${notificationSchedule.workHoursEnd
-        .toString()
-        .padStart(2, '0')}:00`,
-      quietHours: `${notificationSchedule.quietHoursStart
-        .toString()
-        .padStart(2, '0')}:00 - ${notificationSchedule.quietHoursEnd
-        .toString()
-        .padStart(2, '0')}:00`,
+      workHours: (() => {
+        const startHour = notificationSchedule.workHoursStart;
+        const endHour = notificationSchedule.workHoursEnd;
+
+        if (use24HourFormat) {
+          return `${startHour.toString().padStart(2, '0')}:00 - ${endHour
+            .toString()
+            .padStart(2, '0')}:00`;
+        } else {
+          const startAMPM = startHour >= 12 ? 'PM' : 'AM';
+          const endAMPM = endHour >= 12 ? 'PM' : 'AM';
+          const startDisplayHour = startHour % 12 || 12;
+          const endDisplayHour = endHour % 12 || 12;
+          return `${startDisplayHour}:00 ${startAMPM} - ${endDisplayHour}:00 ${endAMPM}`;
+        }
+      })(),
+      quietHours: (() => {
+        const startHour = notificationSchedule.quietHoursStart;
+        const endHour = notificationSchedule.quietHoursEnd;
+
+        if (use24HourFormat) {
+          return `${startHour.toString().padStart(2, '0')}:00 - ${endHour
+            .toString()
+            .padStart(2, '0')}:00`;
+        } else {
+          const startAMPM = startHour >= 12 ? 'PM' : 'AM';
+          const endAMPM = endHour >= 12 ? 'PM' : 'AM';
+          const startDisplayHour = startHour % 12 || 12;
+          const endDisplayHour = endHour % 12 || 12;
+          return `${startDisplayHour}:00 ${startAMPM} - ${endDisplayHour}:00 ${endAMPM}`;
+        }
+      })(),
       workDays:
         notificationSchedule.workDays.length === 7
           ? 'Every day'
@@ -652,7 +719,7 @@ const Settings: React.FC = () => {
     title: 'Assignment Feedback Ready',
     message: 'Your AI analysis for "Research Paper" is now available',
     type: 'feedback',
-    time: '2 minutes ago',
+    time: formatDateTimeWithPreference(new Date(Date.now() - 2 * 60 * 1000)), // 2 minutes ago
   };
 
   // Filter settings based on search query
@@ -1056,6 +1123,13 @@ const Settings: React.FC = () => {
     console.log('Date format changed to:', dateFormat);
   }, [dateFormat]);
 
+  // Apply time format setting
+  useEffect(() => {
+    // Store time format preference in localStorage for future use
+    localStorage.setItem('use24HourFormat', use24HourFormat.toString());
+    console.log('Time format changed to:', use24HourFormat ? '24-hour' : '12-hour');
+  }, [use24HourFormat]);
+
   // Load saved settings from localStorage on component mount
   useEffect(() => {
     const loadSavedSettings = () => {
@@ -1067,6 +1141,11 @@ const Settings: React.FC = () => {
         ['MM/DD/YYYY', 'DD/MM/YYYY', 'YYYY-MM-DD', 'DD.MM.YYYY'].includes(savedDateFormat)
       ) {
         setDateFormat(savedDateFormat as DateFormat);
+      }
+
+      const savedTimeFormat = localStorage.getItem('use24HourFormat');
+      if (savedTimeFormat) {
+        setUse24HourFormat(savedTimeFormat === 'true');
       }
     };
 
@@ -1515,6 +1594,36 @@ const Settings: React.FC = () => {
                       </Typography>
                     )}
                   </Box>
+
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      Time Format
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={!use24HourFormat}
+                            onChange={() => setUse24HourFormat(false)}
+                            size="small"
+                          />
+                        }
+                        label="12-hour (AM/PM)"
+                        sx={{ flex: 1 }}
+                      />
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={use24HourFormat}
+                            onChange={() => setUse24HourFormat(true)}
+                            size="small"
+                          />
+                        }
+                        label="24-hour"
+                        sx={{ flex: 1 }}
+                      />
+                    </Box>
+                  </Box>
                 </Grid>
 
                 <Grid item xs={12} md={6}>
@@ -1572,6 +1681,13 @@ const Settings: React.FC = () => {
                         <EventOutlined fontSize="small" color="action" />
                         <Typography variant="body2">{dateFormat} format</Typography>
                       </Box>
+
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <AccessTime fontSize="small" color="action" />
+                        <Typography variant="body2">
+                          {use24HourFormat ? '24-hour' : '12-hour (AM/PM)'} format
+                        </Typography>
+                      </Box>
                     </Box>
 
                     <Box sx={{ mb: 2 }}>
@@ -1587,13 +1703,7 @@ const Settings: React.FC = () => {
                         variant="body2"
                         sx={{ fontFamily: 'monospace', fontSize: '0.875rem' }}
                       >
-                        {new Date().toLocaleString(language === 'en' ? 'en-US' : language, {
-                          year: 'numeric',
-                          month: '2-digit',
-                          day: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
+                        {formatDateTimeWithPreference(new Date())}
                       </Typography>
                     </Box>
 
@@ -1615,6 +1725,7 @@ const Settings: React.FC = () => {
                           onClick={() => {
                             setLanguage('en');
                             setDateFormat('MM/DD/YYYY');
+                            setUse24HourFormat(false);
                           }}
                           sx={{ py: 0.5, px: 1 }}
                         >
@@ -2465,7 +2576,9 @@ const Settings: React.FC = () => {
                         >
                           {Array.from({ length: 24 }, (_, i) => (
                             <MenuItem key={i} value={i}>
-                              {i.toString().padStart(2, '0')}:00
+                              {use24HourFormat
+                                ? `${i.toString().padStart(2, '0')}:00`
+                                : `${i % 12 || 12}:00 ${i >= 12 ? 'PM' : 'AM'}`}
                             </MenuItem>
                           ))}
                         </Select>
@@ -2486,7 +2599,9 @@ const Settings: React.FC = () => {
                         >
                           {Array.from({ length: 24 }, (_, i) => (
                             <MenuItem key={i} value={i}>
-                              {i.toString().padStart(2, '0')}:00
+                              {use24HourFormat
+                                ? `${i.toString().padStart(2, '0')}:00`
+                                : `${i % 12 || 12}:00 ${i >= 12 ? 'PM' : 'AM'}`}
                             </MenuItem>
                           ))}
                         </Select>
@@ -2566,7 +2681,9 @@ const Settings: React.FC = () => {
                         >
                           {Array.from({ length: 24 }, (_, i) => (
                             <MenuItem key={i} value={i}>
-                              {i.toString().padStart(2, '0')}:00
+                              {use24HourFormat
+                                ? `${i.toString().padStart(2, '0')}:00`
+                                : `${i % 12 || 12}:00 ${i >= 12 ? 'PM' : 'AM'}`}
                             </MenuItem>
                           ))}
                         </Select>
@@ -2587,7 +2704,9 @@ const Settings: React.FC = () => {
                         >
                           {Array.from({ length: 24 }, (_, i) => (
                             <MenuItem key={i} value={i}>
-                              {i.toString().padStart(2, '0')}:00
+                              {use24HourFormat
+                                ? `${i.toString().padStart(2, '0')}:00`
+                                : `${i % 12 || 12}:00 ${i >= 12 ? 'PM' : 'AM'}`}
                             </MenuItem>
                           ))}
                         </Select>
@@ -3132,7 +3251,7 @@ const Settings: React.FC = () => {
                       </ListItemIcon>
                       <ListItemText
                         primary={t('settings.privacy.lastPasswordChange')}
-                        secondary={securitySettings.lastPasswordChange}
+                        secondary={formatDateWithPreference(securitySettings.lastPasswordChange)}
                         primaryTypographyProps={{
                           sx: { fontSize: { xs: '0.875rem', md: '1rem' } },
                         }}
@@ -3221,7 +3340,7 @@ const Settings: React.FC = () => {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <HistoryOutlined fontSize="small" color="action" />
                         <Typography variant="body2">
-                          Last Audit: {getSecuritySummary().lastAudit}
+                          Last Audit: {formatDateWithPreference(getSecuritySummary().lastAudit)}
                         </Typography>
                       </Box>
                     </Box>
@@ -4152,7 +4271,7 @@ const Settings: React.FC = () => {
                     Account Created:
                   </Typography>
                   <Typography variant="body2" fontWeight="medium">
-                    January 15, 2024
+                    {formatDateWithPreference('2024-01-15')}
                   </Typography>
                 </Box>
                 <Box
@@ -4162,7 +4281,7 @@ const Settings: React.FC = () => {
                     Last Login:
                   </Typography>
                   <Typography variant="body2" fontWeight="medium">
-                    Today at 2:30 PM
+                    {formatDateTimeWithPreference(new Date())}
                   </Typography>
                 </Box>
               </Box>

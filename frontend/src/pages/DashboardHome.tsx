@@ -61,12 +61,38 @@ import { notificationService } from '../services/notification';
 import { mapToCoreSubject } from '../services/subjectService';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 import { Notification } from '../types';
+import { DateFormat } from '../utils/dateFormat';
 
 const DashboardHome: React.FC = () => {
   const { user, isMockUser } = useAuth();
   const navigate = useNavigate();
   const { breakpoint } = useAspectRatio();
   const { t } = useTranslation();
+
+  // Get user's date format preference (default to MM/DD/YYYY if not set)
+  const userDateFormat = (localStorage.getItem('dateFormat') as DateFormat) || 'MM/DD/YYYY';
+
+  // Simple date formatting function based on user preference
+  const formatDateWithPreference = (date: Date | string) => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    const year = dateObj.getFullYear();
+    const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+    const day = dateObj.getDate().toString().padStart(2, '0');
+
+    switch (userDateFormat) {
+      case 'MM/DD/YYYY':
+        return `${month}/${day}/${year}`;
+      case 'DD/MM/YYYY':
+        return `${day}/${month}/${year}`;
+      case 'YYYY-MM-DD':
+        return `${year}-${month}-${day}`;
+      case 'DD.MM.YYYY':
+        return `${day}.${month}.${year}`;
+      default:
+        return `${month}/${day}/${year}`;
+    }
+  };
+
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'in progress' | 'completed' | 'not started'>('all');
   const [page, setPage] = useState(0);
@@ -737,7 +763,7 @@ const DashboardHome: React.FC = () => {
                           </span>
                         </TableCell>
                         <TableCell sx={{ p: { xs: 1, md: 2 } }}>
-                          {new Date(assignment.createdAt).toLocaleDateString()}
+                          {formatDateWithPreference(assignment.createdAt)}
                         </TableCell>
                         <TableCell sx={{ p: { xs: 1, md: 2 } }}>
                           <Box
@@ -1336,7 +1362,7 @@ const DashboardHome: React.FC = () => {
             <b>Status:</b> {viewAssignment?.status}
             <br />
             <b>Created At:</b>{' '}
-            {viewAssignment ? new Date(viewAssignment.createdAt).toLocaleString() : ''}
+            {viewAssignment ? formatDateWithPreference(viewAssignment.createdAt) : ''}
             <br />
             <b>Word Count:</b> {viewAssignment?.wordCount}
             <br />
