@@ -140,6 +140,28 @@ const baseTheme: ThemeOptions = {
         },
       },
     },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          borderRadius: 12,
+        },
+      },
+    },
+    MuiDialogTitle: {
+      styleOverrides: {
+        root: {
+          fontSize: 'calc(1.5 * var(--app-font-size, 16px)) !important',
+          fontWeight: 700,
+          color: '#d32f2f',
+          padding:
+            'calc(1.25 * var(--app-font-size, 16px)) calc(1.5 * var(--app-font-size, 16px)) calc(1 * var(--app-font-size, 16px)) calc(1.5 * var(--app-font-size, 16px))',
+          '& .MuiSvgIcon-root': {
+            color: '#d32f2f',
+            fontSize: 'calc(1.5 * var(--app-font-size, 16px)) !important',
+          },
+        },
+      },
+    },
     MuiTabs: {
       styleOverrides: {
         root: {

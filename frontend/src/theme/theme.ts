@@ -164,6 +164,26 @@ const theme = createTheme({
         },
       },
     },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          borderRadius: 12,
+        },
+      },
+    },
+    MuiDialogTitle: {
+      styleOverrides: {
+        root: {
+          fontSize: '1.25rem',
+          fontWeight: 600,
+          color: '#d32f2f',
+          padding: '20px 24px 16px 24px',
+          '& .MuiSvgIcon-root': {
+            color: '#d32f2f',
+          },
+        },
+      },
+    },
   },
 });
 

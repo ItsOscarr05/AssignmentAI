@@ -1,12 +1,17 @@
 import {
   AccessTime,
+  AllInclusive,
   AnalyticsOutlined,
   AssignmentOutlined,
+  AutoAwesomeOutlined,
+  BarChartOutlined,
   Brush,
   CheckCircle,
   CompareArrows,
+  CurrencyBitcoin as CurrencyBitcoinIcon,
   DataUsageOutlined,
   DeleteForeverOutlined,
+  DesignServicesOutlined,
   DesktopWindowsOutlined,
   DownloadOutlined,
   EmailOutlined,
@@ -14,20 +19,31 @@ import {
   EventOutlined,
   FeedbackOutlined,
   FingerprintOutlined,
+  FormatQuoteOutlined,
+  GppGoodOutlined,
   HistoryOutlined,
   Info,
   Language,
+  LibraryBooksOutlined,
   LockOutlined,
   Notifications,
   NotificationsActiveOutlined,
   NotificationsOutlined,
+  PaletteOutlined,
   PrivacyTipOutlined,
   Psychology,
+  PsychologyOutlined,
+  RocketLaunchOutlined,
   Save,
+  SchoolOutlined,
+  ScienceOutlined,
   Search,
   SecurityOutlined,
   SecurityUpdateOutlined,
   ShieldOutlined,
+  SmartToyOutlined,
+  Spellcheck,
+  TextSnippetOutlined,
   Tune,
   UpdateOutlined,
   VerifiedUserOutlined,
@@ -72,6 +88,7 @@ import {
   useTheme,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AIFeaturesDemo from '../components/ai/AIFeaturesDemo';
 import DateFormatSelector from '../components/common/DateFormatSelector';
 import { useAspectRatio } from '../hooks/useAspectRatio';
@@ -117,6 +134,7 @@ interface SubscriptionConfig {
 const Settings: React.FC = () => {
   const theme = useTheme();
   const { breakpoint } = useAspectRatio();
+  const navigate = useNavigate();
 
   const [tabValue, setTabValue] = useState(0);
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
@@ -157,6 +175,7 @@ const Settings: React.FC = () => {
   // AI Settings Validation & Feedback
   const [aiSettingsError, setAiSettingsError] = useState<string | null>(null);
   const [showModelComparison, setShowModelComparison] = useState(false);
+  const [selectedModelPlan, setSelectedModelPlan] = useState<SubscriptionPlan | null>(null);
   const [isValidatingSettings, setIsValidatingSettings] = useState(false);
   const [showAIFeaturesDemo, setShowAIFeaturesDemo] = useState(false);
 
@@ -3487,38 +3506,123 @@ const Settings: React.FC = () => {
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <CompareArrows />
-            AI Model Comparison
-          </Box>
-        </DialogTitle>
         <DialogContent>
+          <DialogTitle>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <CompareArrows />
+              AI Model Comparison
+            </Box>
+          </DialogTitle>
           <Grid container spacing={3}>
             {Object.entries(subscriptionConfig).map(([plan, config]) => (
               <Grid item xs={12} md={6} key={plan}>
                 <Paper
                   elevation={2}
+                  onClick={() => setSelectedModelPlan(plan as SubscriptionPlan)}
                   sx={{
                     p: 3,
-                    border: plan === subscription.plan ? '2px solid' : '1px solid',
-                    borderColor: plan === subscription.plan ? 'primary.main' : 'divider',
+                    pt: 4,
+                    border: selectedModelPlan === plan ? '3px solid' : '1px solid',
+                    borderColor:
+                      selectedModelPlan === plan
+                        ? plan === 'free'
+                          ? '#2196f3'
+                          : plan === 'plus'
+                          ? '#4caf50'
+                          : plan === 'pro'
+                          ? '#9c27b0'
+                          : '#ff9800'
+                        : 'divider',
                     borderRadius: 2,
                     position: 'relative',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease-in-out',
+                    '&:hover': {
+                      transform: 'translateY(-2px)',
+                      boxShadow: 4,
+                      borderColor:
+                        plan === 'free'
+                          ? '#2196f3'
+                          : plan === 'plus'
+                          ? '#4caf50'
+                          : plan === 'pro'
+                          ? '#9c27b0'
+                          : '#ff9800',
+                    },
                   }}
                 >
-                  {plan === subscription.plan && (
+                  {selectedModelPlan === plan && (
                     <Chip
-                      label="Current Plan"
-                      color="primary"
+                      label="Selected"
                       size="small"
-                      sx={{ position: 'absolute', top: 8, right: 8 }}
+                      sx={{
+                        position: 'absolute',
+                        top: 8,
+                        left: 8,
+                        backgroundColor:
+                          plan === 'free'
+                            ? '#2196f3'
+                            : plan === 'plus'
+                            ? '#4caf50'
+                            : plan === 'pro'
+                            ? '#9c27b0'
+                            : '#ff9800',
+                        color: 'white',
+                        fontWeight: 'bold',
+                      }}
                     />
                   )}
 
-                  <Typography variant="h6" gutterBottom>
-                    {config.label}
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    {plan === 'free' && (
+                      <SmartToyOutlined
+                        sx={{
+                          fontSize: '1.5rem',
+                          color: '#2196f3',
+                        }}
+                      />
+                    )}
+                    {plan === 'plus' && (
+                      <PsychologyOutlined
+                        sx={{
+                          fontSize: '1.5rem',
+                          color: '#4caf50',
+                        }}
+                      />
+                    )}
+                    {plan === 'pro' && (
+                      <AutoAwesomeOutlined
+                        sx={{
+                          fontSize: '1.5rem',
+                          color: '#9c27b0',
+                        }}
+                      />
+                    )}
+                    {plan === 'max' && (
+                      <RocketLaunchOutlined
+                        sx={{
+                          fontSize: '1.5rem',
+                          color: '#ff9800',
+                        }}
+                      />
+                    )}
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        color:
+                          plan === 'free'
+                            ? '#2196f3'
+                            : plan === 'plus'
+                            ? '#4caf50'
+                            : plan === 'pro'
+                            ? '#9c27b0'
+                            : '#ff9800',
+                        fontWeight: 'bold',
+                      }}
+                    >
+                      {config.label}
+                    </Typography>
+                  </Box>
 
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     {plan.charAt(0).toUpperCase() + plan.slice(1)} Plan
@@ -3531,7 +3635,19 @@ const Settings: React.FC = () => {
                     <List dense>
                       <ListItem sx={{ px: 0 }}>
                         <ListItemIcon sx={{ minWidth: 32 }}>
-                          <CheckCircle fontSize="small" color="success" />
+                          <CurrencyBitcoinIcon
+                            sx={{
+                              fontSize: '1.2rem',
+                              color:
+                                plan === 'free'
+                                  ? '#2196f3'
+                                  : plan === 'plus'
+                                  ? '#4caf50'
+                                  : plan === 'pro'
+                                  ? '#9c27b0'
+                                  : '#ff9800',
+                            }}
+                          />
                         </ListItemIcon>
                         <ListItemText
                           primary={`${config.tokenLimit.toLocaleString()} token limit`}
@@ -3540,19 +3656,136 @@ const Settings: React.FC = () => {
                       </ListItem>
                       <ListItem sx={{ px: 0 }}>
                         <ListItemIcon sx={{ minWidth: 32 }}>
-                          <CheckCircle fontSize="small" color="success" />
+                          {plan === 'free' ? (
+                            <SchoolOutlined
+                              sx={{
+                                fontSize: '1.2rem',
+                                color: '#2196f3',
+                              }}
+                            />
+                          ) : plan === 'plus' ? (
+                            <ScienceOutlined
+                              sx={{
+                                fontSize: '1.2rem',
+                                color: '#4caf50',
+                              }}
+                            />
+                          ) : plan === 'pro' ? (
+                            <Search
+                              sx={{
+                                fontSize: '1.2rem',
+                                color: '#9c27b0',
+                              }}
+                            />
+                          ) : (
+                            <AllInclusive
+                              sx={{
+                                fontSize: '1.2rem',
+                                color: '#ff9800',
+                              }}
+                            />
+                          )}
                         </ListItemIcon>
                         <ListItemText
-                          primary={plan === 'free' ? 'Basic AI features' : 'Advanced AI features'}
+                          primary={
+                            plan === 'free'
+                              ? 'Basic Assignment Analysis'
+                              : plan === 'plus'
+                              ? 'Advanced Writing Analysis'
+                              : plan === 'pro'
+                              ? 'AI-Powered Research Assistance'
+                              : 'Unlimited Assignment Analysis'
+                          }
                           primaryTypographyProps={{ variant: 'body2' }}
                         />
                       </ListItem>
                       <ListItem sx={{ px: 0 }}>
                         <ListItemIcon sx={{ minWidth: 32 }}>
-                          <CheckCircle fontSize="small" color="success" />
+                          {plan === 'free' ? (
+                            <Spellcheck
+                              sx={{
+                                fontSize: '1.2rem',
+                                color: '#2196f3',
+                              }}
+                            />
+                          ) : plan === 'plus' ? (
+                            <PaletteOutlined
+                              sx={{
+                                fontSize: '1.2rem',
+                                color: '#4caf50',
+                              }}
+                            />
+                          ) : plan === 'pro' ? (
+                            <FormatQuoteOutlined
+                              sx={{
+                                fontSize: '1.2rem',
+                                color: '#9c27b0',
+                              }}
+                            />
+                          ) : (
+                            <BarChartOutlined
+                              sx={{
+                                fontSize: '1.2rem',
+                                color: '#ff9800',
+                              }}
+                            />
+                          )}
                         </ListItemIcon>
                         <ListItemText
-                          primary={plan === 'free' ? 'Standard support' : 'Priority support'}
+                          primary={
+                            plan === 'free'
+                              ? 'Grammar & Spelling Check'
+                              : plan === 'plus'
+                              ? 'Style & Tone Suggestions'
+                              : plan === 'pro'
+                              ? 'Citation & Reference Check'
+                              : 'Advanced Analytics Dashboard'
+                          }
+                          primaryTypographyProps={{ variant: 'body2' }}
+                        />
+                      </ListItem>
+                      <ListItem sx={{ px: 0 }}>
+                        <ListItemIcon sx={{ minWidth: 32 }}>
+                          {plan === 'free' ? (
+                            <TextSnippetOutlined
+                              sx={{
+                                fontSize: '1.2rem',
+                                color: '#2196f3',
+                              }}
+                            />
+                          ) : plan === 'plus' ? (
+                            <LibraryBooksOutlined
+                              sx={{
+                                fontSize: '1.2rem',
+                                color: '#4caf50',
+                              }}
+                            />
+                          ) : plan === 'pro' ? (
+                            <GppGoodOutlined
+                              sx={{
+                                fontSize: '1.2rem',
+                                color: '#9c27b0',
+                              }}
+                            />
+                          ) : (
+                            <DesignServicesOutlined
+                              sx={{
+                                fontSize: '1.2rem',
+                                color: '#ff9800',
+                              }}
+                            />
+                          )}
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={
+                            plan === 'free'
+                              ? 'Basic Templates'
+                              : plan === 'plus'
+                              ? 'Extended Templates Library'
+                              : plan === 'pro'
+                              ? 'Plagiarism Detection'
+                              : 'Custom Assignment Templates'
+                          }
                           primaryTypographyProps={{ variant: 'body2' }}
                         />
                       </ListItem>
@@ -3575,11 +3808,17 @@ const Settings: React.FC = () => {
                     <Typography variant="subtitle2" gutterBottom>
                       Pricing:
                     </Typography>
-                    <Typography variant="h6" color="primary.main">
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        color: 'error.main',
+                        fontWeight: 'bold',
+                      }}
+                    >
                       {plan === 'free' && 'Free'}
-                      {plan === 'plus' && '$9.99/month'}
-                      {plan === 'pro' && '$19.99/month'}
-                      {plan === 'max' && '$39.99/month'}
+                      {plan === 'plus' && '$4.99/month'}
+                      {plan === 'pro' && '$9.99/month'}
+                      {plan === 'max' && '$14.99/month'}
                     </Typography>
                   </Box>
                 </Paper>
@@ -3589,15 +3828,52 @@ const Settings: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowModelComparison(false)}>Close</Button>
-          <Button
-            variant="contained"
-            onClick={() => {
-              setShowModelComparison(false);
-              // TODO: Add upgrade functionality
-            }}
-          >
-            Upgrade Plan
-          </Button>
+          {selectedModelPlan && (
+            <Button
+              variant="contained"
+              disabled={selectedModelPlan === subscription.plan}
+              onClick={() => {
+                if (selectedModelPlan !== subscription.plan) {
+                  setShowModelComparison(false);
+                  navigate('/dashboard/price-plan');
+                }
+              }}
+              sx={{
+                backgroundColor:
+                  selectedModelPlan === subscription.plan
+                    ? '#9e9e9e'
+                    : selectedModelPlan === 'free'
+                    ? '#2196f3'
+                    : selectedModelPlan === 'plus'
+                    ? '#4caf50'
+                    : selectedModelPlan === 'pro'
+                    ? '#9c27b0'
+                    : '#ff9800',
+                '&:hover': {
+                  backgroundColor:
+                    selectedModelPlan === subscription.plan
+                      ? '#9e9e9e'
+                      : selectedModelPlan === 'free'
+                      ? '#1976d2'
+                      : selectedModelPlan === 'plus'
+                      ? '#388e3c'
+                      : selectedModelPlan === 'pro'
+                      ? '#7b1fa2'
+                      : '#f57c00',
+                },
+                '&:disabled': {
+                  backgroundColor: '#9e9e9e',
+                  color: '#ffffff',
+                },
+              }}
+            >
+              {selectedModelPlan === subscription.plan
+                ? 'Current Plan'
+                : `Upgrade to ${
+                    selectedModelPlan.charAt(0).toUpperCase() + selectedModelPlan.slice(1)
+                  }`}
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
 
