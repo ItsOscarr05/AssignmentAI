@@ -171,6 +171,7 @@ const Settings: React.FC = () => {
   const [showDownloadDataDialog, setShowDownloadDataDialog] = useState(false);
   const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false);
   const [showAccountInfoDialog, setShowAccountInfoDialog] = useState(false);
+  const [showAIFeaturesTestDialog, setShowAIFeaturesTestDialog] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
@@ -2098,10 +2099,10 @@ const Settings: React.FC = () => {
                     <Button
                       variant="contained"
                       size="small"
-                      onClick={() => setShowAIFeaturesDemo(true)}
+                      onClick={() => setShowAIFeaturesTestDialog(true)}
                       sx={{ ml: 'auto' }}
                     >
-                      Test AI Features
+                      AI Features Status
                     </Button>
                   </Box>
                 </Grid>
@@ -4415,6 +4416,167 @@ const Settings: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowAccountInfoDialog(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* AI Features Status Dialog */}
+      <Dialog
+        open={showAIFeaturesTestDialog}
+        onClose={() => setShowAIFeaturesTestDialog(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle sx={{ color: 'primary.main' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Psychology sx={{ color: 'primary.main' }} />
+            AI Features Status
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={3}>
+            <Alert
+              severity="error"
+              sx={{
+                '& .MuiAlert-icon': { color: 'primary.main' },
+                '& .MuiAlert-message': { color: 'primary.main' },
+              }}
+            >
+              View the current status and configuration of your AI features.
+            </Alert>
+
+            <Box>
+              <Typography variant="h6" gutterBottom sx={{ color: 'primary.main' }}>
+                Feature Status
+              </Typography>
+              <Stack spacing={2}>
+                {[
+                  { key: 'autoComplete', label: 'Auto Complete', enabled: autoComplete },
+                  { key: 'codeSnippets', label: 'Code Snippets', enabled: codeSnippets },
+                  { key: 'aiSuggestions', label: 'AI Suggestions', enabled: aiSuggestions },
+                  {
+                    key: 'realTimeAnalysis',
+                    label: 'Real-time Analysis',
+                    enabled: realTimeAnalysis,
+                  },
+                ].map(({ key, label, enabled }) => (
+                  <Box
+                    key={key}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      p: 2,
+                      border: 1,
+                      borderColor: 'divider',
+                      borderRadius: 1,
+                      bgcolor: 'background.paper',
+                      opacity: enabled ? 1 : 0.6,
+                    }}
+                  >
+                    <Box display="flex" alignItems="center" gap={2}>
+                      {enabled ? (
+                        <CheckCircle color="success" />
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">
+                          -
+                        </Typography>
+                      )}
+                      <Box>
+                        <Typography variant="subtitle1">{label}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {enabled ? 'Feature enabled and ready' : 'Feature disabled'}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Chip
+                      label={enabled ? 'Enabled' : 'Disabled'}
+                      size="small"
+                      color={enabled ? 'success' : 'default'}
+                    />
+                  </Box>
+                ))}
+              </Stack>
+            </Box>
+
+            <Box>
+              <Typography variant="h6" gutterBottom sx={{ color: 'primary.main' }}>
+                Current AI Settings
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    Token Context Limit
+                  </Typography>
+                  <Typography variant="body1">{tokenContextLimit.toLocaleString()}</Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    Temperature
+                  </Typography>
+                  <Typography variant="body1">{temperature}</Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    Context Length
+                  </Typography>
+                  <Typography variant="body1">{contextLength}</Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    Model
+                  </Typography>
+                  <Typography variant="body1">{subscription.model}</Typography>
+                </Grid>
+              </Grid>
+            </Box>
+
+            <Box>
+              <Typography variant="h6" gutterBottom sx={{ color: 'primary.main' }}>
+                Performance Information
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    Response Time
+                  </Typography>
+                  <Typography variant="body1">~2-5 seconds</Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    Token Usage
+                  </Typography>
+                  <Typography variant="body1">Varies by request</Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    Model Version
+                  </Typography>
+                  <Typography variant="body1">
+                    {subscription.model === 'gpt-4.1-nano'
+                      ? 'GPT-4.1 Nano'
+                      : subscription.model === 'gpt-3.5-turbo'
+                      ? 'GPT-3.5 Turbo'
+                      : subscription.model === 'gpt-4-turbo'
+                      ? 'GPT-4 Turbo'
+                      : subscription.model === 'gpt-4'
+                      ? 'GPT-4'
+                      : subscription.model}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    API Status
+                  </Typography>
+                  <Typography variant="body1" color="success.main">
+                    Connected
+                  </Typography>
+                </Grid>
+              </Grid>
+            </Box>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowAIFeaturesTestDialog(false)}>Close</Button>
         </DialogActions>
       </Dialog>
 

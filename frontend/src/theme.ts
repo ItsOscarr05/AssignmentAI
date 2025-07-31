@@ -158,9 +158,9 @@ const baseTheme: ThemeOptions = {
             },
             '& .MuiSvgIcon-root': {
               background: '#ffffff',
-              padding: 'calc(0.375 * var(--app-font-size, 16px))',
-              borderRadius: 'calc(0.5 * var(--app-font-size, 16px))',
-              fontSize: 'calc(1.3 * var(--app-font-size, 16px)) !important',
+              padding: 'calc(0.5 * var(--app-font-size, 16px))',
+              borderRadius: 'calc(0.625 * var(--app-font-size, 16px))',
+              fontSize: 'calc(1.8 * var(--app-font-size, 16px)) !important',
               boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
               border: '1px solid',
               borderColor: 'rgba(0,0,0,0.06)',
