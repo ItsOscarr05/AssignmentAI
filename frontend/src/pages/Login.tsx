@@ -21,10 +21,12 @@ import {
 } from '@mui/material';
 import React, { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import HeroParticles from '../components/HeroParticles';
 import { useAuth } from '../contexts/AuthContext';
 
 const Login: React.FC = () => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -38,7 +40,7 @@ const Login: React.FC = () => {
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setEmailError('Invalid email address');
+      setEmailError(t('pages.login.invalidEmail'));
       return false;
     }
     setEmailError('');
@@ -47,7 +49,7 @@ const Login: React.FC = () => {
 
   const validatePassword = (password: string) => {
     if (password.length < 6) {
-      setPasswordError('Password must be at least 6 characters');
+      setPasswordError(t('pages.login.passwordTooShort'));
       return false;
     }
     setPasswordError('');
@@ -75,7 +77,7 @@ const Login: React.FC = () => {
         }
         // If no 2FA required, the login function will handle navigation to dashboard
       } catch (error: any) {
-        setError(error.message || 'Login failed. Please check your credentials.');
+        setError(error.message || t('pages.login.loginFailed'));
       } finally {
         setIsLoading(false);
       }
@@ -209,7 +211,7 @@ const Login: React.FC = () => {
                   fontSize: { xs: '1.3rem', sm: '1.4rem', md: '1.3rem' },
                 }}
               >
-                Your AI-powered assignment companion
+                {t('pages.login.tagline')}
               </Typography>
               <Typography
                 variant="body2"
@@ -222,7 +224,7 @@ const Login: React.FC = () => {
                   fontSize: { xs: '1.2rem', sm: '1.25rem', md: '1.1rem' },
                 }}
               >
-                Get intelligent help with your assignments using advanced AI technology.
+                {t('pages.login.description')}
               </Typography>
             </Box>
             <HeroParticles />
@@ -281,7 +283,7 @@ const Login: React.FC = () => {
                   },
                 }}
               >
-                Back
+                {t('pages.login.back')}
               </Button>
 
               <Typography
@@ -295,7 +297,7 @@ const Login: React.FC = () => {
                   color: 'text.primary',
                 }}
               >
-                Welcome Back!
+                {t('pages.login.title')}
               </Typography>
               <Typography
                 color="text.secondary"
@@ -307,7 +309,7 @@ const Login: React.FC = () => {
                   fontSize: '1.1rem',
                 }}
               >
-                Sign in to continue to AssignmentAI
+                {t('pages.login.subtitle')}
               </Typography>
 
               <Box component="form" onSubmit={handleSubmit}>
@@ -316,7 +318,7 @@ const Login: React.FC = () => {
                   required
                   fullWidth
                   id="email"
-                  label="Email Address"
+                  label={t('pages.login.email')}
                   name="email"
                   autoComplete="email"
                   autoFocus
@@ -342,7 +344,7 @@ const Login: React.FC = () => {
                   required
                   fullWidth
                   name="password"
-                  label="Password"
+                  label={t('pages.login.password')}
                   type={showPassword ? 'text' : 'password'}
                   id="password"
                   autoComplete="current-password"
@@ -366,7 +368,7 @@ const Login: React.FC = () => {
                     endAdornment: (
                       <InputAdornment position="end">
                         <IconButton
-                          aria-label="toggle password visibility"
+                          aria-label={t('pages.login.togglePasswordVisibility')}
                           onClick={() => setShowPassword(!showPassword)}
                           edge="end"
                         >
@@ -391,7 +393,7 @@ const Login: React.FC = () => {
                     color="primary"
                     underline="hover"
                   >
-                    Forgot password?
+                    {t('pages.login.forgotPassword')}
                   </Link>
                 </Box>
 
@@ -427,7 +429,7 @@ const Login: React.FC = () => {
                   {isLoading ? (
                     <CircularProgress size={24} color="inherit" role="progressbar" />
                   ) : (
-                    'Sign In (Temporarily Disabled)'
+                    t('pages.login.signInDisabled')
                   )}
                 </Button>
 
@@ -438,7 +440,7 @@ const Login: React.FC = () => {
                   onClick={mockLogin}
                   sx={{ mt: 2 }}
                 >
-                  Mock Login
+                  {t('pages.login.mockLogin')}
                 </Button>
 
                 <Divider sx={{ my: 3 }}>
@@ -450,7 +452,7 @@ const Login: React.FC = () => {
                       fontWeight: 400,
                     }}
                   >
-                    or continue with
+                    {t('pages.login.orContinueWith')}
                   </Typography>
                 </Divider>
 
@@ -472,7 +474,7 @@ const Login: React.FC = () => {
                         }
                       } catch (error) {
                         console.error('Google OAuth error:', error);
-                        setError('Failed to connect to Google. Please try again.');
+                        setError(t('pages.login.googleOAuthError'));
                       }
                     }}
                     sx={{
@@ -482,7 +484,7 @@ const Login: React.FC = () => {
                       letterSpacing: '0.01em',
                     }}
                   >
-                    Google
+                    {t('pages.login.google')}
                   </Button>
                   <Button
                     fullWidth
@@ -501,7 +503,7 @@ const Login: React.FC = () => {
                         }
                       } catch (error) {
                         console.error('GitHub OAuth error:', error);
-                        setError('Failed to connect to GitHub. Please try again.');
+                        setError(t('pages.login.githubOAuthError'));
                       }
                     }}
                     sx={{
@@ -511,7 +513,7 @@ const Login: React.FC = () => {
                       letterSpacing: '0.01em',
                     }}
                   >
-                    GitHub
+                    {t('pages.login.github')}
                   </Button>
                 </Stack>
 
@@ -524,7 +526,7 @@ const Login: React.FC = () => {
                     fontWeight: 400,
                   }}
                 >
-                  Don't have an account?{' '}
+                  {t('pages.login.dontHaveAccount')}{' '}
                   <Link
                     component={RouterLink}
                     to="/register"
@@ -536,7 +538,7 @@ const Login: React.FC = () => {
                       letterSpacing: '0.01em',
                     }}
                   >
-                    Sign up
+                    {t('pages.login.signUp')}
                   </Link>
                 </Typography>
               </Box>

@@ -206,8 +206,6 @@ const languageNames = {
   fr: 'Français',
   es: 'Español',
   de: 'Deutsch',
-  it: 'Italiano',
-  pt: 'Português',
   ru: 'Русский',
   zh: '中文',
   ja: '日本語',
@@ -215,7 +213,7 @@ const languageNames = {
 };
 
 // Generate language files
-const languages = ['en', 'fr', 'es', 'de', 'it', 'pt', 'ru', 'zh', 'ja', 'ko'];
+const languages = ['en', 'fr', 'es', 'de', 'ru', 'zh', 'ja', 'ko'];
 
 console.log('📝 Generating language files...');
 

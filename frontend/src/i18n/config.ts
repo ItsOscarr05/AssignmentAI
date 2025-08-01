@@ -9,25 +9,13 @@ import deTranslations from './locales/de.json';
 import enTranslations from './locales/en.json';
 import esTranslations from './locales/es.json';
 import frTranslations from './locales/fr.json';
-import itTranslations from './locales/it.json';
-import jaTranslations from './locales/ja.json';
-import koTranslations from './locales/ko.json';
-import ptTranslations from './locales/pt.json';
-import ruTranslations from './locales/ru.json';
-import zhTranslations from './locales/zh.json';
 
 // Supported languages
 export const supportedLanguages = [
   { code: 'en', name: 'English', flag: '🇺🇸' },
-  { code: 'fr', name: 'Français', flag: '🇫🇷' },
   { code: 'es', name: 'Español', flag: '🇪🇸' },
+  { code: 'fr', name: 'Français', flag: '🇫🇷' },
   { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
-  { code: 'it', name: 'Italiano', flag: '🇮🇹' },
-  { code: 'pt', name: 'Português', flag: '🇵🇹' },
-  { code: 'ru', name: 'Русский', flag: '🇷🇺' },
-  { code: 'zh', name: '中文', flag: '🇨🇳' },
-  { code: 'ja', name: '日本語', flag: '🇯🇵' },
-  { code: 'ko', name: '한국어', flag: '🇰🇷' },
 ];
 
 // Language detection function
@@ -48,32 +36,14 @@ i18n
       en: {
         translation: enTranslations,
       },
-      fr: {
-        translation: frTranslations,
-      },
       es: {
         translation: esTranslations,
       },
+      fr: {
+        translation: frTranslations,
+      },
       de: {
         translation: deTranslations,
-      },
-      it: {
-        translation: itTranslations,
-      },
-      pt: {
-        translation: ptTranslations,
-      },
-      ru: {
-        translation: ruTranslations,
-      },
-      zh: {
-        translation: zhTranslations,
-      },
-      ja: {
-        translation: jaTranslations,
-      },
-      ko: {
-        translation: koTranslations,
       },
     },
     fallbackLng: 'en',

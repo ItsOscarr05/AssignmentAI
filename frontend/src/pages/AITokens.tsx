@@ -1131,6 +1131,7 @@ const AITokens: React.FC = () => {
                           </ListItemIcon>
                           <ListItemText
                             primary={transaction.description}
+                            secondaryTypographyProps={{ component: 'span' }}
                             secondary={
                               <>
                                 <Chip

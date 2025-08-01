@@ -90,8 +90,8 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import AIFeaturesDemo from '../components/ai/AIFeaturesDemo';
 import DateFormatSelector from '../components/common/DateFormatSelector';
 import { useAspectRatio } from '../hooks/useAspectRatio';
@@ -138,6 +138,14 @@ const Settings: React.FC = () => {
   const theme = useTheme();
   const { breakpoint } = useAspectRatio();
   const navigate = useNavigate();
+  const location = useLocation();
+  const hasUnsavedChanges = useRef(false);
+  const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
+
+  // Store initial values for comparison
+  const [initialValues, setInitialValues] = useState<any>(null);
+  const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
 
   const [tabValue, setTabValue] = useState(0);
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
@@ -795,42 +803,145 @@ const Settings: React.FC = () => {
 
   // Filter settings based on search query
 
+  // Function to check if there are unsaved changes
+  const checkForUnsavedChanges = useCallback(() => {
+    if (!initialValues || !isSettingsLoaded) return false;
+
+    const currentValues = {
+      darkMode,
+      language,
+      fontSize,
+      animations,
+      compactMode,
+      dateFormat,
+      use24HourFormat,
+      tokenContextLimit,
+      temperature,
+      contextLength,
+      autoComplete,
+      codeSnippets,
+      aiSuggestions,
+      realTimeAnalysis,
+      notifications,
+      notificationPreferences,
+      notificationSchedule,
+      privacySettings,
+      subscription,
+    };
+
+    return JSON.stringify(currentValues) !== JSON.stringify(initialValues);
+  }, [
+    initialValues,
+    isSettingsLoaded,
+    darkMode,
+    language,
+    fontSize,
+    animations,
+    compactMode,
+    dateFormat,
+    use24HourFormat,
+    tokenContextLimit,
+    temperature,
+    contextLength,
+    autoComplete,
+    codeSnippets,
+    aiSuggestions,
+    realTimeAnalysis,
+    notifications,
+    notificationPreferences,
+    notificationSchedule,
+    privacySettings,
+    subscription,
+  ]);
+
+  // Function to confirm navigation without saving
+  const confirmNavigationWithoutSaving = useCallback(() => {
+    setShowUnsavedChangesDialog(false);
+    if (pendingNavigation) {
+      navigate(pendingNavigation);
+      setPendingNavigation(null);
+    }
+  }, [navigate, pendingNavigation]);
+
+  // Function to cancel navigation
+  const cancelNavigation = useCallback(() => {
+    setShowUnsavedChangesDialog(false);
+    setPendingNavigation(null);
+  }, []);
+
+  // Function to save and navigate
+  const saveAndNavigate = useCallback(async () => {
+    try {
+      await handleSave();
+      setShowUnsavedChangesDialog(false);
+      if (pendingNavigation) {
+        navigate(pendingNavigation);
+        setPendingNavigation(null);
+      }
+    } catch (error) {
+      console.error('Failed to save settings before navigation:', error);
+    }
+  }, [pendingNavigation, navigate]);
+
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 
   const handleSave = async () => {
+    console.log('Save button clicked - starting save process');
+    // Set loading state immediately
+    setIsValidatingSettings(true);
+
     try {
+      // Clear any previous errors
+      setAiSettingsError(null);
+      setNotificationSettingsError(null);
+      setPrivacySettingsError(null);
+
       // Validate AI settings before saving
       const aiErrors = validateAISettings();
+      console.log('AI validation errors:', aiErrors);
       if (aiErrors.length > 0) {
         setAiSettingsError(aiErrors.join(', '));
+        setIsValidatingSettings(false);
+        console.log('AI validation failed, stopping save');
         return;
       }
 
       // Validate notification settings before saving
       const notificationErrors = validateNotificationSettings();
+      console.log('Notification validation errors:', notificationErrors);
       if (notificationErrors.length > 0) {
         setNotificationSettingsError(notificationErrors.join(', '));
+        setIsValidatingSettings(false);
+        console.log('Notification validation failed, stopping save');
         return;
       }
 
       // Validate privacy settings before saving
       const privacyErrors = validatePrivacySettings();
+      console.log('Privacy validation errors:', privacyErrors);
       if (privacyErrors.length > 0) {
         setPrivacySettingsError(privacyErrors.join(', '));
+        setIsValidatingSettings(false);
+        console.log('Privacy validation failed, stopping save');
         return;
       }
 
-      setIsValidatingSettings(true);
-      setAiSettingsError(null);
-      setNotificationSettingsError(null);
-      setPrivacySettingsError(null);
+      console.log('All validations passed, proceeding with save');
 
-      // Save to backend first
-      await savePreferencesToBackend();
+      // Try to save to backend first, but don't fail if backend is not available
+      let backendSaveSuccessful = false;
+      try {
+        await savePreferencesToBackend();
+        backendSaveSuccessful = true;
+        console.log('Backend save successful');
+      } catch (error) {
+        console.warn('Backend save failed, falling back to localStorage:', error);
+        // Continue with localStorage save even if backend fails
+      }
 
-      // Also save to localStorage as fallback
+      // Save to localStorage as fallback (or primary if backend failed)
       const settingsData = {
         appearance: {
           dark_mode: darkMode,
@@ -886,12 +997,44 @@ const Settings: React.FC = () => {
         },
       };
 
-      console.log('Saving settings:', settingsData);
+      console.log('Saving settings to localStorage:', settingsData);
+
+      // Save to localStorage
+      localStorage.setItem('userSettings', JSON.stringify(settingsData));
 
       setShowSaveSuccess(true);
       setTimeout(() => setShowSaveSuccess(false), 3000);
 
-      console.log('Settings saved successfully!');
+      console.log(
+        `Settings saved successfully! ${
+          backendSaveSuccessful ? '(Backend + localStorage)' : '(localStorage only)'
+        }`
+      );
+
+      // Update initial values after successful save
+      const newInitialValues = {
+        darkMode,
+        language,
+        fontSize,
+        animations,
+        compactMode,
+        dateFormat,
+        use24HourFormat,
+        tokenContextLimit,
+        temperature,
+        contextLength,
+        autoComplete,
+        codeSnippets,
+        aiSuggestions,
+        realTimeAnalysis,
+        notifications,
+        notificationPreferences,
+        notificationSchedule,
+        privacySettings,
+        subscription,
+      };
+      setInitialValues(newInitialValues);
+      hasUnsavedChanges.current = false;
     } catch (error) {
       console.error('Failed to save settings:', error);
       setAiSettingsError('Failed to save AI settings. Please try again.');
@@ -1127,133 +1270,18 @@ const Settings: React.FC = () => {
     if (language === 'es') {
       // Spanish
       document.body.classList.add('language-es');
-      document.body.classList.remove(
-        'language-fr',
-        'language-de',
-        'language-it',
-        'language-pt',
-        'language-ru',
-        'language-zh',
-        'language-ja',
-        'language-ko'
-      );
+      document.body.classList.remove('language-fr', 'language-de', 'language-it', 'language-pt');
     } else if (language === 'fr') {
       // French
       document.body.classList.add('language-fr');
-      document.body.classList.remove(
-        'language-es',
-        'language-de',
-        'language-it',
-        'language-pt',
-        'language-ru',
-        'language-zh',
-        'language-ja',
-        'language-ko'
-      );
+      document.body.classList.remove('language-es', 'language-de', 'language-it', 'language-pt');
     } else if (language === 'de') {
       // German
       document.body.classList.add('language-de');
-      document.body.classList.remove(
-        'language-es',
-        'language-fr',
-        'language-it',
-        'language-pt',
-        'language-ru',
-        'language-zh',
-        'language-ja',
-        'language-ko'
-      );
-    } else if (language === 'it') {
-      // Italian
-      document.body.classList.add('language-it');
-      document.body.classList.remove(
-        'language-es',
-        'language-fr',
-        'language-de',
-        'language-pt',
-        'language-ru',
-        'language-zh',
-        'language-ja',
-        'language-ko'
-      );
-    } else if (language === 'pt') {
-      // Portuguese
-      document.body.classList.add('language-pt');
-      document.body.classList.remove(
-        'language-es',
-        'language-fr',
-        'language-de',
-        'language-it',
-        'language-ru',
-        'language-zh',
-        'language-ja',
-        'language-ko'
-      );
-    } else if (language === 'ru') {
-      // Russian
-      document.body.classList.add('language-ru');
-      document.body.classList.remove(
-        'language-es',
-        'language-fr',
-        'language-de',
-        'language-it',
-        'language-pt',
-        'language-zh',
-        'language-ja',
-        'language-ko'
-      );
-    } else if (language === 'zh') {
-      // Chinese
-      document.body.classList.add('language-zh');
-      document.body.classList.remove(
-        'language-es',
-        'language-fr',
-        'language-de',
-        'language-it',
-        'language-pt',
-        'language-ru',
-        'language-ja',
-        'language-ko'
-      );
-    } else if (language === 'ja') {
-      // Japanese
-      document.body.classList.add('language-ja');
-      document.body.classList.remove(
-        'language-es',
-        'language-fr',
-        'language-de',
-        'language-it',
-        'language-pt',
-        'language-ru',
-        'language-zh',
-        'language-ko'
-      );
-    } else if (language === 'ko') {
-      // Korean
-      document.body.classList.add('language-ko');
-      document.body.classList.remove(
-        'language-es',
-        'language-fr',
-        'language-de',
-        'language-it',
-        'language-pt',
-        'language-ru',
-        'language-zh',
-        'language-ja'
-      );
+      document.body.classList.remove('language-es', 'language-fr', 'language-it', 'language-pt');
     } else {
       // English (default)
-      document.body.classList.remove(
-        'language-es',
-        'language-fr',
-        'language-de',
-        'language-it',
-        'language-pt',
-        'language-ru',
-        'language-zh',
-        'language-ja',
-        'language-ko'
-      );
+      document.body.classList.remove('language-es', 'language-fr', 'language-de');
     }
 
     console.log('Language changed to:', language);
@@ -1391,6 +1419,92 @@ const Settings: React.FC = () => {
     }
   };
 
+  // Set initial values after loading preferences
+  useEffect(() => {
+    if (!isLoadingPreferences && !isSettingsLoaded) {
+      const currentValues = {
+        darkMode,
+        language,
+        fontSize,
+        animations,
+        compactMode,
+        dateFormat,
+        use24HourFormat,
+        tokenContextLimit,
+        temperature,
+        contextLength,
+        autoComplete,
+        codeSnippets,
+        aiSuggestions,
+        realTimeAnalysis,
+        notifications,
+        notificationPreferences,
+        notificationSchedule,
+        privacySettings,
+        subscription,
+      };
+      setInitialValues(currentValues);
+      setIsSettingsLoaded(true);
+    }
+  }, [
+    isLoadingPreferences,
+    isSettingsLoaded,
+    darkMode,
+    language,
+    fontSize,
+    animations,
+    compactMode,
+    dateFormat,
+    use24HourFormat,
+    tokenContextLimit,
+    temperature,
+    contextLength,
+    autoComplete,
+    codeSnippets,
+    aiSuggestions,
+    realTimeAnalysis,
+    notifications,
+    notificationPreferences,
+    notificationSchedule,
+    privacySettings,
+    subscription,
+  ]);
+
+  // Handle beforeunload event to warn about unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (checkForUnsavedChanges()) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [checkForUnsavedChanges]);
+
+  // Update hasUnsavedChanges ref whenever there are unsaved changes
+  useEffect(() => {
+    hasUnsavedChanges.current = checkForUnsavedChanges();
+  }, [checkForUnsavedChanges]);
+
+  // Handle browser back/forward navigation
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      if (checkForUnsavedChanges()) {
+        event.preventDefault();
+        setPendingNavigation(location.pathname);
+        setShowUnsavedChangesDialog(true);
+        // Push the current state back to prevent navigation
+        window.history.pushState(null, '', location.pathname);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [checkForUnsavedChanges, location.pathname]);
+
   // Save preferences to backend
   const savePreferencesToBackend = async () => {
     try {
@@ -1455,6 +1569,30 @@ const Settings: React.FC = () => {
           }}
         >
           {t('settings.settingsSavedSuccessfully')}
+        </Alert>
+      )}
+
+      {isValidatingSettings && (
+        <Alert
+          severity="info"
+          sx={{
+            position: 'fixed',
+            top: 20,
+            right: 20,
+            zIndex: 9999,
+            borderRadius: 2,
+            boxShadow: theme.shadows[4],
+            animation: 'slideIn 0.3s ease-out',
+            '@keyframes slideIn': {
+              from: { transform: 'translateX(100%)', opacity: 0 },
+              to: { transform: 'translateX(0)', opacity: 1 },
+            },
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <CircularProgress size={16} />
+            Saving settings...
+          </Box>
         </Alert>
       )}
 
@@ -1532,18 +1670,39 @@ const Settings: React.FC = () => {
 
         <Button
           variant="contained"
-          startIcon={<Save />}
+          startIcon={
+            isValidatingSettings ? <CircularProgress size={16} color="inherit" /> : <Save />
+          }
           onClick={handleSave}
           disabled={isValidatingSettings}
-          className="save-changes"
+          className={`save-changes ${
+            checkForUnsavedChanges() && !isValidatingSettings ? 'unsaved-changes-pulse' : ''
+          }`}
           sx={{
             ml: { xs: 0, md: 'auto' },
+            ...(checkForUnsavedChanges() &&
+              !isValidatingSettings && {
+                backgroundColor: theme.palette.warning.main,
+                '&:hover': {
+                  backgroundColor: theme.palette.warning.dark,
+                },
+              }),
+            ...(isValidatingSettings && {
+              backgroundColor: theme.palette.info.main,
+              '&:hover': {
+                backgroundColor: theme.palette.info.dark,
+              },
+            }),
           }}
         >
           {isValidatingSettings ? (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <CircularProgress size={16} color="inherit" />
-              Validating...
+              Saving...
+            </Box>
+          ) : checkForUnsavedChanges() ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {t('settings.saveChanges')}
             </Box>
           ) : (
             t('settings.saveChanges')
@@ -1663,12 +1822,6 @@ const Settings: React.FC = () => {
                       <MenuItem value="es">Español</MenuItem>
                       <MenuItem value="fr">Français</MenuItem>
                       <MenuItem value="de">Deutsch</MenuItem>
-                      <MenuItem value="it">Italiano</MenuItem>
-                      <MenuItem value="pt">Português</MenuItem>
-                      <MenuItem value="ru">Русский</MenuItem>
-                      <MenuItem value="zh">中文</MenuItem>
-                      <MenuItem value="ja">日本語</MenuItem>
-                      <MenuItem value="ko">한국어</MenuItem>
                     </Select>
                     <Typography
                       variant="caption"
@@ -1684,10 +1837,6 @@ const Settings: React.FC = () => {
                         ? 'Français'
                         : language === 'de'
                         ? 'Deutsch'
-                        : language === 'it'
-                        ? 'Italiano'
-                        : language === 'pt'
-                        ? 'Português'
                         : language === 'ru'
                         ? 'Русский'
                         : language === 'zh'
@@ -1788,10 +1937,6 @@ const Settings: React.FC = () => {
                             ? 'Français'
                             : language === 'de'
                             ? 'Deutsch'
-                            : language === 'it'
-                            ? 'Italiano'
-                            : language === 'pt'
-                            ? 'Português'
                             : language === 'ru'
                             ? 'Русский'
                             : language === 'zh'
@@ -5179,6 +5324,35 @@ const Settings: React.FC = () => {
         </DialogActions>
       </Dialog>
 
+      {/* Unsaved Changes Dialog */}
+      <Dialog open={showUnsavedChangesDialog} onClose={cancelNavigation} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Warning color="warning" />
+            Unsaved Changes
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            You have unsaved changes to your settings. What would you like to do?
+          </Typography>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            <Typography variant="body2">
+              If you leave without saving, your changes will be lost.
+            </Typography>
+          </Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={cancelNavigation}>Cancel</Button>
+          <Button onClick={confirmNavigationWithoutSaving} color="warning">
+            Leave Without Saving
+          </Button>
+          <Button onClick={saveAndNavigate} variant="contained" color="primary">
+            Save & Continue
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <style>{`
         .MuiSlider-thumb {
           transition: transform 0.2s;
@@ -5305,32 +5479,21 @@ const Settings: React.FC = () => {
           font-family: 'Times New Roman', serif;
         }
         
-        .language-ru {
-          font-family: 'Arial', sans-serif;
-        }
-        .language-ru .MuiTypography-root {
-          font-family: 'Arial', sans-serif;
+        /* Unsaved changes indicator animation */
+        .unsaved-changes-pulse {
+          animation: pulse 2s infinite;
         }
         
-        .language-zh {
-          font-family: 'Microsoft YaHei', 'SimSun', sans-serif;
-        }
-        .language-zh .MuiTypography-root {
-          font-family: 'Microsoft YaHei', 'SimSun', sans-serif;
-        }
-        
-        .language-ja {
-          font-family: 'MS Gothic', 'Yu Gothic', sans-serif;
-        }
-        .language-ja .MuiTypography-root {
-          font-family: 'MS Gothic', 'Yu Gothic', sans-serif;
-        }
-        
-        .language-ko {
-          font-family: 'Malgun Gothic', 'Dotum', sans-serif;
-        }
-        .language-ko .MuiTypography-root {
-          font-family: 'Malgun Gothic', 'Dotum', sans-serif;
+        @keyframes pulse {
+          0% {
+            box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.7);
+          }
+          70% {
+            box-shadow: 0 0 0 10px rgba(255, 152, 0, 0);
+          }
+          100% {
+            box-shadow: 0 0 0 0 rgba(255, 152, 0, 0);
+          }
         }
       `}</style>
     </Box>

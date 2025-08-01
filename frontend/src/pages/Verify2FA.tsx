@@ -12,10 +12,12 @@ import {
   Typography,
 } from '@mui/material';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const Verify2FA: React.FC = () => {
+  const { t } = useTranslation();
   const [code, setCode] = useState('');
   const [isBackupCode, setIsBackupCode] = useState(false);
   const [error, setError] = useState('');
@@ -26,7 +28,7 @@ const Verify2FA: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!code.trim()) {
-      setError('Please enter your 2FA code');
+      setError(t('pages.verify2FA.pleaseEnter2FACode'));
       return;
     }
 
@@ -37,7 +39,7 @@ const Verify2FA: React.FC = () => {
       await verify2FA(code, isBackupCode);
       // Navigation will be handled by the AuthContext
     } catch (error: any) {
-      setError(error.message || '2FA verification failed');
+      setError(error.message || t('pages.verify2FA.verificationFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -58,17 +60,17 @@ const Verify2FA: React.FC = () => {
       <Paper elevation={3} sx={{ p: 4 }}>
         <Box sx={{ mb: 3 }}>
           <Button startIcon={<ArrowBackIcon />} onClick={handleGoBack} sx={{ mb: 2 }}>
-            Back to Login
+            {t('pages.verify2FA.backToLogin')}
           </Button>
 
           <Typography variant="h4" component="h1" gutterBottom>
-            Two-Factor Authentication
+            {t('pages.verify2FA.title')}
           </Typography>
 
           <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
             {isBackupCode
-              ? 'Enter your backup code to access your account'
-              : 'Enter the 6-digit code from your authenticator app'}
+              ? t('pages.verify2FA.enterBackupCode')
+              : t('pages.verify2FA.enterAuthenticatorCode')}
           </Typography>
         </Box>
 
@@ -81,7 +83,7 @@ const Verify2FA: React.FC = () => {
         <form onSubmit={handleSubmit}>
           <Stack spacing={3}>
             <TextField
-              label={isBackupCode ? 'Backup Code' : '2FA Code'}
+              label={isBackupCode ? t('pages.verify2FA.backupCode') : t('pages.verify2FA.twoFACode')}
               value={code}
               onChange={e => setCode(e.target.value)}
               fullWidth
@@ -90,7 +92,7 @@ const Verify2FA: React.FC = () => {
                 maxLength: isBackupCode ? 8 : 6,
                 pattern: isBackupCode ? '[A-Z0-9]{8}' : '[0-9]{6}',
               }}
-              placeholder={isBackupCode ? 'Enter 8-digit backup code' : 'Enter 6-digit code'}
+              placeholder={isBackupCode ? t('pages.verify2FA.enter8DigitBackupCode') : t('pages.verify2FA.enter6DigitCode')}
             />
 
             <Button
@@ -106,7 +108,7 @@ const Verify2FA: React.FC = () => {
                 },
               }}
             >
-              {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Verify'}
+              {isLoading ? <CircularProgress size={24} color="inherit" /> : t('pages.verify2FA.verify')}
             </Button>
 
             <Box sx={{ textAlign: 'center' }}>
@@ -116,15 +118,15 @@ const Verify2FA: React.FC = () => {
                 onClick={handleBackupCodeToggle}
                 sx={{ textDecoration: 'none' }}
               >
-                {isBackupCode ? 'Use authenticator app instead' : 'Use backup code instead'}
+                {isBackupCode ? t('pages.verify2FA.useAuthenticatorApp') : t('pages.verify2FA.useBackupCode')}
               </Link>
             </Box>
 
             <Box sx={{ textAlign: 'center', mt: 2 }}>
               <Typography variant="body2" color="text.secondary">
-                Having trouble?{' '}
+                {t('pages.verify2FA.havingTrouble')}{' '}
                 <Link href="/recover-2fa" sx={{ textDecoration: 'none' }}>
-                  Recover your account
+                  {t('pages.verify2FA.recoverAccount')}
                 </Link>
               </Typography>
             </Box>

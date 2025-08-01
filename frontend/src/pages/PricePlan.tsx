@@ -2,7 +2,6 @@
 import {
   AccessTimeOutlined,
   AllInclusive,
-  AutoAwesomeOutlined,
   AutoFixHighOutlined,
   BarChartOutlined,
   BlockOutlined,
@@ -19,17 +18,13 @@ import {
   LocalOffer,
   MilitaryTechOutlined,
   PaletteOutlined,
-  PsychologyOutlined,
-  RocketLaunchOutlined,
   SchoolOutlined,
   ScienceOutlined,
   Search,
-  SmartToyOutlined,
   Speed,
   Spellcheck,
   Star,
   TextSnippetOutlined,
-  WorkspacePremium,
 } from '@mui/icons-material';
 import {
   Box,
@@ -55,6 +50,7 @@ import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { useSnackbar } from 'notistack';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import PaymentForm from '../components/payment/PaymentForm';
 import { useAspectRatio } from '../hooks/useAspectRatio';
@@ -361,6 +357,7 @@ const getFeatureIcon = (featureName: string, color: string) => {
 };
 
 const PricePlan: React.FC = () => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
@@ -395,7 +392,7 @@ const PricePlan: React.FC = () => {
 
   const handlePlanSelect = (plan: Plan) => {
     if (plan.price === 0) {
-      enqueueSnackbar('Free plan activated!', { variant: 'success' });
+      enqueueSnackbar(t('pages.pricePlan.freePlanActivated'), { variant: 'success' });
       navigate('/dashboard');
       return;
     }
@@ -405,12 +402,12 @@ const PricePlan: React.FC = () => {
 
   const handlePaymentSuccess = () => {
     setPaymentDialogOpen(false);
-    enqueueSnackbar('Subscription successful!', { variant: 'success' });
+    enqueueSnackbar(t('pages.pricePlan.subscriptionSuccessful'), { variant: 'success' });
     navigate('/dashboard');
   };
 
   const handlePaymentError = (error: string) => {
-    enqueueSnackbar(`Payment failed: ${error}`, { variant: 'error' });
+    enqueueSnackbar(t('pages.pricePlan.paymentFailed', { error }), { variant: 'error' });
   };
 
   const renderDetailedComparison = () => {
@@ -428,7 +425,7 @@ const PricePlan: React.FC = () => {
         }}
       >
         <DialogTitle sx={{ fontSize: { xs: '1.25rem', md: '1.5rem' }, p: { xs: 2, md: 3 } }}>
-          Detailed Feature Comparison
+          {t('pages.pricePlan.detailedFeatureComparison')}
         </DialogTitle>
         <DialogContent sx={{ p: { xs: 2, md: 3 } }}>
           <Box sx={{ mt: { xs: 1, md: 2 } }}>
@@ -450,53 +447,47 @@ const PricePlan: React.FC = () => {
                           mb: { xs: 0.5, md: 0 },
                         }}
                       >
-                        {React.cloneElement(plan.icon as React.ReactElement, {
-                          sx: {
-                            color: plan.color,
-                            fontSize: { xs: 20, md: 24 },
-                          },
-                        })}
                         <Typography
                           variant="h6"
                           sx={{
-                            color: plan.color,
                             fontSize: { xs: '1rem', md: '1.25rem' },
+                            fontWeight: 'bold',
+                            color: plan.color,
                           }}
                         >
                           {plan.name}
                         </Typography>
+                        {plan.popular && (
+                          <Chip
+                            label="Popular"
+                            size="small"
+                            sx={{
+                              backgroundColor: `${plan.color}15`,
+                              color: plan.color,
+                              border: `1px solid ${plan.color}40`,
+                              fontSize: { xs: '0.625rem', md: '0.75rem' },
+                            }}
+                          />
+                        )}
                       </Box>
-                      <Typography
-                        variant="subtitle2"
-                        color="text.secondary"
-                        sx={{
-                          fontSize: { xs: '0.75rem', md: '0.875rem' },
-                        }}
-                      >
-                        ${plan.price}/month
-                      </Typography>
                     </Box>
                   ))}
                 </Box>
               </Grid>
               {features.map(feature => (
                 <Grid item xs={12} key={feature.name}>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      mb: { xs: 1, md: 1 },
-                      py: { xs: 0.5, md: 0 },
-                    }}
-                  >
-                    <Box
-                      sx={{ flex: 1, display: 'flex', alignItems: 'center', pr: { xs: 1, md: 0 } }}
-                    >
-                      <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography
+                        sx={{
+                          fontSize: { xs: '0.875rem', md: '1rem' },
+                          fontWeight: 500,
+                        }}
+                      >
                         {feature.name}
                       </Typography>
                       {feature.description && (
-                        <Tooltip title={feature.description} arrow placement="top">
+                        <Tooltip title={feature.description} arrow>
                           <IconButton size="small" sx={{ ml: { xs: 0.5, md: 0.5 } }}>
                             <HelpOutline
                               fontSize="small"
@@ -576,7 +567,7 @@ const PricePlan: React.FC = () => {
         }}
       >
         <Typography variant="h4" fontWeight="normal" className="page-title" sx={{ ml: 4 }}>
-          Pricing Plans
+          {t('pages.pricePlan.title')}
         </Typography>
         <FormControlLabel
           control={
@@ -585,7 +576,7 @@ const PricePlan: React.FC = () => {
               onChange={e => setShowDetailedComparison(e.target.checked)}
             />
           }
-          label="Detailed Comparison View"
+          label={t('pages.pricePlan.detailedComparisonView')}
         />
       </Box>
 
@@ -600,146 +591,92 @@ const PricePlan: React.FC = () => {
                     display: 'flex',
                     flexDirection: 'column',
                     position: 'relative',
-                    transition: 'all 0.3s ease',
-                    border: '2.5px solid',
-                    borderColor: plan.color,
                     overflow: 'visible',
+                    borderRadius: 3,
+                    boxShadow: theme.shadows[4],
+                    border: '2px solid',
+                    borderColor: plan.popular ? plan.color : 'transparent',
+                    transition: 'all 0.3s ease',
                     '&:hover': {
                       transform: 'translateY(-8px)',
-                      boxShadow: `0 8px 24px ${plan.color}40`,
-                      borderColor: plan.color,
+                      boxShadow: theme.shadows[12],
                     },
-                    minWidth: '280px',
-                    opacity: plan.isCurrentPlan ? 0.7 : 1,
+                    ...(plan.isCurrentPlan && {
+                      borderColor: theme.palette.grey[400],
+                      backgroundColor: theme.palette.grey[50],
+                    }),
                   }}
                 >
                   {plan.popular && (
-                    <Chip
-                      icon={<WorkspacePremium sx={{ color: 'white' }} />}
-                      label={
-                        <span style={{ fontWeight: 700, fontSize: '1.15rem' }}>Most Popular</span>
-                      }
+                    <Box
                       sx={{
                         position: 'absolute',
-                        top: -18,
-                        left: 0,
-                        right: 0,
-                        mx: 'auto',
-                        width: 'fit-content',
-                        borderRadius: 2,
-                        zIndex: 2,
-                        fontSize: '1.15rem',
-                        fontWeight: 700,
-                        bgcolor: '#D32F2F',
-                        color: 'white',
-                        px: 2.5,
-                        py: 0.6,
-                        boxShadow: '0 2px 8px 0 rgba(211,47,47,0.15)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        '.MuiChip-icon': {
-                          color: 'white',
-                          fontSize: 22,
-                          ml: 0.5,
-                        },
+                        top: -12,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        zIndex: 1,
                       }}
-                    />
-                  )}
-                  {plan.isCurrentPlan && (
-                    <Chip
-                      label="Current Plan"
-                      color="secondary"
-                      sx={{
-                        position: 'absolute',
-                        top: 16,
-                        left: 16,
-                        borderRadius: 2,
-                        mt: 2,
-                      }}
-                    />
-                  )}
-                  <CardContent sx={{ flexGrow: 1, p: 3, display: 'flex', flexDirection: 'column' }}>
-                    <Stack spacing={3} sx={{ flexGrow: 0 }}>
-                      <Box
+                    >
+                      <Chip
+                        icon={<Star />}
+                        label="Most Popular"
                         sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 2,
-                          color: plan.color,
+                          backgroundColor: plan.color,
+                          color: 'white',
+                          fontWeight: 'bold',
+                          boxShadow: theme.shadows[4],
                         }}
-                      >
-                        {plan.icon}
-                        <Typography variant="h5" fontWeight="bold">
-                          {plan.name}
-                        </Typography>
-                      </Box>
-                      <Typography variant="subtitle1" color="text.secondary">
-                        {plan.bestFor}
-                      </Typography>
-                      <Box>
-                        <Typography variant="h3" fontWeight="bold" gutterBottom>
+                      />
+                    </Box>
+                  )}
+                  <CardContent
+                    sx={{
+                      p: 4,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      height: '100%',
+                      position: 'relative',
+                    }}
+                  >
+                    <Stack spacing={3}>
+                      <Box sx={{ textAlign: 'center' }}>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 1,
+                            mb: 1,
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              p: 1,
+                              borderRadius: 2,
+                              backgroundColor: `${plan.color}15`,
+                              color: plan.color,
+                            }}
+                          >
+                            {plan.icon}
+                          </Box>
+                          <Typography variant="h5" fontWeight="bold" color={plan.color}>
+                            {plan.name}
+                          </Typography>
+                        </Box>
+                        <Typography variant="h3" fontWeight="bold" sx={{ mb: 1 }}>
                           ${plan.price}
-                          <Typography component="span" variant="subtitle1" color="text.secondary">
-                            /month
+                          <Typography
+                            component="span"
+                            variant="h6"
+                            color="text.secondary"
+                            sx={{ ml: 0.5 }}
+                          >
+                            {t('pages.pricePlan.perMonth')}
                           </Typography>
                         </Typography>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                          {plan.name === 'Free' && (
-                            <Chip
-                              icon={<SmartToyOutlined />}
-                              label="GPT-4.1 Nano"
-                              size="small"
-                              sx={{
-                                backgroundColor: `${plan.color}15`,
-                                color: plan.color,
-                                border: `1px solid ${plan.color}40`,
-                                '& .MuiChip-icon': { color: plan.color },
-                              }}
-                            />
-                          )}
-                          {plan.name === 'Plus' && (
-                            <Chip
-                              icon={<PsychologyOutlined />}
-                              label="GPT-3.5 Turbo"
-                              size="small"
-                              sx={{
-                                backgroundColor: `${plan.color}15`,
-                                color: plan.color,
-                                border: `1px solid ${plan.color}40`,
-                                '& .MuiChip-icon': { color: plan.color },
-                              }}
-                            />
-                          )}
-                          {plan.name === 'Pro' && (
-                            <Chip
-                              icon={<AutoAwesomeOutlined />}
-                              label="GPT-4 Turbo"
-                              size="small"
-                              sx={{
-                                backgroundColor: `${plan.color}15`,
-                                color: plan.color,
-                                border: `1px solid ${plan.color}40`,
-                                '& .MuiChip-icon': { color: plan.color },
-                              }}
-                            />
-                          )}
-                          {plan.name === 'Max' && (
-                            <Chip
-                              icon={<RocketLaunchOutlined />}
-                              label="GPT-4"
-                              size="small"
-                              sx={{
-                                backgroundColor: `${plan.color}15`,
-                                color: plan.color,
-                                border: `1px solid ${plan.color}40`,
-                                '& .MuiChip-icon': { color: plan.color },
-                              }}
-                            />
-                          )}
-                        </Box>
                         <Typography color="text.secondary">{plan.description}</Typography>
                         <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
-                          {plan.tokenBoost?.toLocaleString()} tokens/month
+                          {plan.tokenBoost?.toLocaleString()} {t('pages.pricePlan.tokensPerMonth')}
                         </Typography>
                       </Box>
                       <Divider />
@@ -750,12 +687,12 @@ const PricePlan: React.FC = () => {
                           sx={{ mt: 1, mb: 1 }}
                         >
                           {plan.name === 'Free'
-                            ? 'Free Features'
+                            ? t('pages.pricePlan.freeFeatures')
                             : plan.name === 'Plus'
-                            ? 'Plus everything in Free'
+                            ? t('pages.pricePlan.plusEverythingInFree')
                             : plan.name === 'Pro'
-                            ? 'Plus everything in Plus'
-                            : 'Plus everything in Pro'}
+                            ? t('pages.pricePlan.plusEverythingInPlus')
+                            : t('pages.pricePlan.plusEverythingInPro')}
                         </Typography>
                         {plan.features.map(featureName => (
                           <Stack key={featureName} direction="row" spacing={1} alignItems="center">
@@ -793,10 +730,10 @@ const PricePlan: React.FC = () => {
                       }}
                     >
                       {plan.isCurrentPlan
-                        ? '✓ Your Current Plan'
+                        ? t('pages.pricePlan.yourCurrentPlan')
                         : plan.price === 0
-                        ? 'Get Started Free'
-                        : 'Choose Plan'}
+                        ? t('pages.pricePlan.getStartedFree')
+                        : t('pages.pricePlan.choosePlan')}
                     </Button>
                     {!plan.isCurrentPlan && plan.price > 0 && (
                       <Stack
@@ -807,12 +744,12 @@ const PricePlan: React.FC = () => {
                       >
                         <CreditCard fontSize="small" color="action" />
                         <Typography variant="caption" color="text.secondary">
-                          Secure checkout via Stripe
+                          {t('pages.pricePlan.secureCheckout')}
                         </Typography>
                       </Stack>
                     )}
                     <Typography variant="caption" color="text.secondary" textAlign="center">
-                      No commitment. Cancel anytime.
+                      {t('pages.pricePlan.noCommitment')}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -829,9 +766,9 @@ const PricePlan: React.FC = () => {
         fullWidth
       >
         <DialogTitle>
-          Subscribe to {selectedPlan?.name} Plan
+          {t('pages.pricePlan.subscribeToPlan', { plan: selectedPlan?.name })}
           <IconButton
-            aria-label="close"
+            aria-label={t('pages.pricePlan.close')}
             onClick={() => setPaymentDialogOpen(false)}
             sx={{
               position: 'absolute',

@@ -24,8 +24,6 @@ const LanguageSelector: React.FC = () => {
     Spanish: 'es',
     French: 'fr',
     German: 'de',
-    Italian: 'it',
-    Portuguese: 'pt',
     Russian: 'ru',
     Chinese: 'zh',
     Japanese: 'ja',
