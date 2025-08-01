@@ -47,6 +47,8 @@ import {
   Tune,
   UpdateOutlined,
   VerifiedUserOutlined,
+  Visibility,
+  VisibilityOff,
   VisibilityOffOutlined,
   VisibilityOutlined,
   VpnKeyOutlined,
@@ -68,6 +70,7 @@ import {
   FormControlLabel,
   FormGroup,
   Grid,
+  IconButton,
   InputAdornment,
   InputLabel,
   LinearProgress,
@@ -188,6 +191,14 @@ const Settings: React.FC = () => {
   const [showSecurityAudit, setShowSecurityAudit] = useState(false);
   const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
   const [showDownloadDataDialog, setShowDownloadDataDialog] = useState(false);
+  const [exportFormat, setExportFormat] = useState<'json' | 'pdf' | 'csv' | 'xml'>('json');
+  const [exportDataTypes, setExportDataTypes] = useState({
+    assignments: true,
+    preferences: true,
+    activity: true,
+    analytics: false,
+  });
+  const [isExportingData, setIsExportingData] = useState(false);
   const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false);
   const [showAccountInfoDialog, setShowAccountInfoDialog] = useState(false);
   const [showAIFeaturesTestDialog, setShowAIFeaturesTestDialog] = useState(false);
@@ -198,6 +209,10 @@ const Settings: React.FC = () => {
   });
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
 
   // Notification Settings
   const [notifications, setNotifications] = useState({
@@ -641,23 +656,51 @@ const Settings: React.FC = () => {
     const recommendations = [];
 
     if (!privacySettings.twoFactorAuth) {
-      recommendations.push('Enable two-factor authentication for enhanced security');
+      recommendations.push({
+        text: 'Enable two-factor authentication for enhanced security',
+        priority: 'high',
+        color: 'error.main',
+      });
     }
 
     if (securitySettings.passwordStrength === 'weak') {
-      recommendations.push('Strengthen your password with symbols and numbers');
+      recommendations.push({
+        text: 'Strengthen your password with symbols and numbers',
+        priority: 'high',
+        color: 'error.main',
+      });
     }
 
     if (securitySettings.activeSessions > 3) {
-      recommendations.push('Review and close unused active sessions');
+      recommendations.push({
+        text: 'Review and close unused active sessions',
+        priority: 'medium',
+        color: 'warning.main',
+      });
     }
 
     if (!privacySettings.autoLock) {
-      recommendations.push('Enable auto-lock to protect your account when inactive');
+      recommendations.push({
+        text: 'Enable auto-lock to protect your account when inactive',
+        priority: 'medium',
+        color: 'warning.main',
+      });
+    }
+
+    if (!privacySettings.biometricLogin) {
+      recommendations.push({
+        text: 'Enable biometric login for enhanced security and convenience',
+        priority: 'medium',
+        color: 'warning.main',
+      });
     }
 
     if (privacySettings.allowTracking) {
-      recommendations.push('Consider disabling activity tracking for enhanced privacy');
+      recommendations.push({
+        text: 'Consider disabling activity tracking for enhanced privacy',
+        priority: 'low',
+        color: 'info.main',
+      });
     }
 
     return recommendations;
@@ -997,6 +1040,78 @@ const Settings: React.FC = () => {
       );
     } finally {
       setIsChangingPassword(false);
+    }
+  };
+
+  // Password requirements validation
+  const passwordRequirements = {
+    minLength: passwordForm.newPassword.length >= 8,
+    hasUpperCase: /[A-Z]/.test(passwordForm.newPassword),
+    hasLowerCase: /[a-z]/.test(passwordForm.newPassword),
+    hasNumber: /\d/.test(passwordForm.newPassword),
+    hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(passwordForm.newPassword),
+  };
+
+  const validateConfirmPassword = (confirmPassword: string) => {
+    if (confirmPassword !== passwordForm.newPassword) {
+      setConfirmPasswordError('Passwords do not match');
+      return false;
+    }
+    setConfirmPasswordError('');
+    return true;
+  };
+
+  const handleDataExport = async () => {
+    setIsExportingData(true);
+    try {
+      // Check if at least one data type is selected
+      const selectedTypes = Object.values(exportDataTypes).filter(Boolean);
+      if (selectedTypes.length === 0) {
+        alert('Please select at least one data type to export.');
+        return;
+      }
+
+      // TODO: Implement actual data export API call
+      // This would typically call your backend API to generate the export
+      console.log('Exporting data in', exportFormat, 'format:', exportDataTypes);
+
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // For now, create a mock download
+      const mockData = {
+        format: exportFormat,
+        dataTypes: exportDataTypes,
+        timestamp: new Date().toISOString(),
+        user: 'current_user',
+      };
+
+      const blob = new Blob([JSON.stringify(mockData, null, 2)], {
+        type:
+          exportFormat === 'pdf'
+            ? 'application/pdf'
+            : exportFormat === 'csv'
+            ? 'text/csv'
+            : exportFormat === 'xml'
+            ? 'application/xml'
+            : 'application/json',
+      });
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `assignmentai_export_${new Date().toISOString().split('T')[0]}.${exportFormat}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      setShowDownloadDataDialog(false);
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('Failed to export data. Please try again.');
+    } finally {
+      setIsExportingData(false);
     }
   };
 
@@ -3361,30 +3476,6 @@ const Settings: React.FC = () => {
                         </Typography>
                       </Box>
                     </Box>
-                    {getSecurityRecommendations().length > 0 && (
-                      <Box sx={{ mb: 2 }}>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          display="block"
-                          gutterBottom
-                        >
-                          Recommendations:
-                        </Typography>
-                        {getSecurityRecommendations()
-                          .slice(0, 2)
-                          .map((rec, index) => (
-                            <Typography
-                              key={index}
-                              variant="caption"
-                              color="warning.main"
-                              sx={{ display: 'block', mb: 0.5 }}
-                            >
-                              • {rec}
-                            </Typography>
-                          ))}
-                      </Box>
-                    )}
                   </Paper>
                 </Grid>
 
@@ -4150,7 +4241,7 @@ const Settings: React.FC = () => {
 
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
-              <Typography variant="subtitle1" gutterBottom>
+              <Typography variant="subtitle1" gutterBottom sx={{ color: 'primary.main' }}>
                 Security Score Breakdown
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -4201,7 +4292,7 @@ const Settings: React.FC = () => {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <Typography variant="subtitle1" gutterBottom>
+              <Typography variant="subtitle1" gutterBottom sx={{ color: 'primary.main' }}>
                 Security Recommendations
               </Typography>
               {getSecurityRecommendations().length > 0 ? (
@@ -4209,10 +4300,14 @@ const Settings: React.FC = () => {
                   {getSecurityRecommendations().map((recommendation, index) => (
                     <ListItem key={index} sx={{ px: 0 }}>
                       <ListItemIcon sx={{ minWidth: 32 }}>
-                        <Warning fontSize="small" color="warning" />
+                        {recommendation.priority === 'high' ? (
+                          <Error fontSize="small" sx={{ color: recommendation.color }} />
+                        ) : (
+                          <Warning fontSize="small" sx={{ color: recommendation.color }} />
+                        )}
                       </ListItemIcon>
                       <ListItemText
-                        primary={recommendation}
+                        primary={recommendation.text}
                         primaryTypographyProps={{ variant: 'body2' }}
                       />
                     </ListItem>
@@ -4226,7 +4321,7 @@ const Settings: React.FC = () => {
                 </Alert>
               )}
 
-              <Typography variant="subtitle1" sx={{ mt: 3 }} gutterBottom>
+              <Typography variant="subtitle1" sx={{ mt: 3, color: 'primary.main' }} gutterBottom>
                 Privacy Analysis
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -4234,7 +4329,7 @@ const Settings: React.FC = () => {
                   <Typography variant="body2">Data Collection</Typography>
                   <Typography
                     variant="body2"
-                    color={privacySettings.dataCollection ? 'warning.main' : 'success.main'}
+                    color={privacySettings.dataCollection ? 'success.main' : 'error.main'}
                   >
                     {privacySettings.dataCollection ? 'Enabled' : 'Disabled'}
                   </Typography>
@@ -4243,7 +4338,7 @@ const Settings: React.FC = () => {
                   <Typography variant="body2">Analytics Sharing</Typography>
                   <Typography
                     variant="body2"
-                    color={privacySettings.shareAnalytics ? 'warning.main' : 'success.main'}
+                    color={privacySettings.shareAnalytics ? 'success.main' : 'error.main'}
                   >
                     {privacySettings.shareAnalytics ? 'Enabled' : 'Disabled'}
                   </Typography>
@@ -4252,7 +4347,7 @@ const Settings: React.FC = () => {
                   <Typography variant="body2">Activity Tracking</Typography>
                   <Typography
                     variant="body2"
-                    color={privacySettings.allowTracking ? 'warning.main' : 'success.main'}
+                    color={privacySettings.allowTracking ? 'success.main' : 'error.main'}
                   >
                     {privacySettings.allowTracking ? 'Enabled' : 'Disabled'}
                   </Typography>
@@ -4358,38 +4453,116 @@ const Settings: React.FC = () => {
         </DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Choose what data you'd like to download from your account.
+            Choose what data you'd like to download from your account and select your preferred
+            export format.
           </Typography>
 
-          <FormGroup>
-            <FormControlLabel
-              control={<Switch defaultChecked />}
-              label="Assignments and Submissions"
-            />
-            <FormControlLabel
-              control={<Switch defaultChecked />}
-              label="User Preferences and Settings"
-            />
-            <FormControlLabel control={<Switch defaultChecked />} label="Activity History" />
-            <FormControlLabel control={<Switch />} label="Analytics Data (if enabled)" />
-          </FormGroup>
+          {/* Export Format Selection */}
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle2" sx={{ mb: 2, color: 'primary.main' }}>
+              Export Format
+            </Typography>
+            <FormControl fullWidth>
+              <Select
+                value={exportFormat}
+                onChange={e => setExportFormat(e.target.value as 'json' | 'pdf' | 'csv' | 'xml')}
+                displayEmpty
+              >
+                <MenuItem value="json">JSON (JavaScript Object Notation)</MenuItem>
+                <MenuItem value="pdf">PDF (Portable Document Format)</MenuItem>
+                <MenuItem value="csv">CSV (Comma-Separated Values)</MenuItem>
+                <MenuItem value="xml">XML (Extensible Markup Language)</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+
+          {/* Data Type Selection */}
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle2" sx={{ mb: 2, color: 'primary.main' }}>
+              Data to Export
+            </Typography>
+            <FormGroup>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={exportDataTypes.assignments}
+                    onChange={e =>
+                      setExportDataTypes({
+                        ...exportDataTypes,
+                        assignments: e.target.checked,
+                      })
+                    }
+                  />
+                }
+                label="Assignments and Submissions"
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={exportDataTypes.preferences}
+                    onChange={e =>
+                      setExportDataTypes({
+                        ...exportDataTypes,
+                        preferences: e.target.checked,
+                      })
+                    }
+                  />
+                }
+                label="User Preferences and Settings"
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={exportDataTypes.activity}
+                    onChange={e =>
+                      setExportDataTypes({
+                        ...exportDataTypes,
+                        activity: e.target.checked,
+                      })
+                    }
+                  />
+                }
+                label="Activity History"
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={exportDataTypes.analytics}
+                    onChange={e =>
+                      setExportDataTypes({
+                        ...exportDataTypes,
+                        analytics: e.target.checked,
+                      })
+                    }
+                  />
+                }
+                label="Analytics Data (if enabled)"
+              />
+            </FormGroup>
+          </Box>
 
           <Alert severity="info" sx={{ mt: 2 }}>
             <Typography variant="caption">
-              Data will be exported in JSON format and may take a few minutes to prepare.
+              Data will be exported in {exportFormat.toUpperCase()} format and may take a few
+              minutes to prepare.
+              {exportFormat === 'pdf' &&
+                ' PDF exports include formatted reports with charts and summaries.'}
+              {exportFormat === 'csv' && ' CSV exports are ideal for spreadsheet applications.'}
+              {exportFormat === 'xml' && ' XML exports provide structured data with metadata.'}
             </Typography>
           </Alert>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setShowDownloadDataDialog(false)}>Cancel</Button>
+          <Button onClick={() => setShowDownloadDataDialog(false)} disabled={isExportingData}>
+            Cancel
+          </Button>
           <Button
             variant="contained"
-            onClick={() => {
-              setShowDownloadDataDialog(false);
-              // TODO: Implement data export
-            }}
+            onClick={handleDataExport}
+            disabled={isExportingData}
+            startIcon={isExportingData ? <CircularProgress size={16} /> : <DownloadOutlined />}
           >
-            Download Data
+            {isExportingData ? 'Preparing Export...' : 'Download Data'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -4421,7 +4594,7 @@ const Settings: React.FC = () => {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
               label="Current Password"
-              type="password"
+              type={showCurrentPassword ? 'text' : 'password'}
               fullWidth
               variant="outlined"
               placeholder="Enter your current password"
@@ -4433,37 +4606,159 @@ const Settings: React.FC = () => {
                 })
               }
               disabled={isChangingPassword}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      edge="end"
+                      disabled={isChangingPassword}
+                    >
+                      {showCurrentPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
             <TextField
               label="New Password"
-              type="password"
+              type={showNewPassword ? 'text' : 'password'}
               fullWidth
               variant="outlined"
               placeholder="Enter your new password"
-              helperText="Password must be at least 8 characters long"
               value={passwordForm.newPassword}
-              onChange={e =>
+              onChange={e => {
+                const newPasswordValue = e.target.value;
                 setPasswordForm({
                   ...passwordForm,
-                  newPassword: e.target.value,
-                })
-              }
+                  newPassword: newPasswordValue,
+                });
+                // Re-validate confirm password when new password changes
+                if (passwordForm.confirmPassword) {
+                  // Check if passwords match with the new password value
+                  if (passwordForm.confirmPassword !== newPasswordValue) {
+                    setConfirmPasswordError('Passwords do not match');
+                  } else {
+                    setConfirmPasswordError('');
+                  }
+                }
+              }}
               disabled={isChangingPassword}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      edge="end"
+                      disabled={isChangingPassword}
+                    >
+                      {showNewPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
+
+            {/* Password Requirements Display */}
+            {passwordForm.newPassword.length > 0 && (
+              <Box sx={{ mt: 1, mb: 1 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: 'text.secondary',
+                    fontWeight: 400,
+                    fontSize: '0.8rem',
+                    mb: 1,
+                  }}
+                >
+                  Password Requirements:
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: passwordRequirements.minLength ? 'success.main' : 'error.main',
+                      fontWeight: 400,
+                      fontSize: '0.75rem',
+                    }}
+                  >
+                    • At least 8 characters {passwordRequirements.minLength ? '✓' : '✗'}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: passwordRequirements.hasUpperCase ? 'success.main' : 'error.main',
+                      fontWeight: 400,
+                      fontSize: '0.75rem',
+                    }}
+                  >
+                    • One uppercase letter {passwordRequirements.hasUpperCase ? '✓' : '✗'}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: passwordRequirements.hasLowerCase ? 'success.main' : 'error.main',
+                      fontWeight: 400,
+                      fontSize: '0.75rem',
+                    }}
+                  >
+                    • One lowercase letter {passwordRequirements.hasLowerCase ? '✓' : '✗'}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: passwordRequirements.hasNumber ? 'success.main' : 'error.main',
+                      fontWeight: 400,
+                      fontSize: '0.75rem',
+                    }}
+                  >
+                    • One number {passwordRequirements.hasNumber ? '✓' : '✗'}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: passwordRequirements.hasSpecialChar ? 'success.main' : 'error.main',
+                      fontWeight: 400,
+                      fontSize: '0.75rem',
+                    }}
+                  >
+                    • One special character {passwordRequirements.hasSpecialChar ? '✓' : '✗'}
+                  </Typography>
+                </Box>
+              </Box>
+            )}
+
             <TextField
               label="Confirm New Password"
-              type="password"
+              type={showConfirmPassword ? 'text' : 'password'}
               fullWidth
               variant="outlined"
               placeholder="Confirm your new password"
               value={passwordForm.confirmPassword}
-              onChange={e =>
+              onChange={e => {
                 setPasswordForm({
                   ...passwordForm,
                   confirmPassword: e.target.value,
-                })
-              }
+                });
+                validateConfirmPassword(e.target.value);
+              }}
+              onBlur={e => validateConfirmPassword(e.target.value)}
+              error={!!confirmPasswordError}
+              helperText={confirmPasswordError}
               disabled={isChangingPassword}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      edge="end"
+                      disabled={isChangingPassword}
+                    >
+                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
           </Box>
 
@@ -4586,7 +4881,21 @@ const Settings: React.FC = () => {
                   <Typography variant="body2" color="text.secondary">
                     Current Plan:
                   </Typography>
-                  <Chip label="Free" size="small" color="primary" />
+                  <Chip
+                    label={subscription.plan.charAt(0).toUpperCase() + subscription.plan.slice(1)}
+                    size="small"
+                    sx={{
+                      backgroundColor:
+                        subscription.plan === 'free'
+                          ? '#2196f3'
+                          : subscription.plan === 'plus'
+                          ? '#4caf50'
+                          : subscription.plan === 'pro'
+                          ? '#9c27b0'
+                          : '#ff9800',
+                      color: 'white',
+                    }}
+                  />
                 </Box>
                 <Box
                   sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
@@ -4610,7 +4919,11 @@ const Settings: React.FC = () => {
                   <Typography variant="body2" color="text.secondary">
                     2FA Enabled:
                   </Typography>
-                  <Chip label="Disabled" size="small" color="warning" />
+                  <Chip
+                    label={privacySettings.twoFactorAuth ? 'Enabled' : 'Disabled'}
+                    size="small"
+                    color={privacySettings.twoFactorAuth ? 'success' : 'error'}
+                  />
                 </Box>
               </Box>
             </Grid>
