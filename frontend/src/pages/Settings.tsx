@@ -94,8 +94,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import AIFeaturesDemo from '../components/ai/AIFeaturesDemo';
 import DateFormatSelector from '../components/common/DateFormatSelector';
+import { useTheme as useAppTheme } from '../contexts/ThemeContext';
 import { useAspectRatio } from '../hooks/useAspectRatio';
-
 import { preferences, users } from '../services/api';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 import { DateFormat, getDefaultDateFormat, getDefaultTimeFormat } from '../utils/dateFormat';
@@ -155,7 +155,8 @@ const Settings: React.FC = () => {
   const [isLoadingPreferences, setIsLoadingPreferences] = useState(false);
 
   // General Settings
-  const [darkMode, setDarkMode] = useState(false);
+  const { theme: appTheme, toggleTheme } = useAppTheme();
+  const darkMode = appTheme === 'dark';
   const [language, setLanguage] = useState('en');
   const [fontSize, setFontSize] = useState(20);
   const [animations, setAnimations] = useState(true);
@@ -1111,14 +1112,7 @@ const Settings: React.FC = () => {
     }
   }, [compactMode]);
 
-  // Apply dark mode setting (local effect for now)
-  useEffect(() => {
-    if (darkMode) {
-      document.body.classList.add('dark-mode-local');
-    } else {
-      document.body.classList.remove('dark-mode-local');
-    }
-  }, [darkMode]);
+  // Dark mode is now handled by Material-UI theme system
 
   // Password change function
   const handlePasswordChange = async () => {
@@ -1346,7 +1340,7 @@ const Settings: React.FC = () => {
         setLanguage(userPreferences.language);
       }
       if (userPreferences.theme) {
-        setDarkMode(userPreferences.theme === 'dark');
+        // Theme is handled by context, no need to set here
       }
       if (userPreferences.font_size) {
         setFontSize(parseInt(userPreferences.font_size) || 20);
@@ -1739,9 +1733,7 @@ const Settings: React.FC = () => {
                 <Grid item xs={12} md={6}>
                   <FormGroup>
                     <FormControlLabel
-                      control={
-                        <Switch checked={darkMode} onChange={() => setDarkMode(!darkMode)} />
-                      }
+                      control={<Switch checked={darkMode} onChange={toggleTheme} />}
                       label="Dark Mode"
                     />
                     <FormControlLabel
