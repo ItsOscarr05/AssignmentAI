@@ -1,14 +1,9 @@
 import {
-  ArticleOutlined as ArticleIcon,
   AssignmentOutlined as AssignmentIcon,
   AutoAwesomeOutlined,
   CheckCircleOutline as CheckCircleIcon,
-  CreateOutlined as CreateIcon,
-  ExploreOutlined as ExploreIcon,
   InfoOutlined as InfoOutlinedIcon,
-  LightbulbOutlined as LightbulbIcon,
   Pending as PendingIcon,
-  PsychologyOutlined as PsychologyIcon,
   TrendingUp as TrendingUpIcon,
 } from '@mui/icons-material';
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
@@ -47,7 +42,7 @@ import {
 import dayjs from 'dayjs';
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
 
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import DashboardPieChart from '../components/dashboard/DashboardPieChart';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -1006,7 +1001,7 @@ const DashboardHome: React.FC = () => {
         spacing={getAspectRatioStyle(aspectRatioStyles.grid.gap, breakpoint, 3)}
         sx={{ mb: 3, width: '100%' }}
       >
-        <Grid item xs={11.5} md={breakpoint === 'standard' ? 12 : 6}>
+        <Grid item xs={11.5} md={12}>
           <Paper
             sx={{
               p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 3),
@@ -1142,196 +1137,6 @@ const DashboardHome: React.FC = () => {
                 </Paper>
               </Grid>
             </Grid>
-          </Paper>
-        </Grid>
-        <Grid item xs={11.5} md={breakpoint === 'standard' ? 12 : 6}>
-          <Paper
-            sx={{
-              p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 3),
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-              background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 120%)',
-              border: '2px solid #D32F2F',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              overflow: 'hidden',
-              maxWidth: '100%',
-              width: '100%',
-            }}
-          >
-            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2, color: 'black' }}>
-              Assignment AI Suggestions
-            </Typography>
-            {assignments.length === 0 ? (
-              <Box
-                display="flex"
-                flexDirection="column"
-                alignItems="center"
-                justifyContent="center"
-                sx={{ mt: 6 }}
-              >
-                <LightbulbIcon sx={{ fontSize: 54, color: 'red', mb: 2, opacity: 0.5 }} />
-                <Typography variant="h5" color="text.secondary" gutterBottom>
-                  No suggestions yet
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Check back later for personalized recommendations
-                </Typography>
-              </Box>
-            ) : (
-              <Stack spacing={2}>
-                {suggestionAssignment && (
-                  <Paper
-                    variant="outlined"
-                    sx={{
-                      p: 2,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 2,
-                      borderColor: '#8E24AA',
-                    }}
-                  >
-                    <LightbulbIcon sx={{ color: '#8E24AA' }} />
-                    <Typography variant="body2">
-                      Get a head start on your{' '}
-                      <RouterLink
-                        to="/dashboard/assignments"
-                        state={{ name: suggestionAssignment.title }}
-                        style={{ fontWeight: 'bold', color: '#8E24AA', textDecoration: 'none' }}
-                        onMouseOver={(e: React.MouseEvent<HTMLAnchorElement>) =>
-                          (e.currentTarget.style.textDecoration = 'underline')
-                        }
-                        onMouseOut={(e: React.MouseEvent<HTMLAnchorElement>) =>
-                          (e.currentTarget.style.textDecoration = 'none')
-                        }
-                      >
-                        {suggestionAssignment.title}
-                      </RouterLink>{' '}
-                      assignment.
-                    </Typography>
-                  </Paper>
-                )}
-                {unusedCoreSubject && (
-                  <Paper
-                    variant="outlined"
-                    sx={{
-                      p: 2,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 2,
-                      borderColor: '#1976D2',
-                    }}
-                  >
-                    <ExploreIcon sx={{ color: '#1976D2' }} />
-                    <Typography variant="body2">
-                      Expand your knowledge with{' '}
-                      <RouterLink
-                        to="/dashboard/assignments"
-                        state={{ subject: unusedCoreSubject }}
-                        style={{ fontWeight: 'bold', color: '#1976D2', textDecoration: 'none' }}
-                        onMouseOver={(e: React.MouseEvent<HTMLAnchorElement>) =>
-                          (e.currentTarget.style.textDecoration = 'underline')
-                        }
-                        onMouseOut={(e: React.MouseEvent<HTMLAnchorElement>) =>
-                          (e.currentTarget.style.textDecoration = 'none')
-                        }
-                      >
-                        {unusedCoreSubject}
-                      </RouterLink>
-                      ?
-                    </Typography>
-                  </Paper>
-                )}
-                <Paper
-                  variant="outlined"
-                  sx={{
-                    p: 2,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 2,
-                    borderColor: '#1976D2',
-                  }}
-                >
-                  <CreateIcon sx={{ color: '#1976D2' }} />
-                  <Typography variant="body2">
-                    Improve your writing with our{' '}
-                    <RouterLink
-                      to="/dashboard/workshop"
-                      state={{ responseTab: 1 }}
-                      style={{ fontWeight: 'bold', color: '#1976D2', textDecoration: 'none' }}
-                      onMouseOver={(e: React.MouseEvent<HTMLAnchorElement>) =>
-                        (e.currentTarget.style.textDecoration = 'underline')
-                      }
-                      onMouseOut={(e: React.MouseEvent<HTMLAnchorElement>) =>
-                        (e.currentTarget.style.textDecoration = 'none')
-                      }
-                    >
-                      rewrite tool
-                    </RouterLink>{' '}
-                    can help refine your content.
-                  </Typography>
-                </Paper>
-                <Paper
-                  variant="outlined"
-                  sx={{
-                    p: 2,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 2,
-                    borderColor: '#388E3C',
-                  }}
-                >
-                  <PsychologyIcon sx={{ color: '#388E3C' }} />
-                  <Typography variant="body2">
-                    Stuck on a problem? Our{' '}
-                    <RouterLink
-                      to="/dashboard/workshop"
-                      style={{ fontWeight: 'bold', color: '#388E3C', textDecoration: 'none' }}
-                      onMouseOver={(e: React.MouseEvent<HTMLAnchorElement>) =>
-                        (e.currentTarget.style.textDecoration = 'underline')
-                      }
-                      onMouseOut={(e: React.MouseEvent<HTMLAnchorElement>) =>
-                        (e.currentTarget.style.textDecoration = 'none')
-                      }
-                    >
-                      workshop
-                    </RouterLink>{' '}
-                    can help you get unstuck.
-                  </Typography>
-                </Paper>
-                {mostFrequentSubject && (
-                  <Paper
-                    variant="outlined"
-                    sx={{
-                      p: 2,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 2,
-                      borderColor: '#FFA000',
-                    }}
-                  >
-                    <ArticleIcon sx={{ color: '#FFA000' }} />
-                    <Typography variant="body2">
-                      You're becoming an expert in {mostFrequentSubject}. Try our{' '}
-                      <RouterLink
-                        to="/dashboard/workshop"
-                        state={{ responseTab: 3 }}
-                        style={{ fontWeight: 'bold', color: '#FFA000', textDecoration: 'none' }}
-                        onMouseOver={(e: React.MouseEvent<HTMLAnchorElement>) =>
-                          (e.currentTarget.style.textDecoration = 'underline')
-                        }
-                        onMouseOut={(e: React.MouseEvent<HTMLAnchorElement>) =>
-                          (e.currentTarget.style.textDecoration = 'none')
-                        }
-                      >
-                        summarizing
-                      </RouterLink>{' '}
-                      to prepare for exams.
-                    </Typography>
-                  </Paper>
-                )}
-              </Stack>
-            )}
           </Paper>
         </Grid>
       </Grid>

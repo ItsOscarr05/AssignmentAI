@@ -26,6 +26,20 @@ import React from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
+// Get font size from localStorage or default to 20
+const getFontSize = () => {
+  try {
+    const savedSettings = localStorage.getItem('userSettings');
+    if (savedSettings) {
+      const settings = JSON.parse(savedSettings);
+      return settings.appearance?.font_size || 20;
+    }
+  } catch (error) {
+    console.warn('Failed to parse user settings:', error);
+  }
+  return 20;
+};
+
 const expandedWidth = 250;
 
 const Dashboard: React.FC = () => {
@@ -34,6 +48,23 @@ const Dashboard: React.FC = () => {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [fontSize, setFontSize] = React.useState(getFontSize());
+
+  // Listen for font size changes
+  React.useEffect(() => {
+    const handleStorageChange = () => {
+      setFontSize(getFontSize());
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    // Also check periodically for changes
+    const interval = setInterval(handleStorageChange, 1000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -88,17 +119,16 @@ const Dashboard: React.FC = () => {
           style={{ maxHeight: 48, width: 'auto', marginRight: -25, display: 'block' }}
         />
         <Typography
-          variant="h6"
           noWrap
           component="div"
           sx={{
             color: 'primary.contrastText',
-            fontSize: '1.7rem',
-            fontWeight: 700,
             minWidth: 0,
             flexShrink: 1,
             textAlign: 'center',
             width: '100%',
+            fontSize: `${(1.7 * fontSize) / 20}rem`,
+            fontWeight: 700,
           }}
         >
           AssignmentAI
@@ -147,14 +177,18 @@ const Dashboard: React.FC = () => {
                   mr: 2,
                 }}
               >
-                {React.cloneElement(item.icon, { sx: { fontSize: 28 } })}
+                {React.cloneElement(item.icon, {
+                  sx: { fontSize: `${(28 * fontSize) / 20}px` },
+                })}
               </ListItemIcon>
               <ListItemText
                 primary={item.text}
                 primaryTypographyProps={{
                   color: 'inherit',
-                  fontWeight: 500,
-                  fontSize: '1.1rem',
+                  sx: {
+                    fontSize: `${(1.1 * fontSize) / 20}rem`,
+                    fontWeight: 500,
+                  },
                 }}
               />
             </ListItem>
@@ -165,9 +199,11 @@ const Dashboard: React.FC = () => {
       {/* Copyright */}
       <Box sx={{ p: 1, width: '100%', textAlign: 'center' }}>
         <Typography
-          variant="body2"
           color="primary.contrastText"
-          sx={{ opacity: 0.7, fontSize: '0.9rem' }}
+          sx={{
+            opacity: 0.7,
+            fontSize: `${(0.9 * fontSize) / 20}rem`,
+          }}
         >
           © {new Date().getFullYear()} AssignmentAI
         </Typography>
@@ -201,7 +237,11 @@ const Dashboard: React.FC = () => {
             },
           }}
         >
-          {mobileOpen ? <CloseIcon sx={{ fontSize: 32 }} /> : <MenuIcon sx={{ fontSize: 32 }} />}
+          {mobileOpen ? (
+            <CloseIcon sx={{ fontSize: `${(32 * fontSize) / 20}px` }} />
+          ) : (
+            <MenuIcon sx={{ fontSize: `${(32 * fontSize) / 20}px` }} />
+          )}
         </IconButton>
       )}
       <Box

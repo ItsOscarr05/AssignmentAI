@@ -131,6 +131,26 @@ const theme = createTheme({
         },
       },
     },
+    MuiDrawer: {
+      styleOverrides: {
+        paper: {
+          '& .dashboard-sidebar-title': {
+            fontSize: 'calc(1.7rem * var(--app-font-size, 20px) / 20px) !important',
+            fontWeight: 700,
+          },
+          '& .dashboard-sidebar-menu-text': {
+            fontSize: 'calc(1.1rem * var(--app-font-size, 20px) / 20px) !important',
+            fontWeight: 500,
+          },
+          '& .dashboard-sidebar-copyright': {
+            fontSize: 'calc(0.9rem * var(--app-font-size, 20px) / 20px) !important',
+          },
+          '& .dashboard-sidebar-icon': {
+            fontSize: 'calc(28px * var(--app-font-size, 20px) / 20px) !important',
+          },
+        },
+      },
+    },
     MuiCard: {
       styleOverrides: {
         root: {

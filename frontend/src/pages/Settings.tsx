@@ -1809,9 +1809,45 @@ const Settings: React.FC = () => {
                       }}
                     >
                       <MenuItem value="en">English</MenuItem>
-                      <MenuItem value="es">Español</MenuItem>
-                      <MenuItem value="fr">Français</MenuItem>
-                      <MenuItem value="de">Deutsch</MenuItem>
+                      <MenuItem
+                        value="es"
+                        disabled
+                        sx={{
+                          color: 'text.disabled',
+                          opacity: 0.6,
+                          '&:hover': {
+                            backgroundColor: 'transparent',
+                          },
+                        }}
+                      >
+                        Español (Coming soon)
+                      </MenuItem>
+                      <MenuItem
+                        value="fr"
+                        disabled
+                        sx={{
+                          color: 'text.disabled',
+                          opacity: 0.6,
+                          '&:hover': {
+                            backgroundColor: 'transparent',
+                          },
+                        }}
+                      >
+                        Français (Coming soon)
+                      </MenuItem>
+                      <MenuItem
+                        value="de"
+                        disabled
+                        sx={{
+                          color: 'text.disabled',
+                          opacity: 0.6,
+                          '&:hover': {
+                            backgroundColor: 'transparent',
+                          },
+                        }}
+                      >
+                        Deutsch (Coming soon)
+                      </MenuItem>
                     </Select>
                     <Typography
                       variant="caption"
@@ -3511,7 +3547,7 @@ const Settings: React.FC = () => {
                         <HistoryOutlined />
                       </ListItemIcon>
                       <ListItemText
-                        primary={t('settings.privacy.lastPasswordChange')}
+                        primary="Last Password Change"
                         secondary={formatDateWithPreference(securitySettings.lastPasswordChange)}
                         primaryTypographyProps={{
                           sx: { fontSize: { xs: '0.875rem', md: '1rem' } },
@@ -3526,10 +3562,8 @@ const Settings: React.FC = () => {
                         <VerifiedUserOutlined />
                       </ListItemIcon>
                       <ListItemText
-                        primary={t('settings.privacy.activeSessions')}
-                        secondary={`${securitySettings.activeSessions} ${t(
-                          'settings.privacy.devices'
-                        )}`}
+                        primary="Active Sessions"
+                        secondary={`${securitySettings.activeSessions} active sessions`}
                         primaryTypographyProps={{
                           sx: { fontSize: { xs: '0.875rem', md: '1rem' } },
                         }}
@@ -3615,7 +3649,7 @@ const Settings: React.FC = () => {
                 <Grid item xs={12} md={12} lg={12}>
                   <Box sx={{ textAlign: 'center', width: '100%' }}>
                     <Typography variant="subtitle1" gutterBottom>
-                      {t('settings.privacy.accountManagement')}
+                      Account Management
                     </Typography>
                     <Box
                       sx={{
@@ -3653,7 +3687,7 @@ const Settings: React.FC = () => {
                         sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
                         onClick={() => setShowDownloadDataDialog(true)}
                       >
-                        {t('settings.privacy.downloadMyData')}
+                        Download My Data
                       </Button>
                       <Button
                         variant="contained"
@@ -3670,7 +3704,7 @@ const Settings: React.FC = () => {
                         }}
                         onClick={() => setShowDeleteAccountDialog(true)}
                       >
-                        {t('settings.privacy.deleteAccount')}
+                        Delete Account
                       </Button>
                     </Box>
                   </Box>
