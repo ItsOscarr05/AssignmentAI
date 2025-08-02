@@ -96,7 +96,6 @@ import AIFeaturesDemo from '../components/ai/AIFeaturesDemo';
 import DateFormatSelector from '../components/common/DateFormatSelector';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 
-import { useTranslation } from '../hooks/useTranslation';
 import { preferences, users } from '../services/api';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 import { DateFormat, getDefaultDateFormat, getDefaultTimeFormat } from '../utils/dateFormat';
@@ -278,9 +277,6 @@ const Settings: React.FC = () => {
     model: 'gpt-4.1-nano', // Match the free plan model from subscriptionConfig
     tokenLimit: 30000,
   });
-
-  // Use the new i18n translation hook
-  const { t, changeLanguage } = useTranslation();
 
   // Simple date formatting function based on user preference
   const formatDateWithPreference = (date: Date | string) => {
@@ -1264,7 +1260,7 @@ const Settings: React.FC = () => {
     document.documentElement.lang = language;
 
     // Change language using i18n
-    changeLanguage(language);
+    // Language change functionality removed - English only
 
     // Apply language-specific changes
     if (language === 'es') {
@@ -1285,7 +1281,7 @@ const Settings: React.FC = () => {
     }
 
     console.log('Language changed to:', language);
-  }, [language, changeLanguage]);
+  }, [language]);
 
   // Apply date format setting
   useEffect(() => {
@@ -1568,7 +1564,7 @@ const Settings: React.FC = () => {
             },
           }}
         >
-          {t('settings.settingsSavedSuccessfully')}
+          Settings saved successfully
         </Alert>
       )}
 
@@ -1640,12 +1636,12 @@ const Settings: React.FC = () => {
             ml: { xs: 0, md: 4 },
           }}
         >
-          {t('settings.title')}
+          Settings
         </Typography>
 
         {/* Search Bar */}
         <TextField
-          placeholder={t('settings.searchSettings')}
+          placeholder="Search settings..."
           variant="outlined"
           size="small"
           value={searchQuery}
@@ -1701,11 +1697,9 @@ const Settings: React.FC = () => {
               Saving...
             </Box>
           ) : checkForUnsavedChanges() ? (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              {t('settings.saveChanges')}
-            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>Save Changes</Box>
           ) : (
-            t('settings.saveChanges')
+            'Save Changes'
           )}
         </Button>
       </Box>
@@ -1729,20 +1723,16 @@ const Settings: React.FC = () => {
         >
           <Tabs value={tabValue} onChange={handleTabChange} variant="fullWidth">
             <Tab icon={<Tune />} label="General" sx={{ gap: 1 }} />
-            <Tab icon={<Psychology />} label={t('settings.ai.title')} sx={{ gap: 1 }} />
-            <Tab
-              icon={<Notifications />}
-              label={t('settings.notifications.title')}
-              sx={{ gap: 1 }}
-            />
-            <Tab icon={<SecurityOutlined />} label={t('settings.privacy.title')} sx={{ gap: 1 }} />
+            <Tab icon={<Psychology />} label="AI Settings" sx={{ gap: 1 }} />
+            <Tab icon={<Notifications />} label="Notifications" sx={{ gap: 1 }} />
+            <Tab icon={<SecurityOutlined />} label="Privacy & Security" sx={{ gap: 1 }} />
           </Tabs>
         </Box>
 
         <Box sx={{ p: { xs: 2, md: 4 } }}>
           <TabPanel value={tabValue} index={0} breakpoint={breakpoint}>
             <SettingsSection
-              title={t('settings.appearance.title')}
+              title="Appearance"
               icon={<Brush sx={{ color: theme.palette.primary.main }} />}
             >
               <Grid container spacing={3}>
@@ -1752,7 +1742,7 @@ const Settings: React.FC = () => {
                       control={
                         <Switch checked={darkMode} onChange={() => setDarkMode(!darkMode)} />
                       }
-                      label={t('settings.appearance.darkMode')}
+                      label="Dark Mode"
                     />
                     <FormControlLabel
                       control={
@@ -1761,7 +1751,7 @@ const Settings: React.FC = () => {
                           onChange={e => setAnimations(e.target.checked)}
                         />
                       }
-                      label={t('settings.appearance.enableAnimations')}
+                      label="Enable Animations"
                     />
                     <FormControlLabel
                       control={
@@ -1770,12 +1760,12 @@ const Settings: React.FC = () => {
                           onChange={e => setCompactMode(e.target.checked)}
                         />
                       }
-                      label={t('settings.appearance.compactMode')}
+                      label="Compact Mode"
                     />
                   </FormGroup>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <Typography gutterBottom>{t('settings.appearance.fontSize')}</Typography>
+                  <Typography gutterBottom>Font Size</Typography>
                   <Slider
                     value={fontSize}
                     onChange={(_e, value) => setFontSize(value as number)}
@@ -1802,20 +1792,20 @@ const Settings: React.FC = () => {
             </SettingsSection>
 
             <SettingsSection
-              title={t('settings.language.title')}
+              title="Language & Region"
               icon={<Language sx={{ color: theme.palette.primary.main }} />}
             >
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
                   <FormControl fullWidth sx={{ mb: 2 }}>
-                    <InputLabel>{t('settings.language.language')}</InputLabel>
+                    <InputLabel>Language</InputLabel>
                     <Select
                       value={language}
-                      label={t('settings.language.language')}
+                      label="Language"
                       onChange={e => {
                         const newLanguage = e.target.value;
                         setLanguage(newLanguage);
-                        changeLanguage(newLanguage);
+                        // Language change functionality removed - English only
                       }}
                     >
                       <MenuItem value="en">English</MenuItem>
@@ -1828,7 +1818,7 @@ const Settings: React.FC = () => {
                       color="text.secondary"
                       sx={{ mt: 1, display: 'block' }}
                     >
-                      {t('settings.language.currentLanguage')}:{' '}
+                      Current Language:{' '}
                       {language === 'en'
                         ? 'English'
                         : language === 'es'
@@ -1854,7 +1844,7 @@ const Settings: React.FC = () => {
                       value={dateFormat}
                       onChange={setDateFormat}
                       onValidationError={setDateFormatError}
-                      label={t('settings.language.dateFormat')}
+                      label="Date Format"
                       fullWidth={true}
                       size="medium"
                       enableAutoDetection={true}
@@ -2017,7 +2007,7 @@ const Settings: React.FC = () => {
 
           <TabPanel value={tabValue} index={1} breakpoint={breakpoint}>
             <SettingsSection
-              title={t('settings.ai.modelConfiguration')}
+              title="AI Model Configuration"
               icon={<Psychology sx={{ color: theme.palette.primary.main }} />}
             >
               {aiSettingsError && (
@@ -2029,10 +2019,10 @@ const Settings: React.FC = () => {
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
                   <FormControl fullWidth>
-                    <InputLabel>{t('settings.ai.aiModel')}</InputLabel>
+                    <InputLabel>AI Model</InputLabel>
                     <Select
                       value={subscription.model}
-                      label={t('settings.ai.aiModel')}
+                      label="AI Model"
                       onChange={e => handleModelChange(e.target.value)}
                     >
                       {Object.entries(subscriptionConfig).map(([plan, config]) => (
@@ -2145,7 +2135,7 @@ const Settings: React.FC = () => {
                   </Typography>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <Typography gutterBottom>{t('settings.ai.temperature')}</Typography>
+                  <Typography gutterBottom>Temperature</Typography>
                   <Slider
                     value={parseFloat(temperature)}
                     onChange={(_e, value) => setTemperature(value.toString())}
@@ -2166,7 +2156,7 @@ const Settings: React.FC = () => {
                   </Typography>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <Typography gutterBottom>{t('settings.ai.contextLength')}</Typography>
+                  <Typography gutterBottom>Context Length</Typography>
                   <Slider
                     value={contextLength}
                     onChange={(_e, value) => setContextLength(value as number)}
@@ -2190,7 +2180,7 @@ const Settings: React.FC = () => {
             </SettingsSection>
 
             <SettingsSection
-              title={t('settings.ai.aiFeatures')}
+              title="AI Features"
               icon={<Widgets sx={{ color: theme.palette.primary.main }} />}
             >
               <Grid container spacing={3}>
@@ -2210,7 +2200,7 @@ const Settings: React.FC = () => {
                         label={
                           <Box>
                             <Typography variant="body2" fontWeight="medium">
-                              {t('settings.ai.aiAutoComplete')}
+                              AI Auto-Complete
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
                               Provides intelligent code completion as you type
@@ -2240,7 +2230,7 @@ const Settings: React.FC = () => {
                         label={
                           <Box>
                             <Typography variant="body2" fontWeight="medium">
-                              {t('settings.ai.codeSnippetsGeneration')}
+                              Code Snippets Generation
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
                               Generates boilerplate code and common patterns
@@ -2277,7 +2267,7 @@ const Settings: React.FC = () => {
                         label={
                           <Box>
                             <Typography variant="body2" fontWeight="medium">
-                              {t('settings.ai.aiSuggestions')}
+                              AI Suggestions
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
                               Provides real-time coding hints and refactoring suggestions
@@ -2307,7 +2297,7 @@ const Settings: React.FC = () => {
                         label={
                           <Box>
                             <Typography variant="body2" fontWeight="medium">
-                              {t('settings.ai.realTimeAnalysis')}
+                              Real-Time Analysis
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
                               Analyzes code quality and provides immediate feedback
@@ -2391,7 +2381,7 @@ const Settings: React.FC = () => {
 
           <TabPanel value={tabValue} index={2} breakpoint={breakpoint}>
             <SettingsSection
-              title={t('settings.notifications.notificationPreferences')}
+              title="Notification Preferences"
               icon={<NotificationsOutlined sx={{ color: theme.palette.primary.main }} />}
             >
               {notificationSettingsError && (
@@ -2403,7 +2393,7 @@ const Settings: React.FC = () => {
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
-                    {t('settings.notifications.notificationChannels')}
+                    Notification Channels
                   </Typography>
                   <FormGroup>
                     <FormControlLabel
@@ -2418,7 +2408,7 @@ const Settings: React.FC = () => {
                       label={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <EmailOutlined fontSize="small" />
-                          <Typography>{t('settings.notifications.emailNotifications')}</Typography>
+                          <Typography>Email Notifications</Typography>
                         </Box>
                       }
                     />
@@ -2443,9 +2433,7 @@ const Settings: React.FC = () => {
                       label={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <DesktopWindowsOutlined fontSize="small" />
-                          <Typography>
-                            {t('settings.notifications.desktopNotifications')}
-                          </Typography>
+                          <Typography>Desktop Notifications</Typography>
                         </Box>
                       }
                     />
@@ -2470,7 +2458,7 @@ const Settings: React.FC = () => {
                       label={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <NotificationsOutlined fontSize="small" />
-                          <Typography>{t('settings.notifications.soundNotifications')}</Typography>
+                          <Typography>Sound Notifications</Typography>
                         </Box>
                       }
                     />
@@ -2488,7 +2476,7 @@ const Settings: React.FC = () => {
 
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
-                    {t('settings.notifications.notificationTypes')}
+                    Notification Types
                   </Typography>
                   <FormGroup>
                     <FormControlLabel
@@ -2503,7 +2491,7 @@ const Settings: React.FC = () => {
                       label={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <AssignmentOutlined fontSize="small" />
-                          <Typography>{t('settings.notifications.assignmentUpdates')}</Typography>
+                          <Typography>Assignment Updates</Typography>
                         </Box>
                       }
                     />
@@ -2528,7 +2516,7 @@ const Settings: React.FC = () => {
                       label={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <EventOutlined fontSize="small" />
-                          <Typography>{t('settings.notifications.deadlineReminders')}</Typography>
+                          <Typography>Deadline Reminders</Typography>
                         </Box>
                       }
                     />
@@ -2553,9 +2541,7 @@ const Settings: React.FC = () => {
                       label={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <FeedbackOutlined fontSize="small" />
-                          <Typography>
-                            {t('settings.notifications.feedbackNotifications')}
-                          </Typography>
+                          <Typography>Feedback Notifications</Typography>
                         </Box>
                       }
                     />
@@ -2580,7 +2566,7 @@ const Settings: React.FC = () => {
                       label={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <UpdateOutlined fontSize="small" />
-                          <Typography>{t('settings.notifications.systemUpdates')}</Typography>
+                          <Typography>System Updates</Typography>
                         </Box>
                       }
                     />
@@ -2635,13 +2621,13 @@ const Settings: React.FC = () => {
             </SettingsSection>
 
             <SettingsSection
-              title={t('settings.notifications.displayPreferences')}
+              title="Display Preferences"
               icon={<NotificationsActiveOutlined sx={{ color: theme.palette.primary.main }} />}
             >
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
-                    {t('settings.notifications.displayPreferences')}
+                    Display Preferences
                   </Typography>
                   <FormGroup>
                     <FormControlLabel
@@ -2656,7 +2642,7 @@ const Settings: React.FC = () => {
                           }
                         />
                       }
-                      label={t('settings.notifications.showNotificationPreview')}
+                      label="Show Notification Preview"
                     />
                     {notificationPreferences.showPreview && (
                       <Typography
@@ -2679,7 +2665,7 @@ const Settings: React.FC = () => {
                           }
                         />
                       }
-                      label={t('settings.notifications.showNotificationBadge')}
+                      label="Show Notification Badge"
                     />
                     {notificationPreferences.showBadge && (
                       <Typography
@@ -2702,7 +2688,7 @@ const Settings: React.FC = () => {
                           }
                         />
                       }
-                      label={t('settings.notifications.groupSimilarNotifications')}
+                      label="Group Similar Notifications"
                     />
                     {notificationPreferences.groupNotifications && (
                       <Typography
@@ -2716,7 +2702,7 @@ const Settings: React.FC = () => {
                   </FormGroup>
 
                   <Typography variant="subtitle1" sx={{ mt: 3 }} gutterBottom>
-                    {t('settings.notifications.priorityLevel')}
+                    Priority Level
                   </Typography>
                   <FormControl fullWidth>
                     <Select
@@ -2728,11 +2714,9 @@ const Settings: React.FC = () => {
                         })
                       }
                     >
-                      <MenuItem value="low">{t('settings.notifications.lowPriority')}</MenuItem>
-                      <MenuItem value="medium">
-                        {t('settings.notifications.mediumPriority')}
-                      </MenuItem>
-                      <MenuItem value="high">{t('settings.notifications.highPriority')}</MenuItem>
+                      <MenuItem value="low">Low Priority</MenuItem>
+                      <MenuItem value="medium">Medium Priority</MenuItem>
+                      <MenuItem value="high">High Priority</MenuItem>
                     </Select>
                   </FormControl>
                   <Typography
@@ -2829,21 +2813,21 @@ const Settings: React.FC = () => {
             </SettingsSection>
 
             <SettingsSection
-              title={t('settings.notifications.workHours')}
+              title="Work Hours"
               icon={<EventOutlined sx={{ color: theme.palette.primary.main }} />}
             >
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
-                    {t('settings.notifications.workHours')}
+                    Work Hours
                   </Typography>
                   <Grid container spacing={2}>
                     <Grid item xs={6}>
                       <FormControl fullWidth>
-                        <InputLabel>{t('settings.sound.startTime')}</InputLabel>
+                        <InputLabel>Start Time</InputLabel>
                         <Select
                           value={notificationSchedule.workHoursStart}
-                          label={t('settings.sound.startTime')}
+                          label="Start Time"
                           onChange={e =>
                             setNotificationSchedule({
                               ...notificationSchedule,
@@ -2863,10 +2847,10 @@ const Settings: React.FC = () => {
                     </Grid>
                     <Grid item xs={6}>
                       <FormControl fullWidth>
-                        <InputLabel>{t('settings.sound.endTime')}</InputLabel>
+                        <InputLabel>End Time</InputLabel>
                         <Select
                           value={notificationSchedule.workHoursEnd}
-                          label={t('settings.sound.endTime')}
+                          label="End Time"
                           onChange={e =>
                             setNotificationSchedule({
                               ...notificationSchedule,
@@ -2896,7 +2880,7 @@ const Settings: React.FC = () => {
 
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
-                    {t('settings.notifications.workDays')}
+                    Work Days
                   </Typography>
                   <FormGroup row>
                     {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, index) => (
@@ -2934,21 +2918,21 @@ const Settings: React.FC = () => {
             </SettingsSection>
 
             <SettingsSection
-              title={t('settings.sound.quietHours')}
+              title="Quiet Hours"
               icon={<NotificationsOutlined sx={{ color: theme.palette.primary.main }} />}
             >
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
-                    {t('settings.sound.quietHours')}
+                    Quiet Hours
                   </Typography>
                   <Grid container spacing={2}>
                     <Grid item xs={12} md={6}>
                       <FormControl fullWidth>
-                        <InputLabel>{t('settings.sound.startTime')}</InputLabel>
+                        <InputLabel>Start Time</InputLabel>
                         <Select
                           value={notificationSchedule.quietHoursStart}
-                          label={t('settings.sound.startTime')}
+                          label="Start Time"
                           onChange={e =>
                             setNotificationSchedule({
                               ...notificationSchedule,
@@ -2968,10 +2952,10 @@ const Settings: React.FC = () => {
                     </Grid>
                     <Grid item xs={12} md={6}>
                       <FormControl fullWidth>
-                        <InputLabel>{t('settings.sound.endTime')}</InputLabel>
+                        <InputLabel>End Time</InputLabel>
                         <Select
                           value={notificationSchedule.quietHoursEnd}
-                          label={t('settings.sound.endTime')}
+                          label="End Time"
                           onChange={e =>
                             setNotificationSchedule({
                               ...notificationSchedule,
@@ -3022,7 +3006,7 @@ const Settings: React.FC = () => {
 
           <TabPanel value={tabValue} index={3} breakpoint={breakpoint}>
             <SettingsSection
-              title={t('settings.privacy.securityScore')}
+              title="Security Score"
               icon={<SecurityOutlined sx={{ color: theme.palette.primary.main }} />}
             >
               {privacySettingsError && (
@@ -3041,7 +3025,7 @@ const Settings: React.FC = () => {
                     gap: { xs: 1, sm: 2 },
                   }}
                 >
-                  <Typography variant="h6">{t('settings.privacy.securityScore')}</Typography>
+                  <Typography variant="h6">Security Score</Typography>
                   <Typography
                     variant="h4"
                     sx={{
@@ -3078,7 +3062,7 @@ const Settings: React.FC = () => {
                   color="text.secondary"
                   sx={{ mt: 1, display: 'block' }}
                 >
-                  {t('settings.privacy.lastSecurityAudit')}: {securitySettings.lastSecurityAudit}
+                  Last Security Audit: {securitySettings.lastSecurityAudit}
                 </Typography>
               </Box>
 
@@ -3229,13 +3213,13 @@ const Settings: React.FC = () => {
             </SettingsSection>
 
             <SettingsSection
-              title={t('settings.privacy.privacySettings')}
+              title="Privacy Settings"
               icon={<PrivacyTipOutlined sx={{ color: theme.palette.primary.main }} />}
             >
               <Grid container spacing={{ xs: 2, md: 3 }}>
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
-                    {t('settings.privacy.dataPrivacy')}
+                    Data Privacy
                   </Typography>
                   <FormGroup>
                     <FormControlLabel
@@ -3256,7 +3240,7 @@ const Settings: React.FC = () => {
                         >
                           <DataUsageOutlined fontSize="small" />
                           <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
-                            {t('settings.privacy.allowDataCollection')}
+                            Allow Data Collection
                           </Typography>
                         </Box>
                       }
@@ -3288,7 +3272,7 @@ const Settings: React.FC = () => {
                         >
                           <AnalyticsOutlined fontSize="small" />
                           <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
-                            {t('settings.privacy.shareAnalytics')}
+                            Share Analytics
                           </Typography>
                         </Box>
                       }
@@ -3320,7 +3304,7 @@ const Settings: React.FC = () => {
                         >
                           <VisibilityOutlined fontSize="small" />
                           <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
-                            {t('settings.privacy.showOnlineStatus')}
+                            Show Online Status
                           </Typography>
                         </Box>
                       }
@@ -3352,7 +3336,7 @@ const Settings: React.FC = () => {
                         >
                           <VisibilityOffOutlined fontSize="small" />
                           <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
-                            {t('settings.privacy.allowActivityTracking')}
+                            Allow Activity Tracking
                           </Typography>
                         </Box>
                       }
@@ -3371,7 +3355,7 @@ const Settings: React.FC = () => {
 
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
-                    {t('settings.privacy.accountSecurity')}
+                    Account Security
                   </Typography>
                   <FormGroup>
                     <FormControlLabel
@@ -3392,7 +3376,7 @@ const Settings: React.FC = () => {
                         >
                           <ShieldOutlined fontSize="small" />
                           <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
-                            {t('settings.privacy.twoFactorAuthentication')}
+                            Two-Factor Authentication
                           </Typography>
                         </Box>
                       }
@@ -3424,7 +3408,7 @@ const Settings: React.FC = () => {
                         >
                           <FingerprintOutlined fontSize="small" />
                           <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
-                            {t('settings.privacy.biometricLogin')}
+                            Biometric Login
                           </Typography>
                         </Box>
                       }
@@ -3456,7 +3440,7 @@ const Settings: React.FC = () => {
                         >
                           <LockOutlined fontSize="small" />
                           <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
-                            {t('settings.privacy.autoLockAccount')}
+                            Auto-Lock Account
                           </Typography>
                         </Box>
                       }
@@ -3474,7 +3458,7 @@ const Settings: React.FC = () => {
                   </FormGroup>
 
                   <Typography variant="subtitle1" sx={{ mt: 3 }} gutterBottom>
-                    {t('settings.privacy.autoLockTimeout')}
+                    Auto-Lock Timeout
                   </Typography>
                   <FormControl fullWidth>
                     <Select
@@ -3501,7 +3485,7 @@ const Settings: React.FC = () => {
 
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
-                    {t('settings.privacy.securityInformation')}
+                    Security Information
                   </Typography>
                   <List dense>
                     <ListItem sx={{ px: { xs: 0, md: 2 } }}>
@@ -3509,7 +3493,7 @@ const Settings: React.FC = () => {
                         <VpnKeyOutlined />
                       </ListItemIcon>
                       <ListItemText
-                        primary={t('settings.privacy.passwordStrength')}
+                        primary="Password Strength"
                         secondary={
                           securitySettings.passwordStrength.charAt(0).toUpperCase() +
                           securitySettings.passwordStrength.slice(1)

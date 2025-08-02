@@ -25,7 +25,6 @@ import {
 import React from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useTranslation } from '../hooks/useTranslation';
 
 const expandedWidth = 250;
 
@@ -35,25 +34,24 @@ const Dashboard: React.FC = () => {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const { t } = useTranslation();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
 
   const menuItems = [
-    { text: t('navigation.home'), icon: <HomeIcon />, path: '/dashboard' },
-    { text: t('navigation.assignments'), icon: <AssignmentIcon />, path: '/dashboard/assignments' },
-    { text: t('navigation.workshop'), icon: <EditIcon />, path: '/dashboard/workshop' },
-    { text: t('navigation.aiTokens'), icon: <CurrencyBitcoinIcon />, path: '/dashboard/ai-tokens' },
+    { text: 'Home', icon: <HomeIcon />, path: '/dashboard' },
+    { text: 'Assignments', icon: <AssignmentIcon />, path: '/dashboard/assignments' },
+    { text: 'Workshop', icon: <EditIcon />, path: '/dashboard/workshop' },
+    { text: 'AI Tokens', icon: <CurrencyBitcoinIcon />, path: '/dashboard/ai-tokens' },
     {
-      text: t('navigation.pricePlan'),
+      text: 'Price Plan',
       icon: <MonetizationOnIcon />,
       path: '/dashboard/price-plan',
     },
-    { text: t('navigation.settings'), icon: <SettingsIcon />, path: '/dashboard/settings' },
-    { text: t('navigation.profile'), icon: <AccountCircleIcon />, path: '/dashboard/profile' },
-    { text: t('navigation.help'), icon: <HelpIcon />, path: '/dashboard/help' },
+    { text: 'Settings', icon: <SettingsIcon />, path: '/dashboard/settings' },
+    { text: 'Profile', icon: <AccountCircleIcon />, path: '/dashboard/profile' },
+    { text: 'Help', icon: <HelpIcon />, path: '/dashboard/help' },
   ];
 
   const drawerWidth = expandedWidth;
@@ -103,7 +101,7 @@ const Dashboard: React.FC = () => {
             width: '100%',
           }}
         >
-          {t('common.appName')}
+          AssignmentAI
         </Typography>
       </Box>
 
@@ -171,7 +169,7 @@ const Dashboard: React.FC = () => {
           color="primary.contrastText"
           sx={{ opacity: 0.7, fontSize: '0.9rem' }}
         >
-          © {new Date().getFullYear()} {t('common.appName')}
+          © {new Date().getFullYear()} AssignmentAI
         </Typography>
       </Box>
     </Box>

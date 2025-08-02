@@ -47,7 +47,6 @@ import {
 } from '@mui/material';
 import { animate, motion } from 'framer-motion';
 import React, { useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 import {
   Bar,
@@ -184,7 +183,6 @@ const VerticalDividers = ({ xAxisMap, yAxisMap }: any) => {
 };
 
 const Workshop: React.FC = () => {
-  const { t } = useTranslation();
   const theme = useTheme();
   const location = useLocation();
   const { isMockUser } = useAuth();
@@ -473,7 +471,7 @@ const Workshop: React.FC = () => {
               fullWidth
               multiline
               rows={4}
-              placeholder={t('pages.workshop.typeMessagePlaceholder')}
+              placeholder="Type your message here..."
               variant="outlined"
               value={input}
               onChange={e => setInput(e.target.value)}
@@ -503,7 +501,7 @@ const Workshop: React.FC = () => {
                   },
                 }}
               >
-                {t('pages.workshop.sendMessage')}
+                Send Message
               </Button>
               <Button
                 variant="outlined"
@@ -518,7 +516,7 @@ const Workshop: React.FC = () => {
                   },
                 }}
               >
-                {t('pages.workshop.clear')}
+                Clear
               </Button>
             </Box>
           </Box>
@@ -531,7 +529,7 @@ const Workshop: React.FC = () => {
             <form onSubmit={handleLinkSubmit}>
               <TextField
                 fullWidth
-                placeholder={t('pages.workshop.pasteLinkPlaceholder')}
+                placeholder="Paste a link here..."
                 variant="outlined"
                 value={linkInput}
                 onChange={e => setLinkInput(e.target.value)}
@@ -561,7 +559,7 @@ const Workshop: React.FC = () => {
                     },
                   }}
                 >
-                  {t('pages.workshop.processLink')}
+                  Process Link
                 </Button>
                 <Button
                   variant="outlined"
@@ -576,7 +574,7 @@ const Workshop: React.FC = () => {
                     },
                   }}
                 >
-                  {t('pages.workshop.clear')}
+                  Clear
                 </Button>
               </Box>
             </form>
@@ -592,12 +590,12 @@ const Workshop: React.FC = () => {
     if (!active || !payload || !payload.length) return null;
     const point = payload[0].payload;
     const allKeys = [
-      { key: 'chats', label: t('pages.workshop.chats'), color: '#E53935' },
-      { key: 'summarize', label: t('pages.workshop.summarize'), color: '#FB8C00' },
-      { key: 'extract', label: t('pages.workshop.extract'), color: '#FDD835' },
-      { key: 'links', label: t('pages.workshop.links'), color: '#43A047' },
-      { key: 'rewrite', label: t('pages.workshop.rewrite'), color: '#1E88E5' },
-      { key: 'files', label: t('pages.workshop.files'), color: '#8E24AA' },
+      { key: 'chats', label: 'Chats', color: '#E53935' },
+      { key: 'summarize', label: 'Summarize', color: '#FB8C00' },
+      { key: 'extract', label: 'Extract', color: '#FDD835' },
+      { key: 'links', label: 'Links', color: '#43A047' },
+      { key: 'rewrite', label: 'Rewrite', color: '#1E88E5' },
+      { key: 'files', label: 'Files', color: '#8E24AA' },
     ];
     return (
       <Paper sx={{ p: 2, boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
@@ -732,7 +730,7 @@ const Workshop: React.FC = () => {
                 fontWeight: { xs: 600, md: 400 },
               }}
             >
-              {t('pages.workshop.title')}
+              AI Workshop
             </Typography>
             <Button
               variant="outlined"
@@ -748,7 +746,7 @@ const Workshop: React.FC = () => {
                 py: { xs: 0.5, sm: 1 },
               }}
             >
-              {t('pages.workshop.history')}
+              History
             </Button>
           </Box>
         </CardContent>
@@ -818,9 +816,9 @@ const Workshop: React.FC = () => {
                   mb: { xs: 0.5, sm: 1 },
                 }}
               >
-                {t('pages.workshop.weeklyActivityOverview')}
+                Weekly Activity Overview
               </Typography>
-              <Tooltip title={t('pages.workshop.activityTooltip')} arrow>
+              <Tooltip title="View your AI activity over time" arrow>
                 <InfoOutlinedIcon
                   sx={{
                     color: 'gray',
@@ -847,10 +845,10 @@ const Workshop: React.FC = () => {
               >
                 <BarChartOutlinedIcon sx={{ fontSize: 64, color: 'red', mb: 2, opacity: 0.5 }} />
                 <Typography variant="h5" color="text.secondary" gutterBottom>
-                  {t('pages.workshop.noActivityYet')}
+                  No activity yet
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {t('pages.workshop.noActivityText')}
+                  Start using the workshop to see your activity here
                 </Typography>
               </Box>
             ) : (
@@ -917,7 +915,7 @@ const Workshop: React.FC = () => {
                       fill="#E53935"
                       fillOpacity={selectedArea ? (selectedArea === 'chats' ? 0.8 : 0.15) : 0.4}
                       strokeOpacity={selectedArea ? (selectedArea === 'chats' ? 1 : 0.3) : 1}
-                      name={t('pages.workshop.chats')}
+                      name="Chats"
                       radius={[4, 4, 0, 0]}
                     />
                     <Bar
@@ -927,7 +925,7 @@ const Workshop: React.FC = () => {
                       fill="#FB8C00"
                       fillOpacity={selectedArea ? (selectedArea === 'summarize' ? 0.8 : 0.15) : 0.4}
                       strokeOpacity={selectedArea ? (selectedArea === 'summarize' ? 1 : 0.3) : 1}
-                      name={t('pages.workshop.summarize')}
+                      name="Summarize"
                       radius={[4, 4, 0, 0]}
                     />
                     <Bar
@@ -937,7 +935,7 @@ const Workshop: React.FC = () => {
                       fill="#FDD835"
                       fillOpacity={selectedArea ? (selectedArea === 'extract' ? 0.8 : 0.15) : 0.4}
                       strokeOpacity={selectedArea ? (selectedArea === 'extract' ? 1 : 0.3) : 1}
-                      name={t('pages.workshop.extract')}
+                      name="Extract"
                       radius={[4, 4, 0, 0]}
                     />
                     <Bar
@@ -947,7 +945,7 @@ const Workshop: React.FC = () => {
                       fill="#43A047"
                       fillOpacity={selectedArea ? (selectedArea === 'links' ? 0.8 : 0.15) : 0.4}
                       strokeOpacity={selectedArea ? (selectedArea === 'links' ? 1 : 0.3) : 1}
-                      name={t('pages.workshop.links')}
+                      name="Links"
                       radius={[4, 4, 0, 0]}
                     />
                     <Bar
@@ -957,7 +955,7 @@ const Workshop: React.FC = () => {
                       fill="#1E88E5"
                       fillOpacity={selectedArea ? (selectedArea === 'rewrite' ? 0.8 : 0.15) : 0.4}
                       strokeOpacity={selectedArea ? (selectedArea === 'rewrite' ? 1 : 0.3) : 1}
-                      name={t('pages.workshop.rewrite')}
+                      name="Rewrite"
                       radius={[4, 4, 0, 0]}
                     />
                     <Bar
@@ -967,7 +965,7 @@ const Workshop: React.FC = () => {
                       fill="#8E24AA"
                       fillOpacity={selectedArea ? (selectedArea === 'files' ? 0.8 : 0.15) : 0.4}
                       strokeOpacity={selectedArea ? (selectedArea === 'files' ? 1 : 0.3) : 1}
-                      name={t('pages.workshop.files')}
+                      name="Files"
                       radius={[4, 4, 0, 0]}
                     />
                   </BarChart>
@@ -1014,7 +1012,7 @@ const Workshop: React.FC = () => {
                   textAlign: { xs: 'left', sm: 'left' },
                 }}
               >
-                {t('pages.workshop.uploadContent')}
+                Upload Content
               </Typography>
               <Tabs
                 value={activeTab}
@@ -1027,7 +1025,7 @@ const Workshop: React.FC = () => {
                 }}
               >
                 <Tab
-                  label={t('pages.workshop.chat')}
+                  label="Chat"
                   icon={<ChatOutlinedIcon sx={{ color: 'red' }} />}
                   iconPosition="start"
                   sx={{
@@ -1046,7 +1044,7 @@ const Workshop: React.FC = () => {
                   }}
                 />
                 <Tab
-                  label={t('pages.workshop.files')}
+                  label="Files"
                   icon={<UploadOutlinedIcon sx={{ color: '#8884d8' }} />}
                   iconPosition="start"
                   sx={{
@@ -1065,7 +1063,7 @@ const Workshop: React.FC = () => {
                   }}
                 />
                 <Tab
-                  label={t('pages.workshop.links')}
+                  label="Links"
                   icon={<LinkOutlinedIcon sx={{ color: '#82ca9d' }} />}
                   iconPosition="start"
                   sx={{
@@ -1137,10 +1135,10 @@ const Workshop: React.FC = () => {
                     fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' },
                   }}
                 >
-                  {t('pages.workshop.aiResponse')}
+                  AI Response
                 </Typography>
                 <Box sx={{ display: 'flex', gap: { xs: 0.5, sm: 1 } }}>
-                  <Tooltip title={t('pages.workshop.clearChat')}>
+                  <Tooltip title="Clear Chat">
                     <IconButton
                       size="small"
                       sx={{
@@ -1156,7 +1154,7 @@ const Workshop: React.FC = () => {
                       <DeleteOutlined />
                     </IconButton>
                   </Tooltip>
-                  <Tooltip title={isCopied ? t('pages.workshop.copied') : t('pages.workshop.copy')}>
+                  <Tooltip title={isCopied ? 'Copied!' : 'Copy'}>
                     <IconButton
                       size="small"
                       sx={{
@@ -1172,7 +1170,7 @@ const Workshop: React.FC = () => {
                       <ContentCopyIcon />
                     </IconButton>
                   </Tooltip>
-                  <Tooltip title={t('pages.workshop.regenerate')}>
+                  <Tooltip title="Regenerate">
                     <IconButton
                       size="small"
                       sx={{
@@ -1209,7 +1207,7 @@ const Workshop: React.FC = () => {
                 }}
               >
                 <Tab
-                  label={t('pages.workshop.download')}
+                  label="Download"
                   icon={
                     <DownloadOutlinedIcon
                       sx={{ color: '#9c27b0', fontSize: { xs: '1rem', sm: '1.25rem' } }}
@@ -1232,7 +1230,7 @@ const Workshop: React.FC = () => {
                   }}
                 />
                 <Tab
-                  label={t('pages.workshop.rewrite')}
+                  label="Rewrite"
                   icon={
                     <EditOutlinedIcon
                       sx={{ color: '#2196f3', fontSize: { xs: '1rem', sm: '1.25rem' } }}
@@ -1256,7 +1254,7 @@ const Workshop: React.FC = () => {
                   ref={rewriteTabRef}
                 />
                 <Tab
-                  label={t('pages.workshop.extract')}
+                  label="Extract"
                   icon={
                     <FormatListBulletedIcon
                       sx={{ color: '#ffc107', fontSize: { xs: '1rem', sm: '1.25rem' } }}
@@ -1279,7 +1277,7 @@ const Workshop: React.FC = () => {
                   }}
                 />
                 <Tab
-                  label={t('pages.workshop.summarize')}
+                  label="Summarize"
                   icon={
                     <RecordVoiceOverOutlined
                       sx={{ color: '#ff9800', fontSize: { xs: '1rem', sm: '1.25rem' } }}
@@ -1366,7 +1364,7 @@ const Workshop: React.FC = () => {
                       </Box>
                       {item.fileCategory && (
                         <Chip
-                          label={`${t('pages.workshop.file')}: ${item.fileCategory}`}
+                          label={`File: ${item.fileCategory}`}
                           size="small"
                           sx={{
                             mr: 1,
@@ -1378,7 +1376,7 @@ const Workshop: React.FC = () => {
                       )}
                       {item.hasDiagram && (
                         <Chip
-                          label={t('pages.workshop.diagramGenerated')}
+                          label="Diagram Generated"
                           size="small"
                           sx={{
                             backgroundColor: 'rgba(255, 152, 0, 0.1)',
@@ -1410,10 +1408,10 @@ const Workshop: React.FC = () => {
                 >
                   <ChatIcon sx={{ fontSize: 48, color: 'red', mb: 2, opacity: 0.5 }} />
                   <Typography variant="h6" color="text.secondary" gutterBottom>
-                    {t('pages.workshop.noResponsesYet')}
+                    No responses yet
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {t('pages.workshop.startConversationText')}
+                    Start a conversation to see AI responses here
                   </Typography>
                 </Box>
               )}
@@ -1432,7 +1430,7 @@ const Workshop: React.FC = () => {
                   onClick={handleDownloadAIContent}
                   disabled={workshopHistory.length === 0}
                 >
-                  {t('pages.workshop.downloadAIResponse')}
+                  Download AI Response
                 </Button>
               </Box>
             )}
@@ -1465,26 +1463,26 @@ const Workshop: React.FC = () => {
               gutterBottom
               sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' } }}
             >
-              {t('pages.workshop.quickActions')}
+              Quick Actions
             </Typography>
             <List>
               <ListItem button onClick={() => handleQuickActionClick(0)}>
                 <ListItemIcon>
                   <ChatOutlinedIcon sx={{ color: 'red' }} />
                 </ListItemIcon>
-                <ListItemText primary={t('pages.workshop.startNewChat')} />
+                <ListItemText primary="Start New Chat" />
               </ListItem>
               <ListItem button onClick={() => handleQuickActionClick(1)}>
                 <ListItemIcon>
                   <UploadOutlinedIcon sx={{ color: '#8884d8' }} />
                 </ListItemIcon>
-                <ListItemText primary={t('pages.workshop.uploadNewDocument')} />
+                <ListItemText primary="Upload New Document" />
               </ListItem>
               <ListItem button onClick={() => handleQuickActionClick(2)}>
                 <ListItemIcon>
                   <LinkOutlinedIcon sx={{ color: '#82ca9d' }} />
                 </ListItemIcon>
-                <ListItemText primary={t('pages.workshop.addExternalLink')} />
+                <ListItemText primary="Add External Link" />
               </ListItem>
             </List>
           </Paper>
@@ -1509,44 +1507,29 @@ const Workshop: React.FC = () => {
               gutterBottom
               sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' } }}
             >
-              {t('pages.workshop.aiSuggestions')}
+              AI Suggestions
             </Typography>
             <List>
-              <ListItem
-                button
-                onClick={() => handleSuggestionClick(t('pages.workshop.summarizeContent'), 3)}
-              >
+              <ListItem button onClick={() => handleSuggestionClick('Summarize this content', 3)}>
                 <ListItemIcon>
                   <RecordVoiceOverOutlined sx={{ color: '#ff9800' }} />
                 </ListItemIcon>
                 <ListItemText
-                  primary={t('pages.workshop.summarize')}
-                  secondary={t('pages.workshop.summarizeDescription')}
+                  primary="Summarize"
+                  secondary="Get a concise summary of the content"
                 />
               </ListItem>
-              <ListItem
-                button
-                onClick={() => handleSuggestionClick(t('pages.workshop.extractKeyPoints'), 2)}
-              >
+              <ListItem button onClick={() => handleSuggestionClick('Extract key points', 2)}>
                 <ListItemIcon>
                   <FormatListBulletedIcon sx={{ color: '#ffc107' }} />
                 </ListItemIcon>
-                <ListItemText
-                  primary={t('pages.workshop.extract')}
-                  secondary={t('pages.workshop.extractDescription')}
-                />
+                <ListItemText primary="Extract" secondary="Extract the main points and insights" />
               </ListItem>
-              <ListItem
-                button
-                onClick={() => handleSuggestionClick(t('pages.workshop.rewriteContent'), 1)}
-              >
+              <ListItem button onClick={() => handleSuggestionClick('Rewrite this content', 1)}>
                 <ListItemIcon>
                   <EditOutlinedIcon sx={{ color: '#2196f3' }} />
                 </ListItemIcon>
-                <ListItemText
-                  primary={t('pages.workshop.rewrite')}
-                  secondary={t('pages.workshop.rewriteDescription')}
-                />
+                <ListItemText primary="Rewrite" secondary="Rewrite content in a different style" />
               </ListItem>
             </List>
           </Paper>
@@ -1572,26 +1555,26 @@ const Workshop: React.FC = () => {
                 gutterBottom
                 sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' } }}
               >
-                {t('pages.workshop.fileActions')}
+                File Actions
               </Typography>
               <List>
                 <ListItem button onClick={() => handleFileAction('summarize')}>
                   <ListItemIcon>
                     <RecordVoiceOverOutlined sx={{ color: '#ff9800' }} />
                   </ListItemIcon>
-                  <ListItemText primary={t('pages.workshop.summarizeFile')} />
+                  <ListItemText primary="Summarize File" />
                 </ListItem>
                 <ListItem button onClick={() => handleFileAction('extract')}>
                   <ListItemIcon>
                     <FormatListBulletedIcon sx={{ color: '#ffc107' }} />
                   </ListItemIcon>
-                  <ListItemText primary={t('pages.workshop.extractKeyPoints')} />
+                  <ListItemText primary="Extract Key Points" />
                 </ListItem>
                 <ListItem button onClick={() => handleFileAction('rewrite')}>
                   <ListItemIcon>
                     <EditOutlinedIcon sx={{ color: '#2196f3' }} />
                   </ListItemIcon>
-                  <ListItemText primary={t('pages.workshop.rewriteContent')} />
+                  <ListItemText primary="Rewrite Content" />
                 </ListItem>
               </List>
             </Paper>
@@ -1621,7 +1604,7 @@ const Workshop: React.FC = () => {
               gutterBottom
               sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' } }}
             >
-              {t('pages.workshop.assignmentTokens')}
+              Assignment Tokens
             </Typography>
             <Box
               sx={{
@@ -1808,8 +1791,8 @@ const Workshop: React.FC = () => {
       >
         <Box sx={{ width: 350, p: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-            <Typography variant="h6">{t('pages.workshop.recentHistory')}</Typography>
-            <Tooltip title={t('pages.workshop.pinItemsTooltip')} arrow>
+            <Typography variant="h6">Recent History</Typography>
+            <Tooltip title="Pin important items for quick access" arrow>
               <InfoOutlinedIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
             </Tooltip>
           </Box>
@@ -1823,10 +1806,10 @@ const Workshop: React.FC = () => {
             >
               <HistoryOutlinedIcon sx={{ fontSize: 54, color: 'red', mb: 2, opacity: 0.5 }} />
               <Typography variant="h5" color="text.secondary" gutterBottom>
-                {t('pages.workshop.noHistoryYet')}
+                No history yet
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {t('pages.workshop.noHistoryText')}
+                Your workshop activity will appear here
               </Typography>
             </Box>
           ) : (
@@ -1900,7 +1883,7 @@ const Workshop: React.FC = () => {
         content=""
         aiResponse=""
         isLoading={false}
-        title={t('pages.workshop.aiResponse')}
+        title="AI Response"
       />
     </Box>
   );

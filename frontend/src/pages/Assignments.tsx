@@ -49,7 +49,6 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import dayjs, { Dayjs } from 'dayjs';
 import React, { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import AssignmentEditDialog from '../components/assignments/AssignmentEdit';
@@ -82,7 +81,6 @@ const Assignments: React.FC = () => {
   const navigate = useNavigate();
   const { isMockUser } = useAuth();
   const { breakpoint } = useAspectRatio();
-  const { t } = useTranslation();
 
   // Get user's date format preference (default to locale-based format if not set)
   const userDateFormat =
@@ -509,7 +507,7 @@ const Assignments: React.FC = () => {
                     ),
                   }}
                 >
-                  {t('assignments.title')}
+                  Assignments
                 </Typography>
                 <Typography
                   variant="subtitle1"
@@ -532,7 +530,7 @@ const Assignments: React.FC = () => {
                     ),
                   }}
                 >
-                  {t('assignments.description')}
+                  Manage and track all your academic assignments in one place
                 </Typography>
               </Box>
               <Box sx={{ textAlign: { xs: 'left', md: 'right' } }}>
@@ -541,14 +539,14 @@ const Assignments: React.FC = () => {
                   color="text.primary"
                   sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}
                 >
-                  {t('assignments.totalAssignments')}: {stats.total}
+                  Total Assignments: {stats.total}
                 </Typography>
                 <Typography
                   variant="body2"
                   color="text.primary"
                   sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}
                 >
-                  {t('assignments.completedAssignments')}: {stats.completed}
+                  Completed Assignments: {stats.completed}
                 </Typography>
               </Box>
             </Box>
@@ -576,7 +574,7 @@ const Assignments: React.FC = () => {
           {/* Search Bar - Full Width on Mobile, First Position */}
           <Grid item xs={12} md={3}>
             <TextField
-              placeholder={t('assignments.filterByName')}
+              placeholder="Filter by name..."
               value={filterName}
               onChange={e => setFilterName(e.target.value)}
               fullWidth

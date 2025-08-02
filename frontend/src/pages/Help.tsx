@@ -39,7 +39,6 @@ import {
 } from '@mui/material';
 import CircularProgress from '@mui/material/CircularProgress';
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { helpService } from '../services/helpService';
@@ -127,14 +126,13 @@ const HelpSection = ({ title, icon, children, breakpoint = 'standard' }: any) =>
 };
 
 const Help: React.FC = () => {
-  const { t } = useTranslation();
   const theme = useTheme();
   const { user } = useAuth?.() || {};
   const { breakpoint } = useAspectRatio();
   const [tabValue, setTabValue] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedFaqs, setExpandedFaqs] = useState<{ [key: string]: boolean }>({});
-  const [selectedCategory, setSelectedCategory] = useState<string>(t('pages.help.allQuestions'));
+  const [selectedCategory, setSelectedCategory] = useState<string>('All Questions');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
@@ -145,70 +143,76 @@ const Help: React.FC = () => {
   // FAQ and quick links data
   const faqData = [
     {
-      category: t('pages.help.gettingStarted'),
+      category: 'Getting Started',
       questions: [
         {
-          question: t('pages.help.howToGetStarted'),
-          answer: t('pages.help.getStartedAnswer'),
+          question: 'How do I get started with AssignmentAI?',
+          answer:
+            'Getting started is easy! Simply create an account, upload your first assignment, and our AI will help you analyze and improve it.',
         },
         {
-          question: t('pages.help.supportedAssignments'),
-          answer: t('pages.help.supportedAssignmentsAnswer'),
+          question: 'What types of assignments are supported?',
+          answer:
+            'We support a wide range of academic assignments including essays, research papers, reports, and more.',
         },
         {
-          question: t('pages.help.createFirstAssignment'),
-          answer: t('pages.help.createFirstAssignmentAnswer'),
+          question: 'How do I create my first assignment?',
+          answer:
+            'Navigate to the Assignments page and click "Upload Content" to add your first assignment.',
         },
       ],
     },
     {
-      category: t('pages.help.aiFeatures'),
+      category: 'AI Features',
       questions: [
         {
-          question: t('pages.help.aiTokenSystem'),
-          answer: t('pages.help.aiTokenSystemAnswer'),
+          question: 'How does the AI token system work?',
+          answer:
+            'Tokens are used to power AI features. Each action consumes tokens based on complexity.',
         },
         {
-          question: t('pages.help.collaboration'),
-          answer: t('pages.help.collaborationAnswer'),
+          question: 'Can I collaborate with others?',
+          answer: 'Yes! You can share assignments and collaborate with classmates or study groups.',
         },
         {
-          question: t('pages.help.aiAccuracy'),
-          answer: t('pages.help.aiAccuracyAnswer'),
+          question: 'How accurate is the AI analysis?',
+          answer:
+            'Our AI provides high-quality analysis, but we recommend reviewing all suggestions.',
         },
         {
-          question: t('pages.help.plagiarismDetection'),
-          answer: t('pages.help.plagiarismDetectionAnswer'),
+          question: 'Does AssignmentAI detect plagiarism?',
+          answer:
+            'Yes, our system includes plagiarism detection features to ensure academic integrity.',
         },
       ],
     },
     {
-      category: t('pages.help.accountSettings'),
+      category: 'Account & Settings',
       questions: [
         {
-          question: t('pages.help.changePassword'),
-          answer: t('pages.help.changePasswordAnswer'),
+          question: 'How do I change my password?',
+          answer: 'Go to Settings > Privacy & Security to change your password.',
         },
         {
-          question: t('pages.help.exportAssignments'),
-          answer: t('pages.help.exportAssignmentsAnswer'),
+          question: 'Can I export my assignments?',
+          answer: 'Yes, you can export assignments in various formats from the Assignments page.',
         },
         {
-          question: t('pages.help.enable2FA'),
-          answer: t('pages.help.enable2FAAnswer'),
+          question: 'How do I enable two-factor authentication?',
+          answer: 'Navigate to Settings > Privacy & Security to set up 2FA for enhanced security.',
         },
       ],
     },
     {
-      category: t('pages.help.subscriptionBilling'),
+      category: 'Subscription & Billing',
       questions: [
         {
-          question: t('pages.help.changePlan'),
-          answer: t('pages.help.changePlanAnswer'),
+          question: 'How do I change my subscription plan?',
+          answer: 'Visit the Price Plan page to upgrade or downgrade your subscription.',
         },
         {
-          question: t('pages.help.freeTrial'),
-          answer: t('pages.help.freeTrialAnswer'),
+          question: 'Is there a free trial available?',
+          answer: 'Yes, we offer a free trial for new users to explore our features.',
         },
       ],
     },
@@ -242,7 +246,7 @@ const Help: React.FC = () => {
   ];
 
   // Category chips
-  const allCategories = [t('pages.help.allQuestions'), ...faqData.map(c => c.category)];
+  const allCategories = ['All Questions', ...faqData.map(c => c.category)];
 
   // Filtered FAQ data with category and search
   const filteredFaqData = faqData
@@ -329,7 +333,7 @@ const Help: React.FC = () => {
     if (!contactForm.subject.trim() || !contactForm.message.trim()) {
       setSnackbar({
         open: true,
-        message: t('errors.required'),
+        message: 'This field is required',
         severity: 'error',
       });
       return;
@@ -338,7 +342,7 @@ const Help: React.FC = () => {
     if (!contactForm.email.trim() || !contactForm.email.includes('@')) {
       setSnackbar({
         open: true,
-        message: t('errors.invalidEmail'),
+        message: 'Please enter a valid email address',
         severity: 'error',
       });
       return;
@@ -358,7 +362,7 @@ const Help: React.FC = () => {
 
       setSnackbar({
         open: true,
-        message: t('pages.help.contactForm.messageSent'),
+        message: 'Message sent successfully!',
         severity: 'success',
       });
 
@@ -374,7 +378,7 @@ const Help: React.FC = () => {
     } catch (error: any) {
       setSnackbar({
         open: true,
-        message: error.response?.data?.message || t('pages.help.contactForm.sendFailed'),
+        message: error.response?.data?.message || 'Failed to send message',
         severity: 'error',
       });
     } finally {
@@ -426,10 +430,10 @@ const Help: React.FC = () => {
             fontSize: { xs: '1.75rem', md: '2.125rem' },
           }}
         >
-          {t('pages.help.title')}
+          Help & Support
         </Typography>
         <TextField
-          placeholder={t('pages.help.searchHelp')}
+          placeholder="Search help articles..."
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
           sx={{
@@ -454,7 +458,7 @@ const Help: React.FC = () => {
               </InputAdornment>
             ),
             inputProps: {
-              'aria-label': t('pages.help.searchHelp'),
+              'aria-label': 'Search help articles...',
               autoFocus: true,
             },
           }}
@@ -473,7 +477,7 @@ const Help: React.FC = () => {
               fontWeight: 500,
             }}
           >
-            {t('pages.help.filterByCategory')}
+            Filter by Category
           </Typography>
           <Box sx={{ display: { xs: 'block', md: 'none' } }}>
             <Grid
@@ -562,27 +566,27 @@ const Help: React.FC = () => {
               variant="outlined"
               size="small"
               onClick={handleExpandAll}
-              aria-label={t('pages.help.expandAll')}
+              aria-label="Expand All"
               sx={{
                 fontSize: { xs: '0.75rem', md: '0.875rem' },
                 px: { xs: 1.5, md: 2 },
                 py: { xs: 0.5, md: 0.75 },
               }}
             >
-              {t('pages.help.expandAll')}
+              Expand All
             </Button>
             <Button
               variant="outlined"
               size="small"
               onClick={handleCollapseAll}
-              aria-label={t('pages.help.collapseAll')}
+              aria-label="Collapse All"
               sx={{
                 fontSize: { xs: '0.75rem', md: '0.875rem' },
                 px: { xs: 1.5, md: 2 },
                 py: { xs: 0.5, md: 0.75 },
               }}
             >
-              {t('pages.help.collapseAll')}
+              Collapse All
             </Button>
           </Stack>
         </Box>
@@ -640,18 +644,14 @@ const Help: React.FC = () => {
               },
             }}
           >
-            <Tab icon={<QuestionAnswerOutlined />} label={t('pages.help.faq')} sx={{ gap: 1 }} />
-            <Tab
-              icon={<ContactSupportOutlined />}
-              label={t('pages.help.contact')}
-              sx={{ gap: 1 }}
-            />
+            <Tab icon={<QuestionAnswerOutlined />} label="FAQ" sx={{ gap: 1 }} />
+            <Tab icon={<ContactSupportOutlined />} label="Contact" sx={{ gap: 1 }} />
           </Tabs>
         </Box>
         <Box sx={{ p: { xs: 2, md: 4 } }}>
           <TabPanel value={tabValue} index={0} breakpoint={breakpoint}>
             <HelpSection
-              title={t('pages.help.popularQuestions')}
+              title="Popular Questions"
               icon={<QuestionAnswerOutlined />}
               breakpoint={breakpoint}
             >
@@ -731,7 +731,7 @@ const Help: React.FC = () => {
                 ))}
               </Stack>
             </HelpSection>
-            <HelpSection title={t('pages.help.faq')} icon={<QuestionAnswerOutlined />}>
+            <HelpSection title="FAQ" icon={<QuestionAnswerOutlined />}>
               {filteredFaqData.length > 0 ? (
                 filteredFaqData.map((category, categoryIndex) => (
                   <Box key={categoryIndex} sx={{ mb: 4 }}>
@@ -851,10 +851,7 @@ const Help: React.FC = () => {
                 </Box>
               )}
             </HelpSection>
-            <HelpSection
-              title={t('pages.help.contactForm.quickLinks')}
-              icon={<HelpOutlineOutlined />}
-            >
+            <HelpSection title="Quick Links" icon={<HelpOutlineOutlined />}>
               <Grid container spacing={{ xs: 2, md: 3 }}>
                 {quickLinks.map((link, index) => (
                   <Grid item xs={12} sm={6} md={3} key={index}>
@@ -932,7 +929,7 @@ const Help: React.FC = () => {
 
           <TabPanel value={tabValue} index={1} breakpoint={breakpoint}>
             <HelpSection
-              title={t('pages.help.contactSupport')}
+              title="Contact Support"
               icon={<ContactSupportOutlined />}
               breakpoint={breakpoint}
             >
@@ -943,13 +940,13 @@ const Help: React.FC = () => {
                     gutterBottom
                     sx={{ fontSize: { xs: '1.125rem', md: '1.25rem' } }}
                   >
-                    {t('pages.help.contactForm.sendMessage')}
+                    Send Message
                   </Typography>
                   <Box component="form" onSubmit={handleContactSubmit}>
                     <Stack spacing={{ xs: 2, md: 3 }}>
                       <TextField
                         fullWidth
-                        label={t('pages.help.contactForm.email')}
+                        label="Email"
                         variant="outlined"
                         type="email"
                         required
@@ -961,12 +958,12 @@ const Help: React.FC = () => {
                             fontSize: { xs: '0.875rem', md: '1rem' },
                           },
                         }}
-                        inputProps={{ 'aria-label': t('pages.help.contactForm.email') }}
+                        inputProps={{ 'aria-label': 'Email' }}
                       />
 
                       <TextField
                         fullWidth
-                        label={t('pages.help.contactForm.subject')}
+                        label="Subject"
                         variant="outlined"
                         required
                         value={contactForm.subject}
@@ -977,101 +974,101 @@ const Help: React.FC = () => {
                             fontSize: { xs: '0.875rem', md: '1rem' },
                           },
                         }}
-                        inputProps={{ 'aria-label': t('pages.help.contactForm.subject') }}
+                        inputProps={{ 'aria-label': 'Subject' }}
                       />
 
                       <FormControl fullWidth>
                         <InputLabel sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
-                          {t('pages.help.contactForm.category')}
+                          Category
                         </InputLabel>
                         <Select
                           value={contactForm.category}
-                          label={t('pages.help.contactForm.category')}
+                          label="Category"
                           onChange={e => handleContactFormChange('category', e.target.value)}
                           sx={{
                             borderRadius: 2,
                             fontSize: { xs: '0.875rem', md: '1rem' },
                           }}
-                          inputProps={{ 'aria-label': t('pages.help.contactForm.category') }}
+                          inputProps={{ 'aria-label': 'Category' }}
                         >
                           <MenuItem value="" sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
-                            {t('pages.help.contactForm.selectCategory')}
+                            Select Category
                           </MenuItem>
                           <MenuItem
                             value="technical"
                             sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
                           >
-                            {t('pages.help.contactForm.technical')}
+                            Technical Issue
                           </MenuItem>
                           <MenuItem
                             value="billing"
                             sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
                           >
-                            {t('pages.help.contactForm.billing')}
+                            Billing Question
                           </MenuItem>
                           <MenuItem
                             value="feature"
                             sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
                           >
-                            {t('pages.help.contactForm.feature')}
+                            Feature Request
                           </MenuItem>
                           <MenuItem value="bug" sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
-                            {t('pages.help.contactForm.bug')}
+                            Bug Report
                           </MenuItem>
                           <MenuItem
                             value="general"
                             sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
                           >
-                            {t('pages.help.contactForm.general')}
+                            General Inquiry
                           </MenuItem>
                         </Select>
                       </FormControl>
 
                       <FormControl fullWidth>
                         <InputLabel sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
-                          {t('pages.help.contactForm.priority')}
+                          Priority
                         </InputLabel>
                         <Select
                           value={contactForm.priority}
-                          label={t('pages.help.contactForm.priority')}
+                          label="Priority"
                           onChange={e => handleContactFormChange('priority', e.target.value)}
                           sx={{
                             borderRadius: 2,
                             fontSize: { xs: '0.875rem', md: '1rem' },
                           }}
-                          inputProps={{ 'aria-label': t('pages.help.contactForm.priority') }}
+                          inputProps={{ 'aria-label': 'Priority' }}
                         >
                           <MenuItem value="low" sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
-                            {t('pages.help.contactForm.low')}
+                            Low
                           </MenuItem>
                           <MenuItem
                             value="medium"
                             sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
                           >
-                            {t('pages.help.contactForm.medium')}
+                            Medium
                           </MenuItem>
                           <MenuItem value="high" sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
-                            {t('pages.help.contactForm.high')}
+                            High
                           </MenuItem>
                           <MenuItem
                             value="urgent"
                             sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
                           >
-                            {t('pages.help.contactForm.urgent')}
+                            Urgent
                           </MenuItem>
                         </Select>
                       </FormControl>
 
                       <TextField
                         fullWidth
-                        label={t('pages.help.contactForm.message')}
+                        label="Message"
                         multiline
                         rows={4}
                         variant="outlined"
                         required
                         value={contactForm.message}
                         onChange={e => handleContactFormChange('message', e.target.value)}
-                        placeholder={t('pages.help.contactForm.message')}
+                        placeholder="Message"
                         sx={{
                           '& .MuiOutlinedInput-root': {
                             borderRadius: 2,
@@ -1080,7 +1077,7 @@ const Help: React.FC = () => {
                         }}
                         inputProps={{
                           maxLength: 1000,
-                          'aria-label': t('pages.help.contactForm.message'),
+                          'aria-label': 'Message',
                         }}
                         helperText={`${contactForm.message.length}/1000 characters`}
                       />
@@ -1090,10 +1087,10 @@ const Help: React.FC = () => {
                         variant="outlined"
                         component="label"
                         startIcon={<AttachFile />}
-                        aria-label={t('pages.help.contactForm.attachment')}
+                        aria-label="Add Attachment"
                         sx={{ alignSelf: 'flex-start' }}
                       >
-                        {t('pages.help.contactForm.attachment')}
+                        Add Attachment
                         <input
                           type="file"
                           hidden
@@ -1133,16 +1130,14 @@ const Help: React.FC = () => {
                               boxShadow: '0 7px 30px -10px rgba(33,150,243,0.6)',
                             },
                           }}
-                          aria-label={t('pages.help.contactForm.sendMessage')}
+                          aria-label="Send Message"
                         >
-                          {isSubmitting
-                            ? t('pages.help.contactForm.sending')
-                            : t('pages.help.contactForm.sendMessage')}
+                          {isSubmitting ? 'Sending...' : 'Send Message'}
                         </Button>
 
                         {contactForm.priority === 'urgent' && (
                           <Chip
-                            label={t('pages.help.contactForm.urgent')}
+                            label="Urgent"
                             color="error"
                             size="small"
                             icon={<ContactSupportOutlined />}
@@ -1158,7 +1153,7 @@ const Help: React.FC = () => {
                       <span role="img" aria-label="check">
                         ✅
                       </span>{' '}
-                      {t('pages.help.contactForm.thankYouMessage')}
+                      Thank you for contacting us! We'll get back to you soon.
                     </Alert>
                   )}
                 </Grid>
@@ -1196,7 +1191,7 @@ const Help: React.FC = () => {
                           Email
                         </Typography>
                         <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
-                          {t('pages.help.email')}
+                          support@assignmentai.com
                         </Typography>
                       </Box>
                       <Box>
@@ -1205,10 +1200,10 @@ const Help: React.FC = () => {
                           gutterBottom
                           sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
                         >
-                          {t('pages.help.contactForm.responseTime')}
+                          Response Time
                         </Typography>
                         <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
-                          {t('pages.help.responseTime')}
+                          24-48 hours
                         </Typography>
                       </Box>
                       <Box>
@@ -1217,10 +1212,10 @@ const Help: React.FC = () => {
                           gutterBottom
                           sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
                         >
-                          {t('pages.help.contactForm.officeHours')}
+                          Office Hours
                         </Typography>
                         <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
-                          {t('pages.help.hours')}
+                          Monday - Friday, 9 AM - 6 PM EST
                         </Typography>
                       </Box>
                       <Box>
@@ -1229,10 +1224,10 @@ const Help: React.FC = () => {
                           gutterBottom
                           sx={{ fontSize: '0.875rem', md: '1rem' }}
                         >
-                          {t('pages.help.contactForm.emergencySupport')}
+                          Emergency Support
                         </Typography>
                         <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
-                          {t('pages.help.urgentSupport')}
+                          For urgent issues, please mark your message as urgent.
                         </Typography>
                       </Box>
                     </Stack>
@@ -1259,7 +1254,7 @@ const Help: React.FC = () => {
         <Button
           variant="contained"
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          aria-label={t('common.backToTop')}
+          aria-label="Back to Top"
           sx={{
             px: { xs: 4, md: 6 },
             py: { xs: 1.5, md: 2 },
@@ -1275,7 +1270,7 @@ const Help: React.FC = () => {
             },
           }}
         >
-          {t('common.backToTop')}
+          Back to Top
         </Button>
       </Box>
 

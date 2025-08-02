@@ -12,12 +12,10 @@ import {
   Typography,
 } from '@mui/material';
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const Verify2FA: React.FC = () => {
-  const { t } = useTranslation();
   const [code, setCode] = useState('');
   const [isBackupCode, setIsBackupCode] = useState(false);
   const [error, setError] = useState('');
@@ -28,7 +26,7 @@ const Verify2FA: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!code.trim()) {
-      setError(t('pages.verify2FA.pleaseEnter2FACode'));
+      setError('Please enter your 2FA code');
       return;
     }
 
@@ -39,7 +37,7 @@ const Verify2FA: React.FC = () => {
       await verify2FA(code, isBackupCode);
       // Navigation will be handled by the AuthContext
     } catch (error: any) {
-      setError(error.message || t('pages.verify2FA.verificationFailed'));
+      setError(error.message || 'Verification failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -60,17 +58,15 @@ const Verify2FA: React.FC = () => {
       <Paper elevation={3} sx={{ p: 4 }}>
         <Box sx={{ mb: 3 }}>
           <Button startIcon={<ArrowBackIcon />} onClick={handleGoBack} sx={{ mb: 2 }}>
-            {t('pages.verify2FA.backToLogin')}
+            Back to Login
           </Button>
 
           <Typography variant="h4" component="h1" gutterBottom>
-            {t('pages.verify2FA.title')}
+            Two-Factor Authentication
           </Typography>
 
           <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-            {isBackupCode
-              ? t('pages.verify2FA.enterBackupCode')
-              : t('pages.verify2FA.enterAuthenticatorCode')}
+            {isBackupCode ? 'Enter Backup Code' : 'Enter Authenticator Code'}
           </Typography>
         </Box>
 
@@ -83,7 +79,7 @@ const Verify2FA: React.FC = () => {
         <form onSubmit={handleSubmit}>
           <Stack spacing={3}>
             <TextField
-              label={isBackupCode ? t('pages.verify2FA.backupCode') : t('pages.verify2FA.twoFACode')}
+              label={isBackupCode ? 'Backup Code' : '2FA Code'}
               value={code}
               onChange={e => setCode(e.target.value)}
               fullWidth
@@ -92,7 +88,11 @@ const Verify2FA: React.FC = () => {
                 maxLength: isBackupCode ? 8 : 6,
                 pattern: isBackupCode ? '[A-Z0-9]{8}' : '[0-9]{6}',
               }}
-              placeholder={isBackupCode ? t('pages.verify2FA.enter8DigitBackupCode') : t('pages.verify2FA.enter6DigitCode')}
+              placeholder={
+                isBackupCode
+                  ? 'Enter your 8-digit backup code'
+                  : 'Enter the 6-digit code from your authenticator app'
+              }
             />
 
             <Button
@@ -108,7 +108,7 @@ const Verify2FA: React.FC = () => {
                 },
               }}
             >
-              {isLoading ? <CircularProgress size={24} color="inherit" /> : t('pages.verify2FA.verify')}
+              {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Verify'}
             </Button>
 
             <Box sx={{ textAlign: 'center' }}>
@@ -118,15 +118,15 @@ const Verify2FA: React.FC = () => {
                 onClick={handleBackupCodeToggle}
                 sx={{ textDecoration: 'none' }}
               >
-                {isBackupCode ? t('pages.verify2FA.useAuthenticatorApp') : t('pages.verify2FA.useBackupCode')}
+                {isBackupCode ? 'Use Authenticator App' : 'Use Backup Code'}
               </Link>
             </Box>
 
             <Box sx={{ textAlign: 'center', mt: 2 }}>
               <Typography variant="body2" color="text.secondary">
-                {t('pages.verify2FA.havingTrouble')}{' '}
+                Having trouble?{' '}
                 <Link href="/recover-2fa" sx={{ textDecoration: 'none' }}>
-                  {t('pages.verify2FA.recoverAccount')}
+                  Recover Account
                 </Link>
               </Typography>
             </Box>

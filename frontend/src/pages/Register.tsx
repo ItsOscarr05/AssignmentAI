@@ -21,12 +21,10 @@ import {
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import HeroParticles from '../components/HeroParticles';
 import { useAuth } from '../contexts/AuthContext';
 
 const Register: React.FC = () => {
-  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -57,23 +55,23 @@ const Register: React.FC = () => {
 
   const validatePassword = (password: string) => {
     if (password.length < 8) {
-      setPasswordError(t('pages.register.minLength'));
+      setPasswordError('At least 8 characters');
       return false;
     }
     if (!/[A-Z]/.test(password)) {
-      setPasswordError(t('pages.register.uppercase'));
+      setPasswordError('At least one uppercase letter');
       return false;
     }
     if (!/[a-z]/.test(password)) {
-      setPasswordError(t('pages.register.lowercase'));
+      setPasswordError('At least one lowercase letter');
       return false;
     }
     if (!/\d/.test(password)) {
-      setPasswordError(t('pages.register.number'));
+      setPasswordError('At least one number');
       return false;
     }
     if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-      setPasswordError(t('pages.register.specialChar'));
+      setPasswordError('At least one special character');
       return false;
     }
     setPasswordError('');
@@ -82,7 +80,7 @@ const Register: React.FC = () => {
 
   const validateConfirmPassword = (confirmPassword: string) => {
     if (confirmPassword && formData.password !== confirmPassword) {
-      setConfirmPasswordError(t('pages.register.passwordsDoNotMatch'));
+      setConfirmPasswordError('Passwords do not match');
       return false;
     }
     setConfirmPasswordError('');
@@ -168,14 +166,14 @@ const Register: React.FC = () => {
       !formData.password ||
       !formData.confirmPassword
     ) {
-      setError(t('pages.register.allFieldsRequired'));
+      setError('All fields are required');
       return;
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      setError(t('pages.register.invalidEmail'));
+      setError('Please enter a valid email address');
       return;
     }
 
@@ -196,12 +194,12 @@ const Register: React.FC = () => {
         password: formData.password,
         confirm_password: formData.confirmPassword,
       });
-      setSuccess(t('pages.register.registrationSuccessful'));
+      setSuccess('Registration successful! Redirecting to login...');
       setTimeout(() => {
         navigate('/login');
       }, 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('pages.register.registrationError'));
+      setError(err instanceof Error ? err.message : 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -304,7 +302,7 @@ const Register: React.FC = () => {
                   fontSize: { xs: '1.3rem', sm: '1.4rem', md: '1.3rem' },
                 }}
               >
-                {t('pages.register.tagline')}
+                Join the future of academic assistance
               </Typography>
               <Typography
                 variant="body2"
@@ -317,7 +315,7 @@ const Register: React.FC = () => {
                   fontSize: { xs: '1.2rem', sm: '1.25rem', md: '1.1rem' },
                 }}
               >
-                {t('pages.register.description')}
+                Create your account and start transforming your assignments with AI-powered insights
               </Typography>
             </Box>
             <HeroParticles />
@@ -379,7 +377,7 @@ const Register: React.FC = () => {
                   },
                 }}
               >
-                {t('pages.register.back')}
+                Back
               </Button>
 
               <Typography
@@ -394,7 +392,7 @@ const Register: React.FC = () => {
                   mb: 2,
                 }}
               >
-                {t('pages.register.title')}
+                Create Account
               </Typography>
               <Typography
                 color="text.secondary"
@@ -406,7 +404,7 @@ const Register: React.FC = () => {
                   fontSize: '0.85rem', // Reduce supporting text size
                 }}
               >
-                {t('pages.register.subtitle')}
+                Join AssignmentAI and transform your academic journey
               </Typography>
 
               <form onSubmit={handleSubmit}>
@@ -424,7 +422,7 @@ const Register: React.FC = () => {
                   margin="normal"
                   required
                   fullWidth
-                  label={t('pages.register.firstName')}
+                  label="First Name"
                   name="firstName"
                   autoComplete="given-name"
                   value={formData.firstName}
@@ -443,7 +441,7 @@ const Register: React.FC = () => {
                   margin="normal"
                   required
                   fullWidth
-                  label={t('pages.register.lastName')}
+                  label="Last Name"
                   name="lastName"
                   autoComplete="family-name"
                   value={formData.lastName}
@@ -462,7 +460,7 @@ const Register: React.FC = () => {
                   margin="normal"
                   required
                   fullWidth
-                  label={t('pages.register.email')}
+                  label="Email Address"
                   name="email"
                   autoComplete="email"
                   value={formData.email}
@@ -491,7 +489,7 @@ const Register: React.FC = () => {
                         mb: 1,
                       }}
                     >
-                      {t('pages.register.passwordRequirements')}
+                      Password Requirements
                     </Typography>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                       <Typography
@@ -503,7 +501,7 @@ const Register: React.FC = () => {
                           fontSize: '0.75rem',
                         }}
                       >
-                        • {t('pages.register.minLength')} {passwordRequirements.minLength ? '✓' : '✗'}
+                        • At least 8 characters {passwordRequirements.minLength ? '✓' : '✗'}
                       </Typography>
                       <Typography
                         variant="body2"
@@ -514,7 +512,8 @@ const Register: React.FC = () => {
                           fontSize: '0.75rem',
                         }}
                       >
-                        • {t('pages.register.uppercase')} {passwordRequirements.hasUpperCase ? '✓' : '✗'}
+                        • At least one uppercase letter{' '}
+                        {passwordRequirements.hasUpperCase ? '✓' : '✗'}
                       </Typography>
                       <Typography
                         variant="body2"
@@ -525,7 +524,8 @@ const Register: React.FC = () => {
                           fontSize: '0.75rem',
                         }}
                       >
-                        • {t('pages.register.lowercase')} {passwordRequirements.hasLowerCase ? '✓' : '✗'}
+                        • At least one lowercase letter{' '}
+                        {passwordRequirements.hasLowerCase ? '✓' : '✗'}
                       </Typography>
                       <Typography
                         variant="body2"
@@ -536,7 +536,7 @@ const Register: React.FC = () => {
                           fontSize: '0.75rem',
                         }}
                       >
-                        • {t('pages.register.number')} {passwordRequirements.hasNumber ? '✓' : '✗'}
+                        • At least one number {passwordRequirements.hasNumber ? '✓' : '✗'}
                       </Typography>
                       <Typography
                         variant="body2"
@@ -549,7 +549,8 @@ const Register: React.FC = () => {
                           fontSize: '0.75rem',
                         }}
                       >
-                        • {t('pages.register.specialChar')} {passwordRequirements.hasSpecialChar ? '✓' : '✗'}
+                        • At least one special character{' '}
+                        {passwordRequirements.hasSpecialChar ? '✓' : '✗'}
                       </Typography>
                     </Box>
                   </Box>
@@ -559,7 +560,7 @@ const Register: React.FC = () => {
                   margin="normal"
                   required
                   fullWidth
-                  label={t('pages.register.password')}
+                  label="Password"
                   name="password"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="new-password"
@@ -600,7 +601,7 @@ const Register: React.FC = () => {
                   margin="normal"
                   required
                   fullWidth
-                  label={t('pages.register.confirmPassword')}
+                  label="Confirm Password"
                   name="confirmPassword"
                   type={showConfirmPassword ? 'text' : 'password'}
                   autoComplete="new-password"
@@ -653,7 +654,7 @@ const Register: React.FC = () => {
                   }}
                   disabled={isLoading}
                 >
-                  {isLoading ? <CircularProgress size={20} /> : t('pages.register.register')}
+                  {isLoading ? <CircularProgress size={20} /> : 'Register'}
                 </Button>
 
                 <Divider sx={{ my: 3 }}>
@@ -666,7 +667,7 @@ const Register: React.FC = () => {
                       fontSize: '0.8rem', // Reduce divider text size
                     }}
                   >
-                    {t('pages.register.orRegisterWith')}
+                    Or register with
                   </Typography>
                 </Divider>
 
@@ -688,7 +689,7 @@ const Register: React.FC = () => {
                         }
                       } catch (error) {
                         console.error('Google OAuth error:', error);
-                        setError(t('pages.register.googleOAuthError'));
+                        setError('Google OAuth error occurred');
                       }
                     }}
                     sx={{
@@ -700,7 +701,7 @@ const Register: React.FC = () => {
                     }}
                     size="small"
                   >
-                    {t('pages.register.google')}
+                    Google
                   </Button>
                   <Button
                     fullWidth
@@ -719,7 +720,7 @@ const Register: React.FC = () => {
                         }
                       } catch (error) {
                         console.error('GitHub OAuth error:', error);
-                        setError(t('pages.register.githubOAuthError'));
+                        setError('GitHub OAuth error occurred');
                       }
                     }}
                     sx={{
@@ -731,7 +732,7 @@ const Register: React.FC = () => {
                     }}
                     size="small"
                   >
-                    {t('pages.register.github')}
+                    GitHub
                   </Button>
                 </Stack>
 
@@ -745,7 +746,7 @@ const Register: React.FC = () => {
                     fontSize: '0.9rem', // Reduce already have account text size
                   }}
                 >
-                  {t('pages.register.alreadyHaveAccount')}{' '}
+                  Already have an account?{' '}
                   <Link
                     component={RouterLink}
                     to="/login"
@@ -757,7 +758,7 @@ const Register: React.FC = () => {
                       fontSize: '0.9rem', // Reduce sign in link size
                     }}
                   >
-                    {t('pages.register.signIn')}
+                    Sign in
                   </Link>
                 </Typography>
               </form>

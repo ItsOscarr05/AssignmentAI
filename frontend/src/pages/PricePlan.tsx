@@ -50,7 +50,6 @@ import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { useSnackbar } from 'notistack';
 import React, { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import PaymentForm from '../components/payment/PaymentForm';
 import { useAspectRatio } from '../hooks/useAspectRatio';
@@ -357,7 +356,6 @@ const getFeatureIcon = (featureName: string, color: string) => {
 };
 
 const PricePlan: React.FC = () => {
-  const { t } = useTranslation();
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
@@ -392,7 +390,7 @@ const PricePlan: React.FC = () => {
 
   const handlePlanSelect = (plan: Plan) => {
     if (plan.price === 0) {
-      enqueueSnackbar(t('pages.pricePlan.freePlanActivated'), { variant: 'success' });
+      enqueueSnackbar('Free plan activated successfully!', { variant: 'success' });
       navigate('/dashboard');
       return;
     }
@@ -402,12 +400,14 @@ const PricePlan: React.FC = () => {
 
   const handlePaymentSuccess = () => {
     setPaymentDialogOpen(false);
-    enqueueSnackbar(t('pages.pricePlan.subscriptionSuccessful'), { variant: 'success' });
+    enqueueSnackbar('Subscription successful! Welcome to AssignmentAI Pro.', {
+      variant: 'success',
+    });
     navigate('/dashboard');
   };
 
   const handlePaymentError = (error: string) => {
-    enqueueSnackbar(t('pages.pricePlan.paymentFailed', { error }), { variant: 'error' });
+    enqueueSnackbar(`Payment failed: ${error}`, { variant: 'error' });
   };
 
   const renderDetailedComparison = () => {
@@ -425,7 +425,7 @@ const PricePlan: React.FC = () => {
         }}
       >
         <DialogTitle sx={{ fontSize: { xs: '1.25rem', md: '1.5rem' }, p: { xs: 2, md: 3 } }}>
-          {t('pages.pricePlan.detailedFeatureComparison')}
+          Detailed Feature Comparison
         </DialogTitle>
         <DialogContent sx={{ p: { xs: 2, md: 3 } }}>
           <Box sx={{ mt: { xs: 1, md: 2 } }}>
@@ -567,7 +567,7 @@ const PricePlan: React.FC = () => {
         }}
       >
         <Typography variant="h4" fontWeight="normal" className="page-title" sx={{ ml: 4 }}>
-          {t('pages.pricePlan.title')}
+          Choose Your Plan
         </Typography>
         <FormControlLabel
           control={
@@ -576,7 +576,7 @@ const PricePlan: React.FC = () => {
               onChange={e => setShowDetailedComparison(e.target.checked)}
             />
           }
-          label={t('pages.pricePlan.detailedComparisonView')}
+          label="Detailed Comparison View"
         />
       </Box>
 
@@ -671,12 +671,12 @@ const PricePlan: React.FC = () => {
                             color="text.secondary"
                             sx={{ ml: 0.5 }}
                           >
-                            {t('pages.pricePlan.perMonth')}
+                            per month
                           </Typography>
                         </Typography>
                         <Typography color="text.secondary">{plan.description}</Typography>
                         <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
-                          {plan.tokenBoost?.toLocaleString()} {t('pages.pricePlan.tokensPerMonth')}
+                          {plan.tokenBoost?.toLocaleString()} tokens per month
                         </Typography>
                       </Box>
                       <Divider />
@@ -687,12 +687,12 @@ const PricePlan: React.FC = () => {
                           sx={{ mt: 1, mb: 1 }}
                         >
                           {plan.name === 'Free'
-                            ? t('pages.pricePlan.freeFeatures')
+                            ? 'Free Features'
                             : plan.name === 'Plus'
-                            ? t('pages.pricePlan.plusEverythingInFree')
+                            ? 'Everything in Free, plus:'
                             : plan.name === 'Pro'
-                            ? t('pages.pricePlan.plusEverythingInPlus')
-                            : t('pages.pricePlan.plusEverythingInPro')}
+                            ? 'Everything in Plus, plus:'
+                            : 'Everything in Pro, plus:'}
                         </Typography>
                         {plan.features.map(featureName => (
                           <Stack key={featureName} direction="row" spacing={1} alignItems="center">
@@ -730,10 +730,10 @@ const PricePlan: React.FC = () => {
                       }}
                     >
                       {plan.isCurrentPlan
-                        ? t('pages.pricePlan.yourCurrentPlan')
+                        ? 'Your Current Plan'
                         : plan.price === 0
-                        ? t('pages.pricePlan.getStartedFree')
-                        : t('pages.pricePlan.choosePlan')}
+                        ? 'Get Started Free'
+                        : 'Choose Plan'}
                     </Button>
                     {!plan.isCurrentPlan && plan.price > 0 && (
                       <Stack
@@ -744,12 +744,12 @@ const PricePlan: React.FC = () => {
                       >
                         <CreditCard fontSize="small" color="action" />
                         <Typography variant="caption" color="text.secondary">
-                          {t('pages.pricePlan.secureCheckout')}
+                          Secure checkout
                         </Typography>
                       </Stack>
                     )}
                     <Typography variant="caption" color="text.secondary" textAlign="center">
-                      {t('pages.pricePlan.noCommitment')}
+                      No commitment, cancel anytime
                     </Typography>
                   </CardContent>
                 </Card>
@@ -766,9 +766,9 @@ const PricePlan: React.FC = () => {
         fullWidth
       >
         <DialogTitle>
-          {t('pages.pricePlan.subscribeToPlan', { plan: selectedPlan?.name })}
+          Subscribe to {selectedPlan?.name}
           <IconButton
-            aria-label={t('pages.pricePlan.close')}
+            aria-label="Close"
             onClick={() => setPaymentDialogOpen(false)}
             sx={{
               position: 'absolute',

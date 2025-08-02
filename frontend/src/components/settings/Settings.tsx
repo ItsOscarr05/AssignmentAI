@@ -14,7 +14,6 @@ import {
   Typography,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { settingsApi } from '../../services/api/settings';
 import { AppSettings } from '../../types/settings';
 
@@ -31,7 +30,6 @@ interface SettingsProps {
 }
 
 function Settings({ initialSettings, onUpdate }: SettingsProps) {
-  const { t, i18n } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [settings, setSettings] = useState<AppSettings | null>(initialSettings || null);
@@ -114,7 +112,7 @@ function Settings({ initialSettings, onUpdate }: SettingsProps) {
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                {t('settings.notifications.title')}
+                Notifications
               </Typography>
               <FormGroup>
                 <FormControlLabel
@@ -126,7 +124,7 @@ function Settings({ initialSettings, onUpdate }: SettingsProps) {
                       }
                     />
                   }
-                  label={t('settings.notifications.email')}
+                  label="Email Notifications"
                 />
                 <FormControlLabel
                   control={
@@ -135,7 +133,7 @@ function Settings({ initialSettings, onUpdate }: SettingsProps) {
                       onChange={e => handleSettingChange('notifications', 'push', e.target.checked)}
                     />
                   }
-                  label={t('settings.notifications.push')}
+                  label="Push Notifications"
                 />
                 <FormControlLabel
                   control={
@@ -146,7 +144,7 @@ function Settings({ initialSettings, onUpdate }: SettingsProps) {
                       }
                     />
                   }
-                  label={t('settings.notifications.assignments')}
+                  label="Assignment Updates"
                 />
                 <FormControlLabel
                   control={
@@ -157,7 +155,7 @@ function Settings({ initialSettings, onUpdate }: SettingsProps) {
                       }
                     />
                   }
-                  label={t('settings.notifications.grades')}
+                  label="Grade Notifications"
                 />
               </FormGroup>
             </CardContent>
@@ -169,49 +167,49 @@ function Settings({ initialSettings, onUpdate }: SettingsProps) {
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                {t('settings.appearance.title')}
+                Appearance
               </Typography>
               <Grid container spacing={2}>
                 <Grid item xs={12}>
                   <FormControl fullWidth>
-                    <InputLabel>{t('settings.appearance.theme')}</InputLabel>
+                    <InputLabel>Theme</InputLabel>
                     <Select
                       value={settings.appearance.theme}
                       onChange={e => handleSettingChange('appearance', 'theme', e.target.value)}
-                      label={t('settings.appearance.theme')}
+                      label="Theme"
                     >
-                      <MenuItem value="light">{t('settings.appearance.themeLight')}</MenuItem>
-                      <MenuItem value="dark">{t('settings.appearance.themeDark')}</MenuItem>
-                      <MenuItem value="system">{t('settings.appearance.themeSystem')}</MenuItem>
+                      <MenuItem value="light">Light</MenuItem>
+                      <MenuItem value="dark">Dark</MenuItem>
+                      <MenuItem value="system">System</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
                 <Grid item xs={12}>
                   <FormControl fullWidth>
-                    <InputLabel>{t('settings.appearance.fontSize')}</InputLabel>
+                    <InputLabel>Font Size</InputLabel>
                     <Select
                       value={settings.appearance.fontSize}
                       onChange={e => handleSettingChange('appearance', 'fontSize', e.target.value)}
-                      label={t('settings.appearance.fontSize')}
+                      label="Font Size"
                     >
-                      <MenuItem value="small">{t('settings.appearance.fontSizeSmall')}</MenuItem>
-                      <MenuItem value="medium">{t('settings.appearance.fontSizeMedium')}</MenuItem>
-                      <MenuItem value="large">{t('settings.appearance.fontSizeLarge')}</MenuItem>
+                      <MenuItem value="small">Small</MenuItem>
+                      <MenuItem value="medium">Medium</MenuItem>
+                      <MenuItem value="large">Large</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
                 <Grid item xs={12}>
                   <FormControl fullWidth>
-                    <InputLabel>{t('settings.appearance.density')}</InputLabel>
+                    <InputLabel>Density</InputLabel>
                     <Select
                       value={settings.appearance.density}
                       onChange={e => handleSettingChange('appearance', 'density', e.target.value)}
-                      label={t('settings.appearance.density')}
+                      label="Density"
                     >
                       <MenuItem value="comfortable">
-                        {t('settings.appearance.densityComfortable')}
+                        Comfortable
                       </MenuItem>
-                      <MenuItem value="compact">{t('settings.appearance.densityCompact')}</MenuItem>
+                      <MenuItem value="compact">Compact</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
@@ -225,19 +223,18 @@ function Settings({ initialSettings, onUpdate }: SettingsProps) {
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                {t('settings.language.title')}
+                Language & Region
               </Typography>
               <Grid container spacing={2}>
                 <Grid item xs={12}>
                   <FormControl fullWidth>
-                    <InputLabel>{t('settings.language.language')}</InputLabel>
+                    <InputLabel>Language</InputLabel>
                     <Select
                       value={settings.language}
                       onChange={e => {
                         handleSettingChange('language', '', e.target.value);
-                        i18n.changeLanguage(e.target.value);
                       }}
-                      label={t('settings.language.language')}
+                      label="Language"
                     >
                       <MenuItem value="en">English</MenuItem>
                       <MenuItem value="es">Español</MenuItem>
@@ -255,23 +252,23 @@ function Settings({ initialSettings, onUpdate }: SettingsProps) {
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                {t('settings.privacy.title')}
+                Privacy & Security
               </Typography>
               <Grid container spacing={2}>
                 <Grid item xs={12}>
                   <FormControl fullWidth>
-                    <InputLabel>{t('settings.privacy.profileVisibility')}</InputLabel>
+                    <InputLabel>Profile Visibility</InputLabel>
                     <Select
                       value={settings.privacy.profileVisibility}
                       onChange={e =>
                         handleSettingChange('privacy', 'profileVisibility', e.target.value)
                       }
-                      label={t('settings.privacy.profileVisibility')}
+                      label="Profile Visibility"
                     >
-                      <MenuItem value="public">{t('settings.privacy.visibilityPublic')}</MenuItem>
-                      <MenuItem value="private">{t('settings.privacy.visibilityPrivate')}</MenuItem>
+                      <MenuItem value="public">Public</MenuItem>
+                      <MenuItem value="private">Private</MenuItem>
                       <MenuItem value="connections">
-                        {t('settings.privacy.visibilityConnections')}
+                        Connections Only
                       </MenuItem>
                     </Select>
                   </FormControl>
@@ -286,7 +283,7 @@ function Settings({ initialSettings, onUpdate }: SettingsProps) {
                         }
                       />
                     }
-                    label={t('settings.privacy.activityStatus')}
+                    label="Activity Status"
                   />
                 </Grid>
               </Grid>

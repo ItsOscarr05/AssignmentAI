@@ -1,6 +1,5 @@
 import { Alert, Box, CircularProgress, Container, Grid, Paper, Typography } from '@mui/material';
 import React, { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import AIAnalysisPanel from '../components/AIAnalysisPanel';
 
@@ -20,7 +19,6 @@ interface Submission {
 }
 
 const SubmissionReview: React.FC = () => {
-  const { t } = useTranslation();
   const { submissionId } = useParams<{ submissionId: string }>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,19 +29,21 @@ const SubmissionReview: React.FC = () => {
       try {
         const response = await fetch(`/api/submissions/${submissionId}`);
         if (!response.ok) {
-          throw new Error(t('pages.submissionReview.failedToFetchSubmission'));
+          throw new Error('Failed to fetch submission');
         }
         const data = await response.json();
         setSubmission(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : t('pages.submissionReview.anErrorOccurred'));
+        setError(
+          err instanceof Error ? err.message : 'An error occurred while loading the submission'
+        );
       } finally {
         setLoading(false);
       }
     };
 
     fetchSubmission();
-  }, [submissionId, t]);
+  }, [submissionId]);
 
   if (loading) {
     return (
@@ -66,7 +66,7 @@ const SubmissionReview: React.FC = () => {
   if (!submission) {
     return (
       <Container maxWidth="lg" sx={{ mt: 4 }}>
-        <Alert severity="warning">{t('pages.submissionReview.submissionNotFound')}</Alert>
+        <Alert severity="warning">Submission not found</Alert>
       </Container>
     );
   }
@@ -77,17 +77,16 @@ const SubmissionReview: React.FC = () => {
         <Grid item xs={12}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h4" gutterBottom>
-              {t('pages.submissionReview.title')}
+              Submission Review
             </Typography>
             <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-              {t('pages.submissionReview.assignment')}: {submission.assignment.title}
+              Assignment: {submission.assignment.title}
             </Typography>
             <Typography variant="subtitle2" color="text.secondary">
-              {t('pages.submissionReview.submittedBy')}: {submission.student.name}
+              Submitted by: {submission.student.name}
             </Typography>
             <Typography variant="caption" color="text.secondary" display="block">
-              {t('pages.submissionReview.submittedAt')}:{' '}
-              {new Date(submission.submitted_at).toLocaleString()}
+              Submitted at: {new Date(submission.submitted_at).toLocaleString()}
             </Typography>
           </Paper>
         </Grid>
@@ -95,7 +94,7 @@ const SubmissionReview: React.FC = () => {
         <Grid item xs={12} md={8}>
           <Paper sx={{ p: 3, mb: 3 }}>
             <Typography variant="h6" gutterBottom>
-              {t('pages.submissionReview.submissionContent')}
+              Submission Content
             </Typography>
             <Box
               sx={{

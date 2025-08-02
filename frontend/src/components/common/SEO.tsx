@@ -1,6 +1,6 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useTranslation } from 'react-i18next';
+import { t } from '../../utils/englishTranslations';
 
 interface SEOProps {
   title?: string;
@@ -25,15 +25,9 @@ export const SEO: React.FC<SEOProps> = ({
   publishedTime,
   modifiedTime,
 }) => {
-  const { t } = useTranslation();
   const siteName = 'AssignmentAI';
-  const defaultTitle = t('common.siteTitle', {
-    defaultValue: 'AssignmentAI - AI-Powered Assignment Assistant',
-  });
-  const defaultDescription = t('common.siteDescription', {
-    defaultValue:
-      'An AI-powered platform for creating, managing, and grading assignments efficiently.',
-  });
+  const defaultTitle = t('common.siteTitle');
+  const defaultDescription = t('common.siteDescription');
 
   const seoTitle = title ? `${title} | ${siteName}` : defaultTitle;
   const seoDescription = description || defaultDescription;

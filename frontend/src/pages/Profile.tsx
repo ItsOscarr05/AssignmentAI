@@ -39,7 +39,6 @@ import {
   useTheme,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { useAssignments } from '../hooks/useApiQuery';
 import { useAspectRatio } from '../hooks/useAspectRatio';
@@ -165,7 +164,6 @@ const StatCard = ({ icon, title, value, color, onClick, sx }: any) => {
 };
 
 const Profile: React.FC = () => {
-  const { t } = useTranslation();
   const theme = useTheme();
   const { user, logout } = useAuth();
   const { breakpoint } = useAspectRatio();
@@ -250,7 +248,7 @@ const Profile: React.FC = () => {
       if (!file.type.startsWith('image/')) {
         setSnackbar({
           open: true,
-          message: t('pages.profile.editProfileDialog.selectImageFile'),
+          message: 'Please select an image file',
           severity: 'error',
         });
         return;
@@ -260,7 +258,7 @@ const Profile: React.FC = () => {
         // 5MB limit
         setSnackbar({
           open: true,
-          message: t('pages.profile.editProfileDialog.imageSizeLimit'),
+          message: 'Image size must be less than 5MB',
           severity: 'error',
         });
         return;
@@ -284,7 +282,7 @@ const Profile: React.FC = () => {
 
       setSnackbar({
         open: true,
-        message: t('pages.profile.editProfileDialog.profileUpdated'),
+        message: 'Profile updated successfully',
         severity: 'success',
       });
 
@@ -292,7 +290,7 @@ const Profile: React.FC = () => {
     } catch (error: any) {
       setSnackbar({
         open: true,
-        message: error.response?.data?.message || t('pages.profile.editProfileDialog.updateFailed'),
+        message: error.response?.data?.message || 'Failed to update profile',
         severity: 'error',
       });
     } finally {
@@ -391,12 +389,12 @@ const Profile: React.FC = () => {
             fontSize: { xs: '1.75rem', md: '2.125rem' },
           }}
         >
-          {t('pages.profile.title')}
+          Profile
         </Typography>
         <Button
           variant="contained"
           startIcon={<EditOutlined />}
-          aria-label={t('pages.profile.editProfile')}
+          aria-label="Edit Profile"
           sx={{
             ml: { xs: 0, md: 'auto' },
             px: { xs: 2, md: 4 },
@@ -416,12 +414,12 @@ const Profile: React.FC = () => {
           }}
           onClick={handleEditProfile}
         >
-          {t('pages.profile.editProfile')}
+          Edit Profile
         </Button>
         <Button
           variant="contained"
           startIcon={<LogoutOutlined />}
-          aria-label={t('pages.profile.logout')}
+          aria-label="Logout"
           sx={{
             ml: { xs: 0, md: 2 },
             px: { xs: 3, md: 6 },
@@ -441,7 +439,7 @@ const Profile: React.FC = () => {
           }}
           onClick={logout}
         >
-          {t('pages.profile.logout')}
+          Logout
         </Button>
       </Box>
       <Box
@@ -499,7 +497,7 @@ const Profile: React.FC = () => {
           >
             <Tab
               icon={<AccountCircleOutlined />}
-              label={t('pages.profile.overview')}
+              label="Overview"
               sx={{
                 gap: 1,
                 '& .MuiTab-label': {
@@ -511,7 +509,7 @@ const Profile: React.FC = () => {
             />
             <Tab
               icon={<TimelineOutlined />}
-              label={t('pages.profile.activity')}
+              label="Activity"
               sx={{
                 gap: 1,
                 '& .MuiTab-label': {
@@ -523,7 +521,7 @@ const Profile: React.FC = () => {
             />
             <Tab
               icon={<BadgeOutlined />}
-              label={t('pages.profile.achievements')}
+              label="Achievements"
               sx={{
                 gap: 1,
                 '& .MuiTab-label': {
@@ -537,7 +535,7 @@ const Profile: React.FC = () => {
         </Box>
         <Box sx={{ p: { xs: 0, md: 4 } }}>
           <TabPanel value={tabValue} index={0} breakpoint={breakpoint}>
-            <ProfileSection title={t('pages.profile.personalInformation')} icon={<AccountCircleOutlined />}>
+            <ProfileSection title="Personal Information" icon={<AccountCircleOutlined />}>
               <Box sx={{ position: 'relative', mb: 4, textAlign: 'center' }}>
                 <Avatar
                   sx={{
@@ -569,7 +567,7 @@ const Profile: React.FC = () => {
                     color="text.secondary"
                     sx={{ mb: 1, fontSize: { xs: '0.75rem', md: '0.875rem' } }}
                   >
-                    {t('pages.profile.memberSince')} {memberSince}
+                    Member Since {memberSince}
                   </Typography>
                 )}
                 <Stack
@@ -583,7 +581,7 @@ const Profile: React.FC = () => {
                     rowGap: { xs: 1, md: 1.5 },
                   }}
                 >
-                  <Tooltip title={t('pages.profile.email')} arrow>
+                  <Tooltip title="Email" arrow>
                     <Chip
                       icon={<EmailOutlined aria-label="Email icon" />}
                       label={displayEmail}
@@ -602,11 +600,13 @@ const Profile: React.FC = () => {
                       }}
                     />
                   </Tooltip>
-                  <Tooltip title={t('pages.profile.institution')} arrow>
+                  <Tooltip title="Institution" arrow>
                     <Chip
                       icon={<SchoolOutlined aria-label="Institution icon" />}
                       label={
-                        (profileData as any)?.institution || (user as any)?.institution || t('pages.profile.noData')
+                        (profileData as any)?.institution ||
+                        (user as any)?.institution ||
+                        'No data available'
                       }
                       aria-label="User institution"
                       sx={{
@@ -622,10 +622,14 @@ const Profile: React.FC = () => {
                       }}
                     />
                   </Tooltip>
-                  <Tooltip title={t('pages.profile.country')} arrow>
+                  <Tooltip title="Country" arrow>
                     <Chip
                       icon={<LocationOnOutlined aria-label="Location icon" />}
-                      label={(profileData as any)?.location || (user as any)?.location || t('pages.profile.noData')}
+                      label={
+                        (profileData as any)?.location ||
+                        (user as any)?.location ||
+                        'No data available'
+                      }
                       aria-label="User country"
                       sx={{
                         background: 'rgba(255,255,255,0.9)',
@@ -640,7 +644,7 @@ const Profile: React.FC = () => {
                       }}
                     />
                   </Tooltip>
-                  <Tooltip title={t('pages.profile.language')} arrow>
+                  <Tooltip title="Language" arrow>
                     <Chip
                       icon={<LanguageOutlined aria-label="Language icon" />}
                       label={languageLabel}
@@ -667,7 +671,7 @@ const Profile: React.FC = () => {
                 <Grid item xs={12} sm={6} md={4}>
                   <StatCard
                     icon={<AssignmentOutlined />}
-                    title={t('pages.profile.totalAssignments')}
+                    title="Total Assignments"
                     value={
                       assignmentsLoading ? (
                         <CircularProgress size={28} />
@@ -682,12 +686,12 @@ const Profile: React.FC = () => {
                   />
                 </Grid>
                 <Grid item xs={12} sm={6} md={4}>
-                  <StatCard icon={<BadgeOutlined />} title={t('pages.profile.subscriptionType')} value={t('pages.profile.free')} />
+                  <StatCard icon={<BadgeOutlined />} title="Subscription Type" value="Free" />
                 </Grid>
                 <Grid item xs={12} sm={6} md={4}>
                   <StatCard
                     icon={<VerifiedOutlined />}
-                    title={t('pages.profile.memberSince')}
+                    title="Member Since"
                     value={memberSince || 'N/A'}
                   />
                 </Grid>
@@ -714,10 +718,10 @@ const Profile: React.FC = () => {
                 }}
               />
               <Typography variant="h5" color="black" gutterBottom>
-                {t('pages.profile.comingSoon')}
+                Coming Soon
               </Typography>
               <Typography color="text.secondary" sx={{ maxWidth: 400 }}>
-                {t('pages.profile.activityComingSoon')}
+                Activity tracking coming soon
               </Typography>
             </Box>
           </TabPanel>
@@ -741,10 +745,10 @@ const Profile: React.FC = () => {
                 }}
               />
               <Typography variant="h5" color="black" gutterBottom>
-                {t('pages.profile.comingSoon')}
+                Coming Soon
               </Typography>
               <Typography color="text.secondary" sx={{ maxWidth: 400 }}>
-                {t('pages.profile.achievementsComingSoon')}
+                Achievements coming soon
               </Typography>
             </Box>
           </TabPanel>
@@ -779,7 +783,7 @@ const Profile: React.FC = () => {
         >
           <Stack direction="row" alignItems="center" spacing={2}>
             <EditOutlined />
-            <Typography variant="h6">{t('pages.profile.editProfileDialog.title')}</Typography>
+            <Typography variant="h6">Edit Profile</Typography>
           </Stack>
         </DialogTitle>
 
@@ -802,7 +806,7 @@ const Profile: React.FC = () => {
                 >
                   <AccountCircleOutlined sx={{ fontSize: 80, color: theme.palette.error.main }} />
                 </Avatar>
-                <Tooltip title={t('pages.profile.editProfileDialog.changeAvatar')}>
+                <Tooltip title="Change Avatar">
                   <IconButton
                     component="label"
                     sx={{
@@ -828,7 +832,7 @@ const Profile: React.FC = () => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label={t('pages.profile.editProfileDialog.firstName')}
+                label="First Name"
                 value={editForm.firstName}
                 onChange={e => handleFormChange('firstName', e.target.value)}
                 variant="outlined"
@@ -843,7 +847,7 @@ const Profile: React.FC = () => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label={t('pages.profile.editProfileDialog.lastName')}
+                label="Last Name"
                 value={editForm.lastName}
                 onChange={e => handleFormChange('lastName', e.target.value)}
                 variant="outlined"
@@ -858,7 +862,7 @@ const Profile: React.FC = () => {
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label={t('pages.profile.editProfileDialog.email')}
+                label="Email"
                 value={editForm.email}
                 onChange={e => handleFormChange('email', e.target.value)}
                 variant="outlined"
@@ -874,7 +878,7 @@ const Profile: React.FC = () => {
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label={t('pages.profile.editProfileDialog.bio')}
+                label="Bio"
                 value={editForm.bio}
                 onChange={e => handleFormChange('bio', e.target.value)}
                 variant="outlined"
@@ -891,7 +895,7 @@ const Profile: React.FC = () => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label={t('pages.profile.editProfileDialog.location')}
+                label="Location"
                 value={editForm.location}
                 onChange={e => handleFormChange('location', e.target.value)}
                 variant="outlined"
@@ -906,7 +910,7 @@ const Profile: React.FC = () => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label={t('pages.profile.editProfileDialog.institution')}
+                label="Institution"
                 value={editForm.institution}
                 onChange={e => handleFormChange('institution', e.target.value)}
                 variant="outlined"
@@ -927,7 +931,7 @@ const Profile: React.FC = () => {
             variant="outlined"
             sx={{ borderRadius: 2 }}
           >
-            {t('pages.profile.editProfileDialog.cancel')}
+            Cancel
           </Button>
           <Button
             onClick={handleSaveProfile}
@@ -943,7 +947,7 @@ const Profile: React.FC = () => {
               },
             }}
           >
-            {isAvatarUploading ? t('pages.profile.editProfileDialog.saving') : t('pages.profile.editProfileDialog.saveChanges')}
+            {isAvatarUploading ? 'Saving...' : 'Save Changes'}
           </Button>
         </DialogActions>
       </Dialog>

@@ -1,9 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { i18n, TFunction } from 'i18next';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import React from 'react';
-import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter, useNavigate } from 'react-router-dom';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { AuthProvider } from '../../../contexts/AuthContext';
@@ -20,50 +18,7 @@ vi.mock('@mui/material', async importOriginal => {
   };
 });
 
-// Mock i18n
-const mockI18n = {
-  t: ((key: string) => key) as TFunction,
-  language: 'en',
-  languages: ['en'],
-  changeLanguage: vi.fn(),
-  dir: () => 'ltr',
-  getFixedT: () => ((key: string) => key) as TFunction,
-  format: () => '',
-  exists: () => true,
-  init: () => Promise.resolve(mockI18n.t),
-  loadLanguages: () => Promise.resolve(),
-  loadNamespaces: () => Promise.resolve(),
-  reloadResources: () => Promise.resolve(),
-  use: () => mockI18n,
-  loadResources: () => Promise.resolve(),
-  modules: {},
-  services: {},
-  store: {},
-  cloneInstance: () => mockI18n,
-  createInstance: () => mockI18n,
-  getDataByLanguage: () => ({}),
-  getResource: () => ({}),
-  getResourceBundle: () => ({}),
-  hasResourceBundle: () => true,
-  isInitialized: true,
-  off: () => mockI18n,
-  on: () => mockI18n,
-  options: {},
-  hasLoadedNamespace: () => true,
-  addResource: () => mockI18n,
-  addResources: () => mockI18n,
-  addResourceBundle: () => mockI18n,
-  setDefaultNamespace: () => mockI18n,
-  isInitializing: false,
-  initializedStoreOnce: false,
-  initializedLanguageOnce: false,
-  emit: () => mockI18n,
-  removeResourceBundle: () => mockI18n,
-} as const;
-
-vi.mock('../../../i18n', () => ({
-  default: mockI18n,
-}));
+// Mock i18n - removed since we no longer use internationalization
 
 // Mock the lazy-loaded components
 const mockNavigate = vi.fn();
@@ -181,11 +136,9 @@ afterAll(() => server.close());
 const renderLogin = () => {
   return render(
     <MemoryRouter initialEntries={['/']}>
-      <I18nextProvider i18n={mockI18n as unknown as i18n}>
-        <AuthProvider>
-          <LoginForm />
-        </AuthProvider>
-      </I18nextProvider>
+      <AuthProvider>
+        <LoginForm />
+      </AuthProvider>
     </MemoryRouter>
   );
 };

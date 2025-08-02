@@ -12,7 +12,6 @@ import RedStarField from '../components/RedStarField';
 import PageHeader from '../components/common/PageHeader';
 
 const About = () => {
-  const { t } = useTranslation();
   const values = [
     {
       icon: <SchoolOutlined sx={{ fontSize: 40, color: 'primary.main' }} />,
@@ -85,26 +84,37 @@ const About = () => {
           <Divider sx={{ mb: 3, borderColor: 'primary.main', opacity: 0.2 }} />
 
           <Typography variant="h5" sx={{ mb: 1, fontWeight: 600, color: 'text.primary' }}>
-            {t('pages.about.mission')}
+            Our Mission
           </Typography>
           <Typography variant="body1" sx={{ mb: 3, fontSize: '1.15rem', color: 'text.secondary' }}>
-            {t('pages.about.missionText')}
+            AssignmentAI was born from a simple yet powerful vision: to democratize access to
+            intelligent academic assistance. We believe that every student deserves the opportunity
+            to excel in their educational journey, regardless of their background or circumstances.
             <br />
             <br />
-            {t('pages.about.missionText2')}
+            Our mission is to provide cutting-edge AI-powered tools that enhance learning, improve
+            writing skills, and foster critical thinking. We strive to create an inclusive platform
+            that supports diverse learning styles and academic needs.
             <br />
             <br />
-            {t('pages.about.missionText3')}
+            By combining the power of artificial intelligence with human-centered design, we aim to
+            transform the way students approach their assignments, making learning more engaging,
+            efficient, and effective.
           </Typography>
 
           <Typography variant="h5" sx={{ mb: 1, fontWeight: 600, color: 'text.primary' }}>
-            {t('pages.about.story')}
+            Our Story
           </Typography>
           <Typography variant="body1" sx={{ mb: 3, fontSize: '1.15rem', color: 'text.secondary' }}>
-            {t('pages.about.storyText')}
+            Founded by a team of educators, technologists, and students who experienced firsthand
+            the challenges of academic writing and research, AssignmentAI emerged from the
+            recognition that traditional study methods often fall short in today's fast-paced,
+            information-rich world.
             <br />
             <br />
-            {t('pages.about.storyText2')}
+            We started with a simple question: "How can we leverage technology to make learning more
+            accessible and effective?" This question led us to develop innovative AI solutions that
+            not only assist with writing but also teach valuable skills that last a lifetime.
             <br />
             <br />
             The journey from a dorm room idea to a fully realized application is a testament to the
@@ -113,7 +123,7 @@ const About = () => {
           </Typography>
 
           <Typography variant="h5" sx={{ mb: 1, fontWeight: 600, color: 'text.primary' }}>
-            {t('pages.about.values')}
+            Our Values
           </Typography>
           <Grid container spacing={3} sx={{ mb: 3 }}>
             {values.map((value, index) => (
@@ -149,10 +159,13 @@ const About = () => {
           </Grid>
 
           <Typography variant="h5" sx={{ mb: 1, fontWeight: 600, color: 'text.primary' }}>
-            {t('pages.about.commitment')}
+            Our Commitment
           </Typography>
           <Typography variant="body1" sx={{ mb: 3, fontSize: '1.15rem', color: 'text.secondary' }}>
-            {t('pages.about.commitmentText')}
+            We are committed to continuous innovation, user privacy, and educational excellence. Our
+            platform evolves based on real user feedback, ensuring that we remain at the forefront
+            of educational technology while maintaining the highest standards of security and
+            ethical AI use.
             <br />
             <br />
             We believe in open communication and transparency. Our support team is always ready to
@@ -163,10 +176,12 @@ const About = () => {
           </Typography>
 
           <Typography variant="h5" sx={{ mb: 1, fontWeight: 600, color: 'text.primary' }}>
-            {t('pages.about.joinJourney')}
+            Join Our Journey
           </Typography>
           <Typography variant="body1" sx={{ fontSize: '1.15rem', color: 'text.secondary' }}>
-            {t('pages.about.joinJourneyText')}
+            Whether you're a student looking to improve your academic performance, an educator
+            seeking innovative teaching tools, or an institution aiming to enhance learning
+            outcomes, AssignmentAI is here to support your educational journey.
             <br />
             <br />
             We invite you to connect with us, share your experiences, and help shape the future of

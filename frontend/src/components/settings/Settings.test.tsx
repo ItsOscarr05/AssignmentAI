@@ -67,15 +67,7 @@ vi.mock('@mui/material', () => ({
   ),
 }));
 
-// Mock i18n
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => key,
-    i18n: {
-      changeLanguage: vi.fn(),
-    },
-  }),
-}));
+// Mock i18n - removed since we no longer use internationalization
 
 // Mock settings API
 vi.mock('../../services/api/settings', () => ({
@@ -113,9 +105,9 @@ describe('Settings Component', () => {
   it('renders settings form with initial values', () => {
     render(<Settings initialSettings={mockSettings} />);
 
-    expect(screen.getByRole('switch', { name: 'settings.notifications.email' })).toBeChecked();
-    expect(screen.getByRole('switch', { name: 'settings.notifications.push' })).not.toBeChecked();
-    expect(screen.getByRole('combobox', { name: 'settings.language.language' })).toHaveValue('en');
+    expect(screen.getByRole('switch', { name: 'Email Notifications' })).toBeChecked();
+    expect(screen.getByRole('switch', { name: 'Push Notifications' })).not.toBeChecked();
+    expect(screen.getByRole('combobox', { name: 'Language' })).toHaveValue('en');
   });
 
   it('handles setting updates', async () => {
@@ -127,7 +119,7 @@ describe('Settings Component', () => {
     render(<Settings initialSettings={mockSettings} onUpdate={mockOnUpdate} />);
 
     // Toggle email notifications
-    const emailSwitch = screen.getByRole('switch', { name: 'settings.notifications.email' });
+    const emailSwitch = screen.getByRole('switch', { name: 'Email Notifications' });
     fireEvent.click(emailSwitch);
 
     // Wait for the first update to complete
@@ -142,7 +134,7 @@ describe('Settings Component', () => {
     });
 
     // Change language
-    const languageSelect = screen.getByRole('combobox', { name: 'settings.language.language' });
+    const languageSelect = screen.getByRole('combobox', { name: 'Language' });
     fireEvent.change(languageSelect, { target: { value: 'es' } });
 
     // Wait for the second update to complete and verify both updates

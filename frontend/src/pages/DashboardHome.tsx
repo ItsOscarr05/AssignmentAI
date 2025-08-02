@@ -46,7 +46,7 @@ import {
 } from '@mui/material';
 import dayjs from 'dayjs';
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import DashboardPieChart from '../components/dashboard/DashboardPieChart';
 import { useAuth } from '../contexts/AuthContext';
@@ -67,7 +67,6 @@ const DashboardHome: React.FC = () => {
   const { user, isMockUser } = useAuth();
   const navigate = useNavigate();
   const { breakpoint } = useAspectRatio();
-  const { t } = useTranslation();
 
   // Get user's date format preference (default to locale-based format if not set)
   const userDateFormat =
@@ -379,8 +378,7 @@ const DashboardHome: React.FC = () => {
                     ),
                   }}
                 >
-                  {t('dashboard.welcomeBack')},{' '}
-                  {user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'User'}!
+                  Welcome back, {user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'User'}!
                 </Typography>
                 <IconButton
                   aria-label="notifications"
@@ -401,10 +399,10 @@ const DashboardHome: React.FC = () => {
                 color="text.secondary"
                 sx={{ mb: breakpoint === 'tall' || breakpoint === 'standard' ? 1 : 2 }}
               >
-                {t('dashboard.readyToTackle')}
+                Ready to tackle your assignments?
               </Typography>
               <Typography variant="body2" color="primary" sx={{ fontStyle: 'italic' }}>
-                {t('dashboard.aiTip')}
+                AI Tip: Try asking me to analyze your assignment structure or suggest improvements!
               </Typography>
             </Box>
             <Stack
@@ -428,14 +426,14 @@ const DashboardHome: React.FC = () => {
                 color="primary"
                 onClick={() => navigate('/dashboard/workshop#upload-content-card')}
               >
-                {t('dashboard.uploadContent')}
+                Upload Content
               </Button>
               <Button
                 variant="outlined"
                 color="secondary"
                 onClick={() => navigate('/dashboard/assignments')}
               >
-                {t('dashboard.askAIAboutAssignment')}
+                Ask AI about your assignment
               </Button>
             </Stack>
             <Menu
@@ -474,7 +472,7 @@ const DashboardHome: React.FC = () => {
                       sx={{ fontSize: 40, color: 'red', mb: 3, opacity: 0.5 }}
                     />
                     <Typography variant="h6" sx={{ color: '#222' }} gutterBottom>
-                      {t('dashboard.loadingNotifications')}
+                      Loading notifications...
                     </Typography>
                   </Box>
                 </MenuItem>
@@ -508,10 +506,10 @@ const DashboardHome: React.FC = () => {
                       sx={{ fontSize: 40, color: 'red', mb: 3, opacity: 0.5 }}
                     />
                     <Typography variant="h6" sx={{ color: '#222' }} gutterBottom>
-                      {t('dashboard.noNotificationsYet')}
+                      No notifications yet
                     </Typography>
                     <Typography variant="body2" sx={{ color: '#333' }}>
-                      {t('dashboard.allCaughtUp')}
+                      You're all caught up!
                     </Typography>
                   </Box>
                 </MenuItem>
@@ -570,7 +568,7 @@ const DashboardHome: React.FC = () => {
               }
             >
               <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'black' }}>
-                {t('dashboard.recentActiveAssignments')}
+                Recent Active Assignments
               </Typography>
               <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
                 <Button
@@ -590,7 +588,7 @@ const DashboardHome: React.FC = () => {
                         }
                   }
                 >
-                  {t('dashboard.all')}
+                  All
                 </Button>
                 <Button
                   size="small"
@@ -609,7 +607,7 @@ const DashboardHome: React.FC = () => {
                         }
                   }
                 >
-                  {t('dashboard.notStarted')}
+                  Not Started
                 </Button>
                 <Button
                   size="small"
@@ -628,7 +626,7 @@ const DashboardHome: React.FC = () => {
                         }
                   }
                 >
-                  {t('dashboard.inProgress')}
+                  In Progress
                 </Button>
                 <Button
                   size="small"
@@ -647,7 +645,7 @@ const DashboardHome: React.FC = () => {
                         }
                   }
                 >
-                  {t('dashboard.completed')}
+                  Completed
                 </Button>
               </Stack>
             </Box>
@@ -675,7 +673,7 @@ const DashboardHome: React.FC = () => {
                         p: { xs: 1, md: 2 },
                       }}
                     >
-                      {t('dashboard.assignment')}
+                      Assignment
                     </TableCell>
                     <TableCell
                       sx={{
@@ -685,7 +683,7 @@ const DashboardHome: React.FC = () => {
                         p: { xs: 1, md: 2 },
                       }}
                     >
-                      {t('dashboard.status')}
+                      Status
                     </TableCell>
                     <TableCell
                       sx={{
@@ -695,7 +693,7 @@ const DashboardHome: React.FC = () => {
                         p: { xs: 1, md: 2 },
                       }}
                     >
-                      {t('dashboard.lastUsed')}
+                      Last Used
                     </TableCell>
                     <TableCell
                       sx={{
@@ -706,7 +704,7 @@ const DashboardHome: React.FC = () => {
                         p: { xs: 1, md: 2 },
                       }}
                     >
-                      {t('dashboard.actions')}
+                      Actions
                     </TableCell>
                   </TableRow>
                 </TableHead>
@@ -726,10 +724,10 @@ const DashboardHome: React.FC = () => {
                             sx={{ fontSize: 54, color: 'red', mb: 2, opacity: 0.5 }}
                           />
                           <Typography variant="h5" color="text.secondary" gutterBottom>
-                            {t('dashboard.noAssignmentsYet')}
+                            No assignments yet
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
-                            {t('dashboard.startByUploading')}
+                            Start by uploading your first assignment
                           </Typography>
                         </Box>
                       </TableCell>
@@ -797,7 +795,7 @@ const DashboardHome: React.FC = () => {
                                   fontSize: '0.75rem',
                                 }}
                               >
-                                {t('dashboard.view')}
+                                View
                               </Box>
                             </Button>
                             {assignment.status === 'Completed' && (
@@ -824,7 +822,7 @@ const DashboardHome: React.FC = () => {
                                     fontSize: '0.75rem',
                                   }}
                                 >
-                                  {t('dashboard.regenerate')}
+                                  Regenerate
                                 </Box>
                               </Button>
                             )}
@@ -852,7 +850,7 @@ const DashboardHome: React.FC = () => {
                                     fontSize: '0.75rem',
                                   }}
                                 >
-                                  {t('dashboard.resume')}
+                                  Resume
                                 </Box>
                               </Button>
                             )}
@@ -927,7 +925,7 @@ const DashboardHome: React.FC = () => {
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
               <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'black' }}>
-                {t('dashboard.assignmentDistribution')}
+                Assignment Distribution
               </Typography>
               <Tooltip title="Select a section to navigate to assignments" arrow>
                 <InfoOutlinedIcon
@@ -955,7 +953,7 @@ const DashboardHome: React.FC = () => {
                 justifyContent: 'center',
               }}
             >
-              <Suspense fallback={<div>{t('dashboard.loadingChart')}</div>}>
+              <Suspense fallback={<div>Loading chart...</div>}>
                 <DashboardPieChart
                   data={pieChartData}
                   stats={stats}
@@ -966,7 +964,7 @@ const DashboardHome: React.FC = () => {
             <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
               <FormControl sx={{ minWidth: 150 }}>
                 <InputLabel id="distribution-filter-label" sx={{ color: '#D32F2F' }}>
-                  {t('dashboard.timeframe')}
+                  Timeframe
                 </InputLabel>
                 <Select
                   labelId="distribution-filter-label"
@@ -990,11 +988,11 @@ const DashboardHome: React.FC = () => {
                     },
                   }}
                 >
-                  <MenuItem value="total">{t('dashboard.lifetime')}</MenuItem>
-                  <MenuItem value="yearly">{t('dashboard.thisYear')}</MenuItem>
-                  <MenuItem value="monthly">{t('dashboard.thisMonth')}</MenuItem>
-                  <MenuItem value="weekly">{t('dashboard.thisWeek')}</MenuItem>
-                  <MenuItem value="daily">{t('dashboard.today')}</MenuItem>
+                  <MenuItem value="total">Lifetime</MenuItem>
+                  <MenuItem value="yearly">This Year</MenuItem>
+                  <MenuItem value="monthly">This Month</MenuItem>
+                  <MenuItem value="weekly">This Week</MenuItem>
+                  <MenuItem value="daily">Today</MenuItem>
                 </Select>
               </FormControl>
             </Box>
@@ -1021,7 +1019,7 @@ const DashboardHome: React.FC = () => {
             }}
           >
             <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2, color: 'black' }}>
-              {t('dashboard.aiActivityInsights')}
+              AI Activity Insights
             </Typography>
             <Grid container spacing={{ xs: 1, md: 2 }}>
               <Grid item xs={6}>
@@ -1045,7 +1043,7 @@ const DashboardHome: React.FC = () => {
                   <Box display="flex" flexDirection="column" alignItems="center">
                     <AssignmentIcon sx={{ color: '#1976D2', mb: 3 }} />
                     <Typography variant="subtitle2" color="text.secondary">
-                      {t('dashboard.assignmentsGenerated')}
+                      Assignments Generated
                     </Typography>
                     <Typography variant="h5" sx={{ color: '#1976D2', fontWeight: 700 }}>
                       {mockActivity.assignmentsGenerated}
@@ -1078,7 +1076,7 @@ const DashboardHome: React.FC = () => {
                   <Box display="flex" flexDirection="column" alignItems="center">
                     <CheckCircleIcon sx={{ color: '#388E3C', mb: 3 }} />
                     <Typography variant="subtitle2" color="text.secondary">
-                      {t('dashboard.assignmentsCompleted')}
+                      Assignments Completed
                     </Typography>
                     <Typography variant="h5" sx={{ color: '#388E3C', fontWeight: 700 }}>
                       {assignmentsCompletedCount}
@@ -1106,7 +1104,7 @@ const DashboardHome: React.FC = () => {
                   <Box display="flex" flexDirection="column" alignItems="center">
                     <TrendingUpIcon sx={{ color: '#8E24AA', mb: 3 }} />
                     <Typography variant="subtitle2" color="text.secondary">
-                      {t('dashboard.monthlyTokenUsage')}
+                      Monthly Token Usage
                     </Typography>
                     <Typography variant="h5" sx={{ color: '#8E24AA', fontWeight: 700 }}>
                       {(monthlyTokenUsage ?? 0).toLocaleString()}
@@ -1135,7 +1133,7 @@ const DashboardHome: React.FC = () => {
                   <Box display="flex" flexDirection="column" alignItems="center">
                     <AutoAwesomeOutlined sx={{ color: '#FFA000', mb: 3 }} />
                     <Typography variant="subtitle2" color="text.secondary">
-                      {t('dashboard.lifetimeTokenUsage')}
+                      Lifetime Token Usage
                     </Typography>
                     <Typography variant="h5" sx={{ color: '#FFA000', fontWeight: 700 }}>
                       {(lifetimeTokenUsage ?? 0).toLocaleString()}
@@ -1162,7 +1160,7 @@ const DashboardHome: React.FC = () => {
             }}
           >
             <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2, color: 'black' }}>
-              {t('dashboard.assignmentAISuggestions')}
+              Assignment AI Suggestions
             </Typography>
             {assignments.length === 0 ? (
               <Box
@@ -1174,10 +1172,10 @@ const DashboardHome: React.FC = () => {
               >
                 <LightbulbIcon sx={{ fontSize: 54, color: 'red', mb: 2, opacity: 0.5 }} />
                 <Typography variant="h5" color="text.secondary" gutterBottom>
-                  {t('dashboard.noSuggestionsYet')}
+                  No suggestions yet
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {t('dashboard.checkBackLater')}
+                  Check back later for personalized recommendations
                 </Typography>
               </Box>
             ) : (
@@ -1195,17 +1193,21 @@ const DashboardHome: React.FC = () => {
                   >
                     <LightbulbIcon sx={{ color: '#8E24AA' }} />
                     <Typography variant="body2">
-                      {t('dashboard.getHeadStart')}{' '}
+                      Get a head start on your{' '}
                       <RouterLink
                         to="/dashboard/assignments"
                         state={{ name: suggestionAssignment.title }}
                         style={{ fontWeight: 'bold', color: '#8E24AA', textDecoration: 'none' }}
-                        onMouseOver={e => (e.currentTarget.style.textDecoration = 'underline')}
-                        onMouseOut={e => (e.currentTarget.style.textDecoration = 'none')}
+                        onMouseOver={(e: React.MouseEvent<HTMLAnchorElement>) =>
+                          (e.currentTarget.style.textDecoration = 'underline')
+                        }
+                        onMouseOut={(e: React.MouseEvent<HTMLAnchorElement>) =>
+                          (e.currentTarget.style.textDecoration = 'none')
+                        }
                       >
                         {suggestionAssignment.title}
                       </RouterLink>{' '}
-                      assignment. {t('dashboard.notStartedStatus')}
+                      assignment.
                     </Typography>
                   </Paper>
                 )}
@@ -1222,13 +1224,17 @@ const DashboardHome: React.FC = () => {
                   >
                     <ExploreIcon sx={{ color: '#1976D2' }} />
                     <Typography variant="body2">
-                      {t('dashboard.expandKnowledge')}{' '}
+                      Expand your knowledge with{' '}
                       <RouterLink
                         to="/dashboard/assignments"
                         state={{ subject: unusedCoreSubject }}
                         style={{ fontWeight: 'bold', color: '#1976D2', textDecoration: 'none' }}
-                        onMouseOver={e => (e.currentTarget.style.textDecoration = 'underline')}
-                        onMouseOut={e => (e.currentTarget.style.textDecoration = 'none')}
+                        onMouseOver={(e: React.MouseEvent<HTMLAnchorElement>) =>
+                          (e.currentTarget.style.textDecoration = 'underline')
+                        }
+                        onMouseOut={(e: React.MouseEvent<HTMLAnchorElement>) =>
+                          (e.currentTarget.style.textDecoration = 'none')
+                        }
                       >
                         {unusedCoreSubject}
                       </RouterLink>
@@ -1248,17 +1254,21 @@ const DashboardHome: React.FC = () => {
                 >
                   <CreateIcon sx={{ color: '#1976D2' }} />
                   <Typography variant="body2">
-                    {t('dashboard.improveWriting')}{' '}
+                    Improve your writing with our{' '}
                     <RouterLink
                       to="/dashboard/workshop"
                       state={{ responseTab: 1 }}
                       style={{ fontWeight: 'bold', color: '#1976D2', textDecoration: 'none' }}
-                      onMouseOver={e => (e.currentTarget.style.textDecoration = 'underline')}
-                      onMouseOut={e => (e.currentTarget.style.textDecoration = 'none')}
+                      onMouseOver={(e: React.MouseEvent<HTMLAnchorElement>) =>
+                        (e.currentTarget.style.textDecoration = 'underline')
+                      }
+                      onMouseOut={(e: React.MouseEvent<HTMLAnchorElement>) =>
+                        (e.currentTarget.style.textDecoration = 'none')
+                      }
                     >
-                      {t('dashboard.rewriteTool')}
+                      rewrite tool
                     </RouterLink>{' '}
-                    {t('dashboard.canHelpRefine')}
+                    can help refine your content.
                   </Typography>
                 </Paper>
                 <Paper
@@ -1273,16 +1283,20 @@ const DashboardHome: React.FC = () => {
                 >
                   <PsychologyIcon sx={{ color: '#388E3C' }} />
                   <Typography variant="body2">
-                    {t('dashboard.stuckOnProblem')}{' '}
+                    Stuck on a problem? Our{' '}
                     <RouterLink
                       to="/dashboard/workshop"
                       style={{ fontWeight: 'bold', color: '#388E3C', textDecoration: 'none' }}
-                      onMouseOver={e => (e.currentTarget.style.textDecoration = 'underline')}
-                      onMouseOut={e => (e.currentTarget.style.textDecoration = 'none')}
+                      onMouseOver={(e: React.MouseEvent<HTMLAnchorElement>) =>
+                        (e.currentTarget.style.textDecoration = 'underline')
+                      }
+                      onMouseOut={(e: React.MouseEvent<HTMLAnchorElement>) =>
+                        (e.currentTarget.style.textDecoration = 'none')
+                      }
                     >
-                      {t('dashboard.workshop')}
+                      workshop
                     </RouterLink>{' '}
-                    {t('dashboard.askAIForHints')}
+                    can help you get unstuck.
                   </Typography>
                 </Paper>
                 {mostFrequentSubject && (
@@ -1298,18 +1312,21 @@ const DashboardHome: React.FC = () => {
                   >
                     <ArticleIcon sx={{ color: '#FFA000' }} />
                     <Typography variant="body2">
-                      {t('dashboard.expertIn')} {mostFrequentSubject}.{' '}
-                      {t('dashboard.trySummarizing')}{' '}
+                      You're becoming an expert in {mostFrequentSubject}. Try our{' '}
                       <RouterLink
                         to="/dashboard/workshop"
                         state={{ responseTab: 3 }}
                         style={{ fontWeight: 'bold', color: '#FFA000', textDecoration: 'none' }}
-                        onMouseOver={e => (e.currentTarget.style.textDecoration = 'underline')}
-                        onMouseOut={e => (e.currentTarget.style.textDecoration = 'none')}
+                        onMouseOver={(e: React.MouseEvent<HTMLAnchorElement>) =>
+                          (e.currentTarget.style.textDecoration = 'underline')
+                        }
+                        onMouseOut={(e: React.MouseEvent<HTMLAnchorElement>) =>
+                          (e.currentTarget.style.textDecoration = 'none')
+                        }
                       >
-                        {t('dashboard.summarizing')}
+                        summarizing
                       </RouterLink>{' '}
-                      {t('dashboard.prepareForExam')}
+                      to prepare for exams.
                     </Typography>
                   </Paper>
                 )}
@@ -1324,16 +1341,15 @@ const DashboardHome: React.FC = () => {
         onClose={() => setSelectedAssignment(null)}
         aria-labelledby="open-workshop-dialog-title"
       >
-        <DialogTitle id="open-workshop-dialog-title">{t('dashboard.openInWorkshop')}</DialogTitle>
+        <DialogTitle id="open-workshop-dialog-title">Open in Workshop</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            {t('dashboard.wouldYouLikeToOpen')} <b>{selectedAssignment?.title}</b>{' '}
-            {t('dashboard.inWorkshop')}
+            Would you like to open <b>{selectedAssignment?.title}</b> in the workshop?
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setSelectedAssignment(null)} color="primary">
-            {t('common.cancel')}
+            Cancel
           </Button>
           <Button
             onClick={() => {
@@ -1348,7 +1364,7 @@ const DashboardHome: React.FC = () => {
             color="primary"
             variant="contained"
           >
-            {t('dashboard.openInWorkshopButton')}
+            Open in Workshop
           </Button>
         </DialogActions>
       </Dialog>
@@ -1358,26 +1374,24 @@ const DashboardHome: React.FC = () => {
         onClose={() => setViewAssignment(null)}
         aria-labelledby="view-assignment-dialog-title"
       >
-        <DialogTitle id="view-assignment-dialog-title">
-          {t('dashboard.assignmentDetails')}
-        </DialogTitle>
+        <DialogTitle id="view-assignment-dialog-title">Assignment Details</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            <b>{t('dashboard.title')}:</b> {viewAssignment?.title}
+            <b>Title:</b> {viewAssignment?.title}
             <br />
-            <b>{t('dashboard.status')}:</b> {viewAssignment?.status}
+            <b>Status:</b> {viewAssignment?.status}
             <br />
-            <b>{t('dashboard.createdAt')}:</b>{' '}
+            <b>Created At:</b>{' '}
             {viewAssignment ? formatDateWithPreference(viewAssignment.createdAt) : ''}
             <br />
-            <b>{t('dashboard.wordCount')}:</b> {viewAssignment?.wordCount}
+            <b>Word Count:</b> {viewAssignment?.wordCount}
             <br />
-            <b>{t('dashboard.tokensUsed')}:</b> {viewAssignment?.tokensUsed}
+            <b>Tokens Used:</b> {viewAssignment?.tokensUsed}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setViewAssignment(null)} color="primary">
-            {t('common.close')}
+            Close
           </Button>
         </DialogActions>
       </Dialog>

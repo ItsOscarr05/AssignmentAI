@@ -24,6 +24,7 @@ const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Terms = lazy(() => import('./pages/Terms'));
 const Workshop = lazy(() => import('./pages/Workshop'));
+const TranslationDemo = lazy(() => import('./pages/TranslationDemo'));
 const AssignmentDetail = lazy(() => import('./components/assignments/AssignmentDetail'));
 const OAuthCallback = lazy(() =>
   import('./components/auth/OAuthCallback').then(module => ({ default: module.OAuthCallback }))
