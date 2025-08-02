@@ -1054,7 +1054,7 @@ const Settings: React.FC = () => {
         borderRadius: 3,
         background:
           theme.palette.mode === 'dark'
-            ? 'linear-gradient(145deg, rgba(50,50,50,0.9) 0%, rgba(40,40,40,0.9) 100%)'
+            ? 'linear-gradient(145deg, rgba(0,8,20,0.9) 0%, rgba(0,8,20,0.9) 100%)'
             : 'linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(240,240,240,0.9) 100%)',
         backdropFilter: 'blur(10px)',
         transition: 'all 0.3s ease-in-out',
@@ -1070,7 +1070,7 @@ const Settings: React.FC = () => {
           sx={{
             p: 1.5,
             borderRadius: 2,
-            background: '#ffffff',
+            background: theme => (theme.palette.mode === 'dark' ? '#000814' : '#ffffff'),
             color: theme.palette.primary.main,
             display: 'flex',
             alignItems: 'center',
@@ -1799,6 +1799,12 @@ const Settings: React.FC = () => {
                         setLanguage(newLanguage);
                         // Language change functionality removed - English only
                       }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          backgroundColor: theme =>
+                            theme.palette.mode === 'dark' ? '#000814' : '#fff',
+                        },
+                      }}
                     >
                       <MenuItem value="en">English</MenuItem>
                       <MenuItem
@@ -2052,6 +2058,12 @@ const Settings: React.FC = () => {
                       value={subscription.model}
                       label="AI Model"
                       onChange={e => handleModelChange(e.target.value)}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          backgroundColor: theme =>
+                            theme.palette.mode === 'dark' ? '#000814' : '#fff',
+                        },
+                      }}
                     >
                       {Object.entries(subscriptionConfig).map(([plan, config]) => (
                         <MenuItem
@@ -2741,6 +2753,12 @@ const Settings: React.FC = () => {
                           priorityLevel: e.target.value,
                         })
                       }
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          backgroundColor: theme =>
+                            theme.palette.mode === 'dark' ? '#000814' : '#fff',
+                        },
+                      }}
                     >
                       <MenuItem value="low">Low Priority</MenuItem>
                       <MenuItem value="medium">Medium Priority</MenuItem>
@@ -2862,6 +2880,12 @@ const Settings: React.FC = () => {
                               workHoursStart: Number(e.target.value),
                             })
                           }
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              backgroundColor: theme =>
+                                theme.palette.mode === 'dark' ? '#000814' : '#fff',
+                            },
+                          }}
                         >
                           {Array.from({ length: 24 }, (_, i) => (
                             <MenuItem key={i} value={i}>
@@ -2885,6 +2909,12 @@ const Settings: React.FC = () => {
                               workHoursEnd: Number(e.target.value),
                             })
                           }
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              backgroundColor: theme =>
+                                theme.palette.mode === 'dark' ? '#000814' : '#fff',
+                            },
+                          }}
                         >
                           {Array.from({ length: 24 }, (_, i) => (
                             <MenuItem key={i} value={i}>
@@ -3498,6 +3528,12 @@ const Settings: React.FC = () => {
                         })
                       }
                       disabled={!privacySettings.autoLock}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          backgroundColor: theme =>
+                            theme.palette.mode === 'dark' ? '#000814' : '#fff',
+                        },
+                      }}
                     >
                       <MenuItem value={5}>5 minutes</MenuItem>
                       <MenuItem value={15}>15 minutes</MenuItem>
@@ -3688,7 +3724,7 @@ const Settings: React.FC = () => {
                         fullWidth
                         sx={{
                           bgcolor: 'error.main',
-                          color: 'white',
+                          color: theme => (theme.palette.mode === 'dark' ? 'white' : 'white'),
                           fontSize: { xs: '0.875rem', md: '1rem' },
                           '&:hover': {
                             bgcolor: 'error.dark',
@@ -3713,8 +3749,15 @@ const Settings: React.FC = () => {
         onClose={() => setShowNotificationPreview(false)}
         maxWidth="sm"
         fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+          },
+        }}
       >
-        <DialogTitle>Notification Preview</DialogTitle>
+        <DialogTitle sx={{ color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black') }}>
+          Notification Preview
+        </DialogTitle>
         <DialogContent>
           <Box
             sx={{
@@ -3753,9 +3796,14 @@ const Settings: React.FC = () => {
         onClose={() => setShowModelComparison(false)}
         maxWidth="md"
         fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+          },
+        }}
       >
         <DialogContent>
-          <DialogTitle>
+          <DialogTitle sx={{ color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black') }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <CompareArrows />
               AI Model Comparison
@@ -3815,7 +3863,7 @@ const Settings: React.FC = () => {
                             : plan === 'pro'
                             ? '#9c27b0'
                             : '#ff9800',
-                        color: 'white',
+                        color: theme => (theme.palette.mode === 'dark' ? 'white' : 'white'),
                         fontWeight: 'bold',
                       }}
                     />
@@ -4111,7 +4159,7 @@ const Settings: React.FC = () => {
                 },
                 '&:disabled': {
                   backgroundColor: '#9e9e9e',
-                  color: '#ffffff',
+                  color: theme => (theme.palette.mode === 'dark' ? '#ffffff' : '#ffffff'),
                 },
               }}
             >
@@ -4157,8 +4205,13 @@ const Settings: React.FC = () => {
         onClose={() => setShowNotificationTest(false)}
         maxWidth="md"
         fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+          },
+        }}
       >
-        <DialogTitle>
+        <DialogTitle sx={{ color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black') }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <NotificationsActiveOutlined />
             Test Notifications
@@ -4382,8 +4435,13 @@ const Settings: React.FC = () => {
         onClose={() => setShowSecurityAudit(false)}
         maxWidth="md"
         fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+          },
+        }}
       >
-        <DialogTitle>
+        <DialogTitle sx={{ color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black') }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <SecurityOutlined />
             Security Audit Report
@@ -4531,8 +4589,13 @@ const Settings: React.FC = () => {
         onClose={() => setShowDeleteAccountDialog(false)}
         maxWidth="sm"
         fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+          },
+        }}
       >
-        <DialogTitle>
+        <DialogTitle sx={{ color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black') }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <DeleteForeverOutlined color="error" />
             Delete Account
@@ -4599,8 +4662,13 @@ const Settings: React.FC = () => {
         onClose={() => setShowDownloadDataDialog(false)}
         maxWidth="sm"
         fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+          },
+        }}
       >
-        <DialogTitle>
+        <DialogTitle sx={{ color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black') }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <DownloadOutlined />
             Download Your Data
@@ -4622,6 +4690,11 @@ const Settings: React.FC = () => {
                 value={exportFormat}
                 onChange={e => setExportFormat(e.target.value as 'json' | 'pdf' | 'csv' | 'xml')}
                 displayEmpty
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+                  },
+                }}
               >
                 <MenuItem value="json">JSON (JavaScript Object Notation)</MenuItem>
                 <MenuItem value="pdf">PDF (Portable Document Format)</MenuItem>
@@ -4728,8 +4801,13 @@ const Settings: React.FC = () => {
         onClose={() => setShowChangePasswordDialog(false)}
         maxWidth="sm"
         fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+          },
+        }}
       >
-        <DialogTitle>
+        <DialogTitle sx={{ color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black') }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <VpnKeyOutlined />
             Change Password
@@ -4956,8 +5034,13 @@ const Settings: React.FC = () => {
         onClose={() => setShowAccountInfoDialog(false)}
         maxWidth="md"
         fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+          },
+        }}
       >
-        <DialogTitle>
+        <DialogTitle sx={{ color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black') }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <VerifiedUserOutlined />
             Account Information
@@ -5048,7 +5131,7 @@ const Settings: React.FC = () => {
                           : subscription.plan === 'pro'
                           ? '#9c27b0'
                           : '#ff9800',
-                      color: 'white',
+                      color: theme => (theme.palette.mode === 'dark' ? 'white' : 'white'),
                     }}
                   />
                 </Box>

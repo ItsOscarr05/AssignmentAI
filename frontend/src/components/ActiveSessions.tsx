@@ -140,16 +140,16 @@ export const ActiveSessions: React.FC<ActiveSessionsProps> = ({ onSessionRevoked
           {sessions.map(session => (
             <div
               key={session.id}
-              className="p-4 border rounded-lg shadow-sm hover:shadow-md transition-shadow"
+              className="p-4 border rounded-lg shadow-sm hover:shadow-md transition-shadow bg-white dark:bg-gray-800"
             >
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="font-medium">{session.device}</p>
-                  <p className="text-sm text-gray-600">IP: {session.ip}</p>
-                  <p className="text-sm text-gray-600">
+                  <p className="font-medium dark:text-white">{session.device}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">IP: {session.ip}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
                     Last active: {new Date(session.lastActive).toLocaleString()}
                   </p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
                     Expires: {new Date(session.expiresAt).toLocaleString()}
                   </p>
                   <button
@@ -168,27 +168,33 @@ export const ActiveSessions: React.FC<ActiveSessionsProps> = ({ onSessionRevoked
               </div>
 
               {selectedSession === session.id && analytics && (
-                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-4">Session Analytics</h3>
+                <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-4 dark:text-white">Session Analytics</h3>
 
                   <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div className="p-3 bg-white rounded shadow">
-                      <p className="text-sm text-gray-600">Total Page Views</p>
-                      <p className="text-xl font-semibold">{analytics.summary.total_page_views}</p>
+                    <div className="p-3 bg-white dark:bg-gray-700 rounded shadow">
+                      <p className="text-sm text-gray-600 dark:text-gray-300">Total Page Views</p>
+                      <p className="text-xl font-semibold dark:text-white">
+                        {analytics.summary.total_page_views}
+                      </p>
                     </div>
-                    <div className="p-3 bg-white rounded shadow">
-                      <p className="text-sm text-gray-600">Total API Calls</p>
-                      <p className="text-xl font-semibold">{analytics.summary.total_api_calls}</p>
+                    <div className="p-3 bg-white dark:bg-gray-700 rounded shadow">
+                      <p className="text-sm text-gray-600 dark:text-gray-300">Total API Calls</p>
+                      <p className="text-xl font-semibold dark:text-white">
+                        {analytics.summary.total_api_calls}
+                      </p>
                     </div>
-                    <div className="p-3 bg-white rounded shadow">
-                      <p className="text-sm text-gray-600">Error Rate</p>
-                      <p className="text-xl font-semibold">
+                    <div className="p-3 bg-white dark:bg-gray-700 rounded shadow">
+                      <p className="text-sm text-gray-600 dark:text-gray-300">Error Rate</p>
+                      <p className="text-xl font-semibold dark:text-white">
                         {analytics.summary.error_rate.toFixed(1)}%
                       </p>
                     </div>
-                    <div className="p-3 bg-white rounded shadow">
-                      <p className="text-sm text-gray-600">Avg. Session Duration</p>
-                      <p className="text-xl font-semibold">
+                    <div className="p-3 bg-white dark:bg-gray-700 rounded shadow">
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        Avg. Session Duration
+                      </p>
+                      <p className="text-xl font-semibold dark:text-white">
                         {formatDuration(analytics.summary.average_session_duration)}
                       </p>
                     </div>

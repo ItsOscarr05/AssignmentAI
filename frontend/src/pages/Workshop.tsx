@@ -38,8 +38,6 @@ import {
   ListItemText,
   Paper,
   Snackbar,
-  Tab,
-  Tabs,
   TextField,
   Tooltip,
   Typography,
@@ -348,7 +346,7 @@ const Workshop: React.FC = () => {
 
   // Custom styles
   const cardStyle = {
-    backgroundColor: '#fff',
+    backgroundColor: (theme: any) => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
     boxShadow: '0 2px 12px rgba(0, 0, 0, 0.1)',
     borderRadius: '12px',
     transition: 'all 0.2s ease-in-out',
@@ -477,6 +475,7 @@ const Workshop: React.FC = () => {
               onChange={e => setInput(e.target.value)}
               sx={{
                 '& .MuiOutlinedInput-root': {
+                  backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#ffffff'),
                   '& fieldset': {
                     borderColor: 'red',
                   },
@@ -654,7 +653,7 @@ const Workshop: React.FC = () => {
     <Box
       sx={{
         p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2),
-        backgroundColor: 'white',
+        backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : 'white'),
         minHeight: '100vh',
         overflow: 'hidden',
         width: '100%',
@@ -730,7 +729,7 @@ const Workshop: React.FC = () => {
                 fontWeight: { xs: 600, md: 400 },
               }}
             >
-              AI Workshop
+              Workshop
             </Typography>
             <Button
               variant="outlined"
@@ -1014,74 +1013,68 @@ const Workshop: React.FC = () => {
               >
                 Upload Content
               </Typography>
-              <Tabs
-                value={activeTab}
-                onChange={(_e, newValue) => setActiveTab(newValue)}
-                sx={{
-                  '& .MuiTabs-indicator': {
-                    backgroundColor:
-                      activeTab === 0 ? 'red' : activeTab === 1 ? '#8884d8' : '#82ca9d',
-                  },
-                }}
-              >
-                <Tab
-                  label="Chat"
-                  icon={<ChatOutlinedIcon sx={{ color: 'red' }} />}
-                  iconPosition="start"
+              <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                <Button
+                  onClick={() => setActiveTab(0)}
                   sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
                     color: 'red',
-                    '&.Mui-selected': {
+                    borderBottom: activeTab === 0 ? '2px solid red' : 'none',
+                    backgroundColor: 'transparent',
+                    textTransform: 'none',
+                    fontWeight: activeTab === 0 ? 'bold' : 'normal',
+                    '&:hover': {
+                      backgroundColor: 'transparent',
                       color: 'red',
                     },
-                    '& .MuiTab-label': {
-                      display: { xs: 'none', sm: 'block' },
-                    },
-                    '@media (max-width: 480px)': {
-                      '& .MuiTab-label': {
-                        display: 'none',
-                      },
-                    },
                   }}
-                />
-                <Tab
-                  label="Files"
-                  icon={<UploadOutlinedIcon sx={{ color: '#8884d8' }} />}
-                  iconPosition="start"
+                >
+                  <ChatOutlinedIcon sx={{ color: 'red' }} />
+                  <Typography sx={{ display: { xs: 'none', sm: 'block' } }}>CHAT</Typography>
+                </Button>
+                <Button
+                  onClick={() => setActiveTab(1)}
                   sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
                     color: '#8884d8',
-                    '&.Mui-selected': {
+                    borderBottom: activeTab === 1 ? '2px solid #8884d8' : 'none',
+                    backgroundColor: 'transparent',
+                    textTransform: 'none',
+                    fontWeight: activeTab === 1 ? 'bold' : 'normal',
+                    '&:hover': {
+                      backgroundColor: 'transparent',
                       color: '#8884d8',
                     },
-                    '& .MuiTab-label': {
-                      display: { xs: 'none', sm: 'block' },
-                    },
-                    '@media (max-width: 480px)': {
-                      '& .MuiTab-label': {
-                        display: 'none',
-                      },
-                    },
                   }}
-                />
-                <Tab
-                  label="Links"
-                  icon={<LinkOutlinedIcon sx={{ color: '#82ca9d' }} />}
-                  iconPosition="start"
+                >
+                  <UploadOutlinedIcon sx={{ color: '#8884d8' }} />
+                  <Typography sx={{ display: { xs: 'none', sm: 'block' } }}>FILES</Typography>
+                </Button>
+                <Button
+                  onClick={() => setActiveTab(2)}
                   sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
                     color: '#82ca9d',
-                    '&.Mui-selected': {
+                    borderBottom: activeTab === 2 ? '2px solid #82ca9d' : 'none',
+                    backgroundColor: 'transparent',
+                    textTransform: 'none',
+                    fontWeight: activeTab === 2 ? 'bold' : 'normal',
+                    '&:hover': {
+                      backgroundColor: 'transparent',
                       color: '#82ca9d',
                     },
-                    '& .MuiTab-label': {
-                      display: { xs: 'none', sm: 'block' },
-                    },
-                    '@media (max-width: 480px)': {
-                      '& .MuiTab-label': {
-                        display: 'none',
-                      },
-                    },
                   }}
-                />
-              </Tabs>
+                >
+                  <LinkOutlinedIcon sx={{ color: '#82ca9d' }} />
+                  <Typography sx={{ display: { xs: 'none', sm: 'block' } }}>LINKS</Typography>
+                </Button>
+              </Box>
             </Box>
             <Box sx={{ p: 1 }}>
               <TabPanel value={activeTab} index={0}>
@@ -1190,119 +1183,140 @@ const Workshop: React.FC = () => {
               </Box>
 
               {/* Bottom row: Tabs */}
-              <Tabs
-                value={responseTab}
-                onChange={(_e, newValue) => setResponseTab(newValue)}
-                sx={{
-                  '& .MuiTabs-indicator': {
-                    backgroundColor:
-                      responseTab === 0
-                        ? '#9c27b0'
-                        : responseTab === 1
-                        ? '#2196f3'
-                        : responseTab === 2
-                        ? '#ffc107'
-                        : '#ff9800',
-                  },
-                }}
-              >
-                <Tab
-                  label="Download"
-                  icon={
-                    <DownloadOutlinedIcon
-                      sx={{ color: '#9c27b0', fontSize: { xs: '1rem', sm: '1.25rem' } }}
-                    />
-                  }
-                  iconPosition="start"
+              <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                <Button
+                  onClick={() => setResponseTab(0)}
                   sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
                     color: '#9c27b0',
-                    '&.Mui-selected': {
+                    borderBottom: responseTab === 0 ? '2px solid #9c27b0' : 'none',
+                    backgroundColor: 'transparent',
+                    textTransform: 'none',
+                    fontWeight: responseTab === 0 ? 'bold' : 'normal',
+                    minWidth: { xs: 50, sm: 100 },
+                    flex: { xs: 1, sm: 'none' },
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                    '&:hover': {
+                      backgroundColor: 'transparent',
                       color: '#9c27b0',
                     },
+                  }}
+                >
+                  <DownloadOutlinedIcon
+                    sx={{ color: '#9c27b0', fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                  />
+                  <Typography
+                    sx={{
+                      display: { xs: 'none', sm: 'block' },
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                      color: 'inherit',
+                    }}
+                  >
+                    DOWNLOAD
+                  </Typography>
+                </Button>
+                <Button
+                  onClick={() => setResponseTab(1)}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    color: '#2196f3',
+                    borderBottom: responseTab === 1 ? '2px solid #2196f3' : 'none',
+                    backgroundColor: 'transparent',
+                    textTransform: 'none',
+                    fontWeight: responseTab === 1 ? 'bold' : 'normal',
                     minWidth: { xs: 50, sm: 100 },
                     flex: { xs: 1, sm: 'none' },
                     fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                    '@media (max-width: 480px)': {
-                      '& .MuiTab-label': {
-                        display: 'none !important',
-                      },
-                    },
-                  }}
-                />
-                <Tab
-                  label="Rewrite"
-                  icon={
-                    <EditOutlinedIcon
-                      sx={{ color: '#2196f3', fontSize: { xs: '1rem', sm: '1.25rem' } }}
-                    />
-                  }
-                  iconPosition="start"
-                  sx={{
-                    color: '#2196f3',
-                    '&.Mui-selected': {
+                    '&:hover': {
+                      backgroundColor: 'transparent',
                       color: '#2196f3',
                     },
+                  }}
+                >
+                  <EditOutlinedIcon
+                    sx={{ color: '#2196f3', fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                  />
+                  <Typography
+                    sx={{
+                      display: { xs: 'none', sm: 'block' },
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                      color: 'inherit',
+                    }}
+                  >
+                    REWRITE
+                  </Typography>
+                </Button>
+                <Button
+                  onClick={() => setResponseTab(2)}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    color: '#ffc107',
+                    borderBottom: responseTab === 2 ? '2px solid #ffc107' : 'none',
+                    backgroundColor: 'transparent',
+                    textTransform: 'none',
+                    fontWeight: responseTab === 2 ? 'bold' : 'normal',
                     minWidth: { xs: 50, sm: 100 },
                     flex: { xs: 1, sm: 'none' },
                     fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                    '@media (max-width: 480px)': {
-                      '& .MuiTab-label': {
-                        display: 'none !important',
-                      },
-                    },
-                  }}
-                  ref={rewriteTabRef}
-                />
-                <Tab
-                  label="Extract"
-                  icon={
-                    <FormatListBulletedIcon
-                      sx={{ color: '#ffc107', fontSize: { xs: '1rem', sm: '1.25rem' } }}
-                    />
-                  }
-                  iconPosition="start"
-                  sx={{
-                    color: '#ffc107',
-                    '&.Mui-selected': {
+                    '&:hover': {
+                      backgroundColor: 'transparent',
                       color: '#ffc107',
                     },
+                  }}
+                >
+                  <FormatListBulletedIcon
+                    sx={{ color: '#ffc107', fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                  />
+                  <Typography
+                    sx={{
+                      display: { xs: 'none', sm: 'block' },
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                      color: 'inherit',
+                    }}
+                  >
+                    EXTRACT
+                  </Typography>
+                </Button>
+                <Button
+                  onClick={() => setResponseTab(3)}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    color: '#ff9800',
+                    borderBottom: responseTab === 3 ? '2px solid #ff9800' : 'none',
+                    backgroundColor: 'transparent',
+                    textTransform: 'none',
+                    fontWeight: responseTab === 3 ? 'bold' : 'normal',
                     minWidth: { xs: 50, sm: 100 },
                     flex: { xs: 1, sm: 'none' },
                     fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                    '@media (max-width: 480px)': {
-                      '& .MuiTab-label': {
-                        display: 'none !important',
-                      },
-                    },
-                  }}
-                />
-                <Tab
-                  label="Summarize"
-                  icon={
-                    <RecordVoiceOverOutlined
-                      sx={{ color: '#ff9800', fontSize: { xs: '1rem', sm: '1.25rem' } }}
-                    />
-                  }
-                  iconPosition="start"
-                  sx={{
-                    color: '#ff9800',
-                    '&.Mui-selected': {
+                    '&:hover': {
+                      backgroundColor: 'transparent',
                       color: '#ff9800',
                     },
-                    minWidth: { xs: 50, sm: 100 },
-                    flex: { xs: 1, sm: 'none' },
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                    '& .MuiTab-label': {
-                      display: { xs: 'none', sm: 'block' },
-                    },
-                    '@media (max-width: 480px)': {
-                      '& .MuiTab-label': {
-                        display: 'none',
-                      },
-                    },
                   }}
-                />
-              </Tabs>
+                >
+                  <RecordVoiceOverOutlined
+                    sx={{ color: '#ff9800', fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                  />
+                  <Typography
+                    sx={{
+                      display: { xs: 'none', sm: 'block' },
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                      color: 'inherit',
+                    }}
+                  >
+                    SUMMARIZE
+                  </Typography>
+                </Button>
+              </Box>
             </Box>
             <Divider sx={{ mb: 2 }} />
             <Box sx={{ minHeight: '200px', width: '100%', px: { xs: 0, sm: 2 } }}>
@@ -1406,7 +1420,14 @@ const Workshop: React.FC = () => {
                     p: 3,
                   }}
                 >
-                  <ChatIcon sx={{ fontSize: 48, color: 'red', mb: 2, opacity: 0.5 }} />
+                  <ChatIcon
+                    sx={{
+                      fontSize: 48,
+                      color: theme => (theme.palette.mode === 'dark' ? '#D32F2F' : 'red'),
+                      mb: 2,
+                      opacity: 0.5,
+                    }}
+                  />
                   <Typography variant="h6" color="text.secondary" gutterBottom>
                     No responses yet
                   </Typography>
@@ -1468,19 +1489,25 @@ const Workshop: React.FC = () => {
             <List>
               <ListItem button onClick={() => handleQuickActionClick(0)}>
                 <ListItemIcon>
-                  <ChatOutlinedIcon sx={{ color: 'red' }} />
+                  <ChatOutlinedIcon
+                    sx={{ color: theme => (theme.palette.mode === 'dark' ? '#D32F2F' : 'red') }}
+                  />
                 </ListItemIcon>
                 <ListItemText primary="Start New Chat" />
               </ListItem>
               <ListItem button onClick={() => handleQuickActionClick(1)}>
                 <ListItemIcon>
-                  <UploadOutlinedIcon sx={{ color: '#8884d8' }} />
+                  <UploadOutlinedIcon
+                    sx={{ color: theme => (theme.palette.mode === 'dark' ? '#8884d8' : '#8884d8') }}
+                  />
                 </ListItemIcon>
                 <ListItemText primary="Upload New Document" />
               </ListItem>
               <ListItem button onClick={() => handleQuickActionClick(2)}>
                 <ListItemIcon>
-                  <LinkOutlinedIcon sx={{ color: '#82ca9d' }} />
+                  <LinkOutlinedIcon
+                    sx={{ color: theme => (theme.palette.mode === 'dark' ? '#82ca9d' : '#82ca9d') }}
+                  />
                 </ListItemIcon>
                 <ListItemText primary="Add External Link" />
               </ListItem>
@@ -1785,7 +1812,7 @@ const Workshop: React.FC = () => {
         onClose={() => setIsDrawerOpen(false)}
         sx={{
           '& .MuiDrawer-paper': {
-            backgroundColor: 'white',
+            backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : 'white'),
           },
         }}
       >
@@ -1823,7 +1850,13 @@ const Workshop: React.FC = () => {
                       <ListItem
                         button
                         onClick={() => handlePinHistory(item.id)}
-                        sx={{ border: '1px solid red', borderRadius: '8px', mb: 1 }}
+                        sx={{
+                          border: '1px solid red',
+                          borderRadius: '8px',
+                          mb: 1,
+                          backgroundColor: theme =>
+                            theme.palette.mode === 'dark' ? '#000814' : 'transparent',
+                        }}
                       >
                         <ListItemIcon>
                           {React.cloneElement(getHistoryIcon(item.type), { sx: { color: 'red' } })}

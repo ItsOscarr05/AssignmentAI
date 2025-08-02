@@ -287,7 +287,7 @@ const NotificationPreferences: React.FC = () => {
         <Box
           sx={{
             background: 'success.main',
-            color: 'white',
+            color: theme => (theme.palette.mode === 'dark' ? 'white' : 'white'),
             p: 2,
             borderRadius: 1,
           }}
@@ -307,7 +307,7 @@ const NotificationPreferences: React.FC = () => {
         <Box
           sx={{
             background: 'error.main',
-            color: 'white',
+            color: theme => (theme.palette.mode === 'dark' ? 'white' : 'white'),
             p: 2,
             borderRadius: 1,
           }}

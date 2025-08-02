@@ -65,7 +65,7 @@ const Verify2FA: React.FC = () => {
             Two-Factor Authentication
           </Typography>
 
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+          <Typography variant="body1" sx={{ color: '#666666', mb: 3 }}>
             {isBackupCode ? 'Enter Backup Code' : 'Enter Authenticator Code'}
           </Typography>
         </Box>
@@ -123,7 +123,7 @@ const Verify2FA: React.FC = () => {
             </Box>
 
             <Box sx={{ textAlign: 'center', mt: 2 }}>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{ color: '#666666' }}>
                 Having trouble?{' '}
                 <Link href="/recover-2fa" sx={{ textDecoration: 'none' }}>
                   Recover Account

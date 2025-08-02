@@ -165,7 +165,7 @@ const Assignments: React.FC = () => {
 
   // Custom styles
   const cardStyle = {
-    backgroundColor: '#fff',
+    backgroundColor: (theme: any) => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
     boxShadow: '0 2px 12px rgba(0, 0, 0, 0.1)',
     borderRadius: '12px',
     transition: 'all 0.2s ease-in-out',
@@ -465,7 +465,7 @@ const Assignments: React.FC = () => {
       <Box
         sx={{
           p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2),
-          backgroundColor: '#fafafa',
+          backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fafafa'),
           minHeight: '100vh',
           overflow: 'hidden',
           width: '100%',
@@ -579,6 +579,9 @@ const Assignments: React.FC = () => {
               onChange={e => setFilterName(e.target.value)}
               fullWidth
               sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#ffffff'),
+                },
                 '& .MuiOutlinedInput-notchedOutline': {
                   borderColor: 'red',
                   borderWidth: '2px',
@@ -625,6 +628,10 @@ const Assignments: React.FC = () => {
                 label="Status"
                 onChange={e => setFilterStatus(e.target.value)}
                 sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: theme =>
+                      theme.palette.mode === 'dark' ? '#000814' : '#ffffff',
+                  },
                   '& .MuiOutlinedInput-notchedOutline': {
                     borderColor: 'red',
                     borderWidth: '2px',
@@ -654,6 +661,10 @@ const Assignments: React.FC = () => {
                 label="Subject"
                 onChange={e => setFilterSubject(e.target.value)}
                 sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: theme =>
+                      theme.palette.mode === 'dark' ? '#000814' : '#ffffff',
+                  },
                   '& .MuiOutlinedInput-notchedOutline': {
                     borderColor: 'red',
                     borderWidth: '2px',
@@ -685,6 +696,10 @@ const Assignments: React.FC = () => {
                 label="Timeframe"
                 onChange={e => setFilterTimeframe(e.target.value)}
                 sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: theme =>
+                      theme.palette.mode === 'dark' ? '#000814' : '#ffffff',
+                  },
                   '& .MuiOutlinedInput-notchedOutline': {
                     borderColor: 'red',
                     borderWidth: '2px',
@@ -724,6 +739,10 @@ const Assignments: React.FC = () => {
                   textField: {
                     fullWidth: true,
                     sx: {
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: theme =>
+                          theme.palette.mode === 'dark' ? '#000814' : '#ffffff',
+                      },
                       '& .MuiOutlinedInput-notchedOutline': {
                         borderColor: 'red',
                         borderWidth: '2px',

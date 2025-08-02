@@ -318,7 +318,10 @@ const DashboardHome: React.FC = () => {
             sx={{
               p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2),
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-              background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 120%)',
+              background: theme =>
+                theme.palette.mode === 'dark'
+                  ? 'linear-gradient(145deg, #000814 0%, #001122 120%)'
+                  : 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 120%)',
               border: '2px solid #D32F2F',
               display: 'flex',
               flexDirection: breakpoint === 'tall' || breakpoint === 'standard' ? 'column' : 'row',
@@ -382,7 +385,7 @@ const DashboardHome: React.FC = () => {
                     color: '#D32F2F',
                     transition: 'all 0.2s',
                     '&:hover': {
-                      background: '#f5f5f5',
+                      background: theme => (theme.palette.mode === 'dark' ? '#001122' : '#f5f5f5'),
                     },
                   }}
                 >
@@ -525,7 +528,10 @@ const DashboardHome: React.FC = () => {
             sx={{
               p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2),
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-              background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 120%)',
+              background: theme =>
+                theme.palette.mode === 'dark'
+                  ? 'linear-gradient(145deg, #000814 0%, #001122 120%)'
+                  : 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 120%)',
               border: '2px solid #D32F2F',
               overflow: 'hidden',
               maxWidth: '100%',
@@ -562,7 +568,13 @@ const DashboardHome: React.FC = () => {
                   : 5
               }
             >
-              <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'black' }}>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 'bold',
+                  color: theme => (theme.palette.mode === 'dark' ? '#ffffff' : '#000000'),
+                }}
+              >
                 Recent Active Assignments
               </Typography>
               <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
@@ -895,7 +907,10 @@ const DashboardHome: React.FC = () => {
             sx={{
               p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 3),
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-              background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 120%)',
+              background: theme =>
+                theme.palette.mode === 'dark'
+                  ? 'linear-gradient(145deg, #000814 0%, #001122 120%)'
+                  : 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 120%)',
               border: '2px solid #D32F2F',
               minHeight:
                 breakpoint === 'tall'
@@ -919,7 +934,13 @@ const DashboardHome: React.FC = () => {
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
-              <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'black' }}>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 'bold',
+                  color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+                }}
+              >
                 Assignment Distribution
               </Typography>
               <Tooltip title="Select a section to navigate to assignments" arrow>
@@ -969,6 +990,7 @@ const DashboardHome: React.FC = () => {
                   onChange={e => setDistributionFilter(e.target.value)}
                   sx={{
                     color: '#D32F2F',
+                    backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#000814' : '#ffffff',
                     '& .MuiOutlinedInput-notchedOutline': {
                       borderColor: '#D32F2F',
                     },
@@ -980,6 +1002,9 @@ const DashboardHome: React.FC = () => {
                     },
                     '& .MuiSvgIcon-root': {
                       color: '#D32F2F',
+                    },
+                    '& .MuiSelect-select': {
+                      backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#000814' : '#ffffff',
                     },
                   }}
                 >
@@ -1006,14 +1031,24 @@ const DashboardHome: React.FC = () => {
             sx={{
               p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 3),
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-              background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 120%)',
+              background: theme =>
+                theme.palette.mode === 'dark'
+                  ? 'linear-gradient(145deg, #000814 0%, #001122 120%)'
+                  : 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 120%)',
               border: '2px solid #D32F2F',
               overflow: 'hidden',
               maxWidth: '100%',
               width: '100%',
             }}
           >
-            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2, color: 'black' }}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 'bold',
+                mb: 2,
+                color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+              }}
+            >
               AI Activity Insights
             </Typography>
             <Grid container spacing={{ xs: 1, md: 2 }}>
@@ -1025,7 +1060,7 @@ const DashboardHome: React.FC = () => {
                     textAlign: 'center',
                     boxShadow: 'none',
                     border: '1.5px solid #1976D2',
-                    background: '#fff',
+                    background: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
                     cursor: 'pointer',
                     transition: 'all 0.2s ease-in-out',
                     '&:hover': {
@@ -1058,7 +1093,7 @@ const DashboardHome: React.FC = () => {
                     textAlign: 'center',
                     boxShadow: 'none',
                     border: '1.5px solid #388E3C',
-                    background: '#fff',
+                    background: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
                     cursor: 'pointer',
                     transition: 'all 0.2s ease-in-out',
                     '&:hover': {
@@ -1087,7 +1122,7 @@ const DashboardHome: React.FC = () => {
                     textAlign: 'center',
                     boxShadow: 'none',
                     border: '1.5px solid #8E24AA',
-                    background: '#fff',
+                    background: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
                     cursor: 'pointer',
                     transition: 'all 0.2s ease-in-out',
                     '&:hover': {
@@ -1115,7 +1150,7 @@ const DashboardHome: React.FC = () => {
                     textAlign: 'center',
                     boxShadow: 'none',
                     border: '1.5px solid #FFA000',
-                    background: '#fff',
+                    background: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
                     width: '100%',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease-in-out',

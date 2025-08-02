@@ -56,7 +56,7 @@ export const TwoFactorVerify = ({
   const isDisabled = isLoading || attempts >= maxAttempts;
 
   return (
-    <Box className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
+            <Box className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
       <Typography variant="h5" component="h2" className="text-2xl font-bold mb-6">
         Two-Factor Authentication
       </Typography>

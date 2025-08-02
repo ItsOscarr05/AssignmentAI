@@ -421,10 +421,17 @@ const PricePlan: React.FC = () => {
           sx: {
             width: { xs: '95vw', md: 'auto' },
             maxWidth: { xs: '95vw', md: 'lg' },
+            backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
           },
         }}
       >
-        <DialogTitle sx={{ fontSize: { xs: '1.25rem', md: '1.5rem' }, p: { xs: 2, md: 3 } }}>
+        <DialogTitle
+          sx={{
+            fontSize: { xs: '1.25rem', md: '1.5rem' },
+            p: { xs: 2, md: 3 },
+            color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+          }}
+        >
           Detailed Feature Comparison
         </DialogTitle>
         <DialogContent sx={{ p: { xs: 2, md: 3 } }}>
@@ -482,6 +489,7 @@ const PricePlan: React.FC = () => {
                         sx={{
                           fontSize: { xs: '0.875rem', md: '1rem' },
                           fontWeight: 500,
+                          color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
                         }}
                       >
                         {feature.name}
@@ -561,13 +569,13 @@ const PricePlan: React.FC = () => {
           pb: 2,
           background:
             theme.palette.mode === 'dark'
-              ? 'linear-gradient(180deg, rgba(18,18,18,0.95) 0%, rgba(18,18,18,0.95) 100%)'
+              ? 'linear-gradient(180deg, rgba(0,8,20,0.95) 0%, rgba(0,8,20,0.95) 100%)'
               : 'linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.95) 100%)',
           backdropFilter: 'blur(10px)',
         }}
       >
         <Typography variant="h4" fontWeight="normal" className="page-title" sx={{ ml: 4 }}>
-          Choose Your Plan
+          Price Plan
         </Typography>
         <FormControlLabel
           control={
@@ -622,7 +630,7 @@ const PricePlan: React.FC = () => {
                         label="Most Popular"
                         sx={{
                           backgroundColor: plan.color,
-                          color: 'white',
+                          color: theme => (theme.palette.mode === 'dark' ? 'white' : 'white'),
                           fontWeight: 'bold',
                           boxShadow: theme.shadows[4],
                         }}
@@ -764,8 +772,13 @@ const PricePlan: React.FC = () => {
         onClose={() => setPaymentDialogOpen(false)}
         maxWidth="sm"
         fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+          },
+        }}
       >
-        <DialogTitle>
+        <DialogTitle sx={{ color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black') }}>
           Subscribe to {selectedPlan?.name}
           <IconButton
             aria-label="Close"

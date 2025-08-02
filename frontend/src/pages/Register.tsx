@@ -388,15 +388,15 @@ const Register: React.FC = () => {
                   fontFamily: "'Playfair Display', serif",
                   fontSize: { xs: '2.2rem', md: '2.7rem' }, // Increase heading size
                   letterSpacing: '-0.02em',
-                  color: 'text.primary',
+                  color: '#000000',
                   mb: 2,
                 }}
               >
                 Create Account
               </Typography>
               <Typography
-                color="text.secondary"
                 sx={{
+                  color: '#666666',
                   mb: 4,
                   fontFamily: "'Inter', sans-serif",
                   fontWeight: 300,
@@ -431,9 +431,26 @@ const Register: React.FC = () => {
                     '& .MuiOutlinedInput-root': {
                       height: '54px', // Reduced height
                       fontSize: '0.95rem', // Reduce input text size
+                      backgroundColor: 'white',
+                      '& fieldset': {
+                        borderColor: '#e0e0e0',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#bdbdbd',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#d32f2f',
+                      },
                     },
                     '& .MuiInputLabel-root': {
                       fontSize: '0.95rem', // Reduce label size
+                      color: '#666666',
+                    },
+                    '& .MuiInputLabel-root.Mui-focused': {
+                      color: '#d32f2f',
+                    },
+                    '& .MuiInputBase-input': {
+                      color: '#000000',
                     },
                   }}
                 />
@@ -450,9 +467,26 @@ const Register: React.FC = () => {
                     '& .MuiOutlinedInput-root': {
                       height: '54px',
                       fontSize: '0.95rem',
+                      backgroundColor: 'white',
+                      '& fieldset': {
+                        borderColor: '#e0e0e0',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#bdbdbd',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#d32f2f',
+                      },
                     },
                     '& .MuiInputLabel-root': {
                       fontSize: '0.95rem',
+                      color: '#666666',
+                    },
+                    '& .MuiInputLabel-root.Mui-focused': {
+                      color: '#d32f2f',
+                    },
+                    '& .MuiInputBase-input': {
+                      color: '#000000',
                     },
                   }}
                 />
@@ -469,9 +503,26 @@ const Register: React.FC = () => {
                     '& .MuiOutlinedInput-root': {
                       height: '54px',
                       fontSize: '0.95rem',
+                      backgroundColor: 'white',
+                      '& fieldset': {
+                        borderColor: '#e0e0e0',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#bdbdbd',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#d32f2f',
+                      },
                     },
                     '& .MuiInputLabel-root': {
                       fontSize: '0.95rem',
+                      color: '#666666',
+                    },
+                    '& .MuiInputLabel-root.Mui-focused': {
+                      color: '#d32f2f',
+                    },
+                    '& .MuiInputBase-input': {
+                      color: '#000000',
                     },
                   }}
                 />
@@ -482,7 +533,7 @@ const Register: React.FC = () => {
                     <Typography
                       variant="body2"
                       sx={{
-                        color: 'text.secondary',
+                        color: '#666666',
                         fontFamily: "'Inter', sans-serif",
                         fontWeight: 400,
                         fontSize: '0.8rem',
@@ -573,9 +624,26 @@ const Register: React.FC = () => {
                     '& .MuiOutlinedInput-root': {
                       height: '54px',
                       fontSize: '0.95rem',
+                      backgroundColor: 'white',
+                      '& fieldset': {
+                        borderColor: '#e0e0e0',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#bdbdbd',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#d32f2f',
+                      },
                     },
                     '& .MuiInputLabel-root': {
                       fontSize: '0.95rem',
+                      color: '#666666',
+                    },
+                    '& .MuiInputLabel-root.Mui-focused': {
+                      color: '#d32f2f',
+                    },
+                    '& .MuiInputBase-input': {
+                      color: '#000000',
                     },
                   }}
                   InputProps={{
@@ -614,9 +682,26 @@ const Register: React.FC = () => {
                     '& .MuiOutlinedInput-root': {
                       height: '54px',
                       fontSize: '0.95rem',
+                      backgroundColor: 'white',
+                      '& fieldset': {
+                        borderColor: '#e0e0e0',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#bdbdbd',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#d32f2f',
+                      },
                     },
                     '& .MuiInputLabel-root': {
                       fontSize: '0.95rem',
+                      color: '#666666',
+                    },
+                    '& .MuiInputLabel-root.Mui-focused': {
+                      color: '#d32f2f',
+                    },
+                    '& .MuiInputBase-input': {
+                      color: '#000000',
                     },
                   }}
                   InputProps={{
@@ -661,7 +746,7 @@ const Register: React.FC = () => {
                   <Typography
                     variant="body2"
                     sx={{
-                      color: 'text.secondary',
+                      color: '#666666',
                       fontFamily: "'Inter', sans-serif",
                       fontWeight: 400,
                       fontSize: '0.8rem', // Reduce divider text size
@@ -744,6 +829,7 @@ const Register: React.FC = () => {
                     fontFamily: "'Inter', sans-serif",
                     fontWeight: 400,
                     fontSize: '0.9rem', // Reduce already have account text size
+                    color: '#000000',
                   }}
                 >
                   Already have an account?{' '}

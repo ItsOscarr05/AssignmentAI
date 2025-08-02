@@ -272,17 +272,17 @@ const Dashboard: React.FC = () => {
               borderRight: '1px solid',
               borderColor: 'divider',
               background: `linear-gradient(45deg, ${theme.palette.primary.dark} 30%, ${theme.palette.primary.main} 90%)`,
-              color: '#ffffff',
+              color: theme => (theme.palette.mode === 'dark' ? '#ffffff' : '#ffffff'),
               borderRadius: 0,
               transition: theme.transitions.create('width', {
                 easing: theme.transitions.easing.sharp,
                 duration: theme.transitions.duration.enteringScreen,
               }),
               '& .MuiListItemIcon-root': {
-                color: '#ffffff',
+                color: theme => (theme.palette.mode === 'dark' ? '#ffffff' : '#ffffff'),
               },
               '& .MuiTypography-root': {
-                color: '#ffffff',
+                color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : '#ffffff',
               },
               '& .MuiDivider-root': {
                 borderColor: 'rgba(255, 255, 255, 0.12)',

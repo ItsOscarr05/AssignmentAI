@@ -294,14 +294,14 @@ const Login: React.FC = () => {
                   fontFamily: "'Playfair Display', serif",
                   fontSize: { xs: '2rem', md: '2.4rem' },
                   letterSpacing: '-0.02em',
-                  color: 'text.primary',
+                  color: '#000000',
                 }}
               >
                 Welcome Back
               </Typography>
               <Typography
-                color="text.secondary"
                 sx={{
+                  color: '#666666',
                   mb: 4,
                   fontFamily: "'Inter', sans-serif",
                   fontWeight: 300,
@@ -329,13 +329,30 @@ const Login: React.FC = () => {
                   helperText={emailError}
                   sx={{
                     mb: 2,
+                    '& .MuiOutlinedInput-root': {
+                      backgroundColor: 'white',
+                      '& fieldset': {
+                        borderColor: '#e0e0e0',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#bdbdbd',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#d32f2f',
+                      },
+                    },
                     '& .MuiInputLabel-root': {
                       fontFamily: "'Inter', sans-serif",
                       fontWeight: 400,
+                      color: '#666666',
+                    },
+                    '& .MuiInputLabel-root.Mui-focused': {
+                      color: '#d32f2f',
                     },
                     '& .MuiInputBase-input': {
                       fontFamily: "'Inter', sans-serif",
                       fontWeight: 400,
+                      color: '#000000',
                     },
                   }}
                 />
@@ -355,13 +372,30 @@ const Login: React.FC = () => {
                   helperText={passwordError}
                   inputProps={{ 'data-testid': 'password-input' }}
                   sx={{
+                    '& .MuiOutlinedInput-root': {
+                      backgroundColor: 'white',
+                      '& fieldset': {
+                        borderColor: '#e0e0e0',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#bdbdbd',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#d32f2f',
+                      },
+                    },
                     '& .MuiInputLabel-root': {
                       fontFamily: "'Inter', sans-serif",
                       fontWeight: 400,
+                      color: '#666666',
+                    },
+                    '& .MuiInputLabel-root.Mui-focused': {
+                      color: '#d32f2f',
                     },
                     '& .MuiInputBase-input': {
                       fontFamily: "'Inter', sans-serif",
                       fontWeight: 400,
+                      color: '#000000',
                     },
                   }}
                   InputProps={{
@@ -447,7 +481,7 @@ const Login: React.FC = () => {
                   <Typography
                     variant="body2"
                     sx={{
-                      color: 'text.secondary',
+                      color: '#666666',
                       fontFamily: "'Inter', sans-serif",
                       fontWeight: 400,
                     }}
@@ -524,6 +558,7 @@ const Login: React.FC = () => {
                     mt: 3,
                     fontFamily: "'Inter', sans-serif",
                     fontWeight: 400,
+                    color: '#000000',
                   }}
                 >
                   Don't have an account?{' '}

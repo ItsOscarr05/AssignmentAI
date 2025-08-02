@@ -1,14 +1,9 @@
 import {
-  ArrowForward,
-  ArticleOutlined,
   AttachFile,
   ContactSupportOutlined,
   ExpandMore,
-  FeedbackOutlined,
-  ForumOutlined,
   HelpOutlineOutlined,
   QuestionAnswerOutlined,
-  RateReviewOutlined,
   SearchOutlined,
   SendOutlined,
 } from '@mui/icons-material';
@@ -19,8 +14,6 @@ import {
   Alert,
   Box,
   Button,
-  Card,
-  CardContent,
   Chip,
   FormControl,
   Grid,
@@ -82,7 +75,7 @@ const HelpSection = ({ title, icon, children, breakpoint = 'standard' }: any) =>
         borderRadius: 3,
         background:
           theme.palette.mode === 'dark'
-            ? 'linear-gradient(145deg, rgba(50,50,50,0.9) 0%, rgba(40,40,40,0.9) 100%)'
+            ? 'linear-gradient(145deg, rgba(0,8,20,0.9) 0%, rgba(0,8,20,0.9) 100%)'
             : 'linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(240,240,240,0.9) 100%)',
         backdropFilter: 'blur(10px)',
         transition: 'all 0.3s ease-in-out',
@@ -98,7 +91,7 @@ const HelpSection = ({ title, icon, children, breakpoint = 'standard' }: any) =>
           sx={{
             p: { xs: 1, md: 1.5 },
             borderRadius: 2,
-            background: '#ffffff',
+            background: theme => (theme.palette.mode === 'dark' ? '#000814' : '#ffffff'),
             color: theme.palette.primary.main,
             display: 'flex',
             alignItems: 'center',
@@ -114,7 +107,7 @@ const HelpSection = ({ title, icon, children, breakpoint = 'standard' }: any) =>
         <Typography
           variant="h5"
           fontWeight="400"
-          color="black"
+          color={theme => (theme.palette.mode === 'dark' ? 'white' : 'black')}
           sx={{ fontSize: { xs: '1.25rem', md: '1.5rem' } }}
         >
           {title}
@@ -215,33 +208,6 @@ const Help: React.FC = () => {
           answer: 'Yes, we offer a free trial for new users to explore our features.',
         },
       ],
-    },
-  ];
-
-  const quickLinks = [
-    {
-      title: 'Documentation',
-      description: 'Detailed guides and API references',
-      icon: <ArticleOutlined />,
-      link: '/docs',
-    },
-    {
-      title: 'Community Forum',
-      description: 'Connect with other users',
-      icon: <ForumOutlined />,
-      link: '/forum',
-    },
-    {
-      title: 'Feature Requests',
-      description: 'Suggest new features',
-      icon: <FeedbackOutlined />,
-      link: '/feedback',
-    },
-    {
-      title: 'User Reviews',
-      description: 'Read what others say about us',
-      icon: <RateReviewOutlined />,
-      link: '/reviews',
     },
   ];
 
@@ -415,7 +381,7 @@ const Help: React.FC = () => {
           px: { xs: 1, md: 0 },
           background:
             theme.palette.mode === 'dark'
-              ? 'linear-gradient(180deg, rgba(18,18,18,0.95) 0%, rgba(18,18,18,0.95) 100%)'
+              ? 'linear-gradient(180deg, rgba(0,8,20,0.95) 0%, rgba(0,8,20,0.95) 100%)'
               : 'linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.95) 100%)',
           backdropFilter: 'blur(10px)',
         }}
@@ -444,6 +410,7 @@ const Help: React.FC = () => {
               borderRadius: 3,
               fontWeight: 600,
               fontSize: { xs: '1rem', md: '1.1rem' },
+              backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#ffffff'),
               '&:hover': {
                 '& > fieldset': {
                   borderColor: theme.palette.primary.main,
@@ -571,6 +538,16 @@ const Help: React.FC = () => {
                 fontSize: { xs: '0.75rem', md: '0.875rem' },
                 px: { xs: 1.5, md: 2 },
                 py: { xs: 0.5, md: 0.75 },
+                backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#ffffff'),
+                borderColor: theme =>
+                  theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+                color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+                '&:hover': {
+                  backgroundColor: theme =>
+                    theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                  borderColor: theme =>
+                    theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
+                },
               }}
             >
               Expand All
@@ -584,6 +561,16 @@ const Help: React.FC = () => {
                 fontSize: { xs: '0.75rem', md: '0.875rem' },
                 px: { xs: 1.5, md: 2 },
                 py: { xs: 0.5, md: 0.75 },
+                backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#ffffff'),
+                borderColor: theme =>
+                  theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+                color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+                '&:hover': {
+                  backgroundColor: theme =>
+                    theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                  borderColor: theme =>
+                    theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
+                },
               }}
             >
               Collapse All
@@ -687,15 +674,11 @@ const Help: React.FC = () => {
                       expandIcon={<ExpandMore />}
                       sx={{
                         background:
-                          theme.palette.mode === 'dark'
-                            ? 'rgba(255,255,255,0.05)'
-                            : 'rgba(0,0,0,0.02)',
+                          theme.palette.mode === 'dark' ? 'rgba(0,8,20,0.8)' : 'rgba(0,0,0,0.02)',
                         borderRadius: 2,
                         '&:hover': {
                           background:
-                            theme.palette.mode === 'dark'
-                              ? 'rgba(255,255,255,0.08)'
-                              : 'rgba(0,0,0,0.04)',
+                            theme.palette.mode === 'dark' ? 'rgba(0,8,20,0.9)' : 'rgba(0,0,0,0.04)',
                         },
                         '& .MuiAccordionSummary-expandIconWrapper': {
                           color: theme.palette.primary.main,
@@ -713,9 +696,7 @@ const Help: React.FC = () => {
                     <AccordionDetails
                       sx={{
                         background:
-                          theme.palette.mode === 'dark'
-                            ? 'rgba(255,255,255,0.02)'
-                            : 'rgba(0,0,0,0.01)',
+                          theme.palette.mode === 'dark' ? 'rgba(0,8,20,0.6)' : 'rgba(0,0,0,0.01)',
                         borderTop: '1px solid',
                         borderColor:
                           theme.palette.mode === 'dark'
@@ -739,7 +720,7 @@ const Help: React.FC = () => {
                       variant="h6"
                       sx={{
                         mb: 2,
-                        color: 'black',
+                        color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
                         display: 'flex',
                         alignItems: 'center',
                         gap: 1,
@@ -851,80 +832,6 @@ const Help: React.FC = () => {
                 </Box>
               )}
             </HelpSection>
-            <HelpSection title="Quick Links" icon={<HelpOutlineOutlined />}>
-              <Grid container spacing={{ xs: 2, md: 3 }}>
-                {quickLinks.map((link, index) => (
-                  <Grid item xs={12} sm={6} md={3} key={index}>
-                    <Card
-                      sx={{
-                        height: '100%',
-                        transition: 'all 0.3s ease',
-                        border: '2px solid',
-                        borderColor: 'error.main',
-                        '&:hover': {
-                          transform: 'translateY(-4px)',
-                          boxShadow: theme.shadows[4],
-                          borderColor: 'error.dark',
-                        },
-                      }}
-                    >
-                      <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: { xs: 1, md: 2 },
-                            mb: 2,
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              p: { xs: 0.5, md: 1 },
-                              borderRadius: 1.5,
-                              background: '#ffffff',
-                              color: theme.palette.primary.main,
-                            }}
-                          >
-                            {link.icon}
-                          </Box>
-                          <Typography
-                            variant="h6"
-                            fontWeight="500"
-                            color="black"
-                            sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}
-                          >
-                            {link.title}
-                          </Typography>
-                        </Box>
-                        <Typography
-                          color="text.secondary"
-                          sx={{ mb: 2, fontSize: { xs: '0.875rem', md: '1rem' } }}
-                        >
-                          {link.description}
-                        </Typography>
-                        <Button
-                          variant="text"
-                          endIcon={<ArrowForward />}
-                          href={link.link}
-                          component="a"
-                          sx={{
-                            fontSize: { xs: '0.875rem', md: '1rem' },
-                            '&:hover': {
-                              background: 'transparent',
-                              color: theme.palette.primary.main,
-                              transform: 'translateX(4px)',
-                            },
-                          }}
-                          aria-label={`Visit ${link.title}`}
-                        >
-                          Visit
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                ))}
-              </Grid>
-            </HelpSection>
           </TabPanel>
 
           <TabPanel value={tabValue} index={1} breakpoint={breakpoint}>
@@ -956,6 +863,8 @@ const Help: React.FC = () => {
                           '& .MuiOutlinedInput-root': {
                             borderRadius: 2,
                             fontSize: { xs: '0.875rem', md: '1rem' },
+                            backgroundColor: theme =>
+                              theme.palette.mode === 'dark' ? '#000814' : '#ffffff',
                           },
                         }}
                         inputProps={{ 'aria-label': 'Email' }}
@@ -972,6 +881,8 @@ const Help: React.FC = () => {
                           '& .MuiOutlinedInput-root': {
                             borderRadius: 2,
                             fontSize: { xs: '0.875rem', md: '1rem' },
+                            backgroundColor: theme =>
+                              theme.palette.mode === 'dark' ? '#000814' : '#ffffff',
                           },
                         }}
                         inputProps={{ 'aria-label': 'Subject' }}
@@ -988,6 +899,10 @@ const Help: React.FC = () => {
                           sx={{
                             borderRadius: 2,
                             fontSize: { xs: '0.875rem', md: '1rem' },
+                            '& .MuiOutlinedInput-root': {
+                              backgroundColor: theme =>
+                                theme.palette.mode === 'dark' ? '#000814' : '#ffffff',
+                            },
                           }}
                           inputProps={{ 'aria-label': 'Category' }}
                         >
@@ -1035,6 +950,10 @@ const Help: React.FC = () => {
                           sx={{
                             borderRadius: 2,
                             fontSize: { xs: '0.875rem', md: '1rem' },
+                            '& .MuiOutlinedInput-root': {
+                              backgroundColor: theme =>
+                                theme.palette.mode === 'dark' ? '#000814' : '#ffffff',
+                            },
                           }}
                           inputProps={{ 'aria-label': 'Priority' }}
                         >
@@ -1073,6 +992,8 @@ const Help: React.FC = () => {
                           '& .MuiOutlinedInput-root': {
                             borderRadius: 2,
                             fontSize: { xs: '0.875rem', md: '1rem' },
+                            backgroundColor: theme =>
+                              theme.palette.mode === 'dark' ? '#000814' : '#ffffff',
                           },
                         }}
                         inputProps={{
@@ -1176,7 +1097,7 @@ const Help: React.FC = () => {
                     <Typography
                       variant="h6"
                       gutterBottom
-                      color="black"
+                      color={theme => (theme.palette.mode === 'dark' ? 'white' : 'black')}
                       sx={{ fontSize: { xs: '1.125rem', md: '1.25rem' } }}
                     >
                       Contact Information
@@ -1247,8 +1168,6 @@ const Help: React.FC = () => {
           mt: 4,
           mb: 2,
           pt: 4,
-          borderTop: '1px solid',
-          borderColor: 'divider',
         }}
       >
         <Button

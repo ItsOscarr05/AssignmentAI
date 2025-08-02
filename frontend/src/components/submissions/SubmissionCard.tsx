@@ -49,22 +49,22 @@ export const SubmissionCard: React.FC<SubmissionCardProps> = ({
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200';
       case 'submitted':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200';
       case 'graded':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200';
       case 'late':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200';
     }
   };
 
   const getGradeColor = (grade: number) => {
-    if (grade >= 90) return 'bg-green-100 text-green-800';
-    if (grade >= 70) return 'bg-yellow-100 text-yellow-800';
-    return 'bg-red-100 text-red-800';
+    if (grade >= 90) return 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200';
+    if (grade >= 70) return 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200';
+    return 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200';
   };
 
   if (loading) {
@@ -77,14 +77,14 @@ export const SubmissionCard: React.FC<SubmissionCardProps> = ({
 
   return (
     <article
-      className="bg-white rounded-lg shadow-md p-4"
+      className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4"
       aria-label={`Submission: ${submission.assignmentTitle} by ${submission.studentName}`}
     >
       <div className="flex justify-between items-start mb-4">
         <div>
-          <h3 className="text-lg font-semibold">{submission.assignmentTitle}</h3>
-          <p className="text-gray-600">{submission.studentName}</p>
-          <p className="text-sm text-gray-500">
+          <h3 className="text-lg font-semibold dark:text-white">{submission.assignmentTitle}</h3>
+          <p className="text-gray-600 dark:text-gray-300">{submission.studentName}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Submitted on {new Date(submission.submittedAt).toLocaleDateString()}
           </p>
         </div>
@@ -102,7 +102,7 @@ export const SubmissionCard: React.FC<SubmissionCardProps> = ({
             </span>
           )}
           {submission.grade === undefined && (
-            <span className="px-2 py-1 rounded-full text-sm bg-gray-100 text-gray-800">
+            <span className="px-2 py-1 rounded-full text-sm bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-200">
               Not Graded
             </span>
           )}
@@ -110,9 +110,9 @@ export const SubmissionCard: React.FC<SubmissionCardProps> = ({
       </div>
 
       {submission.feedback ? (
-        <p className="text-gray-700 mb-4">{submission.feedback}</p>
+        <p className="text-gray-700 dark:text-gray-300 mb-4">{submission.feedback}</p>
       ) : (
-        <p className="text-gray-500 italic mb-4">No feedback</p>
+        <p className="text-gray-500 dark:text-gray-400 italic mb-4">No feedback</p>
       )}
 
       {ActionsComponent ? (

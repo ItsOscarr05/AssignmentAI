@@ -94,8 +94,8 @@ const ResetPassword: React.FC = () => {
               Invalid Reset Link
             </Typography>
             <Typography
-              color="text.secondary"
               sx={{
+                color: '#666666',
                 fontFamily: "'Inter', sans-serif",
                 fontWeight: 300,
                 letterSpacing: '0.01em',
@@ -162,8 +162,8 @@ const ResetPassword: React.FC = () => {
               Reset Password
             </Typography>
             <Typography
-              color="text.secondary"
               sx={{
+                color: '#666666',
                 fontFamily: "'Inter', sans-serif",
                 fontWeight: 300,
                 letterSpacing: '0.01em',

@@ -772,15 +772,15 @@ const Landing: React.FC = () => {
                           mb: 2,
                           fontWeight: 600,
                           fontSize: { xs: '1.4rem', md: '1.6rem' },
-                          color: 'text.primary',
+                          color: '#000000',
                         }}
                       >
                         {feature.title}
                       </Typography>
                       <Typography
                         variant="body1"
-                        color="text.secondary"
                         sx={{
+                          color: '#666666',
                           fontSize: { xs: '1.0rem', md: '1.15rem' },
                           lineHeight: 1.6,
                         }}
@@ -860,7 +860,7 @@ const Landing: React.FC = () => {
                         mb: 3,
                         fontWeight: 600,
                         fontSize: { xs: '1.4rem', md: '1.6rem' },
-                        color: 'text.primary',
+                        color: '#000000',
                       }}
                     >
                       AssignmentAI
@@ -874,6 +874,7 @@ const Landing: React.FC = () => {
                           primary="Designed for Students & Academia"
                           primaryTypographyProps={{
                             fontSize: { xs: '1.0rem', md: '1.15rem' },
+                            color: '#000000',
                           }}
                         />
                       </ListItem>
@@ -885,6 +886,7 @@ const Landing: React.FC = () => {
                           primary="Superior AI Model Built for Students & Academia"
                           primaryTypographyProps={{
                             fontSize: { xs: '1.0rem', md: '1.15rem' },
+                            color: '#000000',
                           }}
                         />
                       </ListItem>
@@ -896,17 +898,19 @@ const Landing: React.FC = () => {
                           primary="Enriched with 20+ Academia Use Cases"
                           primaryTypographyProps={{
                             fontSize: { xs: '1.0rem', md: '1.15rem' },
+                            color: '#000000',
                           }}
                         />
                       </ListItem>
                       <ListItem>
                         <ListItemIcon sx={{ minWidth: 40 }}>
-                          <span style={{ fontSize: '1.75rem' }}>✔</span>
+                          <span style={{ fontSize: '1.75rem', color: '#000000' }}>✔</span>
                         </ListItemIcon>
                         <ListItemText
                           primary="Specialized Tools: AI Diagram Maker, Code Generation/Programming, Math Solver"
                           primaryTypographyProps={{
                             fontSize: { xs: '1.0rem', md: '1.15rem' },
+                            color: '#000000',
                           }}
                         />
                       </ListItem>
@@ -918,6 +922,7 @@ const Landing: React.FC = () => {
                           primary="Real-Time Reference: Answers with Real-Time References"
                           primaryTypographyProps={{
                             fontSize: { xs: '1.0rem', md: '1.15rem' },
+                            color: '#000000',
                           }}
                         />
                       </ListItem>
@@ -951,7 +956,7 @@ const Landing: React.FC = () => {
                         mb: 3,
                         fontWeight: 600,
                         fontSize: { xs: '1.4rem', md: '1.6rem' },
-                        color: 'text.primary',
+                        color: '#000000',
                       }}
                     >
                       ChatGPT
@@ -965,6 +970,7 @@ const Landing: React.FC = () => {
                           primary="Designed for General-Purpose"
                           primaryTypographyProps={{
                             fontSize: { xs: '1.0rem', md: '1.15rem' },
+                            color: '#000000',
                           }}
                         />
                       </ListItem>
@@ -976,6 +982,7 @@ const Landing: React.FC = () => {
                           primary="General-Purpose AI Model"
                           primaryTypographyProps={{
                             fontSize: { xs: '1.0rem', md: '1.15rem' },
+                            color: '#000000',
                           }}
                         />
                       </ListItem>
@@ -987,6 +994,7 @@ const Landing: React.FC = () => {
                           primary="Limited Academic Focus"
                           primaryTypographyProps={{
                             fontSize: { xs: '1.0rem', md: '1.15rem' },
+                            color: '#000000',
                           }}
                         />
                       </ListItem>
@@ -998,6 +1006,7 @@ const Landing: React.FC = () => {
                           primary="Specialized Tools: N/A"
                           primaryTypographyProps={{
                             fontSize: { xs: '1.0rem', md: '1.15rem' },
+                            color: '#000000',
                           }}
                         />
                       </ListItem>
@@ -1009,6 +1018,7 @@ const Landing: React.FC = () => {
                           primary="References may not be real-time"
                           primaryTypographyProps={{
                             fontSize: { xs: '1.0rem', md: '1.15rem' },
+                            color: '#000000',
                           }}
                         />
                       </ListItem>
@@ -1113,15 +1123,15 @@ const Landing: React.FC = () => {
                           mb: 2,
                           fontWeight: 600,
                           fontSize: { xs: '1.4rem', md: '1.6rem' },
-                          color: 'text.primary',
+                          color: '#000000',
                         }}
                       >
                         {feature.title}
                       </Typography>
                       <Typography
                         variant="body1"
-                        color="text.secondary"
                         sx={{
+                          color: '#666666',
                           fontSize: { xs: '1.0rem', md: '1.15rem' },
                           lineHeight: 1.6,
                         }}
@@ -1237,10 +1247,10 @@ const Landing: React.FC = () => {
                     }}
                   >
                     <Box sx={{ mb: 1.5 }}>{feature.icon}</Box>
-                    <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, color: '#000000' }}>
                       {feature.title}
                     </Typography>
-                    <Typography color="text.secondary">{feature.desc}</Typography>
+                    <Typography sx={{ color: '#666666' }}>{feature.desc}</Typography>
                   </Paper>
                 </Grid>
               ))}
@@ -1363,7 +1373,7 @@ const Landing: React.FC = () => {
                     <Typography
                       variant="h5"
                       sx={{
-                        color: 'text.secondary',
+                        color: '#666666',
                         fontWeight: 600,
                         fontSize: { xs: '1rem', sm: '1.1rem', md: '1.25rem' },
                         lineHeight: 1.2,
@@ -1484,6 +1494,7 @@ const Landing: React.FC = () => {
                             sx={{
                               fontFamily: '"Mike Sans", "Audiowide", Arial, sans-serif',
                               fontSize: { xs: '2.0rem', md: '2.5rem' },
+                              color: '#000000',
                             }}
                           >
                             {plan.price === 0 ? 'Free' : `$${plan.price}`}
@@ -1491,8 +1502,8 @@ const Landing: React.FC = () => {
                               <Typography
                                 component="span"
                                 variant="h5"
-                                color="text.secondary"
                                 sx={{
+                                  color: '#000000',
                                   fontFamily: '"Mike Sans", "Audiowide", Arial, sans-serif',
                                   fontSize: { xs: '1.0rem', md: '1.25rem' },
                                 }}
@@ -1502,8 +1513,10 @@ const Landing: React.FC = () => {
                             )}
                           </Typography>
                           <Typography
-                            color="text.secondary"
-                            sx={{ fontSize: { xs: '1.0rem', md: '1.15rem' } }}
+                            sx={{
+                              color: '#666666',
+                              fontSize: { xs: '1.0rem', md: '1.15rem' },
+                            }}
                           >
                             {plan.description}
                           </Typography>
@@ -1639,8 +1652,11 @@ const Landing: React.FC = () => {
                           {plan.name === 'Free' && (
                             <Typography
                               variant="caption"
-                              color="text.secondary"
-                              sx={{ fontSize: { xs: '0.95rem', md: '1.05rem' }, pl: 0.5 }}
+                              sx={{
+                                color: '#000000',
+                                fontSize: { xs: '0.95rem', md: '1.05rem' },
+                                pl: 0.5,
+                              }}
                             >
                               Free Features
                             </Typography>
@@ -1650,8 +1666,8 @@ const Landing: React.FC = () => {
                               <Typography
                                 key={feature}
                                 variant="caption"
-                                color="text.secondary"
                                 sx={{
+                                  color: '#000000',
                                   fontSize: { xs: '0.95rem', md: '1.05rem' },
                                   fontWeight: 500,
                                   pl: 0.5,
@@ -1664,7 +1680,10 @@ const Landing: React.FC = () => {
                                 {getFeatureIcon(feature, plan.color)}
                                 <Typography
                                   variant="body2"
-                                  sx={{ fontSize: { xs: '1.0rem', md: '1.1rem' } }}
+                                  sx={{
+                                    fontSize: { xs: '1.0rem', md: '1.1rem' },
+                                    color: '#000000',
+                                  }}
                                 >
                                   {feature}
                                 </Typography>
@@ -1783,13 +1802,14 @@ const Landing: React.FC = () => {
                         sx={{
                           mb: 1,
                           fontSize: { xs: '1.2rem', md: '1.4rem' },
+                          color: '#000000',
                         }}
                       >
                         {faq.question}
                       </Typography>
                       <Typography
-                        color="text.secondary"
                         sx={{
+                          color: '#666666',
                           fontSize: { xs: '1.0rem', md: '1.1rem' },
                           lineHeight: 1.5,
                         }}
@@ -1875,13 +1895,14 @@ const Landing: React.FC = () => {
                         fontSize: { xs: '1.4rem', md: '1.8rem' },
                         mb: 2,
                         fontWeight: 600,
+                        color: '#000000',
                       }}
                     >
                       {post.title}
                     </Typography>
                     <Typography
-                      color="text.secondary"
                       sx={{
+                        color: '#666666',
                         mb: 2,
                         fontSize: { xs: '1.0rem', md: '1.1rem' },
                         lineHeight: 1.5,
@@ -1952,7 +1973,7 @@ const Landing: React.FC = () => {
               variant="h5"
               sx={{
                 mb: 3,
-                color: 'text.primary',
+                color: '#000000',
                 fontWeight: 600,
                 fontSize: { xs: '1.2rem', md: '1.5rem' },
               }}
@@ -1971,8 +1992,10 @@ const Landing: React.FC = () => {
                 <EmailOutlined sx={{ color: '#D32F2F' }} />
                 <Typography
                   variant="h6"
-                  color="text.secondary"
-                  sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}
+                  sx={{
+                    color: '#000000',
+                    fontSize: { xs: '1rem', md: '1.25rem' },
+                  }}
                 >
                   support@assignmentai.app
                 </Typography>
@@ -1981,19 +2004,21 @@ const Landing: React.FC = () => {
                 <AccessTimeOutlined sx={{ color: '#D32F2F' }} />
                 <Typography
                   variant="h6"
-                  color="text.secondary"
-                  sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}
+                  sx={{
+                    color: '#000000',
+                    fontSize: { xs: '1rem', md: '1.25rem' },
+                  }}
                 >
                   24/7 Support
                 </Typography>
               </Stack>
               <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
                 <HelpOutline sx={{ color: '#D32F2F' }} />
-                <Typography component="span" color="text.secondary" sx={{ fontWeight: 700 }}>
+                <Typography component="span" sx={{ color: '#000000', fontWeight: 700 }}>
                   <RouterMuiLink
                     to="/about"
                     sx={{
-                      color: 'text.secondary',
+                      color: '#000000',
                       transition: 'all 0.2s ease-in-out',
                       '&:hover': {
                         color: '#B71C1C',
@@ -2011,7 +2036,7 @@ const Landing: React.FC = () => {
               sx={{
                 mb: 4,
                 fontSize: { xs: '1.15rem', md: '1.35rem' },
-                color: 'text.secondary',
+                color: '#666666',
                 fontWeight: 500,
               }}
             >

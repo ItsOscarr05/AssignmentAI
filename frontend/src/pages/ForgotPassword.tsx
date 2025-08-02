@@ -218,14 +218,14 @@ const ForgotPassword: React.FC = () => {
                   fontFamily: "'Playfair Display', serif",
                   fontSize: { xs: '2rem', md: '2.4rem' },
                   letterSpacing: '-0.02em',
-                  color: 'text.primary',
+                  color: '#000000',
                 }}
               >
                 Reset Password
               </Typography>
               <Typography
-                color="text.secondary"
                 sx={{
+                  color: '#666666',
                   mb: 2,
                   fontFamily: "'Inter', sans-serif",
                   fontWeight: 300,
@@ -246,8 +246,11 @@ const ForgotPassword: React.FC = () => {
                     Check your email
                   </Typography>
                   <Typography
-                    color="text.secondary"
-                    sx={{ mb: 3, fontFamily: "'Inter', sans-serif" }}
+                    sx={{
+                      color: '#666666',
+                      mb: 3,
+                      fontFamily: "'Inter', sans-serif",
+                    }}
                   >
                     We've sent password reset instructions to {email}
                   </Typography>
@@ -281,13 +284,30 @@ const ForgotPassword: React.FC = () => {
                     onChange={e => setEmail(e.target.value)}
                     sx={{
                       mb: 1.5,
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: 'white',
+                        '& fieldset': {
+                          borderColor: '#e0e0e0',
+                        },
+                        '&:hover fieldset': {
+                          borderColor: '#bdbdbd',
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#d32f2f',
+                        },
+                      },
                       '& .MuiInputLabel-root': {
                         fontFamily: "'Inter', sans-serif",
                         fontWeight: 400,
+                        color: '#666666',
+                      },
+                      '& .MuiInputLabel-root.Mui-focused': {
+                        color: '#d32f2f',
                       },
                       '& .MuiInputBase-input': {
                         fontFamily: "'Inter', sans-serif",
                         fontWeight: 400,
+                        color: '#000000',
                       },
                     }}
                   />
@@ -332,6 +352,7 @@ const ForgotPassword: React.FC = () => {
                       mt: 1,
                       fontFamily: "'Inter', sans-serif",
                       fontWeight: 400,
+                      color: '#000000',
                     }}
                   >
                     Remember your password?{' '}

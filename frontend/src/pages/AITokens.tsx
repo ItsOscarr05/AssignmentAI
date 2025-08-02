@@ -568,7 +568,14 @@ const AITokens: React.FC = () => {
       <Grid container spacing={3}>
         <Grid item xs={12} md={breakpoint === 'standard' ? 12 : 8}>
           <Paper sx={{ p: 2, mb: 2, ...redOutline }}>
-            <Typography variant="h6" gutterBottom sx={{ color: 'black', fontWeight: 'normal' }}>
+            <Typography
+              variant="h6"
+              gutterBottom
+              sx={{
+                color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+                fontWeight: 'normal',
+              }}
+            >
               Token Usage
             </Typography>
             <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>
@@ -601,7 +608,7 @@ const AITokens: React.FC = () => {
                   sx={{
                     height: 10,
                     borderRadius: 5,
-                    backgroundColor: '#fff',
+                    backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
                     border: '2px solid red',
                     '& .MuiLinearProgress-bar': {
                       backgroundColor: '#d32f2f',
@@ -768,7 +775,14 @@ const AITokens: React.FC = () => {
           </Paper>
 
           <Paper sx={{ p: 2, mb: 2, ...redOutline }}>
-            <Typography variant="h6" gutterBottom sx={{ color: 'black', fontWeight: 'normal' }}>
+            <Typography
+              variant="h6"
+              gutterBottom
+              sx={{
+                color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+                fontWeight: 'normal',
+              }}
+            >
               Usage History
             </Typography>
             <ToggleButtonGroup
@@ -900,7 +914,14 @@ const AITokens: React.FC = () => {
           </Paper>
 
           <Paper sx={{ p: 2, mb: 2, ...redOutline }}>
-            <Typography variant="h6" gutterBottom sx={{ color: 'black', fontWeight: 'normal' }}>
+            <Typography
+              variant="h6"
+              gutterBottom
+              sx={{
+                color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+                fontWeight: 'normal',
+              }}
+            >
               Token Cost Calculator ($1 per 2,000 tokens)
             </Typography>
             <Box
@@ -1062,7 +1083,14 @@ const AITokens: React.FC = () => {
             </Box>
           </Paper>
           <Paper sx={{ p: 2, mb: 2, ...redOutline }}>
-            <Typography variant="h6" gutterBottom sx={{ color: 'black', fontWeight: 'normal' }}>
+            <Typography
+              variant="h6"
+              gutterBottom
+              sx={{
+                color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+                fontWeight: 'normal',
+              }}
+            >
               Recent Transactions
             </Typography>
             {transactions.length === 0 ? (
@@ -1098,7 +1126,8 @@ const AITokens: React.FC = () => {
                             pl: 0,
                             position: 'relative',
                             borderLeft: 'none',
-                            background: '#fff',
+                            background: theme =>
+                              theme.palette.mode === 'dark' ? '#000814' : '#fff',
                             border: `2px solid ${color}`,
                             transition: 'box-shadow 0.2s',
                             '&:hover': {
@@ -1139,7 +1168,8 @@ const AITokens: React.FC = () => {
                                   size="small"
                                   sx={{
                                     backgroundColor: color,
-                                    color: '#fff',
+                                    color: theme =>
+                                      theme.palette.mode === 'dark' ? '#000814' : '#fff',
                                     fontWeight: 600,
                                     mr: 1,
                                   }}
@@ -1156,7 +1186,8 @@ const AITokens: React.FC = () => {
                             } tokens`}
                             size="medium"
                             sx={{
-                              backgroundColor: '#fff',
+                              backgroundColor: theme =>
+                                theme.palette.mode === 'dark' ? '#000814' : '#fff',
                               color: color,
                               border: `2px solid ${color}`,
                               fontWeight: 700,
@@ -1239,7 +1270,10 @@ const AITokens: React.FC = () => {
         <Grid item xs={12} md={breakpoint === 'standard' ? 12 : 4}>
           <Paper sx={{ p: 3, mb: 4, ...redOutline }} ref={guideRef}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-              <Typography variant="h6" sx={{ color: 'black' }}>
+              <Typography
+                variant="h6"
+                sx={{ color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black') }}
+              >
                 Token Usage Guide
               </Typography>
               <Tooltip
@@ -1294,19 +1328,37 @@ const AITokens: React.FC = () => {
                             React.cloneElement(featureIcons[info.title].icon, {
                               sx: { color: featureIcons[info.title].color, fontSize: 28 },
                             })}
-                          <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'black' }}>
+                          <Typography
+                            variant="subtitle1"
+                            sx={{
+                              fontWeight: 600,
+                              color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+                            }}
+                          >
                             {info.title}
                           </Typography>
                         </Box>
                         <Chip
                           label={info.tokens}
                           size="small"
-                          color="error"
                           variant="outlined"
-                          sx={{ fontWeight: 600 }}
+                          sx={{
+                            fontWeight: 600,
+                            color: featureIcons[info.title]?.color || 'red',
+                            borderColor: featureIcons[info.title]?.color || 'red',
+                            '& .MuiChip-label': {
+                              color: featureIcons[info.title]?.color || 'red',
+                            },
+                          }}
                         />
                       </Box>
-                      <Typography variant="body2" sx={{ mb: 1, color: '#000 !important' }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          mb: 1,
+                          color: theme => (theme.palette.mode === 'dark' ? 'white' : '#000'),
+                        }}
+                      >
                         {info.description}
                       </Typography>
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
@@ -1374,19 +1426,37 @@ const AITokens: React.FC = () => {
                             React.cloneElement(featureIcons[info.title].icon, {
                               sx: { color: featureIcons[info.title].color, fontSize: 28 },
                             })}
-                          <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'black' }}>
+                          <Typography
+                            variant="subtitle1"
+                            sx={{
+                              fontWeight: 600,
+                              color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+                            }}
+                          >
                             {info.title}
                           </Typography>
                         </Box>
                         <Chip
                           label={info.tokens}
                           size="small"
-                          color="error"
                           variant="outlined"
-                          sx={{ fontWeight: 600 }}
+                          sx={{
+                            fontWeight: 600,
+                            color: featureIcons[info.title]?.color || 'red',
+                            borderColor: featureIcons[info.title]?.color || 'red',
+                            '& .MuiChip-label': {
+                              color: featureIcons[info.title]?.color || 'red',
+                            },
+                          }}
                         />
                       </Box>
-                      <Typography variant="body2" sx={{ mb: 1, color: '#000 !important' }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          mb: 1,
+                          color: theme => (theme.palette.mode === 'dark' ? 'white' : '#000'),
+                        }}
+                      >
                         {info.description}
                       </Typography>
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
@@ -1443,12 +1513,19 @@ const AITokens: React.FC = () => {
                 maxHeight: '80vh',
                 width: { xs: '95vw', sm: '90vw', md: 'auto' },
                 maxWidth: { xs: '95vw', sm: '90vw', md: 'md' },
+                backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
               },
             }}
           >
             <DialogTitle sx={{ borderBottom: '1px solid', borderColor: 'divider', pb: 2 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h6" sx={{ color: 'black', fontWeight: 'normal' }}>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+                    fontWeight: 'normal',
+                  }}
+                >
                   All Transactions
                 </Typography>
                 <IconButton onClick={handleModalClose} size="small">
@@ -1473,7 +1550,8 @@ const AITokens: React.FC = () => {
                             pr: 2,
                             position: 'relative',
                             borderLeft: 'none',
-                            background: '#fff',
+                            background: theme =>
+                              theme.palette.mode === 'dark' ? '#000814' : '#fff',
                             border: `2px solid ${color}`,
                             transition: 'box-shadow 0.2s',
                             '&:hover': {
@@ -1514,7 +1592,8 @@ const AITokens: React.FC = () => {
                                   size="small"
                                   sx={{
                                     backgroundColor: color,
-                                    color: '#fff',
+                                    color: theme =>
+                                      theme.palette.mode === 'dark' ? '#000814' : '#fff',
                                     fontWeight: 600,
                                     mr: 1,
                                   }}
@@ -1531,7 +1610,8 @@ const AITokens: React.FC = () => {
                             } tokens`}
                             size="medium"
                             sx={{
-                              backgroundColor: '#fff',
+                              backgroundColor: theme =>
+                                theme.palette.mode === 'dark' ? '#000814' : '#fff',
                               color: color,
                               border: `2px solid ${color}`,
                               fontWeight: 700,

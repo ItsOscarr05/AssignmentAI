@@ -1,3 +1,4 @@
+import { useTheme } from '@mui/material/styles';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip, TooltipProps } from 'recharts';
@@ -57,6 +58,7 @@ const CustomTooltip: React.FC<TooltipProps<number, string>> = ({ active, payload
       <div
         style={{
           backgroundColor: '#fff',
+          color: '#000',
           padding: '5px',
           border: '1px solid #ccc',
         }}
@@ -70,6 +72,7 @@ const CustomTooltip: React.FC<TooltipProps<number, string>> = ({ active, payload
 
 const DashboardPieChart: React.FC<DashboardPieChartProps> = ({ data, distributionFilter }) => {
   const navigate = useNavigate();
+  const theme = useTheme();
 
   const handlePieClick = (payload: any) => {
     if (payload && payload.name && payload.name !== 'No Subjects') {
@@ -90,7 +93,11 @@ const DashboardPieChart: React.FC<DashboardPieChartProps> = ({ data, distributio
           y="45%"
           textAnchor="middle"
           dominantBaseline="middle"
-          style={{ fontSize: '28px', fontWeight: 'bold' }}
+          style={{
+            fontSize: '28px',
+            fontWeight: 'bold',
+            fill: theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+          }}
         >
           Total Subjects:
         </text>
@@ -99,7 +106,11 @@ const DashboardPieChart: React.FC<DashboardPieChartProps> = ({ data, distributio
           y="55%"
           textAnchor="middle"
           dominantBaseline="middle"
-          style={{ fontSize: '28px', fontWeight: 'bold' }}
+          style={{
+            fontSize: '28px',
+            fontWeight: 'bold',
+            fill: theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+          }}
         >
           {data.length}
         </text>

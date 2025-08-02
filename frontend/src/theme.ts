@@ -2,6 +2,17 @@ import { createTheme, ThemeOptions } from '@mui/material/styles';
 
 // Base theme configuration
 const baseTheme: ThemeOptions = {
+  palette: {
+    primary: {
+      main: '#d32f2f',
+    },
+    secondary: {
+      main: '#8884d8',
+    },
+    success: {
+      main: '#82ca9d',
+    },
+  },
   typography: {
     fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
     h1: { fontWeight: 500 },
@@ -277,8 +288,8 @@ export const darkTheme = createTheme({
       contrastText: '#ffffff', // Keep white for contrast
     },
     background: {
-      default: '#000000', // Black background
-      paper: '#000000', // Black cards
+      default: '#000814', // Dark blue-black background
+      paper: '#000814', // Dark blue-black cards
     },
     text: {
       primary: '#ffffff', // White text
@@ -302,7 +313,7 @@ export const darkTheme = createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: {
-          backgroundColor: '#000000', // Black background
+          backgroundColor: '#000814', // Dark blue-black background
           color: '#ffffff', // White text
         },
       },
@@ -334,7 +345,7 @@ export const darkTheme = createTheme({
         root: {
           borderRadius: 12,
           boxShadow: '0 2px 8px rgba(255, 255, 255, 0.1)', // White shadow
-          backgroundColor: '#000000', // Black background
+          backgroundColor: '#000814', // Dark blue-black background
           color: '#ffffff', // White text
         },
       },
@@ -343,7 +354,7 @@ export const darkTheme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 12,
-          backgroundColor: '#000000', // Black background
+          backgroundColor: '#000814', // Dark blue-black background
           color: '#ffffff', // White text
         },
       },
@@ -554,7 +565,8 @@ export const darkTheme = createTheme({
             fontSize: 'calc(0.85 * var(--app-font-size, 16px)) !important',
             fontWeight: 500,
             background: 'linear-gradient(45deg, #d32f2f, #ff6659)', // Keep red gradient
-            boxShadow: '0 4px 20px 0px rgba(211, 47, 47, 0.3), 0 7px 10px -5px rgba(211, 47, 47, 0.4)', // Red shadow
+            boxShadow:
+              '0 4px 20px 0px rgba(211, 47, 47, 0.3), 0 7px 10px -5px rgba(211, 47, 47, 0.4)', // Red shadow
             transition: 'all 0.3s ease',
             '&:hover': {
               transform: 'translateY(-2px)',

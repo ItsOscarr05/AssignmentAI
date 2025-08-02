@@ -83,7 +83,7 @@ const ProfileSection = ({ title, icon, children }: any) => {
         borderRadius: 3,
         background:
           theme.palette.mode === 'dark'
-            ? 'linear-gradient(145deg, rgba(50,50,50,0.9) 0%, rgba(40,40,40,0.9) 100%)'
+            ? 'linear-gradient(145deg, rgba(0,8,20,0.9) 0%, rgba(0,8,20,0.9) 100%)'
             : 'linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(240,240,240,0.9) 100%)',
         backdropFilter: 'blur(10px)',
         transition: 'all 0.3s ease-in-out',
@@ -99,7 +99,7 @@ const ProfileSection = ({ title, icon, children }: any) => {
           sx={{
             p: 1.5,
             borderRadius: 2,
-            background: '#ffffff',
+            background: theme => (theme.palette.mode === 'dark' ? '#000814' : '#ffffff'),
             color: theme.palette.primary.main,
             display: 'flex',
             alignItems: 'center',
@@ -132,13 +132,13 @@ const StatCard = ({ icon, title, value, color, onClick, sx }: any) => {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'flex-start',
-        background: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+        background: theme.palette.mode === 'dark' ? 'rgba(0,8,20,0.8)' : 'rgba(0,0,0,0.02)',
         borderRadius: 2,
         transition: 'all 0.3s ease',
         '&:hover': {
           transform: onClick ? 'translateY(-4px) scale(1.03)' : 'translateY(-4px)',
           boxShadow: theme.shadows[4],
-          background: onClick ? 'rgba(255,0,0,0.08)' : undefined,
+          background: onClick ? 'rgba(0,8,20,0.9)' : undefined,
         },
         cursor: onClick ? 'pointer' : 'default',
         ...sx,
@@ -148,7 +148,7 @@ const StatCard = ({ icon, title, value, color, onClick, sx }: any) => {
         sx={{
           p: 1,
           borderRadius: 1.5,
-          background: '#ffffff',
+          background: theme => (theme.palette.mode === 'dark' ? '#000814' : '#ffffff'),
           color: color || theme.palette.primary.main,
           mb: 2,
         }}
@@ -400,14 +400,14 @@ const Profile: React.FC = () => {
             px: { xs: 2, md: 4 },
             py: 1.5,
             borderRadius: 3,
-            backgroundColor: '#ffffff',
+            backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#ffffff'),
             color: theme.palette.primary.main,
             fontSize: { xs: '0.875rem', md: '1rem' },
             boxShadow: '0 4px 20px 0px rgba(0,0,0,0.14), 0 7px 10px -5px rgba(33,150,243,0.4)',
             transition: 'all 0.3s ease',
             '&:hover': {
               transform: 'translateY(-2px)',
-              backgroundColor: '#f5f5f5',
+              backgroundColor: theme => (theme.palette.mode === 'dark' ? '#001122' : '#f5f5f5'),
               color: theme.palette.primary.dark,
               boxShadow: '0 7px 30px -10px rgba(33,150,243,0.6)',
             },
@@ -426,14 +426,14 @@ const Profile: React.FC = () => {
             py: 1.5,
             borderRadius: 3,
             backgroundColor: theme.palette.error.main,
-            color: '#ffffff',
+            color: theme => (theme.palette.mode === 'dark' ? '#ffffff' : '#ffffff'),
             fontSize: { xs: '1rem', md: '1.125rem' },
             boxShadow: '0 4px 20px 0px rgba(0,0,0,0.14), 0 7px 10px -5px rgba(244,67,54,0.4)',
             transition: 'all 0.3s ease',
             '&:hover': {
               transform: 'translateY(-2px)',
               backgroundColor: theme.palette.error.dark,
-              color: '#ffffff',
+              color: theme => (theme.palette.mode === 'dark' ? '#ffffff' : '#ffffff'),
               boxShadow: '0 7px 30px -10px rgba(244,67,54,0.6)',
             },
           }}
@@ -477,7 +477,7 @@ const Profile: React.FC = () => {
                   color: theme.palette.primary.main,
                 },
                 '& .MuiSvgIcon-root': {
-                  background: '#ffffff',
+                  background: theme => (theme.palette.mode === 'dark' ? '#000814' : '#ffffff'),
                   padding: '6px',
                   borderRadius: '8px',
                   fontSize: '1.3rem',
@@ -546,7 +546,7 @@ const Profile: React.FC = () => {
                     border: '4px solid',
                     borderColor: theme.palette.primary.main,
                     boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                    background: '#fff',
+                    background: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
                   }}
                   aria-label="User avatar"
                 >
@@ -587,7 +587,10 @@ const Profile: React.FC = () => {
                       label={displayEmail}
                       aria-label="User email"
                       sx={{
-                        background: 'rgba(255,255,255,0.9)',
+                        background: theme =>
+                          theme.palette.mode === 'dark'
+                            ? 'rgba(0,8,20,0.9)'
+                            : 'rgba(255,255,255,0.9)',
                         border: '1px solid',
                         borderColor: theme.palette.primary.main,
                         fontSize: { xs: '0.75rem', md: '0.875rem' },
@@ -610,7 +613,10 @@ const Profile: React.FC = () => {
                       }
                       aria-label="User institution"
                       sx={{
-                        background: 'rgba(255,255,255,0.9)',
+                        background: theme =>
+                          theme.palette.mode === 'dark'
+                            ? 'rgba(0,8,20,0.9)'
+                            : 'rgba(255,255,255,0.9)',
                         border: '1px solid',
                         borderColor: theme.palette.primary.main,
                         fontSize: { xs: '0.75rem', md: '0.875rem' },
@@ -632,7 +638,10 @@ const Profile: React.FC = () => {
                       }
                       aria-label="User country"
                       sx={{
-                        background: 'rgba(255,255,255,0.9)',
+                        background: theme =>
+                          theme.palette.mode === 'dark'
+                            ? 'rgba(0,8,20,0.9)'
+                            : 'rgba(255,255,255,0.9)',
                         border: '1px solid',
                         borderColor: theme.palette.primary.main,
                         fontSize: { xs: '0.75rem', md: '0.875rem' },
@@ -650,7 +659,10 @@ const Profile: React.FC = () => {
                       label={languageLabel}
                       aria-label="User language"
                       sx={{
-                        background: 'rgba(255,255,255,0.9)',
+                        background: theme =>
+                          theme.palette.mode === 'dark'
+                            ? 'rgba(0,8,20,0.9)'
+                            : 'rgba(255,255,255,0.9)',
                         border: '1px solid',
                         borderColor: theme.palette.primary.main,
                         fontSize: { xs: '0.75rem', md: '0.875rem' },
@@ -717,7 +729,11 @@ const Profile: React.FC = () => {
                   mb: 2,
                 }}
               />
-              <Typography variant="h5" color="black" gutterBottom>
+              <Typography
+                variant="h5"
+                color={theme => (theme.palette.mode === 'dark' ? 'white' : 'black')}
+                gutterBottom
+              >
                 Coming Soon
               </Typography>
               <Typography color="text.secondary" sx={{ maxWidth: 400 }}>
@@ -744,7 +760,11 @@ const Profile: React.FC = () => {
                   mb: 2,
                 }}
               />
-              <Typography variant="h5" color="black" gutterBottom>
+              <Typography
+                variant="h5"
+                color={theme => (theme.palette.mode === 'dark' ? 'white' : 'black')}
+                gutterBottom
+              >
                 Coming Soon
               </Typography>
               <Typography color="text.secondary" sx={{ maxWidth: 400 }}>
@@ -766,7 +786,7 @@ const Profile: React.FC = () => {
             borderRadius: 3,
             background:
               theme.palette.mode === 'dark'
-                ? 'linear-gradient(145deg, rgba(50,50,50,0.95) 0%, rgba(40,40,40,0.95) 100%)'
+                ? 'linear-gradient(145deg, rgba(0,8,20,0.95) 0%, rgba(0,8,20,0.95) 100%)'
                 : 'linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(240,240,240,0.95) 100%)',
             backdropFilter: 'blur(10px)',
           },
