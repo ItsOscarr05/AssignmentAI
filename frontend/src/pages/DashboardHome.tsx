@@ -185,54 +185,6 @@ const DashboardHome: React.FC = () => {
     assignmentsGenerated,
   };
 
-  const notStartedAssignments = useMemo(
-    () =>
-      assignments
-        .filter(a => a.status === 'Not Started')
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
-    []
-  );
-  const suggestionAssignment = notStartedAssignments.length > 0 ? notStartedAssignments[0] : null;
-
-  const coreSubjects = [
-    'Math',
-    'Fitness',
-    'Literature',
-    'Business',
-    'Science',
-    'Career & Technical Ed',
-    'Language',
-    'History',
-    'Technology',
-    'Music & Arts',
-  ];
-  const usedSubjects = useMemo(
-    () =>
-      isMockUser
-        ? new Set(recentAssignmentsWithSubject.map(a => a.subject || mapToCoreSubject(a.title)))
-        : new Set(assignments.map(a => a.subject || mapToCoreSubject(a.title))),
-    [isMockUser, assignments]
-  );
-  const unusedCoreSubject = useMemo(
-    () => coreSubjects.find(s => !usedSubjects.has(s)),
-    [usedSubjects]
-  );
-
-  const mostFrequentSubject = useMemo(() => {
-    const source = isMockUser ? recentAssignmentsWithSubject : assignments;
-    const subjectFrequency = source.reduce((acc, curr) => {
-      const core = curr.subject || mapToCoreSubject(curr.title);
-      if (core !== 'Other') {
-        acc[core] = (acc[core] || 0) + 1;
-      }
-      return acc;
-    }, {} as Record<string, number>);
-
-    if (Object.keys(subjectFrequency).length === 0) return null;
-
-    return Object.entries(subjectFrequency).sort((a, b) => b[1] - a[1])[0][0];
-  }, [isMockUser, assignments]);
-
   // Rainbow order for pie chart (counterclockwise, starting with red)
   const rainbowOrder = [
     'Math',
@@ -320,7 +272,7 @@ const DashboardHome: React.FC = () => {
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
               background: theme =>
                 theme.palette.mode === 'dark'
-                  ? 'linear-gradient(145deg, #000814 0%, #001122 120%)'
+                  ? `linear-gradient(145deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 120%)`
                   : 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 120%)',
               border: '2px solid #D32F2F',
               display: 'flex',
@@ -530,7 +482,7 @@ const DashboardHome: React.FC = () => {
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
               background: theme =>
                 theme.palette.mode === 'dark'
-                  ? 'linear-gradient(145deg, #000814 0%, #001122 120%)'
+                  ? `linear-gradient(145deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 120%)`
                   : 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 120%)',
               border: '2px solid #D32F2F',
               overflow: 'hidden',
@@ -575,7 +527,7 @@ const DashboardHome: React.FC = () => {
                   color: theme => (theme.palette.mode === 'dark' ? '#ffffff' : '#000000'),
                 }}
               >
-                Recent Active Assignments
+                Recent & Active Assignments
               </Typography>
               <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
                 <Button
@@ -909,7 +861,7 @@ const DashboardHome: React.FC = () => {
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
               background: theme =>
                 theme.palette.mode === 'dark'
-                  ? 'linear-gradient(145deg, #000814 0%, #001122 120%)'
+                  ? `linear-gradient(145deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 120%)`
                   : 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 120%)',
               border: '2px solid #D32F2F',
               minHeight:
@@ -990,7 +942,8 @@ const DashboardHome: React.FC = () => {
                   onChange={e => setDistributionFilter(e.target.value)}
                   sx={{
                     color: '#D32F2F',
-                    backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#000814' : '#ffffff',
+                    backgroundColor: theme =>
+                      theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff',
                     '& .MuiOutlinedInput-notchedOutline': {
                       borderColor: '#D32F2F',
                     },
@@ -1004,7 +957,8 @@ const DashboardHome: React.FC = () => {
                       color: '#D32F2F',
                     },
                     '& .MuiSelect-select': {
-                      backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#000814' : '#ffffff',
+                      backgroundColor: theme =>
+                        theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff',
                     },
                   }}
                 >
@@ -1033,7 +987,7 @@ const DashboardHome: React.FC = () => {
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
               background: theme =>
                 theme.palette.mode === 'dark'
-                  ? 'linear-gradient(145deg, #000814 0%, #001122 120%)'
+                  ? `linear-gradient(145deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 120%)`
                   : 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 120%)',
               border: '2px solid #D32F2F',
               overflow: 'hidden',
@@ -1060,7 +1014,8 @@ const DashboardHome: React.FC = () => {
                     textAlign: 'center',
                     boxShadow: 'none',
                     border: '1.5px solid #1976D2',
-                    background: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+                    background: theme =>
+                      theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease-in-out',
                     '&:hover': {
@@ -1093,7 +1048,8 @@ const DashboardHome: React.FC = () => {
                     textAlign: 'center',
                     boxShadow: 'none',
                     border: '1.5px solid #388E3C',
-                    background: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+                    background: theme =>
+                      theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease-in-out',
                     '&:hover': {
@@ -1122,7 +1078,8 @@ const DashboardHome: React.FC = () => {
                     textAlign: 'center',
                     boxShadow: 'none',
                     border: '1.5px solid #8E24AA',
-                    background: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+                    background: theme =>
+                      theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease-in-out',
                     '&:hover': {
@@ -1150,7 +1107,8 @@ const DashboardHome: React.FC = () => {
                     textAlign: 'center',
                     boxShadow: 'none',
                     border: '1.5px solid #FFA000',
-                    background: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+                    background: theme =>
+                      theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
                     width: '100%',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease-in-out',

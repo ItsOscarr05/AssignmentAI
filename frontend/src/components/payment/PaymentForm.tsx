@@ -87,7 +87,8 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
           required
           sx={{
             '& .MuiOutlinedInput-root': {
-              backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+              backgroundColor: theme =>
+                theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
               '& fieldset': { borderColor: 'red' },
               '&:hover fieldset': { borderColor: 'red' },
               '&.Mui-focused fieldset': { borderColor: 'red' },

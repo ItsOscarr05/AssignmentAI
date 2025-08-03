@@ -420,7 +420,8 @@ const PricePlan: React.FC = () => {
           sx: {
             width: { xs: '95vw', md: 'auto' },
             maxWidth: { xs: '95vw', md: 'lg' },
-            backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+            backgroundColor: theme =>
+              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
           },
         }}
       >
@@ -594,7 +595,8 @@ const PricePlan: React.FC = () => {
                     borderColor: plan.color,
                     borderRadius: 3.5,
                     boxShadow: 3,
-                    backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : 'white'),
+                    backgroundColor: theme =>
+                      theme.palette.mode === 'dark' ? theme.palette.background.paper : 'white',
                     zIndex: 1,
                     transition: 'all 0.3s ease',
                     '&:hover': {
@@ -903,7 +905,8 @@ const PricePlan: React.FC = () => {
         fullWidth
         PaperProps={{
           sx: {
-            backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+            backgroundColor: theme =>
+              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
           },
         }}
       >

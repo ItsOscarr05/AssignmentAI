@@ -165,7 +165,8 @@ const Assignments: React.FC = () => {
 
   // Custom styles
   const cardStyle = {
-    backgroundColor: (theme: any) => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+    backgroundColor: (theme: any) =>
+      theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
     boxShadow: '0 2px 12px rgba(0, 0, 0, 0.1)',
     borderRadius: '12px',
     transition: 'all 0.2s ease-in-out',
@@ -465,7 +466,8 @@ const Assignments: React.FC = () => {
       <Box
         sx={{
           p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2),
-          backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fafafa'),
+          backgroundColor: theme =>
+            theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fafafa',
           minHeight: '100vh',
           overflow: 'hidden',
           width: '100%',
@@ -580,7 +582,8 @@ const Assignments: React.FC = () => {
               fullWidth
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#ffffff'),
+                  backgroundColor: theme =>
+                    theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff',
                 },
                 '& .MuiOutlinedInput-notchedOutline': {
                   borderColor: 'red',
@@ -630,7 +633,7 @@ const Assignments: React.FC = () => {
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     backgroundColor: theme =>
-                      theme.palette.mode === 'dark' ? '#000814' : '#ffffff',
+                      theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff',
                   },
                   '& .MuiOutlinedInput-notchedOutline': {
                     borderColor: 'red',
@@ -663,7 +666,7 @@ const Assignments: React.FC = () => {
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     backgroundColor: theme =>
-                      theme.palette.mode === 'dark' ? '#000814' : '#ffffff',
+                      theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff',
                   },
                   '& .MuiOutlinedInput-notchedOutline': {
                     borderColor: 'red',
@@ -698,7 +701,7 @@ const Assignments: React.FC = () => {
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     backgroundColor: theme =>
-                      theme.palette.mode === 'dark' ? '#000814' : '#ffffff',
+                      theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff',
                   },
                   '& .MuiOutlinedInput-notchedOutline': {
                     borderColor: 'red',
@@ -741,7 +744,9 @@ const Assignments: React.FC = () => {
                     sx: {
                       '& .MuiOutlinedInput-root': {
                         backgroundColor: theme =>
-                          theme.palette.mode === 'dark' ? '#000814' : '#ffffff',
+                          theme.palette.mode === 'dark'
+                            ? theme.palette.background.paper
+                            : '#ffffff',
                       },
                       '& .MuiOutlinedInput-notchedOutline': {
                         borderColor: 'red',

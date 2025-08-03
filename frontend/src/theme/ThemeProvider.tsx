@@ -3,7 +3,7 @@ import React, { createContext, ReactNode, useCallback, useContext, useState } fr
 import { createDarkTheme, lightTheme } from '../theme';
 
 type ThemeMode = 'light' | 'dark';
-type DarkThemeColor = 'navy' | 'charcoal' | 'slate' | 'graphite';
+type DarkThemeColor = 'navy' | 'charcoal' | 'darkGray' | 'pitchBlack';
 
 interface ThemeContextType {
   mode: ThemeMode;
@@ -38,9 +38,9 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
             ? '#000814'
             : darkThemeColor === 'charcoal'
             ? '#1a1a1a'
-            : darkThemeColor === 'slate'
-            ? '#2d3748'
-            : '#4a5568' // graphite
+            : darkThemeColor === 'darkGray'
+            ? '#282828'
+            : '#141414' // pitchBlack
         );
 
   return (

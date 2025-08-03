@@ -283,7 +283,7 @@ const Dashboard: React.FC = () => {
               borderColor: theme => (theme.palette.mode === 'dark' ? '#d32f2f' : 'divider'),
               background: theme =>
                 theme.palette.mode === 'dark'
-                  ? '#000814'
+                  ? theme.palette.background.paper
                   : `linear-gradient(45deg, ${theme.palette.primary.dark} 30%, ${theme.palette.primary.main} 90%)`,
               color: theme => (theme.palette.mode === 'dark' ? '#d32f2f' : '#ffffff'),
               borderRadius: '0 12px 12px 0',
@@ -328,11 +328,15 @@ const Dashboard: React.FC = () => {
         sx={{
           flexGrow: 1,
           p: 3,
-          width: { md: `calc(100% - ${drawerWidth}px)` },
+          width: '100%',
           minHeight: '100vh',
-          backgroundColor: 'background.default',
-          marginLeft: { md: `${drawerWidth}px` },
-          transition: theme.transitions.create(['margin', 'width'], {
+          backgroundColor: theme =>
+            theme.palette.mode === 'dark'
+              ? theme.palette.background.paper
+              : `linear-gradient(45deg, ${theme.palette.primary.dark} 30%, ${theme.palette.primary.main} 90%)`,
+          marginLeft: 0,
+          paddingLeft: { md: `${drawerWidth + 24}px` },
+          transition: theme.transitions.create(['padding'], {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.leavingScreen,
           }),

@@ -75,7 +75,7 @@ const HelpSection = ({ title, icon, children, breakpoint = 'standard' }: any) =>
         borderRadius: 3,
         background:
           theme.palette.mode === 'dark'
-            ? 'linear-gradient(145deg, rgba(0,8,20,0.9) 0%, rgba(0,8,20,0.9) 100%)'
+            ? `linear-gradient(145deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.paper} 100%)`
             : 'linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(240,240,240,0.9) 100%)',
         backdropFilter: 'blur(10px)',
         transition: 'all 0.3s ease-in-out',
@@ -382,7 +382,7 @@ const Help: React.FC = () => {
           px: { xs: 1, md: 0 },
           background:
             theme.palette.mode === 'dark'
-              ? 'linear-gradient(180deg, rgba(0,8,20,0.95) 0%, rgba(0,8,20,0.95) 100%)'
+              ? `linear-gradient(180deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.paper} 100%)`
               : 'linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.95) 100%)',
           backdropFilter: 'blur(10px)',
         }}
@@ -411,7 +411,8 @@ const Help: React.FC = () => {
               borderRadius: 3,
               fontWeight: 600,
               fontSize: { xs: '1rem', md: '1.1rem' },
-              backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#ffffff'),
+              backgroundColor: theme =>
+                theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff',
               '&:hover': {
                 '& > fieldset': {
                   borderColor: theme.palette.primary.main,
@@ -539,7 +540,7 @@ const Help: React.FC = () => {
                 fontSize: { xs: '0.75rem', md: '0.875rem' },
                 px: { xs: 1.5, md: 2 },
                 py: { xs: 0.5, md: 0.75 },
-                backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#ffffff'),
+                backgroundColor: theme => (theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff'),
                 borderColor: theme =>
                   theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
                 color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
@@ -562,7 +563,7 @@ const Help: React.FC = () => {
                 fontSize: { xs: '0.75rem', md: '0.875rem' },
                 px: { xs: 1.5, md: 2 },
                 py: { xs: 0.5, md: 0.75 },
-                backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#ffffff'),
+                backgroundColor: theme => (theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff'),
                 borderColor: theme =>
                   theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
                 color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
@@ -676,11 +677,15 @@ const Help: React.FC = () => {
                       expandIcon={<ExpandMore />}
                       sx={{
                         background:
-                          theme.palette.mode === 'dark' ? 'rgba(0,8,20,0.8)' : 'rgba(0,0,0,0.02)',
+                          theme.palette.mode === 'dark'
+                            ? `${theme.palette.background.paper}cc`
+                            : 'rgba(0,0,0,0.02)',
                         borderRadius: 2,
                         '&:hover': {
                           background:
-                            theme.palette.mode === 'dark' ? 'rgba(0,8,20,0.9)' : 'rgba(0,0,0,0.04)',
+                            theme.palette.mode === 'dark'
+                              ? `${theme.palette.background.paper}e6`
+                              : 'rgba(0,0,0,0.04)',
                         },
                         '& .MuiAccordionSummary-expandIconWrapper': {
                           color: theme.palette.primary.main,
@@ -698,7 +703,9 @@ const Help: React.FC = () => {
                     <AccordionDetails
                       sx={{
                         background:
-                          theme.palette.mode === 'dark' ? 'rgba(0,8,20,0.6)' : 'rgba(0,0,0,0.01)',
+                          theme.palette.mode === 'dark'
+                            ? `${theme.palette.background.paper}99`
+                            : 'rgba(0,0,0,0.01)',
                         borderTop: '1px solid',
                         borderColor:
                           theme.palette.mode === 'dark'
@@ -866,7 +873,9 @@ const Help: React.FC = () => {
                             borderRadius: 2,
                             fontSize: { xs: '0.875rem', md: '1rem' },
                             backgroundColor: theme =>
-                              theme.palette.mode === 'dark' ? '#000814' : '#ffffff',
+                              theme.palette.mode === 'dark'
+                                ? theme.palette.background.paper
+                                : '#ffffff',
                           },
                         }}
                         inputProps={{ 'aria-label': 'Email' }}
@@ -884,7 +893,9 @@ const Help: React.FC = () => {
                             borderRadius: 2,
                             fontSize: { xs: '0.875rem', md: '1rem' },
                             backgroundColor: theme =>
-                              theme.palette.mode === 'dark' ? '#000814' : '#ffffff',
+                              theme.palette.mode === 'dark'
+                                ? theme.palette.background.paper
+                                : '#ffffff',
                           },
                         }}
                         inputProps={{ 'aria-label': 'Subject' }}
@@ -903,7 +914,9 @@ const Help: React.FC = () => {
                             fontSize: { xs: '0.875rem', md: '1rem' },
                             '& .MuiOutlinedInput-root': {
                               backgroundColor: theme =>
-                                theme.palette.mode === 'dark' ? '#000814' : '#ffffff',
+                                theme.palette.mode === 'dark'
+                                  ? theme.palette.background.paper
+                                  : '#ffffff',
                             },
                           }}
                           inputProps={{ 'aria-label': 'Category' }}
@@ -954,7 +967,9 @@ const Help: React.FC = () => {
                             fontSize: { xs: '0.875rem', md: '1rem' },
                             '& .MuiOutlinedInput-root': {
                               backgroundColor: theme =>
-                                theme.palette.mode === 'dark' ? '#000814' : '#ffffff',
+                                theme.palette.mode === 'dark'
+                                  ? theme.palette.background.paper
+                                  : '#ffffff',
                             },
                           }}
                           inputProps={{ 'aria-label': 'Priority' }}
@@ -995,7 +1010,9 @@ const Help: React.FC = () => {
                             borderRadius: 2,
                             fontSize: { xs: '0.875rem', md: '1rem' },
                             backgroundColor: theme =>
-                              theme.palette.mode === 'dark' ? '#000814' : '#ffffff',
+                              theme.palette.mode === 'dark'
+                                ? theme.palette.background.paper
+                                : '#ffffff',
                           },
                         }}
                         inputProps={{

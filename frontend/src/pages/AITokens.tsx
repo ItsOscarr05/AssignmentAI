@@ -608,7 +608,8 @@ const AITokens: React.FC = () => {
                   sx={{
                     height: 10,
                     borderRadius: 5,
-                    backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+                    backgroundColor: theme =>
+                      theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
                     border: '2px solid red',
                     '& .MuiLinearProgress-bar': {
                       backgroundColor: '#d32f2f',
@@ -1127,7 +1128,9 @@ const AITokens: React.FC = () => {
                             position: 'relative',
                             borderLeft: 'none',
                             background: theme =>
-                              theme.palette.mode === 'dark' ? '#000814' : '#fff',
+                              theme.palette.mode === 'dark'
+                                ? theme.palette.background.paper
+                                : '#fff',
                             border: `2px solid ${color}`,
                             transition: 'box-shadow 0.2s',
                             '&:hover': {
@@ -1169,7 +1172,9 @@ const AITokens: React.FC = () => {
                                   sx={{
                                     backgroundColor: color,
                                     color: theme =>
-                                      theme.palette.mode === 'dark' ? '#000814' : '#fff',
+                                      theme.palette.mode === 'dark'
+                                        ? theme.palette.background.paper
+                                        : '#fff',
                                     fontWeight: 600,
                                     mr: 1,
                                   }}
@@ -1187,7 +1192,9 @@ const AITokens: React.FC = () => {
                             size="medium"
                             sx={{
                               backgroundColor: theme =>
-                                theme.palette.mode === 'dark' ? '#000814' : '#fff',
+                                theme.palette.mode === 'dark'
+                                  ? theme.palette.background.paper
+                                  : '#fff',
                               color: color,
                               border: `2px solid ${color}`,
                               fontWeight: 700,
@@ -1513,7 +1520,8 @@ const AITokens: React.FC = () => {
                 maxHeight: '80vh',
                 width: { xs: '95vw', sm: '90vw', md: 'auto' },
                 maxWidth: { xs: '95vw', sm: '90vw', md: 'md' },
-                backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+                backgroundColor: theme =>
+                  theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
               },
             }}
           >
@@ -1551,7 +1559,9 @@ const AITokens: React.FC = () => {
                             position: 'relative',
                             borderLeft: 'none',
                             background: theme =>
-                              theme.palette.mode === 'dark' ? '#000814' : '#fff',
+                              theme.palette.mode === 'dark'
+                                ? theme.palette.background.paper
+                                : '#fff',
                             border: `2px solid ${color}`,
                             transition: 'box-shadow 0.2s',
                             '&:hover': {
@@ -1593,7 +1603,9 @@ const AITokens: React.FC = () => {
                                   sx={{
                                     backgroundColor: color,
                                     color: theme =>
-                                      theme.palette.mode === 'dark' ? '#000814' : '#fff',
+                                      theme.palette.mode === 'dark'
+                                        ? theme.palette.background.paper
+                                        : '#fff',
                                     fontWeight: 600,
                                     mr: 1,
                                   }}
@@ -1611,7 +1623,9 @@ const AITokens: React.FC = () => {
                             size="medium"
                             sx={{
                               backgroundColor: theme =>
-                                theme.palette.mode === 'dark' ? '#000814' : '#fff',
+                                theme.palette.mode === 'dark'
+                                  ? theme.palette.background.paper
+                                  : '#fff',
                               color: color,
                               border: `2px solid ${color}`,
                               fontWeight: 700,

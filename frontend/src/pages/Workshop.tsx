@@ -346,7 +346,8 @@ const Workshop: React.FC = () => {
 
   // Custom styles
   const cardStyle = {
-    backgroundColor: (theme: any) => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+    backgroundColor: (theme: any) =>
+      theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
     boxShadow: '0 2px 12px rgba(0, 0, 0, 0.1)',
     borderRadius: '12px',
     transition: 'all 0.2s ease-in-out',
@@ -475,7 +476,8 @@ const Workshop: React.FC = () => {
               onChange={e => setInput(e.target.value)}
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#ffffff'),
+                  backgroundColor: theme =>
+                    theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff',
                   '& fieldset': {
                     borderColor: 'red',
                   },
@@ -653,7 +655,8 @@ const Workshop: React.FC = () => {
     <Box
       sx={{
         p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2),
-        backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : 'white'),
+        backgroundColor: theme =>
+          theme.palette.mode === 'dark' ? theme.palette.background.paper : 'white',
         minHeight: '100vh',
         overflow: 'hidden',
         width: '100%',
@@ -1812,7 +1815,10 @@ const Workshop: React.FC = () => {
         onClose={() => setIsDrawerOpen(false)}
         sx={{
           '& .MuiDrawer-paper': {
-            backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : 'white'),
+            backgroundColor: theme =>
+              theme.palette.mode === 'dark' ? theme.palette.background.paper : 'white',
+            borderTopRightRadius: 0,
+            borderBottomRightRadius: 0,
           },
         }}
       >
@@ -1855,7 +1861,9 @@ const Workshop: React.FC = () => {
                           borderRadius: '8px',
                           mb: 1,
                           backgroundColor: theme =>
-                            theme.palette.mode === 'dark' ? '#000814' : 'transparent',
+                            theme.palette.mode === 'dark'
+                              ? theme.palette.background.paper
+                              : 'transparent',
                         }}
                       >
                         <ListItemIcon>

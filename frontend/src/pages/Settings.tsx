@@ -1054,7 +1054,7 @@ const Settings: React.FC = () => {
         borderRadius: 3,
         background:
           theme.palette.mode === 'dark'
-            ? 'linear-gradient(145deg, rgba(0,8,20,0.9) 0%, rgba(0,8,20,0.9) 100%)'
+            ? `linear-gradient(145deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.paper} 100%)`
             : 'linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(240,240,240,0.9) 100%)',
         backdropFilter: 'blur(10px)',
         transition: 'all 0.3s ease-in-out',
@@ -1070,7 +1070,8 @@ const Settings: React.FC = () => {
           sx={{
             p: 1.5,
             borderRadius: 2,
-            background: theme => (theme.palette.mode === 'dark' ? '#000814' : '#ffffff'),
+            background: theme =>
+              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff',
             color: theme.palette.primary.main,
             display: 'flex',
             alignItems: 'center',
@@ -1743,7 +1744,7 @@ const Settings: React.FC = () => {
                           label="Dark Theme Color"
                           onChange={e =>
                             setDarkThemeColor(
-                              e.target.value as 'navy' | 'charcoal' | 'slate' | 'graphite'
+                              e.target.value as 'navy' | 'charcoal' | 'darkGray' | 'pitchBlack'
                             )
                           }
                           sx={{
@@ -1760,13 +1761,27 @@ const Settings: React.FC = () => {
                                 width: 16,
                                 height: 16,
                                 borderRadius: '50%',
-                                backgroundColor: '#000814',
+                                backgroundColor: theme => theme.palette.background.paper,
                                 border: '1px solid',
                                 borderColor: 'divider',
                                 mr: 1,
                               }}
                             />
                             Navy (Current)
+                          </MenuItem>
+                          <MenuItem value="pitchBlack">
+                            <Box
+                              sx={{
+                                width: 16,
+                                height: 16,
+                                borderRadius: '50%',
+                                backgroundColor: '#141414',
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                mr: 1,
+                              }}
+                            />
+                            Pitch Black
                           </MenuItem>
                           <MenuItem value="charcoal">
                             <Box
@@ -1782,33 +1797,19 @@ const Settings: React.FC = () => {
                             />
                             Charcoal
                           </MenuItem>
-                          <MenuItem value="slate">
+                          <MenuItem value="darkGray">
                             <Box
                               sx={{
                                 width: 16,
                                 height: 16,
                                 borderRadius: '50%',
-                                backgroundColor: '#2d3748',
+                                backgroundColor: '#282828',
                                 border: '1px solid',
                                 borderColor: 'divider',
                                 mr: 1,
                               }}
                             />
-                            Slate
-                          </MenuItem>
-                          <MenuItem value="graphite">
-                            <Box
-                              sx={{
-                                width: 16,
-                                height: 16,
-                                borderRadius: '50%',
-                                backgroundColor: '#4a5568',
-                                border: '1px solid',
-                                borderColor: 'divider',
-                                mr: 1,
-                              }}
-                            />
-                            Graphite
+                            Dark Gray
                           </MenuItem>
                         </Select>
                       </FormControl>
@@ -1881,7 +1882,7 @@ const Settings: React.FC = () => {
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           backgroundColor: theme =>
-                            theme.palette.mode === 'dark' ? '#000814' : '#fff',
+                            theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
                         },
                       }}
                     >
@@ -2140,7 +2141,7 @@ const Settings: React.FC = () => {
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           backgroundColor: theme =>
-                            theme.palette.mode === 'dark' ? '#000814' : '#fff',
+                            theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
                         },
                       }}
                     >
@@ -2835,7 +2836,7 @@ const Settings: React.FC = () => {
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           backgroundColor: theme =>
-                            theme.palette.mode === 'dark' ? '#000814' : '#fff',
+                            theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
                         },
                       }}
                     >
@@ -2962,7 +2963,9 @@ const Settings: React.FC = () => {
                           sx={{
                             '& .MuiOutlinedInput-root': {
                               backgroundColor: theme =>
-                                theme.palette.mode === 'dark' ? '#000814' : '#fff',
+                                theme.palette.mode === 'dark'
+                                  ? theme.palette.background.paper
+                                  : '#fff',
                             },
                           }}
                         >
@@ -2991,7 +2994,9 @@ const Settings: React.FC = () => {
                           sx={{
                             '& .MuiOutlinedInput-root': {
                               backgroundColor: theme =>
-                                theme.palette.mode === 'dark' ? '#000814' : '#fff',
+                                theme.palette.mode === 'dark'
+                                  ? theme.palette.background.paper
+                                  : '#fff',
                             },
                           }}
                         >
@@ -3610,7 +3615,7 @@ const Settings: React.FC = () => {
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           backgroundColor: theme =>
-                            theme.palette.mode === 'dark' ? '#000814' : '#fff',
+                            theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
                         },
                       }}
                     >
@@ -3830,7 +3835,8 @@ const Settings: React.FC = () => {
         fullWidth
         PaperProps={{
           sx: {
-            backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+            backgroundColor: theme =>
+              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
           },
         }}
       >
@@ -3877,7 +3883,8 @@ const Settings: React.FC = () => {
         fullWidth
         PaperProps={{
           sx: {
-            backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+            backgroundColor: theme =>
+              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
           },
         }}
       >
@@ -4286,7 +4293,8 @@ const Settings: React.FC = () => {
         fullWidth
         PaperProps={{
           sx: {
-            backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+            backgroundColor: theme =>
+              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
           },
         }}
       >
@@ -4516,7 +4524,8 @@ const Settings: React.FC = () => {
         fullWidth
         PaperProps={{
           sx: {
-            backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+            backgroundColor: theme =>
+              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
           },
         }}
       >
@@ -4670,7 +4679,8 @@ const Settings: React.FC = () => {
         fullWidth
         PaperProps={{
           sx: {
-            backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+            backgroundColor: theme =>
+              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
           },
         }}
       >
@@ -4743,7 +4753,8 @@ const Settings: React.FC = () => {
         fullWidth
         PaperProps={{
           sx: {
-            backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+            backgroundColor: theme =>
+              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
           },
         }}
       >
@@ -4771,7 +4782,8 @@ const Settings: React.FC = () => {
                 displayEmpty
                 sx={{
                   '& .MuiOutlinedInput-root': {
-                    backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+                    backgroundColor: theme =>
+                      theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
                   },
                 }}
               >
@@ -4882,7 +4894,8 @@ const Settings: React.FC = () => {
         fullWidth
         PaperProps={{
           sx: {
-            backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+            backgroundColor: theme =>
+              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
           },
         }}
       >
@@ -5115,7 +5128,8 @@ const Settings: React.FC = () => {
         fullWidth
         PaperProps={{
           sx: {
-            backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+            backgroundColor: theme =>
+              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
           },
         }}
       >

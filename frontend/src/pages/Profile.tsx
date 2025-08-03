@@ -400,7 +400,8 @@ const Profile: React.FC = () => {
             px: { xs: 2, md: 4 },
             py: 1.5,
             borderRadius: 3,
-            backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : '#ffffff'),
+            backgroundColor: theme =>
+              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff',
             color: theme.palette.primary.main,
             fontSize: { xs: '0.875rem', md: '1rem' },
             boxShadow: '0 4px 20px 0px rgba(0,0,0,0.14), 0 7px 10px -5px rgba(33,150,243,0.4)',

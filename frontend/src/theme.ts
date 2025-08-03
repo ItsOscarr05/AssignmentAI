@@ -139,7 +139,7 @@ const baseTheme: ThemeOptions = {
     MuiPaper: {
       styleOverrides: {
         root: {
-          borderRadius: 12,
+          borderRadius: 16,
         },
       },
     },
@@ -290,8 +290,8 @@ export const theme = lightTheme;
 export const darkThemeColors = {
   navy: '#000814', // Current dark blue-black
   charcoal: '#1a1a1a', // Lighter dark gray
-  slate: '#2d3748', // Medium dark gray-blue
-  graphite: '#4a5568', // Lightest dark gray
+  darkGray: '#282828', // Medium dark gray
+  pitchBlack: '#141414', // Very dark gray, almost black
 };
 
 // Function to create dark theme with custom background color
@@ -356,6 +356,7 @@ export const createDarkTheme = (backgroundColor: string) =>
       MuiPaper: {
         styleOverrides: {
           root: {
+            borderRadius: 16,
             backgroundColor: backgroundColor,
             color: '#ffffff', // White text
           },
@@ -386,8 +387,31 @@ export const createDarkTheme = (backgroundColor: string) =>
       MuiTabs: {
         styleOverrides: {
           root: {
-            '& .MuiSvgIcon-root': {
-              fontSize: 'calc(1.7 * var(--app-font-size, 16px)) !important',
+            '& .MuiTab-root': {
+              minHeight: 'calc(4.375 * var(--app-font-size, 16px))',
+              fontSize: 'calc(1 * var(--app-font-size, 16px)) !important',
+              fontWeight: 500,
+              textTransform: 'uppercase',
+              transition: 'all 0.2s',
+              flex: 1,
+              backgroundColor: backgroundColor, // Use dark mode background color
+              color: '#ffffff', // White text for dark mode
+              '&:hover': {
+                bgcolor: 'rgba(255, 255, 255, 0.1)', // Light hover effect for dark mode
+              },
+              '&.Mui-selected': {
+                color: '#d32f2f', // Keep red for selected
+                backgroundColor: backgroundColor, // Keep dark background when selected
+              },
+              '& .MuiSvgIcon-root': {
+                fontSize: 'calc(1.7 * var(--app-font-size, 16px)) !important',
+                color: '#d32f2f', // Keep red icons
+              },
+            },
+            '& .MuiTabs-indicator': {
+              height: 3,
+              borderRadius: '3px 3px 0 0',
+              background: 'linear-gradient(45deg, #d32f2f, #ff6659)', // Keep red gradient
             },
           },
         },
