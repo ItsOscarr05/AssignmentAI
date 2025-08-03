@@ -91,7 +91,8 @@ const HelpSection = ({ title, icon, children, breakpoint = 'standard' }: any) =>
           sx={{
             p: { xs: 1, md: 1.5 },
             borderRadius: 2,
-            background: theme => (theme.palette.mode === 'dark' ? '#000814' : '#ffffff'),
+            background: theme =>
+              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff',
             color: theme.palette.primary.main,
             display: 'flex',
             alignItems: 'center',
@@ -584,8 +585,8 @@ const Help: React.FC = () => {
           overflow: 'hidden',
           bgcolor: 'background.paper',
           boxShadow: theme.shadows[2],
-          border: '1px solid',
-          borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+          border: '2px solid',
+          borderColor: 'error.main',
         }}
       >
         <Box
@@ -613,7 +614,8 @@ const Help: React.FC = () => {
                   color: theme.palette.primary.main,
                 },
                 '& .MuiSvgIcon-root': {
-                  background: '#ffffff',
+                  background: theme =>
+                    theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff',
                   padding: { xs: '4px', md: '6px' },
                   borderRadius: '8px',
                   fontSize: { xs: '1.1rem', md: '1.3rem' },

@@ -1077,8 +1077,7 @@ const Settings: React.FC = () => {
             justifyContent: 'center',
             boxShadow: '0 2px 12px rgba(0,0,0,0.1)',
             border: '1px solid',
-            borderColor:
-              theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+            borderColor: theme.palette.mode === 'dark' ? '#d32f2f' : 'rgba(0,0,0,0.06)',
           }}
         >
           {icon}
@@ -1704,8 +1703,8 @@ const Settings: React.FC = () => {
           overflow: 'hidden',
           bgcolor: 'background.paper',
           boxShadow: theme.shadows[2],
-          border: '1px solid',
-          borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+          border: '2px solid',
+          borderColor: '#d32f2f',
         }}
       >
         <Box
@@ -1716,10 +1715,10 @@ const Settings: React.FC = () => {
           }}
         >
           <Tabs value={tabValue} onChange={handleTabChange} variant="fullWidth">
-            <Tab icon={<Tune />} label="General" sx={{ gap: 1 }} />
-            <Tab icon={<Psychology />} label="AI Settings" sx={{ gap: 1 }} />
-            <Tab icon={<Notifications />} label="Notifications" sx={{ gap: 1 }} />
-            <Tab icon={<SecurityOutlined />} label="Privacy & Security" sx={{ gap: 1 }} />
+            <Tab icon={<Tune />} label="General" />
+            <Tab icon={<Psychology />} label="AI Settings" />
+            <Tab icon={<Notifications />} label="Notifications" />
+            <Tab icon={<SecurityOutlined />} label="Privacy & Security" />
           </Tabs>
         </Box>
 

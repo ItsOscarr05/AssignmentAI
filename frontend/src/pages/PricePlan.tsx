@@ -7,7 +7,6 @@ import {
   BlockOutlined,
   CheckCircle,
   Close as CloseIcon,
-  CreditCard,
   DesignServicesOutlined,
   Diamond,
   EmojiEvents,
@@ -562,16 +561,8 @@ const PricePlan: React.FC = () => {
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 3,
-          position: 'sticky',
-          top: 0,
-          zIndex: 10,
           pt: 2,
           pb: 2,
-          background:
-            theme.palette.mode === 'dark'
-              ? 'linear-gradient(180deg, rgba(0,8,20,0.95) 0%, rgba(0,8,20,0.95) 100%)'
-              : 'linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.95) 100%)',
-          backdropFilter: 'blur(10px)',
         }}
       >
         <Typography variant="h4" fontWeight="normal" className="page-title" sx={{ ml: 4 }}>
@@ -590,175 +581,313 @@ const PricePlan: React.FC = () => {
 
       <Container>
         <Stack spacing={6}>
-          <Grid container spacing={6}>
+          <Grid container spacing={4} justifyContent="center">
             {plansWithCurrentPlan.map(plan => (
-              <Grid item xs={11} md={6} lg={3} key={plan.name}>
+              <Grid item xs={12} sm={6} md={6} lg={3} xl={3} key={plan.name}>
                 <Card
                   sx={{
                     height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
                     position: 'relative',
-                    overflow: 'visible',
-                    borderRadius: 3,
-                    boxShadow: theme.shadows[4],
-                    border: '2px solid',
-                    borderColor: plan.popular ? plan.color : 'transparent',
+                    border: '2.25px solid #D32F2F',
+                    borderColor: plan.color,
+                    borderRadius: 3.5,
+                    boxShadow: 3,
+                    backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : 'white'),
+                    zIndex: 1,
                     transition: 'all 0.3s ease',
                     '&:hover': {
                       transform: 'translateY(-8px)',
-                      boxShadow: theme.shadows[12],
+                      boxShadow: `0 8px 24px ${plan.color}40`,
+                      borderColor: plan.color,
                     },
-                    ...(plan.isCurrentPlan && {
-                      borderColor: theme.palette.grey[400],
-                      backgroundColor: theme.palette.grey[50],
-                    }),
+                    minWidth: '240px',
+                    overflow: 'visible',
                   }}
                 >
                   {plan.popular && (
-                    <Box
+                    <Chip
+                      icon={<Star />}
+                      label="Most Popular"
+                      color="primary"
                       sx={{
                         position: 'absolute',
-                        top: -12,
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        zIndex: 1,
+                        top: -18,
+                        left: 0,
+                        right: 0,
+                        mx: 'auto',
+                        width: 'fit-content',
+                        borderRadius: 2,
+                        zIndex: 2,
+                        fontSize: '1.05rem',
+                        boxShadow: 2,
+                        bgcolor: '#D32F2F',
+                        color: 'white',
                       }}
-                    >
-                      <Chip
-                        icon={<Star />}
-                        label="Most Popular"
-                        sx={{
-                          backgroundColor: plan.color,
-                          color: theme => (theme.palette.mode === 'dark' ? 'white' : 'white'),
-                          fontWeight: 'bold',
-                          boxShadow: theme.shadows[4],
-                        }}
-                      />
-                    </Box>
+                    />
                   )}
-                  <CardContent
-                    sx={{
-                      p: 4,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      height: '100%',
-                      position: 'relative',
-                    }}
-                  >
-                    <Stack spacing={3}>
-                      <Box sx={{ textAlign: 'center' }}>
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: 1,
-                            mb: 1,
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              p: 1,
-                              borderRadius: 2,
-                              backgroundColor: `${plan.color}15`,
-                              color: plan.color,
-                            }}
-                          >
-                            {plan.icon}
-                          </Box>
-                          <Typography variant="h5" fontWeight="bold" color={plan.color}>
-                            {plan.name}
-                          </Typography>
-                        </Box>
-                        <Typography variant="h3" fontWeight="bold" sx={{ mb: 1 }}>
-                          ${plan.price}
-                          <Typography
-                            component="span"
-                            variant="h6"
-                            color="text.secondary"
-                            sx={{ ml: 0.5 }}
-                          >
-                            per month
-                          </Typography>
-                        </Typography>
-                        <Typography color="text.secondary">{plan.description}</Typography>
-                        <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
-                          {plan.tokenBoost?.toLocaleString()} tokens per month
+                  <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                    <Stack spacing={2}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 2,
+                          color: plan.color,
+                        }}
+                      >
+                        {plan.icon}
+                        <Typography variant="h4" fontWeight="bold">
+                          {plan.name}
                         </Typography>
                       </Box>
-                      <Divider />
-                      <Stack spacing={2} sx={{ mb: 3 }}>
+                      <Box>
                         <Typography
-                          variant="subtitle2"
-                          color="text.secondary"
-                          sx={{ mt: 1, mb: 1 }}
+                          variant="h2"
+                          fontWeight="bold"
+                          gutterBottom
+                          sx={{
+                            fontFamily: '"Mike Sans", "Audiowide", Arial, sans-serif',
+                            fontSize: { xs: '2.0rem', md: '2.5rem' },
+                            color: theme => (theme.palette.mode === 'dark' ? '#ffffff' : '#000000'),
+                          }}
                         >
-                          {plan.name === 'Free'
-                            ? 'Free Features'
-                            : plan.name === 'Plus'
-                            ? 'Everything in Free, plus:'
-                            : plan.name === 'Pro'
-                            ? 'Everything in Plus, plus:'
-                            : 'Everything in Pro, plus:'}
+                          {plan.price === 0 ? 'Free' : `$${plan.price}`}
+                          {plan.price !== 0 && (
+                            <Typography
+                              component="span"
+                              variant="h5"
+                              sx={{
+                                color: theme =>
+                                  theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+                                fontFamily: '"Mike Sans", "Audiowide", Arial, sans-serif',
+                                fontSize: { xs: '1.0rem', md: '1.25rem' },
+                              }}
+                            >
+                              /mo
+                            </Typography>
+                          )}
                         </Typography>
-                        {plan.features.map(featureName => (
-                          <Stack key={featureName} direction="row" spacing={1} alignItems="center">
-                            {getFeatureIcon(featureName, plan.color)}
-                            <Typography>{featureName}</Typography>
-                          </Stack>
-                        ))}
+                        <Typography
+                          sx={{
+                            color: theme => (theme.palette.mode === 'dark' ? '#cccccc' : '#666666'),
+                            fontSize: { xs: '1.0rem', md: '1.15rem' },
+                          }}
+                        >
+                          {plan.description}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, mt: -1 }}>
+                        {plan.name === 'Free' && (
+                          <Chip
+                            icon={<LocalOffer />}
+                            label="GPT-4.1 Nano"
+                            size="small"
+                            sx={{
+                              backgroundColor: '#e3f2fd',
+                              color: '#1976d2',
+                              border: '1.25px solid #90caf9',
+                              fontSize: '0.85rem',
+                              px: 0.5,
+                              height: 24,
+                              minHeight: 20,
+                              '& .MuiChip-icon': { color: '#1976d2', fontSize: 18 },
+                            }}
+                          />
+                        )}
+                        {plan.name === 'Plus' && (
+                          <Chip
+                            icon={<Star />}
+                            label="GPT-3.5 Turbo"
+                            size="small"
+                            sx={{
+                              backgroundColor: '#e8f5e9',
+                              color: '#388e3c',
+                              border: '1.25px solid #81c784',
+                              fontSize: '0.85rem',
+                              px: 0.5,
+                              height: 24,
+                              minHeight: 20,
+                              '& .MuiChip-icon': { color: '#388e3c', fontSize: 18 },
+                            }}
+                          />
+                        )}
+                        {plan.name === 'Pro' && (
+                          <Chip
+                            icon={<Diamond />}
+                            label="GPT-4 Turbo"
+                            size="small"
+                            sx={{
+                              backgroundColor: '#f3e5f5',
+                              color: '#8e24aa',
+                              border: '1.25px solid #ce93d8',
+                              fontSize: '0.85rem',
+                              px: 0.5,
+                              height: 24,
+                              minHeight: 20,
+                              '& .MuiChip-icon': { color: '#8e24aa', fontSize: 18 },
+                            }}
+                          />
+                        )}
+                        {plan.name === 'Max' && (
+                          <Chip
+                            icon={<EmojiEvents />}
+                            label="GPT-4"
+                            size="small"
+                            sx={{
+                              backgroundColor: '#fff3e0',
+                              color: '#f57c00',
+                              border: '1.25px solid #ffb74d',
+                              fontSize: '0.85rem',
+                              px: 0.5,
+                              height: 24,
+                              minHeight: 20,
+                              '& .MuiChip-icon': { color: '#f57c00', fontSize: 18 },
+                            }}
+                          />
+                        )}
+                      </Box>
+                      {plan.name === 'Free' && (
+                        <Typography
+                          variant="tokenLimit"
+                          color="error.main"
+                          sx={{
+                            mt: 0.5,
+                            mb: 0,
+                          }}
+                        >
+                          30,000 tokens/month
+                        </Typography>
+                      )}
+                      {plan.name === 'Plus' && (
+                        <Typography
+                          variant="tokenLimit"
+                          color="error.main"
+                          sx={{
+                            mt: 0.5,
+                            mb: 0,
+                          }}
+                        >
+                          50,000 tokens/month
+                        </Typography>
+                      )}
+                      {plan.name === 'Pro' && (
+                        <Typography
+                          variant="tokenLimit"
+                          color="error.main"
+                          sx={{
+                            mt: 0.5,
+                            mb: 0,
+                          }}
+                        >
+                          75,000 tokens/month
+                        </Typography>
+                      )}
+                      {plan.name === 'Max' && (
+                        <Typography
+                          variant="tokenLimit"
+                          color="error.main"
+                          sx={{
+                            mt: 0.5,
+                            mb: 0,
+                          }}
+                        >
+                          100,000 tokens/month
+                        </Typography>
+                      )}
+                      <Divider />
+                      <Stack spacing={1.5}>
+                        {plan.name === 'Free' && (
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: theme =>
+                                theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+                              fontSize: { xs: '0.95rem', md: '1.05rem' },
+                              pl: 0.5,
+                            }}
+                          >
+                            Free Features
+                          </Typography>
+                        )}
+                        {plan.features.map(feature =>
+                          feature.startsWith('Everything in') ? (
+                            <Typography
+                              key={feature}
+                              variant="caption"
+                              sx={{
+                                color: theme =>
+                                  theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+                                fontSize: { xs: '0.95rem', md: '1.05rem' },
+                                fontWeight: 500,
+                                pl: 0.5,
+                              }}
+                            >
+                              {feature}
+                            </Typography>
+                          ) : (
+                            <Stack key={feature} direction="row" spacing={1} alignItems="center">
+                              {getFeatureIcon(feature, plan.color)}
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  fontSize: { xs: '1.0rem', md: '1.1rem' },
+                                  color: theme =>
+                                    theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+                                }}
+                              >
+                                {feature}
+                              </Typography>
+                            </Stack>
+                          )
+                        )}
                       </Stack>
-                    </Stack>
-                    <Box flexGrow={1} />
-                    <Button
-                      variant={plan.popular ? 'contained' : 'outlined'}
-                      fullWidth
-                      onClick={() => handlePlanSelect(plan)}
-                      disabled={plan.isCurrentPlan}
-                      sx={{
-                        mt: 'auto',
-                        py: 1.5,
-                        borderRadius: 2,
-                        ...(plan.popular && {
-                          background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
-                          '&:hover': {
-                            background: `linear-gradient(45deg, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`,
-                          },
-                        }),
-                        ...(plan.isCurrentPlan && {
-                          backgroundColor: theme.palette.grey[300],
-                          color: theme.palette.grey[600],
-                          borderColor: theme.palette.grey[400],
-                          '&:hover': {
+                      <Button
+                        variant={plan.popular ? 'contained' : 'outlined'}
+                        color="primary"
+                        size="large"
+                        onClick={() => handlePlanSelect(plan)}
+                        disabled={plan.isCurrentPlan}
+                        sx={{
+                          px: 3.5,
+                          py: 1.8,
+                          fontWeight: 700,
+                          fontSize: '1.0rem',
+                          borderRadius: 2,
+                          ...(plan.popular
+                            ? {
+                                bgcolor: '#D32F2F',
+                                color: 'white',
+                                '&:hover': { bgcolor: '#B71C1C' },
+                              }
+                            : {
+                                borderColor: '#D32F2F',
+                                color: '#D32F2F',
+                                '&:hover': {
+                                  borderColor: '#B71C1C',
+                                  bgcolor: 'rgba(211, 47, 47, 0.04)',
+                                },
+                              }),
+                          textTransform: 'none',
+                          ...(plan.isCurrentPlan && {
                             backgroundColor: theme.palette.grey[300],
                             color: theme.palette.grey[600],
-                          },
-                        }),
-                      }}
-                    >
-                      {plan.isCurrentPlan
-                        ? 'Your Current Plan'
-                        : plan.price === 0
-                        ? 'Get Started Free'
-                        : 'Choose Plan'}
-                    </Button>
-                    {!plan.isCurrentPlan && plan.price > 0 && (
-                      <Stack
-                        direction="row"
-                        spacing={1}
-                        alignItems="center"
-                        justifyContent="center"
+                            borderColor: theme.palette.grey[400],
+                            '&:hover': {
+                              backgroundColor: theme.palette.grey[300],
+                              color: theme.palette.grey[600],
+                            },
+                          }),
+                        }}
                       >
-                        <CreditCard fontSize="small" color="action" />
-                        <Typography variant="caption" color="text.secondary">
-                          Secure checkout
-                        </Typography>
-                      </Stack>
-                    )}
-                    <Typography variant="caption" color="text.secondary" textAlign="center">
-                      No commitment, cancel anytime
-                    </Typography>
+                        {plan.isCurrentPlan
+                          ? 'Your Current Plan'
+                          : plan.price === 0
+                          ? 'Get Started Free'
+                          : 'Choose Plan'}
+                      </Button>
+                    </Stack>
                   </CardContent>
                 </Card>
               </Grid>

@@ -448,8 +448,8 @@ const Profile: React.FC = () => {
           overflow: 'hidden',
           bgcolor: 'background.paper',
           boxShadow: theme.shadows[2],
-          border: '1px solid',
-          borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+          border: '2px solid',
+          borderColor: 'error.main',
         }}
       >
         <Box

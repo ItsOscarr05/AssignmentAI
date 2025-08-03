@@ -113,20 +113,29 @@ const Dashboard: React.FC = () => {
           mb: 0,
         }}
       >
-        <img
+        <Box
+          component="img"
           src="/scroll_transparent.png"
           alt="Logo"
-          style={{ maxHeight: 48, width: 'auto', marginRight: -25, display: 'block' }}
+          sx={{
+            maxHeight: 48,
+            width: 'auto',
+            marginRight: 0,
+            display: 'block',
+            filter: theme =>
+              theme.palette.mode === 'dark'
+                ? 'brightness(0) saturate(100%) invert(27%) sepia(51%) saturate(2878%) hue-rotate(346deg) brightness(104%) contrast(97%)'
+                : 'none',
+          }}
         />
         <Typography
           noWrap
           component="div"
           sx={{
-            color: 'primary.contrastText',
+            color: theme => (theme.palette.mode === 'dark' ? '#d32f2f' : 'primary.contrastText'),
             minWidth: 0,
             flexShrink: 1,
-            textAlign: 'center',
-            width: '100%',
+            textAlign: 'left',
             fontSize: `${(1.7 * fontSize) / 20}rem`,
             fontWeight: 700,
           }}
@@ -199,8 +208,8 @@ const Dashboard: React.FC = () => {
       {/* Copyright */}
       <Box sx={{ p: 1, width: '100%', textAlign: 'center' }}>
         <Typography
-          color="primary.contrastText"
           sx={{
+            color: theme => (theme.palette.mode === 'dark' ? '#d32f2f' : 'primary.contrastText'),
             opacity: 0.7,
             fontSize: `${(0.9 * fontSize) / 20}rem`,
           }}
@@ -269,32 +278,41 @@ const Dashboard: React.FC = () => {
               boxSizing: 'border-box',
               width: drawerWidth,
               overflowX: 'hidden',
-              borderRight: '1px solid',
-              borderColor: 'divider',
-              background: `linear-gradient(45deg, ${theme.palette.primary.dark} 30%, ${theme.palette.primary.main} 90%)`,
-              color: theme => (theme.palette.mode === 'dark' ? '#ffffff' : '#ffffff'),
-              borderRadius: 0,
+              borderRight: theme =>
+                theme.palette.mode === 'dark' ? '2px solid #d32f2f' : '1px solid',
+              borderColor: theme => (theme.palette.mode === 'dark' ? '#d32f2f' : 'divider'),
+              background: theme =>
+                theme.palette.mode === 'dark'
+                  ? '#000814'
+                  : `linear-gradient(45deg, ${theme.palette.primary.dark} 30%, ${theme.palette.primary.main} 90%)`,
+              color: theme => (theme.palette.mode === 'dark' ? '#d32f2f' : '#ffffff'),
+              borderRadius: '0 12px 12px 0',
               transition: theme.transitions.create('width', {
                 easing: theme.transitions.easing.sharp,
                 duration: theme.transitions.duration.enteringScreen,
               }),
               '& .MuiListItemIcon-root': {
-                color: theme => (theme.palette.mode === 'dark' ? '#ffffff' : '#ffffff'),
+                color: theme => (theme.palette.mode === 'dark' ? '#d32f2f' : '#ffffff'),
               },
               '& .MuiTypography-root': {
-                color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : '#ffffff',
+                color: theme => (theme.palette.mode === 'dark' ? '#d32f2f' : '#ffffff'),
               },
               '& .MuiDivider-root': {
                 borderColor: 'rgba(255, 255, 255, 0.12)',
               },
               '& .MuiListItem-root': {
                 '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                  backgroundColor: theme =>
+                    theme.palette.mode === 'dark' ? 'rgba(211, 47, 47, 0.1)' : 'rgba(0, 0, 0, 0.1)',
                 },
                 '&.Mui-selected': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                  backgroundColor: theme =>
+                    theme.palette.mode === 'dark' ? 'rgba(211, 47, 47, 0.2)' : 'rgba(0, 0, 0, 0.2)',
                   '&:hover': {
-                    backgroundColor: 'rgba(0, 0, 0, 0.25)',
+                    backgroundColor: theme =>
+                      theme.palette.mode === 'dark'
+                        ? 'rgba(211, 47, 47, 0.3)'
+                        : 'rgba(0, 0, 0, 0.25)',
                   },
                 },
               },

@@ -1,4 +1,21 @@
+import '@mui/material/styles';
 import { createTheme, ThemeOptions } from '@mui/material/styles';
+
+declare module '@mui/material/styles' {
+  interface TypographyVariants {
+    tokenLimit: React.CSSProperties;
+  }
+
+  interface TypographyVariantsOptions {
+    tokenLimit?: React.CSSProperties;
+  }
+}
+
+declare module '@mui/material/Typography' {
+  interface TypographyPropsVariantOverrides {
+    tokenLimit: true;
+  }
+}
 
 // Base theme configuration
 const baseTheme: ThemeOptions = {
@@ -31,6 +48,11 @@ const baseTheme: ThemeOptions = {
       fontWeight: 500,
       letterSpacing: '0.01em',
       fontSize: '0.65rem',
+    },
+    tokenLimit: {
+      fontSize: '0.9rem',
+      lineHeight: 1.4,
+      fontWeight: 600,
     },
   },
   components: {
@@ -204,13 +226,7 @@ const baseTheme: ThemeOptions = {
               color: '#d32f2f',
             },
             '& .MuiSvgIcon-root': {
-              background: '#ffffff',
-              padding: 'calc(0.5 * var(--app-font-size, 16px))',
-              borderRadius: 'calc(0.625 * var(--app-font-size, 16px))',
-              fontSize: 'calc(1.8 * var(--app-font-size, 16px)) !important',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              border: '1px solid',
-              borderColor: 'rgba(0,0,0,0.06)',
+              fontSize: 'calc(1.7 * var(--app-font-size, 16px)) !important',
               color: '#d32f2f',
             },
           },
@@ -414,13 +430,7 @@ export const darkTheme = createTheme({
               color: '#d32f2f', // Keep red
             },
             '& .MuiSvgIcon-root': {
-              background: '#000000', // Black background
-              padding: 'calc(0.5 * var(--app-font-size, 16px))',
-              borderRadius: 'calc(0.625 * var(--app-font-size, 16px))',
-              fontSize: 'calc(1.8 * var(--app-font-size, 16px)) !important',
-              boxShadow: '0 2px 8px rgba(255,255,255,0.1)', // White shadow
-              border: '1px solid',
-              borderColor: 'rgba(255,255,255,0.1)', // White border
+              fontSize: 'calc(1.7 * var(--app-font-size, 16px)) !important',
               color: '#d32f2f', // Keep red
             },
           },
