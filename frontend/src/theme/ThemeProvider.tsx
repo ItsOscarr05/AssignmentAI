@@ -1,5 +1,12 @@
 import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
-import React, { createContext, ReactNode, useCallback, useContext, useState } from 'react';
+import React, {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 import { createDarkTheme, lightTheme } from '../theme';
 
 type ThemeMode = 'light' | 'dark';
@@ -19,8 +26,26 @@ interface ThemeProviderProps {
 }
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-  const [mode, setMode] = useState<ThemeMode>('light');
-  const [darkThemeColor, setDarkThemeColor] = useState<DarkThemeColor>('navy');
+  // Load theme preferences from localStorage on component mount
+  const [mode, setMode] = useState<ThemeMode>(() => {
+    const savedMode = localStorage.getItem('theme-mode');
+    return (savedMode as ThemeMode) || 'light';
+  });
+
+  const [darkThemeColor, setDarkThemeColor] = useState<DarkThemeColor>(() => {
+    const savedColor = localStorage.getItem('dark-theme-color');
+    return (savedColor as DarkThemeColor) || 'navy';
+  });
+
+  // Save theme mode to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('theme-mode', mode);
+  }, [mode]);
+
+  // Save dark theme color to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('dark-theme-color', darkThemeColor);
+  }, [darkThemeColor]);
 
   const toggleTheme = useCallback(() => {
     setMode(prevMode => (prevMode === 'light' ? 'dark' : 'light'));

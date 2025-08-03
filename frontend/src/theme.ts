@@ -423,6 +423,26 @@ export const createDarkTheme = (backgroundColor: string) =>
               fontSize: 'calc(0.7 * var(--app-font-size, 16px)) !important',
             },
           },
+          caption: {
+            fontSize: 'calc(0.7 * var(--app-font-size, 16px)) !important',
+            lineHeight: 1.4,
+            fontWeight: 400,
+          },
+          subtitle1: {
+            fontSize: 'calc(1.3 * var(--app-font-size, 16px)) !important',
+            fontWeight: 600,
+            lineHeight: 1.3,
+          },
+          h6: {
+            fontSize: 'calc(1.4 * var(--app-font-size, 16px)) !important',
+            fontWeight: 600,
+            lineHeight: 1.3,
+          },
+          h4: {
+            fontSize: 'calc(2.5 * var(--app-font-size, 16px)) !important',
+            fontWeight: 500,
+            lineHeight: 1.2,
+          },
         },
         variants: [
           {
@@ -717,6 +737,30 @@ export const darkTheme = createTheme({
           '&:hover': {
             backgroundColor: 'rgba(255, 255, 255, 0.1)', // White with opacity
           },
+        },
+      },
+    },
+    MuiTypography: {
+      styleOverrides: {
+        caption: {
+          fontSize: 'calc(0.7 * var(--app-font-size, 16px)) !important',
+          lineHeight: 1.4,
+          fontWeight: 400,
+        },
+        subtitle1: {
+          fontSize: 'calc(1.3 * var(--app-font-size, 16px)) !important',
+          fontWeight: 600,
+          lineHeight: 1.3,
+        },
+        h6: {
+          fontSize: 'calc(1.4 * var(--app-font-size, 16px)) !important',
+          fontWeight: 600,
+          lineHeight: 1.3,
+        },
+        h4: {
+          fontSize: 'calc(2.5 * var(--app-font-size, 16px)) !important',
+          fontWeight: 500,
+          lineHeight: 1.2,
         },
       },
     },
