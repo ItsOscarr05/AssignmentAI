@@ -267,7 +267,9 @@ export interface AuthContextType {
 
 export interface ThemeContextType {
   theme: 'light' | 'dark';
+  darkThemeColor: 'navy' | 'charcoal' | 'slate' | 'graphite';
   toggleTheme: () => void;
+  setDarkThemeColor: (color: 'navy' | 'charcoal' | 'slate' | 'graphite') => void;
 }
 
 // Component Props Types

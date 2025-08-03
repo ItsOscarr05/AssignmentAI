@@ -1,12 +1,15 @@
 import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
 import React, { createContext, ReactNode, useCallback, useContext, useState } from 'react';
-import { darkTheme, lightTheme } from '../theme';
+import { createDarkTheme, lightTheme } from '../theme';
 
 type ThemeMode = 'light' | 'dark';
+type DarkThemeColor = 'navy' | 'charcoal' | 'slate' | 'graphite';
 
 interface ThemeContextType {
   mode: ThemeMode;
+  darkThemeColor: DarkThemeColor;
   toggleTheme: () => void;
+  setDarkThemeColor: (color: DarkThemeColor) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -17,15 +20,33 @@ interface ThemeProviderProps {
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [mode, setMode] = useState<ThemeMode>('light');
+  const [darkThemeColor, setDarkThemeColor] = useState<DarkThemeColor>('navy');
 
   const toggleTheme = useCallback(() => {
     setMode(prevMode => (prevMode === 'light' ? 'dark' : 'light'));
   }, []);
 
-  const theme = mode === 'light' ? lightTheme : darkTheme;
+  const setDarkColor = useCallback((color: DarkThemeColor) => {
+    setDarkThemeColor(color);
+  }, []);
+
+  const theme =
+    mode === 'light'
+      ? lightTheme
+      : createDarkTheme(
+          darkThemeColor === 'navy'
+            ? '#000814'
+            : darkThemeColor === 'charcoal'
+            ? '#1a1a1a'
+            : darkThemeColor === 'slate'
+            ? '#2d3748'
+            : '#4a5568' // graphite
+        );
 
   return (
-    <ThemeContext.Provider value={{ mode, toggleTheme }}>
+    <ThemeContext.Provider
+      value={{ mode, darkThemeColor, toggleTheme, setDarkThemeColor: setDarkColor }}
+    >
       <MuiThemeProvider theme={theme}>{children}</MuiThemeProvider>
     </ThemeContext.Provider>
   );

@@ -286,6 +286,141 @@ export const lightTheme = createTheme({
 // Export theme as default (light theme)
 export const theme = lightTheme;
 
+// Dark theme color variants
+export const darkThemeColors = {
+  navy: '#000814', // Current dark blue-black
+  charcoal: '#1a1a1a', // Lighter dark gray
+  slate: '#2d3748', // Medium dark gray-blue
+  graphite: '#4a5568', // Lightest dark gray
+};
+
+// Function to create dark theme with custom background color
+export const createDarkTheme = (backgroundColor: string) =>
+  createTheme({
+    ...baseTheme,
+    palette: {
+      mode: 'dark',
+      primary: {
+        main: '#d32f2f', // Keep red
+        light: '#ff6659', // Keep red
+        dark: '#9a0007', // Keep red
+        contrastText: '#ffffff', // Keep white for contrast
+      },
+      secondary: {
+        main: '#f44336', // Keep red
+        light: '#ff7961', // Keep red
+        dark: '#ba000d', // Keep red
+        contrastText: '#ffffff', // Keep white for contrast
+      },
+      background: {
+        default: backgroundColor,
+        paper: backgroundColor,
+      },
+      text: {
+        primary: '#ffffff', // White text
+        secondary: '#ffffff', // White secondary text
+      },
+      error: {
+        main: '#d32f2f', // Keep red
+      },
+      warning: {
+        main: '#ffa000', // Keep orange
+      },
+      info: {
+        main: '#1976d2', // Keep blue
+      },
+      success: {
+        main: '#2e7d32', // Keep green
+      },
+    },
+    components: {
+      ...baseTheme.components,
+      MuiAppBar: {
+        styleOverrides: {
+          root: {
+            backgroundColor: backgroundColor,
+            color: '#ffffff', // White text
+          },
+        },
+      },
+      MuiCard: {
+        styleOverrides: {
+          root: {
+            borderRadius: 12,
+            boxShadow: '0 2px 8px rgba(255, 255, 255, 0.1)', // White shadow
+            backgroundColor: backgroundColor,
+            color: '#ffffff', // White text
+          },
+        },
+      },
+      MuiPaper: {
+        styleOverrides: {
+          root: {
+            backgroundColor: backgroundColor,
+            color: '#ffffff', // White text
+          },
+        },
+      },
+      MuiDrawer: {
+        styleOverrides: {
+          paper: {
+            backgroundColor: '#d32f2f', // Keep red
+            borderRight: '1px solid rgba(255, 255, 255, 0.12)', // White border
+            '& .dashboard-sidebar-title': {
+              fontSize: 'calc(1.7rem * var(--app-font-size, 16px) / 16px) !important',
+              fontWeight: 700,
+            },
+            '& .dashboard-sidebar-menu-text': {
+              fontSize: 'calc(1.1rem * var(--app-font-size, 16px) / 16px) !important',
+              fontWeight: 500,
+            },
+            '& .dashboard-sidebar-copyright': {
+              fontSize: 'calc(0.9rem * var(--app-font-size, 16px) / 16px) !important',
+            },
+            '& .dashboard-sidebar-icon': {
+              fontSize: 'calc(28px * var(--app-font-size, 16px) / 16px) !important',
+            },
+          },
+        },
+      },
+      MuiTabs: {
+        styleOverrides: {
+          root: {
+            '& .MuiSvgIcon-root': {
+              fontSize: 'calc(1.7 * var(--app-font-size, 16px)) !important',
+            },
+          },
+        },
+      },
+      MuiTypography: {
+        styleOverrides: {
+          root: {
+            '&.MuiTypography-caption': {
+              fontSize: 'calc(0.7 * var(--app-font-size, 16px)) !important',
+            },
+          },
+        },
+        variants: [
+          {
+            props: { variant: 'tokenLimit' },
+            style: {
+              fontSize: '0.9rem',
+              lineHeight: 1.4,
+              fontWeight: 600,
+            },
+          },
+        ],
+      },
+      MuiButton: {
+        styleOverrides: {
+          root: {
+            fontSize: '0.8rem !important',
+          },
+        },
+      },
+    },
+  });
+
 // Export dark theme as a separate chunk
 export const darkTheme = createTheme({
   ...baseTheme,

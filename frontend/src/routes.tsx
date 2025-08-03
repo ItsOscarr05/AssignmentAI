@@ -3,6 +3,7 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import PageTransition from './components/PageTransition';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider } from './theme/ThemeProvider';
 
 // Lazy load all large page components
 const About = lazy(() => import('./pages/About'));
@@ -24,7 +25,6 @@ const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Terms = lazy(() => import('./pages/Terms'));
 const Workshop = lazy(() => import('./pages/Workshop'));
-const TranslationDemo = lazy(() => import('./pages/TranslationDemo'));
 const AssignmentDetail = lazy(() => import('./components/assignments/AssignmentDetail'));
 const OAuthCallback = lazy(() =>
   import('./components/auth/OAuthCallback').then(module => ({ default: module.OAuthCallback }))
@@ -42,227 +42,229 @@ const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
 const suspenseFallback = <div style={{ padding: 40, textAlign: 'center' }}>Loading...</div>;
 
-// Wrap the router with AuthProvider
+// Router with both AuthProvider and ThemeProvider
 export const AppRouter = () => (
   <BrowserRouter>
     <AuthProvider>
-      <AnimatePresence mode="wait">
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <Suspense fallback={suspenseFallback}>
-                <PageTransition>
-                  <Landing />
-                </PageTransition>
-              </Suspense>
-            }
-          />
-          <Route
-            path="/login"
-            element={
-              <Suspense fallback={suspenseFallback}>
-                <PageTransition>
-                  <Login />
-                </PageTransition>
-              </Suspense>
-            }
-          />
-          <Route
-            path="/register"
-            element={
-              <Suspense fallback={suspenseFallback}>
-                <PageTransition>
-                  <Register />
-                </PageTransition>
-              </Suspense>
-            }
-          />
-          <Route
-            path="/forgot-password"
-            element={
-              <Suspense fallback={suspenseFallback}>
-                <PageTransition>
-                  <ForgotPassword />
-                </PageTransition>
-              </Suspense>
-            }
-          />
-          <Route
-            path="/reset-password"
-            element={
-              <Suspense fallback={suspenseFallback}>
-                <PageTransition>
-                  <ResetPassword />
-                </PageTransition>
-              </Suspense>
-            }
-          />
-          <Route
-            path="/auth/callback"
-            element={
-              <Suspense fallback={suspenseFallback}>
-                <PageTransition>
-                  <OAuthCallback />
-                </PageTransition>
-              </Suspense>
-            }
-          />
-          <Route
-            path="/about"
-            element={
-              <Suspense fallback={suspenseFallback}>
-                <PageTransition>
-                  <About />
-                </PageTransition>
-              </Suspense>
-            }
-          />
-          <Route
-            path="/contact"
-            element={
-              <Suspense fallback={suspenseFallback}>
-                <PageTransition>
-                  <Contact />
-                </PageTransition>
-              </Suspense>
-            }
-          />
-          <Route
-            path="/privacy"
-            element={
-              <Suspense fallback={suspenseFallback}>
-                <PageTransition>
-                  <Privacy />
-                </PageTransition>
-              </Suspense>
-            }
-          />
-          <Route
-            path="/terms"
-            element={
-              <Suspense fallback={suspenseFallback}>
-                <PageTransition>
-                  <Terms />
-                </PageTransition>
-              </Suspense>
-            }
-          />
-          <Route
-            path="/dashboard"
-            element={
-              <PrivateRoute>
-                <Suspense fallback={suspenseFallback}>
-                  <PageTransition>
-                    <DashboardLayout />
-                  </PageTransition>
-                </Suspense>
-              </PrivateRoute>
-            }
-          >
+      <ThemeProvider>
+        <AnimatePresence mode="wait">
+          <Routes>
             <Route
-              index
+              path="/"
               element={
                 <Suspense fallback={suspenseFallback}>
                   <PageTransition>
-                    <DashboardHome />
+                    <Landing />
                   </PageTransition>
                 </Suspense>
               }
             />
             <Route
-              path="assignments"
+              path="/login"
               element={
                 <Suspense fallback={suspenseFallback}>
                   <PageTransition>
-                    <Assignments />
+                    <Login />
                   </PageTransition>
                 </Suspense>
               }
             />
             <Route
-              path="assignments/:id"
+              path="/register"
               element={
                 <Suspense fallback={suspenseFallback}>
                   <PageTransition>
-                    <AssignmentDetail />
+                    <Register />
                   </PageTransition>
                 </Suspense>
               }
             />
             <Route
-              path="workshop"
+              path="/forgot-password"
               element={
                 <Suspense fallback={suspenseFallback}>
                   <PageTransition>
-                    <Workshop />
+                    <ForgotPassword />
                   </PageTransition>
                 </Suspense>
               }
             />
             <Route
-              path="settings"
+              path="/reset-password"
               element={
                 <Suspense fallback={suspenseFallback}>
                   <PageTransition>
-                    <Settings />
+                    <ResetPassword />
                   </PageTransition>
                 </Suspense>
               }
             />
             <Route
-              path="price-plan"
+              path="/auth/callback"
               element={
                 <Suspense fallback={suspenseFallback}>
                   <PageTransition>
-                    <PricePlan />
+                    <OAuthCallback />
                   </PageTransition>
                 </Suspense>
               }
             />
             <Route
-              path="profile"
+              path="/about"
               element={
                 <Suspense fallback={suspenseFallback}>
                   <PageTransition>
-                    <Profile />
+                    <About />
                   </PageTransition>
                 </Suspense>
               }
             />
             <Route
-              path="help"
+              path="/contact"
               element={
                 <Suspense fallback={suspenseFallback}>
                   <PageTransition>
-                    <Help />
+                    <Contact />
                   </PageTransition>
                 </Suspense>
               }
             />
             <Route
-              path="ai-settings"
+              path="/privacy"
               element={
                 <Suspense fallback={suspenseFallback}>
                   <PageTransition>
-                    <AISettings />
+                    <Privacy />
                   </PageTransition>
                 </Suspense>
               }
             />
             <Route
-              path="ai-tokens"
+              path="/terms"
               element={
                 <Suspense fallback={suspenseFallback}>
                   <PageTransition>
-                    <AITokens />
+                    <Terms />
                   </PageTransition>
                 </Suspense>
               }
             />
-          </Route>
-        </Routes>
-      </AnimatePresence>
+            <Route
+              path="/dashboard"
+              element={
+                <PrivateRoute>
+                  <Suspense fallback={suspenseFallback}>
+                    <PageTransition>
+                      <DashboardLayout />
+                    </PageTransition>
+                  </Suspense>
+                </PrivateRoute>
+              }
+            >
+              <Route
+                index
+                element={
+                  <Suspense fallback={suspenseFallback}>
+                    <PageTransition>
+                      <DashboardHome />
+                    </PageTransition>
+                  </Suspense>
+                }
+              />
+              <Route
+                path="assignments"
+                element={
+                  <Suspense fallback={suspenseFallback}>
+                    <PageTransition>
+                      <Assignments />
+                    </PageTransition>
+                  </Suspense>
+                }
+              />
+              <Route
+                path="assignments/:id"
+                element={
+                  <Suspense fallback={suspenseFallback}>
+                    <PageTransition>
+                      <AssignmentDetail />
+                    </PageTransition>
+                  </Suspense>
+                }
+              />
+              <Route
+                path="workshop"
+                element={
+                  <Suspense fallback={suspenseFallback}>
+                    <PageTransition>
+                      <Workshop />
+                    </PageTransition>
+                  </Suspense>
+                }
+              />
+              <Route
+                path="settings"
+                element={
+                  <Suspense fallback={suspenseFallback}>
+                    <PageTransition>
+                      <Settings />
+                    </PageTransition>
+                  </Suspense>
+                }
+              />
+              <Route
+                path="price-plan"
+                element={
+                  <Suspense fallback={suspenseFallback}>
+                    <PageTransition>
+                      <PricePlan />
+                    </PageTransition>
+                  </Suspense>
+                }
+              />
+              <Route
+                path="profile"
+                element={
+                  <Suspense fallback={suspenseFallback}>
+                    <PageTransition>
+                      <Profile />
+                    </PageTransition>
+                  </Suspense>
+                }
+              />
+              <Route
+                path="help"
+                element={
+                  <Suspense fallback={suspenseFallback}>
+                    <PageTransition>
+                      <Help />
+                    </PageTransition>
+                  </Suspense>
+                }
+              />
+              <Route
+                path="ai-settings"
+                element={
+                  <Suspense fallback={suspenseFallback}>
+                    <PageTransition>
+                      <AISettings />
+                    </PageTransition>
+                  </Suspense>
+                }
+              />
+              <Route
+                path="ai-tokens"
+                element={
+                  <Suspense fallback={suspenseFallback}>
+                    <PageTransition>
+                      <AITokens />
+                    </PageTransition>
+                  </Suspense>
+                }
+              />
+            </Route>
+          </Routes>
+        </AnimatePresence>
+      </ThemeProvider>
     </AuthProvider>
   </BrowserRouter>
 );

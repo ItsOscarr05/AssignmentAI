@@ -14,7 +14,6 @@ import { ToastProvider } from './contexts/ToastContext';
 import { TokenLimitProvider } from './contexts/TokenLimitContext';
 import './i18n/config'; // Initialize i18n
 import { AppRouter } from './routes';
-import { ThemeProvider } from './theme/ThemeProvider';
 
 // Pages that should be excluded from theme changes
 const EXCLUDED_PATHS = [
@@ -85,49 +84,45 @@ const AppContent: React.FC = () => {
   return (
     <ErrorBoundary>
       <SecurityProvider>
-        <ThemeProvider>
-          <AuthProvider>
-            <ToastProvider>
-              <AdProvider>
-                <TokenLimitProvider>
-                  <AIFeaturesProvider
-                    initialFeatures={{
-                      autoComplete: true,
-                      codeSnippets: true,
-                      aiSuggestions: true,
-                      realTimeAnalysis: false,
+        <ToastProvider>
+          <AdProvider>
+            <TokenLimitProvider>
+              <AIFeaturesProvider
+                initialFeatures={{
+                  autoComplete: true,
+                  codeSnippets: true,
+                  aiSuggestions: true,
+                  realTimeAnalysis: false,
+                }}
+              >
+                <CssBaseline />
+                <SnackbarProvider maxSnack={3}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      minHeight: '100vh',
+                      overflow: 'hidden',
                     }}
                   >
-                    <CssBaseline />
-                    <SnackbarProvider maxSnack={3}>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          minHeight: '100vh',
-                          overflow: 'hidden',
-                        }}
-                      >
-                        <Navbar />
-                        <Box sx={{ display: 'flex', flex: 1 }}>
-                          <Box sx={{ flex: 1 }}>
-                            <AdComponent position="top" />
-                            <AppRouter />
-                            <AdComponent position="bottom" />
-                          </Box>
-                          <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-                            <AdComponent position="sidebar" />
-                          </Box>
-                        </Box>
+                    <Navbar />
+                    <Box sx={{ display: 'flex', flex: 1 }}>
+                      <Box sx={{ flex: 1 }}>
+                        <AdComponent position="top" />
+                        <AppRouter />
+                        <AdComponent position="bottom" />
                       </Box>
-                    </SnackbarProvider>
-                    <Toaster position="top-right" richColors />
-                  </AIFeaturesProvider>
-                </TokenLimitProvider>
-              </AdProvider>
-            </ToastProvider>
-          </AuthProvider>
-        </ThemeProvider>
+                      <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+                        <AdComponent position="sidebar" />
+                      </Box>
+                    </Box>
+                  </Box>
+                </SnackbarProvider>
+                <Toaster position="top-right" richColors />
+              </AIFeaturesProvider>
+            </TokenLimitProvider>
+          </AdProvider>
+        </ToastProvider>
       </SecurityProvider>
     </ErrorBoundary>
   );

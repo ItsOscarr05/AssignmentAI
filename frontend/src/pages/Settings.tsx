@@ -94,10 +94,10 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import AIFeaturesDemo from '../components/ai/AIFeaturesDemo';
 import DateFormatSelector from '../components/common/DateFormatSelector';
-import { useTheme as useAppTheme } from '../contexts/ThemeContext';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { preferences, users } from '../services/api';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
+import { useTheme as useAppTheme } from '../theme/ThemeProvider';
 import { DateFormat, getDefaultDateFormat, getDefaultTimeFormat } from '../utils/dateFormat';
 
 interface TabPanelProps {
@@ -155,7 +155,7 @@ const Settings: React.FC = () => {
   const [isLoadingPreferences, setIsLoadingPreferences] = useState(false);
 
   // General Settings
-  const { theme: appTheme, toggleTheme } = useAppTheme();
+  const { mode: appTheme, toggleTheme, darkThemeColor, setDarkThemeColor } = useAppTheme();
   const darkMode = appTheme === 'dark';
   const [language, setLanguage] = useState('en');
   const [fontSize, setFontSize] = useState(20);
@@ -1735,24 +1735,84 @@ const Settings: React.FC = () => {
                       control={<Switch checked={darkMode} onChange={toggleTheme} />}
                       label="Dark Mode"
                     />
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={animations}
-                          onChange={e => setAnimations(e.target.checked)}
-                        />
-                      }
-                      label="Enable Animations"
-                    />
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={compactMode}
-                          onChange={e => setCompactMode(e.target.checked)}
-                        />
-                      }
-                      label="Compact Mode"
-                    />
+                    {darkMode && (
+                      <FormControl fullWidth sx={{ mt: 2, mb: 2 }}>
+                        <InputLabel>Dark Theme Color</InputLabel>
+                        <Select
+                          value={darkThemeColor}
+                          label="Dark Theme Color"
+                          onChange={e =>
+                            setDarkThemeColor(
+                              e.target.value as 'navy' | 'charcoal' | 'slate' | 'graphite'
+                            )
+                          }
+                          sx={{
+                            '& .MuiSelect-select': {
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                            },
+                          }}
+                        >
+                          <MenuItem value="navy">
+                            <Box
+                              sx={{
+                                width: 16,
+                                height: 16,
+                                borderRadius: '50%',
+                                backgroundColor: '#000814',
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                mr: 1,
+                              }}
+                            />
+                            Navy (Current)
+                          </MenuItem>
+                          <MenuItem value="charcoal">
+                            <Box
+                              sx={{
+                                width: 16,
+                                height: 16,
+                                borderRadius: '50%',
+                                backgroundColor: '#1a1a1a',
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                mr: 1,
+                              }}
+                            />
+                            Charcoal
+                          </MenuItem>
+                          <MenuItem value="slate">
+                            <Box
+                              sx={{
+                                width: 16,
+                                height: 16,
+                                borderRadius: '50%',
+                                backgroundColor: '#2d3748',
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                mr: 1,
+                              }}
+                            />
+                            Slate
+                          </MenuItem>
+                          <MenuItem value="graphite">
+                            <Box
+                              sx={{
+                                width: 16,
+                                height: 16,
+                                borderRadius: '50%',
+                                backgroundColor: '#4a5568',
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                mr: 1,
+                              }}
+                            />
+                            Graphite
+                          </MenuItem>
+                        </Select>
+                      </FormControl>
+                    )}
                   </FormGroup>
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -1778,6 +1838,26 @@ const Settings: React.FC = () => {
                     valueLabelFormat={value => `${value}px`}
                     disableSwap
                   />
+                  <FormGroup sx={{ mt: 3 }}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={animations}
+                          onChange={e => setAnimations(e.target.checked)}
+                        />
+                      }
+                      label="Enable Animations"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={compactMode}
+                          onChange={e => setCompactMode(e.target.checked)}
+                        />
+                      }
+                      label="Compact Mode"
+                    />
+                  </FormGroup>
                 </Grid>
               </Grid>
             </SettingsSection>
