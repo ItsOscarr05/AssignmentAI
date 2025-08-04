@@ -1665,22 +1665,45 @@ const Settings: React.FC = () => {
           }
           onClick={handleSave}
           disabled={isValidatingSettings}
-          className={`save-changes ${
+          className={`save-changes settings-save-button ${
             checkForUnsavedChanges() && !isValidatingSettings ? 'unsaved-changes-pulse' : ''
           }`}
           sx={{
             ml: { xs: 0, md: 'auto' },
+            // Dark mode specific styling
+            ...(theme.palette.mode === 'dark' && {
+              backgroundColor: 'transparent !important',
+              color: '#d32f2f !important',
+              border: '2px solid #d32f2f !important',
+              boxShadow: 'none !important',
+              '&:hover': {
+                backgroundColor: 'rgba(211, 47, 47, 0.1) !important',
+                boxShadow: '0 4px 20px 0px rgba(211, 47, 47, 0.3) !important',
+              },
+              '& .MuiSvgIcon-root': {
+                color: '#d32f2f !important',
+              },
+            }),
+            // Light mode styling (keep original gradient)
+            ...(theme.palette.mode === 'light' && {
+              backgroundColor: 'transparent !important',
+              '&:hover': {
+                backgroundColor: 'transparent !important',
+              },
+            }),
+            // Override for unsaved changes state
             ...(checkForUnsavedChanges() &&
               !isValidatingSettings && {
-                backgroundColor: theme.palette.warning.main,
+                backgroundColor: `${theme.palette.warning.main} !important`,
                 '&:hover': {
-                  backgroundColor: theme.palette.warning.dark,
+                  backgroundColor: `${theme.palette.warning.dark} !important`,
                 },
               }),
+            // Override for validating state
             ...(isValidatingSettings && {
-              backgroundColor: theme.palette.info.main,
+              backgroundColor: `${theme.palette.info.main} !important`,
               '&:hover': {
-                backgroundColor: theme.palette.info.dark,
+                backgroundColor: `${theme.palette.info.dark} !important`,
               },
             }),
           }}
@@ -5665,8 +5688,14 @@ const Settings: React.FC = () => {
           font-family: 'Times New Roman', serif;
         }
         
-        /* Unsaved changes indicator animation */
+        /* Unsaved changes indicator animation - only in dark mode */
         .unsaved-changes-pulse {
+          animation: none;
+        }
+        
+        /* Apply pulsing animation only in dark mode */
+        [data-mui-color-scheme="dark"] .unsaved-changes-pulse,
+        body[class*="dark"] .unsaved-changes-pulse {
           animation: pulse 2s infinite;
         }
         

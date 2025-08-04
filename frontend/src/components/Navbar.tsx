@@ -54,7 +54,7 @@ const Navbar: React.FC = () => {
           edge="start"
           sx={{
             mr: 2,
-            color: 'white',
+            color: theme.palette.mode === 'dark' ? theme.palette.background.default : 'white',
             '&:hover': {
               background: 'rgba(255,255,255,0.1)',
             },

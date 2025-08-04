@@ -234,14 +234,14 @@ const Dashboard: React.FC = () => {
             top: 16,
             right: 16,
             zIndex: theme.zIndex.drawer + 3,
-            background: 'rgba(255,255,255,1)',
-            color: theme.palette.primary.main,
+            background: theme.palette.mode === 'dark' ? theme.palette.background.default : 'rgba(255,255,255,1)',
+            color: '#d32f2f',
             boxShadow: 2,
             width: 48,
             height: 48,
             border: '2px solid #D32F2F',
             '&:hover': {
-              background: 'rgba(255,255,255,1)',
+              background: theme.palette.mode === 'dark' ? theme.palette.background.default : 'rgba(255,255,255,1)',
               borderColor: '#B71C1C',
             },
           }}

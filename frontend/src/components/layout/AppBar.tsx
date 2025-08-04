@@ -47,7 +47,11 @@ export const AppBar: React.FC<AppBarProps> = ({ onMenuClick }) => {
           color="inherit"
           edge="start"
           onClick={onMenuClick}
-          sx={{ mr: 2, display: { sm: 'none' } }}
+          sx={{
+            mr: 2,
+            display: { sm: 'none' },
+            color: appTheme === 'dark' ? '#000814' : 'inherit',
+          }}
           aria-label="menu"
         >
           <MenuIcon />

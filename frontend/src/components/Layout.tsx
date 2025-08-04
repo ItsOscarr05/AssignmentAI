@@ -22,6 +22,7 @@ import {
   Toolbar,
   Typography,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { ReactNode, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Notifications from './Notifications';
@@ -47,6 +48,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const theme = useTheme();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -100,7 +102,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             aria-label="open drawer"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: 'none' } }}
+            sx={{
+              mr: 2,
+              display: { sm: 'none' },
+              color: theme.palette.mode === 'dark' ? theme.palette.background.default : 'inherit',
+            }}
           >
             <MenuIcon />
           </IconButton>

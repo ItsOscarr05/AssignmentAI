@@ -214,7 +214,11 @@ const ResponsiveNavbar: React.FC = () => {
               aria-label="open drawer"
               edge="start"
               onClick={handleDrawerToggle}
-              sx={{ mr: 2, display: { sm: 'none' } }}
+              sx={{
+                mr: 2,
+                display: { sm: 'none' },
+                color: theme.palette.mode === 'dark' ? theme.palette.background.default : 'inherit',
+              }}
             >
               <Menu />
             </IconButton>

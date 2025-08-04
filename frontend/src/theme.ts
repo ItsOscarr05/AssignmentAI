@@ -777,19 +777,25 @@ export const darkTheme = createTheme({
             padding: `calc(0.6 * var(--app-font-size, 16px)) calc(1.2 * var(--app-font-size, 16px))`,
             fontSize: 'calc(0.85 * var(--app-font-size, 16px)) !important',
             fontWeight: 500,
-            background: 'linear-gradient(45deg, #d32f2f, #ff6659)', // Keep red gradient
-            boxShadow:
-              '0 4px 20px 0px rgba(211, 47, 47, 0.3), 0 7px 10px -5px rgba(211, 47, 47, 0.4)', // Red shadow
+            background: 'transparent',
+            color: '#d32f2f',
+            border: '2px solid #d32f2f',
+            boxShadow: 'none',
             transition: 'all 0.3s ease',
             '&:hover': {
               transform: 'translateY(-2px)',
-              boxShadow: '0 7px 30px -10px rgba(211, 47, 47, 0.6)', // Red shadow
+              background: 'rgba(211, 47, 47, 0.1)',
+              boxShadow: '0 4px 20px 0px rgba(211, 47, 47, 0.3)',
             },
             '&:disabled': {
-              background: 'rgba(255, 255, 255, 0.12)', // White with opacity
-              color: 'rgba(255, 255, 255, 0.38)', // White with opacity
+              background: 'rgba(0,0,0,0.12)',
+              color: 'rgba(0,0,0,0.38)',
+              border: '2px solid rgba(0,0,0,0.12)',
               transform: 'none',
               boxShadow: 'none',
+            },
+            '& .MuiSvgIcon-root': {
+              color: '#d32f2f',
             },
           },
         },
