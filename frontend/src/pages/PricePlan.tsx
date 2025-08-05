@@ -55,7 +55,12 @@ import { useAspectRatio } from '../hooks/useAspectRatio';
 import { api } from '../services/api';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+console.log('Stripe Key:', import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+
+const stripePromise = loadStripe(
+  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ||
+    'pk_test_51RYem5BGydvd9sZlgu1k8rVc5y13Y0uVJ1sTjdDe3Ao2CLwgcSiG03GYxtYBLrz1tjN15d1PK38QAqnkf9YMy3HZ00hap3ZOqt'
+);
 
 interface Feature {
   name: string;
