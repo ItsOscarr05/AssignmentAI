@@ -1,4 +1,4 @@
-import { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { Assignment, Class, Submission, User } from '../types';
 import {
   AssignmentGenerationRequest,
@@ -100,24 +100,16 @@ interface ReportTemplate {
   }>;
 }
 
-// Create a mock axios instance
-const mockAxiosInstance = {
-  interceptors: {
-    request: {
-      use: (callback: any) => callback,
-    },
-    response: {
-      use: (callback: any) => callback,
-    },
+// Create a real axios instance
+const apiInstance = axios.create({
+  baseURL: 'http://localhost:8000/api/v1',
+  headers: {
+    'Content-Type': 'application/json',
   },
-  post: async (_url: string, _data?: any) => ({ data: {} }),
-  put: async (_url: string, _data?: any) => ({ data: {} }),
-  get: async (_url: string) => ({ data: {} }),
-  delete: async (_url: string) => ({ data: {} }),
-} as unknown as AxiosInstance;
+});
 
 // Add a request interceptor to add the auth token to requests
-mockAxiosInstance.interceptors.request.use(
+apiInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem('token');
     if (token && config.headers) {
@@ -131,7 +123,7 @@ mockAxiosInstance.interceptors.request.use(
 );
 
 // Add a response interceptor to handle errors
-mockAxiosInstance.interceptors.response.use(
+apiInstance.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error: any) => {
     if (error.response?.status === 401) {
@@ -142,7 +134,7 @@ mockAxiosInstance.interceptors.response.use(
   }
 );
 
-export const api = mockAxiosInstance;
+export const api = apiInstance;
 
 // Auth endpoints
 export const auth = {

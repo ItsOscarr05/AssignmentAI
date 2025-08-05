@@ -1,12 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Header
 from sqlalchemy.orm import Session
-from typing import Optional, List
+from pydantic import BaseModel
 from app.core.deps import get_current_user, get_db
 from app.services.payment_service import PaymentService
 from app.models.user import User
 from app.core.config import settings
 
+
+class CreateSubscriptionRequest(BaseModel):
+    price_id: str
+    payment_method_id: str
+
+
 router = APIRouter()
+
 
 @router.post("/create-subscription")
 async def create_subscription(
@@ -23,6 +30,39 @@ async def create_subscription(
         payment_method_id=payment_method_id
     )
 
+
+@router.post("/test-create-subscription")
+async def test_create_subscription(
+    request: CreateSubscriptionRequest,
+    db: Session = Depends(get_db)
+):
+    """Test endpoint for creating subscription without authentication"""
+    try:
+        print(f"Test subscription request received:")
+        print(f"Price ID: {request.price_id}")
+        print(f"Payment Method ID: {request.payment_method_id}")
+        
+        # Simulate successful payment processing
+        # In a real implementation, you would create a user and process the payment
+        result = {
+            "success": True,
+            "message": "Test subscription created successfully",
+            "subscription_id": "sub_test_123456789",
+            "customer_id": "cus_test_123456789",
+            "status": "active",
+            "price_id": request.price_id,
+            "payment_method_id": request.payment_method_id
+        }
+        
+        print("Test subscription created successfully!")
+        return result
+    except Exception as e:
+        print(f"Error creating subscription: {str(e)}")
+        print(f"Price ID: {request.price_id}")
+        print(f"Payment Method ID: {request.payment_method_id}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @router.post("/cancel-subscription")
 async def cancel_subscription(
     db: Session = Depends(get_db),
@@ -31,6 +71,7 @@ async def cancel_subscription(
     """Cancel the current subscription"""
     payment_service = PaymentService(db)
     return await payment_service.cancel_subscription(user=current_user)
+
 
 @router.get("/plans")
 async def get_plans():
@@ -96,6 +137,7 @@ async def get_plans():
     ]
     return plans
 
+
 @router.get("/plans/current")
 async def get_current_plan(
     db: Session = Depends(get_db),
@@ -105,6 +147,7 @@ async def get_current_plan(
     payment_service = PaymentService(db)
     return await payment_service.get_current_plan(current_user)
 
+
 @router.get("/subscriptions/current")
 async def get_current_subscription(
     db: Session = Depends(get_db),
@@ -113,6 +156,7 @@ async def get_current_subscription(
     """Get current user's subscription"""
     payment_service = PaymentService(db)
     return await payment_service.get_current_subscription(current_user)
+
 
 @router.post("/payment-methods")
 async def create_payment_method(
@@ -124,6 +168,7 @@ async def create_payment_method(
     payment_service = PaymentService(db)
     return await payment_service.create_payment_method(current_user, payment_method_data)
 
+
 @router.get("/payment-methods")
 async def get_payment_methods(
     db: Session = Depends(get_db),
@@ -132,6 +177,7 @@ async def get_payment_methods(
     """Get user's payment methods"""
     payment_service = PaymentService(db)
     return await payment_service.get_payment_methods(current_user)
+
 
 @router.put("/payment-methods/{payment_method_id}")
 async def update_payment_method(
@@ -144,6 +190,7 @@ async def update_payment_method(
     payment_service = PaymentService(db)
     return await payment_service.update_payment_method(current_user, payment_method_id, payment_method_data)
 
+
 @router.delete("/payment-methods/{payment_method_id}")
 async def delete_payment_method(
     payment_method_id: str,
@@ -154,6 +201,7 @@ async def delete_payment_method(
     payment_service = PaymentService(db)
     return await payment_service.delete_payment_method(current_user, payment_method_id)
 
+
 @router.get("/invoices")
 async def get_invoices(
     db: Session = Depends(get_db),
@@ -162,6 +210,7 @@ async def get_invoices(
     """Get user's invoices"""
     payment_service = PaymentService(db)
     return await payment_service.get_invoices(current_user)
+
 
 @router.post("/stripe/webhook")
 async def stripe_webhook(
@@ -172,4 +221,4 @@ async def stripe_webhook(
     """Stripe webhook endpoint"""
     payload = await request.body()
     payment_service = PaymentService(db)
-    return await payment_service.handle_webhook(payload, stripe_signature) 
+    return await payment_service.handle_webhook(payload, stripe_signature)

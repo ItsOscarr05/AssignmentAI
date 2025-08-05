@@ -55,8 +55,6 @@ import { useAspectRatio } from '../hooks/useAspectRatio';
 import { api } from '../services/api';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 
-console.log('Stripe Key:', import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
-
 const stripePromise = loadStripe(
   import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ||
     'pk_test_51RYem5BGydvd9sZlgu1k8rVc5y13Y0uVJ1sTjdDe3Ao2CLwgcSiG03GYxtYBLrz1tjN15d1PK38QAqnkf9YMy3HZ00hap3ZOqt'
@@ -254,7 +252,7 @@ const plans: Plan[] = [
       'Standard Response Time',
       'Basic Templates',
     ],
-    priceId: 'price_free',
+    priceId: '', // Will be populated from backend
     bestFor: 'Perfect starting tool with basic writing assistance',
     tokenBoost: 30000,
     isCurrentPlan: false,
@@ -273,7 +271,7 @@ const plans: Plan[] = [
       'Ad-Free Experience',
     ],
     popular: true,
-    priceId: 'price_plus',
+    priceId: '', // Will be populated from backend
     bestFor: 'Enhanced features for more serious students',
     tokenBoost: 50000,
     isCurrentPlan: false,
@@ -291,7 +289,7 @@ const plans: Plan[] = [
       '24/7 Priority Support',
       'Ad-Free Experience',
     ],
-    priceId: 'price_pro',
+    priceId: '', // Will be populated from backend
     bestFor: 'Advanced features for professional students',
     tokenBoost: 75000,
     isCurrentPlan: false,
@@ -309,7 +307,7 @@ const plans: Plan[] = [
       'Custom Assignment Templates',
       'Ad-Free Experience',
     ],
-    priceId: 'price_max',
+    priceId: '', // Will be populated from backend
     bestFor: 'Ultimate package for power users',
     tokenBoost: 100000,
     isCurrentPlan: false,
@@ -372,7 +370,37 @@ const PricePlan: React.FC = () => {
 
   useEffect(() => {
     fetchCurrentPlan();
+    fetchPlansWithPrices();
   }, []);
+
+  const fetchPlansWithPrices = async () => {
+    try {
+      const response = await api.get('/plans');
+      const backendPlans = response.data;
+      console.log('Backend plans:', backendPlans);
+
+      // Map backend plans to frontend plans by name
+      const updatedPlans = plans.map(plan => {
+        const backendPlan = backendPlans.find(
+          (bp: any) => bp.name.toLowerCase() === plan.name.toLowerCase()
+        );
+        console.log(`Mapping plan ${plan.name}:`, {
+          frontendPlan: plan.name,
+          backendPlan: backendPlan?.name,
+          priceId: backendPlan?.priceId,
+        });
+        return {
+          ...plan,
+          priceId: backendPlan?.priceId || plan.priceId,
+        };
+      });
+
+      setPlansWithCurrentPlan(updatedPlans);
+    } catch (error) {
+      console.error('Failed to fetch plans with prices:', error);
+      // Keep original plans if fetch fails
+    }
+  };
 
   const fetchCurrentPlan = async () => {
     try {

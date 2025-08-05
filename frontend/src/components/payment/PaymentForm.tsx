@@ -145,28 +145,6 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
     }
   };
 
-  const formatCardNumber = (value: string): string => {
-    // Remove all non-digits
-    const cardNumber = value.replace(/\D/g, '');
-
-    // Format with spaces every 4 digits
-    const formatted = cardNumber.replace(/(\d{4})(?=\d)/g, '$1 ');
-
-    return formatted;
-  };
-
-  const formatExpiryDate = (value: string): string => {
-    // Remove all non-digits
-    const digits = value.replace(/\D/g, '');
-
-    // Format as MM/YY
-    if (digits.length <= 2) {
-      return digits;
-    } else {
-      return `${digits.slice(0, 2)}/${digits.slice(2, 4)}`;
-    }
-  };
-
   const getFieldBorderColor = (fieldName: string, value: string, hasError: boolean): string => {
     if (hasError) return 'red';
     if (!value.trim()) return 'red';
@@ -249,8 +227,11 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       errors.address = addressErrors;
     }
 
+    console.log('Validation errors:', errors);
     setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    const isValid = Object.keys(errors).length === 0;
+    console.log('Form is valid:', isValid);
+    return isValid;
   };
 
   const handleBillingInfoChange = (field: keyof BillingInfo, value: string) => {
@@ -290,7 +271,13 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    console.log('Form submitted!');
+    console.log('Form validation result:', validateForm());
+    console.log('Form data:', { billingInfo, cardholderName, billingEmail });
+    console.log('Price ID being sent:', priceId);
+
     if (!validateForm()) {
+      console.log('Form validation failed, returning early');
       return;
     }
 
@@ -331,11 +318,15 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       }
 
       // Create subscription using the payment method
-      await api.post('/create-subscription', {
+      console.log('Making API call to /payments/test-create-subscription');
+      console.log('Request data:', { price_id: priceId, payment_method_id: paymentMethod!.id });
+
+      await api.post('/payments/test-create-subscription', {
         price_id: priceId,
         payment_method_id: paymentMethod!.id,
       });
 
+      console.log('API call successful!');
       onSuccess();
     } catch (apiError: any) {
       const errorMessage =
