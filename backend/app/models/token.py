@@ -1,25 +1,28 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Index, Boolean
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.sql import func
 from app.db.base_class import Base
+
+if TYPE_CHECKING:
+    from app.models.user import User
 
 class Token(Base):
     __tablename__ = "tokens"
 
-    id = Column(Integer, primary_key=True, index=True)
-    token = Column(String(255), unique=True, index=True, nullable=False)
-    token_type = Column(String(50), nullable=False)  # e.g., "access", "refresh", "verification"
-    expires_at = Column(DateTime(timezone=True), nullable=False)
-    is_revoked = Column(Boolean, default=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    token: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
+    token_type: Mapped[str] = mapped_column(String(50), nullable=False)  # e.g., "access", "refresh", "verification"
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    is_revoked: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), onupdate=func.now())
     
     # Foreign Keys
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
     
-    # Relationships
-    user = relationship("User", back_populates="tokens")
+
 
     # Add indexes for common queries
     __table_args__ = (

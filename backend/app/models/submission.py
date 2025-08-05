@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional, Dict, Any
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Float, JSON, Index, Enum
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy import Column, Integer, String, Text, DateTime, Float, JSON, Index, Enum
+from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base_class import Base
 import enum
 
@@ -27,14 +27,9 @@ class Submission(Base):
     comments: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     graded_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     
-    # Foreign Keys
-    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
-    assignment_id: Mapped[int] = mapped_column(Integer, ForeignKey("assignments.id"), nullable=False)
-    
-    # Relationships
-    user: Mapped["User"] = relationship("User")
-    assignment: Mapped["Assignment"] = relationship("Assignment", back_populates="submissions")
-    ai_feedback: Mapped[Optional["Feedback"]] = relationship("Feedback", back_populates="submission")
+    # Foreign Keys (without constraints)
+    user_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    assignment_id: Mapped[int] = mapped_column(Integer, nullable=False)
 
     # Add indexes for common queries
     __table_args__ = (

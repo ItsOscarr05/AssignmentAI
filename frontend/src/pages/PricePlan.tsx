@@ -374,27 +374,44 @@ const PricePlan: React.FC = () => {
   }, []);
 
   const fetchPlansWithPrices = async () => {
+    console.log('fetchPlansWithPrices called');
     try {
-      const response = await api.get('/plans');
+      console.log('Making API call to /payments/plans');
+      const response = await api.get('/payments/plans');
+      console.log('API response received:', response);
       const backendPlans = response.data;
       console.log('Backend plans:', backendPlans);
 
       // Map backend plans to frontend plans by name
       const updatedPlans = plans.map(plan => {
+        console.log(`\n--- Mapping plan: ${plan.name} ---`);
+        console.log('Frontend plan name:', plan.name);
+        console.log(
+          'Backend plans available:',
+          backendPlans.map((bp: any) => ({ name: bp.name, priceId: bp.priceId }))
+        );
+
         const backendPlan = backendPlans.find(
           (bp: any) => bp.name.toLowerCase() === plan.name.toLowerCase()
         );
-        console.log(`Mapping plan ${plan.name}:`, {
-          frontendPlan: plan.name,
-          backendPlan: backendPlan?.name,
-          priceId: backendPlan?.priceId,
-        });
-        return {
+
+        console.log('Backend plan found:', backendPlan);
+        console.log('Backend plan name:', backendPlan?.name);
+        console.log('Backend plan priceId:', backendPlan?.priceId);
+        console.log('Original plan priceId:', plan.priceId);
+
+        const updatedPlan = {
           ...plan,
           priceId: backendPlan?.priceId || plan.priceId,
         };
+
+        console.log('Updated plan priceId:', updatedPlan.priceId);
+        console.log('--- End mapping ---\n');
+
+        return updatedPlan;
       });
 
+      console.log('Final updated plans:', updatedPlans);
       setPlansWithCurrentPlan(updatedPlans);
     } catch (error) {
       console.error('Failed to fetch plans with prices:', error);
@@ -404,29 +421,69 @@ const PricePlan: React.FC = () => {
 
   const fetchCurrentPlan = async () => {
     try {
-      const response = await api.get<CurrentPlan>('/plans/current');
+      const response = await api.get<CurrentPlan>('/payments/plans/current/public');
       setCurrentPlan(response.data);
 
-      // Update plans to mark current plan
-      const updatedPlans = plans.map(plan => ({
-        ...plan,
-        isCurrentPlan: plan.name.toLowerCase() === (response.data.name || '').toLowerCase(),
-      }));
-      setPlansWithCurrentPlan(updatedPlans);
+      // Update plans to mark current plan, but preserve existing price IDs
+      setPlansWithCurrentPlan(prevPlans =>
+        prevPlans.map(plan => ({
+          ...plan,
+          isCurrentPlan: plan.name.toLowerCase() === (response.data.name || '').toLowerCase(),
+        }))
+      );
     } catch (error) {
       console.error('Failed to fetch current plan:', error);
-      // If no current plan, all plans are available
-      setPlansWithCurrentPlan(plans.map(plan => ({ ...plan, isCurrentPlan: false })));
+      // If no current plan, all plans are available, but preserve existing price IDs
+      setPlansWithCurrentPlan(prevPlans =>
+        prevPlans.map(plan => ({ ...plan, isCurrentPlan: false }))
+      );
     }
   };
 
   const handlePlanSelect = (plan: Plan) => {
+    console.log('\n=== PLAN SELECTION ===');
+    console.log('Plan selected:', plan);
+    console.log('Plan priceId:', plan.priceId);
+    console.log('Plan price:', plan.price);
+
     if (plan.price === 0) {
+      console.log('Free plan selected, redirecting to dashboard');
       enqueueSnackbar('Free plan activated successfully!', { variant: 'success' });
       navigate('/dashboard');
       return;
     }
-    setSelectedPlan(plan);
+
+    // Find the plan with the updated price ID from plansWithCurrentPlan
+    const updatedPlan = plansWithCurrentPlan.find(p => p.name === plan.name);
+    console.log('Updated plan found:', updatedPlan);
+    console.log('Updated plan priceId:', updatedPlan?.priceId);
+    console.log(
+      'All plans with current plan:',
+      plansWithCurrentPlan.map(p => ({ name: p.name, priceId: p.priceId }))
+    );
+
+    // Debug: Show the full plansWithCurrentPlan array
+    console.log('Full plansWithCurrentPlan array:', JSON.stringify(plansWithCurrentPlan, null, 2));
+    console.log('Looking for plan with name:', plan.name);
+    console.log(
+      'Available plan names:',
+      plansWithCurrentPlan.map(p => p.name)
+    );
+
+    if (!updatedPlan) {
+      console.error('Could not find updated plan for:', plan.name);
+      enqueueSnackbar('Error: Could not find plan details. Please try again.', {
+        variant: 'error',
+      });
+      return;
+    }
+
+    const finalPlan = updatedPlan || plan;
+    console.log('Final plan to be used:', finalPlan);
+    console.log('Final plan priceId:', finalPlan.priceId);
+    console.log('=== END PLAN SELECTION ===\n');
+
+    setSelectedPlan(finalPlan);
     setPaymentDialogOpen(true);
   };
 

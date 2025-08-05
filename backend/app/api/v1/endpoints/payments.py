@@ -38,23 +38,66 @@ async def test_create_subscription(
 ):
     """Test endpoint for creating subscription without authentication"""
     try:
-        print(f"Test subscription request received:")
-        print(f"Price ID: {request.price_id}")
-        print(f"Payment Method ID: {request.payment_method_id}")
+        print("=" * 50)
+        print("REAL SUBSCRIPTION REQUEST RECEIVED")
+        print("=" * 50)
+        print(f"Full request object: {request}")
+        print(f"Request dict: {request.dict()}")
+        print(f"Price ID: '{request.price_id}' (type: {type(request.price_id)})")
+        print(f"Payment Method ID: '{request.payment_method_id}' (type: {type(request.payment_method_id)})")
+        print(f"Price ID length: {len(request.price_id) if request.price_id else 0}")
+        print(f"Price ID is empty: {request.price_id == ''}")
+        print(f"Price ID is None: {request.price_id is None}")
+        print("=" * 50)
         
-        # Simulate successful payment processing
-        # In a real implementation, you would create a user and process the payment
-        result = {
-            "success": True,
-            "message": "Test subscription created successfully",
-            "subscription_id": "sub_test_123456789",
-            "customer_id": "cus_test_123456789",
-            "status": "active",
-            "price_id": request.price_id,
-            "payment_method_id": request.payment_method_id
-        }
+        # Get or create a test user for testing purposes
+        from app.models.user import User
+        import uuid
         
-        print("Test subscription created successfully!")
+        # Try to get existing test user, or create a new one with unique email
+        test_user = db.query(User).filter(User.email == "test@example.com").first()
+        if not test_user:
+            print("Creating new test user...")
+            test_user = User(
+                email="test@example.com",
+                name="Test User",
+                hashed_password="dummy_hash_for_testing",
+                is_active=True,
+                is_verified=False,
+                two_factor_enabled=False,
+                is_superuser=False,
+                failed_login_attempts=0,
+                password_history=[],
+                sessions=[]
+            )
+            db.add(test_user)
+            db.commit()
+            db.refresh(test_user)
+            print(f"New test user created with ID: {test_user.id}")
+        else:
+            print(f"Using existing test user: {test_user.email} (ID: {test_user.id})")
+            print(f"Current stripe_customer_id: {test_user.stripe_customer_id}")
+            # Clear the existing stripe_customer_id to force creation of a new one
+            if test_user.stripe_customer_id:
+                print(f"Clearing existing stripe_customer_id: {test_user.stripe_customer_id}")
+                test_user.stripe_customer_id = None
+                db.commit()
+                db.refresh(test_user)
+                print("stripe_customer_id cleared successfully")
+            else:
+                print("No existing stripe_customer_id found")
+
+        print(f"Final test user state - ID: {test_user.id}, stripe_customer_id: {test_user.stripe_customer_id}")
+        
+        # Use the real payment service to create the subscription
+        payment_service = PaymentService(db)
+        result = await payment_service.create_subscription(
+            user=test_user,
+            price_id=request.price_id,
+            payment_method_id=request.payment_method_id
+        )
+        
+        print("Real subscription created successfully!")
         return result
     except Exception as e:
         print(f"Error creating subscription: {str(e)}")
@@ -76,6 +119,13 @@ async def cancel_subscription(
 @router.get("/plans")
 async def get_plans():
     """Get available subscription plans"""
+    print("DEBUG: /plans endpoint called")
+    print(f"DEBUG: STRIPE_SECRET_KEY starts with: {settings.STRIPE_SECRET_KEY[:10]}...")
+    print(f"DEBUG: STRIPE_SECRET_KEY is test mode: {'sk_test_' in settings.STRIPE_SECRET_KEY}")
+    print(f"DEBUG: STRIPE_PRICE_FREE = {settings.STRIPE_PRICE_FREE}")
+    print(f"DEBUG: STRIPE_PRICE_PLUS = {settings.STRIPE_PRICE_PLUS}")
+    print(f"DEBUG: STRIPE_PRICE_PRO = {settings.STRIPE_PRICE_PRO}")
+    print(f"DEBUG: STRIPE_PRICE_MAX = {settings.STRIPE_PRICE_MAX}")
     plans = [
         {
             "id": "free",
@@ -135,6 +185,7 @@ async def get_plans():
             "priceId": settings.STRIPE_PRICE_MAX
         }
     ]
+    print("DEBUG: Returning plans:", plans)
     return plans
 
 
@@ -146,6 +197,26 @@ async def get_current_plan(
     """Get current user's plan"""
     payment_service = PaymentService(db)
     return await payment_service.get_current_plan(current_user)
+
+
+@router.get("/plans/current/public")
+async def get_current_plan_public(
+    db: Session = Depends(get_db)
+):
+    """Get current user's plan without authentication (for pricing page)"""
+    # Return a default response for unauthenticated users
+    return {
+        "id": "free",
+        "name": "Free",
+        "price": 0,
+        "interval": "month",
+        "features": [
+            "Basic assignment generation",
+            "5 assignments per month",
+            "Standard AI model",
+            "Email support"
+        ]
+    }
 
 
 @router.get("/subscriptions/current")

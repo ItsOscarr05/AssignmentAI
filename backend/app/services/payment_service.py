@@ -1,6 +1,7 @@
 import stripe
 from typing import Optional, Dict, Any, List
 from fastapi import HTTPException
+from datetime import datetime
 from app.core.config import settings
 from app.models.user import User
 from app.models.subscription import Subscription, SubscriptionStatus
@@ -63,12 +64,19 @@ class PaymentService:
                 expand=['latest_invoice.payment_intent'],
             )
 
-            # Step 5: Save the subscription to your database
+            # Step 5: Determine plan details from price_id
+            plan_details = self._get_plan_details_from_price_id(price_id)
+            
+            # Step 6: Save the subscription to your database
             db_subscription = Subscription(
                 user_id=user.id,
                 stripe_subscription_id=subscription.id,
+                stripe_customer_id=user.stripe_customer_id,
+                plan_name=plan_details["name"],
+                plan_price=plan_details["price"],
                 status=subscription.status,
-                plan_id=price_id,
+                current_period_start=datetime.now(),  # Use current time as fallback
+                current_period_end=datetime.now(),  # Use current time as fallback
             )
             self.db.add(db_subscription)
             self.db.commit()
@@ -77,6 +85,21 @@ class PaymentService:
 
         except stripe.error.StripeError as e:
             raise HTTPException(status_code=400, detail=str(e))
+
+    def _get_plan_details_from_price_id(self, price_id: str) -> Dict[str, Any]:
+        """Get plan details from price_id"""
+        plan_mapping = {
+            settings.STRIPE_PRICE_FREE: {"name": "Free", "price": 0.0},
+            settings.STRIPE_PRICE_PLUS: {"name": "Plus", "price": 4.99},
+            settings.STRIPE_PRICE_PRO: {"name": "Pro", "price": 9.99},
+            settings.STRIPE_PRICE_MAX: {"name": "Max", "price": 14.99},
+        }
+        
+        if price_id in plan_mapping:
+            return plan_mapping[price_id]
+        else:
+            # Default to Pro if price_id not found
+            return {"name": "Pro", "price": 9.99}
 
     async def cancel_subscription(self, user: User) -> Dict[str, Any]:
         """Cancel a user's subscription"""

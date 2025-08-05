@@ -46,6 +46,17 @@ async def lifespan(app: FastAPI):
     # Startup
     print("DEBUG: Application startup beginning...")
     logging_service.info("Starting up AssignmentAI application")
+    
+    # Initialize database tables
+    try:
+        from app.database import engine
+        from app.db.base import Base  # Import all models
+        print("DEBUG: Creating database tables...")
+        Base.metadata.create_all(bind=engine)
+        print("DEBUG: Database tables created successfully!")
+    except Exception as e:
+        print(f"DEBUG: Database initialization failed: {e}")
+    
     try:
         await init_rate_limiter()
         print("DEBUG: Rate limiter initialized successfully")

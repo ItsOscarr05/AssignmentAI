@@ -1,21 +1,17 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, JSON
+from datetime import datetime
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, JSON
 from sqlalchemy.orm import relationship
 from app.db.base_class import Base
-from datetime import datetime
 
 class Usage(Base):
     __tablename__ = "usage"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    feature = Column(String, nullable=False)  # e.g., 'template', 'ai_generation', 'file_upload'
-    action = Column(String, nullable=False)  # e.g., 'create', 'use', 'delete'
-    timestamp = Column(DateTime, default=datetime.utcnow)
-    tokens_used = Column(Integer, default=0)  # NEW FIELD
-    usage_metadata = Column(JSON)  # Additional usage data like size, duration, etc.
-    
-    # Relationships
-    user = relationship("User")
+    user_id = Column(Integer, nullable=False)
+    date = Column(DateTime, default=datetime.utcnow)
+    tokens_used = Column(Integer, default=0)
+    requests_made = Column(Integer, default=0)
+    usage_metadata = Column(JSON, nullable=True)
 
 class UsageLimit(Base):
     __tablename__ = "usage_limits"

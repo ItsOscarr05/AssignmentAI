@@ -1,43 +1,17 @@
-from sqlalchemy import Column, String, JSON, ForeignKey, Boolean, Integer
-from sqlalchemy.sql import func
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, JSON, Text
 from sqlalchemy.orm import relationship
 from app.db.base_class import Base
-from uuid import uuid4
+from datetime import datetime
 
 class Preference(Base):
     __tablename__ = "preferences"
 
-    id = Column(String, primary_key=True, index=True, default=lambda: str(uuid4()))
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
-    
-    # UI Preferences
-    theme = Column(String, default="light")  # light, dark, system
-    language = Column(String, default="en")
-    font_size = Column(String, default="medium")  # small, medium, large
-    compact_mode = Column(Boolean, default=False)
-    
-    # Notification Preferences
-    email_notifications = Column(Boolean, default=True)
-    push_notifications = Column(Boolean, default=True)
-    notification_types = Column(JSON, default={
-        "assignment_due": True,
-        "grade": True,
-        "comment": True,
-        "announcement": True
-    })
-    
-    # Privacy Preferences
-    show_profile = Column(Boolean, default=True)
-    show_progress = Column(Boolean, default=True)
-    show_activity = Column(Boolean, default=True)
-    
-    # Accessibility Preferences
-    high_contrast = Column(Boolean, default=False)
-    reduced_motion = Column(Boolean, default=False)
-    screen_reader = Column(Boolean, default=False)
-    
-    # Custom Preferences (for future extensibility)
-    custom_preferences = Column(JSON, default={})
-    
-    # Relationships
-    user = relationship("User") 
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False)
+    preference_key = Column(String(100), nullable=False)
+    preference_value = Column(Text, nullable=False)
+    preference_type = Column(String(50), nullable=False)  # e.g., 'string', 'boolean', 'json', 'number'
+    is_public = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    preference_metadata = Column(JSON, nullable=True) 

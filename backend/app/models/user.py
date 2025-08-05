@@ -3,8 +3,8 @@ from typing import Optional, List, Dict, Any
 from sqlalchemy import Boolean, Column, Integer, String, Index, DateTime, JSON
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.sql import func
-from app.db.base_class import Base
-from app.models.token import Token
+from app.database import Base
+
 
 class User(Base):
     __tablename__ = "users"
@@ -47,8 +47,7 @@ class User(Base):
     )
 
     # Relationships - minimal for basic authentication
-    tokens: Mapped[List[Token]] = relationship("Token", back_populates="user")
-    activities: Mapped[List["Activity"]] = relationship("Activity", back_populates="user")
+
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

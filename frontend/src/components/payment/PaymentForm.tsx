@@ -62,6 +62,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
   onSuccess,
   onError,
 }) => {
+  console.log('PaymentForm received props:', { priceId, planName, planPrice });
   const stripe = useStripe();
   const elements = useElements();
   const [loading, setLoading] = useState(false);
@@ -318,8 +319,20 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       }
 
       // Create subscription using the payment method
-      console.log('Making API call to /payments/test-create-subscription');
-      console.log('Request data:', { price_id: priceId, payment_method_id: paymentMethod!.id });
+      console.log('==================================================');
+      console.log('MAKING API CALL TO TEST-CREATE-SUBSCRIPTION');
+      console.log('==================================================');
+      console.log('Price ID from props:', priceId);
+      console.log('Price ID type:', typeof priceId);
+      console.log('Price ID length:', priceId ? priceId.length : 0);
+      console.log('Price ID is empty:', priceId === '');
+      console.log('Price ID is undefined:', priceId === undefined);
+      console.log('Payment Method ID:', paymentMethod!.id);
+      console.log('Full request data:', {
+        price_id: priceId,
+        payment_method_id: paymentMethod!.id,
+      });
+      console.log('==================================================');
 
       await api.post('/payments/test-create-subscription', {
         price_id: priceId,

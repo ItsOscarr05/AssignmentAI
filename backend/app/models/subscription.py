@@ -1,5 +1,7 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Enum, JSON
-from sqlalchemy.orm import relationship
+from datetime import datetime
+from typing import Optional
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, Float, JSON, Enum
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 from app.db.base_class import Base
 import enum
 
@@ -14,16 +16,16 @@ class SubscriptionStatus(str, enum.Enum):
 class Subscription(Base):
     __tablename__ = "subscriptions"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    stripe_subscription_id = Column(String, unique=True, index=True)
-    stripe_customer_id = Column(String, index=True)
-    plan_id = Column(String, nullable=False)
-    status = Column(Enum(SubscriptionStatus), default=SubscriptionStatus.PENDING)
-    ai_model = Column(String, nullable=False)  # The AI model assigned to this subscription
-    token_limit = Column(Integer, nullable=False)  # Monthly token limit
-    subscription_metadata = Column(JSON)  # Additional subscription data
-    notified_token_thresholds = Column(JSON, default=list)  # Track notified thresholds
-    
-    # Relationships
-    user = relationship("User") 
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    stripe_subscription_id: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    stripe_customer_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    plan_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    plan_price: Mapped[float] = mapped_column(Float, nullable=False)
+    status: Mapped[SubscriptionStatus] = mapped_column(Enum(SubscriptionStatus), nullable=False)
+    current_period_start: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    current_period_end: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    cancel_at_period_end: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    subscription_metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True) 
