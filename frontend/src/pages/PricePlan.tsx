@@ -50,7 +50,9 @@ import { loadStripe } from '@stripe/stripe-js';
 import { useSnackbar } from 'notistack';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import PaymentForm from '../components/payment/PaymentForm';
+import SuccessPopup from '../components/payment/SuccessPopup';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { api } from '../services/api';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
@@ -365,6 +367,7 @@ const PricePlan: React.FC = () => {
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [showDetailedComparison, setShowDetailedComparison] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [, setCurrentPlan] = useState<CurrentPlan | null>(null);
   const [plansWithCurrentPlan, setPlansWithCurrentPlan] = useState<Plan[]>(plans);
 
@@ -488,11 +491,37 @@ const PricePlan: React.FC = () => {
   };
 
   const handlePaymentSuccess = () => {
+    console.log('handlePaymentSuccess called!');
     setPaymentDialogOpen(false);
+    setShowSuccessMessage(true);
+    console.log('Payment dialog closed');
+    console.log('Showing success messages...');
+
+    // Show success message with action button
     enqueueSnackbar('Subscription successful! Welcome to AssignmentAI Pro.', {
       variant: 'success',
+      autoHideDuration: 10000,
+      action: () => (
+        <Button
+          color="inherit"
+          size="small"
+          onClick={() => {
+            navigate('/dashboard');
+          }}
+          sx={{ color: 'white' }}
+        >
+          Go to Dashboard
+        </Button>
+      ),
     });
-    navigate('/dashboard');
+
+    // Also show a simple toast notification
+    toast.success('🎉 Subscription successful! Welcome to AssignmentAI Pro!', {
+      duration: 8000,
+      position: 'top-center',
+    });
+
+    console.log('Success messages shown');
   };
 
   const handlePaymentError = (error: string) => {
@@ -1046,6 +1075,13 @@ const PricePlan: React.FC = () => {
       </Dialog>
 
       {renderDetailedComparison()}
+
+      {/* Success Popup Dialog */}
+      <SuccessPopup
+        open={showSuccessMessage}
+        onClose={() => setShowSuccessMessage(false)}
+        planName={selectedPlan?.name}
+      />
     </Box>
   );
 };

@@ -340,7 +340,9 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       });
 
       console.log('API call successful!');
+      console.log('Calling onSuccess callback...');
       onSuccess();
+      console.log('onSuccess callback completed');
     } catch (apiError: any) {
       const errorMessage =
         apiError.response?.data?.message || apiError.message || 'Failed to process payment';
