@@ -2122,7 +2122,7 @@ const Landing: React.FC = () => {
             <Grid container spacing={4}>
               <Grid item xs={12} md={4}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 700, ml: 1, color: 'grey.100' }}>
+                  <Typography variant="h6" sx={{ fontWeight: 700, ml: 1, color: '#E53E3E' }}>
                     AssignmentAI
                   </Typography>
                 </Box>
@@ -2172,18 +2172,20 @@ const Landing: React.FC = () => {
                 </Box>
               </Grid>
               <Grid item xs={12} md={2}>
-                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2, color: '#E53E3E' }}>
                   Company
                 </Typography>
                 <Stack spacing={1}>
                   <RouterMuiLink
                     to="/about"
                     sx={{
-                      color: '#D32F2F',
+                      color: 'white',
+                      textDecoration: 'none',
                       transition: 'all 0.2s ease-in-out',
                       '&:hover': {
+                        color: '#D32F2F',
+                        textDecoration: 'underline',
                         transform: 'translateY(-2px)',
-                        color: '#B71C1C',
                       },
                     }}
                   >
@@ -2192,10 +2194,12 @@ const Landing: React.FC = () => {
                   <RouterMuiLink
                     to="/contact"
                     sx={{
-                      color: '#D32F2F',
+                      color: 'white',
+                      textDecoration: 'none',
                       transition: 'all 0.2s ease-in-out',
                       '&:hover': {
-                        color: '#B71C1C',
+                        color: '#D32F2F',
+                        textDecoration: 'underline',
                         transform: 'translateY(-2px)',
                       },
                     }}
@@ -2205,17 +2209,19 @@ const Landing: React.FC = () => {
                 </Stack>
               </Grid>
               <Grid item xs={12} md={2}>
-                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2, color: '#E53E3E' }}>
                   Legal
                 </Typography>
                 <Stack spacing={1}>
                   <RouterMuiLink
                     to="/privacy"
                     sx={{
-                      color: '#D32F2F',
+                      color: 'white',
+                      textDecoration: 'none',
                       transition: 'all 0.2s ease-in-out',
                       '&:hover': {
-                        color: '#B71C1C',
+                        color: '#D32F2F',
+                        textDecoration: 'underline',
                         transform: 'translateY(-2px)',
                       },
                     }}
@@ -2225,50 +2231,17 @@ const Landing: React.FC = () => {
                   <RouterMuiLink
                     to="/terms"
                     sx={{
-                      color: '#D32F2F',
+                      color: 'white',
+                      textDecoration: 'none',
                       transition: 'all 0.2s ease-in-out',
                       '&:hover': {
-                        color: '#B71C1C',
+                        color: '#D32F2F',
+                        textDecoration: 'underline',
                         transform: 'translateY(-2px)',
                       },
                     }}
                   >
                     Terms of Service
-                  </RouterMuiLink>
-                </Stack>
-              </Grid>
-              <Grid item xs={12} md={2}>
-                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                  Follow Us
-                </Typography>
-                <Stack direction="row" spacing={2}>
-                  <RouterMuiLink
-                    to="#"
-                    aria-label="Twitter"
-                    sx={{
-                      transition: 'all 0.2s ease-in-out',
-                      '&:hover': {
-                        transform: 'translateY(-2px)',
-                      },
-                    }}
-                  >
-                    <Box component="span" sx={{ fontSize: 24 }}>
-                      🐦
-                    </Box>
-                  </RouterMuiLink>
-                  <RouterMuiLink
-                    to="#"
-                    aria-label="GitHub"
-                    sx={{
-                      transition: 'all 0.2s ease-in-out',
-                      '&:hover': {
-                        transform: 'translateY(-2px)',
-                      },
-                    }}
-                  >
-                    <Box component="span" sx={{ fontSize: 24 }}>
-                      💻
-                    </Box>
                   </RouterMuiLink>
                 </Stack>
               </Grid>

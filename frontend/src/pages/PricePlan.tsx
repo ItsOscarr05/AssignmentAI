@@ -520,9 +520,24 @@ const PricePlan: React.FC = () => {
             fontSize: { xs: '1.25rem', md: '1.5rem' },
             p: { xs: 2, md: 3 },
             color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
           }}
         >
           Detailed Feature Comparison
+          <IconButton
+            onClick={() => setShowDetailedComparison(false)}
+            sx={{
+              color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+              '&:hover': {
+                backgroundColor: theme =>
+                  theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+              },
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
         </DialogTitle>
         <DialogContent sx={{ p: { xs: 2, md: 3 } }}>
           <Box sx={{ mt: { xs: 1, md: 2 } }}>

@@ -116,7 +116,7 @@ const Assignments: React.FC = () => {
   const [filterSubject, setFilterSubject] = useState(location.state?.subject || 'all');
   const [filterTimeframe, setFilterTimeframe] = useState(location.state?.timeframe || 'total');
   const [filterDate, setFilterDate] = useState<Dayjs | null>(null);
-  const [dateView, setDateView] = useState<'year' | 'month' | 'day'>('year');
+  const [dateView, setDateView] = useState<'year' | 'month'>('year');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [assignmentToDelete, setAssignmentToDelete] = useState<Assignment | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -399,8 +399,7 @@ const Assignments: React.FC = () => {
       const matchesDate =
         !filterDate ||
         (dateView === 'year' && assignmentDate.isSame(filterDate, 'year')) ||
-        (dateView === 'month' && assignmentDate.isSame(filterDate, 'month')) ||
-        (dateView === 'day' && assignmentDate.isSame(filterDate, 'day'));
+        (dateView === 'month' && assignmentDate.isSame(filterDate, 'month'));
 
       return matchesStatus && matchesName && matchesSubject && matchesDate && matchesTimeframe;
     })
@@ -731,12 +730,14 @@ const Assignments: React.FC = () => {
                 label="Filter by date"
                 value={filterDate}
                 onChange={setFilterDate}
-                views={['year', 'month', 'day']}
+                views={['year', 'month']}
                 openTo="year"
-                onViewChange={setDateView}
-                format={
-                  dateView === 'year' ? 'YYYY' : dateView === 'month' ? 'MM/YYYY' : 'MM/DD/YYYY'
-                }
+                onViewChange={(view: any) => {
+                  if (view === 'year' || view === 'month') {
+                    setDateView(view);
+                  }
+                }}
+                format={dateView === 'year' ? 'YYYY' : 'MM/YYYY'}
                 slotProps={{
                   field: { clearable: true, onClear: () => setFilterDate(null) },
                   textField: {

@@ -73,7 +73,7 @@ const About = () => {
             maxWidth: 1200,
             mx: 'auto',
             textAlign: 'left',
-            backgroundColor: 'grey.50',
+            backgroundColor: '#fafafa',
             boxShadow: '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
             border: '2px solid',
             borderColor: 'primary.main',
@@ -83,10 +83,10 @@ const About = () => {
           <PageHeader title="About AssignmentAI" />
           <Divider sx={{ mb: 3, borderColor: 'primary.main', opacity: 0.2 }} />
 
-          <Typography variant="h5" sx={{ mb: 1, fontWeight: 600, color: 'text.primary' }}>
+          <Typography variant="h5" sx={{ mb: 1, fontWeight: 600, color: '#D32F2F' }}>
             Our Mission
           </Typography>
-          <Typography variant="body1" sx={{ mb: 3, fontSize: '1.15rem', color: 'text.secondary' }}>
+          <Typography variant="body1" sx={{ mb: 3, fontSize: '1.15rem', color: 'black' }}>
             AssignmentAI was born from a simple yet powerful vision: to democratize access to
             intelligent academic assistance. We believe that every student deserves the opportunity
             to excel in their educational journey, regardless of their background or circumstances.
@@ -102,10 +102,10 @@ const About = () => {
             efficient, and effective.
           </Typography>
 
-          <Typography variant="h5" sx={{ mb: 1, fontWeight: 600, color: 'text.primary' }}>
+          <Typography variant="h5" sx={{ mb: 1, fontWeight: 600, color: '#D32F2F' }}>
             Our Story
           </Typography>
-          <Typography variant="body1" sx={{ mb: 3, fontSize: '1.15rem', color: 'text.secondary' }}>
+          <Typography variant="body1" sx={{ mb: 3, fontSize: '1.15rem', color: 'black' }}>
             Founded by a team of educators, technologists, and students who experienced firsthand
             the challenges of academic writing and research, AssignmentAI emerged from the
             recognition that traditional study methods often fall short in today's fast-paced,
@@ -122,7 +122,7 @@ const About = () => {
             reshape the educational experience for the better.
           </Typography>
 
-          <Typography variant="h5" sx={{ mb: 1, fontWeight: 600, color: 'text.primary' }}>
+          <Typography variant="h5" sx={{ mb: 1, fontWeight: 600, color: '#D32F2F' }}>
             Our Values
           </Typography>
           <Grid container spacing={3} sx={{ mb: 3 }}>
@@ -136,9 +136,9 @@ const About = () => {
                     flexDirection: 'column',
                     alignItems: 'center',
                     textAlign: 'center',
-                    backgroundColor: 'background.paper',
+                    backgroundColor: 'white',
                     borderRadius: 4,
-                    boxShadow: 3,
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
                     transition: 'transform 0.2s, box-shadow 0.2s',
                     '&:hover': {
                       transform: 'translateY(-6px) scale(1.03)',
@@ -147,10 +147,10 @@ const About = () => {
                   }}
                 >
                   {value.icon}
-                  <Typography variant="h6" sx={{ mt: 2, mb: 1, fontWeight: 600 }}>
+                  <Typography variant="h6" sx={{ mt: 2, mb: 1, fontWeight: 600, color: 'black' }}>
                     {value.title}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" sx={{ color: '#666666' }}>
                     {value.description}
                   </Typography>
                 </Box>
@@ -158,10 +158,10 @@ const About = () => {
             ))}
           </Grid>
 
-          <Typography variant="h5" sx={{ mb: 1, fontWeight: 600, color: 'text.primary' }}>
+          <Typography variant="h5" sx={{ mb: 1, fontWeight: 600, color: '#D32F2F' }}>
             Our Commitment
           </Typography>
-          <Typography variant="body1" sx={{ mb: 3, fontSize: '1.15rem', color: 'text.secondary' }}>
+          <Typography variant="body1" sx={{ mb: 3, fontSize: '1.15rem', color: 'black' }}>
             We are committed to continuous innovation, user privacy, and educational excellence. Our
             platform evolves based on real user feedback, ensuring that we remain at the forefront
             of educational technology while maintaining the highest standards of security and
@@ -175,10 +175,10 @@ const About = () => {
             academic journey every step of the way.
           </Typography>
 
-          <Typography variant="h5" sx={{ mb: 1, fontWeight: 600, color: 'text.primary' }}>
+          <Typography variant="h5" sx={{ mb: 1, fontWeight: 600, color: '#D32F2F' }}>
             Join Our Journey
           </Typography>
-          <Typography variant="body1" sx={{ fontSize: '1.15rem', color: 'text.secondary' }}>
+          <Typography variant="body1" sx={{ fontSize: '1.15rem', color: 'black' }}>
             Whether you're a student looking to improve your academic performance, an educator
             seeking innovative teaching tools, or an institution aiming to enhance learning
             outcomes, AssignmentAI is here to support your educational journey.

@@ -57,7 +57,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, showBackButton = true, o
             top: { xs: 0, sm: 0 },
             right: 0,
             color: '#D32F2F',
-            backgroundColor: theme => (theme.palette.mode === 'dark' ? '#000814' : 'white'),
+            backgroundColor: 'white',
             border: '2px solid #D32F2F',
             borderRadius: '8px',
             fontFamily: "'Inter', sans-serif",
@@ -69,7 +69,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, showBackButton = true, o
             px: 2,
             zIndex: 2,
             '&:hover': {
-              backgroundColor: theme => (theme.palette.mode === 'dark' ? '#001122' : '#f5f5f5'),
+              backgroundColor: '#f5f5f5',
               border: '2px solid #B71C1C',
               color: '#B71C1C',
             },
@@ -85,7 +85,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, showBackButton = true, o
         component="h1"
         sx={{
           fontWeight: 700,
-          color: 'primary.main',
+          color: '#D32F2F',
           letterSpacing: 1,
           pr: { xs: 8, sm: 10 }, // Add right padding to prevent overlap with back button
           lineHeight: { xs: 1.2, sm: 1.3 },

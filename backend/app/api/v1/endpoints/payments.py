@@ -185,7 +185,6 @@ async def get_plans():
             "priceId": settings.STRIPE_PRICE_MAX
         }
     ]
-    print("DEBUG: Returning plans:", plans)
     return plans
 
 

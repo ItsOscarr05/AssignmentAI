@@ -1790,7 +1790,7 @@ const Settings: React.FC = () => {
                                 mr: 1,
                               }}
                             />
-                            Navy (Current)
+                            Navy
                           </MenuItem>
                           <MenuItem value="pitchBlack">
                             <Box

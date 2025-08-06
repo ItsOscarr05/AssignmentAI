@@ -32,7 +32,7 @@ const Privacy = () => {
             maxWidth: 1200,
             mx: 'auto',
             textAlign: 'left',
-            backgroundColor: 'grey.50',
+            backgroundColor: '#fafafa',
             boxShadow: '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
             border: '2px solid',
             borderColor: 'primary.main',
@@ -41,7 +41,7 @@ const Privacy = () => {
         >
           <PageHeader title="Privacy Policy" />
           <Divider sx={{ mb: 4, borderColor: 'primary.main', opacity: 0.2 }} />
-          <Typography variant="body1" sx={{ mb: 3, fontSize: '1.15rem', color: 'text.secondary' }}>
+          <Typography variant="body1" sx={{ mb: 3, fontSize: '1.15rem', color: 'black' }}>
             At AssignmentAI, we take your privacy seriously. This Privacy Policy ("Policy")
             constitutes a legally binding agreement between you ("User," "you," or "your") and
             AssignmentAI ("Company," "we," "us," or "our") regarding the collection, use,
@@ -373,16 +373,13 @@ const Privacy = () => {
                 {section.title}
               </Typography>
               <Divider sx={{ mb: 2, borderColor: 'primary.main', opacity: 0.12 }} />
-              <Typography
-                variant="body2"
-                sx={{ mb: 2, fontSize: '1.08rem', color: 'text.primary' }}
-              >
+              <Typography variant="body2" sx={{ mb: 2, fontSize: '1.08rem', color: 'black' }}>
                 {section.content}
               </Typography>
             </div>
           ))}
           <Divider sx={{ my: 4, borderColor: 'primary.main', opacity: 0.12 }} />
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 2, fontStyle: 'italic' }}>
+          <Typography variant="body2" sx={{ mt: 2, fontStyle: 'italic', color: 'black' }}>
             Last Updated: 7/16/2025
           </Typography>
         </Paper>

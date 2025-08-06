@@ -87,7 +87,7 @@ const Contact = () => {
             maxWidth: 1200,
             mx: 'auto',
             textAlign: 'left',
-            backgroundColor: 'grey.50',
+            backgroundColor: '#fafafa',
             boxShadow: '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
             border: '2px solid',
             borderColor: 'primary.main',
@@ -96,10 +96,10 @@ const Contact = () => {
         >
           <PageHeader title="Contact Us" />
           <Divider sx={{ mb: 4, borderColor: 'primary.main', opacity: 0.2 }} />
-          <Typography variant="h5" sx={{ mb: 2, fontWeight: 600, color: 'text.primary' }}>
+          <Typography variant="h5" sx={{ mb: 2, fontWeight: 600, color: 'black' }}>
             We're here to help
           </Typography>
-          <Typography variant="body1" sx={{ mb: 4, fontSize: '1.15rem', color: 'text.secondary' }}>
+          <Typography variant="body1" sx={{ mb: 4, fontSize: '1.15rem', color: 'black' }}>
             Have a question, suggestion, or need support? Fill out the form below or reach out to us
             directly. Our team is dedicated to providing prompt and helpful responses to ensure you
             have the best experience with AssignmentAI.
@@ -109,10 +109,10 @@ const Contact = () => {
               {submitted ? (
                 <Box sx={{ textAlign: 'center', py: 6 }}>
                   <SupportAgent sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
-                  <Typography variant="h6" sx={{ mb: 2 }}>
+                  <Typography variant="h6" sx={{ mb: 2, color: 'black' }}>
                     Thank you for reaching out!
                   </Typography>
-                  <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+                  <Typography variant="body1" sx={{ mb: 4, color: 'black' }}>
                     Your message has been received. Our team will get back to you as soon as
                     possible.
                   </Typography>
@@ -146,6 +146,29 @@ const Contact = () => {
                       fullWidth
                       variant="outlined"
                       disabled={isSubmitting}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          backgroundColor: 'white',
+                          '& fieldset': {
+                            borderColor: '#d32f2f',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: '#b71c1c',
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: '#d32f2f',
+                          },
+                        },
+                        '& .MuiInputLabel-root': {
+                          color: '#666666',
+                          '&.Mui-focused': {
+                            color: '#d32f2f',
+                          },
+                        },
+                        '& .MuiInputBase-input': {
+                          color: 'black',
+                        },
+                      }}
                     />
                     <TextField
                       label="Your Email Address"
@@ -157,6 +180,29 @@ const Contact = () => {
                       fullWidth
                       variant="outlined"
                       disabled={isSubmitting}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          backgroundColor: 'white',
+                          '& fieldset': {
+                            borderColor: '#d32f2f',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: '#b71c1c',
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: '#d32f2f',
+                          },
+                        },
+                        '& .MuiInputLabel-root': {
+                          color: '#666666',
+                          '&.Mui-focused': {
+                            color: '#d32f2f',
+                          },
+                        },
+                        '& .MuiInputBase-input': {
+                          color: 'black',
+                        },
+                      }}
                     />
                     <TextField
                       label="Your Message"
@@ -169,6 +215,29 @@ const Contact = () => {
                       minRows={4}
                       variant="outlined"
                       disabled={isSubmitting}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          backgroundColor: 'white',
+                          '& fieldset': {
+                            borderColor: '#d32f2f',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: '#b71c1c',
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: '#d32f2f',
+                          },
+                        },
+                        '& .MuiInputLabel-root': {
+                          color: '#666666',
+                          '&.Mui-focused': {
+                            color: '#d32f2f',
+                          },
+                        },
+                        '& .MuiInputBase-input': {
+                          color: 'black',
+                        },
+                      }}
                     />
                     <Button
                       type="submit"
@@ -191,15 +260,21 @@ const Contact = () => {
                 <Stack spacing={2}>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <EmailOutlined sx={{ mr: 2, color: 'primary.main' }} />
-                    <Typography variant="body1">support@assignmentai.app</Typography>
+                    <Typography variant="body1" sx={{ color: 'black' }}>
+                      support@assignmentai.app
+                    </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <AccessTime sx={{ mr: 2, color: 'primary.main' }} />
-                    <Typography variant="body1">Support Hours: 24/7</Typography>
+                    <Typography variant="body1" sx={{ color: 'black' }}>
+                      Support Hours: 24/7
+                    </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <HelpOutline sx={{ mr: 2, color: 'primary.main' }} />
-                    <Typography variant="body1">Check our FAQ for quick answers</Typography>
+                    <Typography variant="body1" sx={{ color: 'black' }}>
+                      Check our FAQ for quick answers
+                    </Typography>
                   </Box>
                 </Stack>
                 <Divider sx={{ my: 3, borderColor: 'primary.main', opacity: 0.1 }} />
@@ -209,14 +284,14 @@ const Contact = () => {
                 <Typography variant="body2" sx={{ mb: 1 }}>
                   <b style={{ color: 'black' }}>How quickly will I get a response?</b>
                   <br />
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" sx={{ color: '#666666' }}>
                     We aim to respond to all inquiries within 24 hours during business days.
                   </Typography>
                 </Typography>
                 <Typography variant="body2" sx={{ mb: 1 }}>
                   <b style={{ color: 'black' }}>Can I request a feature?</b>
                   <br />
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" sx={{ color: '#666666' }}>
                     Absolutely! We welcome suggestions and feedback—just use the form or email us
                     directly.
                   </Typography>
@@ -224,7 +299,7 @@ const Contact = () => {
                 <Typography variant="body2">
                   <b style={{ color: 'black' }}>Is my information safe?</b>
                   <br />
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" sx={{ color: '#666666' }}>
                     Yes. We take privacy and security seriously. Your contact details and messages
                     are handled with strict confidentiality.
                   </Typography>

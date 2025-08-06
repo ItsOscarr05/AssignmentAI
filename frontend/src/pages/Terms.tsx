@@ -1,5 +1,6 @@
-import { Box, Container, Divider, Paper, Typography } from '@mui/material';
+import { Box, Container, Divider, Link, Paper, Typography } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import RedStarField from '../components/RedStarField';
 import PageHeader from '../components/common/PageHeader';
 
@@ -32,7 +33,7 @@ const Terms = () => {
             maxWidth: 1200,
             mx: 'auto',
             textAlign: 'left',
-            backgroundColor: 'grey.50',
+            backgroundColor: '#fafafa',
             boxShadow: '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
             border: '2px solid',
             borderColor: 'primary.main',
@@ -41,7 +42,7 @@ const Terms = () => {
         >
           <PageHeader title="Terms of Service" />
           <Divider sx={{ mb: 4, borderColor: 'primary.main', opacity: 0.2 }} />
-          <Typography variant="body1" sx={{ mb: 3, fontSize: '1.15rem', color: 'text.secondary' }}>
+          <Typography variant="body1" sx={{ mb: 3, fontSize: '1.15rem', color: 'black' }}>
             Welcome to AssignmentAI. By accessing or using our platform, you acknowledge and agree
             to be legally bound by these Terms of Service ("Terms"). These Terms constitute a
             binding agreement between you (the "User") and AssignmentAI (the "Company"). Please read
@@ -108,18 +109,28 @@ const Terms = () => {
                 {section.title}
               </Typography>
               <Divider sx={{ mb: 2, borderColor: 'primary.main', opacity: 0.12 }} />
-              <Typography
-                variant="body2"
-                sx={{ mb: 2, fontSize: '1.08rem', color: 'text.primary' }}
-              >
+              <Typography variant="body2" sx={{ mb: 2, fontSize: '1.08rem', color: 'black' }}>
                 {section.content}
               </Typography>
             </div>
           ))}
           <Divider sx={{ my: 4, borderColor: 'primary.main', opacity: 0.12 }} />
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 2, fontStyle: 'italic' }}>
-            If you have any questions or concerns about these Terms, please contact us at
-            support@assignmentai.app.
+          <Typography variant="body2" sx={{ mt: 2, fontStyle: 'italic', color: '#666666' }}>
+            If you have any questions or concerns about these Terms, please{' '}
+            <Link
+              component={RouterLink}
+              to="/contact"
+              sx={{
+                color: '#D32F2F',
+                textDecoration: 'none',
+                '&:hover': {
+                  textDecoration: 'underline',
+                },
+              }}
+            >
+              contact us
+            </Link>{' '}
+            at support@assignmentai.app.
           </Typography>
         </Paper>
       </Container>
