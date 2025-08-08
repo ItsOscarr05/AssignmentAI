@@ -137,7 +137,7 @@ describe('UserPreferences', () => {
     // Mock the initial preferences fetch
     mockFetch.mockImplementation((url, options) => {
       console.log('Mock fetch called with:', { url, options });
-      if (url === '/api/users/preferences') {
+      if (url === '/api/v1/preferences') {
         if (options?.method === 'PUT') {
           console.log('Handling PUT request');
           return Promise.resolve({
@@ -200,7 +200,7 @@ describe('UserPreferences', () => {
 
     // Verify fetch was called with correct URL
     console.log('Verifying fetch calls...');
-    expect(mockFetch).toHaveBeenCalledWith('/api/users/preferences');
+    expect(mockFetch).toHaveBeenCalledWith('/api/v1/preferences');
     console.log('Test completed successfully');
   });
 

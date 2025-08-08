@@ -50,9 +50,15 @@ const checkTokenLimit = async (operation: keyof typeof TOKEN_ESTIMATES): Promise
   try {
     const tokensNeeded = TOKEN_ESTIMATES[operation];
 
+    // Check if we're in mock user mode
+    const isMockUser = localStorage.getItem('isMockUser') === 'true';
+    const subscriptionEndpoint = isMockUser
+      ? '/payments/subscriptions/current/test'
+      : '/payments/subscriptions/current';
+
     // Get current subscription and usage
     const [subscriptionResponse, usageResponse] = await Promise.all([
-      api.get('/subscriptions/current'),
+      api.get(subscriptionEndpoint),
       api.get('/usage/summary', { params: { period: 'monthly' } }),
     ]);
 

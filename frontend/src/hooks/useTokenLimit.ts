@@ -37,7 +37,13 @@ export const useTokenLimit = () => {
       setLoading(true);
       setError(null);
 
-      const response = await api.get<Subscription>('/subscriptions/current');
+      // Check if we're in mock user mode
+      const isMockUser = localStorage.getItem('isMockUser') === 'true';
+      const endpoint = isMockUser
+        ? '/payments/subscriptions/current/test'
+        : '/payments/subscriptions/current';
+
+      const response = await api.get<Subscription>(endpoint);
       setSubscription(response.data);
     } catch (err) {
       console.error('Failed to fetch subscription data:', err);

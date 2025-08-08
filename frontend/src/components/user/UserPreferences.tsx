@@ -16,6 +16,7 @@ import {
   Typography,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
+import { api } from '../../lib/api';
 import { UserPreferences } from '../../types/user';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { Toast } from '../common/Toast';
@@ -53,19 +54,24 @@ const UserPreferencesComponent: React.FC = () => {
       setLoading(true);
       console.log('Loading state set to true');
 
-      const response = await fetch('/api/users/preferences');
-      console.log('Fetch response:', {
-        ok: response.ok,
-        status: response.status,
-        statusText: response.statusText,
-      });
+      // Debug: Check if we have a token
+      const token = localStorage.getItem('token');
+      console.log('Token from localStorage:', token ? 'Present' : 'Missing');
 
-      if (!response.ok) {
-        console.error('Failed to fetch preferences:', response.status);
-        throw new Error('Failed to fetch preferences');
-      }
+      // Debug: Check AuthManager
+      const { AuthManager } = await import('../../services/authManager');
+      const authService = AuthManager.getInstance();
+      console.log('AuthManager token:', authService.getToken() ? 'Present' : 'Missing');
+      console.log('Is authenticated:', authService.isAuthenticated());
 
-      const data = await response.json();
+      // Debug: Check which API instance we're using
+      console.log('API instance baseURL:', api.defaults.baseURL);
+      console.log('API instance headers:', api.defaults.headers);
+
+      const response = await api.get('/preferences');
+      console.log('API response:', response);
+
+      const data = response.data;
       console.log('Fetched preferences:', data);
 
       if (!data || typeof data !== 'object') {
@@ -105,17 +111,7 @@ const UserPreferencesComponent: React.FC = () => {
 
     try {
       setSaving(true);
-      const response = await fetch('/api/users/preferences', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(preferences),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update preferences');
-      }
+      await api.patch('/preferences', preferences);
 
       setToast({
         open: true,

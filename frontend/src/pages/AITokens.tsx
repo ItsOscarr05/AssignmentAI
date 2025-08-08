@@ -163,7 +163,11 @@ const AITokens: React.FC = () => {
 
   const fetchSubscriptionData = async () => {
     try {
-      const response = await api.get<Subscription>('/subscriptions/current');
+      // Use test endpoint if in mock user mode
+      const endpoint = isMockUser
+        ? '/payments/subscriptions/current/test'
+        : '/payments/subscriptions/current';
+      const response = await api.get<Subscription>(endpoint);
       setSubscription(response.data);
     } catch (error) {
       console.error('Failed to fetch subscription data:', error);
@@ -857,7 +861,7 @@ const AITokens: React.FC = () => {
                     <XAxis dataKey="date" stroke="#d32f2f" />
                     <YAxis
                       stroke="#d32f2f"
-                      domain={range === '30' ? [0, tokenUsage.total] : undefined}
+                      domain={[0, tokenUsage.total]}
                     />
                     <RechartsTooltip
                       content={({ active, payload }) => {

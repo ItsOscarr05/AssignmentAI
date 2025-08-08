@@ -63,7 +63,7 @@ class PreferenceUpdate(BaseModel):
     custom_preferences: Optional[Dict[str, Any]] = None
 
 class PreferenceInDBBase(PreferenceBase):
-    id: str = Field(default_factory=lambda: str(uuid4()))
+    id: int
     user_id: int
     model_config = ConfigDict(from_attributes=True)
 

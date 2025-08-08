@@ -7,11 +7,37 @@ class Preference(Base):
     __tablename__ = "preferences"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, nullable=False)
-    preference_key = Column(String(100), nullable=False)
-    preference_value = Column(Text, nullable=False)
-    preference_type = Column(String(50), nullable=False)  # e.g., 'string', 'boolean', 'json', 'number'
-    is_public = Column(Boolean, default=False)
+    user_id = Column(Integer, nullable=False, index=True)
+    
+    # UI Preferences
+    theme = Column(String(20), default="light")
+    language = Column(String(10), default="en")
+    font_size = Column(String(20), default="medium")
+    compact_mode = Column(Boolean, default=False)
+    
+    # Notification Preferences
+    email_notifications = Column(Boolean, default=True)
+    push_notifications = Column(Boolean, default=True)
+    notification_types = Column(JSON, default={
+        "assignment_due": True,
+        "grade": True,
+        "comment": True,
+        "announcement": True
+    })
+    
+    # Privacy Preferences
+    show_profile = Column(Boolean, default=True)
+    show_progress = Column(Boolean, default=True)
+    show_activity = Column(Boolean, default=True)
+    
+    # Accessibility Preferences
+    high_contrast = Column(Boolean, default=False)
+    reduced_motion = Column(Boolean, default=False)
+    screen_reader = Column(Boolean, default=False)
+    
+    # Custom Preferences
+    custom_preferences = Column(JSON, default={})
+    
+    # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    preference_metadata = Column(JSON, nullable=True) 
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow) 

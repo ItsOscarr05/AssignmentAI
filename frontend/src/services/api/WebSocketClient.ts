@@ -1,4 +1,4 @@
-import { WebSocketConfig } from "./types";
+import { WebSocketConfig } from './types';
 
 type MessageHandler = (data: any) => void;
 type ConnectionHandler = (connected: boolean) => void;
@@ -18,39 +18,37 @@ export class WebSocketClient {
   connect(): void {
     if (this.ws?.readyState === WebSocket.OPEN) return;
 
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem('token');
     if (!token) {
-      console.error("No authentication token available");
+      console.error('No authentication token available');
       return;
     }
 
-    const wsUrl = `${
-      process.env.REACT_APP_WS_URL || "ws://localhost:8000/ws"
-    }?token=${token}`;
+    const wsUrl = `${process.env.REACT_APP_WS_URL || 'ws://localhost:8000/ws'}?token=${token}`;
     this.ws = new WebSocket(wsUrl);
 
     this.ws.onopen = () => {
-      console.log("WebSocket connected");
+      console.log('WebSocket connected');
       this.reconnectAttempts = 0;
       this.notifyConnectionHandlers(true);
     };
 
     this.ws.onclose = () => {
-      console.log("WebSocket disconnected");
+      console.log('WebSocket disconnected');
       this.notifyConnectionHandlers(false);
       this.handleReconnect();
     };
 
-    this.ws.onerror = (error) => {
-      console.error("WebSocket error:", error);
+    this.ws.onerror = error => {
+      console.error('WebSocket error:', error);
     };
 
-    this.ws.onmessage = (event) => {
+    this.ws.onmessage = event => {
       try {
         const message = JSON.parse(event.data);
         this.handleMessage(message);
       } catch (error) {
-        console.error("Error parsing WebSocket message:", error);
+        console.error('Error parsing WebSocket message:', error);
       }
     };
   }
@@ -95,21 +93,17 @@ export class WebSocketClient {
     const { event, data } = message;
     const handlers = this.messageHandlers.get(event);
     if (handlers) {
-      handlers.forEach((handler) => handler(data));
+      handlers.forEach(handler => handler(data));
     }
   }
 
   private handleReconnect(): void {
-    if (
-      !this.config.enabled ||
-      this.reconnectAttempts >= this.config.maxReconnectAttempts
-    ) {
+    if (!this.config.enabled || this.reconnectAttempts >= this.config.maxReconnectAttempts) {
       return;
     }
 
     this.reconnectAttempts++;
-    const delay =
-      this.config.reconnectInterval * Math.pow(2, this.reconnectAttempts - 1);
+    const delay = this.config.reconnectInterval * Math.pow(2, this.reconnectAttempts - 1);
 
     this.reconnectTimeout = setTimeout(() => {
       console.log(
@@ -120,14 +114,14 @@ export class WebSocketClient {
   }
 
   private notifyConnectionHandlers(connected: boolean): void {
-    this.connectionHandlers.forEach((handler) => handler(connected));
+    this.connectionHandlers.forEach(handler => handler(connected));
   }
 
   send(event: string, data: any): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({ event, data }));
     } else {
-      console.error("WebSocket is not connected");
+      console.error('WebSocket is not connected');
     }
   }
 }

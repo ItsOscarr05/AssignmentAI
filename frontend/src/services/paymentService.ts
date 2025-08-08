@@ -40,7 +40,12 @@ class PaymentService {
   }
 
   async getCurrentSubscription(): Promise<Subscription> {
-    const response = await api.get<Subscription>('/subscriptions/current');
+    // Check if we're in mock user mode
+    const isMockUser = localStorage.getItem('isMockUser') === 'true';
+    const endpoint = isMockUser
+      ? '/payments/subscriptions/current/test'
+      : '/payments/subscriptions/current';
+    const response = await api.get<Subscription>(endpoint);
     return response.data;
   }
 

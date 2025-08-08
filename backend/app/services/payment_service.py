@@ -77,6 +77,9 @@ class PaymentService:
                 status=subscription.status,
                 current_period_start=datetime.now(),  # Use current time as fallback
                 current_period_end=datetime.now(),  # Use current time as fallback
+                plan_id=plan_details["plan_id"],
+                ai_model=plan_details["ai_model"],
+                token_limit=plan_details["token_limit"]
             )
             self.db.add(db_subscription)
             self.db.commit()
@@ -89,17 +92,47 @@ class PaymentService:
     def _get_plan_details_from_price_id(self, price_id: str) -> Dict[str, Any]:
         """Get plan details from price_id"""
         plan_mapping = {
-            settings.STRIPE_PRICE_FREE: {"name": "Free", "price": 0.0},
-            settings.STRIPE_PRICE_PLUS: {"name": "Plus", "price": 4.99},
-            settings.STRIPE_PRICE_PRO: {"name": "Pro", "price": 9.99},
-            settings.STRIPE_PRICE_MAX: {"name": "Max", "price": 14.99},
+            settings.STRIPE_PRICE_FREE: {
+                "name": "Free", 
+                "price": 0.0,
+                "plan_id": "price_free",
+                "ai_model": "gpt-3.5-turbo",
+                "token_limit": 30000
+            },
+            settings.STRIPE_PRICE_PLUS: {
+                "name": "Plus", 
+                "price": 4.99,
+                "plan_id": "price_plus",
+                "ai_model": "gpt-4",
+                "token_limit": 100000
+            },
+            settings.STRIPE_PRICE_PRO: {
+                "name": "Pro", 
+                "price": 9.99,
+                "plan_id": "price_pro",
+                "ai_model": "gpt-4",
+                "token_limit": 500000
+            },
+            settings.STRIPE_PRICE_MAX: {
+                "name": "Max", 
+                "price": 14.99,
+                "plan_id": "price_max",
+                "ai_model": "gpt-4-turbo",
+                "token_limit": 1000000
+            },
         }
         
         if price_id in plan_mapping:
             return plan_mapping[price_id]
         else:
             # Default to Pro if price_id not found
-            return {"name": "Pro", "price": 9.99}
+            return {
+                "name": "Pro", 
+                "price": 9.99,
+                "plan_id": "price_pro",
+                "ai_model": "gpt-4",
+                "token_limit": 500000
+            }
 
     async def cancel_subscription(self, user: User) -> Dict[str, Any]:
         """Cancel a user's subscription"""

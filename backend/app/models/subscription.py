@@ -22,6 +22,9 @@ class Subscription(Base):
     stripe_customer_id: Mapped[str] = mapped_column(String(255), nullable=False)
     plan_name: Mapped[str] = mapped_column(String(100), nullable=False)
     plan_price: Mapped[float] = mapped_column(Float, nullable=False)
+    plan_id: Mapped[str] = mapped_column(String(100), nullable=True)  # Added missing field
+    ai_model: Mapped[str] = mapped_column(String(100), nullable=True)  # Added missing field
+    token_limit: Mapped[int] = mapped_column(Integer, nullable=True)  # Added missing field
     status: Mapped[SubscriptionStatus] = mapped_column(Enum(SubscriptionStatus), nullable=False)
     current_period_start: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     current_period_end: Mapped[datetime] = mapped_column(DateTime, nullable=False)

@@ -84,7 +84,13 @@ get = user.get
 
 def get_profile(db: Session, user_id: str) -> UserProfile:
     """Get user profile"""
-    user = db.query(User).filter(User.id == user_id).first()
+    # Convert user_id to int since User.id is an integer
+    try:
+        user_id_int = int(user_id)
+    except (ValueError, TypeError):
+        raise ValueError("Invalid user ID")
+    
+    user = db.query(User).filter(User.id == user_id_int).first()
     if not user:
         raise ValueError("User not found")
     
@@ -99,7 +105,13 @@ def get_profile(db: Session, user_id: str) -> UserProfile:
 
 def update_profile(db: Session, user_id: str, profile: UserProfile) -> UserProfile:
     """Update user profile"""
-    user = db.query(User).filter(User.id == user_id).first()
+    # Convert user_id to int since User.id is an integer
+    try:
+        user_id_int = int(user_id)
+    except (ValueError, TypeError):
+        raise ValueError("Invalid user ID")
+    
+    user = db.query(User).filter(User.id == user_id_int).first()
     if not user:
         raise ValueError("User not found")
     
@@ -116,7 +128,13 @@ def update_profile(db: Session, user_id: str, profile: UserProfile) -> UserProfi
 
 def update_preferences(db: Session, user_id: str, preferences: UserPreferences) -> UserPreferences:
     """Update user preferences with AI settings validation"""
-    user = db.query(User).filter(User.id == user_id).first()
+    # Convert user_id to int since User.id is an integer
+    try:
+        user_id_int = int(user_id)
+    except (ValueError, TypeError):
+        raise ValueError("Invalid user ID")
+    
+    user = db.query(User).filter(User.id == user_id_int).first()
     if not user:
         raise ValueError("User not found")
     
@@ -151,7 +169,13 @@ def update_preferences(db: Session, user_id: str, preferences: UserPreferences) 
 
 def get_ai_settings(db: Session, user_id: str) -> Dict[str, Any]:
     """Get user's AI settings with fallback to defaults"""
-    user = db.query(User).filter(User.id == user_id).first()
+    # Convert user_id to int since User.id is an integer
+    try:
+        user_id_int = int(user_id)
+    except (ValueError, TypeError):
+        raise ValueError("Invalid user ID")
+    
+    user = db.query(User).filter(User.id == user_id_int).first()
     if not user:
         raise ValueError("User not found")
     
@@ -170,7 +194,13 @@ def get_ai_settings(db: Session, user_id: str) -> Dict[str, Any]:
 
 def update_avatar(db: Session, user_id: str, avatar_url: str) -> None:
     """Update user avatar"""
-    user = db.query(User).filter(User.id == user_id).first()
+    # Convert user_id to int since User.id is an integer
+    try:
+        user_id_int = int(user_id)
+    except (ValueError, TypeError):
+        raise ValueError("Invalid user ID")
+    
+    user = db.query(User).filter(User.id == user_id_int).first()
     if not user:
         raise ValueError("User not found")
     
@@ -186,7 +216,13 @@ def verify_user_password(user: User, password: str) -> bool:
 
 def update_password(db: Session, user_id: str, new_password: str) -> None:
     """Update user password"""
-    user = db.query(User).filter(User.id == user_id).first()
+    # Convert user_id to int since User.id is an integer
+    try:
+        user_id_int = int(user_id)
+    except (ValueError, TypeError):
+        raise ValueError("Invalid user ID")
+    
+    user = db.query(User).filter(User.id == user_id_int).first()
     if not user:
         raise ValueError("User not found")
     
@@ -198,7 +234,13 @@ def update_password(db: Session, user_id: str, new_password: str) -> None:
 
 def delete_user_account(db: Session, user_id: str) -> None:
     """Delete user"""
-    user = db.query(User).filter(User.id == user_id).first()
+    # Convert user_id to int since User.id is an integer
+    try:
+        user_id_int = int(user_id)
+    except (ValueError, TypeError):
+        raise ValueError("Invalid user ID")
+    
+    user = db.query(User).filter(User.id == user_id_int).first()
     if not user:
         raise ValueError("User not found")
     
@@ -207,7 +249,13 @@ def delete_user_account(db: Session, user_id: str) -> None:
 
 def get_sessions(db: Session, user_id: str) -> List[Dict[str, Any]]:
     """Get user's active sessions"""
-    user = db.query(User).filter(User.id == user_id).first()
+    # Convert user_id to int since User.id is an integer
+    try:
+        user_id_int = int(user_id)
+    except (ValueError, TypeError):
+        raise ValueError("Invalid user ID")
+    
+    user = db.query(User).filter(User.id == user_id_int).first()
     if not user:
         raise ValueError("User not found")
     

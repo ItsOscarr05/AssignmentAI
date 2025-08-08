@@ -201,6 +201,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('user');
       localStorage.removeItem('isMockUser');
       localStorage.removeItem('access_token');
+      localStorage.removeItem('token'); // Also clear AuthManager token
       localStorage.removeItem('refresh_token');
 
       // Log logout event
@@ -230,6 +231,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('user');
       localStorage.removeItem('isMockUser');
       localStorage.removeItem('access_token');
+      localStorage.removeItem('token'); // Also clear AuthManager token
       localStorage.removeItem('refresh_token');
 
       // Log logout all event
@@ -294,6 +296,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
+
+    // Create a mock token for development
+    const mockToken = 'mock-access-token-for-development';
+    localStorage.setItem('access_token', mockToken);
+    localStorage.setItem('token', mockToken); // Also store for AuthManager compatibility
+    localStorage.setItem('token_expiry', (Date.now() + 3600000).toString()); // 1 hour from now
 
     setUser(mockUser);
     setIsMockUser(true);

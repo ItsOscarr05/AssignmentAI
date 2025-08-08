@@ -111,7 +111,7 @@ const apiInstance = axios.create({
 // Add a request interceptor to add the auth token to requests
 apiInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('access_token');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -127,8 +127,11 @@ apiInstance.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error: any) => {
     if (error.response?.status === 401) {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('token_expiry');
       localStorage.removeItem('token');
-      window.location.href = '/';
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }
@@ -579,22 +582,22 @@ export const analytics = {
 // Preferences endpoints
 export const preferences = {
   get: async (): Promise<UserPreferences> => {
-    const response = await api.get('/users/preferences');
+    const response = await api.get('/preferences');
     return response.data;
   },
 
   update: async (preferences: Partial<UserPreferences>): Promise<UserPreferences> => {
-    const response = await api.put('/users/preferences', preferences);
+    const response = await api.patch('/preferences', preferences);
     return response.data;
   },
 
   reset: async (): Promise<UserPreferences> => {
-    const response = await api.post('/users/preferences/reset');
+    const response = await api.post('/preferences/reset');
     return response.data;
   },
 
   delete: async (): Promise<void> => {
-    await api.delete('/users/preferences');
+    await api.delete('/preferences');
   },
 };
 

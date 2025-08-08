@@ -38,7 +38,12 @@ export const useProfileStore = create<ProfileState>(set => ({
   fetchProfile: async () => {
     try {
       set({ isLoading: true, error: null });
-      const response = await api.get<Profile>('/profile');
+
+      // Check if we're in mock user mode
+      const isMockUser = localStorage.getItem('isMockUser') === 'true';
+      const endpoint = isMockUser ? '/users/profile/test' : '/users/profile';
+
+      const response = await api.get<Profile>(endpoint);
       set({ profile: response.data, isLoading: false });
     } catch (error) {
       set({

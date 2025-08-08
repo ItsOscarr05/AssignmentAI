@@ -87,6 +87,87 @@ async def get_profile(
     """Get current user's profile"""
     return user_crud.get_profile(db, str(current_user.id))
 
+@router.get("/profile/test")
+async def get_profile_test(
+    db: Session = Depends(get_db)
+):
+    """Get profile for test user without authentication"""
+    try:
+        # Get or create a test user for testing purposes
+        from app.models.user import User
+        
+        # Try to get existing test user, or create a new one with unique email
+        test_user = db.query(User).filter(User.email == "test@example.com").first()
+        if not test_user:
+            print("Creating new test user for profile test...")
+            test_user = User(
+                email="test@example.com",
+                name="Test User",
+                hashed_password="dummy_hash_for_testing",
+                is_active=True,
+                is_verified=False,
+                two_factor_enabled=False,
+                is_superuser=False,
+                failed_login_attempts=0,
+                password_history=[],
+                sessions=[]
+            )
+            db.add(test_user)
+            db.commit()
+            db.refresh(test_user)
+            print(f"New test user created with ID: {test_user.id}")
+        else:
+            print(f"Using existing test user: {test_user.email} (ID: {test_user.id})")
+        
+        # Use the real user CRUD to get the profile
+        result = user_crud.get_profile(db, str(test_user.id))
+        
+        # Convert the backend format to frontend format
+        # Split the name into firstName and lastName
+        name_parts = result.name.split(' ', 1) if result.name else ['Test', 'User']
+        firstName = name_parts[0] if name_parts else 'Test'
+        lastName = name_parts[1] if len(name_parts) > 1 else 'User'
+        
+        # Convert to frontend format
+        frontend_profile = {
+            "id": str(test_user.id),
+            "firstName": firstName,
+            "lastName": lastName,
+            "email": result.email,
+            "avatarUrl": result.avatar if result.avatar else None,
+            "bio": result.bio,
+            "preferences": {
+                "notifications": {
+                    "email": True,
+                    "push": True
+                },
+                "theme": "light",
+                "language": "en"
+            }
+        }
+        
+        print("Test profile retrieved successfully!")
+        return frontend_profile
+    except Exception as e:
+        print(f"Error in test profile endpoint: {e}")
+        # Return a default test profile response in frontend format
+        return {
+            "id": str(test_user.id) if 'test_user' in locals() else "test_user_123",
+            "firstName": "Test",
+            "lastName": "User",
+            "email": "test@example.com",
+            "bio": "This is a test user profile for testing purposes",
+            "avatarUrl": None,
+            "preferences": {
+                "notifications": {
+                    "email": True,
+                    "push": True
+                },
+                "theme": "light",
+                "language": "en"
+            }
+        }
+
 @router.put("/profile", response_model=UserProfile)
 async def update_profile(
     profile: UserProfile,

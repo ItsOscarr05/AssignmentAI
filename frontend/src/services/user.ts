@@ -13,7 +13,7 @@ class UserService {
   }
 
   async updatePreferences(preferences: UserPreferences): Promise<UserPreferences> {
-    const response = await api.put<UserPreferences>('/users/preferences', preferences);
+    const response = await api.patch<UserPreferences>('/preferences', preferences);
     return response.data;
   }
 

@@ -1,6 +1,6 @@
 from .base import Base
 from .user import User
-from .token import Token
+# from .token import Token
 from .assignment import Assignment
 from .submission import Submission
 from .feedback import Feedback
@@ -15,7 +15,7 @@ from .usage import Usage, UsageLimit
 __all__ = [
     "Base",
     "User",
-    "Token",
+    # "Token",
     "Assignment",
     "Submission",
     "Feedback",

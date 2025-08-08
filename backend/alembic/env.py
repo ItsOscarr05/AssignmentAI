@@ -7,7 +7,7 @@ from app.db.base_class import Base  # Import the Base class that models actually
 
 # Import all models to ensure they are registered with the metadata
 from app.models.user import User
-from app.models.token import Token
+# from app.models.token import Token
 from app.models.assignment import Assignment
 from app.models.submission import Submission
 from app.models.feedback import Feedback

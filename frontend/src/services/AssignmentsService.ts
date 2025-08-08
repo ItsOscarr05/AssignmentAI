@@ -45,7 +45,12 @@ export const useAssignmentsStore = create<AssignmentState>(set => ({
   fetchAssignments: async () => {
     try {
       set({ isLoading: true, error: null });
-      const response = await api.get<Assignment[]>('/assignments');
+
+      // Check if we're in mock user mode
+      const isMockUser = localStorage.getItem('isMockUser') === 'true';
+      const endpoint = isMockUser ? '/assignments/test' : '/assignments';
+
+      const response = await api.get<Assignment[]>(endpoint);
       set({ assignments: response.data, isLoading: false });
     } catch (error) {
       set({
