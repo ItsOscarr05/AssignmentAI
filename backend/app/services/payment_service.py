@@ -104,21 +104,21 @@ class PaymentService:
                 "price": 4.99,
                 "plan_id": "price_plus",
                 "ai_model": "gpt-4",
-                "token_limit": 100000
+                "token_limit": 50000
             },
             settings.STRIPE_PRICE_PRO: {
                 "name": "Pro", 
                 "price": 9.99,
                 "plan_id": "price_pro",
                 "ai_model": "gpt-4",
-                "token_limit": 500000
+                "token_limit": 75000
             },
             settings.STRIPE_PRICE_MAX: {
                 "name": "Max", 
                 "price": 14.99,
                 "plan_id": "price_max",
                 "ai_model": "gpt-4-turbo",
-                "token_limit": 1000000
+                "token_limit": 100000
             },
         }
         
@@ -131,7 +131,7 @@ class PaymentService:
                 "price": 9.99,
                 "plan_id": "price_pro",
                 "ai_model": "gpt-4",
-                "token_limit": 500000
+                "token_limit": 75000
             }
 
     async def cancel_subscription(self, user: User) -> Dict[str, Any]:

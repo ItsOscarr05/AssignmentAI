@@ -17,16 +17,9 @@ def get_current_user(
     db: Session = Depends(get_db),
     token: str = Depends(oauth2_scheme)
 ) -> User:
-    print("DEBUG: get_current_user function called")
     try:
-        # Debug logging
-        print(f"DEBUG: Environment = {settings.ENVIRONMENT}")
-        print(f"DEBUG: Token = {token}")
-        print(f"DEBUG: Token == 'mock-access-token-for-development' = {token == 'mock-access-token-for-development'}")
-        
         # Check if this is a mock token (allow in both development and production for testing)
         if token == "mock-access-token-for-development":
-            print("DEBUG: Using mock user for development")
             try:
                 # Create a mock user for development
                 mock_user = User(
@@ -38,10 +31,8 @@ def get_current_user(
                     is_verified=True,
                     is_superuser=False
                 )
-                print("DEBUG: Mock user created successfully")
                 return mock_user
             except Exception as e:
-                print(f"DEBUG: Error creating mock user: {e}")
                 raise
         
         payload = verify_token(token)

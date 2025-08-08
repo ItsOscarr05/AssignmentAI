@@ -114,9 +114,9 @@ def list_assignments_test(
             db.add(test_user)
             db.commit()
             db.refresh(test_user)
-            print(f"New test user created with ID: {test_user.id}")
+            pass
         else:
-            print(f"Using existing test user: {test_user.email} (ID: {test_user.id})")
+            pass
         
         # Validate pagination parameters
         if page < 1:
@@ -139,7 +139,6 @@ def list_assignments_test(
         # Convert SQLAlchemy models to Pydantic models
         items = [AssignmentResponse.model_validate(assignment) for assignment in assignments]
         
-        print("Test assignments retrieved successfully!")
         return {
             "total": total, 
             "items": items,

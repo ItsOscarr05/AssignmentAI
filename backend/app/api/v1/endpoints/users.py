@@ -115,9 +115,9 @@ async def get_profile_test(
             db.add(test_user)
             db.commit()
             db.refresh(test_user)
-            print(f"New test user created with ID: {test_user.id}")
+            pass
         else:
-            print(f"Using existing test user: {test_user.email} (ID: {test_user.id})")
+            pass
         
         # Use the real user CRUD to get the profile
         result = user_crud.get_profile(db, str(test_user.id))
@@ -146,7 +146,6 @@ async def get_profile_test(
             }
         }
         
-        print("Test profile retrieved successfully!")
         return frontend_profile
     except Exception as e:
         print(f"Error in test profile endpoint: {e}")

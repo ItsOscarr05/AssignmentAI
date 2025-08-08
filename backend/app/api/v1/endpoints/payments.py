@@ -75,19 +75,11 @@ async def test_create_subscription(
             db.refresh(test_user)
             print(f"New test user created with ID: {test_user.id}")
         else:
-            print(f"Using existing test user: {test_user.email} (ID: {test_user.id})")
-            print(f"Current stripe_customer_id: {test_user.stripe_customer_id}")
             # Clear the existing stripe_customer_id to force creation of a new one
             if test_user.stripe_customer_id:
-                print(f"Clearing existing stripe_customer_id: {test_user.stripe_customer_id}")
                 test_user.stripe_customer_id = None
                 db.commit()
                 db.refresh(test_user)
-                print("stripe_customer_id cleared successfully")
-            else:
-                print("No existing stripe_customer_id found")
-
-        print(f"Final test user state - ID: {test_user.id}, stripe_customer_id: {test_user.stripe_customer_id}")
         
         # Use the real payment service to create the subscription
         payment_service = PaymentService(db)
@@ -97,12 +89,8 @@ async def test_create_subscription(
             payment_method_id=request.payment_method_id
         )
         
-        print("Real subscription created successfully!")
         return result
     except Exception as e:
-        print(f"Error creating subscription: {str(e)}")
-        print(f"Price ID: {request.price_id}")
-        print(f"Payment Method ID: {request.payment_method_id}")
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -119,13 +107,6 @@ async def cancel_subscription(
 @router.get("/plans")
 async def get_plans():
     """Get available subscription plans"""
-    print("DEBUG: /plans endpoint called")
-    print(f"DEBUG: STRIPE_SECRET_KEY starts with: {settings.STRIPE_SECRET_KEY[:10]}...")
-    print(f"DEBUG: STRIPE_SECRET_KEY is test mode: {'sk_test_' in settings.STRIPE_SECRET_KEY}")
-    print(f"DEBUG: STRIPE_PRICE_FREE = {settings.STRIPE_PRICE_FREE}")
-    print(f"DEBUG: STRIPE_PRICE_PLUS = {settings.STRIPE_PRICE_PLUS}")
-    print(f"DEBUG: STRIPE_PRICE_PRO = {settings.STRIPE_PRICE_PRO}")
-    print(f"DEBUG: STRIPE_PRICE_MAX = {settings.STRIPE_PRICE_MAX}")
     plans = [
         {
             "id": "free",
@@ -258,7 +239,7 @@ async def get_current_subscription_test(
             db.refresh(test_user)
             print(f"New test user created with ID: {test_user.id}")
         else:
-            print(f"Using existing test user: {test_user.email} (ID: {test_user.id})")
+            pass
         
         # Use the real payment service to get the subscription
         payment_service = PaymentService(db)
@@ -270,12 +251,10 @@ async def get_current_subscription_test(
         if result.get("ai_model") is None:
             result["ai_model"] = "gpt-4"
         if result.get("token_limit") is None:
-            result["token_limit"] = 100000
+            result["token_limit"] = 50000
         
-        print("Test subscription retrieved successfully!")
         return result
     except Exception as e:
-        print(f"Error in test subscription endpoint: {e}")
         # Return a default test subscription response
         return {
             "id": "test_sub_123",
@@ -283,7 +262,7 @@ async def get_current_subscription_test(
             "plan_id": "price_test_plus",
             "current_period_end": "2024-12-31T23:59:59Z",
             "cancel_at_period_end": False,
-            "token_limit": 10000
+            "token_limit": 30000
         }
 
 

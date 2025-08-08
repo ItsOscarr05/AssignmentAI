@@ -460,78 +460,10 @@ const Profile: React.FC = () => {
             bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
           }}
         >
-          <Tabs
-            value={tabValue}
-            onChange={handleTabChange}
-            variant="fullWidth"
-            sx={{
-              '& .MuiTab-root': {
-                minHeight: 70,
-                fontSize: '1rem',
-                fontWeight: 500,
-                transition: 'all 0.2s',
-                flex: 1,
-                '&:hover': {
-                  bgcolor: 'action.hover',
-                },
-                '&.Mui-selected': {
-                  color: theme.palette.primary.main,
-                },
-                '& .MuiSvgIcon-root': {
-                  background: theme => (theme.palette.mode === 'dark' ? '#000814' : '#ffffff'),
-                  padding: '6px',
-                  borderRadius: '8px',
-                  fontSize: '1.3rem',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                  border: '1px solid',
-                  borderColor:
-                    theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
-                  color: theme.palette.primary.main,
-                },
-              },
-              '& .MuiTabs-indicator': {
-                height: 3,
-                borderRadius: '3px 3px 0 0',
-                background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
-              },
-            }}
-          >
-            <Tab
-              icon={<AccountCircleOutlined />}
-              label="Overview"
-              sx={{
-                gap: 1,
-                '& .MuiTab-label': {
-                  fontSize: { xs: '0.7rem', md: '0.875rem' },
-                  fontWeight: 500,
-                  lineHeight: 1.2,
-                },
-              }}
-            />
-            <Tab
-              icon={<TimelineOutlined />}
-              label="Activity"
-              sx={{
-                gap: 1,
-                '& .MuiTab-label': {
-                  fontSize: { xs: '0.7rem', md: '0.875rem' },
-                  fontWeight: 500,
-                  lineHeight: 1.2,
-                },
-              }}
-            />
-            <Tab
-              icon={<BadgeOutlined />}
-              label="Achievements"
-              sx={{
-                gap: 1,
-                '& .MuiTab-label': {
-                  fontSize: { xs: '0.7rem', md: '0.875rem' },
-                  fontWeight: 500,
-                  lineHeight: 1.2,
-                },
-              }}
-            />
+          <Tabs value={tabValue} onChange={handleTabChange} variant="fullWidth">
+            <Tab icon={<AccountCircleOutlined />} label="Overview" />
+            <Tab icon={<TimelineOutlined />} label="Activity" />
+            <Tab icon={<BadgeOutlined />} label="Achievements" />
           </Tabs>
         </Box>
         <Box sx={{ p: { xs: 0, md: 4 } }}>

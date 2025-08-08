@@ -601,41 +601,9 @@ const Help: React.FC = () => {
             value={tabValue}
             onChange={handleTabChange}
             variant="fullWidth"
-            sx={{
-              '& .MuiTab-root': {
-                minHeight: { xs: 60, md: 70 },
-                fontSize: { xs: '0.875rem', md: '1rem' },
-                fontWeight: 500,
-                transition: 'all 0.2s',
-                flex: 1,
-                '&:hover': {
-                  bgcolor: 'action.hover',
-                },
-                '&.Mui-selected': {
-                  color: theme.palette.primary.main,
-                },
-                '& .MuiSvgIcon-root': {
-                  background: theme =>
-                    theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff',
-                  padding: { xs: '4px', md: '6px' },
-                  borderRadius: '8px',
-                  fontSize: { xs: '1.1rem', md: '1.3rem' },
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                  border: '1px solid',
-                  borderColor:
-                    theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
-                  color: theme.palette.primary.main,
-                },
-              },
-              '& .MuiTabs-indicator': {
-                height: 3,
-                borderRadius: '3px 3px 0 0',
-                background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
-              },
-            }}
           >
-            <Tab icon={<QuestionAnswerOutlined />} label="FAQ" sx={{ gap: 1 }} />
-            <Tab icon={<ContactSupportOutlined />} label="Contact" sx={{ gap: 1 }} />
+            <Tab icon={<QuestionAnswerOutlined />} label="FAQ" />
+            <Tab icon={<ContactSupportOutlined />} label="Contact" />
           </Tabs>
         </Box>
         <Box sx={{ p: { xs: 2, md: 4 } }}>
