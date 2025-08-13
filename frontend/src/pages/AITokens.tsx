@@ -1433,14 +1433,6 @@ const AITokens: React.FC = () => {
                           />
                         ))}
                       </Box>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={() => handleTryIt(info.title)}
-                        sx={{ borderColor: 'red', color: 'red', mt: 1 }}
-                      >
-                        Try Now
-                      </Button>
                     </ListItem>
                     {index < academicFeatures.length - 1 && <Divider sx={{ my: 1 }} />}
                   </React.Fragment>
@@ -1531,14 +1523,6 @@ const AITokens: React.FC = () => {
                           />
                         ))}
                       </Box>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={() => handleTryIt(info.title)}
-                        sx={{ borderColor: 'red', color: 'red', mt: 1 }}
-                      >
-                        Try Now
-                      </Button>
                     </ListItem>
                     {index < technicalFeatures.length - 1 && <Divider sx={{ my: 1 }} />}
                   </React.Fragment>

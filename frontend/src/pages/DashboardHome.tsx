@@ -456,7 +456,7 @@ const DashboardHome: React.FC = () => {
                       sx={{ fontSize: 40, color: 'red', mb: 3, opacity: 0.5 }}
                     />
                     <Typography variant="h6" sx={{ color: '#222' }} gutterBottom>
-                      No notifications yet
+                      No Notifications Yet
                     </Typography>
                     <Typography variant="body2" sx={{ color: '#333' }}>
                       You're all caught up!
@@ -683,7 +683,7 @@ const DashboardHome: React.FC = () => {
                             sx={{ fontSize: 54, color: 'red', mb: 2, opacity: 0.5 }}
                           />
                           <Typography variant="h5" color="text.secondary" gutterBottom>
-                            No assignments yet
+                            No Assignments Yet
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
                             Start by uploading your first assignment

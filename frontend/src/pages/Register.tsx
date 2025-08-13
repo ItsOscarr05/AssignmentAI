@@ -193,6 +193,8 @@ const Register: React.FC = () => {
         email: formData.email,
         password: formData.password,
         confirm_password: formData.confirmPassword,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
       });
       setSuccess('Registration successful! Redirecting to login...');
       setTimeout(() => {
@@ -278,13 +280,12 @@ const Register: React.FC = () => {
                 }}
               />
               <Typography
-                variant="h4"
                 component="h1"
                 fontWeight="bold"
                 gutterBottom
                 sx={{
                   fontFamily: "'Playfair Display', serif",
-                  fontSize: { xs: '2.5rem', sm: '2.8rem', md: '3.5rem' },
+                  fontSize: { xs: '2.8rem', sm: '3rem', md: '3.4rem' },
                   letterSpacing: '0em',
                   mb: 1,
                 }}

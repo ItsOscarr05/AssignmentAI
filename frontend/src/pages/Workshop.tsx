@@ -847,7 +847,7 @@ const Workshop: React.FC = () => {
               >
                 <BarChartOutlinedIcon sx={{ fontSize: 64, color: 'red', mb: 2, opacity: 0.5 }} />
                 <Typography variant="h5" color="text.secondary" gutterBottom>
-                  No activity yet
+                  No Activity Yet
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Start using the workshop to see your activity here
@@ -1432,7 +1432,7 @@ const Workshop: React.FC = () => {
                     }}
                   />
                   <Typography variant="h6" color="text.secondary" gutterBottom>
-                    No responses yet
+                    No Responses Yet
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Start a conversation to see AI responses here
@@ -1839,7 +1839,7 @@ const Workshop: React.FC = () => {
             >
               <HistoryOutlinedIcon sx={{ fontSize: 54, color: 'red', mb: 2, opacity: 0.5 }} />
               <Typography variant="h5" color="text.secondary" gutterBottom>
-                No history yet
+                No History Yet
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 Your workshop activity will appear here

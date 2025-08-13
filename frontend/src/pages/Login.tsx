@@ -186,13 +186,12 @@ const Login: React.FC = () => {
                 }}
               />
               <Typography
-                variant="h4"
                 component="h1"
                 fontWeight="bold"
                 gutterBottom
                 sx={{
                   fontFamily: "'Playfair Display', serif",
-                  fontSize: { xs: '2.5rem', sm: '2.8rem', md: '3.5rem' },
+                  fontSize: { xs: '2.8rem', sm: '3rem', md: '3.4rem' },
                   letterSpacing: '0em',
                   mb: 1,
                 }}

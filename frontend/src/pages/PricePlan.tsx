@@ -7,6 +7,7 @@ import {
   BlockOutlined,
   CheckCircle,
   Close as CloseIcon,
+  CompareArrows,
   DesignServicesOutlined,
   Diamond,
   EmojiEvents,
@@ -569,136 +570,147 @@ const PricePlan: React.FC = () => {
           },
         }}
       >
-        <DialogTitle
-          sx={{
-            fontSize: { xs: '1.25rem', md: '1.5rem' },
-            p: { xs: 2, md: 3 },
-            color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          Detailed Feature Comparison
+        {/* Remove DialogTitle so there is no header or X button */}
+        <DialogContent sx={{ p: { xs: 2, md: 3 }, position: 'relative' }}>
           <IconButton
             onClick={() => setShowDetailedComparison(false)}
+            size="small"
             sx={{
-              color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
-              '&:hover': {
-                backgroundColor: theme =>
-                  theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
-              },
+              position: 'absolute',
+              top: 8,
+              left: 8,
+              color: 'red',
+              zIndex: 2,
             }}
+            aria-label="Close"
           >
-            <CloseIcon />
+            <CloseIcon fontSize="small" />
           </IconButton>
-        </DialogTitle>
-        <DialogContent sx={{ p: { xs: 2, md: 3 } }}>
           <Box sx={{ mt: { xs: 1, md: 2 } }}>
-            <Grid container spacing={{ xs: 1, md: 2 }}>
-              <Grid item xs={12}>
-                <Box sx={{ display: 'flex', mb: { xs: 2, md: 2 } }}>
-                  <Box sx={{ flex: 1 }} /> {/* Empty space for feature names */}
-                  {plansWithCurrentPlan.map(plan => (
-                    <Box
-                      key={plan.name}
-                      sx={{ flex: 1, textAlign: 'center', px: { xs: 0.5, md: 1 } }}
-                    >
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: { xs: 0.5, md: 1 },
-                          mb: { xs: 0.5, md: 0 },
-                        }}
-                      >
-                        <Typography
-                          variant="h6"
-                          sx={{
-                            fontSize: { xs: '1rem', md: '1.25rem' },
-                            fontWeight: 'bold',
-                            color: plan.color,
-                          }}
-                        >
-                          {plan.name}
-                        </Typography>
-                        {plan.popular && (
-                          <Chip
-                            label="Popular"
-                            size="small"
-                            sx={{
-                              backgroundColor: `${plan.color}15`,
-                              color: plan.color,
-                              border: `1px solid ${plan.color}40`,
-                              fontSize: { xs: '0.625rem', md: '0.75rem' },
-                            }}
-                          />
-                        )}
-                      </Box>
-                    </Box>
-                  ))}
+            {/* Replace the feature comparison rows with a grid layout for perfect alignment */}
+            <Box sx={{ width: '100%', overflowX: 'auto', mt: 2 }}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns:
+                    'minmax(220px, 1.5fr) repeat(' + plansWithCurrentPlan.length + ', 1fr)',
+                  alignItems: 'center',
+                  fontWeight: 700,
+                  mb: 2,
+                  px: 2,
+                  py: 1,
+                  borderBottom: '2px solid #eee',
+                  background: '#fff',
+                }}
+              >
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    fontSize: { xs: '1.1rem', md: '1.2rem' },
+                    color: 'red',
+                    fontWeight: 700,
+                  }}
+                >
+                  Detailed Feature Comparison
+                  <CompareArrows sx={{ ml: 1, color: 'red', fontSize: { xs: 22, md: 26 } }} />
                 </Box>
-              </Grid>
+                {plansWithCurrentPlan.map(plan => (
+                  <Box
+                    key={plan.name}
+                    sx={{
+                      textAlign: 'center',
+                      color: plan.color,
+                      fontWeight: 700,
+                      fontSize: { xs: '1.1rem', md: '1.2rem' },
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 1,
+                    }}
+                  >
+                    {plan.icon}
+                    {plan.name}
+                  </Box>
+                ))}
+              </Box>
               {features.map(feature => (
-                <Grid item xs={12} key={feature.name}>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography
-                        sx={{
-                          fontSize: { xs: '0.875rem', md: '1rem' },
-                          fontWeight: 500,
-                          color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
-                        }}
-                      >
-                        {feature.name}
-                      </Typography>
-                      {feature.description && (
+                <Box
+                  key={feature.name}
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns:
+                      'minmax(220px, 1.5fr) repeat(' + plansWithCurrentPlan.length + ', 1fr)',
+                    alignItems: 'center',
+                    minHeight: 40,
+                    px: 2,
+                    py: 1,
+                    background: '#fff', // Always white background
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', minHeight: 32 }}>
+                    <Typography
+                      sx={{
+                        fontWeight: 600,
+                        fontSize: { xs: '1.1rem', md: '1.2rem' },
+                        color: 'text.primary',
+                      }}
+                    >
+                      {feature.name}
+                    </Typography>
+                    <Box
+                      sx={{
+                        width: 28,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        ml: 0.5,
+                      }}
+                    >
+                      {feature.description ? (
                         <Tooltip title={feature.description} arrow>
-                          <IconButton size="small" sx={{ ml: { xs: 0.5, md: 0.5 } }}>
+                          <IconButton size="small" sx={{ p: 0 }}>
                             <HelpOutline
                               fontSize="small"
-                              sx={{
-                                color: 'error.main',
-                                fontSize: { xs: 16, md: 20 },
-                              }}
+                              sx={{ color: 'error.main', fontSize: { xs: 16, md: 20 } }}
                             />
                           </IconButton>
                         </Tooltip>
+                      ) : (
+                        <IconButton size="small" sx={{ p: 0, opacity: 0, pointerEvents: 'none' }}>
+                          <HelpOutline fontSize="small" />
+                        </IconButton>
                       )}
                     </Box>
-                    {plansWithCurrentPlan.map((plan, index) => {
-                      // Check if this plan or any previous plan includes this feature
-                      const isIncluded = plansWithCurrentPlan
-                        .slice(0, index + 1)
-                        .some(p => p.features.includes(feature.name));
-
-                      return (
-                        <Box key={plan.name} sx={{ flex: 1, textAlign: 'center' }}>
-                          {isIncluded ? (
-                            <CheckCircle
-                              sx={{
-                                color: plan.color,
-                                fontSize: { xs: 20, md: 24 },
-                              }}
-                            />
-                          ) : (
-                            <Typography
-                              color="text.disabled"
-                              sx={{
-                                fontSize: { xs: '0.875rem', md: '1rem' },
-                              }}
-                            >
-                              —
-                            </Typography>
-                          )}
-                        </Box>
-                      );
-                    })}
                   </Box>
-                </Grid>
+                  {plansWithCurrentPlan.map(plan => {
+                    const isIncluded = plansWithCurrentPlan
+                      .slice(0, plansWithCurrentPlan.indexOf(plan) + 1)
+                      .some(p => p.features.includes(feature.name));
+                    return (
+                      <Box
+                        key={plan.name}
+                        sx={{
+                          textAlign: 'center',
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          minHeight: 32,
+                        }}
+                      >
+                        {isIncluded ? (
+                          <CheckCircle sx={{ color: plan.color, fontSize: 28 }} />
+                        ) : (
+                          <Typography sx={{ color: '#aaa', fontSize: 28, fontWeight: 700 }}>
+                            —
+                          </Typography>
+                        )}
+                      </Box>
+                    );
+                  })}
+                </Box>
               ))}
-            </Grid>
+            </Box>
           </Box>
         </DialogContent>
       </Dialog>

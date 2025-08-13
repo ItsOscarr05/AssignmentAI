@@ -1740,8 +1740,8 @@ const Settings: React.FC = () => {
         >
           <Tabs value={tabValue} onChange={handleTabChange} variant="fullWidth">
             <Tab icon={<Tune />} label="General" />
-            <Tab icon={<Psychology />} label="AI Settings" />
-            <Tab icon={<Notifications />} label="Notifications" />
+            <Tab icon={<PsychologyOutlined />} label="AI Settings" />
+            <Tab icon={<NotificationsOutlined />} label="Notifications" />
             <Tab icon={<SecurityOutlined />} label="Privacy & Security" />
           </Tabs>
         </Box>
@@ -2145,7 +2145,7 @@ const Settings: React.FC = () => {
           <TabPanel value={tabValue} index={1} breakpoint={breakpoint}>
             <SettingsSection
               title="AI Model Configuration"
-              icon={<Psychology sx={{ color: theme.palette.primary.main }} />}
+              icon={<PsychologyOutlined sx={{ color: theme.palette.primary.main }} />}
             >
               {aiSettingsError && (
                 <Alert severity="error" sx={{ mb: 3 }}>
@@ -5381,7 +5381,7 @@ const Settings: React.FC = () => {
       >
         <DialogTitle sx={{ color: 'primary.main' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Psychology sx={{ color: 'primary.main' }} />
+            <PsychologyOutlined sx={{ color: 'primary.main' }} />
             AI Features Status
           </Box>
         </DialogTitle>
