@@ -22,7 +22,35 @@ export function useTokenUsage(subscription?: Subscription | null) {
     [billingStart, billingEnd]
   );
 
-  const totalTokens = subscription?.token_limit ?? 30000;
+  const inferTokenLimit = (): number => {
+    const pid = subscription?.plan_id;
+
+    // Always prefer explicit mapping for test plan ids to override fallback 30k
+    if (pid === 'price_test_plus') return 50000;
+    if (pid === 'price_test_pro') return 75000;
+    if (pid === 'price_test_max') return 100000;
+    if (pid === 'price_test_free') return 30000;
+
+    // Otherwise, if backend provides a positive token_limit, use it
+    if (subscription?.token_limit && subscription.token_limit > 0) {
+      return subscription.token_limit;
+    }
+
+    // Map canonical and env price ids
+    const envPlus = (import.meta as any).env?.VITE_STRIPE_PRICE_PLUS;
+    const envPro = (import.meta as any).env?.VITE_STRIPE_PRICE_PRO;
+    const envMax = (import.meta as any).env?.VITE_STRIPE_PRICE_MAX;
+    const envFree = (import.meta as any).env?.VITE_STRIPE_PRICE_FREE;
+    const is = (ids: Array<string | undefined>) => ids.filter(Boolean).includes(pid as string);
+
+    if (is(['price_plus', envPlus])) return 50000;
+    if (is(['price_pro', envPro])) return 75000;
+    if (is(['price_max', envMax])) return 100000;
+    if (is(['price_free', envFree])) return 30000;
+    return 30000;
+  };
+
+  const totalTokens = inferTokenLimit();
   const usedTokens = assignmentsInCycle.reduce((sum, a) => sum + (a.tokensUsed || 500), 0);
   const remainingTokens = totalTokens - usedTokens;
   const percentUsed = Math.round((usedTokens / totalTokens) * 100);

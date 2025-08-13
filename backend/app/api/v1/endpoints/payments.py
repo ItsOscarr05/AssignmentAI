@@ -31,6 +31,90 @@ async def create_subscription(
     )
 
 
+@router.post("/upgrade-subscription")
+async def upgrade_subscription(
+    price_id: str,
+    payment_method_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Upgrade an existing subscription to a new plan"""
+    payment_service = PaymentService(db)
+    return await payment_service.upgrade_subscription(
+        user=current_user,
+        new_price_id=price_id,
+        payment_method_id=payment_method_id
+    )
+
+
+@router.post("/test-upgrade-subscription")
+async def test_upgrade_subscription(
+    request: CreateSubscriptionRequest,
+    db: Session = Depends(get_db)
+):
+    """Test endpoint for upgrading subscription without authentication"""
+    try:
+        print("=" * 50)
+        print("REAL SUBSCRIPTION UPGRADE REQUEST RECEIVED")
+        print("=" * 50)
+        print(f"Full request object: {request}")
+        print(f"Request dict: {request.dict()}")
+        print(f"Price ID: '{request.price_id}' (type: {type(request.price_id)})")
+        print(f"Payment Method ID: '{request.payment_method_id}' (type: {type(request.payment_method_id)})")
+        print("=" * 50)
+        
+        # Get or create a test user for testing purposes
+        from app.models.user import User
+        from app.models.subscription import Subscription, SubscriptionStatus
+        
+        # Try to get existing test user, or create a new one with unique email
+        test_user = db.query(User).filter(User.email == "test@example.com").first()
+        if not test_user:
+            print("Creating new test user for upgrade...")
+            test_user = User(
+                email="test@example.com",
+                name="Test User",
+                hashed_password="dummy_hash_for_testing",
+                is_active=True,
+                is_verified=False,
+                two_factor_enabled=False,
+                is_superuser=False,
+                failed_login_attempts=0,
+                password_history=[],
+                sessions=[]
+            )
+            db.add(test_user)
+            db.commit()
+            db.refresh(test_user)
+            print(f"New test user created with ID: {test_user.id}")
+        
+        # Check if test user has an existing subscription
+        existing_subscription = db.query(Subscription).filter(
+            Subscription.user_id == test_user.id,
+            Subscription.status.in_([SubscriptionStatus.ACTIVE, SubscriptionStatus.CANCELING])
+        ).first()
+        
+        if existing_subscription:
+            print(f"Test user has existing subscription: {existing_subscription.id}")
+            print(f"Subscription status: {existing_subscription.status}")
+            print(f"Stripe subscription ID: {existing_subscription.stripe_subscription_id}")
+        else:
+            print("Test user has no existing subscription (free plan)")
+        
+        # Use the payment service to handle the upgrade (or create new subscription if from free plan)
+        payment_service = PaymentService(db)
+        result = await payment_service.upgrade_subscription(
+            user=test_user,
+            new_price_id=request.price_id,
+            payment_method_id=request.payment_method_id
+        )
+        
+        return result
+    except Exception as e:
+        print(f"Error in test upgrade subscription: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @router.post("/test-create-subscription")
 async def test_create_subscription(
     request: CreateSubscriptionRequest,
@@ -245,6 +329,9 @@ async def get_current_subscription_test(
         payment_service = PaymentService(db)
         result = await payment_service.get_current_subscription(test_user)
         
+        # Debug: Print the actual result from the database
+        print(f"DEBUG: Raw subscription result from database: {result}")
+        
         # Ensure all required fields are present with defaults if missing
         if result.get("plan_id") is None:
             result["plan_id"] = "price_test_plus"
@@ -252,6 +339,9 @@ async def get_current_subscription_test(
             result["ai_model"] = "gpt-4"
         if result.get("token_limit") is None:
             result["token_limit"] = 50000
+        
+        # Debug: Print the final result being returned
+        print(f"DEBUG: Final subscription result being returned: {result}")
         
         return result
     except Exception as e:

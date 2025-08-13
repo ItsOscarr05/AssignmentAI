@@ -25,9 +25,11 @@ const PlanComparison: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [currentSubscription, setCurrentSubscription] = useState<any>(null);
 
   useEffect(() => {
     fetchPlans();
+    fetchCurrentSubscription();
   }, []);
 
   const fetchPlans = async () => {
@@ -41,6 +43,16 @@ const PlanComparison: React.FC = () => {
     }
   };
 
+  const fetchCurrentSubscription = async () => {
+    try {
+      const subscription = await paymentService.getCurrentSubscription();
+      setCurrentSubscription(subscription);
+    } catch (error) {
+      // User might not have a subscription, which is fine
+      setCurrentSubscription(null);
+    }
+  };
+
   const handlePlanSelect = (plan: Plan) => {
     setSelectedPlan(plan);
     setShowPaymentForm(true);
@@ -49,11 +61,25 @@ const PlanComparison: React.FC = () => {
   const handlePaymentSuccess = () => {
     setShowPaymentForm(false);
     setSelectedPlan(null);
+    fetchCurrentSubscription(); // Refresh subscription data
     enqueueSnackbar('Subscription activated successfully!', { variant: 'success' });
   };
 
   const handlePaymentError = (error: string) => {
     enqueueSnackbar(`Failed to process payment: ${error}`, { variant: 'error' });
+  };
+
+  // Determine if this is an upgrade based on current subscription and selected plan
+  const isUpgrade = (): boolean => {
+    if (!currentSubscription || !selectedPlan) return false;
+
+    // If user has an active subscription, this is likely an upgrade
+    if (currentSubscription.status === 'active') {
+      return true;
+    }
+
+    // You could also compare plan prices here if needed
+    return false;
   };
 
   if (loading) {
@@ -148,6 +174,7 @@ const PlanComparison: React.FC = () => {
                 planPrice={selectedPlan.price}
                 onSuccess={handlePaymentSuccess}
                 onError={handlePaymentError}
+                isUpgrade={isUpgrade()}
               />
             </CardContent>
           </Card>

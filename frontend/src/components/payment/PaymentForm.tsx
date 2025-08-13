@@ -23,6 +23,7 @@ interface PaymentFormProps {
   planPrice: number;
   onSuccess: () => void;
   onError: (error: string) => void;
+  isUpgrade?: boolean; // Add this prop to indicate if this is an upgrade
 }
 
 interface BillingInfo {
@@ -61,6 +62,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
   planPrice,
   onSuccess,
   onError,
+  isUpgrade = false, // Default to false
 }) => {
   console.log('PaymentForm received props:', { priceId, planName, planPrice });
   const stripe = useStripe();
@@ -318,9 +320,14 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
         throw new Error(paymentMethodError.message);
       }
 
-      // Create subscription using the payment method
+      // Determine the appropriate endpoint based on whether this is an upgrade
+      const endpoint = isUpgrade
+        ? '/payments/test-upgrade-subscription'
+        : '/payments/test-create-subscription';
+      const action = isUpgrade ? 'UPGRADING' : 'CREATING';
+
       console.log('==================================================');
-      console.log('MAKING API CALL TO TEST-CREATE-SUBSCRIPTION');
+      console.log(`MAKING API CALL TO ${action} SUBSCRIPTION`);
       console.log('==================================================');
       console.log('Price ID from props:', priceId);
       console.log('Price ID type:', typeof priceId);
@@ -328,16 +335,21 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       console.log('Price ID is empty:', priceId === '');
       console.log('Price ID is undefined:', priceId === undefined);
       console.log('Payment Method ID:', paymentMethod!.id);
+      console.log('Is Upgrade:', isUpgrade);
+      console.log('Endpoint:', endpoint);
       console.log('Full request data:', {
         price_id: priceId,
         payment_method_id: paymentMethod!.id,
       });
       console.log('==================================================');
 
-      await api.post('/payments/test-create-subscription', {
+      await api.post(endpoint, {
         price_id: priceId,
         payment_method_id: paymentMethod!.id,
       });
+
+      // Broadcast subscription change so token limits refresh immediately across the app
+      window.dispatchEvent(new Event('subscription-updated'));
 
       console.log('API call successful!');
       console.log('Calling onSuccess callback...');

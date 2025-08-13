@@ -122,11 +122,12 @@ async def login(
     """
     client_ip = request.client.host
     user_agent = request.headers.get("user-agent", "")
-    
+    logger.info(f"Login attempt: email={login_data.email}, ip={client_ip}, user_agent={user_agent}")
     try:
         # Check rate limiting
         rate_limiter = get_rate_limiter(request.app)
         if rate_limiter.is_rate_limited(client_ip, "/api/v1/auth/login"):
+            logger.warning(f"Rate limit exceeded: email={login_data.email}, ip={client_ip}, user_agent={user_agent}")
             # Log rate limit exceeded
             from app.models.security import AuditLog
             audit_log = AuditLog(
@@ -167,6 +168,7 @@ async def login(
         
         # Check if user exists
         if not user:
+            logger.warning(f"Login failed: user not found, email={login_data.email}, ip={client_ip}, user_agent={user_agent}")
             db.commit()
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -175,6 +177,7 @@ async def login(
         
         # Check if user is active
         if not user.is_active:
+            logger.warning(f"Login failed: account deactivated, email={login_data.email}, ip={client_ip}, user_agent={user_agent}")
             db.commit()
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -183,6 +186,7 @@ async def login(
         
         # Check if user is verified (optional - can be configured)
         if settings.REQUIRE_EMAIL_VERIFICATION and not user.is_verified:
+            logger.warning(f"Login failed: email not verified, email={login_data.email}, ip={client_ip}, user_agent={user_agent}")
             db.commit()
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -191,6 +195,7 @@ async def login(
         
         # Verify password
         if not verify_password(login_data.password, str(user.hashed_password)):
+            logger.warning(f"Login failed: invalid password, email={login_data.email}, ip={client_ip}, user_agent={user_agent}")
             # Update audit log with failure reason
             audit_log.details["reason"] = "invalid_password"
             db.commit()
@@ -219,6 +224,7 @@ async def login(
         user_2fa_enabled = getattr(user, 'two_factor_enabled', False)
         
         if user_2fa_enabled:
+            logger.info(f"Login requires 2FA: email={login_data.email}, ip={client_ip}, user_agent={user_agent}")
             # Return temporary token for 2FA verification
             temp_token_expires = timedelta(minutes=5)  # Short-lived token for 2FA
             temp_token = create_access_token(
@@ -264,11 +270,14 @@ async def login(
         
         # Create session with device fingerprint
         session_service = get_session_service(db)
-        session = await session_service.create_session(
+        device_info = {
+            "ip_address": client_ip,
+            "user_agent": user_agent,
+            "device_fingerprint": device_fingerprint
+        }
+        session_id = await session_service.create_session(
             user_id=user.id,
-            ip_address=client_ip,
-            user_agent=user_agent,
-            device_fingerprint=device_fingerprint
+            device_info=device_info
         )
         
         # Create access token with session ID
@@ -285,7 +294,7 @@ async def login(
         
         # Log successful login
         audit_log.details["success"] = True
-        audit_log.details["session_id"] = str(session.id)
+        audit_log.details["session_id"] = str(session_id)
         audit_log.details["requires_2fa"] = False
         db.commit()
         
@@ -301,6 +310,7 @@ async def login(
         if ip_analysis["risk_score"] > 50:
             logger.warning(f"High-risk login detected: {ip_analysis}")
         
+        logger.info(f"Login successful: user_id={user.id}, email={login_data.email}, ip={client_ip}, user_agent={user_agent}")
         return {
             "access_token": access_token,
             "token_type": "bearer",
@@ -316,11 +326,11 @@ async def login(
             }
         }
         
-    except HTTPException:
+    except HTTPException as he:
+        logger.error(f"Login HTTPException: email={login_data.email}, ip={client_ip}, user_agent={user_agent}, detail={he.detail}")
         raise
     except Exception as e:
-        # Log unexpected errors
-        logger.error(f"Login error for {login_data.email}: {str(e)}")
+        logger.error(f"Login error: email={login_data.email}, ip={client_ip}, user_agent={user_agent}, error={str(e)}")
         traceback.print_exc()
         
         # Update audit log with error
@@ -709,36 +719,64 @@ def register(
     *,
     user_in: dict = Body(...),
     db: Session = Depends(get_db),
+    request: Request = None  # Add request to get IP and user agent
 ) -> Any:
     """
     Create new user.
     """
     try:
-        print(f"Registration request received: {user_in}")
-        
+        client_ip = request.client.host if request else "N/A"
+        user_agent = request.headers.get("user-agent", "N/A") if request else "N/A"
+        logger.info(f"Registration request received from {client_ip} - {user_in}")
+        from app.models.security import AuditLog
         # Extract fields from the request
         email = user_in.get("email")
         password = user_in.get("password")
         full_name = user_in.get("full_name")
-        
-        print(f"Extracted fields - email: {email}, full_name: {full_name}, password_length: {len(password) if password else 0}")
-        
         if not email or not password or not full_name:
+            logger.warning(f"Registration failed (missing fields) from {client_ip} - email: {email}, full_name: {full_name}")
+            audit_log = AuditLog(
+                user_id=None,
+                action="registration_attempt",
+                details={
+                    "success": False,
+                    "reason": "missing_fields",
+                    "ip_address": client_ip,
+                    "user_agent": user_agent,
+                    "email": email,
+                },
+                ip_address=client_ip,
+                user_agent=user_agent
+            )
+            db.add(audit_log)
+            db.commit()
             raise HTTPException(
                 status_code=400,
                 detail="Email, password, and full_name are required"
             )
-        
         # Check if user already exists
         existing_user = db.query(User).filter(User.email == email).first()
         if existing_user:
+            logger.warning(f"Registration failed (email exists) from {client_ip} - email: {email}")
+            audit_log = AuditLog(
+                user_id=existing_user.id,
+                action="registration_attempt",
+                details={
+                    "success": False,
+                    "reason": "email_exists",
+                    "ip_address": client_ip,
+                    "user_agent": user_agent,
+                    "email": email,
+                },
+                ip_address=client_ip,
+                user_agent=user_agent
+            )
+            db.add(audit_log)
+            db.commit()
             raise HTTPException(
                 status_code=400,
                 detail="Email already registered"
             )
-        
-        print("Creating new user...")
-        
         # Create new user
         hashed_password = get_password_hash(password)
         user = User(
@@ -747,24 +785,52 @@ def register(
             name=full_name,
             updated_at=datetime.utcnow()
         )
-        
-        print(f"User object created: {user}")
-        
         db.add(user)
         db.commit()
         db.refresh(user)
-        
-        print(f"User saved successfully with ID: {user.id}")
-        
+        logger.info(f"User registered successfully: {user.id} from {client_ip} - email: {email}")
+        audit_log = AuditLog(
+            user_id=user.id,
+            action="registration_attempt",
+            details={
+                "success": True,
+                "ip_address": client_ip,
+                "user_agent": user_agent,
+                "email": email,
+            },
+            ip_address=client_ip,
+            user_agent=user_agent
+        )
+        db.add(audit_log)
+        db.commit()
         return {"message": "User registered successfully"}
     except HTTPException:
         raise
     except Exception as e:
         db.rollback()
-        print(f"Registration error: {str(e)}")
-        print(f"Error type: {type(e).__name__}")
+        logger.error(f"Registration error: {str(e)}")
+        logger.error(f"Error type: {type(e).__name__}")
         import traceback
         traceback.print_exc()
+        # Log error to audit log if possible
+        try:
+            audit_log = AuditLog(
+                user_id=None,
+                action="registration_attempt",
+                details={
+                    "success": False,
+                    "reason": str(e),
+                    "ip_address": client_ip if 'client_ip' in locals() else "N/A",
+                    "user_agent": user_agent if 'user_agent' in locals() else "N/A",
+                    "email": user_in.get("email") if 'user_in' in locals() else None,
+                },
+                ip_address=client_ip if 'client_ip' in locals() else "N/A",
+                user_agent=user_agent if 'user_agent' in locals() else "N/A"
+            )
+            db.add(audit_log)
+            db.commit()
+        except Exception:
+            pass
         raise HTTPException(
             status_code=500,
             detail="An unexpected error occurred"

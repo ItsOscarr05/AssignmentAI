@@ -138,6 +138,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       token_type: response.token_type,
     });
 
+    // Also set the token in localStorage and axios default header for compatibility
+    if (response.access_token) {
+      localStorage.setItem('token', response.access_token);
+      // Import the api instance from config/api if not already
+      // @ts-ignore
+      import('../config/api').then(({ default: api }) => {
+        api.defaults.headers.common['Authorization'] = `Bearer ${response.access_token}`;
+      });
+    }
+
     // Get user data
     let userData = response.user;
     if (!userData) {
@@ -157,14 +167,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     if (userData) {
-      // Convert API user data to User type
+      // Safely handle undefined name
+      const name = typeof userData.name === 'string' ? userData.name : '';
+      const [firstName, ...rest] = name.split(' ');
+      const lastName = rest.join(' ');
       const user: User = {
         id: userData.id,
         email: userData.email,
-        name: userData.name,
+        name: name,
         role: 'student', // Default role, can be updated from user profile
-        firstName: userData.name.split(' ')[0] || '',
-        lastName: userData.name.split(' ').slice(1).join(' ') || '',
+        firstName: firstName || '',
+        lastName: lastName || '',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -267,7 +280,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error('Passwords do not match');
       }
 
-      const response = await auth.register(userData);
+      // Send only the required fields to the backend using the auth.register method
+      const response = await auth.register({
+        email: userData.email,
+        password: userData.password,
+        full_name: `${userData.firstName} ${userData.lastName}`.trim(),
+      });
 
       // Log successful registration
       securityMonitor.logEvent('profile_update', 'low', {
@@ -275,7 +293,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: userData.email,
       });
 
-      return response;
+      return response.data;
     } catch (error: any) {
       const errorMessage = error.response?.data?.detail || error.message || 'Registration failed';
       setError(errorMessage);

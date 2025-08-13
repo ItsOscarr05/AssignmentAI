@@ -43,8 +43,16 @@ export const useTokenLimit = () => {
         ? '/payments/subscriptions/current/test'
         : '/payments/subscriptions/current';
 
-      const response = await api.get<Subscription>(endpoint);
-      setSubscription(response.data);
+      try {
+        const response = await api.get<Subscription>(endpoint);
+        setSubscription(response.data);
+        console.log('useTokenLimit: subscription response', response.data);
+      } catch (err) {
+        console.warn('useTokenLimit: primary subscription fetch failed, trying test endpoint');
+        const response2 = await api.get<Subscription>('/payments/subscriptions/current/test');
+        setSubscription(response2.data);
+        console.log('useTokenLimit: fallback subscription response', response2.data);
+      }
     } catch (err) {
       console.error('Failed to fetch subscription data:', err);
       setError('Failed to load subscription data');
@@ -57,12 +65,32 @@ export const useTokenLimit = () => {
 
   // Fetch token usage data
   const fetchTokenUsage = useCallback(async () => {
+    const mapPlanToLimit = (planId?: string): number => {
+      if (planId === 'price_test_plus') return 50000;
+      if (planId === 'price_test_pro') return 75000;
+      if (planId === 'price_test_max') return 100000;
+      if (planId === 'price_test_free') return 30000;
+
+      const envPlus = (import.meta as any).env?.VITE_STRIPE_PRICE_PLUS;
+      const envPro = (import.meta as any).env?.VITE_STRIPE_PRICE_PRO;
+      const envMax = (import.meta as any).env?.VITE_STRIPE_PRICE_MAX;
+      const envFree = (import.meta as any).env?.VITE_STRIPE_PRICE_FREE;
+      const is = (ids: Array<string | undefined>) => ids.filter(Boolean).includes(planId as string);
+      if (is(['price_plus', envPlus])) return 50000;
+      if (is(['price_pro', envPro])) return 75000;
+      if (is(['price_max', envMax])) return 100000;
+      if (is(['price_free', envFree])) return 30000;
+      return 30000;
+    };
     try {
       const response = await api.get('/usage/summary', {
         params: { period: 'monthly' },
       });
 
-      const total = subscription?.token_limit ?? 30000;
+      const total =
+        subscription?.token_limit && subscription.token_limit > 0
+          ? subscription.token_limit
+          : mapPlanToLimit(subscription?.plan_id);
       const used = response.data.total_tokens || 0;
       const remaining = total - used;
 
@@ -78,7 +106,10 @@ export const useTokenLimit = () => {
     } catch (err) {
       console.error('Failed to fetch token usage:', err);
       // Fallback to mock data if API fails
-      const total = subscription?.token_limit ?? 30000;
+      const total =
+        subscription?.token_limit && subscription.token_limit > 0
+          ? subscription.token_limit
+          : mapPlanToLimit(subscription?.plan_id);
       setTokenUsage({
         total,
         used: 0,
@@ -124,6 +155,13 @@ export const useTokenLimit = () => {
   // Initialize data
   useEffect(() => {
     fetchSubscriptionData();
+
+    // Listen for subscription changes (e.g., after upgrade)
+    const handler = () => {
+      refreshTokenData();
+    };
+    window.addEventListener('subscription-updated', handler);
+    return () => window.removeEventListener('subscription-updated', handler);
   }, [fetchSubscriptionData]);
 
   useEffect(() => {

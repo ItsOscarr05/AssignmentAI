@@ -102,7 +102,7 @@ interface ReportTemplate {
 
 // Create a real axios instance
 const apiInstance = axios.create({
-  baseURL: 'http://localhost:8000/api/v1',
+  baseURL: `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1`,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -147,7 +147,11 @@ export const auth = {
     email: string;
     password: string;
   }) => {
-    const response = await api.post('/auth/register', userData);
+    const response = await api.post('/auth/register', {
+      email: userData.email,
+      password: userData.password,
+      full_name: `${userData.firstName} ${userData.lastName}`.trim(),
+    });
     return response.data;
   },
 

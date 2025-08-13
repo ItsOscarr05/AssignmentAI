@@ -94,9 +94,43 @@ const AITokens: React.FC = () => {
   const [transactions, setTransactions] = useState<any[]>([]);
 
   const { totalTokens, usedTokens, remainingTokens, percentUsed } = useTokenUsage(subscription);
+  const mapPlanToLimit = (planId?: string): number | undefined => {
+    if (!planId) return undefined;
+    if (planId === 'price_test_free') return 30000;
+    if (planId === 'price_test_plus') return 50000;
+    if (planId === 'price_test_pro') return 75000;
+    if (planId === 'price_test_max') return 100000;
+    const envPlus = (import.meta as any).env?.VITE_STRIPE_PRICE_PLUS;
+    const envPro = (import.meta as any).env?.VITE_STRIPE_PRICE_PRO;
+    const envMax = (import.meta as any).env?.VITE_STRIPE_PRICE_MAX;
+    const envFree = (import.meta as any).env?.VITE_STRIPE_PRICE_FREE;
+    const is = (ids: Array<string | undefined>) => ids.filter(Boolean).includes(planId);
+    if (is(['price_free', envFree])) return 30000;
+    if (is(['price_plus', envPlus])) return 50000;
+    if (is(['price_pro', envPro])) return 75000;
+    if (is(['price_max', envMax])) return 100000;
+    return undefined;
+  };
+  const mappedLimit = mapPlanToLimit(subscription?.plan_id);
+  const computedTotalTokens =
+    (subscription?.token_limit && subscription.token_limit > 0
+      ? subscription.token_limit
+      : mappedLimit) ?? totalTokens;
+  console.log('AITokens: mapping debug', {
+    planId: subscription?.plan_id,
+    mappedLimit,
+    subscriptionTokenLimit: subscription?.token_limit,
+    totalTokens,
+    computedTotalTokens
+  });
 
   useEffect(() => {
     fetchSubscriptionData();
+    const handler = () => {
+      fetchSubscriptionData();
+    };
+    window.addEventListener('subscription-updated', handler);
+    return () => window.removeEventListener('subscription-updated', handler);
     if (!isMockUser) {
       api
         .get('/assignments')
@@ -164,11 +198,25 @@ const AITokens: React.FC = () => {
   const fetchSubscriptionData = async () => {
     try {
       // Use test endpoint if in mock user mode
-      const endpoint = isMockUser
+      const primary = isMockUser
         ? '/payments/subscriptions/current/test'
         : '/payments/subscriptions/current';
-      const response = await api.get<Subscription>(endpoint);
-      setSubscription(response.data);
+      console.log('AITokens: fetching subscription. isMockUser=', isMockUser, 'endpoint=', primary);
+      try {
+        const response = await api.get<Subscription>(primary);
+        console.log('AITokens: subscription response', response.data);
+        setSubscription(response.data);
+      } catch (primaryErr: any) {
+        console.warn('AITokens: primary subscription fetch failed, trying test endpoint. Error=', primaryErr?.message || primaryErr);
+        try {
+          const fallback = '/payments/subscriptions/current/test';
+          const response2 = await api.get<Subscription>(fallback);
+          console.log('AITokens: fallback subscription response', response2.data);
+          setSubscription(response2.data);
+        } catch (fallbackErr) {
+          throw fallbackErr;
+        }
+      }
     } catch (error) {
       console.error('Failed to fetch subscription data:', error);
     } finally {
@@ -351,22 +399,22 @@ const AITokens: React.FC = () => {
 
   // Calculate token usage based on user type
   let usedTokensCalc = usedTokens;
-  let remainingTokensCalc = remainingTokens;
-  let percentUsedCalc = percentUsed;
+  let remainingTokensCalc = remainingTokens + (computedTotalTokens - totalTokens);
+  let percentUsedCalc = Math.round((usedTokensCalc / computedTotalTokens) * 100);
   if (!isMockUser) {
     usedTokensCalc = assignments.reduce((sum, a) => sum + (a.tokensUsed || 0), 0);
-    remainingTokensCalc = totalTokens - usedTokensCalc;
-    percentUsedCalc = totalTokens > 0 ? Math.round((usedTokensCalc / totalTokens) * 100) : 0;
+    remainingTokensCalc = computedTotalTokens - usedTokensCalc;
+    percentUsedCalc =
+      computedTotalTokens > 0 ? Math.round((usedTokensCalc / computedTotalTokens) * 100) : 0;
   }
   const tokenUsage = {
-    label: subscription
-      ? `Plan (${totalTokens.toLocaleString()} tokens/month)`
-      : 'Free Plan (30,000 tokens/month)',
-    total: totalTokens,
+    label: `Plan (${computedTotalTokens.toLocaleString()} tokens/month)`,
+    total: computedTotalTokens,
     used: usedTokensCalc,
     remaining: remainingTokensCalc,
     percentUsed: percentUsedCalc,
   };
+  console.log('AITokens: computed token usage', tokenUsage, 'subscription', subscription);
 
   if (loading) {
     return (
@@ -859,10 +907,7 @@ const AITokens: React.FC = () => {
                   <LineChart data={displayedUsageData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                     <XAxis dataKey="date" stroke="#d32f2f" />
-                    <YAxis
-                      stroke="#d32f2f"
-                      domain={[0, tokenUsage.total]}
-                    />
+                    <YAxis stroke="#d32f2f" domain={[0, tokenUsage.total]} />
                     <RechartsTooltip
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {

@@ -370,10 +370,12 @@ const PricePlan: React.FC = () => {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [, setCurrentPlan] = useState<CurrentPlan | null>(null);
   const [plansWithCurrentPlan, setPlansWithCurrentPlan] = useState<Plan[]>(plans);
+  const [currentSubscription, setCurrentSubscription] = useState<any>(null);
 
   useEffect(() => {
     fetchCurrentPlan();
     fetchPlansWithPrices();
+    fetchCurrentSubscription();
   }, []);
 
   const fetchPlansWithPrices = async () => {
@@ -440,6 +442,16 @@ const PricePlan: React.FC = () => {
       setPlansWithCurrentPlan(prevPlans =>
         prevPlans.map(plan => ({ ...plan, isCurrentPlan: false }))
       );
+    }
+  };
+
+  const fetchCurrentSubscription = async () => {
+    try {
+      const response = await api.get('/payments/subscriptions/current/test');
+      setCurrentSubscription(response.data);
+    } catch (error) {
+      console.error('Failed to fetch current subscription:', error);
+      setCurrentSubscription(null);
     }
   };
 
@@ -526,6 +538,19 @@ const PricePlan: React.FC = () => {
 
   const handlePaymentError = (error: string) => {
     enqueueSnackbar(`Payment failed: ${error}`, { variant: 'error' });
+  };
+
+  // Determine if this is an upgrade based on current subscription and selected plan
+  const isUpgrade = (): boolean => {
+    if (!currentSubscription || !selectedPlan) return false;
+
+    // If user has an active subscription, this is likely an upgrade
+    if (currentSubscription.status === 'active') {
+      return true;
+    }
+
+    // You could also compare plan prices here if needed
+    return false;
   };
 
   const renderDetailedComparison = () => {
@@ -1068,6 +1093,7 @@ const PricePlan: React.FC = () => {
                 planPrice={selectedPlan.price}
                 onSuccess={handlePaymentSuccess}
                 onError={handlePaymentError}
+                isUpgrade={isUpgrade()}
               />
             </Elements>
           )}

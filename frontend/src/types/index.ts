@@ -1,3 +1,4 @@
+import { RegisterData } from './auth';
 // User Types
 export interface User {
   id: string;
@@ -254,11 +255,7 @@ export interface AuthContextType {
   verify2FA: (code: string, isBackupCode?: boolean) => Promise<void>;
   logout: () => Promise<void>;
   logoutAll: () => Promise<void>;
-  register: (userData: {
-    email: string;
-    password: string;
-    confirm_password: string;
-  }) => Promise<any>;
+  register: (userData: RegisterData) => Promise<any>;
   updateUser: (userData: Partial<User>) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updatePassword: (token: string, newPassword: string) => Promise<void>;

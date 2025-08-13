@@ -161,8 +161,9 @@ class TokenManager {
       }
 
       const refreshToken = this.getRefreshToken();
+      // If there's no refresh token (e.g., mock login), skip refresh gracefully
       if (!refreshToken) {
-        throw new Error('No refresh token available');
+        return null;
       }
 
       // Try to refresh the token
@@ -178,7 +179,10 @@ class TokenManager {
       return tokenData;
     } catch (error) {
       console.error('Failed to refresh token:', error);
-      this.clearTokens();
+      // Only clear tokens if we actually attempted a refresh using a refresh token
+      if (this.getRefreshToken()) {
+        this.clearTokens();
+      }
       return null;
     } finally {
       this.refreshPromise = null;
@@ -315,7 +319,8 @@ class TokenManager {
       const refreshTime = (expiresIn - 5 * 60) * 1000;
 
       setTimeout(async () => {
-        if (!this.isTokenExpired()) {
+        // Only attempt refresh if we have a refresh token to use
+        if (!this.isTokenExpired() && this.getRefreshToken()) {
           await this.refreshToken();
         }
       }, refreshTime);
@@ -330,13 +335,13 @@ class TokenManager {
   private setupTokenRefresh(): void {
     try {
       // Check if token needs refresh on page load
-      if (this.isTokenExpiringSoon() && !this.isTokenExpired()) {
+      if (this.isTokenExpiringSoon() && !this.isTokenExpired() && this.getRefreshToken()) {
         this.refreshToken();
       }
 
       // Set up periodic checks for token expiry
       setInterval(() => {
-        if (this.isTokenExpiringSoon() && !this.isTokenExpired()) {
+        if (this.isTokenExpiringSoon() && !this.isTokenExpired() && this.getRefreshToken()) {
           this.refreshToken();
         }
       }, 60000); // Check every minute

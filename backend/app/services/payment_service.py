@@ -89,6 +89,82 @@ class PaymentService:
         except stripe.error.StripeError as e:
             raise HTTPException(status_code=400, detail=str(e))
 
+    async def upgrade_subscription(
+        self, user: User, new_price_id: str, payment_method_id: str
+    ) -> Dict[str, Any]:
+        """
+        Upgrades an existing subscription to a new plan.
+        - If user has no subscription (free plan), creates a new subscription
+        - If user has an existing subscription, updates it with the new price
+        - Updates the local database with new plan details
+        """
+        try:
+            # Step 1: Find the current active subscription
+            current_subscription = self.db.query(Subscription).filter(
+                Subscription.user_id == user.id,
+                Subscription.status.in_([SubscriptionStatus.ACTIVE, SubscriptionStatus.CANCELING])
+            ).first()
+
+            # If no existing subscription, this is an upgrade from free plan
+            if not current_subscription:
+                print(f"User {user.id} has no existing subscription. Creating new subscription for upgrade from free plan.")
+                # Create a new subscription instead of upgrading
+                return await self.create_subscription(user, new_price_id, payment_method_id)
+
+            # Step 2: Get the current subscription from Stripe
+            stripe_subscription = stripe.Subscription.retrieve(current_subscription.stripe_subscription_id)
+            print(f"Retrieved Stripe subscription: {stripe_subscription.id}")
+            
+            # Step 3: Get the current subscription items using dictionary access
+            subscription_items = stripe_subscription['items']
+            print(f"Subscription items: {subscription_items}")
+            print(f"Subscription items type: {type(subscription_items)}")
+            
+            if not subscription_items or not subscription_items.data:
+                print(f"Subscription items data: {subscription_items.data if subscription_items else 'None'}")
+                raise HTTPException(status_code=400, detail="No subscription items found")
+            
+            subscription_item_id = subscription_items.data[0].id
+            print(f"Found subscription item ID: {subscription_item_id}")
+
+            # Step 4: Update the subscription in Stripe
+            updated_subscription = stripe.Subscription.modify(
+                current_subscription.stripe_subscription_id,
+                items=[{
+                    'id': subscription_item_id,
+                    'price': new_price_id,
+                }],
+                proration_behavior='create_prorations',  # Prorate the change
+            )
+
+            # Step 5: Get new plan details
+            new_plan_details = self._get_plan_details_from_price_id(new_price_id)
+            
+            # Step 6: Update the local database
+            print(f"DEBUG: Updating database with new plan details: {new_plan_details}")
+            
+            current_subscription.plan_name = new_plan_details["name"]
+            current_subscription.plan_price = new_plan_details["price"]
+            current_subscription.plan_id = new_plan_details["plan_id"]
+            current_subscription.ai_model = new_plan_details["ai_model"]
+            current_subscription.token_limit = new_plan_details["token_limit"]
+            current_subscription.status = SubscriptionStatus.ACTIVE
+            current_subscription.updated_at = datetime.now()
+            
+            self.db.commit()
+            self.db.refresh(current_subscription)
+            
+            print(f"DEBUG: Database updated. New token_limit: {current_subscription.token_limit}")
+
+            return {
+                "message": "Subscription upgraded successfully",
+                "subscription": updated_subscription,
+                "new_plan": new_plan_details
+            }
+
+        except stripe.error.StripeError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+
     def _get_plan_details_from_price_id(self, price_id: str) -> Dict[str, Any]:
         """Get plan details from price_id"""
         plan_mapping = {
@@ -401,5 +477,28 @@ class PaymentService:
             .first()
         )
         if db_subscription:
+            # Update status
             db_subscription.status = subscription['status']
+            
+            # Update plan details if the subscription items have changed
+            if subscription.get('items') and subscription['items'].get('data'):
+                subscription_item = subscription['items']['data'][0]
+                if subscription_item.get('price') and subscription_item['price'].get('id'):
+                    new_price_id = subscription_item['price']['id']
+                    new_plan_details = self._get_plan_details_from_price_id(new_price_id)
+                    
+                    # Update plan details in database
+                    db_subscription.plan_name = new_plan_details["name"]
+                    db_subscription.plan_price = new_plan_details["price"]
+                    db_subscription.plan_id = new_plan_details["plan_id"]
+                    db_subscription.ai_model = new_plan_details["ai_model"]
+                    db_subscription.token_limit = new_plan_details["token_limit"]
+            
+            # Update period information
+            if subscription.get('current_period_start'):
+                db_subscription.current_period_start = datetime.fromtimestamp(subscription['current_period_start'])
+            if subscription.get('current_period_end'):
+                db_subscription.current_period_end = datetime.fromtimestamp(subscription['current_period_end'])
+            
+            db_subscription.updated_at = datetime.now()
             self.db.commit() 

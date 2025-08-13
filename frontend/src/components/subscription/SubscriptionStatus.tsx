@@ -267,6 +267,7 @@ const SubscriptionStatus: React.FC = () => {
                     planPrice={selectedPlan.price}
                     onSuccess={handleUpgradeSuccess}
                     onError={handleUpgradeError}
+                    isUpgrade={true}
                   />
                 ) : null;
               })()}
