@@ -6,6 +6,7 @@ import { tokenManager } from '../services/auth/TokenManager';
 import { RegisterData } from '../services/authManager';
 import { securityMonitor } from '../services/security/SecurityMonitor';
 import { AuthContextType, LoginRequest, TokenWith2FA, User } from '../types';
+import { setAuthContextUpdateUser } from '../utils/authBridge';
 import { InputValidation } from '../utils/security';
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -260,6 +261,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('user', JSON.stringify({ ...user, ...userData }));
     }
   };
+
+  // Set the updateUser function in ProfileService so it can update user data
+  useEffect(() => {
+    setAuthContextUpdateUser(updateUser);
+  }, []);
 
   const register = async (userData: RegisterData) => {
     try {

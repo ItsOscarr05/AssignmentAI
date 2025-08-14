@@ -10,7 +10,6 @@ import {
   LogoutOutlined,
   PhotoCameraOutlined,
   SaveOutlined,
-  SchoolOutlined,
   TimelineOutlined,
   VerifiedOutlined,
 } from '@mui/icons-material';
@@ -201,18 +200,32 @@ const Profile: React.FC = () => {
 
   // Initialize form with profile data
   useEffect(() => {
-    if (profile) {
+    if (profile || user) {
+      // Extract first and last name from profile.name if it exists
+      let firstName = '';
+      let lastName = '';
+
+      if (profile?.name) {
+        const nameParts = profile.name.split(' ');
+        firstName = nameParts[0] || '';
+        lastName = nameParts.slice(1).join(' ') || '';
+      } else if (user?.name) {
+        const nameParts = user.name.split(' ');
+        firstName = nameParts[0] || '';
+        lastName = nameParts.slice(1).join(' ') || '';
+      }
+
       setEditForm({
-        firstName: profile.firstName || '',
-        lastName: profile.lastName || '',
-        email: profile.email || '',
-        bio: profile.bio || '',
-        location: '',
+        firstName: firstName,
+        lastName: lastName,
+        email: profile?.email || user?.email || '',
+        bio: profile?.bio || '',
+        location: profile?.location || '',
         institution: '',
         department: '',
       });
     }
-  }, [profile]);
+  }, [profile, user]);
 
   // Fetch real assignments for the logged-in user
   const {
@@ -226,6 +239,30 @@ const Profile: React.FC = () => {
   };
 
   const handleEditProfile = () => {
+    // Extract first and last name from profile.name if it exists
+    let firstName = '';
+    let lastName = '';
+
+    if (profile?.name) {
+      const nameParts = profile.name.split(' ');
+      firstName = nameParts[0] || '';
+      lastName = nameParts.slice(1).join(' ') || '';
+    } else if (user?.name) {
+      const nameParts = user.name.split(' ');
+      firstName = nameParts[0] || '';
+      lastName = nameParts.slice(1).join(' ') || '';
+    }
+
+    // Populate form with current data when opening dialog
+    setEditForm({
+      firstName: firstName,
+      lastName: lastName,
+      email: profile?.email || user?.email || '',
+      bio: profile?.bio || '',
+      location: profile?.location || '',
+      institution: '',
+      department: '',
+    });
     setIsEditDialogOpen(true);
   };
 
@@ -272,12 +309,17 @@ const Profile: React.FC = () => {
     try {
       setIsAvatarUploading(true);
 
-      // Update profile data
+      // Combine first and last name into a single name field
+      const fullName = `${editForm.firstName} ${editForm.lastName}`.trim();
+
+      // Update profile data in the format expected by the backend
       await updateProfile({
-        firstName: editForm.firstName,
-        lastName: editForm.lastName,
+        name: fullName,
         email: editForm.email,
+        avatar: profile?.avatarUrl || '', // Required field by backend
         bio: editForm.bio,
+        location: editForm.location || undefined,
+        website: undefined, // Not implemented in the form yet
       });
 
       setSnackbar({
@@ -333,10 +375,10 @@ const Profile: React.FC = () => {
   // Use profile data or fallback to user data
   const profileData = profile || user;
   const displayName = profileData
-    ? profile && profile.firstName
-      ? `${profile.firstName} ${profile.lastName || ''}`.trim()
-      : user && user.firstName
-      ? `${user.firstName} ${user.lastName || ''}`.trim()
+    ? profile && profile.name
+      ? profile.name
+      : user && user.name
+      ? user.name
       : 'John Doe'
     : 'John Doe';
   const displayEmail = profileData?.email || 'john.doe@example.com';
@@ -533,31 +575,6 @@ const Profile: React.FC = () => {
                           fontSize: { xs: '1rem', md: '1.25rem' },
                         },
                         mr: 0.5,
-                      }}
-                    />
-                  </Tooltip>
-                  <Tooltip title="Institution" arrow>
-                    <Chip
-                      icon={<SchoolOutlined aria-label="Institution icon" />}
-                      label={
-                        (profileData as any)?.institution ||
-                        (user as any)?.institution ||
-                        'No data available'
-                      }
-                      aria-label="User institution"
-                      sx={{
-                        background: theme =>
-                          theme.palette.mode === 'dark'
-                            ? 'rgba(0,8,20,0.9)'
-                            : 'rgba(255,255,255,0.9)',
-                        border: '1px solid',
-                        borderColor: theme.palette.primary.main,
-                        fontSize: { xs: '0.75rem', md: '0.875rem' },
-                        height: { xs: 28, md: 32 },
-                        '& .MuiChip-icon': {
-                          color: theme.palette.primary.main,
-                          fontSize: { xs: '1rem', md: '1.25rem' },
-                        },
                       }}
                     />
                   </Tooltip>

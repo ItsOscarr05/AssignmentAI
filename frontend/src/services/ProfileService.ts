@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { getAuthContextUpdateUser } from '../utils/authBridge';
 import { api } from './api';
 
 interface ProfilePreferences {
@@ -12,11 +13,13 @@ interface ProfilePreferences {
 
 interface Profile {
   id: string;
-  firstName: string;
-  lastName: string;
+  name: string;
   email: string;
   avatarUrl?: string;
+  avatar?: string; // Add this for backend compatibility
   bio?: string;
+  location?: string;
+  website?: string;
   preferences: ProfilePreferences;
 }
 
@@ -45,6 +48,22 @@ export const useProfileStore = create<ProfileState>(set => ({
 
       const response = await api.get<Profile>(endpoint);
       set({ profile: response.data, isLoading: false });
+
+      // Update the user object in AuthContext with profile data
+      const updateUser = getAuthContextUpdateUser();
+      if (updateUser && response.data) {
+        const profileData = response.data;
+        // Extract first and last name from profile.name
+        const nameParts = profileData.name.split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+
+        await updateUser({
+          name: profileData.name,
+          firstName: firstName,
+          lastName: lastName,
+        });
+      }
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to fetch profile',
@@ -56,7 +75,7 @@ export const useProfileStore = create<ProfileState>(set => ({
   updateProfile: async (profile: Partial<Profile>) => {
     try {
       set({ isLoading: true, error: null });
-      const response = await api.put<Profile>('/profile', profile);
+      const response = await api.put<Profile>('/users/profile', profile);
       set({ profile: response.data, isLoading: false });
       return response.data;
     } catch (error) {
