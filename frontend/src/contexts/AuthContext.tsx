@@ -38,11 +38,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const storedIsMockUser = localStorage.getItem('isMockUser') === 'true';
 
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
       setIsMockUser(storedIsMockUser);
     }
     setIsLoading(false);
   }, []);
+
+  // Fetch profile after AuthContext is fully initialized
+  useEffect(() => {
+    if (user && !isMockUser && !user.name) {
+      // Wait a bit for the context to be fully set up, then fetch profile
+      const timer = setTimeout(() => {
+        import('../services/ProfileService').then(({ useProfileStore }) => {
+          const { fetchProfile } = useProfileStore.getState();
+          fetchProfile();
+        });
+      }, 100);
+
+      return () => clearTimeout(timer);
+    }
+  }, [user, isMockUser]);
 
   // Remove unused parameters from handleCallback
   const handleCallback = async () => {
@@ -256,9 +272,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateUser = async (userData: Partial<User>) => {
+    console.log('AuthContext: updateUser called with:', userData);
+    console.log('AuthContext: current user before update:', user);
+
     setUser(prev => {
       if (prev) {
         const updatedUser = { ...prev, ...userData };
+        console.log('AuthContext: updated user:', updatedUser);
         // Update localStorage immediately with the new user data
         localStorage.setItem('user', JSON.stringify(updatedUser));
         return updatedUser;
@@ -269,8 +289,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Set the updateUser function in ProfileService so it can update user data
   useEffect(() => {
+    console.log('AuthContext: Setting updateUser function:', updateUser);
     setAuthContextUpdateUser(updateUser);
-  }, []);
+  }, [updateUser]);
 
   const register = async (userData: RegisterData) => {
     try {

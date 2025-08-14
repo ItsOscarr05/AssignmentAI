@@ -98,6 +98,7 @@ const DashboardHome: React.FC = () => {
   const [viewAssignment, setViewAssignment] = useState<Assignment | null>(null);
   // Notification bell menu state
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
   const open = Boolean(anchorEl);
   const handleBellClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);

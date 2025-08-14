@@ -51,6 +51,9 @@ export const useProfileStore = create<ProfileState>(set => ({
 
       // Update the user object in AuthContext with profile data
       const updateUser = getAuthContextUpdateUser();
+      console.log('ProfileService: updateUser function:', updateUser);
+      console.log('ProfileService: profile data:', response.data);
+
       if (updateUser && response.data) {
         const profileData = response.data;
         // Extract first and last name from profile.name
@@ -58,11 +61,21 @@ export const useProfileStore = create<ProfileState>(set => ({
         const firstName = nameParts[0] || '';
         const lastName = nameParts.slice(1).join(' ') || '';
 
+        console.log('ProfileService: updating user with:', {
+          name: profileData.name,
+          firstName: firstName,
+          lastName: lastName,
+        });
+
         await updateUser({
           name: profileData.name,
           firstName: firstName,
           lastName: lastName,
         });
+
+        console.log('ProfileService: user update completed');
+      } else {
+        console.log('ProfileService: updateUser function not available or no profile data');
       }
     } catch (error) {
       set({
