@@ -256,10 +256,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateUser = async (userData: Partial<User>) => {
-    setUser(prev => (prev ? { ...prev, ...userData } : null));
-    if (user) {
-      localStorage.setItem('user', JSON.stringify({ ...user, ...userData }));
-    }
+    setUser(prev => {
+      if (prev) {
+        const updatedUser = { ...prev, ...userData };
+        // Update localStorage immediately with the new user data
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        return updatedUser;
+      }
+      return null;
+    });
   };
 
   // Set the updateUser function in ProfileService so it can update user data
