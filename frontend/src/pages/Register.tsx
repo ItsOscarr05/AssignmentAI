@@ -87,6 +87,16 @@ const Register: React.FC = () => {
     return true;
   };
 
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address');
+      return false;
+    }
+    setError(''); // Clear previous email error
+    return true;
+  };
+
   // Ensure registration starts with a clean slate - no plan information
   useEffect(() => {
     // Only clear plan storage if user is not already logged in (first-time registration)
@@ -154,56 +164,64 @@ const Register: React.FC = () => {
     validateConfirmPassword(formData.confirmPassword);
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (
+      e.key === 'Enter' &&
+      formData.firstName &&
+      formData.lastName &&
+      formData.email &&
+      formData.password &&
+      formData.confirmPassword
+    ) {
+      handleSubmit(e as any);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
 
-    // Validate all fields are filled
+    // Validate all fields
+    const isFirstNameValid = formData.firstName.trim().length > 0;
+    const isLastNameValid = formData.lastName.trim().length > 0;
+    const isEmailValid = validateEmail(formData.email);
+    const isPasswordValid = validatePassword(formData.password);
+    const isConfirmPasswordValid = validateConfirmPassword(formData.confirmPassword);
+
     if (
-      !formData.firstName ||
-      !formData.lastName ||
-      !formData.email ||
-      !formData.password ||
-      !formData.confirmPassword
+      isFirstNameValid &&
+      isLastNameValid &&
+      isEmailValid &&
+      isPasswordValid &&
+      isConfirmPasswordValid
     ) {
-      setError('All fields are required');
-      return;
-    }
+      setIsLoading(true);
+      setError('');
+      setSuccess('');
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      setError('Please enter a valid email address');
-      return;
-    }
+      try {
+        await register({
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          email: formData.email.trim(),
+          password: formData.password,
+          confirm_password: formData.confirmPassword,
+        });
 
-    // Validate password
-    if (!validatePassword(formData.password)) {
-      return;
-    }
+        setSuccess('Registration successful! Redirecting to login...');
 
-    // Validate password match
-    if (!validateConfirmPassword(formData.confirmPassword)) {
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      await register({
-        email: formData.email,
-        password: formData.password,
-        confirm_password: formData.confirmPassword,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-      });
-      setSuccess('Registration successful! Redirecting to login...');
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed. Please try again.');
-    } finally {
-      setIsLoading(false);
+        // Redirect to login page after a short delay
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
+      } catch (error: any) {
+        console.error('Registration error:', error);
+        setError(error.message || 'Registration failed. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      // Show validation error if form is invalid
+      setError('Please fix the errors above before submitting.');
     }
   };
 
@@ -408,15 +426,35 @@ const Register: React.FC = () => {
                 Join AssignmentAI and transform your academic journey
               </Typography>
 
-              <form onSubmit={handleSubmit}>
+              <Box
+                component="form"
+                onSubmit={handleSubmit}
+                onKeyPress={handleKeyPress}
+                sx={{
+                  '& .MuiFormControl-root': {
+                    mb: 2,
+                  },
+                }}
+              >
                 {error && (
                   <Alert severity="error" sx={{ mb: 3 }} role="alert">
-                    {error}
+                    <Typography
+                      variant="body2"
+                      sx={{ fontFamily: "'Inter', sans-serif", fontWeight: 400 }}
+                    >
+                      {error}
+                    </Typography>
                   </Alert>
                 )}
+
                 {success && (
                   <Alert severity="success" sx={{ mb: 3 }} role="alert">
-                    {success}
+                    <Typography
+                      variant="body2"
+                      sx={{ fontFamily: "'Inter', sans-serif", fontWeight: 400 }}
+                    >
+                      {success}
+                    </Typography>
                   </Alert>
                 )}
                 <TextField
@@ -430,7 +468,6 @@ const Register: React.FC = () => {
                   onChange={handleChange}
                   sx={{
                     '& .MuiOutlinedInput-root': {
-                      height: '54px', // Reduced height
                       fontSize: '0.95rem', // Reduce input text size
                       backgroundColor: 'white',
                       '& fieldset': {
@@ -444,6 +481,8 @@ const Register: React.FC = () => {
                       },
                     },
                     '& .MuiInputLabel-root': {
+                      fontFamily: "'Inter', sans-serif",
+                      fontWeight: 400,
                       fontSize: '0.95rem', // Reduce label size
                       color: '#666666',
                     },
@@ -451,6 +490,8 @@ const Register: React.FC = () => {
                       color: '#d32f2f',
                     },
                     '& .MuiInputBase-input': {
+                      fontFamily: "'Inter', sans-serif",
+                      fontWeight: 400,
                       color: '#000000',
                     },
                   }}
@@ -466,7 +507,6 @@ const Register: React.FC = () => {
                   onChange={handleChange}
                   sx={{
                     '& .MuiOutlinedInput-root': {
-                      height: '54px',
                       fontSize: '0.95rem',
                       backgroundColor: 'white',
                       '& fieldset': {
@@ -480,6 +520,8 @@ const Register: React.FC = () => {
                       },
                     },
                     '& .MuiInputLabel-root': {
+                      fontFamily: "'Inter', sans-serif",
+                      fontWeight: 400,
                       fontSize: '0.95rem',
                       color: '#666666',
                     },
@@ -487,6 +529,8 @@ const Register: React.FC = () => {
                       color: '#d32f2f',
                     },
                     '& .MuiInputBase-input': {
+                      fontFamily: "'Inter', sans-serif",
+                      fontWeight: 400,
                       color: '#000000',
                     },
                   }}
@@ -502,7 +546,6 @@ const Register: React.FC = () => {
                   onChange={handleChange}
                   sx={{
                     '& .MuiOutlinedInput-root': {
-                      height: '54px',
                       fontSize: '0.95rem',
                       backgroundColor: 'white',
                       '& fieldset': {
@@ -516,6 +559,8 @@ const Register: React.FC = () => {
                       },
                     },
                     '& .MuiInputLabel-root': {
+                      fontFamily: "'Inter', sans-serif",
+                      fontWeight: 400,
                       fontSize: '0.95rem',
                       color: '#666666',
                     },
@@ -523,6 +568,8 @@ const Register: React.FC = () => {
                       color: '#d32f2f',
                     },
                     '& .MuiInputBase-input': {
+                      fontFamily: "'Inter', sans-serif",
+                      fontWeight: 400,
                       color: '#000000',
                     },
                   }}
@@ -623,7 +670,6 @@ const Register: React.FC = () => {
                   helperText={passwordError}
                   sx={{
                     '& .MuiOutlinedInput-root': {
-                      height: '54px',
                       fontSize: '0.95rem',
                       backgroundColor: 'white',
                       '& fieldset': {
@@ -637,6 +683,8 @@ const Register: React.FC = () => {
                       },
                     },
                     '& .MuiInputLabel-root': {
+                      fontFamily: "'Inter', sans-serif",
+                      fontWeight: 400,
                       fontSize: '0.95rem',
                       color: '#666666',
                     },
@@ -644,6 +692,8 @@ const Register: React.FC = () => {
                       color: '#d32f2f',
                     },
                     '& .MuiInputBase-input': {
+                      fontFamily: "'Inter', sans-serif",
+                      fontWeight: 400,
                       color: '#000000',
                     },
                   }}
@@ -681,7 +731,6 @@ const Register: React.FC = () => {
                   helperText={confirmPasswordError}
                   sx={{
                     '& .MuiOutlinedInput-root': {
-                      height: '54px',
                       fontSize: '0.95rem',
                       backgroundColor: 'white',
                       '& fieldset': {
@@ -695,6 +744,8 @@ const Register: React.FC = () => {
                       },
                     },
                     '& .MuiInputLabel-root': {
+                      fontFamily: "'Inter', sans-serif",
+                      fontWeight: 400,
                       fontSize: '0.95rem',
                       color: '#666666',
                     },
@@ -702,6 +753,8 @@ const Register: React.FC = () => {
                       color: '#d32f2f',
                     },
                     '& .MuiInputBase-input': {
+                      fontFamily: "'Inter', sans-serif",
+                      fontWeight: 400,
                       color: '#000000',
                     },
                   }}
@@ -729,18 +782,38 @@ const Register: React.FC = () => {
                   type="submit"
                   fullWidth
                   variant="contained"
+                  disabled={
+                    isLoading ||
+                    !formData.firstName ||
+                    !formData.lastName ||
+                    !formData.email ||
+                    !formData.password ||
+                    !formData.confirmPassword
+                  }
                   sx={{
                     mt: 3,
                     mb: 2,
-                    py: 1.0, // Reduced vertical padding
+                    py: 1.5,
                     fontFamily: "'Inter', sans-serif",
                     fontWeight: 500,
-                    fontSize: '0.95rem',
+                    fontSize: '0.9375rem',
                     textTransform: 'none',
+                    backgroundColor: '#d32f2f',
+                    '&:hover': {
+                      backgroundColor: '#b71c1c',
+                    },
+                    '&:disabled': {
+                      backgroundColor: '#e0e0e0',
+                      color: '#666666',
+                    },
                   }}
-                  disabled={isLoading}
+                  aria-label={isLoading ? 'Creating account...' : 'Register'}
                 >
-                  {isLoading ? <CircularProgress size={20} /> : 'Register'}
+                  {isLoading ? (
+                    <CircularProgress size={24} color="inherit" role="progressbar" />
+                  ) : (
+                    'Register'
+                  )}
                 </Button>
 
                 <Divider sx={{ my: 3 }}>
@@ -750,7 +823,7 @@ const Register: React.FC = () => {
                       color: '#666666',
                       fontFamily: "'Inter', sans-serif",
                       fontWeight: 400,
-                      fontSize: '0.8rem', // Reduce divider text size
+                      fontSize: '0.875rem',
                     }}
                   >
                     Or register with
@@ -779,13 +852,11 @@ const Register: React.FC = () => {
                       }
                     }}
                     sx={{
-                      py: 1.0, // Reduced vertical padding
+                      py: 1.5,
                       fontFamily: "'Inter', sans-serif",
                       fontWeight: 500,
-                      fontSize: '1rem',
-                      textTransform: 'none',
+                      letterSpacing: '0.01em',
                     }}
-                    size="small"
                   >
                     Google
                   </Button>
@@ -810,13 +881,11 @@ const Register: React.FC = () => {
                       }
                     }}
                     sx={{
-                      py: 1.0, // Reduced vertical padding
+                      py: 1.5,
                       fontFamily: "'Inter', sans-serif",
                       fontWeight: 500,
-                      fontSize: '1rem',
-                      textTransform: 'none',
+                      letterSpacing: '0.01em',
                     }}
-                    size="small"
                   >
                     GitHub
                   </Button>
@@ -826,10 +895,9 @@ const Register: React.FC = () => {
                   variant="body2"
                   align="center"
                   sx={{
-                    mt: 2,
+                    mt: 3,
                     fontFamily: "'Inter', sans-serif",
                     fontWeight: 400,
-                    fontSize: '0.9rem', // Reduce already have account text size
                     color: '#000000',
                   }}
                 >
@@ -840,15 +908,15 @@ const Register: React.FC = () => {
                     color="primary"
                     underline="hover"
                     sx={{
-                      fontWeight: 500,
                       fontFamily: "'Inter', sans-serif",
-                      fontSize: '0.9rem', // Reduce sign in link size
+                      fontWeight: 500,
+                      letterSpacing: '0.01em',
                     }}
                   >
                     Sign in
                   </Link>
                 </Typography>
-              </form>
+              </Box>
             </Box>
           </Grid>
         </Grid>

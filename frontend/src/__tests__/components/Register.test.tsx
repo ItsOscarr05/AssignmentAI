@@ -1,7 +1,7 @@
 import { ThemeProvider } from '@mui/material/styles';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import Register from '../../pages/auth/Register';
+import Register from '../../pages/Register';
 import { useAuthStore } from '../../services/AuthService';
 import { theme } from '../../theme';
 

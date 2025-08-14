@@ -50,6 +50,7 @@ export interface LoginCredentials {
 export interface LoginRequest {
   email: string;
   password: string;
+  rememberMe?: boolean;
 }
 
 export interface TokenWith2FA {

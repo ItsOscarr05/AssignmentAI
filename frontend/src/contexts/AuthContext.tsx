@@ -71,6 +71,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setError(null);
       setIsLoading(true);
 
+      console.log('Login function called with credentials:', {
+        email: credentials.email,
+        hasPassword: !!credentials.password,
+        rememberMe: credentials.rememberMe,
+      });
+
       // Validate input
       if (!InputValidation.isValidEmail(credentials.email)) {
         throw new Error('Invalid email format');
@@ -80,6 +86,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       securityMonitor.logLoginAttempt(credentials.email, false, 'Attempting login');
 
       const response = await AuthService.login(credentials);
+
+      console.log('AuthService.login response:', response);
 
       // Log successful login
       securityMonitor.logLoginAttempt(credentials.email, true);
@@ -95,7 +103,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return response;
       } else {
         // Regular login successful
-        await handleSuccessfulLogin(response);
+        console.log('Calling handleSuccessfulLogin with credentials:', credentials);
+        await handleSuccessfulLogin(response, credentials);
         return response;
       }
     } catch (error: any) {
@@ -129,7 +138,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Log successful 2FA verification
       securityMonitor.log2FAEvent('2fa_verification', true);
 
-      await handleSuccessfulLogin(response);
+      await handleSuccessfulLogin(response, {
+        email: localStorage.getItem('rememberedEmail') || '',
+        password: '',
+        rememberMe: false,
+      });
       setRequires2FA(false);
       setTempToken(null);
     } catch (error: any) {
@@ -146,7 +159,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const handleSuccessfulLogin = async (response: TokenWith2FA) => {
+  const handleSuccessfulLogin = async (response: TokenWith2FA, credentials: LoginRequest) => {
     // Store tokens using token manager
     tokenManager.storeTokens({
       access_token: response.access_token,
@@ -204,6 +217,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('isMockUser', 'false');
       setIsMockUser(false);
 
+      // Store remember me preference and form data if enabled
+      if (credentials.rememberMe) {
+        console.log('Storing remember me data:', {
+          email: userData.email,
+          rememberMe: credentials.rememberMe,
+          hasPassword: !!credentials.password,
+        });
+        localStorage.setItem('rememberMe', 'true');
+        localStorage.setItem('rememberedEmail', userData.email);
+        // Store password for auto-fill (this is a common pattern for remember me)
+        // The password is stored in the same session where the user explicitly enabled it
+        localStorage.setItem('rememberedPassword', credentials.password);
+      } else {
+        console.log('Clearing remember me data');
+        localStorage.removeItem('rememberMe');
+        localStorage.removeItem('rememberedEmail');
+        localStorage.removeItem('rememberedPassword');
+      }
+
       // Log session creation
       securityMonitor.logSessionEvent('session_created', 'session-id', user.id);
     }
@@ -233,6 +265,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('access_token');
       localStorage.removeItem('token'); // Also clear AuthManager token
       localStorage.removeItem('refresh_token');
+      // Don't clear remember me data - keep it for auto-fill on return
+      // localStorage.removeItem('rememberMe');
+      // localStorage.removeItem('rememberedEmail');
+      // localStorage.removeItem('rememberedPassword');
 
       // Log logout event
       securityMonitor.logEvent('logout', 'low', {});
@@ -263,6 +299,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('access_token');
       localStorage.removeItem('token'); // Also clear AuthManager token
       localStorage.removeItem('refresh_token');
+      // Don't clear remember me data - keep it for auto-fill on return
+      // localStorage.removeItem('rememberMe');
+      // localStorage.removeItem('rememberedEmail');
+      // localStorage.removeItem('rememberedPassword');
 
       // Log logout all event
       securityMonitor.logEvent('logout', 'low', { logoutAll: true });
@@ -357,6 +397,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsMockUser(true);
     localStorage.setItem('user', JSON.stringify(mockUser));
     localStorage.setItem('isMockUser', 'true');
+
+    // For testing remember me, let's simulate storing the mock credentials
+    const mockCredentials = {
+      email: 'dev@example.com',
+      password: 'devpassword123',
+      rememberMe: true,
+    };
+
+    if (mockCredentials.rememberMe) {
+      console.log('Mock login: Storing remember me data');
+      localStorage.setItem('rememberMe', 'true');
+      localStorage.setItem('rememberedEmail', mockCredentials.email);
+      localStorage.setItem('rememberedPassword', mockCredentials.password);
+    }
 
     // Log mock login
     securityMonitor.logEvent('login_success', 'low', {

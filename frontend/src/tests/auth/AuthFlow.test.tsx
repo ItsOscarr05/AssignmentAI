@@ -3,9 +3,9 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter, MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import LoginForm from '../../components/auth/LoginForm';
-import SignUpForm from '../../components/auth/SignUpForm';
 import { AuthProvider } from '../../contexts/AuthContext';
 import { useAuth } from '../../hooks/useAuth';
+import Register from '../../pages/Register';
 import { theme } from '../../theme';
 
 // Mock @mui/material
@@ -150,7 +150,7 @@ describe('Authentication Flow', () => {
         <BrowserRouter>
           <ThemeProvider theme={theme}>
             <AuthProvider>
-              <SignUpForm />
+              <Register />
             </AuthProvider>
           </ThemeProvider>
         </BrowserRouter>

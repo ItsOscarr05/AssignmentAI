@@ -193,6 +193,12 @@ const ResetPassword: React.FC = () => {
                       aria-label="toggle password visibility"
                       onClick={() => setShowPassword(!showPassword)}
                       edge="end"
+                      sx={{
+                        color: '#666666',
+                        '&:hover': {
+                          color: '#888888',
+                        },
+                      }}
                     >
                       {showPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>

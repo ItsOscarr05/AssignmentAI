@@ -3,9 +3,9 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthProvider } from '../../contexts/AuthContext';
+import Register from '../../pages/Register';
 import { useAuthStore } from '../../services/auth/authStore';
 import { theme } from '../../theme';
-import RegisterForm from '../RegisterForm';
 
 // Mock the auth store
 vi.mock('../../services/auth/authStore', () => ({
@@ -173,7 +173,7 @@ describe('RegisterForm', () => {
       <BrowserRouter>
         <AuthProvider>
           <ThemeProvider theme={theme}>
-            <RegisterForm />
+            <Register />
           </ThemeProvider>
         </AuthProvider>
       </BrowserRouter>

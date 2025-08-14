@@ -86,6 +86,7 @@ const AITokens: React.FC = () => {
   const [calcTokens, setCalcTokens] = React.useState(0);
   const [calcCost, setCalcCost] = React.useState(0);
   const [modalOpen, setModalOpen] = React.useState(false);
+  const [showFeaturesConfirmation, setShowFeaturesConfirmation] = React.useState(false);
   const navigate = useNavigate();
   const { isMockUser } = useAuth();
   const [assignments, setAssignments] = useState<any[]>(
@@ -93,7 +94,7 @@ const AITokens: React.FC = () => {
   );
   const [transactions, setTransactions] = useState<any[]>([]);
 
-  const { totalTokens, usedTokens, remainingTokens, percentUsed } = useTokenUsage(subscription);
+  const { totalTokens, usedTokens, remainingTokens } = useTokenUsage(subscription);
   const mapPlanToLimit = (planId?: string): number | undefined => {
     if (!planId) return undefined;
     if (planId === 'price_test_free') return 30000;
@@ -121,7 +122,7 @@ const AITokens: React.FC = () => {
     mappedLimit,
     subscriptionTokenLimit: subscription?.token_limit,
     totalTokens,
-    computedTotalTokens
+    computedTotalTokens,
   });
 
   useEffect(() => {
@@ -207,7 +208,10 @@ const AITokens: React.FC = () => {
         console.log('AITokens: subscription response', response.data);
         setSubscription(response.data);
       } catch (primaryErr: any) {
-        console.warn('AITokens: primary subscription fetch failed, trying test endpoint. Error=', primaryErr?.message || primaryErr);
+        console.warn(
+          'AITokens: primary subscription fetch failed, trying test endpoint. Error=',
+          primaryErr?.message || primaryErr
+        );
         try {
           const fallback = '/payments/subscriptions/current/test';
           const response2 = await api.get<Subscription>(fallback);
@@ -521,11 +525,12 @@ const AITokens: React.FC = () => {
       info.title
     )
   );
-  const handleTryIt = (feature: string) => {
-    // Navigate to workshop page with feature as query parameter
-    navigate(`/dashboard/workshop?feature=${encodeURIComponent(feature)}`);
-  };
   const handleSeeAllFeatures = () => {
+    setShowFeaturesConfirmation(true);
+  };
+
+  const handleConfirmFeaturesNavigation = () => {
+    setShowFeaturesConfirmation(false);
     if (window.location.pathname === '/') {
       const featuresSection = document.getElementById('features');
       if (featuresSection) {
@@ -1687,6 +1692,67 @@ const AITokens: React.FC = () => {
           </Dialog>
         </Grid>
       </Grid>
+
+      {/* Features Navigation Confirmation Dialog */}
+      <Dialog
+        open={showFeaturesConfirmation}
+        onClose={() => setShowFeaturesConfirmation(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            border: '2px solid',
+            borderColor: 'primary.main',
+            backgroundColor: theme =>
+              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+          },
+        }}
+      >
+        <DialogTitle sx={{ borderBottom: '1px solid', borderColor: 'divider', pb: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <InfoIcon sx={{ color: 'primary.main', fontSize: 28 }} />
+              <Typography
+                variant="h6"
+                sx={{
+                  color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+                  fontWeight: 600,
+                }}
+              >
+                Leave Dashboard?
+              </Typography>
+            </Box>
+            <IconButton
+              onClick={() => setShowFeaturesConfirmation(false)}
+              size="small"
+              sx={{ color: 'text.secondary' }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3, pb: 1 }}>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+            You're about to leave the dashboard and navigate to the AI Features section. Are you
+            sure this is what you want to do?
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+            You can always return to the dashboard using the navigation menu.
+          </Typography>
+        </DialogContent>
+        <DialogActions
+          sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider', justifyContent: 'center' }}
+        >
+          <Button
+            onClick={handleConfirmFeaturesNavigation}
+            variant="contained"
+            sx={{ minWidth: 120 }}
+          >
+            Continue
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

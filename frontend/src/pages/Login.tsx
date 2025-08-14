@@ -8,9 +8,11 @@ import {
 import {
   Box,
   Button,
+  Checkbox,
   CircularProgress,
   Container,
   Divider,
+  FormControlLabel,
   Grid,
   IconButton,
   InputAdornment,
@@ -19,7 +21,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 import HeroParticles from '../components/HeroParticles';
@@ -29,12 +31,57 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const { login, mockLogin } = useAuth();
   const navigate = useNavigate();
+
+  // Auto-fill email and password if remember me was previously enabled
+  useEffect(() => {
+    // Use a flag to ensure this only runs once
+    let isMounted = true;
+
+    const loadRememberedCredentials = () => {
+      const rememberedEmail = localStorage.getItem('rememberedEmail');
+      const rememberedPassword = localStorage.getItem('rememberedPassword');
+      const wasRememberMeEnabled = localStorage.getItem('rememberMe') === 'true';
+
+      console.log('Remember Me Debug:', {
+        rememberedEmail,
+        rememberedPassword,
+        wasRememberMeEnabled,
+        hasEmail: !!rememberedEmail,
+        hasPassword: !!rememberedPassword,
+      });
+
+      if (isMounted && wasRememberMeEnabled && rememberedEmail && rememberedPassword) {
+        console.log('Auto-filling fields with:', {
+          email: rememberedEmail,
+          password: rememberedPassword,
+        });
+        setEmail(rememberedEmail);
+        setPassword(rememberedPassword);
+        setRememberMe(true);
+      } else if (isMounted) {
+        console.log('Not auto-filling because:', {
+          rememberMeEnabled: wasRememberMeEnabled,
+          hasEmail: !!rememberedEmail,
+          hasPassword: !!rememberedPassword,
+        });
+      }
+    };
+
+    // Small delay to ensure component is fully mounted
+    const timer = setTimeout(loadRememberedCredentials, 100);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, []);
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -68,18 +115,30 @@ const Login: React.FC = () => {
       setError('');
 
       try {
-        const response = await login({ email, password });
+        // Pass rememberMe state to the login function
+        const response = await login({
+          email,
+          password,
+          rememberMe,
+        });
 
         if (response.requires_2fa) {
           // Redirect to 2FA verification page
           navigate('/verify-2fa');
+        } else {
+          // Show success feedback before navigation
+          console.log('Login successful, rememberMe:', rememberMe);
+          // The login function will handle navigation to dashboard
         }
-        // If no 2FA required, the login function will handle navigation to dashboard
       } catch (error: any) {
+        console.error('Login error:', error);
         setError(error.message || 'Login failed. Please try again.');
       } finally {
         setIsLoading(false);
       }
+    } else {
+      // Show validation error if form is invalid
+      setError('Please fix the errors above before submitting.');
     }
   };
 
@@ -103,6 +162,16 @@ const Login: React.FC = () => {
 
   const handlePasswordBlur = () => {
     validatePassword(password);
+  };
+
+  const handleRememberMeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setRememberMe(e.target.checked);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && email && password) {
+      handleSubmit(e as any);
+    }
   };
 
   const handleGoBack = () => {
@@ -311,7 +380,16 @@ const Login: React.FC = () => {
                 Sign in to continue to AssignmentAI
               </Typography>
 
-              <Box component="form" onSubmit={handleSubmit}>
+              <Box
+                component="form"
+                onSubmit={handleSubmit}
+                onKeyPress={handleKeyPress}
+                sx={{
+                  '& .MuiFormControl-root': {
+                    mb: 2,
+                  },
+                }}
+              >
                 <TextField
                   margin="normal"
                   required
@@ -404,6 +482,12 @@ const Login: React.FC = () => {
                           aria-label="Toggle password visibility"
                           onClick={() => setShowPassword(!showPassword)}
                           edge="end"
+                          sx={{
+                            color: '#666666',
+                            '&:hover': {
+                              color: '#888888',
+                            },
+                          }}
                         >
                           {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
                         </IconButton>
@@ -412,7 +496,43 @@ const Login: React.FC = () => {
                   }}
                 />
 
-                <Box sx={{ mt: 1, textAlign: 'right' }}>
+                {/* Remember Me Checkbox and Forgot Password Link */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mt: 1,
+                  }}
+                >
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={rememberMe}
+                        onChange={handleRememberMeChange}
+                        size="small"
+                        sx={{
+                          color: '#666666',
+                          '&.Mui-checked': {
+                            color: '#ff1a1a',
+                          },
+                        }}
+                      />
+                    }
+                    label={
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: '#666666',
+                          fontSize: '0.875rem',
+                          letterSpacing: '0.01em',
+                        }}
+                      >
+                        Remember Me
+                      </Typography>
+                    }
+                  />
+
                   <Link
                     component={RouterLink}
                     to="/forgot-password"
@@ -426,7 +546,7 @@ const Login: React.FC = () => {
                     color="primary"
                     underline="hover"
                   >
-                    Forgot password?
+                    Forgot Password?
                   </Link>
                 </Box>
 
@@ -448,7 +568,7 @@ const Login: React.FC = () => {
                   type="submit"
                   fullWidth
                   variant="contained"
-                  disabled={isLoading}
+                  disabled={isLoading || !email || !password}
                   sx={{
                     mt: 3,
                     mb: 2,
@@ -457,7 +577,16 @@ const Login: React.FC = () => {
                     fontWeight: 500,
                     letterSpacing: '0.02em',
                     fontSize: '0.9375rem',
+                    backgroundColor: '#d32f2f',
+                    '&:hover': {
+                      backgroundColor: '#b71c1c',
+                    },
+                    '&:disabled': {
+                      backgroundColor: '#e0e0e0',
+                      color: '#666666',
+                    },
                   }}
+                  aria-label={isLoading ? 'Signing in...' : 'Sign In'}
                 >
                   {isLoading ? (
                     <CircularProgress size={24} color="inherit" role="progressbar" />
