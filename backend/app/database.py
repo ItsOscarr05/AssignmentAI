@@ -2,6 +2,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from app.core.config import settings
+import os
+from app.db.base_class import Base
 
 SQLALCHEMY_DATABASE_URL = settings.database_uri
 
@@ -29,7 +31,10 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 #     autoflush=False
 # )
 
-Base = declarative_base()
+# Base = declarative_base()  # Removed to unify Base usage
+
+print("SQLALCHEMY_DATABASE_URL:", SQLALCHEMY_DATABASE_URL)
+print("Absolute path:", os.path.abspath(SQLALCHEMY_DATABASE_URL.replace('sqlite:///', '')))
 
 def get_db():
     db = SessionLocal()

@@ -3,7 +3,7 @@ from typing import Optional, List, Dict, Any
 from sqlalchemy import Boolean, Column, Integer, String, Index, DateTime, JSON
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.sql import func
-from app.database import Base
+from app.db.base_class import Base
 
 
 class User(Base):
