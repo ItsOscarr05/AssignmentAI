@@ -3,6 +3,7 @@ import {
   AutoAwesomeOutlined,
   CheckCircleOutline as CheckCircleIcon,
   InfoOutlined as InfoOutlinedIcon,
+  LightbulbOutlined,
   Pending as PendingIcon,
   TrendingUp as TrendingUpIcon,
 } from '@mui/icons-material';
@@ -522,7 +523,7 @@ const DashboardHome: React.FC = () => {
               }
             >
               <Typography
-                variant="h6"
+                variant="h5"
                 sx={{
                   fontWeight: 'bold',
                   color: theme => (theme.palette.mode === 'dark' ? '#ffffff' : '#000000'),
@@ -888,7 +889,7 @@ const DashboardHome: React.FC = () => {
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
               <Typography
-                variant="h6"
+                variant="h5"
                 sx={{
                   fontWeight: 'bold',
                   color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
@@ -922,55 +923,86 @@ const DashboardHome: React.FC = () => {
                 justifyContent: 'center',
               }}
             >
-              <Suspense fallback={<div>Loading chart...</div>}>
-                <DashboardPieChart
-                  data={pieChartData}
-                  stats={stats}
-                  distributionFilter={distributionFilter}
-                />
-              </Suspense>
-            </Box>
-            <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
-              <FormControl sx={{ minWidth: 150 }}>
-                <InputLabel id="distribution-filter-label" sx={{ color: '#D32F2F' }}>
-                  Timeframe
-                </InputLabel>
-                <Select
-                  labelId="distribution-filter-label"
-                  id="distribution-filter"
-                  value={distributionFilter}
-                  label="Timeframe"
-                  onChange={e => setDistributionFilter(e.target.value)}
+              {pieChartData.length === 0 ? (
+                <Box
                   sx={{
-                    color: '#D32F2F',
-                    backgroundColor: theme =>
-                      theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff',
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      borderColor: '#D32F2F',
-                    },
-                    '&:hover .MuiOutlinedInput-notchedOutline': {
-                      borderColor: '#D32F2F',
-                    },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                      borderColor: '#D32F2F',
-                    },
-                    '& .MuiSvgIcon-root': {
-                      color: '#D32F2F',
-                    },
-                    '& .MuiSelect-select': {
-                      backgroundColor: theme =>
-                        theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff',
-                    },
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '100%',
                   }}
                 >
-                  <MenuItem value="total">Lifetime</MenuItem>
-                  <MenuItem value="yearly">This Year</MenuItem>
-                  <MenuItem value="monthly">This Month</MenuItem>
-                  <MenuItem value="weekly">This Week</MenuItem>
-                  <MenuItem value="daily">Today</MenuItem>
-                </Select>
-              </FormControl>
+                  <AssignmentOutlinedIcon
+                    sx={{ fontSize: 80, color: 'red', mb: 3, opacity: 0.5 }}
+                  />
+                  <Typography
+                    variant="h4"
+                    color="text.secondary"
+                    gutterBottom
+                    sx={{ fontWeight: 'normal' }}
+                  >
+                    No Subjects Yet
+                  </Typography>
+                  <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 'normal' }}>
+                    Start by creating your first assignment
+                  </Typography>
+                </Box>
+              ) : (
+                <Suspense fallback={<div>Loading chart...</div>}>
+                  <DashboardPieChart
+                    data={pieChartData}
+                    stats={stats}
+                    distributionFilter={distributionFilter}
+                  />
+                </Suspense>
+              )}
             </Box>
+            {pieChartData.length > 0 && (
+              <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+                <FormControl sx={{ minWidth: 150 }}>
+                  <InputLabel id="distribution-filter-label" sx={{ color: '#D32F2F' }}>
+                    Timeframe
+                  </InputLabel>
+                  <Select
+                    labelId="distribution-filter-label"
+                    id="distribution-filter"
+                    value={distributionFilter}
+                    label="Timeframe"
+                    onChange={e => setDistributionFilter(e.target.value)}
+                    sx={{
+                      color: '#D32F2F',
+                      backgroundColor: theme =>
+                        theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#D32F2F',
+                      },
+                      '&:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#D32F2F',
+                      },
+                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#D32F2F',
+                      },
+                      '& .MuiSvgIcon-root': {
+                        color: '#D32F2F',
+                      },
+                      '& .MuiSelect-select': {
+                        backgroundColor: theme =>
+                          theme.palette.mode === 'dark'
+                            ? theme.palette.background.paper
+                            : '#ffffff',
+                      },
+                    }}
+                  >
+                    <MenuItem value="total">Lifetime</MenuItem>
+                    <MenuItem value="yearly">This Year</MenuItem>
+                    <MenuItem value="monthly">This Month</MenuItem>
+                    <MenuItem value="weekly">This Week</MenuItem>
+                    <MenuItem value="daily">Today</MenuItem>
+                  </Select>
+                </FormControl>
+              </Box>
+            )}
           </Paper>
         </Grid>
       </Grid>
@@ -997,7 +1029,7 @@ const DashboardHome: React.FC = () => {
             }}
           >
             <Typography
-              variant="h6"
+              variant="h5"
               sx={{
                 fontWeight: 'bold',
                 mb: 2,
@@ -1006,131 +1038,162 @@ const DashboardHome: React.FC = () => {
             >
               AI Activity Insights
             </Typography>
-            <Grid container spacing={{ xs: 1, md: 2 }}>
-              <Grid item xs={6}>
-                <Paper
-                  onClick={() => navigate('/dashboard/assignments', { state: { rowsPerPage: -1 } })}
-                  sx={{
-                    p: { xs: 1, md: 2 },
-                    textAlign: 'center',
-                    boxShadow: 'none',
-                    border: '1.5px solid #1976D2',
-                    background: theme =>
-                      theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease-in-out',
-                    '&:hover': {
-                      transform: 'translateY(-2px)',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                      borderColor: '#1565C0',
-                    },
-                  }}
+            {mockActivity.assignmentsGenerated === 0 &&
+            assignmentsCompletedCount === 0 &&
+            (monthlyTokenUsage ?? 0) === 0 &&
+            (lifetimeTokenUsage ?? 0) === 0 ? (
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: 120,
+                  width: '100%',
+                }}
+              >
+                <LightbulbOutlined sx={{ fontSize: 60, color: '#D32F2F', mb: 2, opacity: 0.5 }} />
+                <Typography
+                  variant="h5"
+                  color="text.secondary"
+                  gutterBottom
+                  sx={{ fontWeight: 'normal' }}
                 >
-                  <Box display="flex" flexDirection="column" alignItems="center">
-                    <AssignmentIcon sx={{ color: '#1976D2', mb: 3 }} />
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Assignments Generated
-                    </Typography>
-                    <Typography variant="h5" sx={{ color: '#1976D2', fontWeight: 700 }}>
-                      {mockActivity.assignmentsGenerated}
-                    </Typography>
-                  </Box>
-                </Paper>
+                  No Insights Yet
+                </Typography>
+                <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 'normal' }}>
+                  Start using AI features to see activity insights
+                </Typography>
+              </Box>
+            ) : (
+              <Grid container spacing={{ xs: 1, md: 2 }}>
+                <Grid item xs={6}>
+                  <Paper
+                    onClick={() =>
+                      navigate('/dashboard/assignments', { state: { rowsPerPage: -1 } })
+                    }
+                    sx={{
+                      p: { xs: 1, md: 2 },
+                      textAlign: 'center',
+                      boxShadow: 'none',
+                      border: '1.5px solid #1976D2',
+                      background: theme =>
+                        theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease-in-out',
+                      '&:hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                        borderColor: '#1565C0',
+                      },
+                    }}
+                  >
+                    <Box display="flex" flexDirection="column" alignItems="center">
+                      <AssignmentIcon sx={{ color: '#1976D2', mb: 3 }} />
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Assignments Generated
+                      </Typography>
+                      <Typography variant="h5" sx={{ color: '#1976D2', fontWeight: 700 }}>
+                        {mockActivity.assignmentsGenerated}
+                      </Typography>
+                    </Box>
+                  </Paper>
+                </Grid>
+                <Grid item xs={6}>
+                  <Paper
+                    onClick={() =>
+                      navigate('/dashboard/assignments', {
+                        state: { rowsPerPage: -1, status: 'Completed' },
+                      })
+                    }
+                    sx={{
+                      p: { xs: 1, md: 2 },
+                      textAlign: 'center',
+                      boxShadow: 'none',
+                      border: '1.5px solid #388E3C',
+                      background: theme =>
+                        theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease-in-out',
+                      '&:hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                        borderColor: '#2E7D32',
+                      },
+                    }}
+                  >
+                    <Box display="flex" flexDirection="column" alignItems="center">
+                      <CheckCircleIcon sx={{ color: '#388E3C', mb: 3 }} />
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Assignments Completed
+                      </Typography>
+                      <Typography variant="h5" sx={{ color: '#388E3C', fontWeight: 700 }}>
+                        {assignmentsCompletedCount}
+                      </Typography>
+                    </Box>
+                  </Paper>
+                </Grid>
+                <Grid item xs={6}>
+                  <Paper
+                    onClick={() => navigate('/dashboard/ai-tokens')}
+                    sx={{
+                      p: { xs: 1, md: 2 },
+                      textAlign: 'center',
+                      boxShadow: 'none',
+                      border: '1.5px solid #8E24AA',
+                      background: theme =>
+                        theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease-in-out',
+                      '&:hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                      },
+                    }}
+                  >
+                    <Box display="flex" flexDirection="column" alignItems="center">
+                      <TrendingUpIcon sx={{ color: '#8E24AA', mb: 3 }} />
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Monthly Token Usage
+                      </Typography>
+                      <Typography variant="h5" sx={{ color: '#8E24AA', fontWeight: 700 }}>
+                        {(monthlyTokenUsage ?? 0).toLocaleString()}
+                      </Typography>
+                    </Box>
+                  </Paper>
+                </Grid>
+                <Grid item xs={6}>
+                  <Paper
+                    onClick={() => navigate('/dashboard/ai-tokens')}
+                    sx={{
+                      p: { xs: 1, md: 2 },
+                      textAlign: 'center',
+                      boxShadow: 'none',
+                      border: '1.5px solid #FFA000',
+                      background: theme =>
+                        theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+                      width: '100%',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease-in-out',
+                      '&:hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                      },
+                    }}
+                  >
+                    <Box display="flex" flexDirection="column" alignItems="center">
+                      <AutoAwesomeOutlined sx={{ color: '#FFA000', mb: 3 }} />
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Lifetime Token Usage
+                      </Typography>
+                      <Typography variant="h5" sx={{ color: '#FFA000', fontWeight: 700 }}>
+                        {(lifetimeTokenUsage ?? 0).toLocaleString()}
+                      </Typography>
+                    </Box>
+                  </Paper>
+                </Grid>
               </Grid>
-              <Grid item xs={6}>
-                <Paper
-                  onClick={() =>
-                    navigate('/dashboard/assignments', {
-                      state: { rowsPerPage: -1, status: 'Completed' },
-                    })
-                  }
-                  sx={{
-                    p: { xs: 1, md: 2 },
-                    textAlign: 'center',
-                    boxShadow: 'none',
-                    border: '1.5px solid #388E3C',
-                    background: theme =>
-                      theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease-in-out',
-                    '&:hover': {
-                      transform: 'translateY(-2px)',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                      borderColor: '#2E7D32',
-                    },
-                  }}
-                >
-                  <Box display="flex" flexDirection="column" alignItems="center">
-                    <CheckCircleIcon sx={{ color: '#388E3C', mb: 3 }} />
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Assignments Completed
-                    </Typography>
-                    <Typography variant="h5" sx={{ color: '#388E3C', fontWeight: 700 }}>
-                      {assignmentsCompletedCount}
-                    </Typography>
-                  </Box>
-                </Paper>
-              </Grid>
-              <Grid item xs={6}>
-                <Paper
-                  onClick={() => navigate('/dashboard/ai-tokens')}
-                  sx={{
-                    p: { xs: 1, md: 2 },
-                    textAlign: 'center',
-                    boxShadow: 'none',
-                    border: '1.5px solid #8E24AA',
-                    background: theme =>
-                      theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease-in-out',
-                    '&:hover': {
-                      transform: 'translateY(-2px)',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                    },
-                  }}
-                >
-                  <Box display="flex" flexDirection="column" alignItems="center">
-                    <TrendingUpIcon sx={{ color: '#8E24AA', mb: 3 }} />
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Monthly Token Usage
-                    </Typography>
-                    <Typography variant="h5" sx={{ color: '#8E24AA', fontWeight: 700 }}>
-                      {(monthlyTokenUsage ?? 0).toLocaleString()}
-                    </Typography>
-                  </Box>
-                </Paper>
-              </Grid>
-              <Grid item xs={6}>
-                <Paper
-                  onClick={() => navigate('/dashboard/ai-tokens')}
-                  sx={{
-                    p: { xs: 1, md: 2 },
-                    textAlign: 'center',
-                    boxShadow: 'none',
-                    border: '1.5px solid #FFA000',
-                    background: theme =>
-                      theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
-                    width: '100%',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease-in-out',
-                    '&:hover': {
-                      transform: 'translateY(-2px)',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                    },
-                  }}
-                >
-                  <Box display="flex" flexDirection="column" alignItems="center">
-                    <AutoAwesomeOutlined sx={{ color: '#FFA000', mb: 3 }} />
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Lifetime Token Usage
-                    </Typography>
-                    <Typography variant="h5" sx={{ color: '#FFA000', fontWeight: 700 }}>
-                      {(lifetimeTokenUsage ?? 0).toLocaleString()}
-                    </Typography>
-                  </Box>
-                </Paper>
-              </Grid>
-            </Grid>
+            )}
           </Paper>
         </Grid>
       </Grid>

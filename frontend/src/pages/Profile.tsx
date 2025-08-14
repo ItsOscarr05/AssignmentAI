@@ -2,14 +2,11 @@ import {
   AccountCircleOutlined,
   AssignmentOutlined,
   BadgeOutlined,
-  CancelOutlined,
   EditOutlined,
   EmailOutlined,
   LanguageOutlined,
   LocationOnOutlined,
   LogoutOutlined,
-  PhotoCameraOutlined,
-  SaveOutlined,
   TimelineOutlined,
   VerifiedOutlined,
 } from '@mui/icons-material';
@@ -20,24 +17,19 @@ import {
   Button,
   Chip,
   CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Divider,
   Grid,
-  IconButton,
   Paper,
   Snackbar,
   Stack,
   Tab,
   Tabs,
-  TextField,
   Tooltip,
   Typography,
   useTheme,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
+import EditProfileDialog from '../components/profile/EditProfileDialog';
 import { useAuth } from '../contexts/AuthContext';
 import { useAssignments } from '../hooks/useApiQuery';
 import { useAspectRatio } from '../hooks/useAspectRatio';
@@ -726,201 +718,17 @@ const Profile: React.FC = () => {
       </Box>
 
       {/* Edit Profile Dialog */}
-      <Dialog
+      <EditProfileDialog
         open={isEditDialogOpen}
         onClose={handleCloseEditDialog}
-        maxWidth="md"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            background:
-              theme.palette.mode === 'dark'
-                ? 'linear-gradient(145deg, rgba(0,8,20,0.95) 0%, rgba(0,8,20,0.95) 100%)'
-                : 'linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(240,240,240,0.95) 100%)',
-            backdropFilter: 'blur(10px)',
-          },
-        }}
-      >
-        <DialogTitle
-          sx={{
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
-            color: 'white',
-            borderRadius: '12px 12px 0 0',
-          }}
-        >
-          <Stack direction="row" alignItems="center" spacing={2}>
-            <EditOutlined />
-            <Typography variant="h6">Edit Profile</Typography>
-          </Stack>
-        </DialogTitle>
-
-        <DialogContent sx={{ p: 4 }}>
-          <Grid container spacing={3}>
-            {/* Avatar Section */}
-            <Grid item xs={12} sx={{ textAlign: 'center', mb: 3 }}>
-              <Box sx={{ position: 'relative', display: 'inline-block' }}>
-                <Avatar
-                  src={
-                    avatarPreview || (profileData as any)?.avatarUrl || (profileData as any)?.avatar
-                  }
-                  sx={{
-                    width: 120,
-                    height: 120,
-                    border: '4px solid',
-                    borderColor: theme.palette.primary.main,
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                  }}
-                >
-                  <AccountCircleOutlined sx={{ fontSize: 80, color: theme.palette.error.main }} />
-                </Avatar>
-                <Tooltip title="Change Avatar">
-                  <IconButton
-                    component="label"
-                    sx={{
-                      position: 'absolute',
-                      bottom: 0,
-                      right: 0,
-                      bgcolor: 'background.paper',
-                      border: '2px solid',
-                      borderColor: theme.palette.primary.main,
-                      '&:hover': {
-                        bgcolor: 'action.hover',
-                      },
-                    }}
-                  >
-                    <PhotoCameraOutlined />
-                    <input type="file" hidden accept="image/*" onChange={handleAvatarChange} />
-                  </IconButton>
-                </Tooltip>
-              </Box>
-            </Grid>
-
-            {/* Form Fields */}
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="First Name"
-                value={editForm.firstName}
-                onChange={e => handleFormChange('firstName', e.target.value)}
-                variant="outlined"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                  },
-                }}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Last Name"
-                value={editForm.lastName}
-                onChange={e => handleFormChange('lastName', e.target.value)}
-                variant="outlined"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                  },
-                }}
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Email"
-                value={editForm.email}
-                onChange={e => handleFormChange('email', e.target.value)}
-                variant="outlined"
-                type="email"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                  },
-                }}
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Bio"
-                value={editForm.bio}
-                onChange={e => handleFormChange('bio', e.target.value)}
-                variant="outlined"
-                multiline
-                rows={3}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                  },
-                }}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Location"
-                value={editForm.location}
-                onChange={e => handleFormChange('location', e.target.value)}
-                variant="outlined"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                  },
-                }}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Institution"
-                value={editForm.institution}
-                onChange={e => handleFormChange('institution', e.target.value)}
-                variant="outlined"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                  },
-                }}
-              />
-            </Grid>
-          </Grid>
-        </DialogContent>
-
-        <DialogActions sx={{ p: 3, borderTop: '1px solid', borderColor: 'divider' }}>
-          <Button
-            onClick={handleCloseEditDialog}
-            startIcon={<CancelOutlined />}
-            variant="outlined"
-            sx={{ borderRadius: 2 }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSaveProfile}
-            startIcon={isAvatarUploading ? <CircularProgress size={20} /> : <SaveOutlined />}
-            variant="contained"
-            disabled={isAvatarUploading}
-            sx={{
-              borderRadius: 2,
-              background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
-              boxShadow: '0 4px 20px 0px rgba(0,0,0,0.14), 0 7px 10px -5px rgba(33,150,243,0.4)',
-              '&:hover': {
-                boxShadow: '0 7px 30px -10px rgba(33,150,243,0.6)',
-              },
-            }}
-          >
-            {isAvatarUploading ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        editForm={editForm}
+        onFormChange={handleFormChange}
+        onSave={handleSaveProfile}
+        onAvatarChange={handleAvatarChange}
+        avatarPreview={avatarPreview}
+        profileData={profileData}
+        isAvatarUploading={isAvatarUploading}
+      />
 
       {/* Snackbar for notifications */}
       <Snackbar

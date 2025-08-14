@@ -207,10 +207,19 @@ const Profile: React.FC = () => {
             value={editForm.bio}
             onChange={e => setEditForm({ ...editForm, bio: e.target.value })}
           />
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleSaveProfile}
+              sx={{ minWidth: 120 }}
+            >
+              Save Changes
+            </Button>
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsEditProfileOpen(false)}>Cancel</Button>
-          <Button onClick={handleSaveProfile}>Save Changes</Button>
         </DialogActions>
       </Dialog>
       <Dialog open={isEditPreferencesOpen} onClose={() => setIsEditPreferencesOpen(false)}>

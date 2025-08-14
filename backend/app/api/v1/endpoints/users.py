@@ -76,7 +76,8 @@ def read_user_me(
         "full_name": current_user.name,
         "role": "user",  # Default role for now
         "is_active": current_user.is_active,
-        "is_verified": current_user.is_verified
+        "is_verified": current_user.is_verified,
+        "created_at": current_user.created_at.isoformat() if current_user.created_at else None
     }
 
 @router.get("/profile", response_model=UserProfile)
