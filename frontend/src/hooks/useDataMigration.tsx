@@ -249,20 +249,13 @@ const UserPreferences = () => {
         ...data,
         theme: data.theme || 'light',
         fontSize: data.fontSize || 16,
-        notifications: data.notifications || {
-          email: true,
-          push: true,
-          desktop: true,
-        },
+
       }),
       validate: (data) => {
         return (
           data.theme &&
           typeof data.fontSize === 'number' &&
-          data.notifications &&
-          typeof data.notifications.email === 'boolean' &&
-          typeof data.notifications.push === 'boolean' &&
-          typeof data.notifications.desktop === 'boolean'
+
         );
       },
     },
@@ -270,17 +263,11 @@ const UserPreferences = () => {
       version: 2,
       migrate: (data) => ({
         ...data,
-        notifications: {
-          ...data.notifications,
-          sms: false,
-          frequency: 'daily',
-        },
+
       }),
       validate: (data) => {
         return (
-          data.notifications &&
-          typeof data.notifications.sms === 'boolean' &&
-          data.notifications.frequency === 'daily'
+          
         );
       },
     },

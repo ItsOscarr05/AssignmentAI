@@ -20,31 +20,13 @@ export interface UserSettings {
     sound_effects: boolean;
     haptic_feedback: boolean;
     volume: number;
-    notification_sounds: boolean;
+
     typing_sounds: boolean;
     completion_sounds: boolean;
     quiet_hours_start: number;
     quiet_hours_end: number;
   };
-  notifications: {
-    email: boolean;
-    desktop: boolean;
-    sound: boolean;
-    assignments: boolean;
-    deadlines: boolean;
-    feedback: boolean;
-    updates: boolean;
-    priority_level: string;
-    group_notifications: boolean;
-    show_preview: boolean;
-    show_badge: boolean;
-    show_in_taskbar: boolean;
-    work_hours_start: number;
-    work_hours_end: number;
-    work_days: number[];
-    quiet_hours_start: number;
-    quiet_hours_end: number;
-  };
+
   privacy: {
     two_factor_auth: boolean;
     biometric_login: boolean;
@@ -256,7 +238,7 @@ class SettingsService {
         sound_effects: soundEffects !== 'false',
         haptic_feedback: localStorage.getItem('hapticFeedback') !== 'false',
         volume: volume ? parseInt(volume) : 70,
-        notification_sounds: localStorage.getItem('notificationSounds') !== 'false',
+
         typing_sounds: localStorage.getItem('typingSounds') === 'true',
         completion_sounds: localStorage.getItem('completionSounds') !== 'false',
         quiet_hours_start: parseInt(localStorage.getItem('quietHoursStart') || '22'),
@@ -285,7 +267,7 @@ class SettingsService {
       localStorage.setItem('soundEffects', settings.sound.sound_effects.toString());
       localStorage.setItem('hapticFeedback', settings.sound.haptic_feedback.toString());
       localStorage.setItem('volume', settings.sound.volume.toString());
-      localStorage.setItem('notificationSounds', settings.sound.notification_sounds.toString());
+
       localStorage.setItem('typingSounds', settings.sound.typing_sounds.toString());
       localStorage.setItem('completionSounds', settings.sound.completion_sounds.toString());
       localStorage.setItem('quietHoursStart', settings.sound.quiet_hours_start.toString());

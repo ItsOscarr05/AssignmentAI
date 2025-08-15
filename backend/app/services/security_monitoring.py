@@ -35,7 +35,7 @@ class SecurityMonitoringService:
         user_id: Optional[int] = None,
         ip_address: Optional[str] = None
     ) -> None:
-        """Log a security alert and trigger notifications if needed"""
+        """Log a security alert and trigger alerts if needed"""
         timestamp = datetime.utcnow().isoformat()
         alert = {
             "timestamp": timestamp,
@@ -60,12 +60,12 @@ class SecurityMonitoringService:
         else:
             logger.info(f"Security Alert: {alert_type} - {json.dumps(details)}")
 
-        # Send notifications for high and critical alerts
+        # Send alerts for high and critical security events
         if severity in ["HIGH", "CRITICAL"]:
-            self._send_security_notification(alert)
+            self._send_security_alert(alert)
 
-    def _send_security_notification(self, alert: Dict) -> None:
-        """Send security notifications via email"""
+    def _send_security_alert(self, alert: Dict) -> None:
+        """Send security alerts via email"""
         if not settings.ALERT_EMAIL:
             return
 
@@ -91,7 +91,7 @@ class SecurityMonitoringService:
                 server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
                 server.send_message(msg)
         except Exception as e:
-            logger.error(f"Failed to send security notification: {str(e)}")
+            logger.error(f"Failed to send security alert: {str(e)}")
 
     def track_failed_login_attempts(self, db: Session, user: User, ip_address: str) -> None:
         """Track failed login attempts and generate alerts"""

@@ -161,7 +161,7 @@ module.exports = {
   // Feature Flags
   features: {
     aiAnalysis: true,
-    realTimeNotifications: true,
+
     fileUpload: true,
     analytics: true,
     maintenance: false,

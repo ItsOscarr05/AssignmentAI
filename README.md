@@ -15,23 +15,9 @@ A comprehensive assignment management system with AI-powered features for educat
 - ⚙️ Settings Customization
 - Assignment management
 - AI-powered feedback
-- Real-time notifications
+
 - User authentication
 - File storage
-- Email notifications
-
-## Notification System
-
-The application includes a comprehensive notification system that provides:
-
-- Real-time in-app notifications
-- Email notifications for important events
-- Multiple notification types (success, error, warning, info)
-- Notification persistence and management
-- Mark as read functionality
-- Notification grouping and filtering
-
-For detailed documentation about the notification system, see [Notifications Documentation](docs/notifications.md).
 
 ## Tech Stack
 
@@ -152,6 +138,6 @@ See [Environment Variables Documentation](docs/environment-variables.md) for det
 ## Documentation
 
 - [API Documentation](docs/api.md)
-- [Notifications Documentation](docs/notifications.md)
+
 - [Environment Variables](docs/environment-variables.md)
 - [Deployment Guide](docs/deployment.md)

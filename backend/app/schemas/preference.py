@@ -2,11 +2,7 @@ from typing import Optional, Dict, Any
 from pydantic import BaseModel, Field, ConfigDict
 from uuid import uuid4
 
-class NotificationTypes(BaseModel):
-    assignment_due: bool = True
-    grade: bool = True
-    comment: bool = True
-    announcement: bool = True
+
 
 class PreferenceBase(BaseModel):
     # UI Preferences
@@ -15,10 +11,7 @@ class PreferenceBase(BaseModel):
     font_size: str = "medium"
     compact_mode: bool = False
     
-    # Notification Preferences
-    email_notifications: bool = True
-    push_notifications: bool = True
-    notification_types: NotificationTypes = Field(default_factory=NotificationTypes)
+
     
     # Privacy Preferences
     show_profile: bool = True
@@ -44,10 +37,7 @@ class PreferenceUpdate(BaseModel):
     font_size: Optional[str] = None
     compact_mode: Optional[bool] = None
     
-    # Notification Preferences
-    email_notifications: Optional[bool] = None
-    push_notifications: Optional[bool] = None
-    notification_types: Optional[NotificationTypes] = None
+
     
     # Privacy Preferences
     show_profile: Optional[bool] = None

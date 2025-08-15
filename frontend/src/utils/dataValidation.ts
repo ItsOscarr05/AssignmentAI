@@ -67,11 +67,7 @@ export const userPreferencesSchema = z.object({
   userId: baseSchemas.id,
   theme: z.enum(['light', 'dark', 'system']),
   fontSize: z.number().min(12).max(24),
-  notifications: z.object({
-    email: z.boolean(),
-    push: z.boolean(),
-    desktop: z.boolean(),
-  }),
+
   language: z.string().min(2).max(5),
 
   createdAt: baseSchemas.timestamp,

@@ -1,8 +1,4 @@
-import {
-  Menu as MenuIcon,
-  Notifications as NotificationsIcon,
-  Settings as SettingsIcon,
-} from '@mui/icons-material';
+import { Menu as MenuIcon, Settings as SettingsIcon } from '@mui/icons-material';
 import {
   AppBar,
   Avatar,
@@ -14,6 +10,7 @@ import {
   Toolbar,
   Tooltip,
   Typography,
+  useTheme,
 } from '@mui/material';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -22,6 +19,7 @@ import { useAuth } from '../contexts/AuthContext';
 const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const theme = useTheme();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
@@ -77,18 +75,6 @@ const Navbar: React.FC = () => {
         </Typography>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <IconButton
-            sx={{
-              color: 'white',
-              '&:hover': {
-                background: 'rgba(255,255,255,0.1)',
-              },
-            }}
-            aria-label="notifications"
-          >
-            <NotificationsIcon />
-          </IconButton>
-
           <IconButton
             sx={{
               color: 'white',

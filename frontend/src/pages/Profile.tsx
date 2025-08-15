@@ -730,7 +730,7 @@ const Profile: React.FC = () => {
         isAvatarUploading={isAvatarUploading}
       />
 
-      {/* Snackbar for notifications */}
+      {/* Snackbar for alerts */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}

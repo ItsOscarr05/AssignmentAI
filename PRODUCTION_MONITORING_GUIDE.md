@@ -17,7 +17,7 @@ The production monitoring script provides comprehensive health checks and automa
 - **System Resource Monitoring**: CPU, memory, and disk usage
 - **Database Backup Verification**: Ensures backups are recent
 - **SSL Certificate Monitoring**: Checks certificate expiration
-- **Email Alerts**: Sends notifications for critical issues
+- **Email Alerts**: Sends alerts for critical issues
 
 #### Usage
 

@@ -20,7 +20,7 @@ from app.models.ai_assignment import AIAssignment
 from app.models.class_model import Class
 from app.models.security import SecurityAlert, AuditLog, TwoFactorSetup
 from app.models.log import SystemLog
-from app.models.notification import Notification
+
 from app.models.subscription import Subscription
 from app.models.usage import Usage, UsageLimit
 from app.models.activity import Activity

@@ -94,7 +94,7 @@ app = FastAPI(
         * Create, edit, and organize assignments
         * Support for multiple file formats
         * Assignment templates and libraries
-        * Due date management and notifications
+        * Due date management
 
     * 👥 User Management
         * Teacher and student accounts
@@ -116,7 +116,7 @@ app = FastAPI(
 
     * 🔗 Integrations
         * File storage integration
-        * Email notifications
+
 
     * 📊 Administration
         * User management

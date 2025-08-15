@@ -43,7 +43,6 @@ describe('Profile Component', () => {
         },
         preferences: {
           darkMode: false,
-          notifications: true,
         },
       },
       isLoading: false,
@@ -143,7 +142,6 @@ describe('Profile Component', () => {
     await waitFor(() => {
       expect(mockUpdatePreferences).toHaveBeenCalledWith({
         darkMode: true,
-        notifications: false,
       });
     });
   });

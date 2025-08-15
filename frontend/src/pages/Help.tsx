@@ -540,7 +540,8 @@ const Help: React.FC = () => {
                 fontSize: { xs: '0.75rem', md: '0.875rem' },
                 px: { xs: 1.5, md: 2 },
                 py: { xs: 0.5, md: 0.75 },
-                backgroundColor: theme => (theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff'),
+                backgroundColor: theme =>
+                  theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff',
                 borderColor: theme =>
                   theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
                 color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
@@ -563,7 +564,8 @@ const Help: React.FC = () => {
                 fontSize: { xs: '0.75rem', md: '0.875rem' },
                 px: { xs: 1.5, md: 2 },
                 py: { xs: 0.5, md: 0.75 },
-                backgroundColor: theme => (theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff'),
+                backgroundColor: theme =>
+                  theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff',
                 borderColor: theme =>
                   theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
                 color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
@@ -597,11 +599,7 @@ const Help: React.FC = () => {
             bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
           }}
         >
-          <Tabs
-            value={tabValue}
-            onChange={handleTabChange}
-            variant="fullWidth"
-          >
+          <Tabs value={tabValue} onChange={handleTabChange} variant="fullWidth">
             <Tab icon={<QuestionAnswerOutlined />} label="FAQ" />
             <Tab icon={<ContactSupportOutlined />} label="Contact" />
           </Tabs>
@@ -1180,7 +1178,7 @@ const Help: React.FC = () => {
         </Button>
       </Box>
 
-      {/* Snackbar for notifications */}
+      {/* Snackbar for alerts */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}

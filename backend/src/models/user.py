@@ -33,4 +33,4 @@ class User(Base):
     given_feedback = relationship("Feedback", foreign_keys="[Feedback.teacher_id]", back_populates="teacher")
     received_feedback = relationship("Feedback", foreign_keys="[Feedback.student_id]", back_populates="student")
     attachments = relationship("Attachment", back_populates="user")
-    notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan") 
+ 

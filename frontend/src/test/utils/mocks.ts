@@ -66,16 +66,6 @@ Object.defineProperty(window, 'ResizeObserver', {
   value: ResizeObserverMock,
 });
 
-// Mock Notification API
-const NotificationMock = {
-  requestPermission: vi.fn(),
-  permission: 'granted',
-};
-
-Object.defineProperty(window, 'Notification', {
-  value: NotificationMock,
-});
-
 // Mock Service Worker
 const ServiceWorkerMock = {
   register: vi.fn(),

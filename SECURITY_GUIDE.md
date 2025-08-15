@@ -248,7 +248,7 @@ type SecurityEventType =
 
 ### Alert System
 
-- **Real-time Alerts**: Immediate notification of security events
+- **Real-time Alerts**: Immediate alerting of security events
 - **Severity Levels**: Low, Medium, High, Critical
 - **Alert Categories**: Authentication, Authorization, Data, System
 - **Escalation**: Critical events sent to backend
@@ -378,9 +378,9 @@ const securityHeaders = {
 ### Escalation Matrix
 
 - **Low Severity**: Automated response
-- **Medium Severity**: Security team notification
-- **High Severity**: Management notification
-- **Critical Severity**: Executive notification
+- **Medium Severity**: Security team alert
+- **High Severity**: Management alert
+- **Critical Severity**: Executive alert
 
 ## Compliance
 

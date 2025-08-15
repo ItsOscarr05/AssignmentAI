@@ -8,7 +8,7 @@ from .ai_assignment import AIAssignment
 from .class_model import Class
 from .security import SecurityAlert, AuditLog, TwoFactorSetup
 from .log import SystemLog
-from .notification import Notification
+
 from .subscription import Subscription
 from .usage import Usage, UsageLimit
 
@@ -25,7 +25,7 @@ __all__ = [
     "AuditLog",
     "TwoFactorSetup",
     "SystemLog",
-    "Notification",
+
     "Subscription",
     "Usage",
     "UsageLimit",

@@ -100,7 +100,7 @@ const Privacy = () => {
             - Conducting quality assurance and testing
 
           • Communication and Support:
-            - Sending service notifications and updates
+            - Sending service alerts and updates
             - Providing technical support and assistance
             - Responding to inquiries and feedback
             - Sending security alerts and important notices
@@ -313,8 +313,8 @@ const Privacy = () => {
             - Regulatory requirement updates
             - Technology impact evaluation
 
-          • Notification Methods:
-            - Platform notifications
+          • Alert Methods:
+            - Platform alerts
             - Email communications
             - Website announcements
             - Account dashboard updates

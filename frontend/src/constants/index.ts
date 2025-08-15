@@ -56,14 +56,6 @@ export const DATE_FORMATS = {
   DATETIME: 'MMMM D, YYYY h:mm A',
 } as const;
 
-// Notification Types
-export const NOTIFICATION_TYPES = {
-  SUCCESS: 'success',
-  ERROR: 'error',
-  WARNING: 'warning',
-  INFO: 'info',
-} as const;
-
 // Theme
 export const THEME = {
   LIGHT: 'light',
@@ -126,5 +118,4 @@ export const FEATURE_FLAGS = {
   ENABLE_AUTO_GRADING: true,
   ENABLE_PLAGIARISM_CHECK: true,
   ENABLE_ANALYTICS: true,
-  ENABLE_NOTIFICATIONS: true,
 } as const;

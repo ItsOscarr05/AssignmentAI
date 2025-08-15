@@ -65,7 +65,7 @@ vi.mock('@mui/icons-material', () => ({
   Edit: () => <span data-testid="edit-icon" />,
   History: () => <span data-testid="history-icon" />,
   MoreVert: () => <span data-testid="more-vert-icon" />,
-  Notifications: () => <span data-testid="notifications-icon" />,
+
   Settings: () => <span data-testid="settings-icon" />,
   Speed: () => <span data-testid="speed-icon" />,
   Storage: () => <span data-testid="storage-icon" />,

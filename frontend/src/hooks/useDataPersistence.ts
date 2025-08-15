@@ -192,13 +192,13 @@ const UserPreferences: React.FC = () => {
   interface Preferences {
     theme: 'light' | 'dark';
     fontSize: number;
-    notifications: boolean;
+
   }
 
   const initialPreferences: Preferences = {
     theme: 'light',
     fontSize: 16,
-    notifications: true,
+
   };
 
   const {
@@ -217,7 +217,7 @@ const UserPreferences: React.FC = () => {
         typeof data === 'object' &&
         'theme' in data &&
         'fontSize' in data &&
-        'notifications' in data
+
       );
     },
     transformData: {
@@ -258,15 +258,7 @@ const UserPreferences: React.FC = () => {
     );
   };
 
-  const handleNotificationsToggle = () => {
-    updateData(
-      prev => ({
-        ...prev,
-        notifications: !prev.notifications,
-      }),
-      'notifications-toggle'
-    );
-  };
+
 
   return (
     <div>
@@ -309,10 +301,7 @@ const UserPreferences: React.FC = () => {
           <label>
             <input
               type="checkbox"
-              checked={preferences.notifications}
-              onChange={handleNotificationsToggle}
-            />
-            Enable Notifications
+
           </label>
         </div>
       </div>

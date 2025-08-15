@@ -138,10 +138,6 @@ async def get_profile_test(
             "avatarUrl": result.avatar if result.avatar else None,
             "bio": result.bio,
             "preferences": {
-                "notifications": {
-                    "email": True,
-                    "push": True
-                },
                 "theme": "light",
                 "language": "en"
             }
@@ -159,10 +155,6 @@ async def get_profile_test(
             "bio": "This is a test user profile for testing purposes",
             "avatarUrl": None,
             "preferences": {
-                "notifications": {
-                    "email": True,
-                    "push": True
-                },
                 "theme": "light",
                 "language": "en"
             }

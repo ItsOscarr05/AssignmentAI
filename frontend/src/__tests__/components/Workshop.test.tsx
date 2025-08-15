@@ -115,9 +115,7 @@ vi.mock('@mui/icons-material', () => {
     Schedule: createIconMock('Schedule'),
     Timer: createIconMock('Timer'),
     Alarm: createIconMock('Alarm'),
-    Notifications: createIconMock('Notifications'),
-    NotificationsActive: createIconMock('NotificationsActive'),
-    NotificationsNone: createIconMock('NotificationsNone'),
+
     Visibility: createIconMock('Visibility'),
     VisibilityOff: createIconMock('VisibilityOff'),
     Lock: createIconMock('Lock'),

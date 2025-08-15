@@ -79,17 +79,26 @@ const UserPreferencesComponent: React.FC = () => {
         throw new Error('Invalid preferences data received');
       }
 
-      // Validate required fields
-      const requiredFields = ['theme', 'language', 'notifications', 'accessibility'];
-      const missingFields = requiredFields.filter(field => !(field in data));
+      // Ensure all required fields are present with defaults
+      const preferencesWithDefaults: UserPreferences = {
+        theme: data.theme || 'light',
+        language: data.language || 'en',
+        notifications: {
+          email: data.notifications?.email ?? true,
+          push: data.notifications?.push ?? true,
+          assignmentReminders: data.notifications?.assignmentReminders ?? true,
+          gradeUpdates: data.notifications?.gradeUpdates ?? true,
+          feedbackAlerts: data.notifications?.feedbackAlerts ?? true,
+        },
+        accessibility: {
+          highContrast: data.accessibility?.highContrast ?? false,
+          largeText: data.accessibility?.largeText ?? false,
+          screenReader: data.accessibility?.screenReader ?? false,
+        },
+      };
 
-      if (missingFields.length > 0) {
-        console.error('Missing required fields:', missingFields);
-        throw new Error('Missing required fields in preferences data');
-      }
-
-      console.log('Setting preferences state...');
-      setPreferences(data);
+      console.log('Setting preferences state with defaults...');
+      setPreferences(preferencesWithDefaults);
       console.log('Preferences state updated');
     } catch (error) {
       console.error('Error in fetchPreferences:', error);

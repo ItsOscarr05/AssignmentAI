@@ -9,7 +9,7 @@ export interface TestUserData {
   updatedAt: string;
   preferences: {
     theme: 'light' | 'dark';
-    notifications: boolean;
+
     language: string;
   };
   profile: {
@@ -71,7 +71,7 @@ export class TestUserService {
         updatedAt: new Date().toISOString(),
         preferences: {
           theme: 'light',
-          notifications: true,
+
           language: 'en',
         },
         profile: {
@@ -232,7 +232,7 @@ export class TestUserService {
         updatedAt: new Date().toISOString(),
         preferences: {
           theme: 'light',
-          notifications: false,
+
           language: 'en',
         },
         profile: {

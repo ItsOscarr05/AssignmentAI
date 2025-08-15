@@ -20,7 +20,7 @@ from app.api.v1.endpoints import (
     security,
     activities,
     classes,
-    notifications,
+
     preferences,
     usage,
     diagrams,
@@ -59,7 +59,7 @@ api_router.include_router(workshop.router, prefix="/workshop", tags=["workshop"]
 api_router.include_router(security.router, prefix="/security", tags=["security"])
 api_router.include_router(activities.router, prefix="/activities", tags=["activities"])
 api_router.include_router(classes.router, prefix="/classes", tags=["classes"])
-api_router.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
+
 api_router.include_router(preferences.router, prefix="/preferences", tags=["preferences"])
 api_router.include_router(usage.router, prefix="/usage", tags=["usage"])
 api_router.include_router(diagrams.router, prefix="/diagrams", tags=["diagrams"])

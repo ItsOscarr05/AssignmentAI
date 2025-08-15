@@ -22,7 +22,7 @@ import re
 import asyncio
 from fastapi import HTTPException
 from app.models.usage import Usage
-from app.services.notification import NotificationService, NotificationType
+
 
 class AIService:
     def __init__(self, db: AsyncSession):
@@ -480,25 +480,7 @@ class AIService:
         tokens_needed_int = int(tokens_needed)
         token_limit_int = int(token_limit)
 
-        # --- Token threshold notification logic ---
-        thresholds = [75, 50, 25, 10]
-        remaining = token_limit_int - tokens_used_int
-        percent_remaining = (remaining / token_limit_int) * 100
-        notified = subscription.notified_token_thresholds or []
-        notification_service = NotificationService(self.db)
-        for threshold in thresholds:
-            if percent_remaining <= threshold and threshold not in notified:
-                await notification_service.create_notification(
-                    user_id=user_id,
-                    notification_type=NotificationType.SYSTEM,
-                    title="Token Limit Warning",
-                    message=f"You have {remaining:,} tokens ({threshold}%) remaining this month."
-                )
-                notified.append(threshold)
-        if set(notified) != set(subscription.notified_token_thresholds or []):
-            subscription.notified_token_thresholds = notified
-            self.db.commit()
-        # --- End token threshold notification logic ---
+
 
         if tokens_used_int + tokens_needed_int > token_limit_int:
             raise HTTPException(

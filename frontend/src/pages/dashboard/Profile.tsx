@@ -30,7 +30,6 @@ const Profile: React.FC = () => {
   });
   const [preferencesForm, setPreferencesForm] = useState({
     darkMode: false,
-    notifications: false,
   });
 
   const handleLogout = useCallback(() => {
@@ -62,10 +61,6 @@ const Profile: React.FC = () => {
     if (!profile) return;
     setPreferencesForm({
       darkMode: (profile.preferences as any).darkMode ?? profile.preferences.theme === 'dark',
-      notifications:
-        typeof profile.preferences.notifications === 'boolean'
-          ? profile.preferences.notifications
-          : false,
     });
     setIsEditPreferencesOpen(true);
   }, [profile]);
@@ -74,7 +69,6 @@ const Profile: React.FC = () => {
     if (!profile) return;
     updatePreferences({
       darkMode: !preferencesForm.darkMode,
-      notifications: !preferencesForm.notifications,
     } as any);
     setIsEditPreferencesOpen(false);
   }, [profile, preferencesForm, updatePreferences]);
@@ -236,18 +230,6 @@ const Profile: React.FC = () => {
               />
             }
             label="Dark Mode"
-          />
-          <FormControlLabel
-            control={
-              <Switch
-                checked={preferencesForm.notifications}
-                onChange={e =>
-                  setPreferencesForm({ ...preferencesForm, notifications: e.target.checked })
-                }
-                inputProps={{ 'aria-label': 'Notifications' }}
-              />
-            }
-            label="Notifications"
           />
         </DialogContent>
         <DialogActions>

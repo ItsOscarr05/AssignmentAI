@@ -211,7 +211,7 @@ export const Preferences: React.FC = () => {
               <FormControlLabel
                 control={
                   <Switch
-                    checked={preferences.email_notifications}
+                    checked={preferences.email_notifications ?? false}
                     onChange={e =>
                       handlePreferenceChange({ email_notifications: e.target.checked })
                     }
@@ -224,7 +224,7 @@ export const Preferences: React.FC = () => {
               <FormControlLabel
                 control={
                   <Switch
-                    checked={preferences.push_notifications}
+                    checked={preferences.push_notifications ?? false}
                     onChange={e => handlePreferenceChange({ push_notifications: e.target.checked })}
                   />
                 }
@@ -236,7 +236,7 @@ export const Preferences: React.FC = () => {
                 Notification Types
               </Typography>
               <Grid container spacing={2}>
-                {Object.entries(preferences.notification_types).map(([type, enabled]) => (
+                {Object.entries(preferences.notification_types || {}).map(([type, enabled]) => (
                   <Grid item xs={12} sm={6} key={type}>
                     <FormControlLabel
                       control={
@@ -245,7 +245,7 @@ export const Preferences: React.FC = () => {
                           onChange={e =>
                             handlePreferenceChange({
                               notification_types: {
-                                ...preferences.notification_types,
+                                ...(preferences.notification_types || {}),
                                 [type]: e.target.checked,
                               },
                             })

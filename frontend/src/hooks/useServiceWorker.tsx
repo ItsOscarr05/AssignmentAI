@@ -190,7 +190,7 @@ const App = () => {
     updateInterval: 1000 * 60 * 60, // 1 hour
     onUpdate: (registration) => {
       console.log('New service worker available');
-      // Show update notification to user
+      // Show update alert to user
     },
     onSuccess: (registration) => {
       console.log('Service worker registered successfully');
@@ -204,7 +204,7 @@ const App = () => {
     },
     onError: (error) => {
       console.error('Service worker error:', error);
-      // Show error notification to user
+      // Show error alert to user
     },
   });
 

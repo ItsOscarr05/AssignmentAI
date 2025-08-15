@@ -5,7 +5,6 @@ import {
   CircularProgress,
   FormControl,
   FormControlLabel,
-  FormGroup,
   Grid,
   InputLabel,
   MenuItem,
@@ -15,15 +14,15 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { settingsApi } from '../../services/api/settings';
-import { AppSettings } from '../../types/settings';
+import { UserSettings } from '../../types/index';
 
 interface SettingsProps {
-  initialSettings?: AppSettings;
-  onUpdate?: (settings: Partial<AppSettings>) => void;
+  initialSettings?: UserSettings;
+  onUpdate?: (settings: Partial<UserSettings>) => void;
   on2FASetup?: () => void;
   on2FADisable?: () => void;
   onThemeChange?: (theme: 'light' | 'dark' | 'system') => void;
-  onNotificationUpdate?: (notifications: Partial<AppSettings['notifications']>) => void;
+
   isLoading?: boolean;
   error?: string;
   success?: string;
@@ -32,7 +31,19 @@ interface SettingsProps {
 function Settings({ initialSettings, onUpdate }: SettingsProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [settings, setSettings] = useState<AppSettings | null>(initialSettings || null);
+  const [settings, setSettings] = useState<UserSettings | null>(() => {
+    if (initialSettings) {
+      return {
+        ...initialSettings,
+        privacy: {
+          ...(initialSettings.privacy || {}),
+          profileVisibility: initialSettings.privacy?.profileVisibility || 'public',
+          activityStatus: initialSettings.privacy?.activityStatus ?? true,
+        },
+      };
+    }
+    return null;
+  });
 
   useEffect(() => {
     if (!initialSettings) {
@@ -47,7 +58,15 @@ function Settings({ initialSettings, onUpdate }: SettingsProps) {
     setError(null);
     try {
       const response = await settingsApi.getSettings();
-      setSettings(response.data);
+      const fetchedSettings = response.data;
+      setSettings({
+        ...fetchedSettings,
+        privacy: {
+          profileVisibility: 'public',
+          activityStatus: true,
+          ...(fetchedSettings.privacy || {}),
+        },
+      });
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to fetch settings');
     } finally {
@@ -55,16 +74,28 @@ function Settings({ initialSettings, onUpdate }: SettingsProps) {
     }
   };
 
-  const handleSettingChange = async (section: keyof AppSettings, field: string, value: any) => {
+  const handleSettingChange = async (
+    field: keyof UserSettings,
+    value: string | boolean,
+    subField?: string
+  ) => {
     if (!settings) return;
 
-    const updatedSettings = {
-      ...settings,
-      [section]: {
-        ...(settings[section] as Record<string, any>),
+    let updatedSettings;
+    if (subField && field === 'privacy') {
+      updatedSettings = {
+        ...settings,
+        privacy: {
+          ...settings.privacy,
+          [subField]: value,
+        },
+      };
+    } else {
+      updatedSettings = {
+        ...settings,
         [field]: value,
-      },
-    };
+      };
+    }
 
     setSettings(updatedSettings);
 
@@ -107,109 +138,24 @@ function Settings({ initialSettings, onUpdate }: SettingsProps) {
       </Typography>
 
       <Grid container spacing={3}>
-        {/* Notifications */}
+        {/* Theme */}
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                Notifications
-              </Typography>
-              <FormGroup>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={settings.notifications.email}
-                      onChange={e =>
-                        handleSettingChange('notifications', 'email', e.target.checked)
-                      }
-                    />
-                  }
-                  label="Email Notifications"
-                />
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={settings.notifications.push}
-                      onChange={e => handleSettingChange('notifications', 'push', e.target.checked)}
-                    />
-                  }
-                  label="Push Notifications"
-                />
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={settings.notifications.assignments}
-                      onChange={e =>
-                        handleSettingChange('notifications', 'assignments', e.target.checked)
-                      }
-                    />
-                  }
-                  label="Assignment Updates"
-                />
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={settings.notifications.grades}
-                      onChange={e =>
-                        handleSettingChange('notifications', 'grades', e.target.checked)
-                      }
-                    />
-                  }
-                  label="Grade Notifications"
-                />
-              </FormGroup>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Appearance */}
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Appearance
+                Theme
               </Typography>
               <Grid container spacing={2}>
                 <Grid item xs={12}>
                   <FormControl fullWidth>
                     <InputLabel>Theme</InputLabel>
                     <Select
-                      value={settings.appearance.theme}
-                      onChange={e => handleSettingChange('appearance', 'theme', e.target.value)}
+                      value={settings.theme}
+                      onChange={e => handleSettingChange('theme', e.target.value)}
                       label="Theme"
                     >
                       <MenuItem value="light">Light</MenuItem>
                       <MenuItem value="dark">Dark</MenuItem>
-                      <MenuItem value="system">System</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12}>
-                  <FormControl fullWidth>
-                    <InputLabel>Font Size</InputLabel>
-                    <Select
-                      value={settings.appearance.fontSize}
-                      onChange={e => handleSettingChange('appearance', 'fontSize', e.target.value)}
-                      label="Font Size"
-                    >
-                      <MenuItem value="small">Small</MenuItem>
-                      <MenuItem value="medium">Medium</MenuItem>
-                      <MenuItem value="large">Large</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12}>
-                  <FormControl fullWidth>
-                    <InputLabel>Density</InputLabel>
-                    <Select
-                      value={settings.appearance.density}
-                      onChange={e => handleSettingChange('appearance', 'density', e.target.value)}
-                      label="Density"
-                    >
-                      <MenuItem value="comfortable">
-                        Comfortable
-                      </MenuItem>
-                      <MenuItem value="compact">Compact</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
@@ -231,9 +177,7 @@ function Settings({ initialSettings, onUpdate }: SettingsProps) {
                     <InputLabel>Language</InputLabel>
                     <Select
                       value={settings.language}
-                      onChange={e => {
-                        handleSettingChange('language', '', e.target.value);
-                      }}
+                      onChange={e => handleSettingChange('language', e.target.value)}
                       label="Language"
                     >
                       <MenuItem value="en">English</MenuItem>
@@ -261,15 +205,13 @@ function Settings({ initialSettings, onUpdate }: SettingsProps) {
                     <Select
                       value={settings.privacy.profileVisibility}
                       onChange={e =>
-                        handleSettingChange('privacy', 'profileVisibility', e.target.value)
+                        handleSettingChange('privacy', e.target.value, 'profileVisibility')
                       }
                       label="Profile Visibility"
                     >
                       <MenuItem value="public">Public</MenuItem>
                       <MenuItem value="private">Private</MenuItem>
-                      <MenuItem value="connections">
-                        Connections Only
-                      </MenuItem>
+                      <MenuItem value="connections">Connections Only</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
@@ -279,7 +221,7 @@ function Settings({ initialSettings, onUpdate }: SettingsProps) {
                       <Switch
                         checked={settings.privacy.activityStatus}
                         onChange={e =>
-                          handleSettingChange('privacy', 'activityStatus', e.target.checked)
+                          handleSettingChange('privacy', e.target.checked, 'activityStatus')
                         }
                       />
                     }

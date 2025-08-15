@@ -316,8 +316,8 @@ rsync -avz build/ /var/www/assignmentai/
 
 ### Communication Plan
 
-- [ ] **Internal Notification**: Notify development team
-- [ ] **User Notification**: Notify users if necessary
+- [ ] **Internal Communication**: Notify development team
+- [ ] **User Communication**: Notify users if necessary
 - [ ] **Status Page**: Update status page
 - [ ] **Documentation**: Document rollback reason
 - [ ] **Post-Mortem**: Schedule post-mortem meeting

@@ -139,19 +139,7 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_files_id'), 'files', ['id'], unique=False)
-    op.create_table('notifications',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.Column('title', sa.String(length=255), nullable=False),
-    sa.Column('message', sa.Text(), nullable=False),
-    sa.Column('notification_type', sa.String(length=50), nullable=False),
-    sa.Column('is_read', sa.Boolean(), nullable=True),
-    sa.Column('created_at', sa.DateTime(), nullable=True),
-    sa.Column('read_at', sa.DateTime(), nullable=True),
-    sa.Column('notification_metadata', sa.JSON(), nullable=True),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_notifications_id'), 'notifications', ['id'], unique=False)
+
     op.create_table('preferences',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
@@ -159,9 +147,7 @@ def upgrade() -> None:
     sa.Column('language', sa.String(length=10), nullable=True),
     sa.Column('font_size', sa.String(length=20), nullable=True),
     sa.Column('compact_mode', sa.Boolean(), nullable=True),
-    sa.Column('email_notifications', sa.Boolean(), nullable=True),
-    sa.Column('push_notifications', sa.Boolean(), nullable=True),
-    sa.Column('notification_types', sa.JSON(), nullable=True),
+
     sa.Column('show_profile', sa.Boolean(), nullable=True),
     sa.Column('show_progress', sa.Boolean(), nullable=True),
     sa.Column('show_activity', sa.Boolean(), nullable=True),
@@ -381,8 +367,7 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_preferences_user_id'), table_name='preferences')
     op.drop_index(op.f('ix_preferences_id'), table_name='preferences')
     op.drop_table('preferences')
-    op.drop_index(op.f('ix_notifications_id'), table_name='notifications')
-    op.drop_table('notifications')
+
     op.drop_index(op.f('ix_files_id'), table_name='files')
     op.drop_table('files')
     op.drop_index(op.f('ix_classes_id'), table_name='classes')

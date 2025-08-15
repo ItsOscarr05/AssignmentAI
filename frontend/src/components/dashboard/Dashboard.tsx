@@ -5,7 +5,6 @@ import {
   Edit as EditIcon,
   History as HistoryIcon,
   MoreVert as MoreVertIcon,
-  Notifications as NotificationsIcon,
   Settings as SettingsIcon,
   Speed as SpeedIcon,
   Storage as StorageIcon,
@@ -122,7 +121,7 @@ const Dashboard: React.FC = () => {
       case 'subscription_updated':
         return <SettingsIcon color="warning" />;
       default:
-        return <NotificationsIcon />;
+        return <SettingsIcon />;
     }
   };
 
@@ -420,7 +419,7 @@ const Dashboard: React.FC = () => {
             </List>
           ) : (
             <Box sx={{ textAlign: 'center', py: 3 }}>
-              <NotificationsIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+              <SettingsIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
               <Typography color="text.secondary">No recent activity</Typography>
             </Box>
           )}

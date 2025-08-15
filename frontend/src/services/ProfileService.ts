@@ -3,10 +3,6 @@ import { getAuthContextUpdateUser } from '../utils/authBridge';
 import { api } from './api';
 
 interface ProfilePreferences {
-  notifications: {
-    email: boolean;
-    push: boolean;
-  };
   theme: 'light' | 'dark';
   language: string;
 }

@@ -4,6 +4,7 @@ import { recentAssignments } from '../data/mockData';
 interface Subscription {
   token_limit?: number;
   current_period_end?: string;
+  plan_id?: string;
 }
 
 export function useTokenUsage(subscription?: Subscription | null) {

@@ -17,7 +17,7 @@ interface AuthResponse {
     institution?: string;
     preferences?: {
       theme: 'light' | 'dark';
-      notifications: boolean;
+
       language: string;
     };
     createdAt: string;

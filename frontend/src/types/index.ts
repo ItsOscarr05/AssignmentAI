@@ -14,7 +14,6 @@ export interface User {
   institution?: string;
   preferences?: {
     theme: 'light' | 'dark';
-    notifications: boolean;
     language: string;
   };
   createdAt: string;
@@ -33,8 +32,6 @@ export interface UserProfile {
 }
 
 export interface UserPreferences {
-  emailNotifications: boolean;
-  pushNotifications: boolean;
   darkMode: boolean;
   language: string;
 }
@@ -179,29 +176,6 @@ export interface Link {
   title: string;
   description?: string;
   createdAt: string;
-}
-
-// Notification Types
-export interface Notification {
-  id: string;
-  user_id: string;
-  type: string;
-  title: string;
-  message: string;
-  data?: Record<string, any>;
-  is_read: boolean;
-  is_archived: boolean;
-  created_at: string;
-  read_at?: string;
-  expires_at?: string;
-}
-
-export interface NotificationFilter {
-  type?: string;
-  is_read?: boolean;
-  is_archived?: boolean;
-  start_date?: string;
-  end_date?: string;
 }
 
 // API Response Types
@@ -452,8 +426,11 @@ export interface UserSettings {
   id: string;
   userId: string;
   theme: 'light' | 'dark';
-  notifications: boolean;
   language: string;
+  privacy: {
+    profileVisibility: 'public' | 'private' | 'connections';
+    activityStatus: boolean;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -492,13 +469,6 @@ export interface ActivityStats {
   daily_activity: Record<string, number>;
 }
 
-export interface NotificationTypes {
-  assignment_due: boolean;
-  grade: boolean;
-  comment: boolean;
-  announcement: boolean;
-}
-
 export interface Preference {
   id: string;
   user_id: string;
@@ -512,7 +482,7 @@ export interface Preference {
   // Notification Preferences
   email_notifications: boolean;
   push_notifications: boolean;
-  notification_types: NotificationTypes;
+  notification_types: Record<string, boolean>;
 
   // Privacy Preferences
   show_profile: boolean;

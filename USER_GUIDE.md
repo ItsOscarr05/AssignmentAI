@@ -181,7 +181,7 @@ A session represents your active login on a device. You can have multiple active
 
 - **Strong Password Requirements**: Enforced password complexity
 - **Account Lockout**: Protection against brute force attacks
-- **Login Notifications**: Email alerts for new logins
+- **Login Alerts**: Email alerts for new logins
 - **Suspicious Activity Detection**: Automated threat detection
 
 ### Data Protection
@@ -241,7 +241,7 @@ If you forget your password:
 #### "Account Locked"
 
 - **Wait for Unlock**: Wait for the lockout period to expire
-- **Check Email**: Look for account lockout notifications
+- **Check Email**: Look for account lockout alerts
 - **Contact Support**: If you believe this is an error
 
 #### "2FA Code Invalid"
@@ -315,7 +315,7 @@ If you forget your password:
 1. **Review Settings**: Regularly review your privacy settings
 2. **Limit Sharing**: Be cautious about sharing personal information
 3. **Logout**: Always logout from shared or public devices
-4. **Monitor Alerts**: Pay attention to security notifications
+4. **Monitor Alerts**: Pay attention to security alerts
 
 ### Data Management
 

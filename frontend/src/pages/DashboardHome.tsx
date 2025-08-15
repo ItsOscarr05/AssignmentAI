@@ -10,7 +10,7 @@ import {
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
 import AutorenewOutlinedIcon from '@mui/icons-material/AutorenewOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
+
 import PlayArrowOutlinedIcon from '@mui/icons-material/PlayArrowOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import {
@@ -23,10 +23,7 @@ import {
   DialogTitle,
   FormControl,
   Grid,
-  IconButton,
   InputLabel,
-  ListItemText,
-  Menu,
   MenuItem,
   Paper,
   Select,
@@ -46,17 +43,13 @@ import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardPieChart from '../components/dashboard/DashboardPieChart';
 import { useAuth } from '../contexts/AuthContext';
-import {
-  mockNotificationTemplates,
-  recentAssignmentsWithSubject,
-  type Assignment,
-} from '../data/mockData';
+import { recentAssignmentsWithSubject, type Assignment } from '../data/mockData';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { api } from '../services/api';
-import { notificationService } from '../services/notification';
+
 import { mapToCoreSubject } from '../services/subjectService';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
-import { Notification } from '../types';
+
 import { DateFormat, getDefaultDateFormat } from '../utils/dateFormat';
 
 const DashboardHome: React.FC = () => {
@@ -97,39 +90,6 @@ const DashboardHome: React.FC = () => {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
   const [viewAssignment, setViewAssignment] = useState<Assignment | null>(null);
-  // Notification bell menu state
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-
-  const open = Boolean(anchorEl);
-  const handleBellClick = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
-
-  // Mock notifications for mock users only
-  const mockNotifications = useMemo(() => {
-    if (!isMockUser) return [];
-    const shuffled = [...mockNotificationTemplates].sort(() => 0.5 - Math.random());
-    return shuffled
-      .slice(0, Math.floor(Math.random() * 5) + 1)
-      .map((n, i) => ({ ...n, id: i + 1 }));
-  }, [isMockUser]);
-
-  // Real notifications for real users
-  const [realNotifications, setRealNotifications] = useState<Notification[]>([]);
-  const [notificationsLoading, setNotificationsLoading] = useState(false);
-  useEffect(() => {
-    if (!isMockUser) {
-      setNotificationsLoading(true);
-      notificationService
-        .getNotifications({}, 0, 5)
-        .then(n => setRealNotifications(n))
-        .catch(() => setRealNotifications([]))
-        .finally(() => setNotificationsLoading(false));
-    }
-  }, [isMockUser]);
 
   // Fetch real assignments if not mock user
   useEffect(() => {
@@ -278,9 +238,8 @@ const DashboardHome: React.FC = () => {
                   : 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 120%)',
               border: '2px solid #D32F2F',
               display: 'flex',
-              flexDirection: breakpoint === 'tall' || breakpoint === 'standard' ? 'column' : 'row',
-              alignItems:
-                breakpoint === 'tall' || breakpoint === 'standard' ? 'flex-start' : 'center',
+              flexDirection: breakpoint === 'tall' ? 'column' : 'row',
+              alignItems: breakpoint === 'tall' ? 'flex-start' : 'center',
               justifyContent: 'space-between',
               gap:
                 breakpoint === 'tall'
@@ -297,55 +256,35 @@ const DashboardHome: React.FC = () => {
               width: '100%',
             }}
           >
-            <Box>
-              <Box
+            {/* Left Side - Welcome Content (40-45% width) */}
+            <Box sx={{ flex: '1 1 45%', pr: { xs: 0, md: 2 } }}>
+              <Typography
+                variant={
+                  breakpoint === 'tall'
+                    ? 'h5'
+                    : breakpoint === 'square'
+                    ? 'h4'
+                    : breakpoint === 'standard'
+                    ? 'h3'
+                    : breakpoint === 'wide'
+                    ? 'h2'
+                    : breakpoint === 'ultra-wide'
+                    ? 'h1'
+                    : 'h1'
+                }
                 sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
+                  fontWeight: 700,
+                  color: '#D32F2F',
+                  fontSize: getAspectRatioStyle(
+                    aspectRatioStyles.typography.h1.fontSize,
+                    breakpoint,
+                    '1.5rem'
+                  ),
                   mb: breakpoint === 'tall' || breakpoint === 'standard' ? 1 : 2,
                 }}
               >
-                <Typography
-                  variant={
-                    breakpoint === 'tall'
-                      ? 'h5'
-                      : breakpoint === 'square'
-                      ? 'h4'
-                      : breakpoint === 'standard'
-                      ? 'h3'
-                      : breakpoint === 'wide'
-                      ? 'h2'
-                      : breakpoint === 'ultra-wide'
-                      ? 'h1'
-                      : 'h1'
-                  }
-                  sx={{
-                    fontWeight: 700,
-                    color: '#D32F2F',
-                    fontSize: getAspectRatioStyle(
-                      aspectRatioStyles.typography.h1.fontSize,
-                      breakpoint,
-                      '1.5rem'
-                    ),
-                  }}
-                >
-                  Welcome back, {user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'User'}!
-                </Typography>
-                <IconButton
-                  aria-label="notifications"
-                  onClick={handleBellClick}
-                  sx={{
-                    color: '#D32F2F',
-                    transition: 'all 0.2s',
-                    '&:hover': {
-                      background: theme => (theme.palette.mode === 'dark' ? '#001122' : '#f5f5f5'),
-                    },
-                  }}
-                >
-                  <NotificationsNoneOutlinedIcon fontSize="medium" />
-                </IconButton>
-              </Box>
+                Welcome back, {user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'User'}!
+              </Typography>
               <Typography
                 variant="body1"
                 color="text.secondary"
@@ -353,120 +292,169 @@ const DashboardHome: React.FC = () => {
               >
                 Ready to tackle your assignments?
               </Typography>
-              <Typography variant="body2" color="primary" sx={{ fontStyle: 'italic' }}>
+              <Typography
+                variant="body2"
+                color="primary"
+                sx={{
+                  fontStyle: 'italic',
+                  lineHeight: 1.6,
+                  maxWidth: '80%',
+                }}
+              >
                 AI Tip: Try asking me to analyze your assignment structure or suggest improvements!
               </Typography>
             </Box>
-            <Stack
-              direction={breakpoint === 'tall' || breakpoint === 'standard' ? 'row' : 'row'}
-              spacing={
-                breakpoint === 'tall'
-                  ? 1
-                  : breakpoint === 'square'
-                  ? 2
-                  : breakpoint === 'standard'
-                  ? 2
-                  : breakpoint === 'wide'
-                  ? 4
-                  : 6
-              }
-              alignItems="center"
-              sx={{ flexWrap: 'wrap' }}
-            >
-              <Button
-                variant="outlined"
-                color="primary"
-                onClick={() => navigate('/dashboard/workshop#upload-content-card')}
+
+            {/* Center Divider - Only visible on medium+ screens */}
+            <Box
+              sx={{
+                display: { xs: 'none', md: 'block' },
+                width: '2px',
+                backgroundColor: 'rgba(211, 47, 47, 0.3)',
+                mx: 2,
+                alignSelf: 'stretch',
+                position: 'relative',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: '10%',
+                  bottom: '10%',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: '1px',
+                  background:
+                    'linear-gradient(180deg, transparent 0%, rgba(211, 47, 47, 0.1) 50%, transparent 100%)',
+                },
+              }}
+            />
+
+            {/* Right Side - Quick Actions Section (55-60% width) */}
+            <Box sx={{ flex: '1 1 55%', pl: { xs: 0, md: 3 } }}>
+              {/* Quick Actions Header */}
+              <Box sx={{ textAlign: 'center', mb: 2 }}>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    color: '#D32F2F',
+                    fontWeight: 700,
+                    mb: 0.5,
+                    fontSize: '1.1rem',
+                  }}
+                >
+                  Quick Actions
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: 'text.secondary',
+                    fontSize: '0.75rem',
+                    opacity: 0.8,
+                  }}
+                >
+                  Get started with your assignments
+                </Typography>
+              </Box>
+
+              {/* Quick Action Buttons */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  onClick={() => navigate('/dashboard/workshop')}
+                  sx={{
+                    borderColor: '#D32F2F',
+                    color: '#D32F2F',
+                    fontWeight: 600,
+                    py: 1.5,
+                    '&:hover': {
+                      borderColor: '#B71C1C',
+                      backgroundColor: 'rgba(211, 47, 47, 0.05)',
+                    },
+                  }}
+                >
+                  Create Assignment
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="secondary"
+                  onClick={() => navigate('/dashboard/workshop#upload-content-card')}
+                  sx={{
+                    borderColor: '#1976D2',
+                    color: '#1976D2',
+                    fontWeight: 600,
+                    py: 1.5,
+                    '&:hover': {
+                      borderColor: '#1565C0',
+                      backgroundColor: 'rgba(25, 118, 210, 0.05)',
+                    },
+                  }}
+                >
+                  Upload Content
+                </Button>
+              </Box>
+
+              {/* Recent Activity Summary */}
+              <Box
+                sx={{
+                  backgroundColor: theme =>
+                    theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.1)' : 'rgba(0, 0, 0, 0.02)',
+                  borderRadius: 2,
+                  p: 2,
+                  border: '1px solid rgba(0, 0, 0, 0.1)',
+                }}
               >
-                Upload Content
-              </Button>
-              <Button
-                variant="outlined"
-                color="secondary"
-                onClick={() => navigate('/dashboard/assignments')}
-              >
-                Ask AI about your assignment
-              </Button>
-            </Stack>
-            <Menu
-              anchorEl={anchorEl}
-              open={open}
-              onClose={handleMenuClose}
-              PaperProps={{ sx: { minWidth: 300, maxWidth: 350, p: 1 } }}
-            >
-              {isMockUser && mockNotifications.length > 0 ? (
-                mockNotifications.map(n => (
-                  <MenuItem key={n.id} onClick={handleMenuClose}>
-                    <ListItemText
-                      primary={
-                        <Typography fontWeight="bold" sx={{ color: '#D32F2F' }}>
-                          {n.title}
-                        </Typography>
-                      }
-                      secondary={
-                        <Typography variant="body2" color="text.secondary">
-                          {n.body}
-                        </Typography>
-                      }
-                    />
-                  </MenuItem>
-                ))
-              ) : !isMockUser && notificationsLoading ? (
-                <MenuItem disabled>
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    color: 'text.primary',
+                    fontWeight: 600,
+                    mb: 1,
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  Recent Activity
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                   <Box
-                    width="100%"
-                    display="flex"
-                    flexDirection="column"
-                    alignItems="center"
-                    py={2}
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      backgroundColor: '#4CAF50',
+                      animation: 'pulse 2s infinite',
+                    }}
+                  />
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: 'text.secondary',
+                      fontSize: '0.75rem',
+                      opacity: 0.8,
+                    }}
                   >
-                    <NotificationsNoneOutlinedIcon
-                      sx={{ fontSize: 40, color: 'red', mb: 3, opacity: 0.5 }}
-                    />
-                    <Typography variant="h6" sx={{ color: '#222' }} gutterBottom>
-                      Loading notifications...
-                    </Typography>
-                  </Box>
-                </MenuItem>
-              ) : !isMockUser && realNotifications.length > 0 ? (
-                realNotifications.map(n => (
-                  <MenuItem key={n.id} onClick={handleMenuClose}>
-                    <ListItemText
-                      primary={
-                        <Typography fontWeight="bold" sx={{ color: '#D32F2F' }}>
-                          {n.title}
-                        </Typography>
-                      }
-                      secondary={
-                        <Typography variant="body2" color="text.secondary">
-                          {n.message}
-                        </Typography>
-                      }
-                    />
-                  </MenuItem>
-                ))
-              ) : (
-                <MenuItem disabled>
-                  <Box
-                    width="100%"
-                    display="flex"
-                    flexDirection="column"
-                    alignItems="center"
-                    py={2}
-                  >
-                    <NotificationsNoneOutlinedIcon
-                      sx={{ fontSize: 40, color: 'red', mb: 3, opacity: 0.5 }}
-                    />
-                    <Typography variant="h6" sx={{ color: '#222' }} gutterBottom>
-                      No Notifications Yet
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: '#333' }}>
-                      You're all caught up!
-                    </Typography>
-                  </Box>
-                </MenuItem>
-              )}
-            </Menu>
+                    {assignments.length > 0
+                      ? `${assignments.length} assignments`
+                      : 'No assignments yet'}
+                  </Typography>
+                </Box>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: 'text.secondary',
+                    fontSize: '0.7rem',
+                    opacity: 0.6,
+                    fontStyle: 'italic',
+                    display: 'block',
+                    textAlign: 'center',
+                    mt: 1,
+                  }}
+                >
+                  {assignments.length > 0
+                    ? 'Ready to work on your next assignment'
+                    : 'Start by creating your first assignment'}
+                </Typography>
+              </Box>
+            </Box>
           </Paper>
         </Grid>
       </Grid>

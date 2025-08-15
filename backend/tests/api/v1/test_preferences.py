@@ -14,7 +14,7 @@ def test_get_preferences_success(client, test_user, test_token):
     data = response.json()
     assert "theme" in data
     assert "language" in data
-    assert "email_notifications" in data
+
 
 def test_update_preferences_success(client, test_user, test_token, db):
     """Test successful update of user preferences"""
@@ -26,7 +26,7 @@ def test_update_preferences_success(client, test_user, test_token, db):
     update_data = {
         "theme": "light",
         "language": "es",
-        "email_notifications": False
+
     }
     response = client.patch(
         "/api/v1/preferences/",
@@ -37,7 +37,7 @@ def test_update_preferences_success(client, test_user, test_token, db):
     data = response.json()
     assert data["theme"] == "light"
     assert data["language"] == "es"
-    assert data["email_notifications"] is False
+
 
 def test_update_preferences_not_found(client, test_user, test_token, db):
     """Test update of preferences when they don't exist"""
@@ -138,7 +138,7 @@ def test_get_preferences_creates_new(client, test_user, test_token, db):
     data = response.json()
     assert "theme" in data
     assert "language" in data
-    assert "email_notifications" in data
+
 
 def test_update_preferences_partial_update(client, test_user, test_token, db):
     """Test partial update of preferences"""

@@ -67,7 +67,7 @@ class TestSecurityMonitoringService:
     def test_log_security_alert_high(self, security_service):
         """Test logging high severity alerts"""
         with patch('app.services.security_monitoring.logger') as mock_logger:
-            with patch.object(security_service, '_send_security_notification') as mock_notify:
+            with patch.object(security_service, '_send_security_alert') as mock_notify:
                 security_service.log_security_alert(
                     "TEST_ALERT",
                     "HIGH",
@@ -100,8 +100,8 @@ class TestSecurityMonitoringService:
             mock_logger.info.assert_called_once()
 
     @patch('app.services.security_monitoring.smtplib.SMTP')
-    def test_send_security_notification_success(self, mock_smtp, security_service):
-        """Test successful security notification sending"""
+    def test_send_security_alert_success(self, mock_smtp, security_service):
+        """Test successful security alert sending"""
         with patch('app.services.security_monitoring.settings') as mock_settings:
             mock_settings.ALERT_EMAIL = "admin@example.com"
             mock_settings.SMTP_FROM_EMAIL = "noreply@example.com"
@@ -120,7 +120,7 @@ class TestSecurityMonitoringService:
             mock_server = Mock()
             mock_smtp.return_value.__enter__.return_value = mock_server
             
-            security_service._send_security_notification(alert)
+            security_service._send_security_alert(alert)
             
             mock_smtp.assert_called_once_with("smtp.gmail.com", 587)
             mock_server.starttls.assert_called_once()
@@ -128,8 +128,8 @@ class TestSecurityMonitoringService:
             mock_server.send_message.assert_called_once()
 
     @patch('app.services.security_monitoring.smtplib.SMTP')
-    def test_send_security_notification_failure(self, mock_smtp, security_service):
-        """Test security notification sending failure"""
+    def test_send_security_alert_failure(self, mock_smtp, security_service):
+        """Test security alert sending failure"""
         with patch('app.services.security_monitoring.settings') as mock_settings:
             mock_settings.ALERT_EMAIL = "admin@example.com"
             mock_settings.SMTP_FROM_EMAIL = "noreply@example.com"
@@ -148,11 +148,11 @@ class TestSecurityMonitoringService:
             mock_smtp.side_effect = Exception("SMTP Error")
             
             with patch('app.services.security_monitoring.logger') as mock_logger:
-                security_service._send_security_notification(alert)
+                security_service._send_security_alert(alert)
                 mock_logger.error.assert_called_once()
 
-    def test_send_security_notification_no_alert_email(self, security_service):
-        """Test security notification when no alert email is configured"""
+    def test_send_security_alert_no_alert_email(self, security_service):
+        """Test security alert when no alert email is configured"""
         with patch('app.services.security_monitoring.settings') as mock_settings:
             mock_settings.ALERT_EMAIL = None
             
@@ -166,7 +166,7 @@ class TestSecurityMonitoringService:
             }
             
             # Should not raise any exception
-            security_service._send_security_notification(alert)
+            security_service._send_security_alert(alert)
 
     def test_track_failed_login_attempts_below_threshold(self, security_service, mock_user, mock_db):
         """Test tracking failed login attempts below threshold"""

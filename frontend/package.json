@@ -12,11 +12,7 @@
     "test:run": "vitest run",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint . --ext ts,tsx --fix",
-    "type-check": "tsc --noEmit",
-
-    "cypress:open": "cypress open",
-    "cypress:run": "cypress run",
-    "e2e": "start-server-and-test dev http://localhost:3001 cypress:run"
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@axe-core/react": "^4.8.5",
@@ -66,7 +62,6 @@
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/user-event": "^14.6.1",
-    "@types/cypress": "^0.1.6",
     "@types/negotiator": "^0.6.4",
     "@types/node": "^20.11.19",
     "@types/react": "^18.2.55",
@@ -75,7 +70,6 @@
     "@vitest/coverage-v8": "^3.2.4",
     "@vitest/expect": "^3.2.4",
     "@vitest/ui": "^3.2.4",
-    "cypress": "^14.3.3",
     "dotenv": "^16.5.0",
     "glob": "^11.0.3",
     "jest": "^30.0.4",

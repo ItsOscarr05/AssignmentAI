@@ -325,12 +325,6 @@ export const server = setupServer(
   // Settings endpoints
   http.get<PathParams, DefaultBodyType>('/api/settings', async () => {
     return HttpResponse.json({
-      notifications: {
-        email: true,
-        push: true,
-        assignments: true,
-        grades: true,
-      },
       appearance: {
         theme: 'light',
         fontSize: 'medium',

@@ -61,7 +61,7 @@ vi.mock('@mui/material', async () => {
 // Mock Material-UI icons
 vi.mock('@mui/icons-material', () => ({
   Menu: () => <span aria-label="menu">Menu</span>,
-  Notifications: () => <span aria-label="notifications">Notifications</span>,
+
   Settings: () => <span aria-label="settings">Settings</span>,
   AccountCircle: () => <span aria-label="account settings">Account</span>,
 }));
@@ -109,7 +109,7 @@ describe('Navbar', () => {
     renderNavbar();
     expect(screen.getByText(/assignmentai/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /menu/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /notifications/i })).toBeInTheDocument();
+
     expect(screen.getByRole('button', { name: /^settings$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /account settings/i })).toBeInTheDocument();
   });

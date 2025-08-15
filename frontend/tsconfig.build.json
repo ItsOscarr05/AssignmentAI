@@ -9,7 +9,7 @@
     "src/tests/**",
     "src/**/*.stories.ts",
     "src/**/*.stories.tsx",
-    "cypress/**",
+
     "**/*.test.js",
     "**/*.test.jsx",
     "**/*.spec.js",

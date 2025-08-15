@@ -116,7 +116,7 @@
 ### 3. Alerting
 
 - [ ] Email alerts configured
-- [ ] Slack/Discord notifications (optional)
+- [ ] Slack/Discord alerts (optional)
 - [ ] Critical alerts tested
 - [ ] Escalation procedures documented
 
@@ -181,7 +181,7 @@
 - [ ] AI assignment generation working
 - [ ] Payment processing tested
 - [ ] OAuth login working (optional)
-- [ ] Email notifications working
+- [ ] Email alerts working
 
 ### 2. Performance Testing
 

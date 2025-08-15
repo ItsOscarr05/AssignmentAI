@@ -2,7 +2,6 @@ import {
   AccessTime,
   AllInclusive,
   AnalyticsOutlined,
-  AssignmentOutlined,
   AutoAwesomeOutlined,
   BarChartOutlined,
   Brush,
@@ -12,12 +11,9 @@ import {
   DataUsageOutlined,
   DeleteForeverOutlined,
   DesignServicesOutlined,
-  DesktopWindowsOutlined,
   DownloadOutlined,
-  EmailOutlined,
   Error,
   EventOutlined,
-  FeedbackOutlined,
   FingerprintOutlined,
   FormatQuoteOutlined,
   GppGoodOutlined,
@@ -26,12 +22,8 @@ import {
   Language,
   LibraryBooksOutlined,
   LockOutlined,
-  Notifications,
-  NotificationsActiveOutlined,
-  NotificationsOutlined,
   PaletteOutlined,
   PrivacyTipOutlined,
-  Psychology,
   PsychologyOutlined,
   RocketLaunchOutlined,
   Save,
@@ -45,7 +37,6 @@ import {
   Spellcheck,
   TextSnippetOutlined,
   Tune,
-  UpdateOutlined,
   VerifiedUserOutlined,
   Visibility,
   VisibilityOff,
@@ -149,7 +140,6 @@ const Settings: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showNotificationPreview, setShowNotificationPreview] = useState(false);
 
   const [dateFormatError, setDateFormatError] = useState<string | null>(null);
   const [isLoadingPreferences, setIsLoadingPreferences] = useState(false);
@@ -190,10 +180,6 @@ const Settings: React.FC = () => {
   const [isValidatingSettings, setIsValidatingSettings] = useState(false);
   const [showAIFeaturesDemo, setShowAIFeaturesDemo] = useState(false);
 
-  // Notification Settings Validation & Feedback
-  const [notificationSettingsError, setNotificationSettingsError] = useState<string | null>(null);
-  const [showNotificationTest, setShowNotificationTest] = useState(false);
-
   // Privacy & Security Settings Validation & Feedback
   const [privacySettingsError, setPrivacySettingsError] = useState<string | null>(null);
   const [showSecurityAudit, setShowSecurityAudit] = useState(false);
@@ -221,33 +207,6 @@ const Settings: React.FC = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
-
-  // Notification Settings
-  const [notifications, setNotifications] = useState({
-    email: true,
-    desktop: true,
-    sound: true,
-    assignments: true,
-    deadlines: true,
-    feedback: true,
-    updates: true,
-  });
-
-  const [notificationPreferences, setNotificationPreferences] = useState({
-    priorityLevel: 'medium', // 'low', 'medium', 'high'
-    groupNotifications: true,
-    showPreview: true,
-    showBadge: true,
-    showInTaskbar: true,
-  });
-
-  const [notificationSchedule, setNotificationSchedule] = useState({
-    quietHoursStart: 22,
-    quietHoursEnd: 7,
-    workDays: [1, 2, 3, 4, 5], // Monday to Friday
-    workHoursStart: 9,
-    workHoursEnd: 17,
-  });
 
   // Privacy & Security
   const [privacySettings, setPrivacySettings] = useState({
@@ -402,148 +361,6 @@ const Settings: React.FC = () => {
     setAiSuggestions(true);
     setRealTimeAnalysis(true);
     setAiSettingsError(null);
-  };
-
-  // Notification Settings Validation Functions
-  const validateNotificationSettings = () => {
-    const errors: string[] = [];
-
-    // Check for time conflicts
-    if (notificationSchedule.workHoursStart >= notificationSchedule.workHoursEnd) {
-      errors.push('Work hours end time must be after start time');
-    }
-
-    if (notificationSchedule.quietHoursStart === notificationSchedule.quietHoursEnd) {
-      errors.push('Quiet hours start and end times cannot be the same');
-    }
-
-    // Check if any notification channels are enabled
-    const hasChannels = notifications.email || notifications.desktop || notifications.sound;
-    if (!hasChannels) {
-      errors.push('At least one notification channel must be enabled');
-    }
-
-    // Check if any notification types are enabled
-    const hasTypes =
-      notifications.assignments ||
-      notifications.deadlines ||
-      notifications.feedback ||
-      notifications.updates;
-    if (!hasTypes) {
-      errors.push('At least one notification type must be enabled');
-    }
-
-    return errors;
-  };
-
-  const resetNotificationSettingsToDefaults = () => {
-    setNotifications({
-      email: true,
-      desktop: true,
-      sound: true,
-      assignments: true,
-      deadlines: true,
-      feedback: true,
-      updates: true,
-    });
-    setNotificationPreferences({
-      priorityLevel: 'medium',
-      groupNotifications: true,
-      showPreview: true,
-      showBadge: true,
-      showInTaskbar: true,
-    });
-    setNotificationSchedule({
-      quietHoursStart: 22,
-      quietHoursEnd: 7,
-      workDays: [1, 2, 3, 4, 5], // Monday to Friday
-      workHoursStart: 9,
-      workHoursEnd: 17,
-    });
-    setNotificationSettingsError(null);
-  };
-
-  const enableAllNotifications = () => {
-    setNotifications({
-      email: true,
-      desktop: true,
-      sound: true,
-      assignments: true,
-      deadlines: true,
-      feedback: true,
-      updates: true,
-    });
-  };
-
-  const disableAllNotifications = () => {
-    setNotifications({
-      email: false,
-      desktop: false,
-      sound: false,
-      assignments: false,
-      deadlines: false,
-      feedback: false,
-      updates: false,
-    });
-  };
-
-  const getNotificationSummary = () => {
-    const channels = [];
-    if (notifications.email) channels.push('Email');
-    if (notifications.desktop) channels.push('Desktop');
-    if (notifications.sound) channels.push('Sound');
-
-    const types = [];
-    if (notifications.assignments) types.push('Assignments');
-    if (notifications.deadlines) types.push('Deadlines');
-    if (notifications.feedback) types.push('Feedback');
-    if (notifications.updates) types.push('Updates');
-
-    return {
-      channels: channels.join(', ') || 'None',
-      types: types.join(', ') || 'None',
-      priority: notificationPreferences.priorityLevel,
-      workHours: (() => {
-        const startHour = notificationSchedule.workHoursStart;
-        const endHour = notificationSchedule.workHoursEnd;
-
-        if (use24HourFormat) {
-          return `${startHour.toString().padStart(2, '0')}:00 - ${endHour
-            .toString()
-            .padStart(2, '0')}:00`;
-        } else {
-          const startAMPM = startHour >= 12 ? 'PM' : 'AM';
-          const endAMPM = endHour >= 12 ? 'PM' : 'AM';
-          const startDisplayHour = startHour % 12 || 12;
-          const endDisplayHour = endHour % 12 || 12;
-          return `${startDisplayHour}:00 ${startAMPM} - ${endDisplayHour}:00 ${endAMPM}`;
-        }
-      })(),
-      quietHours: (() => {
-        const startHour = notificationSchedule.quietHoursStart;
-        const endHour = notificationSchedule.quietHoursEnd;
-
-        if (use24HourFormat) {
-          return `${startHour.toString().padStart(2, '0')}:00 - ${endHour
-            .toString()
-            .padStart(2, '0')}:00`;
-        } else {
-          const startAMPM = startHour >= 12 ? 'PM' : 'AM';
-          const endAMPM = endHour >= 12 ? 'PM' : 'AM';
-          const startDisplayHour = startHour % 12 || 12;
-          const endDisplayHour = endHour % 12 || 12;
-          return `${startDisplayHour}:00 ${startAMPM} - ${endDisplayHour}:00 ${endAMPM}`;
-        }
-      })(),
-      workDays:
-        notificationSchedule.workDays.length === 7
-          ? 'Every day'
-          : notificationSchedule.workDays.length === 5 &&
-            notificationSchedule.workDays.includes(1) &&
-            notificationSchedule.workDays.includes(5)
-          ? 'Weekdays'
-          : `${notificationSchedule.workDays.length} days selected`,
-    };
   };
 
   // Privacy & Security Settings Validation Functions
@@ -790,14 +607,6 @@ const Settings: React.FC = () => {
 
   // Calculate security score
 
-  // Notification preview data
-  const notificationPreview = {
-    title: 'Assignment Feedback Ready',
-    message: 'Your AI analysis for "Research Paper" is now available',
-    type: 'feedback',
-    time: formatDateTimeWithPreference(new Date(Date.now() - 2 * 60 * 1000)), // 2 minutes ago
-  };
-
   // Filter settings based on search query
 
   // Function to check if there are unsaved changes
@@ -819,9 +628,7 @@ const Settings: React.FC = () => {
       codeSnippets,
       aiSuggestions,
       realTimeAnalysis,
-      notifications,
-      notificationPreferences,
-      notificationSchedule,
+
       privacySettings,
       subscription,
     };
@@ -844,9 +651,6 @@ const Settings: React.FC = () => {
     codeSnippets,
     aiSuggestions,
     realTimeAnalysis,
-    notifications,
-    notificationPreferences,
-    notificationSchedule,
     privacySettings,
     subscription,
   ]);
@@ -892,7 +696,6 @@ const Settings: React.FC = () => {
     try {
       // Clear any previous errors
       setAiSettingsError(null);
-      setNotificationSettingsError(null);
       setPrivacySettingsError(null);
 
       // Validate AI settings before saving
@@ -902,16 +705,6 @@ const Settings: React.FC = () => {
         setAiSettingsError(aiErrors.join(', '));
         setIsValidatingSettings(false);
         console.log('AI validation failed, stopping save');
-        return;
-      }
-
-      // Validate notification settings before saving
-      const notificationErrors = validateNotificationSettings();
-      console.log('Notification validation errors:', notificationErrors);
-      if (notificationErrors.length > 0) {
-        setNotificationSettingsError(notificationErrors.join(', '));
-        setIsValidatingSettings(false);
-        console.log('Notification validation failed, stopping save');
         return;
       }
 
@@ -950,25 +743,7 @@ const Settings: React.FC = () => {
           language: language,
           date_format: dateFormat,
         },
-        notifications: {
-          email: notifications.email,
-          desktop: notifications.desktop,
-          sound: notifications.sound,
-          assignments: notifications.assignments,
-          deadlines: notifications.deadlines,
-          feedback: notifications.feedback,
-          updates: notifications.updates,
-          priority_level: notificationPreferences.priorityLevel,
-          group_notifications: notificationPreferences.groupNotifications,
-          show_preview: notificationPreferences.showPreview,
-          show_badge: notificationPreferences.showBadge,
-          show_in_taskbar: notificationPreferences.showInTaskbar,
-          work_hours_start: notificationSchedule.workHoursStart,
-          work_hours_end: notificationSchedule.workHoursEnd,
-          work_days: notificationSchedule.workDays,
-          quiet_hours_start: notificationSchedule.quietHoursStart,
-          quiet_hours_end: notificationSchedule.quietHoursEnd,
-        },
+
         privacy: {
           two_factor_auth: privacySettings.twoFactorAuth,
           biometric_login: privacySettings.biometricLogin,
@@ -1024,9 +799,6 @@ const Settings: React.FC = () => {
         codeSnippets,
         aiSuggestions,
         realTimeAnalysis,
-        notifications,
-        notificationPreferences,
-        notificationSchedule,
         privacySettings,
         subscription,
       };
@@ -1035,7 +807,6 @@ const Settings: React.FC = () => {
     } catch (error) {
       console.error('Failed to save settings:', error);
       setAiSettingsError('Failed to save AI settings. Please try again.');
-      setNotificationSettingsError('Failed to save notification settings. Please try again.');
       setPrivacySettingsError('Failed to save privacy settings. Please try again.');
       setShowSaveSuccess(false);
     } finally {
@@ -1348,12 +1119,6 @@ const Settings: React.FC = () => {
       if (userPreferences.compact_mode !== undefined) {
         setCompactMode(userPreferences.compact_mode);
       }
-      if (userPreferences.email_notifications !== undefined) {
-        setNotifications(prev => ({ ...prev, email: !!userPreferences.email_notifications }));
-      }
-      if (userPreferences.push_notifications !== undefined) {
-        setNotifications(prev => ({ ...prev, desktop: !!userPreferences.push_notifications }));
-      }
 
       // Load AI settings from dedicated endpoint
       try {
@@ -1427,9 +1192,7 @@ const Settings: React.FC = () => {
         codeSnippets,
         aiSuggestions,
         realTimeAnalysis,
-        notifications,
-        notificationPreferences,
-        notificationSchedule,
+
         privacySettings,
         subscription,
       };
@@ -1453,9 +1216,6 @@ const Settings: React.FC = () => {
     codeSnippets,
     aiSuggestions,
     realTimeAnalysis,
-    notifications,
-    notificationPreferences,
-    notificationSchedule,
     privacySettings,
     subscription,
   ]);
@@ -1513,16 +1273,12 @@ const Settings: React.FC = () => {
         theme: darkMode ? 'dark' : 'light',
         font_size: fontSize.toString(),
         compact_mode: compactMode,
-        email_notifications: notifications.email,
-        push_notifications: notifications.desktop,
         custom_preferences: {
           dateFormat,
           autoComplete,
           codeSnippets,
           aiSuggestions,
           realTimeAnalysis,
-          notificationPreferences,
-          notificationSchedule,
           privacySettings,
         },
       });
@@ -1741,7 +1497,6 @@ const Settings: React.FC = () => {
           <Tabs value={tabValue} onChange={handleTabChange} variant="fullWidth">
             <Tab icon={<Tune />} label="General" />
             <Tab icon={<PsychologyOutlined />} label="AI Settings" />
-            <Tab icon={<NotificationsOutlined />} label="Notifications" />
             <Tab icon={<SecurityOutlined />} label="Privacy & Security" />
           </Tabs>
         </Box>
@@ -2524,653 +2279,6 @@ const Settings: React.FC = () => {
 
           <TabPanel value={tabValue} index={2} breakpoint={breakpoint}>
             <SettingsSection
-              title="Notification Preferences"
-              icon={<NotificationsOutlined sx={{ color: theme.palette.primary.main }} />}
-            >
-              {notificationSettingsError && (
-                <Alert severity="error" sx={{ mb: 3 }}>
-                  {notificationSettingsError}
-                </Alert>
-              )}
-
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    Notification Channels
-                  </Typography>
-                  <FormGroup>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={notifications.email}
-                          onChange={e =>
-                            setNotifications({ ...notifications, email: e.target.checked })
-                          }
-                        />
-                      }
-                      label={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <EmailOutlined fontSize="small" />
-                          <Typography>Email Notifications</Typography>
-                        </Box>
-                      }
-                    />
-                    {notifications.email && (
-                      <Typography
-                        variant="caption"
-                        color="success.main"
-                        sx={{ ml: 4, display: 'block' }}
-                      >
-                        ✓ Email notifications will be sent to your registered email
-                      </Typography>
-                    )}
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={notifications.desktop}
-                          onChange={e =>
-                            setNotifications({ ...notifications, desktop: e.target.checked })
-                          }
-                        />
-                      }
-                      label={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <DesktopWindowsOutlined fontSize="small" />
-                          <Typography>Desktop Notifications</Typography>
-                        </Box>
-                      }
-                    />
-                    {notifications.desktop && (
-                      <Typography
-                        variant="caption"
-                        color="success.main"
-                        sx={{ ml: 4, display: 'block' }}
-                      >
-                        ✓ Desktop notifications will appear in your system tray
-                      </Typography>
-                    )}
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={notifications.sound}
-                          onChange={e =>
-                            setNotifications({ ...notifications, sound: e.target.checked })
-                          }
-                        />
-                      }
-                      label={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <NotificationsOutlined fontSize="small" />
-                          <Typography>Sound Notifications</Typography>
-                        </Box>
-                      }
-                    />
-                    {notifications.sound && (
-                      <Typography
-                        variant="caption"
-                        color="success.main"
-                        sx={{ ml: 4, display: 'block' }}
-                      >
-                        ✓ Sound alerts will play for new notifications
-                      </Typography>
-                    )}
-                  </FormGroup>
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    Notification Types
-                  </Typography>
-                  <FormGroup>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={notifications.assignments}
-                          onChange={e =>
-                            setNotifications({ ...notifications, assignments: e.target.checked })
-                          }
-                        />
-                      }
-                      label={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <AssignmentOutlined fontSize="small" />
-                          <Typography>Assignment Updates</Typography>
-                        </Box>
-                      }
-                    />
-                    {notifications.assignments && (
-                      <Typography
-                        variant="caption"
-                        color="success.main"
-                        sx={{ ml: 4, display: 'block' }}
-                      >
-                        ✓ Get notified about new assignments and updates
-                      </Typography>
-                    )}
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={notifications.deadlines}
-                          onChange={e =>
-                            setNotifications({ ...notifications, deadlines: e.target.checked })
-                          }
-                        />
-                      }
-                      label={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <EventOutlined fontSize="small" />
-                          <Typography>Deadline Reminders</Typography>
-                        </Box>
-                      }
-                    />
-                    {notifications.deadlines && (
-                      <Typography
-                        variant="caption"
-                        color="success.main"
-                        sx={{ ml: 4, display: 'block' }}
-                      >
-                        ✓ Receive deadline reminders and alerts
-                      </Typography>
-                    )}
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={notifications.feedback}
-                          onChange={e =>
-                            setNotifications({ ...notifications, feedback: e.target.checked })
-                          }
-                        />
-                      }
-                      label={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <FeedbackOutlined fontSize="small" />
-                          <Typography>Feedback Notifications</Typography>
-                        </Box>
-                      }
-                    />
-                    {notifications.feedback && (
-                      <Typography
-                        variant="caption"
-                        color="success.main"
-                        sx={{ ml: 4, display: 'block' }}
-                      >
-                        ✓ Get notified when feedback is available
-                      </Typography>
-                    )}
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={notifications.updates}
-                          onChange={e =>
-                            setNotifications({ ...notifications, updates: e.target.checked })
-                          }
-                        />
-                      }
-                      label={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <UpdateOutlined fontSize="small" />
-                          <Typography>System Updates</Typography>
-                        </Box>
-                      }
-                    />
-                    {notifications.updates && (
-                      <Typography
-                        variant="caption"
-                        color="success.main"
-                        sx={{ ml: 4, display: 'block' }}
-                      >
-                        ✓ Receive system updates and announcements
-                      </Typography>
-                    )}
-                  </FormGroup>
-                </Grid>
-
-                <Grid item xs={12}>
-                  <Divider sx={{ my: 2 }} />
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-                    <Typography variant="body2" color="text.secondary" sx={{ flexShrink: 0 }}>
-                      Active Channels:{' '}
-                      {
-                        [
-                          notifications.email && 'Email',
-                          notifications.desktop && 'Desktop',
-                          notifications.sound && 'Sound',
-                        ].filter(Boolean).length
-                      }
-                    </Typography>
-                    <Button variant="outlined" size="small" onClick={enableAllNotifications}>
-                      Enable All
-                    </Button>
-                    <Button variant="outlined" size="small" onClick={disableAllNotifications}>
-                      Disable All
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={resetNotificationSettingsToDefaults}
-                    >
-                      Reset to Defaults
-                    </Button>
-                    <Button
-                      variant="contained"
-                      size="small"
-                      onClick={() => setShowNotificationTest(true)}
-                    >
-                      Test Notifications
-                    </Button>
-                  </Box>
-                </Grid>
-              </Grid>
-            </SettingsSection>
-
-            <SettingsSection
-              title="Display Preferences"
-              icon={<NotificationsActiveOutlined sx={{ color: theme.palette.primary.main }} />}
-            >
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    Display Preferences
-                  </Typography>
-                  <FormGroup>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={notificationPreferences.showPreview}
-                          onChange={e =>
-                            setNotificationPreferences({
-                              ...notificationPreferences,
-                              showPreview: e.target.checked,
-                            })
-                          }
-                        />
-                      }
-                      label="Show Notification Preview"
-                    />
-                    {notificationPreferences.showPreview && (
-                      <Typography
-                        variant="caption"
-                        color="success.main"
-                        sx={{ ml: 4, display: 'block' }}
-                      >
-                        ✓ Notification content will be visible in preview
-                      </Typography>
-                    )}
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={notificationPreferences.showBadge}
-                          onChange={e =>
-                            setNotificationPreferences({
-                              ...notificationPreferences,
-                              showBadge: e.target.checked,
-                            })
-                          }
-                        />
-                      }
-                      label="Show Notification Badge"
-                    />
-                    {notificationPreferences.showBadge && (
-                      <Typography
-                        variant="caption"
-                        color="success.main"
-                        sx={{ ml: 4, display: 'block' }}
-                      >
-                        ✓ Badge will show unread notification count
-                      </Typography>
-                    )}
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={notificationPreferences.groupNotifications}
-                          onChange={e =>
-                            setNotificationPreferences({
-                              ...notificationPreferences,
-                              groupNotifications: e.target.checked,
-                            })
-                          }
-                        />
-                      }
-                      label="Group Similar Notifications"
-                    />
-                    {notificationPreferences.groupNotifications && (
-                      <Typography
-                        variant="caption"
-                        color="success.main"
-                        sx={{ ml: 4, display: 'block' }}
-                      >
-                        ✓ Similar notifications will be grouped together
-                      </Typography>
-                    )}
-                  </FormGroup>
-
-                  <Typography variant="subtitle1" sx={{ mt: 3 }} gutterBottom>
-                    Priority Level
-                  </Typography>
-                  <FormControl fullWidth>
-                    <Select
-                      value={notificationPreferences.priorityLevel}
-                      onChange={e =>
-                        setNotificationPreferences({
-                          ...notificationPreferences,
-                          priorityLevel: e.target.value,
-                        })
-                      }
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          backgroundColor: theme =>
-                            theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
-                        },
-                      }}
-                    >
-                      <MenuItem value="low">Low Priority</MenuItem>
-                      <MenuItem value="medium">Medium Priority</MenuItem>
-                      <MenuItem value="high">High Priority</MenuItem>
-                    </Select>
-                  </FormControl>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ mt: 1, display: 'block' }}
-                  >
-                    {notificationPreferences.priorityLevel === 'low' &&
-                      'Low priority notifications will be delivered with minimal interruption'}
-                    {notificationPreferences.priorityLevel === 'medium' &&
-                      'Medium priority notifications will be delivered normally'}
-                    {notificationPreferences.priorityLevel === 'high' &&
-                      'High priority notifications will be delivered immediately and may override quiet hours'}
-                  </Typography>
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      p: 2,
-                      height: '100%',
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      borderRadius: 2,
-                      background:
-                        theme.palette.mode === 'dark'
-                          ? 'rgba(255,255,255,0.02)'
-                          : 'rgba(0,0,0,0.02)',
-                    }}
-                  >
-                    <Typography
-                      variant="subtitle1"
-                      gutterBottom
-                      sx={{ color: theme.palette.primary.main, mb: 2 }}
-                    >
-                      Current Configuration
-                    </Typography>
-
-                    <Box sx={{ mb: 2 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                        <NotificationsOutlined fontSize="small" color="action" />
-                        <Typography variant="body2" fontWeight="medium">
-                          Channels: {getNotificationSummary().channels}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                        <AssignmentOutlined fontSize="small" color="action" />
-                        <Typography variant="body2">
-                          Types: {getNotificationSummary().types}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                        <EventOutlined fontSize="small" color="action" />
-                        <Typography variant="body2">
-                          Priority:{' '}
-                          {getNotificationSummary().priority.charAt(0).toUpperCase() +
-                            getNotificationSummary().priority.slice(1)}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                        <EventOutlined fontSize="small" color="action" />
-                        <Typography variant="body2">
-                          Work Hours: {getNotificationSummary().workHours}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                        <EventOutlined fontSize="small" color="action" />
-                        <Typography variant="body2">
-                          Quiet Hours: {getNotificationSummary().quietHours}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <EventOutlined fontSize="small" color="action" />
-                        <Typography variant="body2">
-                          Work Days: {getNotificationSummary().workDays}
-                        </Typography>
-                      </Box>
-                    </Box>
-
-                    <Box>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => setShowNotificationPreview(true)}
-                        sx={{ py: 0.5, px: 1 }}
-                      >
-                        Preview Notifications
-                      </Button>
-                    </Box>
-                  </Paper>
-                </Grid>
-              </Grid>
-            </SettingsSection>
-
-            <SettingsSection
-              title="Work Hours"
-              icon={<EventOutlined sx={{ color: theme.palette.primary.main }} />}
-            >
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    Work Hours
-                  </Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={6}>
-                      <FormControl fullWidth>
-                        <InputLabel>Start Time</InputLabel>
-                        <Select
-                          value={notificationSchedule.workHoursStart}
-                          label="Start Time"
-                          onChange={e =>
-                            setNotificationSchedule({
-                              ...notificationSchedule,
-                              workHoursStart: Number(e.target.value),
-                            })
-                          }
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              backgroundColor: theme =>
-                                theme.palette.mode === 'dark'
-                                  ? theme.palette.background.paper
-                                  : '#fff',
-                            },
-                          }}
-                        >
-                          {Array.from({ length: 24 }, (_, i) => (
-                            <MenuItem key={i} value={i}>
-                              {use24HourFormat
-                                ? `${i.toString().padStart(2, '0')}:00`
-                                : `${i % 12 || 12}:00 ${i >= 12 ? 'PM' : 'AM'}`}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <FormControl fullWidth>
-                        <InputLabel>End Time</InputLabel>
-                        <Select
-                          value={notificationSchedule.workHoursEnd}
-                          label="End Time"
-                          onChange={e =>
-                            setNotificationSchedule({
-                              ...notificationSchedule,
-                              workHoursEnd: Number(e.target.value),
-                            })
-                          }
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              backgroundColor: theme =>
-                                theme.palette.mode === 'dark'
-                                  ? theme.palette.background.paper
-                                  : '#fff',
-                            },
-                          }}
-                        >
-                          {Array.from({ length: 24 }, (_, i) => (
-                            <MenuItem key={i} value={i}>
-                              {use24HourFormat
-                                ? `${i.toString().padStart(2, '0')}:00`
-                                : `${i % 12 || 12}:00 ${i >= 12 ? 'PM' : 'AM'}`}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                  </Grid>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ mt: 1, display: 'block' }}
-                  >
-                    Notifications will be prioritized during work hours
-                  </Typography>
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    Work Days
-                  </Typography>
-                  <FormGroup row>
-                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, index) => (
-                      <FormControlLabel
-                        key={day}
-                        control={
-                          <Switch
-                            checked={notificationSchedule.workDays.includes(index)}
-                            onChange={e => {
-                              const newWorkDays = e.target.checked
-                                ? [...notificationSchedule.workDays, index]
-                                : notificationSchedule.workDays.filter(d => d !== index);
-                              setNotificationSchedule({
-                                ...notificationSchedule,
-                                workDays: newWorkDays,
-                              });
-                            }}
-                            size="small"
-                          />
-                        }
-                        label={day}
-                        sx={{ minWidth: 80 }}
-                      />
-                    ))}
-                  </FormGroup>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ mt: 1, display: 'block' }}
-                  >
-                    Select the days when you want to receive work-related notifications
-                  </Typography>
-                </Grid>
-              </Grid>
-            </SettingsSection>
-
-            <SettingsSection
-              title="Quiet Hours"
-              icon={<NotificationsOutlined sx={{ color: theme.palette.primary.main }} />}
-            >
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    Quiet Hours
-                  </Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} md={6}>
-                      <FormControl fullWidth>
-                        <InputLabel>Start Time</InputLabel>
-                        <Select
-                          value={notificationSchedule.quietHoursStart}
-                          label="Start Time"
-                          onChange={e =>
-                            setNotificationSchedule({
-                              ...notificationSchedule,
-                              quietHoursStart: Number(e.target.value),
-                            })
-                          }
-                        >
-                          {Array.from({ length: 24 }, (_, i) => (
-                            <MenuItem key={i} value={i}>
-                              {use24HourFormat
-                                ? `${i.toString().padStart(2, '0')}:00`
-                                : `${i % 12 || 12}:00 ${i >= 12 ? 'PM' : 'AM'}`}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      <FormControl fullWidth>
-                        <InputLabel>End Time</InputLabel>
-                        <Select
-                          value={notificationSchedule.quietHoursEnd}
-                          label="End Time"
-                          onChange={e =>
-                            setNotificationSchedule({
-                              ...notificationSchedule,
-                              quietHoursEnd: Number(e.target.value),
-                            })
-                          }
-                        >
-                          {Array.from({ length: 24 }, (_, i) => (
-                            <MenuItem key={i} value={i}>
-                              {use24HourFormat
-                                ? `${i.toString().padStart(2, '0')}:00`
-                                : `${i % 12 || 12}:00 ${i >= 12 ? 'PM' : 'AM'}`}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                  </Grid>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ mt: 1, display: 'block' }}
-                  >
-                    Notifications will be silenced during quiet hours, except for high-priority
-                    alerts
-                  </Typography>
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Alert severity="info" sx={{ height: 'fit-content' }}>
-                    <Typography variant="body2" gutterBottom>
-                      <strong>Quiet Hours Tips:</strong>
-                    </Typography>
-                    <Typography variant="caption" component="div">
-                      • High-priority notifications will still be delivered
-                    </Typography>
-                    <Typography variant="caption" component="div">
-                      • Set quiet hours to avoid interruptions during sleep
-                    </Typography>
-                    <Typography variant="caption" component="div">
-                      • Consider setting different hours for weekdays vs weekends
-                    </Typography>
-                  </Alert>
-                </Grid>
-              </Grid>
-            </SettingsSection>
-          </TabPanel>
-
-          <TabPanel value={tabValue} index={3} breakpoint={breakpoint}>
-            <SettingsSection
               title="Security Score"
               icon={<SecurityOutlined sx={{ color: theme.palette.primary.main }} />}
             >
@@ -3850,54 +2958,6 @@ const Settings: React.FC = () => {
         </Box>
       </Box>
 
-      {/* Notification Preview Dialog */}
-      <Dialog
-        open={showNotificationPreview}
-        onClose={() => setShowNotificationPreview(false)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            backgroundColor: theme =>
-              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
-          },
-        }}
-      >
-        <DialogTitle sx={{ color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black') }}>
-          Notification Preview
-        </DialogTitle>
-        <DialogContent>
-          <Box
-            sx={{
-              p: 2,
-              borderRadius: 2,
-              bgcolor: 'background.paper',
-              boxShadow: theme.shadows[1],
-              mb: 2,
-            }}
-          >
-            <Typography variant="subtitle1" fontWeight="bold" sx={{ color: 'primary.main' }}>
-              {notificationPreview.title}
-            </Typography>
-            <Typography variant="body2" color="text.primary">
-              {notificationPreview.message}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-              {notificationPreview.time}
-            </Typography>
-          </Box>
-          <Alert severity="info">
-            <Typography variant="caption">
-              This is how your notifications will appear when enabled. You can customize the
-              appearance and behavior in the settings above.
-            </Typography>
-          </Alert>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowNotificationPreview(false)}>Close</Button>
-        </DialogActions>
-      </Dialog>
-
       {/* Model Comparison Dialog */}
       <Dialog
         open={showModelComparison}
@@ -4305,237 +3365,6 @@ const Settings: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowAIFeaturesDemo(false)}>Close</Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Notification Test Dialog */}
-      <Dialog
-        open={showNotificationTest}
-        onClose={() => setShowNotificationTest(false)}
-        maxWidth="md"
-        fullWidth
-        PaperProps={{
-          sx: {
-            backgroundColor: theme =>
-              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
-          },
-        }}
-      >
-        <DialogTitle sx={{ color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black') }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <NotificationsActiveOutlined />
-            Test Notifications
-          </Box>
-        </DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Test your notification settings with different types of notifications. This will help
-            you verify that your preferences are working correctly.
-          </Typography>
-
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
-              <Typography variant="subtitle1" gutterBottom sx={{ color: 'primary.main' }}>
-                Test Notification Types
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Button
-                  variant="outlined"
-                  startIcon={<AssignmentOutlined />}
-                  sx={{ color: 'text.primary', borderColor: 'text.primary' }}
-                  onClick={() => {
-                    // Simulate assignment notification
-                    if (notifications.desktop) {
-                      new Notification('New Assignment Available', {
-                        body: 'Research Paper assignment has been posted',
-                        icon: '/favicon.ico',
-                        tag: 'assignment',
-                      });
-                    }
-                    if (notifications.sound) {
-                      // Play notification sound
-                      const audio = new Audio('/notification-sound.mp3');
-                      audio.play().catch(() => {
-                        // Fallback: create a simple beep
-                        const context = new (window.AudioContext ||
-                          (window as any).webkitAudioContext)();
-                        const oscillator = context.createOscillator();
-                        const gainNode = context.createGain();
-                        oscillator.connect(gainNode);
-                        gainNode.connect(context.destination);
-                        oscillator.frequency.value = 800;
-                        gainNode.gain.value = 0.1;
-                        oscillator.start();
-                        oscillator.stop(context.currentTime + 0.2);
-                      });
-                    }
-                  }}
-                  disabled={!notifications.assignments}
-                >
-                  Test Assignment Notification
-                </Button>
-                <Button
-                  variant="outlined"
-                  startIcon={<EventOutlined />}
-                  sx={{ color: 'text.primary', borderColor: 'text.primary' }}
-                  onClick={() => {
-                    if (notifications.desktop) {
-                      new Notification('Deadline Reminder', {
-                        body: 'Research Paper is due in 24 hours',
-                        icon: '/favicon.ico',
-                        tag: 'deadline',
-                      });
-                    }
-                    if (notifications.sound) {
-                      const audio = new Audio('/notification-sound.mp3');
-                      audio.play().catch(() => {
-                        const context = new (window.AudioContext ||
-                          (window as any).webkitAudioContext)();
-                        const oscillator = context.createOscillator();
-                        const gainNode = context.createGain();
-                        oscillator.connect(gainNode);
-                        gainNode.connect(context.destination);
-                        oscillator.frequency.value = 600;
-                        gainNode.gain.value = 0.1;
-                        oscillator.start();
-                        oscillator.stop(context.currentTime + 0.3);
-                      });
-                    }
-                  }}
-                  disabled={!notifications.deadlines}
-                >
-                  Test Deadline Notification
-                </Button>
-                <Button
-                  variant="outlined"
-                  startIcon={<FeedbackOutlined />}
-                  sx={{ color: 'text.primary', borderColor: 'text.primary' }}
-                  onClick={() => {
-                    if (notifications.desktop) {
-                      new Notification('Feedback Ready', {
-                        body: 'Your AI analysis for "Research Paper" is now available',
-                        icon: '/favicon.ico',
-                        tag: 'feedback',
-                      });
-                    }
-                    if (notifications.sound) {
-                      const audio = new Audio('/notification-sound.mp3');
-                      audio.play().catch(() => {
-                        const context = new (window.AudioContext ||
-                          (window as any).webkitAudioContext)();
-                        const oscillator = context.createOscillator();
-                        const gainNode = context.createGain();
-                        oscillator.connect(gainNode);
-                        gainNode.connect(context.destination);
-                        oscillator.frequency.value = 1000;
-                        gainNode.gain.value = 0.1;
-                        oscillator.start();
-                        oscillator.stop(context.currentTime + 0.2);
-                      });
-                    }
-                  }}
-                  disabled={!notifications.feedback}
-                >
-                  Test Feedback Notification
-                </Button>
-                <Button
-                  variant="outlined"
-                  startIcon={<UpdateOutlined />}
-                  sx={{ color: 'text.primary', borderColor: 'text.primary' }}
-                  onClick={() => {
-                    if (notifications.desktop) {
-                      new Notification('System Update', {
-                        body: 'New features are available in AssignmentAI',
-                        icon: '/favicon.ico',
-                        tag: 'update',
-                      });
-                    }
-                    if (notifications.sound) {
-                      const audio = new Audio('/notification-sound.mp3');
-                      audio.play().catch(() => {
-                        const context = new (window.AudioContext ||
-                          (window as any).webkitAudioContext)();
-                        const oscillator = context.createOscillator();
-                        const gainNode = context.createGain();
-                        oscillator.connect(gainNode);
-                        gainNode.connect(context.destination);
-                        oscillator.frequency.value = 400;
-                        gainNode.gain.value = 0.1;
-                        oscillator.start();
-                        oscillator.stop(context.currentTime + 0.4);
-                      });
-                    }
-                  }}
-                  disabled={!notifications.updates}
-                >
-                  Test System Update
-                </Button>
-              </Box>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Typography variant="subtitle1" gutterBottom sx={{ color: 'primary.main' }}>
-                Current Settings Status
-              </Typography>
-              <Paper sx={{ p: 2, bgcolor: 'background.default' }}>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <EmailOutlined fontSize="small" />
-                    <Typography variant="body2">
-                      Email: {notifications.email ? '✓ Enabled' : '✗ Disabled'}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <DesktopWindowsOutlined fontSize="small" />
-                    <Typography variant="body2">
-                      Desktop: {notifications.desktop ? '✓ Enabled' : '✗ Disabled'}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <NotificationsOutlined fontSize="small" />
-                    <Typography variant="body2">
-                      Sound: {notifications.sound ? '✓ Enabled' : '✗ Disabled'}
-                    </Typography>
-                  </Box>
-                  <Divider sx={{ my: 1 }} />
-                  <Typography variant="caption" color="text.secondary">
-                    Priority Level:{' '}
-                    {notificationPreferences.priorityLevel.charAt(0).toUpperCase() +
-                      notificationPreferences.priorityLevel.slice(1)}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Work Hours: {getNotificationSummary().workHours}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Quiet Hours: {getNotificationSummary().quietHours}
-                  </Typography>
-                </Box>
-              </Paper>
-            </Grid>
-          </Grid>
-
-          <Box sx={{ maxWidth: '50%', mr: 'auto', mt: -4 }}>
-            <Alert severity="info">
-              <Typography variant="caption">
-                <strong>Note:</strong> Desktop notifications require browser permission. If you
-                don't see notifications, check your browser's notification settings.
-              </Typography>
-            </Alert>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowNotificationTest(false)}>Close</Button>
-          <Button
-            variant="contained"
-            onClick={() => {
-              // Request notification permission
-              if ('Notification' in window) {
-                Notification.requestPermission();
-              }
-            }}
-          >
-            Enable Notifications
-          </Button>
         </DialogActions>
       </Dialog>
 

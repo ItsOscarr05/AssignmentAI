@@ -230,21 +230,6 @@ export const recentAssignmentsWithSubject = recentAssignments.map(a => ({
   subject: a.subject || mapToCoreSubject(a.title),
 }));
 
-// Mock notifications data
-export const mockNotificationTemplates = [
-  { title: 'Assignment Created', body: 'Your new assignment "Math Homework" was created.' },
-  { title: 'Assignment In Progress', body: 'You started working on "Math Homework".' },
-  { title: 'Assignment Completed', body: 'You completed "Math Homework". Well done!' },
-  { title: 'Ready to Download', body: '"Math Homework" is ready to download.' },
-  { title: 'Assignment graded', body: 'Your Math Homework was graded.' },
-  { title: 'New assignment', body: 'A new Science Project was assigned.' },
-  { title: 'Feedback received', body: 'You received feedback on your essay.' },
-  { title: 'Profile updated', body: 'Your profile was updated successfully.' },
-  { title: 'AI suggestion', body: 'Try the new AI-powered summary tool!' },
-  { title: 'Assignment due soon', body: 'Your Literature Essay is due tomorrow.' },
-  { title: 'Welcome!', body: 'Thanks for trying AssignmentAI.' },
-];
-
 // Mock token usage data
 export const tokenLimits = [5000, 12000, 15000, 20000, 25000, 30000];
 export const tokenThresholds = [

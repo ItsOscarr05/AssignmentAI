@@ -22,7 +22,6 @@ const AISettings: React.FC = () => {
     autoSave: true,
     showSuggestions: true,
     darkMode: false,
-    notifications: true,
   });
 
   const handleChange = (name: string) => (event: any) => {
@@ -115,17 +114,6 @@ const AISettings: React.FC = () => {
                     <Switch checked={settings.darkMode} onChange={handleChange('darkMode')} />
                   }
                   label="Dark Mode"
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={settings.notifications}
-                      onChange={handleChange('notifications')}
-                    />
-                  }
-                  label="Enable Notifications"
                 />
               </Grid>
             </Grid>

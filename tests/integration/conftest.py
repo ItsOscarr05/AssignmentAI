@@ -14,7 +14,7 @@ from backend.src.models.assignment import Assignment
 from backend.src.models.submission import Submission
 from backend.src.models.attachment import Attachment
 from backend.src.models.feedback import Feedback, RubricFeedback
-from backend.src.models.notification import Notification
+
 from backend.src.services.auth import get_password_hash
 
 # Create test database

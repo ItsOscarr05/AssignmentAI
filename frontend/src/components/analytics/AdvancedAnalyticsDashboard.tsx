@@ -12,12 +12,10 @@ import {
   Typography,
 } from '@mui/material';
 import React from 'react';
-import { useTokenLimitContext } from '../../contexts/TokenLimitContext';
 import { useAnalyticsDashboard } from '../../hooks/useAnalyticsDashboard';
 
 const AdvancedAnalyticsDashboard: React.FC = () => {
-  const { analytics, loading, error, refreshData } = useAnalyticsDashboard();
-  const { tokenUsage } = useTokenLimitContext();
+  const { analytics, loading, error } = useAnalyticsDashboard();
 
   if (loading) {
     return (

@@ -25,7 +25,6 @@ import {
 import { useTheme } from '@mui/material/styles';
 import { ReactNode, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import Notifications from './Notifications';
 
 // Navigation items for the sidebar
 const navigationItems = [
@@ -113,7 +112,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             AssignmentAI
           </Typography>
-          <Notifications />
         </Toolbar>
       </AppBar>
       <Box component="nav" sx={{ width: { sm: 240 }, flexShrink: { sm: 0 } }}>

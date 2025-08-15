@@ -146,7 +146,7 @@ const MyComponent = () => {
     errorSamplingRate: 0.5,
     ignorePatterns: [
       /ResizeObserver loop limit exceeded/,
-      /ResizeObserver loop completed with undelivered notifications/,
+      /ResizeObserver loop completed with undelivered alerts/,
     ],
     onError: (error) => {
       // Custom error handling

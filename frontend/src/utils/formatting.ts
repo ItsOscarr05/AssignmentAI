@@ -1,11 +1,10 @@
-import { useTranslation } from 'react-i18next';
-
 export const useFormatting = () => {
-  const { i18n } = useTranslation();
+  // Default to English locale for now
+  const locale = 'en-US';
 
   const formatDate = (date: Date | string, options: Intl.DateTimeFormatOptions = {}) => {
     const dateObj = typeof date === 'string' ? new Date(date) : date;
-    return new Intl.DateTimeFormat(i18n.language, {
+    return new Intl.DateTimeFormat(locale, {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -15,7 +14,7 @@ export const useFormatting = () => {
 
   const formatTime = (date: Date | string, options: Intl.DateTimeFormatOptions = {}) => {
     const dateObj = typeof date === 'string' ? new Date(date) : date;
-    return new Intl.DateTimeFormat(i18n.language, {
+    return new Intl.DateTimeFormat(locale, {
       hour: 'numeric',
       minute: 'numeric',
       ...options,
@@ -24,7 +23,7 @@ export const useFormatting = () => {
 
   const formatDateTime = (date: Date | string, options: Intl.DateTimeFormatOptions = {}) => {
     const dateObj = typeof date === 'string' ? new Date(date) : date;
-    return new Intl.DateTimeFormat(i18n.language, {
+    return new Intl.DateTimeFormat(locale, {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -35,7 +34,7 @@ export const useFormatting = () => {
   };
 
   const formatNumber = (number: number, options: Intl.NumberFormatOptions = {}) => {
-    return new Intl.NumberFormat(i18n.language, options).format(number);
+    return new Intl.NumberFormat(locale, options).format(number);
   };
 
   const formatCurrency = (
@@ -43,7 +42,7 @@ export const useFormatting = () => {
     currency: string,
     options: Intl.NumberFormatOptions = {}
   ) => {
-    return new Intl.NumberFormat(i18n.language, {
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency,
       ...options,
@@ -51,7 +50,7 @@ export const useFormatting = () => {
   };
 
   const formatPercentage = (value: number, options: Intl.NumberFormatOptions = {}) => {
-    return new Intl.NumberFormat(i18n.language, {
+    return new Intl.NumberFormat(locale, {
       style: 'percent',
       ...options,
     }).format(value);

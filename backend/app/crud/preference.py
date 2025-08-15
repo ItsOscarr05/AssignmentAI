@@ -57,14 +57,7 @@ def reset_preference(db: Session, user_id: str) -> Optional[Preference]:
     db_preference.language = "en"
     db_preference.font_size = "medium"
     db_preference.compact_mode = False
-    db_preference.email_notifications = True
-    db_preference.push_notifications = True
-    db_preference.notification_types = {
-        "assignment_due": True,
-        "grade": True,
-        "comment": True,
-        "announcement": True
-    }
+
     db_preference.show_profile = True
     db_preference.show_progress = True
     db_preference.show_activity = True

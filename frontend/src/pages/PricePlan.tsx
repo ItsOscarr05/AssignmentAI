@@ -528,7 +528,7 @@ const PricePlan: React.FC = () => {
       ),
     });
 
-    // Also show a simple toast notification
+    // Also show a simple toast alert
     toast.success('🎉 Subscription successful! Welcome to AssignmentAI Pro!', {
       duration: 8000,
       position: 'top-center',

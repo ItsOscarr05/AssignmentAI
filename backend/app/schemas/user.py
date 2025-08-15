@@ -36,8 +36,6 @@ class UserProfile(BaseModel):
     website: Optional[str] = None
 
 class UserPreferences(BaseModel):
-    emailNotifications: bool = True
-    pushNotifications: bool = True
     darkMode: bool = False
     language: str = "en"
     # AI Settings

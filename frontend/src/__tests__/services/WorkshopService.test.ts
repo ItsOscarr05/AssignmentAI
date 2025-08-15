@@ -195,6 +195,7 @@ describe('WorkshopService', () => {
       prompt: 'Test prompt',
       content: 'Generated content',
       timestamp: new Date().toISOString(),
+      type: 'chat' as const,
     };
     vi.mocked(api.delete).mockResolvedValueOnce({ data: {} });
 
@@ -222,6 +223,7 @@ describe('WorkshopService', () => {
           prompt: 'Test prompt',
           content: 'Generated content',
           timestamp: new Date().toISOString(),
+          type: 'chat' as const,
         },
       ],
       files: [

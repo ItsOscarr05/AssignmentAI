@@ -56,42 +56,7 @@ self.addEventListener('sync', event => {
   }
 });
 
-// Push notification handling
-self.addEventListener('push', event => {
-  const options = {
-    body: event.data.text(),
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/badge-72x72.png',
-    vibrate: [100, 50, 100],
-    data: {
-      dateOfArrival: Date.now(),
-      primaryKey: 1,
-    },
-    actions: [
-      {
-        action: 'explore',
-        title: 'View Details',
-        icon: '/icons/checkmark.png',
-      },
-      {
-        action: 'close',
-        title: 'Close',
-        icon: '/icons/xmark.png',
-      },
-    ],
-  };
 
-  event.waitUntil(self.registration.showNotification('AssignmentAI Notification', options));
-});
-
-// Notification click handling
-self.addEventListener('notificationclick', event => {
-  event.notification.close();
-
-  if (event.action === 'explore') {
-    event.waitUntil(clients.openWindow('/dashboard'));
-  }
-});
 
 // Helper function to sync submissions
 async function syncSubmissions() {

@@ -589,10 +589,7 @@ Get current user information.
   "preferences": {
     "timezone": "America/New_York",
     "language": "en",
-    "notifications": {
-      "email": true,
-      "push": false
-    }
+
   }
 }
 ```

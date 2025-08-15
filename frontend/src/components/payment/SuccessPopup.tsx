@@ -37,9 +37,6 @@ const SuccessPopup: React.FC<SuccessPopupProps> = ({ open, onClose, planName = '
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
 
-  // Get theme accent color (red)
-  const themeAccentColor = theme.palette.primary.main;
-
   // Get plan color based on plan name
   const getPlanColor = (plan: string) => {
     switch (plan.toLowerCase()) {

@@ -7,7 +7,6 @@ export interface User {
   updatedAt: string;
   preferences: {
     theme: 'light' | 'dark';
-    notifications: boolean;
     language: string;
   };
   profile: {
@@ -39,6 +38,8 @@ export interface UserProfile {
 
 export interface UserPreferences {
   theme: 'light' | 'dark' | 'system';
+  language: string;
+
   notifications: {
     email: boolean;
     push: boolean;
@@ -46,7 +47,6 @@ export interface UserPreferences {
     gradeUpdates: boolean;
     feedbackAlerts: boolean;
   };
-  language: string;
 
   accessibility: {
     highContrast: boolean;

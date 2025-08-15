@@ -15,15 +15,7 @@ class Preference(Base):
     font_size = Column(String(20), default="medium")
     compact_mode = Column(Boolean, default=False)
     
-    # Notification Preferences
-    email_notifications = Column(Boolean, default=True)
-    push_notifications = Column(Boolean, default=True)
-    notification_types = Column(JSON, default={
-        "assignment_due": True,
-        "grade": True,
-        "comment": True,
-        "announcement": True
-    })
+
     
     # Privacy Preferences
     show_profile = Column(Boolean, default=True)
