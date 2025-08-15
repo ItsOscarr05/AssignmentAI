@@ -1,3 +1,0 @@
-"""
-AssignmentAI Routes Package
-""" 

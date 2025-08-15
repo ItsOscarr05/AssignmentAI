@@ -2,7 +2,7 @@ import { ThemeProvider as EmotionThemeProvider } from '@emotion/react';
 import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import theme from '../../theme/theme';
+import theme from '../../theme';
 import SkipLink from '../common/SkipLink';
 
 const renderSkipLink = (props = {}) => {

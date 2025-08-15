@@ -1,5 +1,5 @@
 // API Endpoints
-export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3000/api';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
 
 // Authentication
 export const AUTH_TOKEN_KEY = 'auth_token';
@@ -11,6 +11,32 @@ export const USER_ROLES = {
   STUDENT: 'student',
   TEACHER: 'teacher',
   ADMIN: 'admin',
+} as const;
+
+// Accessibility Roles
+export const ROLES = {
+  BUTTON: 'button',
+  LINK: 'link',
+  MENU: 'menu',
+  MENUITEM: 'menuitem',
+  DIALOG: 'dialog',
+  ALERT: 'alert',
+  STATUS: 'status',
+  MAIN: 'main',
+} as const;
+
+// ARIA Labels
+export const ARIA_LABELS = {
+  CLOSE: 'Close',
+  OPEN_MENU: 'Open menu',
+  CLOSE_MENU: 'Close menu',
+  SUBMIT: 'Submit',
+  CANCEL: 'Cancel',
+  DELETE: 'Delete',
+  EDIT: 'Edit',
+  SAVE: 'Save',
+  ADD: 'Add new',
+  MENU: 'Menu',
 } as const;
 
 // Assignment Status

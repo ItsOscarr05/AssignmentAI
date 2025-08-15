@@ -1,4 +1,4 @@
-import { REFRESH_TOKEN_KEY } from '../config/constants';
+import { REFRESH_TOKEN_KEY } from '../constants';
 import { api } from '../lib/api';
 import { Session, Token, User } from '../types';
 

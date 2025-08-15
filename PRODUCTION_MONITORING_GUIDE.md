@@ -1,10 +1,18 @@
-# AssignmentAI Production Monitoring & Emergency Response
+# AssignmentAI Production Monitoring & Emergency Response Guide
 
 ## Overview
 
-This document covers the production monitoring and emergency response systems for AssignmentAI. These tools help ensure your production environment remains healthy and provide quick response capabilities during incidents.
+This comprehensive guide covers production monitoring, emergency response systems, and authentication deployment for AssignmentAI. These tools help ensure your production environment remains healthy and provide quick response capabilities during incidents.
 
-## 📊 Production Monitoring
+## Table of Contents
+
+1. [Production Monitoring](#production-monitoring)
+2. [Emergency Response](#emergency-response)
+3. [Authentication Deployment](#authentication-deployment)
+4. [Quick Reference](#quick-reference)
+5. [Troubleshooting](#troubleshooting)
+
+## Production Monitoring
 
 ### Monitoring Script: `scripts/monitor-production.ps1`
 
@@ -99,29 +107,24 @@ schtasks /create /tn "AssignmentAI-Monitoring-Hourly" /tr "powershell -File 'C:\
 [2024-01-15 14:30:16] All checks passed - system is healthy
 ```
 
-## 🚨 Emergency Response
+## Emergency Response
 
-### Emergency Response Script: `scripts/emergency-response.ps1`
+### Emergency Commands (Copy & Paste)
 
-The emergency response script provides quick actions for critical production issues.
-
-#### Available Actions
-
-| Action        | Description                      | Use Case                                 |
-| ------------- | -------------------------------- | ---------------------------------------- |
-| `maintenance` | Enable/disable maintenance mode  | Planned maintenance, security incidents  |
-| `backup`      | Create emergency database backup | Before risky operations, data protection |
-| `restart`     | Restart all services             | Service issues, memory leaks             |
-| `rollback`    | Rollback to previous deployment  | Failed deployments, critical bugs        |
-| `security`    | Handle security incidents        | Security breaches, unauthorized access   |
-| `help`        | Show help information            | Get usage information                    |
-
-#### Usage
+#### Quick Health Check
 
 ```powershell
-# Show help
-.\scripts\emergency-response.ps1 -Action help
+# Check all services
+docker-compose -f docker-compose.prod.yml ps
 
+# Test health endpoints
+curl https://assignmentai.app/health
+curl https://api.assignmentai.app/health
+```
+
+#### Emergency Actions
+
+```powershell
 # Enable maintenance mode
 .\scripts\emergency-response.ps1 -Action maintenance
 
@@ -131,259 +134,251 @@ The emergency response script provides quick actions for critical production iss
 # Restart all services
 .\scripts\emergency-response.ps1 -Action restart
 
-# Rollback deployment (with confirmation)
+# Rollback deployment
 .\scripts\emergency-response.ps1 -Action rollback
-
-# Rollback deployment (force, no confirmation)
-.\scripts\emergency-response.ps1 -Action rollback -Force
 
 # Handle security incident
 .\scripts\emergency-response.ps1 -Action security
 ```
 
-#### Emergency Procedures
+### Incident Response Steps
 
-##### 1. Maintenance Mode
+1. **Assess the Situation**
 
-**Enable:**
+   - Run quick health check: `.\scripts\monitor-production.ps1`
+   - Identify affected services
+   - Determine severity level
+
+2. **Immediate Actions**
+
+   - Enable maintenance mode if needed
+   - Create emergency backup
+   - Notify stakeholders
+
+3. **Investigation**
+
+   - Check service logs
+   - Review monitoring data
+   - Identify root cause
+
+4. **Resolution**
+
+   - Apply fixes
+   - Restart services if needed
+   - Verify recovery
+
+5. **Post-Incident**
+   - Document incident
+   - Update procedures
+   - Schedule review meeting
+
+## Authentication Deployment
+
+### Pre-Deployment Checklist
+
+#### Backend Configuration
+
+- [ ] **API Endpoints**: All authentication endpoints are implemented and working
+
+  - [ ] `/api/v1/auth/login` - User login with rate limiting
+  - [ ] `/api/v1/auth/register` - User registration with email verification
+  - [ ] `/api/v1/auth/forgot-password` - Password reset request
+  - [ ] `/api/v1/auth/reset-password` - Password reset confirmation
+  - [ ] `/api/v1/auth/logout` - User logout with session management
+  - [ ] `/api/v1/auth/me` - Get current user information
+
+- [ ] **Security Features**: All security measures are in place
+
+  - [ ] Password hashing with bcrypt
+  - [ ] JWT token management
+  - [ ] Rate limiting on login attempts
+  - [ ] Session management
+  - [ ] CSRF protection
+  - [ ] Input validation and sanitization
+
+- [ ] **Email Service**: Email functionality is configured
+
+  - [ ] Password reset emails (currently logging for development)
+  - [ ] Email verification (currently logging for development)
+  - [ ] Production email service configured (SMTP, SendGrid, etc.)
+
+- [ ] **Database**: Database is properly configured
+  - [ ] User table with all required fields
+  - [ ] Session table for session management
+  - [ ] Database migrations applied
+  - [ ] Database connection string configured
+
+#### Frontend Configuration
+
+- [ ] **API Integration**: All API calls are properly configured
+
+  - [ ] Standardized API base URL: `http://localhost:8000` (dev) / `https://api.assignmentai.app` (prod)
+  - [ ] All auth endpoints use correct paths (`/api/v1/auth/*`)
+  - [ ] Error handling implemented for all API calls
+  - [ ] Token management (storage, refresh, cleanup)
+
+- [ ] **Components**: All authentication components are implemented
+
+  - [ ] Login page with form validation
+  - [ ] Register page with comprehensive validation
+  - [ ] Forgot password page with email validation
+  - [ ] Reset password page with token validation
+  - [ ] Error handling and user feedback
+
+- [ ] **Routing**: All routes are properly configured
+  - [ ] `/login` - Login page
+  - [ ] `/register` - Registration page
+  - [ ] `/forgot-password` - Forgot password page
+  - [ ] `/reset-password` - Reset password page
+  - [ ] Protected routes redirect to login when not authenticated
+
+#### Environment Configuration
+
+- [ ] **Development Environment**:
+
+  - [ ] `VITE_API_URL=http://localhost:8000` in `.env`
+  - [ ] Backend running on port 8000
+  - [ ] Database connection configured
+
+- [ ] **Production Environment**:
+  - [ ] `VITE_API_URL=https://api.assignmentai.app` in `.env.production`
+  - [ ] SSL certificates configured
+  - [ ] Domain and DNS configured
+  - [ ] CDN configured (if applicable)
+
+#### Testing
+
+- [ ] **Manual Testing**:
+
+  - [ ] User registration flow
+  - [ ] User login flow
+  - [ ] Password reset flow
+  - [ ] Logout functionality
+  - [ ] Session management
+  - [ ] Error handling
+
+- [ ] **Automated Testing**:
+  - [ ] Run authentication test script: `node scripts/test-auth.js`
+  - [ ] All tests pass
+  - [ ] Frontend unit tests pass
+  - [ ] Backend unit tests pass
+
+### Deployment Steps
+
+#### 1. Backend Deployment
+
+```bash
+# 1. Set up production environment
+cp backend/.env.example backend/.env.production
+# Edit backend/.env.production with production values
+
+# 2. Run database migrations
+cd backend
+alembic upgrade head
+
+# 3. Test authentication endpoints
+curl -X POST https://api.assignmentai.app/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"testpassword123"}'
+```
+
+#### 2. Frontend Deployment
+
+```bash
+# 1. Set up production environment
+cp frontend/.env.example frontend/.env.production
+# Edit frontend/.env.production with production values
+
+# 2. Build frontend
+cd frontend
+npm run build
+
+# 3. Deploy to production server
+# (Use your deployment script or manual deployment)
+```
+
+## Quick Reference
+
+### Health Check URLs
+
+| Service    | URL                                   | Expected Response                          |
+| ---------- | ------------------------------------- | ------------------------------------------ |
+| Frontend   | `https://assignmentai.app/health`     | `{"status": "healthy"}`                    |
+| API        | `https://api.assignmentai.app/health` | `{"status": "healthy", "services": {...}}` |
+| Monitoring | `https://monitoring.assignmentai.app` | Grafana dashboard                          |
+
+### Emergency Contacts
+
+- **Technical Lead**: [Your Contact]
+- **Security Team**: [Security Contact]
+- **Hosting Provider**: [Provider Contact]
+
+## Troubleshooting
+
+### Service Issues
 
 ```powershell
-.\scripts\emergency-response.ps1 -Action maintenance
-# Choose: enable
-```
-
-**Disable:**
-
-```powershell
-.\scripts\emergency-response.ps1 -Action maintenance
-# Choose: disable
-```
-
-**What it does:**
-
-- Sets `ENABLE_MAINTENANCE_MODE=True`
-- Restarts backend service
-- Users see maintenance page
-
-##### 2. Emergency Backup
-
-```powershell
-.\scripts\emergency-response.ps1 -Action backup
-```
-
-**What it does:**
-
-- Creates timestamped database backup
-- Uploads to S3 (if configured)
-- Provides backup file location
-
-##### 3. Service Restart
-
-```powershell
-.\scripts\emergency-response.ps1 -Action restart
-```
-
-**What it does:**
-
-- Stops all Docker services
-- Waits 5 seconds
-- Starts all services
-- Verifies all services are running
-
-##### 4. Deployment Rollback
-
-```powershell
-.\scripts\emergency-response.ps1 -Action rollback
-```
-
-**What it does:**
-
-- Shows current and previous commit hashes
-- Asks for confirmation (unless `-Force`)
-- Checks out previous commit
-- Rebuilds and restarts services
-
-##### 5. Security Incident Response
-
-```powershell
-.\scripts\emergency-response.ps1 -Action security
-```
-
-**What it does:**
-
-- Enables maintenance mode
-- Creates emergency backup
-- Blocks suspicious IPs (placeholder)
-- Rotates secrets (placeholder)
-- Checks for unauthorized access (placeholder)
-
-## 📈 Health Check Endpoints
-
-### Frontend Health Check
-
-**URL:** `https://assignmentai.app/health`
-
-**Response:**
-
-```json
-{
-  "status": "healthy",
-  "version": "1.0.0",
-  "environment": "production",
-  "timestamp": "2024-01-15T14:30:00Z"
-}
-```
-
-### Backend Health Check
-
-**URL:** `https://api.assignmentai.app/health`
-
-**Response:**
-
-```json
-{
-  "status": "healthy",
-  "version": "1.0.0",
-  "environment": "production",
-  "timestamp": "2024-01-15T14:30:00Z",
-  "services": {
-    "database": "healthy",
-    "redis": "healthy"
-  },
-  "system": {
-    "cpu_percent": 23.45,
-    "memory_percent": 67.89,
-    "disk_percent": 45.67,
-    "uptime": 1705320600
-  },
-  "uptime": "2024-01-15T10:30:00Z"
-}
-```
-
-## 🔧 Troubleshooting
-
-### Common Issues
-
-#### 1. Monitoring Script Fails
-
-**Symptoms:** Script exits with error
-**Solutions:**
-
-- Check environment variables are set
-- Verify Docker services are running
-- Check network connectivity
-
-#### 2. Health Checks Fail
-
-**Symptoms:** Health endpoints return errors
-**Solutions:**
-
-- Check service logs: `docker-compose -f docker-compose.prod.yml logs`
-- Verify database connectivity
-- Check Redis connectivity
-
-#### 3. Emergency Script Fails
-
-**Symptoms:** Emergency actions don't work
-**Solutions:**
-
-- Check Docker is running
-- Verify Git repository is clean
-- Check file permissions
-
-### Debug Commands
-
-```powershell
-# Check Docker services
-docker-compose -f docker-compose.prod.yml ps
-
 # Check service logs
 docker-compose -f docker-compose.prod.yml logs backend
 docker-compose -f docker-compose.prod.yml logs frontend
 
-# Check system resources
+# Restart specific service
+docker-compose -f docker-compose.prod.yml restart backend
+```
+
+### Database Issues
+
+```powershell
+# Check database connectivity
+docker-compose -f docker-compose.prod.yml exec db pg_isready -U $env:POSTGRES_USER
+
+# Create manual backup
+docker-compose -f docker-compose.prod.yml exec db pg_dump -U $env:POSTGRES_USER $env:POSTGRES_DB > emergency_backup.sql
+```
+
+### System Resources
+
+```powershell
+# Check CPU/Memory
 Get-Counter "\Processor(_Total)\% Processor Time"
 Get-Counter "\Memory\% Committed Bytes In Use"
 
-# Test health endpoints manually
-Invoke-WebRequest -Uri "https://assignmentai.app/health"
-Invoke-WebRequest -Uri "https://api.assignmentai.app/health"
+# Check disk space
+Get-WmiObject -Class Win32_LogicalDisk | Select-Object DeviceID, @{Name="FreeGB";Expression={[math]::Round($_.FreeSpace/1GB,2)}}, @{Name="TotalGB";Expression={[math]::Round($_.Size/1GB,2)}}
 ```
 
-## 📞 Emergency Contacts
+### Common Issues
 
-### Technical Support
+1. **SSL Certificate Issues**
 
-- **Primary Contact**: [Your Email]
-- **Secondary Contact**: [Backup Email]
-- **Emergency Phone**: [Phone Number]
+   - Check Let's Encrypt logs
+   - Verify domain DNS configuration
+   - Check firewall settings
 
-### Service Providers
+2. **Database Connection Issues**
 
-- **Domain Registrar**: [Provider]
-- **Hosting Provider**: [Provider]
-- **SSL Certificate**: Let's Encrypt (auto-renewal)
-- **Monitoring**: Prometheus/Grafana
+   - Verify database credentials
+   - Check network connectivity
+   - Verify connection pool settings
 
-### Escalation Procedures
+3. **Service Startup Issues**
 
-1. **Level 1**: Automated monitoring detects issue
-2. **Level 2**: Manual investigation required
-3. **Level 3**: Emergency response script execution
-4. **Level 4**: Contact technical support
-5. **Level 5**: Contact service providers
+   - Check Docker logs
+   - Verify environment variables
+   - Check port availability
 
-## 📋 Maintenance Schedule
+4. **Performance Issues**
+   - Monitor resource usage
+   - Check database query performance
+   - Verify caching configuration
 
-### Daily
+### Support Resources
 
-- [ ] Review monitoring alerts
-- [ ] Check system resource usage
-- [ ] Verify backup completion
-
-### Weekly
-
-- [ ] Review access logs
-- [ ] Check for failed login attempts
-- [ ] Monitor unusual traffic patterns
-- [ ] Verify SSL certificate renewal
-
-### Monthly
-
-- [ ] Update dependencies
-- [ ] Review user permissions
-- [ ] Performance trend analysis
-- [ ] Capacity planning review
-
-### Quarterly
-
-- [ ] Security audit
-- [ ] Backup restoration test
-- [ ] Disaster recovery drill
-- [ ] Documentation review
-
-## 🔐 Security Considerations
-
-### Access Control
-
-- Limit script access to authorized personnel
-- Use secure authentication for monitoring
-- Regularly rotate access credentials
-
-### Data Protection
-
-- Encrypt sensitive configuration files
-- Secure backup storage
-- Audit log access
-
-### Incident Response
-
-- Document all incidents
-- Follow security procedures
-- Notify stakeholders as appropriate
+- **Logs**: Check application and system logs
+- **Monitoring**: Use Grafana dashboards
+- **Documentation**: Refer to API documentation
+- **Community**: Check GitHub issues and discussions
 
 ---
 
-**Last Updated:** January 15, 2024  
-**Version:** 1.0.0  
-**Maintainer:** AssignmentAI Team
+**Note**: This guide consolidates information from multiple monitoring and authentication documentation files. For specific implementation details, refer to the individual service configurations and scripts.

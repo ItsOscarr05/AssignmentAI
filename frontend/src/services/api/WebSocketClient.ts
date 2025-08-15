@@ -24,7 +24,7 @@ export class WebSocketClient {
       return;
     }
 
-    const wsUrl = `${process.env.REACT_APP_WS_URL || 'ws://localhost:8000/ws'}?token=${token}`;
+    const wsUrl = `${import.meta.env.VITE_WS_URL || 'ws://localhost:8000/ws'}?token=${token}`;
     this.ws = new WebSocket(wsUrl);
 
     this.ws.onopen = () => {

@@ -5,7 +5,7 @@ import axios, {
   AxiosResponse,
   InternalAxiosRequestConfig,
 } from 'axios';
-import { API_BASE_URL } from '../../config/constants';
+import { API_BASE_URL } from '../../constants';
 import { Assignment, AuthResponse, Class, Submission, User } from '../../types';
 import { AssignmentGenerationRequest, AssignmentGenerationResponse } from '../../types/ai';
 import { ApiError } from '../../types/api';

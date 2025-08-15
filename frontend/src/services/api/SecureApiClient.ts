@@ -446,7 +446,7 @@ export class SecureApiClient {
 
 // Create default secure API client instance
 export const secureApiClient = new SecureApiClient({
-  baseURL: process.env.REACT_APP_API_BASE_URL || '/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   enableCSRF: true,
   enableRateLimiting: true,
   maxRetries: 3,

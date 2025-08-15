@@ -15,29 +15,30 @@ A comprehensive assignment management system with AI-powered features for educat
 - ⚙️ Settings Customization
 - Assignment management
 - AI-powered feedback
-
 - User authentication
 - File storage
 
 ## Tech Stack
 
-- Frontend: React, TypeScript, Material-UI
-- Backend: Node.js, Express
-- Database: MongoDB
-- AI Integration: OpenAI API
-- Authentication: JWT
-- File Storage: AWS S3
-- Testing: Jest, React Testing Library
-- Internationalization: i18next
+- **Frontend**: React, TypeScript, Material-UI, Vite
+- **Backend**: FastAPI, Python 3.8+, PostgreSQL
+- **Database**: PostgreSQL with Alembic migrations
+- **AI Integration**: OpenAI API with tiered model access
+- **Authentication**: JWT with 2FA support
+- **File Storage**: Local storage with S3 support
+- **Testing**: Vitest, React Testing Library
+- **Containerization**: Docker with Docker Compose
+- **Monitoring**: Prometheus, Grafana
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js (v14 or higher)
-- MongoDB
-- AWS S3 account (for file storage)
-- OpenAI API key
+- Python 3.8+
+- Node.js 16+
+- PostgreSQL 12+
+- Redis 6+ (optional)
+- Docker (optional)
 
 ### Installation
 
@@ -53,27 +54,24 @@ A comprehensive assignment management system with AI-powered features for educat
    ```bash
    # Install backend dependencies
    cd backend
-   npm install
+   pip install -r requirements.txt
 
    # Install frontend dependencies
    cd ../frontend
-   npm install
+   pnpm install
    ```
 
 3. Configure environment variables:
 
    ```bash
    # Backend (.env)
-   PORT=3000
-   MONGODB_URI=mongodb://localhost:27017/assignmentai
-   JWT_SECRET=your_jwt_secret
-   AWS_ACCESS_KEY_ID=your_aws_access_key
-   AWS_SECRET_ACCESS_KEY=your_aws_secret_key
-   AWS_BUCKET_NAME=your_bucket_name
+   DATABASE_URL=postgresql://username:password@localhost:5432/assignmentai
+   JWT_SECRET_KEY=your_jwt_secret
    OPENAI_API_KEY=your_openai_api_key
+   STRIPE_SECRET_KEY=your_stripe_secret
 
    # Frontend (.env)
-   REACT_APP_API_URL=http://localhost:3000
+   VITE_API_URL=http://localhost:8000
    ```
 
 4. Start the development servers:
@@ -81,11 +79,11 @@ A comprehensive assignment management system with AI-powered features for educat
    ```bash
    # Start backend server
    cd backend
-   npm run dev
+   uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
    # Start frontend server
-   cd frontend
-   npm start
+   cd ../frontend
+   pnpm dev
    ```
 
 ## Project Structure
@@ -93,27 +91,34 @@ A comprehensive assignment management system with AI-powered features for educat
 ```
 assignmentai/
 ├── backend/
-│   ├── src/
-│   │   ├── controllers/
+│   ├── app/
+│   │   ├── api/
+│   │   ├── core/
+│   │   ├── crud/
 │   │   ├── models/
-│   │   ├── routes/
-│   │   ├── services/
-│   │   └── utils/
-│   └── package.json
+│   │   ├── schemas/
+│   │   └── services/
+│   ├── tests/
+│   └── requirements.txt
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
 │   │   ├── contexts/
 │   │   ├── services/
 │   │   ├── utils/
-│   │   └── i18n/
+│   │   └── __tests__/
 │   └── package.json
 └── README.md
 ```
 
-## API Documentation
+## Documentation
 
-See [API.md](docs/API.md) for detailed API documentation.
+- [API Documentation](API_DOCUMENTATION.md)
+- [Environment Setup](ENVIRONMENT_SETUP.md)
+- [Security Guide](SECURITY_GUIDE.md)
+- [User Guide](USER_GUIDE.md)
+- [Deployment Guide](DEPLOYMENT_GUIDE.md)
+- [Production Monitoring](PRODUCTION_MONITORING_GUIDE.md)
 
 ## Contributing
 
@@ -130,14 +135,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 For support, email support@assignmentai.com or open an issue in the repository.
-
-## Environment Variables
-
-See [Environment Variables Documentation](docs/environment-variables.md) for detailed information about required environment variables.
-
-## Documentation
-
-- [API Documentation](docs/api.md)
-
-- [Environment Variables](docs/environment-variables.md)
-- [Deployment Guide](docs/deployment.md)

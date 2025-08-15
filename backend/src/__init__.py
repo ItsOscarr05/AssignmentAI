@@ -1,3 +1,0 @@
-"""
-AssignmentAI Backend Source Package
-""" 

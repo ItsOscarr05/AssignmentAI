@@ -4,7 +4,7 @@ import React from 'react';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
 
 // Only run axe in development and when window is available
-if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined') {
+if (import.meta.env.DEV && typeof window !== 'undefined') {
   // Mock requestIdleCallback if it's not available
   if (!window.requestIdleCallback) {
     window.requestIdleCallback = callback => {
@@ -47,7 +47,7 @@ export const SecurityProvider: React.FC<SecurityProviderProps> = ({ children }) 
             style-src 'self' 'unsafe-inline';
             img-src 'self' data: https:;
             font-src 'self' data:;
-            connect-src 'self' ${process.env.VITE_API_URL};
+            connect-src 'self' ${import.meta.env.VITE_API_URL};
           `}
         />
 

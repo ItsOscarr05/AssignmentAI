@@ -1,3 +1,0 @@
-"""
-AssignmentAI Models Package
-"""
