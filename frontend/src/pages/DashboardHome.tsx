@@ -221,7 +221,7 @@ const DashboardHome: React.FC = () => {
         padding: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2),
       }}
     >
-      {/* Top Section: Welcome & Quick Start */}
+      {/* Top Section: Welcome */}
       <Grid
         container
         spacing={getAspectRatioStyle(aspectRatioStyles.grid.gap, breakpoint, 2)}
@@ -256,8 +256,8 @@ const DashboardHome: React.FC = () => {
               width: '100%',
             }}
           >
-            {/* Left Side - Welcome Content (40-45% width) */}
-            <Box sx={{ flex: '1 1 45%', pr: { xs: 0, md: 2 } }}>
+            {/* Welcome Content - Full Width */}
+            <Box sx={{ flex: '1 1 100%', textAlign: 'center' }}>
               <Typography
                 variant={
                   breakpoint === 'tall'
@@ -299,161 +299,11 @@ const DashboardHome: React.FC = () => {
                   fontStyle: 'italic',
                   lineHeight: 1.6,
                   maxWidth: '80%',
+                  mx: 'auto',
                 }}
               >
                 AI Tip: Try asking me to analyze your assignment structure or suggest improvements!
               </Typography>
-            </Box>
-
-            {/* Center Divider - Only visible on medium+ screens */}
-            <Box
-              sx={{
-                display: { xs: 'none', md: 'block' },
-                width: '2px',
-                backgroundColor: 'rgba(211, 47, 47, 0.3)',
-                mx: 2,
-                alignSelf: 'stretch',
-                position: 'relative',
-                '&::before': {
-                  content: '""',
-                  position: 'absolute',
-                  top: '10%',
-                  bottom: '10%',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  width: '1px',
-                  background:
-                    'linear-gradient(180deg, transparent 0%, rgba(211, 47, 47, 0.1) 50%, transparent 100%)',
-                },
-              }}
-            />
-
-            {/* Right Side - Quick Actions Section (55-60% width) */}
-            <Box sx={{ flex: '1 1 55%', pl: { xs: 0, md: 3 } }}>
-              {/* Quick Actions Header */}
-              <Box sx={{ textAlign: 'center', mb: 2 }}>
-                <Typography
-                  variant="h6"
-                  sx={{
-                    color: '#D32F2F',
-                    fontWeight: 700,
-                    mb: 0.5,
-                    fontSize: '1.1rem',
-                  }}
-                >
-                  Quick Actions
-                </Typography>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: 'text.secondary',
-                    fontSize: '0.75rem',
-                    opacity: 0.8,
-                  }}
-                >
-                  Get started with your assignments
-                </Typography>
-              </Box>
-
-              {/* Quick Action Buttons */}
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  onClick={() => navigate('/dashboard/workshop')}
-                  sx={{
-                    borderColor: '#D32F2F',
-                    color: '#D32F2F',
-                    fontWeight: 600,
-                    py: 1.5,
-                    '&:hover': {
-                      borderColor: '#B71C1C',
-                      backgroundColor: 'rgba(211, 47, 47, 0.05)',
-                    },
-                  }}
-                >
-                  Create Assignment
-                </Button>
-                <Button
-                  variant="outlined"
-                  color="secondary"
-                  onClick={() => navigate('/dashboard/workshop#upload-content-card')}
-                  sx={{
-                    borderColor: '#1976D2',
-                    color: '#1976D2',
-                    fontWeight: 600,
-                    py: 1.5,
-                    '&:hover': {
-                      borderColor: '#1565C0',
-                      backgroundColor: 'rgba(25, 118, 210, 0.05)',
-                    },
-                  }}
-                >
-                  Upload Content
-                </Button>
-              </Box>
-
-              {/* Recent Activity Summary */}
-              <Box
-                sx={{
-                  backgroundColor: theme =>
-                    theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.1)' : 'rgba(0, 0, 0, 0.02)',
-                  borderRadius: 2,
-                  p: 2,
-                  border: '1px solid rgba(0, 0, 0, 0.1)',
-                }}
-              >
-                <Typography
-                  variant="subtitle2"
-                  sx={{
-                    color: 'text.primary',
-                    fontWeight: 600,
-                    mb: 1,
-                    fontSize: '0.875rem',
-                  }}
-                >
-                  Recent Activity
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                  <Box
-                    sx={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: '50%',
-                      backgroundColor: '#4CAF50',
-                      animation: 'pulse 2s infinite',
-                    }}
-                  />
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: 'text.secondary',
-                      fontSize: '0.75rem',
-                      opacity: 0.8,
-                    }}
-                  >
-                    {assignments.length > 0
-                      ? `${assignments.length} assignments`
-                      : 'No assignments yet'}
-                  </Typography>
-                </Box>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: 'text.secondary',
-                    fontSize: '0.7rem',
-                    opacity: 0.6,
-                    fontStyle: 'italic',
-                    display: 'block',
-                    textAlign: 'center',
-                    mt: 1,
-                  }}
-                >
-                  {assignments.length > 0
-                    ? 'Ready to work on your next assignment'
-                    : 'Start by creating your first assignment'}
-                </Typography>
-              </Box>
             </Box>
           </Paper>
         </Grid>
