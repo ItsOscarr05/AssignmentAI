@@ -6,6 +6,7 @@ from app.core.deps import get_current_user, get_db
 from app.models.user import User
 from app.models.subscription import Subscription, SubscriptionStatus
 import logging
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -125,10 +126,10 @@ def get_user_plan(user: User, db: Session) -> str:
     
     # Map Stripe price IDs to plan names
     plan_mapping = {
-        "price_free": "free",
-        "price_plus": "plus", 
-        "price_pro": "pro",
-        "price_max": "max"
+        settings.STRIPE_PRICE_FREE: "free",
+        settings.STRIPE_PRICE_PLUS: "plus", 
+        settings.STRIPE_PRICE_PRO: "pro",
+        settings.STRIPE_PRICE_MAX: "max"
     }
     
     return plan_mapping.get(subscription.plan_id, "free")

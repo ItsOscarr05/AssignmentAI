@@ -26,11 +26,28 @@ export interface Plan {
   interval: 'month' | 'year';
   features: string[];
   priceId: string;
+  color: string;
+}
+
+export interface PlanWithStatus extends Plan {
+  isCurrentPlan: boolean;
+  status: 'current' | 'available';
+  color: string;
 }
 
 class PaymentService {
   async getPlans(): Promise<Plan[]> {
     const response = await api.get<Plan[]>('/plans');
+    return response.data;
+  }
+
+  async getPlansWithStatus(): Promise<PlanWithStatus[]> {
+    // Check if we're in mock user mode
+    const isMockUser = localStorage.getItem('isMockUser') === 'true';
+    const endpoint = isMockUser
+      ? '/payments/plans/with-status/test'
+      : '/payments/plans/with-status';
+    const response = await api.get<PlanWithStatus[]>(endpoint);
     return response.data;
   }
 

@@ -32,6 +32,7 @@ import {
   Card,
   CardContent,
   Chip,
+  CircularProgress,
   Container,
   Dialog,
   DialogContent,
@@ -84,6 +85,7 @@ interface Plan {
   bestFor: string;
   tokenBoost?: number;
   isCurrentPlan?: boolean;
+  status?: 'current' | 'available';
 }
 
 interface CurrentPlan {
@@ -255,7 +257,7 @@ const plans: Plan[] = [
       'Standard Response Time',
       'Basic Templates',
     ],
-    priceId: '', // Will be populated from backend
+    priceId: import.meta.env.VITE_STRIPE_PRICE_FREE || '', // Use environment variable as fallback
     bestFor: 'Perfect starting tool with basic writing assistance',
     tokenBoost: 30000,
     isCurrentPlan: false,
@@ -274,7 +276,7 @@ const plans: Plan[] = [
       'Ad-Free Experience',
     ],
     popular: true,
-    priceId: '', // Will be populated from backend
+    priceId: import.meta.env.VITE_STRIPE_PRICE_PLUS || '', // Use environment variable as fallback
     bestFor: 'Enhanced features for more serious students',
     tokenBoost: 50000,
     isCurrentPlan: false,
@@ -292,7 +294,7 @@ const plans: Plan[] = [
       '24/7 Priority Support',
       'Ad-Free Experience',
     ],
-    priceId: '', // Will be populated from backend
+    priceId: import.meta.env.VITE_STRIPE_PRICE_PRO || '', // Use environment variable as fallback
     bestFor: 'Advanced features for professional students',
     tokenBoost: 75000,
     isCurrentPlan: false,
@@ -310,7 +312,7 @@ const plans: Plan[] = [
       'Custom Assignment Templates',
       'Ad-Free Experience',
     ],
-    priceId: '', // Will be populated from backend
+    priceId: import.meta.env.VITE_STRIPE_PRICE_MAX || '', // Use environment variable as fallback
     bestFor: 'Ultimate package for power users',
     tokenBoost: 100000,
     isCurrentPlan: false,
@@ -370,10 +372,24 @@ const PricePlan: React.FC = () => {
   const [showDetailedComparison, setShowDetailedComparison] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [, setCurrentPlan] = useState<CurrentPlan | null>(null);
-  const [plansWithCurrentPlan, setPlansWithCurrentPlan] = useState<Plan[]>(plans);
+  const [plansWithCurrentPlan, setPlansWithCurrentPlan] = useState<Plan[]>([]);
   const [currentSubscription, setCurrentSubscription] = useState<any>(null);
+  const [plansLoading, setPlansLoading] = useState(true);
 
   useEffect(() => {
+    // Debug: Log environment variables
+    console.log('Environment variables available:');
+    console.log('VITE_STRIPE_PRICE_FREE:', import.meta.env.VITE_STRIPE_PRICE_FREE);
+    console.log('VITE_STRIPE_PRICE_PLUS:', import.meta.env.VITE_STRIPE_PRICE_PLUS);
+    console.log('VITE_STRIPE_PRICE_PRO:', import.meta.env.VITE_STRIPE_PRICE_PRO);
+    console.log('VITE_STRIPE_PRICE_MAX:', import.meta.env.VITE_STRIPE_PRICE_MAX);
+
+    // Debug: Log initial plans
+    console.log(
+      'Initial plans with priceIds:',
+      plans.map(p => ({ name: p.name, priceId: p.priceId }))
+    );
+
     fetchCurrentPlan();
     fetchPlansWithPrices();
     fetchCurrentSubscription();
@@ -382,19 +398,34 @@ const PricePlan: React.FC = () => {
   const fetchPlansWithPrices = async () => {
     console.log('fetchPlansWithPrices called');
     try {
-      console.log('Making API call to /payments/plans');
-      const response = await api.get('/payments/plans');
+      console.log('Making API call to /payments/plans/with-status');
+      const response = await api.get('/payments/plans/with-status');
       console.log('API response received:', response);
       const backendPlans = response.data;
       console.log('Backend plans:', backendPlans);
+      console.log(
+        'Backend plans priceIds:',
+        backendPlans.map((bp: any) => ({
+          name: bp.name,
+          priceId: bp.priceId,
+          isCurrentPlan: bp.isCurrentPlan,
+          status: bp.status,
+        }))
+      );
 
       // Map backend plans to frontend plans by name
       const updatedPlans = plans.map(plan => {
         console.log(`\n--- Mapping plan: ${plan.name} ---`);
         console.log('Frontend plan name:', plan.name);
+        console.log('Frontend plan initial priceId:', plan.priceId);
         console.log(
           'Backend plans available:',
-          backendPlans.map((bp: any) => ({ name: bp.name, priceId: bp.priceId }))
+          backendPlans.map((bp: any) => ({
+            name: bp.name,
+            priceId: bp.priceId,
+            isCurrentPlan: bp.isCurrentPlan,
+            status: bp.status,
+          }))
         );
 
         const backendPlan = backendPlans.find(
@@ -404,24 +435,56 @@ const PricePlan: React.FC = () => {
         console.log('Backend plan found:', backendPlan);
         console.log('Backend plan name:', backendPlan?.name);
         console.log('Backend plan priceId:', backendPlan?.priceId);
-        console.log('Original plan priceId:', plan.priceId);
+        console.log('Backend plan isCurrentPlan:', backendPlan?.isCurrentPlan);
+        console.log('Backend plan status:', backendPlan?.status);
+
+        // Use backend priceId if available, otherwise fall back to environment variable
+        const finalPriceId = backendPlan?.priceId || plan.priceId;
+        console.log('Final priceId to use:', finalPriceId);
 
         const updatedPlan = {
           ...plan,
-          priceId: backendPlan?.priceId || plan.priceId,
+          priceId: finalPriceId,
+          isCurrentPlan: backendPlan?.isCurrentPlan || false,
+          status: backendPlan?.status || 'available',
         };
 
         console.log('Updated plan priceId:', updatedPlan.priceId);
+        console.log('Updated plan isCurrentPlan:', updatedPlan.isCurrentPlan);
+        console.log('Updated plan status:', updatedPlan.status);
         console.log('--- End mapping ---\n');
 
         return updatedPlan;
       });
 
       console.log('Final updated plans:', updatedPlans);
+      console.log(
+        'Final updated plans priceIds:',
+        updatedPlans.map(p => ({ name: p.name, priceId: p.priceId }))
+      );
+
+      // Validate that all plans have valid price IDs
+      const invalidPlans = updatedPlans.filter(p => !p.priceId || p.priceId === '');
+      if (invalidPlans.length > 0) {
+        console.error('Some plans have invalid price IDs:', invalidPlans);
+        console.error('This should not happen - check environment variables and backend response');
+      }
+
       setPlansWithCurrentPlan(updatedPlans);
+      setPlansLoading(false);
     } catch (error) {
       console.error('Failed to fetch plans with prices:', error);
-      // Keep original plans if fetch fails
+      console.error('Error details:', error);
+
+      // Even if backend fails, we should have environment variable fallbacks
+      console.log('Using environment variable fallbacks due to backend failure');
+      console.log(
+        'Plans with fallback priceIds:',
+        plans.map(p => ({ name: p.name, priceId: p.priceId }))
+      );
+
+      setPlansWithCurrentPlan(plans); // Use plans with environment variable fallbacks
+      setPlansLoading(false);
     }
   };
 
@@ -497,6 +560,29 @@ const PricePlan: React.FC = () => {
     const finalPlan = updatedPlan || plan;
     console.log('Final plan to be used:', finalPlan);
     console.log('Final plan priceId:', finalPlan.priceId);
+    console.log('Final plan priceId type:', typeof finalPlan.priceId);
+    console.log('Final plan priceId length:', finalPlan.priceId ? finalPlan.priceId.length : 0);
+    console.log('Final plan priceId is empty:', finalPlan.priceId === '');
+    console.log('Final plan priceId is undefined:', finalPlan.priceId === undefined);
+
+    // Check if the priceId is valid
+    if (!finalPlan.priceId || finalPlan.priceId === '' || finalPlan.priceId === undefined) {
+      console.error('Invalid priceId for plan:', finalPlan.name, 'priceId:', finalPlan.priceId);
+      enqueueSnackbar('Error: Invalid plan configuration. Please try again or contact support.', {
+        variant: 'error',
+      });
+      return;
+    }
+
+    // Additional validation - check if priceId looks like a Stripe price ID
+    if (!finalPlan.priceId.startsWith('price_')) {
+      console.error('PriceId does not look like a Stripe price ID:', finalPlan.priceId);
+      enqueueSnackbar('Error: Invalid plan configuration. Please try again or contact support.', {
+        variant: 'error',
+      });
+      return;
+    }
+
     console.log('=== END PLAN SELECTION ===\n');
 
     setSelectedPlan(finalPlan);
@@ -754,317 +840,380 @@ const PricePlan: React.FC = () => {
       <Container>
         <Stack spacing={6}>
           <Grid container spacing={4} justifyContent="center">
-            {plansWithCurrentPlan.map(plan => (
-              <Grid item xs={12} sm={6} md={6} lg={3} xl={3} key={plan.name}>
-                <Card
-                  sx={{
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    position: 'relative',
-                    border: '2.25px solid #D32F2F',
-                    borderColor: plan.color,
-                    borderRadius: 3.5,
-                    boxShadow: 3,
-                    backgroundColor: theme =>
-                      theme.palette.mode === 'dark' ? theme.palette.background.paper : 'white',
-                    zIndex: 1,
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                      transform: 'translateY(-8px)',
-                      boxShadow: `0 8px 24px ${plan.color}40`,
-                      borderColor: plan.color,
-                    },
-                    minWidth: '240px',
-                    overflow: 'visible',
-                  }}
-                >
-                  {plan.popular && (
-                    <Chip
-                      icon={<Star />}
-                      label="Most Popular"
-                      color="primary"
-                      sx={{
-                        position: 'absolute',
-                        top: -18,
-                        left: 0,
-                        right: 0,
-                        mx: 'auto',
-                        width: 'fit-content',
-                        borderRadius: 2,
-                        zIndex: 2,
-                        fontSize: '1.05rem',
-                        boxShadow: 2,
-                        bgcolor: '#D32F2F',
-                        color: 'white',
-                      }}
-                    />
-                  )}
-                  <CardContent sx={{ flexGrow: 1, p: 3 }}>
-                    <Stack spacing={2}>
-                      <Box
+            {plansLoading ? (
+              <Grid item xs={12}>
+                <Box sx={{ textAlign: 'center', py: 8 }}>
+                  <Typography variant="h5" gutterBottom>
+                    Loading Plans...
+                  </Typography>
+                  <CircularProgress />
+                </Box>
+              </Grid>
+            ) : plansWithCurrentPlan.length === 0 ? (
+              <Grid item xs={12}>
+                <Box sx={{ textAlign: 'center', py: 8 }}>
+                  <Typography variant="h5" gutterBottom>
+                    No plans available.
+                  </Typography>
+                  <Typography variant="body1">
+                    Please try again later or contact support if the issue persists.
+                  </Typography>
+                </Box>
+              </Grid>
+            ) : (
+              <>
+                {/* Show warning if some plans are filtered out */}
+                {plansWithCurrentPlan.some(plan => !plan.priceId || plan.priceId === '') && (
+                  <Grid item xs={12}>
+                    <Box sx={{ textAlign: 'center', py: 2 }}>
+                      <Typography variant="body2" color="warning.main">
+                        ⚠️ Some plans are temporarily unavailable due to configuration issues.
+                      </Typography>
+                    </Box>
+                  </Grid>
+                )}
+                {plansWithCurrentPlan
+                  .filter(plan => plan.priceId && plan.priceId !== '') // Only show plans with valid price IDs
+                  .map(plan => (
+                    <Grid item xs={12} sm={6} md={6} lg={3} xl={3} key={plan.name}>
+                      <Card
                         sx={{
+                          height: '100%',
                           display: 'flex',
-                          alignItems: 'center',
-                          gap: 2,
-                          color: plan.color,
-                        }}
-                      >
-                        {plan.icon}
-                        <Typography variant="h4" fontWeight="bold">
-                          {plan.name}
-                        </Typography>
-                      </Box>
-                      <Box>
-                        <Typography
-                          variant="h2"
-                          fontWeight="bold"
-                          gutterBottom
-                          sx={{
-                            fontFamily: '"Mike Sans", "Audiowide", Arial, sans-serif',
-                            fontSize: { xs: '2.0rem', md: '2.5rem' },
-                            color: theme => (theme.palette.mode === 'dark' ? '#ffffff' : '#000000'),
-                          }}
-                        >
-                          {plan.price === 0 ? 'Free' : `$${plan.price}`}
-                          {plan.price !== 0 && (
-                            <Typography
-                              component="span"
-                              variant="h5"
-                              sx={{
-                                color: theme =>
-                                  theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
-                                fontFamily: '"Mike Sans", "Audiowide", Arial, sans-serif',
-                                fontSize: { xs: '1.0rem', md: '1.25rem' },
-                              }}
-                            >
-                              /mo
-                            </Typography>
-                          )}
-                        </Typography>
-                        <Typography
-                          sx={{
-                            color: theme => (theme.palette.mode === 'dark' ? '#cccccc' : '#666666'),
-                            fontSize: { xs: '1.0rem', md: '1.15rem' },
-                          }}
-                        >
-                          {plan.description}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, mt: -1 }}>
-                        {plan.name === 'Free' && (
-                          <Chip
-                            icon={<LocalOffer />}
-                            label="GPT-4.1 Nano"
-                            size="small"
-                            sx={{
-                              backgroundColor: '#e3f2fd',
-                              color: '#1976d2',
-                              border: '1.25px solid #90caf9',
-                              fontSize: '0.85rem',
-                              px: 0.5,
-                              height: 24,
-                              minHeight: 20,
-                              '& .MuiChip-icon': { color: '#1976d2', fontSize: 18 },
-                            }}
-                          />
-                        )}
-                        {plan.name === 'Plus' && (
-                          <Chip
-                            icon={<Star />}
-                            label="GPT-3.5 Turbo"
-                            size="small"
-                            sx={{
-                              backgroundColor: '#e8f5e9',
-                              color: '#388e3c',
-                              border: '1.25px solid #81c784',
-                              fontSize: '0.85rem',
-                              px: 0.5,
-                              height: 24,
-                              minHeight: 20,
-                              '& .MuiChip-icon': { color: '#388e3c', fontSize: 18 },
-                            }}
-                          />
-                        )}
-                        {plan.name === 'Pro' && (
-                          <Chip
-                            icon={<Diamond />}
-                            label="GPT-4 Turbo"
-                            size="small"
-                            sx={{
-                              backgroundColor: '#f3e5f5',
-                              color: '#8e24aa',
-                              border: '1.25px solid #ce93d8',
-                              fontSize: '0.85rem',
-                              px: 0.5,
-                              height: 24,
-                              minHeight: 20,
-                              '& .MuiChip-icon': { color: '#8e24aa', fontSize: 18 },
-                            }}
-                          />
-                        )}
-                        {plan.name === 'Max' && (
-                          <Chip
-                            icon={<EmojiEvents />}
-                            label="GPT-4"
-                            size="small"
-                            sx={{
-                              backgroundColor: '#fff3e0',
-                              color: '#f57c00',
-                              border: '1.25px solid #ffb74d',
-                              fontSize: '0.85rem',
-                              px: 0.5,
-                              height: 24,
-                              minHeight: 20,
-                              '& .MuiChip-icon': { color: '#f57c00', fontSize: 18 },
-                            }}
-                          />
-                        )}
-                      </Box>
-                      {plan.name === 'Free' && (
-                        <Typography
-                          variant="tokenLimit"
-                          color="error.main"
-                          sx={{
-                            mt: 0.5,
-                            mb: 0,
-                          }}
-                        >
-                          30,000 tokens/month
-                        </Typography>
-                      )}
-                      {plan.name === 'Plus' && (
-                        <Typography
-                          variant="tokenLimit"
-                          color="error.main"
-                          sx={{
-                            mt: 0.5,
-                            mb: 0,
-                          }}
-                        >
-                          50,000 tokens/month
-                        </Typography>
-                      )}
-                      {plan.name === 'Pro' && (
-                        <Typography
-                          variant="tokenLimit"
-                          color="error.main"
-                          sx={{
-                            mt: 0.5,
-                            mb: 0,
-                          }}
-                        >
-                          75,000 tokens/month
-                        </Typography>
-                      )}
-                      {plan.name === 'Max' && (
-                        <Typography
-                          variant="tokenLimit"
-                          color="error.main"
-                          sx={{
-                            mt: 0.5,
-                            mb: 0,
-                          }}
-                        >
-                          100,000 tokens/month
-                        </Typography>
-                      )}
-                      <Divider />
-                      <Stack spacing={1.5}>
-                        {plan.name === 'Free' && (
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              color: theme =>
-                                theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
-                              fontSize: { xs: '0.95rem', md: '1.05rem' },
-                              pl: 0.5,
-                            }}
-                          >
-                            Free Features
-                          </Typography>
-                        )}
-                        {plan.features.map(feature =>
-                          feature.startsWith('Everything in') ? (
-                            <Typography
-                              key={feature}
-                              variant="caption"
-                              sx={{
-                                color: theme =>
-                                  theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
-                                fontSize: { xs: '0.95rem', md: '1.05rem' },
-                                fontWeight: 500,
-                                pl: 0.5,
-                              }}
-                            >
-                              {feature}
-                            </Typography>
-                          ) : (
-                            <Stack key={feature} direction="row" spacing={1} alignItems="center">
-                              {getFeatureIcon(feature, plan.color)}
-                              <Typography
-                                variant="body2"
-                                sx={{
-                                  fontSize: { xs: '1.0rem', md: '1.1rem' },
-                                  color: theme =>
-                                    theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
-                                }}
-                              >
-                                {feature}
-                              </Typography>
-                            </Stack>
-                          )
-                        )}
-                      </Stack>
-                      <Button
-                        variant={plan.popular ? 'contained' : 'outlined'}
-                        color="primary"
-                        size="large"
-                        onClick={() => handlePlanSelect(plan)}
-                        disabled={plan.isCurrentPlan}
-                        sx={{
-                          px: 3.5,
-                          py: 1.8,
-                          fontWeight: 700,
-                          fontSize: '1.0rem',
-                          borderRadius: 2,
-                          ...(plan.popular
-                            ? {
-                                bgcolor: '#D32F2F',
-                                color: 'white',
-                                '&:hover': { bgcolor: '#B71C1C' },
-                              }
-                            : {
-                                borderColor: '#D32F2F',
-                                color: '#D32F2F',
-                                '&:hover': {
-                                  borderColor: '#B71C1C',
-                                  bgcolor: 'rgba(211, 47, 47, 0.04)',
-                                },
-                              }),
-                          textTransform: 'none',
+                          flexDirection: 'column',
+                          position: 'relative',
+                          border: '2.25px solid',
+                          borderColor: plan.color,
+                          borderRadius: 3.5,
+                          boxShadow: `0 0 15px ${plan.color}30`,
+                          backgroundColor: theme =>
+                            theme.palette.mode === 'dark'
+                              ? theme.palette.background.paper
+                              : 'white',
+                          zIndex: 1,
+                          transition: 'all 0.3s ease',
+                          '&:hover': {
+                            transform: plan.isCurrentPlan ? 'none' : 'translateY(-8px)',
+                            boxShadow: `0 0 20px ${plan.color}50`,
+                            borderColor: plan.color,
+                          },
+                          minWidth: '240px',
+                          overflow: 'visible',
+                          // Enhanced glow effect for current plan
                           ...(plan.isCurrentPlan && {
-                            backgroundColor: theme.palette.grey[300],
-                            color: theme.palette.grey[600],
-                            borderColor: theme.palette.grey[400],
-                            '&:hover': {
-                              backgroundColor: theme.palette.grey[300],
-                              color: theme.palette.grey[600],
+                            borderWidth: '3px',
+                            animation: 'currentPlanGlow 2s ease-in-out infinite alternate',
+                            '@keyframes currentPlanGlow': {
+                              '0%': {
+                                boxShadow: `0 0 25px ${plan.color}60`,
+                                borderColor: plan.color,
+                              },
+                              '100%': {
+                                boxShadow: `0 0 40px ${plan.color}90`,
+                                borderColor: plan.color,
+                              },
                             },
                           }),
                         }}
                       >
-                        {plan.isCurrentPlan
-                          ? 'Your Current Plan'
-                          : plan.price === 0
-                          ? 'Get Started Free'
-                          : 'Choose Plan'}
-                      </Button>
-                    </Stack>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
+                        {plan.popular && (
+                          <Chip
+                            icon={<Star />}
+                            label="Most Popular"
+                            color="primary"
+                            sx={{
+                              position: 'absolute',
+                              top: -18,
+                              left: 0,
+                              right: 0,
+                              mx: 'auto',
+                              width: 'fit-content',
+                              borderRadius: 2,
+                              zIndex: 2,
+                              fontSize: '1.05rem',
+                              boxShadow: 2,
+                              bgcolor: '#D32F2F',
+                              color: 'white',
+                            }}
+                          />
+                        )}
+
+                        <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                          <Stack spacing={2}>
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 2,
+                                color: plan.color,
+                              }}
+                            >
+                              {plan.icon}
+                              <Typography variant="h4" fontWeight="bold">
+                                {plan.name}
+                              </Typography>
+                            </Box>
+                            <Box>
+                              <Typography
+                                variant="h2"
+                                fontWeight="bold"
+                                gutterBottom
+                                sx={{
+                                  fontFamily: '"Mike Sans", "Audiowide", Arial, sans-serif',
+                                  fontSize: { xs: '2.0rem', md: '2.5rem' },
+                                  color: theme =>
+                                    theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+                                }}
+                              >
+                                {plan.price === 0 ? 'Free' : `$${plan.price}`}
+                                {plan.price !== 0 && (
+                                  <Typography
+                                    component="span"
+                                    variant="h5"
+                                    sx={{
+                                      color: theme =>
+                                        theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+                                      fontFamily: '"Mike Sans", "Audiowide", Arial, sans-serif',
+                                      fontSize: { xs: '1.0rem', md: '1.25rem' },
+                                    }}
+                                  >
+                                    /mo
+                                  </Typography>
+                                )}
+                              </Typography>
+                              <Typography
+                                sx={{
+                                  color: theme =>
+                                    theme.palette.mode === 'dark' ? '#cccccc' : '#666666',
+                                  fontSize: { xs: '1.0rem', md: '1.15rem' },
+                                }}
+                              >
+                                {plan.description}
+                              </Typography>
+                            </Box>
+                            <Box
+                              sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, mt: -1 }}
+                            >
+                              {plan.name === 'Free' && (
+                                <Chip
+                                  icon={<LocalOffer />}
+                                  label="GPT-4.1 Nano"
+                                  size="small"
+                                  sx={{
+                                    backgroundColor: '#e3f2fd',
+                                    color: '#1976d2',
+                                    border: '1.25px solid #90caf9',
+                                    fontSize: '0.85rem',
+                                    px: 0.5,
+                                    height: 24,
+                                    minHeight: 20,
+                                    '& .MuiChip-icon': { color: '#1976d2', fontSize: 18 },
+                                  }}
+                                />
+                              )}
+                              {plan.name === 'Plus' && (
+                                <Chip
+                                  icon={<Star />}
+                                  label="GPT-3.5 Turbo"
+                                  size="small"
+                                  sx={{
+                                    backgroundColor: '#e8f5e9',
+                                    color: '#388e3c',
+                                    border: '1.25px solid #81c784',
+                                    fontSize: '0.85rem',
+                                    px: 0.5,
+                                    height: 24,
+                                    minHeight: 20,
+                                    '& .MuiChip-icon': { color: '#388e3c', fontSize: 18 },
+                                  }}
+                                />
+                              )}
+                              {plan.name === 'Pro' && (
+                                <Chip
+                                  icon={<Diamond />}
+                                  label="GPT-4 Turbo"
+                                  size="small"
+                                  sx={{
+                                    backgroundColor: '#f3e5f5',
+                                    color: '#8e24aa',
+                                    border: '1.25px solid #ce93d8',
+                                    fontSize: '0.85rem',
+                                    px: 0.5,
+                                    height: 24,
+                                    minHeight: 20,
+                                    '& .MuiChip-icon': { color: '#8e24aa', fontSize: 18 },
+                                  }}
+                                />
+                              )}
+                              {plan.name === 'Max' && (
+                                <Chip
+                                  icon={<EmojiEvents />}
+                                  label="GPT-4"
+                                  size="small"
+                                  sx={{
+                                    backgroundColor: '#fff3e0',
+                                    color: '#f57c00',
+                                    border: '1.25px solid #ffb74d',
+                                    fontSize: '0.85rem',
+                                    px: 0.5,
+                                    height: 24,
+                                    minHeight: 20,
+                                    '& .MuiChip-icon': { color: '#f57c00', fontSize: 18 },
+                                  }}
+                                />
+                              )}
+                            </Box>
+                            {plan.name === 'Free' && (
+                              <Typography
+                                variant="body2"
+                                color="error.main"
+                                sx={{
+                                  mt: 0.5,
+                                  mb: 0,
+                                }}
+                              >
+                                30,000 tokens/month
+                              </Typography>
+                            )}
+                            {plan.name === 'Plus' && (
+                              <Typography
+                                variant="body2"
+                                color="error.main"
+                                sx={{
+                                  mt: 0.5,
+                                  mb: 0,
+                                }}
+                              >
+                                50,000 tokens/month
+                              </Typography>
+                            )}
+                            {plan.name === 'Pro' && (
+                              <Typography
+                                variant="body2"
+                                color="error.main"
+                                sx={{
+                                  mt: 0.5,
+                                  mb: 0,
+                                }}
+                              >
+                                75,000 tokens/month
+                              </Typography>
+                            )}
+                            {plan.name === 'Max' && (
+                              <Typography
+                                variant="body2"
+                                color="error.main"
+                                sx={{
+                                  mt: 0.5,
+                                  mb: 0,
+                                }}
+                              >
+                                100,000 tokens/month
+                              </Typography>
+                            )}
+                            <Divider />
+                            <Stack spacing={1.5}>
+                              {plan.name === 'Free' && (
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    color: theme =>
+                                      theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+                                    fontSize: { xs: '0.95rem', md: '1.05rem' },
+                                    pl: 0.5,
+                                  }}
+                                >
+                                  Free Features
+                                </Typography>
+                              )}
+                              {plan.features.map(feature =>
+                                feature.startsWith('Everything in') ? (
+                                  <Typography
+                                    key={feature}
+                                    variant="caption"
+                                    sx={{
+                                      color: theme =>
+                                        theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+                                      fontSize: { xs: '0.95rem', md: '1.05rem' },
+                                      fontWeight: 500,
+                                      pl: 0.5,
+                                    }}
+                                  >
+                                    {feature}
+                                  </Typography>
+                                ) : (
+                                  <Stack
+                                    key={feature}
+                                    direction="row"
+                                    spacing={1}
+                                    alignItems="center"
+                                  >
+                                    {getFeatureIcon(feature, plan.color)}
+                                    <Typography
+                                      variant="body2"
+                                      sx={{
+                                        fontSize: { xs: '1.0rem', md: '1.1rem' },
+                                        color: theme =>
+                                          theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+                                      }}
+                                    >
+                                      {feature}
+                                    </Typography>
+                                  </Stack>
+                                )
+                              )}
+                            </Stack>
+                            <Button
+                              variant={plan.popular ? 'contained' : 'outlined'}
+                              color="primary"
+                              size="large"
+                              onClick={() => handlePlanSelect(plan)}
+                              disabled={plan.isCurrentPlan}
+                              sx={{
+                                px: 3.5,
+                                py: 1.8,
+                                fontWeight: 700,
+                                fontSize: '1.0rem',
+                                borderRadius: 2,
+                                ...(plan.popular
+                                  ? {
+                                      bgcolor: '#D32F2F',
+                                      color: 'white',
+                                      '&:hover': { bgcolor: '#B71C1C' },
+                                    }
+                                  : {
+                                      borderColor: '#D32F2F',
+                                      color: '#D32F2F',
+                                      '&:hover': {
+                                        borderColor: '#B71C1C',
+                                        bgcolor: 'rgba(211, 47, 47, 0.04)',
+                                      },
+                                    }),
+                                textTransform: 'none',
+                                ...(plan.isCurrentPlan && {
+                                  backgroundColor: 'transparent',
+                                  color: plan.color,
+                                  borderColor: plan.color,
+                                  '&:hover': {
+                                    backgroundColor: 'transparent',
+                                    color: plan.color,
+                                  },
+                                }),
+                              }}
+                            >
+                              {plan.isCurrentPlan
+                                ? 'Current Plan'
+                                : plan.price === 0
+                                ? 'Get Started Free'
+                                : 'Choose Plan'}
+                            </Button>
+                          </Stack>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
+              </>
+            )}
           </Grid>
         </Stack>
       </Container>

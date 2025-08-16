@@ -1,5 +1,10 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { paymentService } from '../services/paymentService';
+import { api } from '../services/api';
+
+interface Subscription {
+  plan_id?: string;
+  status?: string;
+}
 
 interface AdContextType {
   showAds: boolean;
@@ -20,11 +25,27 @@ export const AdProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   useEffect(() => {
     const checkSubscription = async () => {
       try {
-        const subscription = await paymentService.getCurrentSubscription();
-        setShowAds(subscription.plan_id === 'price_free');
+        setIsLoading(true);
+        // Check if we're in mock user mode
+        const isMockUser = localStorage.getItem('isMockUser') === 'true';
+        const endpoint = isMockUser
+          ? '/payments/subscriptions/current/test'
+          : '/payments/subscriptions/current';
+
+        const response = await api.get<Subscription>(endpoint);
+        const subscription = response.data;
+
+        if (subscription) {
+          const envFree = (import.meta as any).env?.VITE_STRIPE_PRICE_FREE;
+          setShowAds(subscription.plan_id === envFree);
+        } else {
+          // Default to showing ads if no subscription (free plan)
+          setShowAds(true);
+        }
       } catch (error) {
-        console.error('Error checking subscription:', error);
-        setShowAds(false);
+        console.error('Error checking subscription for ads:', error);
+        // Default to showing ads on error (free plan)
+        setShowAds(true);
       } finally {
         setIsLoading(false);
       }

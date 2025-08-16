@@ -101,15 +101,19 @@ const AITokens: React.FC = () => {
     if (planId === 'price_test_plus') return 50000;
     if (planId === 'price_test_pro') return 75000;
     if (planId === 'price_test_max') return 100000;
+
     const envPlus = (import.meta as any).env?.VITE_STRIPE_PRICE_PLUS;
     const envPro = (import.meta as any).env?.VITE_STRIPE_PRICE_PRO;
     const envMax = (import.meta as any).env?.VITE_STRIPE_PRICE_MAX;
     const envFree = (import.meta as any).env?.VITE_STRIPE_PRICE_FREE;
+
     const is = (ids: Array<string | undefined>) => ids.filter(Boolean).includes(planId);
-    if (is(['price_free', envFree])) return 30000;
-    if (is(['price_plus', envPlus])) return 50000;
-    if (is(['price_pro', envPro])) return 75000;
-    if (is(['price_max', envMax])) return 100000;
+
+    if (is([envFree])) return 30000;
+    if (is([envPlus])) return 50000;
+    if (is([envPro])) return 75000;
+    if (is([envMax])) return 100000;
+
     return undefined;
   };
   const mappedLimit = mapPlanToLimit(subscription?.plan_id);
@@ -227,6 +231,24 @@ const AITokens: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // Listen for subscription updates from other components
+  useEffect(() => {
+    const handleSubscriptionUpdate = () => {
+      console.log('AITokens: subscription update event received, refreshing data...');
+      fetchSubscriptionData();
+    };
+
+    window.addEventListener('subscription-updated', handleSubscriptionUpdate);
+
+    // Also listen for custom events from payment success
+    window.addEventListener('payment-success', handleSubscriptionUpdate);
+
+    return () => {
+      window.removeEventListener('subscription-updated', handleSubscriptionUpdate);
+      window.removeEventListener('payment-success', handleSubscriptionUpdate);
+    };
+  }, []);
 
   // For 30-day graph, show last 30 days, but only add usage from billing start onward
   function buildLast30DaysChart(

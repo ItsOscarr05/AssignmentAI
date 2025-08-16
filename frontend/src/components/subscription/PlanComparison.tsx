@@ -15,15 +15,15 @@ import {
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import React, { useEffect, useState } from 'react';
-import { paymentService, Plan } from '../../services/paymentService';
+import { paymentService, PlanWithStatus } from '../../services/paymentService';
 import PaymentForm from '../payment/PaymentForm';
 
 const PlanComparison: React.FC = () => {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
-  const [plans, setPlans] = useState<Plan[]>([]);
+  const [plans, setPlans] = useState<PlanWithStatus[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<PlanWithStatus | null>(null);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [currentSubscription, setCurrentSubscription] = useState<any>(null);
 
@@ -34,10 +34,65 @@ const PlanComparison: React.FC = () => {
 
   const fetchPlans = async () => {
     try {
-      const availablePlans = await paymentService.getPlans();
-      setPlans(availablePlans);
+      // Use the new endpoint that includes current plan status
+      const availablePlans = await paymentService.getPlansWithStatus();
+      console.log('Raw backend response:', availablePlans);
+
+      // Add color property to each plan based on plan ID
+      console.log(
+        'Mapping plans with colors:',
+        availablePlans.map(p => ({ id: p.id, name: p.name, isCurrentPlan: p.isCurrentPlan }))
+      );
+
+      const plansWithColors = availablePlans.map(plan => {
+        const color =
+          plan.id === 'free'
+            ? '#2196f3'
+            : plan.id === 'plus'
+            ? '#4caf50'
+            : plan.id === 'pro'
+            ? '#9c27b0'
+            : '#ff9800'; // max plan
+
+        console.log(`Plan ${plan.name} (ID: ${plan.id}) mapped to color: ${color}`);
+
+        return {
+          ...plan,
+          color,
+        };
+      });
+
+      setPlans(plansWithColors as PlanWithStatus[]);
     } catch (error) {
-      enqueueSnackbar('Failed to fetch available plans', { variant: 'error' });
+      console.error('Failed to fetch plans with status:', error);
+      // Fallback to regular plans endpoint
+      try {
+        const fallbackPlans = await paymentService.getPlans();
+        // Add default status and color for fallback
+        console.log('Using fallback plans with default colors');
+        const plansWithDefaultStatus: PlanWithStatus[] = fallbackPlans.map(plan => {
+          const color =
+            plan.id === 'free'
+              ? '#2196f3'
+              : plan.id === 'plus'
+              ? '#4caf50'
+              : plan.id === 'pro'
+              ? '#9c27b0'
+              : '#ff9800'; // max plan
+
+          console.log(`Fallback plan ${plan.name} (ID: ${plan.id}) mapped to color: ${color}`);
+
+          return {
+            ...plan,
+            isCurrentPlan: false,
+            status: 'available' as const,
+            color,
+          };
+        });
+        setPlans(plansWithDefaultStatus);
+      } catch (fallbackError) {
+        enqueueSnackbar('Failed to fetch available plans', { variant: 'error' });
+      }
     } finally {
       setLoading(false);
     }
@@ -53,7 +108,12 @@ const PlanComparison: React.FC = () => {
     }
   };
 
-  const handlePlanSelect = (plan: Plan) => {
+  const handlePlanSelect = (plan: PlanWithStatus) => {
+    // Don't allow selecting the current plan
+    if (plan.isCurrentPlan) {
+      enqueueSnackbar('This is already your current plan', { variant: 'info' });
+      return;
+    }
     setSelectedPlan(plan);
     setShowPaymentForm(true);
   };
@@ -61,7 +121,9 @@ const PlanComparison: React.FC = () => {
   const handlePaymentSuccess = () => {
     setShowPaymentForm(false);
     setSelectedPlan(null);
-    fetchCurrentSubscription(); // Refresh subscription data
+    // Refresh both plans and subscription data
+    fetchPlans();
+    fetchCurrentSubscription();
     enqueueSnackbar('Subscription activated successfully!', { variant: 'success' });
   };
 
@@ -96,56 +158,92 @@ const PlanComparison: React.FC = () => {
       </Typography>
 
       <Grid container spacing={3} sx={{ mt: 2 }}>
-        {plans.map(plan => (
-          <Grid item xs={12} md={4} key={plan.id}>
-            <Card
-              sx={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                position: 'relative',
-                transition: 'transform 0.2s',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                },
-              }}
-            >
-              <CardHeader
-                title={plan.name}
-                subheader={`$${plan.price}/${plan.interval}`}
-                titleTypographyProps={{ align: 'center' }}
-                subheaderTypographyProps={{ align: 'center' }}
-              />
-              <CardContent sx={{ flexGrow: 1 }}>
-                <List>
-                  {plan.features.map((feature, index) => (
-                    <ListItem key={index}>
-                      <ListItemIcon>
-                        <CheckCircleIcon color="primary" />
-                      </ListItemIcon>
-                      <ListItemText primary={feature} />
-                    </ListItem>
-                  ))}
-                </List>
-              </CardContent>
-              <Box sx={{ p: 2 }}>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  onClick={() => handlePlanSelect(plan)}
-                  sx={{
-                    background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
-                    '&:hover': {
-                      background: `linear-gradient(45deg, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`,
+        {plans.map(plan => {
+          console.log(
+            `Rendering plan: ${plan.name}, ID: ${plan.id}, Color: ${plan.color}, isCurrentPlan: ${plan.isCurrentPlan}`
+          );
+          return (
+            <Grid item xs={12} md={4} key={plan.id}>
+              <Card
+                sx={{
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  position: 'relative',
+                  transition: 'all 0.3s ease',
+                  border: '2px solid',
+                  borderColor: plan.color,
+                  boxShadow: `0 0 15px ${plan.color}30`,
+                  '&:hover': {
+                    transform: plan.isCurrentPlan ? 'none' : 'translateY(-4px)',
+                    boxShadow: `0 0 20px ${plan.color}50`,
+                  },
+                  // Enhanced glow effect for current plan
+                  ...(plan.isCurrentPlan && {
+                    borderWidth: '3px',
+                    animation: 'currentPlanGlow 2s ease-in-out infinite alternate',
+                    '@keyframes currentPlanGlow': {
+                      '0%': {
+                        boxShadow: `0 0 25px ${plan.color}60`,
+                        borderColor: plan.color,
+                      },
+                      '100%': {
+                        boxShadow: `0 0 40px ${plan.color}90`,
+                        borderColor: plan.color,
+                      },
                     },
-                  }}
-                >
-                  Select Plan
-                </Button>
-              </Box>
-            </Card>
-          </Grid>
-        ))}
+                  }),
+                }}
+              >
+                <CardHeader
+                  title={plan.name}
+                  subheader={`$${plan.price}/${plan.interval}`}
+                  titleTypographyProps={{ align: 'center' }}
+                  subheaderTypographyProps={{ align: 'center' }}
+                />
+                <CardContent sx={{ flexGrow: 1 }}>
+                  <List>
+                    {plan.features.map((feature, index) => (
+                      <ListItem key={index}>
+                        <ListItemIcon>
+                          <CheckCircleIcon color="primary" />
+                        </ListItemIcon>
+                        <ListItemText primary={feature} />
+                      </ListItem>
+                    ))}
+                  </List>
+                </CardContent>
+                <Box sx={{ p: 2 }}>
+                  <Button
+                    fullWidth
+                    variant={plan.isCurrentPlan ? 'outlined' : 'contained'}
+                    onClick={() => handlePlanSelect(plan)}
+                    disabled={plan.isCurrentPlan}
+                    sx={{
+                      background: plan.isCurrentPlan
+                        ? 'transparent'
+                        : `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
+                      color: plan.isCurrentPlan ? plan.color : 'white',
+                      border: plan.isCurrentPlan ? `2px solid ${plan.color}` : 'none',
+                      '&:hover': {
+                        background: plan.isCurrentPlan
+                          ? 'transparent'
+                          : `linear-gradient(45deg, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`,
+                      },
+                      '&:disabled': {
+                        color: plan.color,
+                        borderColor: plan.color,
+                        opacity: 0.8,
+                      },
+                    }}
+                  >
+                    {plan.isCurrentPlan ? 'Current Plan' : 'Select Plan'}
+                  </Button>
+                </Box>
+              </Card>
+            </Grid>
+          );
+        })}
       </Grid>
 
       {showPaymentForm && selectedPlan && (

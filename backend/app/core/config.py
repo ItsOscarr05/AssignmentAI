@@ -23,10 +23,19 @@ class Settings(BaseSettings):
     # Stripe Configuration
     STRIPE_SECRET_KEY: str = os.getenv("STRIPE_SECRET_KEY", "")
     STRIPE_WEBHOOK_SECRET: str = os.getenv("STRIPE_WEBHOOK_SECRET", "")
-    STRIPE_PRICE_FREE: str = os.getenv("STRIPE_PRICE_FREE", "price_free")
-    STRIPE_PRICE_PLUS: str = os.getenv("STRIPE_PRICE_PLUS", "price_plus")
-    STRIPE_PRICE_PRO: str = os.getenv("STRIPE_PRICE_PRO", "price_pro")
-    STRIPE_PRICE_MAX: str = os.getenv("STRIPE_PRICE_MAX", "price_max")
+    STRIPE_PRICE_FREE: str = os.getenv("STRIPE_PRICE_FREE", "")
+    STRIPE_PRICE_PLUS: str = os.getenv("STRIPE_PRICE_PLUS", "")
+    STRIPE_PRICE_PRO: str = os.getenv("STRIPE_PRICE_PRO", "")
+    STRIPE_PRICE_MAX: str = os.getenv("STRIPE_PRICE_MAX", "")
+    
+    @field_validator('STRIPE_PRICE_FREE', 'STRIPE_PRICE_PLUS', 'STRIPE_PRICE_PRO', 'STRIPE_PRICE_MAX')
+    @classmethod
+    def validate_stripe_price_ids(cls, v: str) -> str:
+        if not v:
+            raise ValueError(f"Stripe price ID environment variable is required but not set")
+        if not v.startswith('price_'):
+            raise ValueError(f"Stripe price ID must start with 'price_', got: {v}")
+        return v
     
     # Database
     DB_HOST: str = "localhost"

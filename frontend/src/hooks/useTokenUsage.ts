@@ -42,12 +42,14 @@ export function useTokenUsage(subscription?: Subscription | null) {
     const envPro = (import.meta as any).env?.VITE_STRIPE_PRICE_PRO;
     const envMax = (import.meta as any).env?.VITE_STRIPE_PRICE_MAX;
     const envFree = (import.meta as any).env?.VITE_STRIPE_PRICE_FREE;
+
     const is = (ids: Array<string | undefined>) => ids.filter(Boolean).includes(pid as string);
 
-    if (is(['price_plus', envPlus])) return 50000;
-    if (is(['price_pro', envPro])) return 75000;
-    if (is(['price_max', envMax])) return 100000;
-    if (is(['price_free', envFree])) return 30000;
+    if (is([envFree])) return 30000;
+    if (is([envPlus])) return 50000;
+    if (is([envPro])) return 75000;
+    if (is([envMax])) return 100000;
+
     return 30000;
   };
 

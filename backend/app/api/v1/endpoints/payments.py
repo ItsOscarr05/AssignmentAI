@@ -1,15 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Header
 from sqlalchemy.orm import Session
+from typing import Dict, Any
 from pydantic import BaseModel
 from app.core.deps import get_current_user, get_db
-from app.services.payment_service import PaymentService
-from app.models.user import User
 from app.core.config import settings
-
-
-class CreateSubscriptionRequest(BaseModel):
-    price_id: str
-    payment_method_id: str
+from app.models.user import User
+from app.services.payment_service import PaymentService
+from app.schemas.payment import CreateSubscriptionRequest
 
 
 router = APIRouter()
@@ -97,6 +94,7 @@ async def test_upgrade_subscription(
         if existing_subscription:
             print(f"Test user has existing subscription: {existing_subscription.id}")
             print(f"Subscription status: {existing_subscription.status}")
+            print(f"Plan ID: {existing_subscription.plan_id}")
             print(f"Stripe subscription ID: {existing_subscription.stripe_subscription_id}")
         else:
             print("Test user has no existing subscription (free plan)")
@@ -190,7 +188,15 @@ async def cancel_subscription(
 
 @router.get("/plans")
 async def get_plans():
-    """Get available subscription plans"""
+    """Get available subscription plans (public)"""
+    # Debug: Log what the settings are resolving to
+    print("=== BACKEND PLANS DEBUG ===")
+    print(f"settings.STRIPE_PRICE_FREE: {settings.STRIPE_PRICE_FREE}")
+    print(f"settings.STRIPE_PRICE_PLUS: {settings.STRIPE_PRICE_PLUS}")
+    print(f"settings.STRIPE_PRICE_PRO: {settings.STRIPE_PRICE_PRO}")
+    print(f"settings.STRIPE_PRICE_MAX: {settings.STRIPE_PRICE_MAX}")
+    print("=== END BACKEND PLANS DEBUG ===")
+    
     plans = [
         {
             "id": "free",
@@ -251,6 +257,226 @@ async def get_plans():
         }
     ]
     return plans
+
+
+@router.get("/plans/with-status")
+async def get_plans_with_status(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get available subscription plans with current plan status for authenticated users"""
+    # Debug: Log what the settings are resolving to
+    print("=== BACKEND PLANS WITH STATUS DEBUG ===")
+    print(f"settings.STRIPE_PRICE_FREE: {settings.STRIPE_PRICE_FREE}")
+    print(f"settings.STRIPE_PRICE_PLUS: {settings.STRIPE_PRICE_PLUS}")
+    print(f"settings.STRIPE_PRICE_PRO: {settings.STRIPE_PRICE_PRO}")
+    print(f"settings.STRIPE_PRICE_MAX: {settings.STRIPE_PRICE_MAX}")
+    print("=== END BACKEND PLANS WITH STATUS DEBUG ===")
+    
+    # Get current user's subscription to determine which plan is active
+    payment_service = PaymentService(db)
+    current_subscription = await payment_service.get_current_subscription(current_user)
+    current_plan_id = current_subscription.get("plan_id") if current_subscription else settings.STRIPE_PRICE_FREE
+    
+    plans = [
+        {
+            "id": "free",
+            "name": "Free",
+            "price": 0,
+            "interval": "month",
+            "features": [
+                "Basic assignment generation",
+                "5 assignments per month",
+                "Standard AI model",
+                "Email support"
+            ],
+            "priceId": settings.STRIPE_PRICE_FREE,
+            "isCurrentPlan": current_plan_id == settings.STRIPE_PRICE_FREE,
+            "status": "current" if current_plan_id == settings.STRIPE_PRICE_FREE else "available"
+        },
+        {
+            "id": "plus",
+            "name": "Plus",
+            "price": 4.99,
+            "interval": "month",
+            "features": [
+                "Enhanced assignment generation",
+                "25 assignments per month",
+                "Advanced AI model",
+                "Priority support",
+                "Export to DOCX"
+            ],
+            "priceId": settings.STRIPE_PRICE_PLUS,
+            "isCurrentPlan": current_plan_id == settings.STRIPE_PRICE_PLUS,
+            "status": "current" if current_plan_id == settings.STRIPE_PRICE_PLUS else "available"
+        },
+        {
+            "id": "pro",
+            "name": "Pro",
+            "price": 9.99,
+            "interval": "month",
+            "features": [
+                "Unlimited assignment generation",
+                "Premium AI model",
+                "Advanced templates",
+                "Citation helper",
+                "Priority support",
+                "Export to DOCX/PDF"
+            ],
+            "priceId": settings.STRIPE_PRICE_PRO,
+            "isCurrentPlan": current_plan_id == settings.STRIPE_PRICE_PRO,
+            "status": "current" if current_plan_id == settings.STRIPE_PRICE_PRO else "available"
+        },
+        {
+            "id": "max",
+            "name": "Max",
+            "price": 14.99,
+            "interval": "month",
+            "features": [
+                "Everything in Pro",
+                "Custom AI models",
+                "Advanced analytics",
+                "API access",
+                "Dedicated support",
+                "White-label options"
+            ],
+            "priceId": settings.STRIPE_PRICE_MAX,
+            "isCurrentPlan": current_plan_id == settings.STRIPE_PRICE_MAX,
+            "status": "current" if current_plan_id == settings.STRIPE_PRICE_MAX else "available"
+        }
+    ]
+    return plans
+
+
+@router.get("/plans/with-status/test")
+async def get_plans_with_status_test(
+    db: Session = Depends(get_db)
+):
+    """Get available subscription plans with current plan status for test user (no authentication)"""
+    try:
+        # Get or create a test user for testing purposes
+        from app.models.user import User
+        
+        # Try to get existing test user, or create a new one with unique email
+        test_user = db.query(User).filter(User.email == "test@example.com").first()
+        if not test_user:
+            print("Creating new test user for plans test...")
+            test_user = User(
+                email="test@example.com",
+                name="Test User",
+                hashed_password="dummy_hash_for_testing",
+                is_active=True,
+                is_verified=False,
+                two_factor_enabled=False,
+                is_superuser=False,
+                failed_login_attempts=0,
+                password_history=[],
+                sessions=[]
+            )
+            db.add(test_user)
+            db.commit()
+            db.refresh(test_user)
+            print(f"New test user created with ID: {test_user.id}")
+        
+        # Get current user's subscription to determine which plan is active
+        payment_service = PaymentService(db)
+        current_subscription = await payment_service.get_current_subscription(test_user)
+        current_plan_id = current_subscription.get("plan_id") if current_subscription else settings.STRIPE_PRICE_FREE
+        
+        print(f"Test user current plan ID: {current_plan_id}")
+        print(f"Current subscription data: {current_subscription}")
+        
+        # If we got a free plan but the user should have Plus, force the correct plan
+        if current_plan_id == settings.STRIPE_PRICE_FREE and test_user.id == 1:
+            # Check if there's actually a Plus subscription in the database
+            from app.models.subscription import Subscription, SubscriptionStatus
+            plus_subscription = db.query(Subscription).filter(
+                Subscription.user_id == test_user.id,
+                Subscription.plan_id == settings.STRIPE_PRICE_PLUS,
+                Subscription.status.in_([SubscriptionStatus.ACTIVE, SubscriptionStatus.CANCELING])
+            ).first()
+            
+            if plus_subscription:
+                print(f"Found Plus subscription in database: {plus_subscription.id}")
+                current_plan_id = settings.STRIPE_PRICE_PLUS
+                print(f"Corrected current plan ID to: {current_plan_id}")
+        
+        plans = [
+            {
+                "id": "free",
+                "name": "Free",
+                "price": 0,
+                "interval": "month",
+                "features": [
+                    "Basic assignment generation",
+                    "5 assignments per month",
+                    "Standard AI model",
+                    "Email support"
+                ],
+                "priceId": settings.STRIPE_PRICE_FREE,
+                "isCurrentPlan": current_plan_id == settings.STRIPE_PRICE_FREE,
+                "status": "current" if current_plan_id == settings.STRIPE_PRICE_FREE else "available"
+            },
+            {
+                "id": "plus",
+                "name": "Plus",
+                "price": 4.99,
+                "interval": "month",
+                "features": [
+                    "Enhanced assignment generation",
+                    "25 assignments per month",
+                    "Advanced AI model",
+                    "Priority support",
+                    "Export to DOCX"
+                ],
+                "priceId": settings.STRIPE_PRICE_PLUS,
+                "isCurrentPlan": current_plan_id == settings.STRIPE_PRICE_PLUS,
+                "status": "current" if current_plan_id == settings.STRIPE_PRICE_PLUS else "available"
+            },
+            {
+                "id": "pro",
+                "name": "Pro",
+                "price": 9.99,
+                "interval": "month",
+                "features": [
+                    "Unlimited assignment generation",
+                    "Premium AI model",
+                    "Advanced templates",
+                    "Citation helper",
+                    "Priority support",
+                    "Export to DOCX/PDF"
+                ],
+                "priceId": settings.STRIPE_PRICE_PRO,
+                "isCurrentPlan": current_plan_id == settings.STRIPE_PRICE_PRO,
+                "status": "current" if current_plan_id == settings.STRIPE_PRICE_PRO else "available"
+            },
+            {
+                "id": "max",
+                "name": "Max",
+                "price": 14.99,
+                "interval": "month",
+                "features": [
+                    "Everything in Pro",
+                    "Custom AI models",
+                    "Advanced analytics",
+                    "API access",
+                    "Dedicated support",
+                    "White-label options"
+                ],
+                "priceId": settings.STRIPE_PRICE_MAX,
+                "isCurrentPlan": current_plan_id == settings.STRIPE_PRICE_MAX,
+                "status": "current" if current_plan_id == settings.STRIPE_PRICE_MAX else "available"
+            }
+        ]
+        
+        print(f"Returning plans with status. Current plan: {current_plan_id}")
+        for plan in plans:
+            print(f"  {plan['name']}: isCurrentPlan={plan['isCurrentPlan']}, status={plan['status']}")
+        
+        return plans
+    except Exception as e:
+        print(f"Error in test plans with status endpoint: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get("/plans/current")
@@ -322,10 +548,8 @@ async def get_current_subscription_test(
             db.commit()
             db.refresh(test_user)
             print(f"New test user created with ID: {test_user.id}")
-        else:
-            pass
         
-        # Use the real payment service to get the subscription
+        # Use the real payment service to get the subscription (this will auto-create free plan if none exists)
         payment_service = PaymentService(db)
         result = await payment_service.get_current_subscription(test_user)
         
@@ -334,26 +558,19 @@ async def get_current_subscription_test(
         
         # Ensure all required fields are present with defaults if missing
         if result.get("plan_id") is None:
-            result["plan_id"] = "price_test_plus"
+            result["plan_id"] = settings.STRIPE_PRICE_FREE
         if result.get("ai_model") is None:
-            result["ai_model"] = "gpt-4"
+            result["ai_model"] = "gpt-3.5-turbo"
         if result.get("token_limit") is None:
-            result["token_limit"] = 50000
+            result["token_limit"] = 30000
         
         # Debug: Print the final result being returned
         print(f"DEBUG: Final subscription result being returned: {result}")
         
         return result
     except Exception as e:
-        # Return a default test subscription response
-        return {
-            "id": "test_sub_123",
-            "status": "active",
-            "plan_id": "price_test_plus",
-            "current_period_end": "2024-12-31T23:59:59Z",
-            "cancel_at_period_end": False,
-            "token_limit": 30000
-        }
+        print(f"Error in test subscription endpoint: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.post("/payment-methods")

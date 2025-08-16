@@ -8,6 +8,7 @@ from app.models.file import File
 from app.models.subscription import Subscription
 from app.models.activity import Activity
 from datetime import datetime, timedelta
+from app.core.config import settings
 
 router = APIRouter()
 
@@ -216,28 +217,30 @@ def get_storage_limit(subscription: Subscription) -> int:
     if not subscription:
         return 100 * 1024 * 1024  # 100MB for free users
     
-    plan_limits = {
-        "price_free": 100 * 1024 * 1024,  # 100MB
-        "price_plus": 1 * 1024 * 1024 * 1024,  # 1GB
-        "price_pro": 5 * 1024 * 1024 * 1024,  # 5GB
-        "price_max": 10 * 1024 * 1024 * 1024,  # 10GB
+    # Storage limits by plan
+    storage_limits = {
+        settings.STRIPE_PRICE_FREE: 100 * 1024 * 1024,  # 100MB
+        settings.STRIPE_PRICE_PLUS: 1 * 1024 * 1024 * 1024,  # 1GB
+        settings.STRIPE_PRICE_PRO: 5 * 1024 * 1024 * 1024,  # 5GB
+        settings.STRIPE_PRICE_MAX: 10 * 1024 * 1024 * 1024,  # 10GB
     }
     
-    return plan_limits.get(subscription.plan_id, 100 * 1024 * 1024)
+    return storage_limits.get(subscription.plan_id, 100 * 1024 * 1024)
 
 def get_monthly_limit(subscription: Subscription) -> int:
     """Get monthly assignment limit based on subscription plan"""
     if not subscription:
         return 5  # 5 assignments for free users
     
-    plan_limits = {
-        "price_free": 5,
-        "price_plus": 25,
-        "price_pro": 100,
-        "price_max": -1,  # Unlimited
+    # Assignment limits by plan
+    assignment_limits = {
+        settings.STRIPE_PRICE_FREE: 5,
+        settings.STRIPE_PRICE_PLUS: 25,
+        settings.STRIPE_PRICE_PRO: 100,
+        settings.STRIPE_PRICE_MAX: -1,  # Unlimited
     }
     
-    return plan_limits.get(subscription.plan_id, 5)
+    return assignment_limits.get(subscription.plan_id, 5)
 
 def get_activity_title(activity: Activity) -> str:
     """Get activity title based on type"""

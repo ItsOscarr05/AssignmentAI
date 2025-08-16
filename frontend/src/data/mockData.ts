@@ -277,7 +277,7 @@ export const mockTransactions = [
 export const mockSubscription = {
   id: 'sub_mock_123',
   status: 'active' as const,
-  plan_id: 'price_free',
+  plan_id: (import.meta as any).env?.VITE_STRIPE_PRICE_FREE || 'price_free',
   current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
   cancel_at_period_end: false,
   token_limit: 30000,

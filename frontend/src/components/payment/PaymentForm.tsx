@@ -65,6 +65,11 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
   isUpgrade = false, // Default to false
 }) => {
   console.log('PaymentForm received props:', { priceId, planName, planPrice });
+  console.log('PaymentForm priceId type:', typeof priceId);
+  console.log('PaymentForm priceId length:', priceId ? priceId.length : 0);
+  console.log('PaymentForm priceId is empty:', priceId === '');
+  console.log('PaymentForm priceId is undefined:', priceId === undefined);
+  console.log('PaymentForm priceId value:', JSON.stringify(priceId));
   const stripe = useStripe();
   const elements = useElements();
   const [loading, setLoading] = useState(false);
@@ -350,6 +355,9 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
 
       // Broadcast subscription change so token limits refresh immediately across the app
       window.dispatchEvent(new Event('subscription-updated'));
+
+      // Also dispatch a payment success event for components that need it
+      window.dispatchEvent(new Event('payment-success'));
 
       console.log('API call successful!');
       console.log('Calling onSuccess callback...');
