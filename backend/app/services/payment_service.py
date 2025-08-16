@@ -232,30 +232,7 @@ class PaymentService:
                 "token_limit": 75000
             }
 
-    async def cancel_subscription(self, user: User) -> Dict[str, Any]:
-        """Cancel a user's subscription"""
-        try:
-            subscription = self.db.query(Subscription).filter(
-                Subscription.user_id == user.id,
-                Subscription.status == SubscriptionStatus.ACTIVE
-            ).first()
 
-            if not subscription:
-                raise HTTPException(status_code=404, detail="No active subscription found")
-
-            # Cancel at period end
-            stripe_sub = stripe.Subscription.modify(
-                subscription.stripe_subscription_id,
-                cancel_at_period_end=True
-            )
-
-            subscription.status = SubscriptionStatus.CANCELING
-            self.db.commit()
-
-            return {"message": "Subscription will be canceled at the end of the billing period"}
-
-        except stripe.error.StripeError as e:
-            raise HTTPException(status_code=400, detail=str(e))
 
     async def get_current_plan(self, user: User) -> Dict[str, Any]:
         """Get current user's plan"""
@@ -467,10 +444,14 @@ class PaymentService:
 
             # Create a new free plan subscription
             from datetime import datetime, timedelta
+            import uuid
+            
+            # Generate a unique fake Stripe subscription ID for free plans
+            fake_stripe_id = f"free_sub_{uuid.uuid4().hex[:16]}"
             
             free_subscription = Subscription(
                 user_id=user.id,
-                stripe_subscription_id=None,  # Free plans don't have Stripe subscriptions
+                stripe_subscription_id=fake_stripe_id,  # Use fake ID to avoid NOT NULL constraint
                 stripe_customer_id=user.stripe_customer_id or f"free_customer_{user.id}",
                 plan_name="Free",
                 plan_price=0.0,
