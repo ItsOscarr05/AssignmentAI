@@ -58,8 +58,6 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { useAuth } from '../contexts/AuthContext';
-import { recentAssignmentsWithSubject } from '../data/mockData';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { useTokenUsage } from '../hooks/useTokenUsage';
 import { api } from '../services/api';
@@ -88,10 +86,7 @@ const AITokens: React.FC = () => {
   const [modalOpen, setModalOpen] = React.useState(false);
   const [showFeaturesConfirmation, setShowFeaturesConfirmation] = React.useState(false);
   const navigate = useNavigate();
-  const { isMockUser } = useAuth();
-  const [assignments, setAssignments] = useState<any[]>(
-    isMockUser ? [...recentAssignmentsWithSubject] : []
-  );
+  const [assignments, setAssignments] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
 
   const { totalTokens, usedTokens, remainingTokens } = useTokenUsage(subscription);
@@ -136,77 +131,31 @@ const AITokens: React.FC = () => {
     };
     window.addEventListener('subscription-updated', handler);
     return () => window.removeEventListener('subscription-updated', handler);
-    if (!isMockUser) {
-      api
-        .get('/assignments')
-        .then(res => {
-          const data = Array.isArray(res.data)
-            ? res.data
-            : Array.isArray(res.data.assignments)
-            ? res.data.assignments
-            : [];
-          setAssignments(data);
-        })
-        .catch(() => setAssignments([]));
-      // Fetch real transactions for test/real users
-      api
-        .get('/transactions')
-        .then(res => {
-          setTransactions(Array.isArray(res.data) ? res.data : []);
-        })
-        .catch(() => setTransactions([]));
-    } else {
-      setAssignments([...recentAssignmentsWithSubject]);
-      // Use mock transactions for mock users
-      setTransactions([
-        {
-          date: new Date().toISOString().slice(0, 10),
-          description: 'Token Purchase - Free Tier',
-          tokens: totalTokens,
-          summary: 'Monthly free token allocation',
-        },
-        {
-          date: '2024-06-01',
-          description: 'Token Purchase - Free Tier',
-          tokens: totalTokens,
-          summary: 'Monthly free token allocation',
-        },
-        {
-          date: '2024-05-01',
-          description: 'Token Purchase - Free Tier',
-          tokens: totalTokens,
-          summary: 'Monthly free token allocation',
-        },
-        {
-          date: '2024-04-01',
-          description: 'Token Purchase - Free Tier',
-          tokens: totalTokens,
-          summary: 'Monthly free token allocation',
-        },
-        {
-          date: '2024-03-01',
-          description: 'Token Purchase - Free Tier',
-          tokens: totalTokens,
-          summary: 'Monthly free token allocation',
-        },
-        ...assignments.slice(-3).map(a => ({
-          date: a.createdAt?.slice(0, 10) || '',
-          description: `${a.title} - ${a.status}`,
-          tokens: -(a.tokensUsed || 500),
-          assignment: a.title,
-          summary: `AI service for assignment: ${a.title}`,
-        })),
-      ]);
-    }
-  }, [isMockUser]);
+    api
+      .get('/assignments')
+      .then(res => {
+        const data = Array.isArray(res.data)
+          ? res.data
+          : Array.isArray(res.data.assignments)
+          ? res.data.assignments
+          : [];
+        setAssignments(data);
+      })
+      .catch(() => setAssignments([]));
+    // Fetch real transactions
+    api
+      .get('/transactions')
+      .then(res => {
+        setTransactions(Array.isArray(res.data) ? res.data : []);
+      })
+      .catch(() => setTransactions([]));
+  }, []);
 
   const fetchSubscriptionData = async () => {
     try {
-      // Use test endpoint if in mock user mode
-      const primary = isMockUser
-        ? '/payments/subscriptions/current/test'
-        : '/payments/subscriptions/current';
-      console.log('AITokens: fetching subscription. isMockUser=', isMockUser, 'endpoint=', primary);
+      // Test endpoints are disabled since test users are removed
+      const primary = '/payments/subscriptions/current';
+      console.log('AITokens: fetching subscription. endpoint=', primary);
       try {
         const response = await api.get<Subscription>(primary);
         console.log('AITokens: subscription response', response.data);
@@ -217,7 +166,7 @@ const AITokens: React.FC = () => {
           primaryErr?.message || primaryErr
         );
         try {
-          const fallback = '/payments/subscriptions/current/test';
+          const fallback = '/payments/subscriptions/current';
           const response2 = await api.get<Subscription>(fallback);
           console.log('AITokens: fallback subscription response', response2.data);
           setSubscription(response2.data);
@@ -427,12 +376,10 @@ const AITokens: React.FC = () => {
   let usedTokensCalc = usedTokens;
   let remainingTokensCalc = remainingTokens + (computedTotalTokens - totalTokens);
   let percentUsedCalc = Math.round((usedTokensCalc / computedTotalTokens) * 100);
-  if (!isMockUser) {
-    usedTokensCalc = assignments.reduce((sum, a) => sum + (a.tokensUsed || 0), 0);
-    remainingTokensCalc = computedTotalTokens - usedTokensCalc;
-    percentUsedCalc =
-      computedTotalTokens > 0 ? Math.round((usedTokensCalc / computedTotalTokens) * 100) : 0;
-  }
+  usedTokensCalc = assignments.reduce((sum, a) => sum + (a.tokensUsed || 0), 0);
+  remainingTokensCalc = computedTotalTokens - usedTokensCalc;
+  percentUsedCalc =
+    computedTotalTokens > 0 ? Math.round((usedTokensCalc / computedTotalTokens) * 100) : 0;
   const tokenUsage = {
     label: `Plan (${computedTotalTokens.toLocaleString()} tokens/month)`,
     total: computedTotalTokens,

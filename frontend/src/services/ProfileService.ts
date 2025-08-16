@@ -39,8 +39,8 @@ export const useProfileStore = create<ProfileState>(set => ({
       set({ isLoading: true, error: null });
 
       // Check if we're in mock user mode
-      const isMockUser = localStorage.getItem('isMockUser') === 'true';
-      const endpoint = isMockUser ? '/users/profile/test' : '/users/profile';
+      // Test endpoints are disabled since test users are removed
+      const endpoint = '/users/profile';
 
       const response = await api.get<Profile>(endpoint);
       set({ profile: response.data, isLoading: false });

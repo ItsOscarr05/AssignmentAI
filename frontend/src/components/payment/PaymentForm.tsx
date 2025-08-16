@@ -327,8 +327,8 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
 
       // Determine the appropriate endpoint based on whether this is an upgrade
       const endpoint = isUpgrade
-        ? '/payments/test-upgrade-subscription'
-        : '/payments/test-create-subscription';
+        ? '/payments/upgrade-subscription'
+        : '/payments/create-subscription';
       const action = isUpgrade ? 'UPGRADING' : 'CREATING';
 
       console.log('==================================================');

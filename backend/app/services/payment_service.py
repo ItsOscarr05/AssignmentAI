@@ -322,54 +322,17 @@ class PaymentService:
         else:
             print(f"DEBUG: No active subscription found for user {user.id}")
             
-            # Special case: If this is the main user (oscarberrigan@gmail.com), 
-            # check if they should have the Plus plan from the test user
-            if user.email == "oscarberrigan@gmail.com":
-                print("DEBUG: Main user detected, checking for Plus plan access...")
-                # Check if test user has Plus plan and copy it
-                test_user = self.db.query(User).filter(User.email == "test@example.com").first()
-                if test_user:
-                    test_subscription = self.db.query(Subscription).filter(
-                        Subscription.user_id == test_user.id,
-                        Subscription.status.in_([SubscriptionStatus.ACTIVE, SubscriptionStatus.CANCELING])
-                    ).first()
-                    if test_subscription and test_subscription.plan_id == settings.STRIPE_PRICE_PLUS:
-                        print("DEBUG: Test user has Plus plan, creating Plus plan for main user...")
-                        # Create Plus plan for main user with unique fake Stripe ID for testing
-                        new_subscription = Subscription(
-                             user_id=user.id,
-                             stripe_subscription_id=f"test_plus_sub_{user.id}_{int(datetime.now().timestamp())}",
-                             stripe_customer_id=f"test_customer_{user.id}",
-                             plan_name=test_subscription.plan_name,
-                             plan_price=test_subscription.plan_price,
-                             plan_id=test_subscription.plan_id,
-                             ai_model=test_subscription.ai_model,
-                             token_limit=test_subscription.token_limit,
-                             status=test_subscription.status,
-                             current_period_start=test_subscription.current_period_start,
-                             current_period_end=test_subscription.current_period_end,
-                             cancel_at_period_end=test_subscription.cancel_at_period_end
-                         )
-                        self.db.add(new_subscription)
-                        self.db.commit()
-                        self.db.refresh(new_subscription)
-                        print(f"DEBUG: Created Plus plan for main user: ID={new_subscription.id}")
-                        
-                        return {
-                            "id": new_subscription.id,
-                            "status": new_subscription.status.value,
-                            "plan_id": new_subscription.plan_id,
-                            "current_period_end": new_subscription.current_period_end.isoformat() if new_subscription.current_period_end else None,
-                            "cancel_at_period_end": new_subscription.cancel_at_period_end,
-                            "ai_model": new_subscription.ai_model,
-                            "token_limit": new_subscription.token_limit
-                        }
+            # No more test user logic - just create free plan for users without subscription
             
             # For other users, create a free plan subscription
             return await self._create_free_plan_subscription(user)
 
         # Get subscription details from Stripe (only for paid plans)
-        if subscription.stripe_subscription_id:
+        # Skip Stripe validation for test/fake subscription IDs
+        if (subscription.stripe_subscription_id and 
+            not subscription.stripe_subscription_id.startswith('test_plus_sub_') and
+            not subscription.stripe_subscription_id.startswith('free_sub_')):
+            
             print(f"DEBUG: Attempting to retrieve Stripe subscription: {subscription.stripe_subscription_id}")
             try:
                 stripe_sub = stripe.Subscription.retrieve(subscription.stripe_subscription_id)

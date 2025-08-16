@@ -43,7 +43,7 @@ import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardPieChart from '../components/dashboard/DashboardPieChart';
 import { useAuth } from '../contexts/AuthContext';
-import { recentAssignmentsWithSubject, type Assignment } from '../data/mockData';
+import { type Assignment } from '../data/mockData';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { api } from '../services/api';
 
@@ -53,7 +53,7 @@ import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBre
 import { DateFormat, getDefaultDateFormat } from '../utils/dateFormat';
 
 const DashboardHome: React.FC = () => {
-  const { user, isMockUser } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { breakpoint } = useAspectRatio();
 
@@ -91,27 +91,23 @@ const DashboardHome: React.FC = () => {
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
   const [viewAssignment, setViewAssignment] = useState<Assignment | null>(null);
 
-  // Fetch real assignments if not mock user
+  // Fetch real assignments
   useEffect(() => {
-    if (!isMockUser) {
-      api
-        .get('/assignments')
-        .then(res => {
-          const data = Array.isArray(res.data)
-            ? res.data
-            : Array.isArray(res.data.assignments)
-            ? res.data.assignments
-            : [];
-          setAssignments(data);
-        })
-        .catch(() => {
-          setError('Failed to fetch assignments.');
-          setAssignments([]);
-        });
-    } else {
-      setAssignments([...recentAssignmentsWithSubject]);
-    }
-  }, [isMockUser]);
+    api
+      .get('/assignments')
+      .then(res => {
+        const data = Array.isArray(res.data)
+          ? res.data
+          : Array.isArray(res.data.assignments)
+          ? res.data.assignments
+          : [];
+        setAssignments(data);
+      })
+      .catch(() => {
+        setError('Failed to fetch assignments.');
+        setAssignments([]);
+      });
+  }, []);
 
   // Calculate stats from assignments
   const assignmentsGenerated = assignments.length;
@@ -163,7 +159,7 @@ const DashboardHome: React.FC = () => {
 
   const pieChartData = useMemo(() => {
     const now = dayjs();
-    const source = isMockUser ? recentAssignmentsWithSubject : assignments;
+    const source = assignments;
     const filteredAssignments =
       distributionFilter === 'total'
         ? source
@@ -187,7 +183,7 @@ const DashboardHome: React.FC = () => {
     return rainbowOrder
       .filter(core => subjectCounts[core])
       .map(core => ({ name: core, value: subjectCounts[core] }));
-  }, [distributionFilter, isMockUser, assignments]);
+  }, [distributionFilter, assignments]);
 
   // Sort assignments newest to oldest
   const sortedAssignments = [...assignments].sort(

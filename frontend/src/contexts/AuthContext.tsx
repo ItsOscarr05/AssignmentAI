@@ -34,13 +34,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   useEffect(() => {
+    // Clear any existing mock user flags since test users are removed
+    localStorage.removeItem('isMockUser');
+    setIsMockUser(false);
+
     const storedUser = localStorage.getItem('user');
-    const storedIsMockUser = localStorage.getItem('isMockUser') === 'true';
 
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
       setUser(parsedUser);
-      setIsMockUser(storedIsMockUser);
+      // Always set mock user to false since test users are removed
+      setIsMockUser(false);
     }
     setIsLoading(false);
   }, []);
@@ -394,9 +398,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('token_expiry', (Date.now() + 3600000).toString()); // 1 hour from now
 
     setUser(mockUser);
-    setIsMockUser(true);
+    setIsMockUser(false); // Disable mock user mode since test users are removed
     localStorage.setItem('user', JSON.stringify(mockUser));
-    localStorage.setItem('isMockUser', 'true');
+    localStorage.setItem('isMockUser', 'false'); // Disable mock user mode
 
     // For testing remember me, let's simulate storing the mock credentials
     const mockCredentials = {
@@ -412,9 +416,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('rememberedPassword', mockCredentials.password);
     }
 
-    // Log mock login
+    // Log mock login (but mock mode is disabled)
     securityMonitor.logEvent('login_success', 'low', {
-      isMockUser: true,
+      isMockUser: false,
       email: mockUser.email,
     });
 

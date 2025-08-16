@@ -43,10 +43,8 @@ class PaymentService {
 
   async getPlansWithStatus(): Promise<PlanWithStatus[]> {
     // Check if we're in mock user mode
-    const isMockUser = localStorage.getItem('isMockUser') === 'true';
-    const endpoint = isMockUser
-      ? '/payments/plans/with-status/test'
-      : '/payments/plans/with-status';
+    // Test endpoints are disabled since test users are removed
+    const endpoint = '/payments/plans/with-status';
     const response = await api.get<PlanWithStatus[]>(endpoint);
     return response.data;
   }
@@ -58,10 +56,8 @@ class PaymentService {
 
   async getCurrentSubscription(): Promise<Subscription> {
     // Check if we're in mock user mode
-    const isMockUser = localStorage.getItem('isMockUser') === 'true';
-    const endpoint = isMockUser
-      ? '/payments/subscriptions/current/test'
-      : '/payments/subscriptions/current';
+    // Test endpoints are disabled since test users are removed
+    const endpoint = '/payments/subscriptions/current';
     const response = await api.get<Subscription>(endpoint);
     return response.data;
   }

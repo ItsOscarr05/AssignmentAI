@@ -36,31 +36,19 @@ const PlanComparison: React.FC = () => {
     try {
       // Use the new endpoint that includes current plan status
       const availablePlans = await paymentService.getPlansWithStatus();
-      console.log('Raw backend response:', availablePlans);
 
       // Add color property to each plan based on plan ID
-      console.log(
-        'Mapping plans with colors:',
-        availablePlans.map(p => ({ id: p.id, name: p.name, isCurrentPlan: p.isCurrentPlan }))
-      );
-
-      const plansWithColors = availablePlans.map(plan => {
-        const color =
+      const plansWithColors = availablePlans.map(plan => ({
+        ...plan,
+        color:
           plan.id === 'free'
             ? '#2196f3'
             : plan.id === 'plus'
             ? '#4caf50'
             : plan.id === 'pro'
             ? '#9c27b0'
-            : '#ff9800'; // max plan
-
-        console.log(`Plan ${plan.name} (ID: ${plan.id}) mapped to color: ${color}`);
-
-        return {
-          ...plan,
-          color,
-        };
-      });
+            : '#ff9800', // max plan
+      }));
 
       setPlans(plansWithColors as PlanWithStatus[]);
     } catch (error) {
@@ -69,26 +57,19 @@ const PlanComparison: React.FC = () => {
       try {
         const fallbackPlans = await paymentService.getPlans();
         // Add default status and color for fallback
-        console.log('Using fallback plans with default colors');
-        const plansWithDefaultStatus: PlanWithStatus[] = fallbackPlans.map(plan => {
-          const color =
+        const plansWithDefaultStatus: PlanWithStatus[] = fallbackPlans.map(plan => ({
+          ...plan,
+          isCurrentPlan: false,
+          status: 'available' as const,
+          color:
             plan.id === 'free'
               ? '#2196f3'
               : plan.id === 'plus'
               ? '#4caf50'
               : plan.id === 'pro'
               ? '#9c27b0'
-              : '#ff9800'; // max plan
-
-          console.log(`Fallback plan ${plan.name} (ID: ${plan.id}) mapped to color: ${color}`);
-
-          return {
-            ...plan,
-            isCurrentPlan: false,
-            status: 'available' as const,
-            color,
-          };
-        });
+              : '#ff9800', // max plan
+        }));
         setPlans(plansWithDefaultStatus);
       } catch (fallbackError) {
         enqueueSnackbar('Failed to fetch available plans', { variant: 'error' });
@@ -158,92 +139,87 @@ const PlanComparison: React.FC = () => {
       </Typography>
 
       <Grid container spacing={3} sx={{ mt: 2 }}>
-        {plans.map(plan => {
-          console.log(
-            `Rendering plan: ${plan.name}, ID: ${plan.id}, Color: ${plan.color}, isCurrentPlan: ${plan.isCurrentPlan}`
-          );
-          return (
-            <Grid item xs={12} md={4} key={plan.id}>
-              <Card
-                sx={{
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  position: 'relative',
-                  transition: 'all 0.3s ease',
-                  border: '2px solid',
-                  borderColor: plan.color,
-                  boxShadow: `0 0 15px ${plan.color}30`,
-                  '&:hover': {
-                    transform: plan.isCurrentPlan ? 'none' : 'translateY(-4px)',
-                    boxShadow: `0 0 20px ${plan.color}50`,
-                  },
-                  // Enhanced glow effect for current plan
-                  ...(plan.isCurrentPlan && {
-                    borderWidth: '3px',
-                    animation: 'currentPlanGlow 2s ease-in-out infinite alternate',
-                    '@keyframes currentPlanGlow': {
-                      '0%': {
-                        boxShadow: `0 0 25px ${plan.color}60`,
-                        borderColor: plan.color,
-                      },
-                      '100%': {
-                        boxShadow: `0 0 40px ${plan.color}90`,
-                        borderColor: plan.color,
-                      },
+        {plans.map(plan => (
+          <Grid item xs={12} md={4} key={plan.id}>
+            <Card
+              sx={{
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                position: 'relative',
+                transition: 'all 0.3s ease',
+                border: '2px solid',
+                borderColor: plan.color,
+                boxShadow: `0 0 15px ${plan.color}30`,
+                '&:hover': {
+                  transform: plan.isCurrentPlan ? 'none' : 'translateY(-4px)',
+                  boxShadow: `0 0 20px ${plan.color}50`,
+                },
+                // Enhanced glow effect for current plan
+                ...(plan.isCurrentPlan && {
+                  borderWidth: '3px',
+                  animation: 'currentPlanGlow 2s ease-in-out infinite alternate',
+                  '@keyframes currentPlanGlow': {
+                    '0%': {
+                      boxShadow: `0 0 25px ${plan.color}60`,
+                      borderColor: plan.color,
                     },
-                  }),
-                }}
-              >
-                <CardHeader
-                  title={plan.name}
-                  subheader={`$${plan.price}/${plan.interval}`}
-                  titleTypographyProps={{ align: 'center' }}
-                  subheaderTypographyProps={{ align: 'center' }}
-                />
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <List>
-                    {plan.features.map((feature, index) => (
-                      <ListItem key={index}>
-                        <ListItemIcon>
-                          <CheckCircleIcon color="primary" />
-                        </ListItemIcon>
-                        <ListItemText primary={feature} />
-                      </ListItem>
-                    ))}
-                  </List>
-                </CardContent>
-                <Box sx={{ p: 2 }}>
-                  <Button
-                    fullWidth
-                    variant={plan.isCurrentPlan ? 'outlined' : 'contained'}
-                    onClick={() => handlePlanSelect(plan)}
-                    disabled={plan.isCurrentPlan}
-                    sx={{
+                    '100%': {
+                      boxShadow: `0 0 40px ${plan.color}90`,
+                      borderColor: plan.color,
+                    },
+                  },
+                }),
+              }}
+            >
+              <CardHeader
+                title={plan.name}
+                subheader={`$${plan.price}/${plan.interval}`}
+                titleTypographyProps={{ align: 'center' }}
+                subheaderTypographyProps={{ align: 'center' }}
+              />
+              <CardContent sx={{ flexGrow: 1 }}>
+                <List>
+                  {plan.features.map((feature, index) => (
+                    <ListItem key={index}>
+                      <ListItemIcon>
+                        <CheckCircleIcon color="primary" />
+                      </ListItemIcon>
+                      <ListItemText primary={feature} />
+                    </ListItem>
+                  ))}
+                </List>
+              </CardContent>
+              <Box sx={{ p: 2 }}>
+                <Button
+                  fullWidth
+                  variant={plan.isCurrentPlan ? 'outlined' : 'contained'}
+                  onClick={() => handlePlanSelect(plan)}
+                  disabled={plan.isCurrentPlan}
+                  sx={{
+                    background: plan.isCurrentPlan
+                      ? 'transparent'
+                      : `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
+                    color: plan.isCurrentPlan ? plan.color : 'white',
+                    border: plan.isCurrentPlan ? `2px solid ${plan.color}` : 'none',
+                    '&:hover': {
                       background: plan.isCurrentPlan
                         ? 'transparent'
-                        : `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
-                      color: plan.isCurrentPlan ? plan.color : 'white',
-                      border: plan.isCurrentPlan ? `2px solid ${plan.color}` : 'none',
-                      '&:hover': {
-                        background: plan.isCurrentPlan
-                          ? 'transparent'
-                          : `linear-gradient(45deg, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`,
-                      },
-                      '&:disabled': {
-                        color: plan.color,
-                        borderColor: plan.color,
-                        opacity: 0.8,
-                      },
-                    }}
-                  >
-                    {plan.isCurrentPlan ? 'Current Plan' : 'Select Plan'}
-                  </Button>
-                </Box>
-              </Card>
-            </Grid>
-          );
-        })}
+                        : `linear-gradient(45deg, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`,
+                    },
+                    '&:disabled': {
+                      color: plan.color,
+                      borderColor: plan.color,
+                      opacity: 0.8,
+                    },
+                  }}
+                >
+                  {plan.isCurrentPlan ? 'Current Plan' : 'Select Plan'}
+                </Button>
+              </Box>
+            </Card>
+          </Grid>
+        ))}
       </Grid>
 
       {showPaymentForm && selectedPlan && (

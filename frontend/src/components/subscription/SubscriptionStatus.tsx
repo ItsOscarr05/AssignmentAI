@@ -56,10 +56,8 @@ const SubscriptionStatus: React.FC = () => {
     setLoading(true);
     try {
       // Check if we're in mock user mode
-      const isMockUser = localStorage.getItem('isMockUser') === 'true';
-      const subscriptionEndpoint = isMockUser
-        ? '/payments/subscriptions/current/test'
-        : '/payments/subscriptions/current';
+      // Test endpoints are disabled since test users are removed
+      const subscriptionEndpoint = '/payments/subscriptions/current';
 
       const [subResponse, planResponse, plansResponse] = await Promise.all([
         api.get<Subscription>(subscriptionEndpoint),

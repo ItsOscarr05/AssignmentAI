@@ -14,8 +14,8 @@ export const useAssignments = (options?: UseQueryOptions<Assignment[]>) => {
     queryKey: ['assignments'],
     queryFn: async () => {
       // Check if we're in mock user mode
-      const isMockUser = localStorage.getItem('isMockUser') === 'true';
-      const endpoint = isMockUser ? '/assignments/test' : '/assignments';
+      // Test endpoints are disabled since test users are removed
+      const endpoint = '/assignments';
 
       const response = await api.get<Assignment[]>(endpoint);
       return response.data;

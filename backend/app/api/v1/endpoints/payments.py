@@ -14,8 +14,7 @@ router = APIRouter()
 
 @router.post("/create-subscription")
 async def create_subscription(
-    price_id: str,
-    payment_method_id: str,
+    request: CreateSubscriptionRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -23,15 +22,14 @@ async def create_subscription(
     payment_service = PaymentService(db)
     return await payment_service.create_subscription(
         user=current_user,
-        price_id=price_id,
-        payment_method_id=payment_method_id
+        price_id=request.price_id,
+        payment_method_id=request.payment_method_id
     )
 
 
 @router.post("/upgrade-subscription")
 async def upgrade_subscription(
-    price_id: str,
-    payment_method_id: str,
+    request: CreateSubscriptionRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -39,8 +37,8 @@ async def upgrade_subscription(
     payment_service = PaymentService(db)
     return await payment_service.upgrade_subscription(
         user=current_user,
-        new_price_id=price_id,
-        payment_method_id=payment_method_id
+        new_price_id=request.price_id,
+        payment_method_id=request.payment_method_id
     )
 
 
@@ -64,26 +62,13 @@ async def test_upgrade_subscription(
         from app.models.user import User
         from app.models.subscription import Subscription, SubscriptionStatus
         
-        # Try to get existing test user, or create a new one with unique email
+        # Get existing test user - DO NOT CREATE NEW ONES
         test_user = db.query(User).filter(User.email == "test@example.com").first()
         if not test_user:
-            print("Creating new test user for upgrade...")
-            test_user = User(
-                email="test@example.com",
-                name="Test User",
-                hashed_password="dummy_hash_for_testing",
-                is_active=True,
-                is_verified=False,
-                two_factor_enabled=False,
-                is_superuser=False,
-                failed_login_attempts=0,
-                password_history=[],
-                sessions=[]
+            raise HTTPException(
+                status_code=404, 
+                detail="Test user not found. Test users are no longer automatically created."
             )
-            db.add(test_user)
-            db.commit()
-            db.refresh(test_user)
-            print(f"New test user created with ID: {test_user.id}")
         
         # Check if test user has an existing subscription
         existing_subscription = db.query(Subscription).filter(
@@ -136,26 +121,13 @@ async def test_create_subscription(
         from app.models.user import User
         import uuid
         
-        # Try to get existing test user, or create a new one with unique email
+        # Get existing test user - DO NOT CREATE NEW ONES
         test_user = db.query(User).filter(User.email == "test@example.com").first()
         if not test_user:
-            print("Creating new test user...")
-            test_user = User(
-                email="test@example.com",
-                name="Test User",
-                hashed_password="dummy_hash_for_testing",
-                is_active=True,
-                is_verified=False,
-                two_factor_enabled=False,
-                is_superuser=False,
-                failed_login_attempts=0,
-                password_history=[],
-                sessions=[]
+            raise HTTPException(
+                status_code=404, 
+                detail="Test user not found. Test users are no longer automatically created."
             )
-            db.add(test_user)
-            db.commit()
-            db.refresh(test_user)
-            print(f"New test user created with ID: {test_user.id}")
         else:
             # Clear the existing stripe_customer_id to force creation of a new one
             if test_user.stripe_customer_id:
@@ -357,26 +329,13 @@ async def get_plans_with_status_test(
         # Get or create a test user for testing purposes
         from app.models.user import User
         
-        # Try to get existing test user, or create a new one with unique email
+        # Get existing test user - DO NOT CREATE NEW ONES
         test_user = db.query(User).filter(User.email == "test@example.com").first()
         if not test_user:
-            print("Creating new test user for plans test...")
-            test_user = User(
-                email="test@example.com",
-                name="Test User",
-                hashed_password="dummy_hash_for_testing",
-                is_active=True,
-                is_verified=False,
-                two_factor_enabled=False,
-                is_superuser=False,
-                failed_login_attempts=0,
-                password_history=[],
-                sessions=[]
+            raise HTTPException(
+                status_code=404, 
+                detail="Test user not found. Test users are no longer automatically created."
             )
-            db.add(test_user)
-            db.commit()
-            db.refresh(test_user)
-            print(f"New test user created with ID: {test_user.id}")
         
         # Get current user's subscription to determine which plan is active
         payment_service = PaymentService(db)
@@ -528,26 +487,13 @@ async def get_current_subscription_test(
         # Get or create a test user for testing purposes
         from app.models.user import User
         
-        # Try to get existing test user, or create a new one with unique email
+        # Get existing test user - DO NOT CREATE NEW ONES
         test_user = db.query(User).filter(User.email == "test@example.com").first()
         if not test_user:
-            print("Creating new test user for subscription test...")
-            test_user = User(
-                email="test@example.com",
-                name="Test User",
-                hashed_password="dummy_hash_for_testing",
-                is_active=True,
-                is_verified=False,
-                two_factor_enabled=False,
-                is_superuser=False,
-                failed_login_attempts=0,
-                password_history=[],
-                sessions=[]
+            raise HTTPException(
+                status_code=404, 
+                detail="Test user not found. Test users are no longer automatically created."
             )
-            db.add(test_user)
-            db.commit()
-            db.refresh(test_user)
-            print(f"New test user created with ID: {test_user.id}")
         
         # Use the real payment service to get the subscription (this will auto-create free plan if none exists)
         payment_service = PaymentService(db)

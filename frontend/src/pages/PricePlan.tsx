@@ -45,7 +45,6 @@ import {
   Switch,
   Tooltip,
   Typography,
-  useTheme,
 } from '@mui/material';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
@@ -363,7 +362,6 @@ const getFeatureIcon = (featureName: string, color: string) => {
 };
 
 const PricePlan: React.FC = () => {
-  const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
   const { breakpoint } = useAspectRatio();
@@ -511,7 +509,7 @@ const PricePlan: React.FC = () => {
 
   const fetchCurrentSubscription = async () => {
     try {
-      const response = await api.get('/payments/subscriptions/current/test');
+      const response = await api.get('/payments/subscriptions/current');
       setCurrentSubscription(response.data);
     } catch (error) {
       console.error('Failed to fetch current subscription:', error);

@@ -38,10 +38,8 @@ export const useTokenLimit = () => {
       setError(null);
 
       // Check if we're in mock user mode
-      const isMockUser = localStorage.getItem('isMockUser') === 'true';
-      const endpoint = isMockUser
-        ? '/payments/subscriptions/current/test'
-        : '/payments/subscriptions/current';
+      // Test endpoints are disabled since test users are removed
+      const endpoint = '/payments/subscriptions/current';
 
       try {
         const response = await api.get<Subscription>(endpoint);
@@ -49,7 +47,7 @@ export const useTokenLimit = () => {
         console.log('useTokenLimit: subscription response', response.data);
       } catch (err) {
         console.warn('useTokenLimit: primary subscription fetch failed, trying test endpoint');
-        const response2 = await api.get<Subscription>('/payments/subscriptions/current/test');
+        const response2 = await api.get<Subscription>('/payments/subscriptions/current');
         setSubscription(response2.data);
         console.log('useTokenLimit: fallback subscription response', response2.data);
       }

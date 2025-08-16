@@ -27,10 +27,8 @@ export const AdProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       try {
         setIsLoading(true);
         // Check if we're in mock user mode
-        const isMockUser = localStorage.getItem('isMockUser') === 'true';
-        const endpoint = isMockUser
-          ? '/payments/subscriptions/current/test'
-          : '/payments/subscriptions/current';
+        // Test endpoints are disabled since test users are removed
+        const endpoint = '/payments/subscriptions/current';
 
         const response = await api.get<Subscription>(endpoint);
         const subscription = response.data;

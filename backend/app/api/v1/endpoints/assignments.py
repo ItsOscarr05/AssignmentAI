@@ -95,28 +95,13 @@ def list_assignments_test(
         # Get or create a test user for testing purposes
         from app.models.user import User
         
-        # Try to get existing test user, or create a new one with unique email
+        # Get existing test user - DO NOT CREATE NEW ONES
         test_user = db.query(User).filter(User.email == "test@example.com").first()
         if not test_user:
-            print("Creating new test user for assignments test...")
-            test_user = User(
-                email="test@example.com",
-                name="Test User",
-                hashed_password="dummy_hash_for_testing",
-                is_active=True,
-                is_verified=False,
-                two_factor_enabled=False,
-                is_superuser=False,
-                failed_login_attempts=0,
-                password_history=[],
-                sessions=[]
+            raise HTTPException(
+                status_code=404, 
+                detail="Test user not found. Test users are no longer automatically created."
             )
-            db.add(test_user)
-            db.commit()
-            db.refresh(test_user)
-            pass
-        else:
-            pass
         
         # Validate pagination parameters
         if page < 1:

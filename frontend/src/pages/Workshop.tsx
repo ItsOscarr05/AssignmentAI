@@ -60,8 +60,7 @@ import {
 import { FeatureAccessErrorComponent } from '../components/workshop/FeatureAccessError';
 import WorkshopFileUpload from '../components/workshop/WorkshopFileUpload';
 import WorkshopLiveModal from '../components/workshop/WorkshopLiveModal';
-import { useAuth } from '../contexts/AuthContext';
-import { recentAssignmentsWithSubject } from '../data/mockData';
+
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { useTokenUsage } from '../hooks/useTokenUsage';
 import { api } from '../services/api';
@@ -75,47 +74,6 @@ interface HistoryItem {
   type: 'file' | 'link' | 'chat';
   isPinned: boolean;
 }
-
-interface ActivityData {
-  date: string;
-  chats: number;
-  files: number;
-  links: number;
-  summarize: number;
-  extract: number;
-  rewrite: number;
-}
-
-const generateWeeklyActivityData = (): ActivityData[] => {
-  const today = new Date();
-  const weekData = [];
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date(today);
-    date.setDate(today.getDate() - i);
-    const dayStr = date.toISOString().split('T')[0];
-    const dayName = dayNames[date.getDay()];
-
-    const files = recentAssignmentsWithSubject.filter(
-      a => a.createdAt.split('T')[0] === dayStr
-    ).length;
-
-    // Simulate other activities for a more dynamic chart
-    weekData.push({
-      date: dayName,
-      chats: Math.floor(Math.random() * 5) + files,
-      files: files,
-      links: Math.floor(Math.random() * 3),
-      summarize: Math.floor(Math.random() * 4),
-      extract: Math.floor(Math.random() * 3),
-      rewrite: Math.floor(Math.random() * 2),
-    });
-  }
-  return weekData;
-};
-
-const initialActivityData = generateWeeklyActivityData();
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -183,7 +141,7 @@ const VerticalDividers = ({ xAxisMap, yAxisMap }: any) => {
 const Workshop: React.FC = () => {
   const theme = useTheme();
   const location = useLocation();
-  const { isMockUser } = useAuth();
+
   const { breakpoint } = useAspectRatio();
   const {
     generateContent,
@@ -204,7 +162,7 @@ const Workshop: React.FC = () => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
-  const [activityData] = useState<ActivityData[]>(isMockUser ? initialActivityData : []);
+  const [activityData] = useState<any[]>([]);
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
   const [animatedPercent, setAnimatedPercent] = useState(0);
   const [isTokenChartHovered, setIsTokenChartHovered] = useState(false);
@@ -224,28 +182,26 @@ const Workshop: React.FC = () => {
     percentUsed: 0,
   });
 
-  const { totalTokens, usedTokens, remainingTokens, percentUsed } = useTokenUsage();
+  const { totalTokens } = useTokenUsage();
 
-  // Fetch real token usage for test/real users
+  // Fetch real token usage
   useEffect(() => {
-    if (!isMockUser) {
-      api.get('/assignments').then(res => {
-        const data = Array.isArray(res.data)
-          ? res.data
-          : Array.isArray(res.data.assignments)
-          ? res.data.assignments
-          : [];
-        const used = data.reduce((sum: number, a: any) => sum + (a.tokensUsed || 0), 0);
-        const total = totalTokens || 30000;
-        setRealTokenUsage({
-          total,
-          used,
-          remaining: total - used,
-          percentUsed: total > 0 ? Math.round((used / total) * 100) : 0,
-        });
+    api.get('/assignments').then(res => {
+      const data = Array.isArray(res.data)
+        ? res.data
+        : Array.isArray(res.data.assignments)
+        ? res.data.assignments
+        : [];
+      const used = data.reduce((sum: number, a: any) => sum + (a.tokensUsed || 0), 0);
+      const total = totalTokens || 30000;
+      setRealTokenUsage({
+        total,
+        used,
+        remaining: total - used,
+        percentUsed: total > 0 ? Math.round((used / total) * 100) : 0,
       });
-    }
-  }, [isMockUser, totalTokens]);
+    });
+  }, [totalTokens]);
 
   const uploadContentRef = useRef<HTMLDivElement>(null);
   const aiResponseRef = useRef<HTMLDivElement>(null);
@@ -253,22 +209,14 @@ const Workshop: React.FC = () => {
   // Modal state for live AI response
   const [liveModalOpen, setLiveModalOpen] = useState(false);
 
-  // Use real or mock token usage for the circular progress bar
-  const tokenUsage = isMockUser
-    ? {
-        label: 'Free Plan (30,000 tokens/month)',
-        total: totalTokens,
-        used: usedTokens,
-        remaining: remainingTokens,
-        percentUsed,
-      }
-    : {
-        label: 'Free Plan (30,000 tokens/month)',
-        total: realTokenUsage.total,
-        used: realTokenUsage.used,
-        remaining: realTokenUsage.remaining,
-        percentUsed: realTokenUsage.percentUsed,
-      };
+  // Use real token usage for the circular progress bar
+  const tokenUsage = {
+    label: 'Free Plan (30,000 tokens/month)',
+    total: realTokenUsage.total,
+    used: realTokenUsage.used,
+    remaining: realTokenUsage.remaining,
+    percentUsed: realTokenUsage.percentUsed,
+  };
 
   useEffect(() => {
     if (location.hash === '#upload-content-card' && uploadContentRef.current) {
@@ -305,23 +253,9 @@ const Workshop: React.FC = () => {
   }, [tokenUsage.percentUsed]);
 
   useEffect(() => {
-    // Use the 5 most recent assignments from mock data for history
-    if (isMockUser) {
-      const sorted = [...recentAssignmentsWithSubject].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-      const historyItems: HistoryItem[] = sorted.slice(0, 5).map(assignment => ({
-        id: assignment.id,
-        title: assignment.title,
-        date: new Date(assignment.createdAt),
-        type: 'file',
-        isPinned: false,
-      }));
-      setHistory(historyItems);
-    } else {
-      setHistory([]);
-    }
-  }, [isMockUser]);
+    // Start with empty history for real users
+    setHistory([]);
+  }, []);
 
   useEffect(() => {
     if (responseTab === 1 && rewriteTabRef.current) {

@@ -52,8 +52,6 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import AssignmentEditDialog from '../components/assignments/AssignmentEdit';
-import { useAuth } from '../contexts/AuthContext';
-import { recentAssignmentsWithSubject } from '../data/mockData';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { assignments } from '../services/api/assignments';
 import { mapToCoreSubject } from '../services/subjectService';
@@ -79,7 +77,7 @@ const Assignments: React.FC = () => {
   const theme = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
-  const { isMockUser } = useAuth();
+
   const { breakpoint } = useAspectRatio();
 
   // Get user's date format preference (default to locale-based format if not set)
@@ -151,16 +149,7 @@ const Assignments: React.FC = () => {
     window.scrollTo(0, 0);
   }, [location.state]);
 
-  const [assignmentsList, setAssignmentsList] = useState<Assignment[]>(
-    isMockUser
-      ? recentAssignmentsWithSubject.map((a: any) => ({
-          ...a,
-          subject: a.subject || (a.title ? mapToCoreSubject(a.title) : 'Unknown'),
-          description: a.description || '',
-          attachments: a.attachments || [],
-        }))
-      : []
-  );
+  const [assignmentsList, setAssignmentsList] = useState<Assignment[]>([]);
   const [loading] = useState(false);
 
   // Custom styles
@@ -248,11 +237,9 @@ const Assignments: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!isMockUser) {
-      fetchAssignments();
-    }
+    fetchAssignments();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMockUser]);
+  }, []);
 
   const handleDeleteConfirm = async () => {
     if (!assignmentToDelete) return;
