@@ -188,7 +188,8 @@ class TestAIService:
         
         result = await ai_service.analyze_submission(
             submission_content="2x + 3 = 7, x = 2",
-            assignment_requirements={"type": "algebra", "difficulty": "medium"}
+            assignment_requirements={"type": "algebra", "difficulty": "medium"},
+            user_id=1
         )
         
         assert result is not None
@@ -208,7 +209,8 @@ class TestAIService:
         with pytest.raises(Exception) as exc_info:
             await ai_service.analyze_submission(
                 submission_content="2x + 3 = 7, x = 2",
-                assignment_requirements={"type": "algebra", "difficulty": "medium"}
+                assignment_requirements={"type": "algebra", "difficulty": "medium"},
+                user_id=1
             )
         assert "OpenAI API error" in str(exc_info.value)
 

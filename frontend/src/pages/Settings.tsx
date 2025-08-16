@@ -1,5 +1,4 @@
 import {
-  AccessTime,
   AllInclusive,
   AnalyticsOutlined,
   AutoAwesomeOutlined,
@@ -64,7 +63,6 @@ import {
   IconButton,
   InputAdornment,
   InputLabel,
-  LinearProgress,
   List,
   ListItem,
   ListItemIcon,
@@ -85,11 +83,12 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import AIFeaturesDemo from '../components/ai/AIFeaturesDemo';
 import DateFormatSelector from '../components/common/DateFormatSelector';
+import AutoLockWarningDialog from '../components/security/AutoLockWarningDialog';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { preferences, users } from '../services/api';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 import { useTheme as useAppTheme } from '../theme/ThemeProvider';
-import { DateFormat, getDefaultDateFormat, getDefaultTimeFormat } from '../utils/dateFormat';
+import { DateFormat, getDefaultDateFormat } from '../utils/dateFormat';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -152,16 +151,11 @@ const Settings: React.FC = () => {
   const [animations, setAnimations] = useState(true);
   const [compactMode, setCompactMode] = useState(false);
 
-  // Language & Region Settings
+  // Language & Date Settings
   const [dateFormat, setDateFormat] = useState<DateFormat>(() => {
     // Get browser locale and set default date format
     const browserLocale = navigator.language || 'en-US';
     return getDefaultDateFormat(browserLocale);
-  });
-  const [use24HourFormat, setUse24HourFormat] = useState<boolean>(() => {
-    // Get browser locale and set default time format
-    const browserLocale = navigator.language || 'en-US';
-    return getDefaultTimeFormat(browserLocale);
   });
 
   // AI Settings
@@ -234,8 +228,8 @@ const Settings: React.FC = () => {
   // Subscription Settings
   const [subscription, setSubscription] = useState({
     plan: 'free' as SubscriptionPlan,
-    model: 'gpt-4.1-nano', // Match the free plan model from subscriptionConfig
-    tokenLimit: 30000,
+    model: 'gpt-4.1-nano', // Will be updated based on actual plan
+    tokenLimit: 30000, // Will be updated based on actual plan
   });
 
   // Simple date formatting function based on user preference
@@ -257,27 +251,6 @@ const Settings: React.FC = () => {
       default:
         return `${month}/${day}/${year}`;
     }
-  };
-
-  // Simple date time formatting function
-  const formatDateTimeWithPreference = (date: Date | string) => {
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-    const dateStr = formatDateWithPreference(dateObj);
-    const hours = dateObj.getHours();
-    const minutes = dateObj.getMinutes();
-
-    let timeStr: string;
-    if (use24HourFormat) {
-      timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-    } else {
-      const ampm = hours >= 12 ? 'PM' : 'AM';
-      const displayHours = hours % 12 || 12;
-      timeStr = `${displayHours.toString().padStart(2, '0')}:${minutes
-        .toString()
-        .padStart(2, '0')} ${ampm}`;
-    }
-
-    return `${dateStr} ${timeStr}`;
   };
 
   // Map subscription plans to their respective models and token limits
@@ -339,10 +312,10 @@ const Settings: React.FC = () => {
 
     if (targetPlan === subscription.plan) {
       // Same plan, allow the change
-      setSubscription({
-        ...subscription,
+      setSubscription(prev => ({
+        ...prev,
         model: newModel,
-      });
+      }));
       setAiSettingsError(null);
     } else {
       // Different plan - show upgrade prompt
@@ -353,7 +326,9 @@ const Settings: React.FC = () => {
   };
 
   const resetAISettingsToDefaults = () => {
-    setTokenContextLimit(1000);
+    // Set token context limit to 25% of the current plan's limit, but at least 1000
+    const defaultTokenLimit = Math.max(1000, Math.floor(subscription.tokenLimit * 0.25));
+    setTokenContextLimit(defaultTokenLimit);
     setTemperature('0.5');
     setContextLength(10);
     setAutoComplete(true);
@@ -368,8 +343,8 @@ const Settings: React.FC = () => {
     const errors: string[] = [];
 
     // Check for security conflicts
-    if (privacySettings.autoLock && privacySettings.lockTimeout < 1) {
-      errors.push('Auto-lock timeout must be at least 1 minute');
+    if (privacySettings.autoLock && privacySettings.lockTimeout < 0.167) {
+      errors.push('Auto-lock timeout must be at least 10 seconds');
     }
 
     // Check for privacy conflicts
@@ -449,6 +424,26 @@ const Settings: React.FC = () => {
     };
   };
 
+  // Calculate actual password strength based on requirements
+  const calculateActualPasswordStrength = () => {
+    const requirements = passwordRequirements;
+    const fulfilledCount = Object.values(requirements).filter(Boolean).length;
+
+    if (fulfilledCount === 5) return 'strong';
+    if (fulfilledCount >= 3) return 'medium';
+    return 'weak';
+  };
+
+  // Get current password strength (either from form or stored settings)
+  const getCurrentPasswordStrength = () => {
+    // If we're in password change mode, use the actual calculated strength
+    if (passwordForm.newPassword) {
+      return calculateActualPasswordStrength();
+    }
+    // Otherwise, use the stored strength from settings
+    return securitySettings.passwordStrength;
+  };
+
   const calculateSecurityScore = () => {
     let score = 0;
 
@@ -456,8 +451,9 @@ const Settings: React.FC = () => {
     score += 20;
 
     // Password strength
-    if (securitySettings.passwordStrength === 'strong') score += 20;
-    else if (securitySettings.passwordStrength === 'medium') score += 10;
+    const currentPasswordStrength = getCurrentPasswordStrength();
+    if (currentPasswordStrength === 'strong') score += 20;
+    else if (currentPasswordStrength === 'medium') score += 10;
 
     // Two-factor authentication
     if (privacySettings.twoFactorAuth) score += 25;
@@ -485,7 +481,7 @@ const Settings: React.FC = () => {
       });
     }
 
-    if (securitySettings.passwordStrength === 'weak') {
+    if (getCurrentPasswordStrength() === 'weak') {
       recommendations.push({
         text: 'Strengthen your password with symbols and numbers',
         priority: 'high',
@@ -544,9 +540,15 @@ const Settings: React.FC = () => {
     {
       id: 'password',
       title: 'Strong Password',
-      description: 'Use a password with at least 6 characters (symbols optional)',
-      status: 'warning',
-      action: 'Change Password',
+      description:
+        'Use a password with at least 8 characters, uppercase, lowercase, number, and special character',
+      status:
+        getCurrentPasswordStrength() === 'strong'
+          ? 'success'
+          : getCurrentPasswordStrength() === 'medium'
+          ? 'warning'
+          : 'error',
+      action: getCurrentPasswordStrength() === 'strong' ? 'Password Strong' : 'Change Password',
       icon: <VpnKeyOutlined />,
       priority: 2, // High priority
     },
@@ -620,7 +622,6 @@ const Settings: React.FC = () => {
       animations,
       compactMode,
       dateFormat,
-      use24HourFormat,
       tokenContextLimit,
       temperature,
       contextLength,
@@ -643,7 +644,6 @@ const Settings: React.FC = () => {
     animations,
     compactMode,
     dateFormat,
-    use24HourFormat,
     tokenContextLimit,
     temperature,
     contextLength,
@@ -791,7 +791,6 @@ const Settings: React.FC = () => {
         animations,
         compactMode,
         dateFormat,
-        use24HourFormat,
         tokenContextLimit,
         temperature,
         contextLength,
@@ -830,7 +829,6 @@ const Settings: React.FC = () => {
         backdropFilter: 'blur(10px)',
         transition: 'all 0.3s ease-in-out',
         '&:hover': {
-          transform: 'translateY(-4px)',
           boxShadow: theme.shadows[8],
           borderColor: 'error.dark',
         },
@@ -884,6 +882,226 @@ const Settings: React.FC = () => {
   }, [compactMode]);
 
   // Dark mode is now handled by Material-UI theme system
+
+  // Ensure subscription state is always consistent with plan
+  useEffect(() => {
+    console.log('Subscription useEffect triggered. Current subscription:', subscription);
+    if (subscription.plan && subscriptionConfig[subscription.plan]) {
+      const planConfig = subscriptionConfig[subscription.plan];
+      console.log('Plan config for', subscription.plan, ':', planConfig);
+      if (
+        subscription.model !== planConfig.model ||
+        subscription.tokenLimit !== planConfig.tokenLimit
+      ) {
+        console.log('Updating subscription to match plan config');
+        setSubscription(prev => ({
+          ...prev,
+          model: planConfig.model,
+          tokenLimit: planConfig.tokenLimit,
+        }));
+      }
+    }
+  }, [subscription.plan]);
+
+  // Ensure token context limit is within plan limits when subscription changes
+  useEffect(() => {
+    if (subscription.tokenLimit && tokenContextLimit > subscription.tokenLimit) {
+      console.log('Adjusting token context limit to match plan limit:', subscription.tokenLimit);
+      setTokenContextLimit(subscription.tokenLimit);
+    }
+  }, [subscription.tokenLimit, tokenContextLimit]);
+
+  // Security Score Progress Bar Animation (same as EditProfileDialog)
+  const getProgressBarColor = (percentage: number) => {
+    if (percentage < 25) return theme.palette.error.main; // Red for low range
+    if (percentage < 50) return theme.palette.warning.main; // Orange for low-mid range
+    if (percentage < 75) return theme.palette.warning.main; // Orange for mid range
+    return theme.palette.success.main; // Green for high range
+  };
+
+  const progressBarColor = getProgressBarColor(calculateSecurityScore());
+
+  // Animated percentage for smooth counting
+  const [animatedSecurityScore, setAnimatedSecurityScore] = useState(calculateSecurityScore());
+
+  // Animate security score progress bar
+  useEffect(() => {
+    const targetScore = calculateSecurityScore();
+    const currentScore = animatedSecurityScore;
+
+    if (Math.abs(targetScore - currentScore) < 1) {
+      setAnimatedSecurityScore(targetScore);
+      return;
+    }
+
+    const steps = 20;
+    const stepDuration = 1; // 1ms per step = 20ms total animation
+    const increment = (targetScore - currentScore) / steps;
+    let currentStep = 0;
+
+    const timer = setInterval(() => {
+      currentStep++;
+      setAnimatedSecurityScore(prev => {
+        const newValue = prev + increment;
+        if (currentStep >= steps || Math.abs(newValue - targetScore) < 1) {
+          return targetScore; // Ensure we end at exact target
+        }
+        return newValue;
+      });
+
+      if (currentStep >= steps) {
+        clearInterval(timer);
+      }
+    }, stepDuration);
+
+    return () => clearInterval(timer);
+  }, [calculateSecurityScore()]);
+
+  // Debug subscription state changes
+  useEffect(() => {
+    console.log('Subscription state changed:', subscription);
+  }, [subscription]);
+
+  // Auto-lock functionality
+  const [showAutoLockWarning, setShowAutoLockWarning] = useState(false);
+  const [autoLockCountdown, setAutoLockCountdown] = useState(600); // 10 minutes in seconds
+  const [isShowingWarning, setIsShowingWarning] = useState(false); // Flag to prevent activity resets while showing warning
+
+  const autoLockTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const warningTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastActivityRef = useRef(Date.now());
+
+  // Isolated countdown component that doesn't affect parent re-renders
+  const AutoLockCountdown = React.memo(
+    ({ lockTimeout, lastActivityRef, onTimeout, isWarningShowing }: any) => {
+      const [countdown, setCountdown] = useState(0);
+
+      useEffect(() => {
+        if (lockTimeout && !isWarningShowing) {
+          // Pause countdown when warning is showing
+          const interval = setInterval(() => {
+            const timeSinceLastActivity = (Date.now() - lastActivityRef.current) / 1000;
+            const timeoutSeconds = lockTimeout * 60;
+            const remaining = Math.max(0, timeoutSeconds - timeSinceLastActivity);
+            const roundedRemaining = Math.round(remaining);
+            setCountdown(roundedRemaining); // Round to nearest whole second
+
+            console.log(
+              'Countdown:',
+              roundedRemaining,
+              'seconds remaining, Warning showing:',
+              isWarningShowing
+            );
+
+            // Trigger warning popup when countdown reaches 0
+            if (remaining <= 0 && onTimeout) {
+              console.log('Countdown reached 0, triggering timeout!');
+              onTimeout();
+            }
+          }, 1000);
+
+          return () => clearInterval(interval);
+        }
+      }, [lockTimeout, lastActivityRef, onTimeout, isWarningShowing]);
+
+      return (
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          display="block"
+          sx={{
+            mt: 1,
+            textAlign: 'center',
+            minHeight: '20px', // Fixed height to prevent bouncing
+            fontFamily: 'monospace', // Monospace font for consistent character width
+          }}
+        >
+          {isWarningShowing
+            ? 'Session expired - Warning popup active'
+            : `Session expires in: ${Math.floor(countdown / 60)}m ${Math.floor(countdown % 60)}s`}
+        </Typography>
+      );
+    }
+  );
+
+  // Reset activity timer on user interaction
+  const resetActivityTimer = useCallback(() => {
+    // Don't reset if we're in the process of showing a warning
+    if (isShowingWarning) {
+      console.log('Skipping activity reset - showing warning');
+      return;
+    }
+
+    lastActivityRef.current = Date.now();
+
+    // If warning is showing, close it and reset countdown
+    if (showAutoLockWarning) {
+      console.log('Activity detected while warning is showing - closing warning');
+      setShowAutoLockWarning(false);
+      setAutoLockCountdown(600);
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+      }
+      if (warningTimeoutRef.current) {
+        clearTimeout(warningTimeoutRef.current);
+      }
+    }
+
+    // Clear any existing auto-lock timeout (we're using the isolated countdown now)
+    if (autoLockTimeoutRef.current) {
+      clearTimeout(autoLockTimeoutRef.current);
+      autoLockTimeoutRef.current = null;
+    }
+
+    // Don't set new timeouts - let the isolated countdown handle it
+    console.log('Activity timer reset - using isolated countdown system');
+  }, [privacySettings.autoLock, showAutoLockWarning]);
+
+  // Set up auto-lock timeout
+  useEffect(() => {
+    if (privacySettings.autoLock) {
+      resetActivityTimer();
+    }
+
+    return () => {
+      if (autoLockTimeoutRef.current) {
+        clearTimeout(autoLockTimeoutRef.current);
+      }
+      if (warningTimeoutRef.current) {
+        clearTimeout(warningTimeoutRef.current);
+      }
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+      }
+    };
+  }, [privacySettings.autoLock, privacySettings.lockTimeout, resetActivityTimer]);
+
+  // Debug: Monitor showAutoLockWarning state changes
+  useEffect(() => {
+    console.log('showAutoLockWarning state changed to:', showAutoLockWarning);
+  }, [showAutoLockWarning]);
+
+  // Set up activity listeners
+  useEffect(() => {
+    if (privacySettings.autoLock) {
+      const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+
+      const handleActivity = () => {
+        resetActivityTimer();
+      };
+
+      events.forEach(event => {
+        document.addEventListener(event, handleActivity, { passive: true });
+      });
+
+      return () => {
+        events.forEach(event => {
+          document.removeEventListener(event, handleActivity);
+        });
+      };
+    }
+  }, [privacySettings.autoLock, resetActivityTimer]);
 
   // Password change function
   const handlePasswordChange = async () => {
@@ -1055,13 +1273,6 @@ const Settings: React.FC = () => {
     console.log('Date format changed to:', dateFormat);
   }, [dateFormat]);
 
-  // Apply time format setting
-  useEffect(() => {
-    // Store time format preference in localStorage for future use
-    localStorage.setItem('use24HourFormat', use24HourFormat.toString());
-    console.log('Time format changed to:', use24HourFormat ? '24-hour' : '12-hour');
-  }, [use24HourFormat]);
-
   // Load saved settings from localStorage on component mount
   useEffect(() => {
     const loadSavedSettings = () => {
@@ -1078,15 +1289,6 @@ const Settings: React.FC = () => {
         const browserLocale = navigator.language || 'en-US';
         setDateFormat(getDefaultDateFormat(browserLocale));
       }
-
-      const savedTimeFormat = localStorage.getItem('use24HourFormat');
-      if (savedTimeFormat) {
-        setUse24HourFormat(savedTimeFormat === 'true');
-      } else {
-        // Use locale-based default if no saved preference
-        const browserLocale = navigator.language || 'en-US';
-        setUse24HourFormat(getDefaultTimeFormat(browserLocale));
-      }
     };
 
     // Try to load from backend first, fall back to localStorage
@@ -1100,6 +1302,71 @@ const Settings: React.FC = () => {
     setIsLoadingPreferences(true);
     try {
       const userPreferences = await preferences.get();
+
+      console.log('Backend preferences response:', userPreferences);
+      console.log('Custom preferences:', userPreferences.custom_preferences);
+
+      // Load subscription data from the proper endpoint
+      try {
+        const subscriptionResponse = await (
+          await import('../services/api')
+        ).api.get('/payments/subscriptions/current');
+        console.log('Subscription response:', subscriptionResponse.data);
+
+        if (subscriptionResponse.data) {
+          const subscriptionData = subscriptionResponse.data;
+          console.log('Raw subscription data:', subscriptionData);
+
+          // Determine plan based on ai_model and token_limit
+          let plan: SubscriptionPlan = 'free';
+
+          if (subscriptionData.ai_model === 'gpt-4' && subscriptionData.token_limit === 75000) {
+            plan = 'pro';
+          } else if (
+            subscriptionData.ai_model === 'gpt-4' &&
+            subscriptionData.token_limit === 100000
+          ) {
+            plan = 'max';
+          } else if (
+            subscriptionData.ai_model === 'gpt-3.5-turbo' &&
+            subscriptionData.token_limit === 50000
+          ) {
+            plan = 'plus';
+          } else if (
+            subscriptionData.ai_model === 'gpt-4.1-nano' &&
+            subscriptionData.token_limit === 30000
+          ) {
+            plan = 'free';
+          } else {
+            // Fallback: try to determine from plan_id if ai_model mapping fails
+            if (subscriptionData.plan_id) {
+              if (subscriptionData.plan_id.includes('plus')) plan = 'plus';
+              else if (subscriptionData.plan_id.includes('pro')) plan = 'pro';
+              else if (subscriptionData.plan_id.includes('max')) plan = 'max';
+              else plan = 'free';
+            }
+          }
+
+          console.log('Determined plan:', plan);
+          const planConfig = subscriptionConfig[plan];
+          console.log('Plan config:', planConfig);
+
+          setSubscription(prev => ({
+            ...prev,
+            plan: plan,
+            model: planConfig.model,
+            tokenLimit: planConfig.tokenLimit,
+          }));
+          console.log('Updated subscription from API to:', {
+            plan,
+            model: planConfig.model,
+            tokenLimit: planConfig.tokenLimit,
+          });
+        }
+      } catch (subscriptionError) {
+        console.warn('Failed to load subscription from API:', subscriptionError);
+        // Fall back to preferences if subscription API fails
+      }
 
       if (userPreferences.custom_preferences?.dateFormat) {
         const format = userPreferences.custom_preferences.dateFormat as string;
@@ -1124,7 +1391,16 @@ const Settings: React.FC = () => {
       try {
         const aiUserSettings = await (await import('../services/api')).aiSettings.get();
         if (aiUserSettings.tokenContextLimit) {
-          setTokenContextLimit(Number(aiUserSettings.tokenContextLimit));
+          const loadedLimit = Number(aiUserSettings.tokenContextLimit);
+          // Ensure the loaded limit doesn't exceed the current plan's limit
+          const maxLimit = subscription.tokenLimit || 30000; // Default to free plan if not set yet
+          const validLimit = Math.min(loadedLimit, maxLimit);
+          setTokenContextLimit(validLimit);
+          if (loadedLimit > maxLimit) {
+            console.warn(
+              `Loaded token context limit (${loadedLimit}) exceeds plan limit (${maxLimit}), setting to ${validLimit}`
+            );
+          }
         }
         if (aiUserSettings.temperature) {
           setTemperature(aiUserSettings.temperature.toString());
@@ -1136,7 +1412,10 @@ const Settings: React.FC = () => {
         console.warn('Failed to load AI settings, using defaults:', error);
         // Fallback to custom_preferences if available
         if (userPreferences.custom_preferences?.maxTokens) {
-          setTokenContextLimit(Number(userPreferences.custom_preferences.maxTokens) || 1000);
+          const loadedLimit = Number(userPreferences.custom_preferences.maxTokens) || 1000;
+          const maxLimit = subscription.tokenLimit || 30000;
+          const validLimit = Math.min(loadedLimit, maxLimit);
+          setTokenContextLimit(validLimit);
         }
         if (userPreferences.custom_preferences?.temperature) {
           setTemperature(userPreferences.custom_preferences.temperature.toString() || '0.5');
@@ -1157,14 +1436,46 @@ const Settings: React.FC = () => {
       if (userPreferences.custom_preferences?.realTimeAnalysis !== undefined) {
         setRealTimeAnalysis(!!userPreferences.custom_preferences.realTimeAnalysis);
       }
-      if (userPreferences.custom_preferences?.model) {
-        setSubscription(prev => ({ ...prev, model: userPreferences.custom_preferences!.model }));
-      }
       if (userPreferences.custom_preferences?.plan) {
+        console.log('Found plan in custom_preferences:', userPreferences.custom_preferences.plan);
+        const plan = userPreferences.custom_preferences!.plan as SubscriptionPlan;
+        const planConfig = subscriptionConfig[plan];
+        console.log('Plan config:', planConfig);
         setSubscription(prev => ({
           ...prev,
-          plan: userPreferences.custom_preferences!.plan as SubscriptionPlan,
+          plan: plan,
+          model: planConfig.model,
+          tokenLimit: planConfig.tokenLimit,
         }));
+        console.log('Updated subscription to:', {
+          plan,
+          model: planConfig.model,
+          tokenLimit: planConfig.tokenLimit,
+        });
+      } else if (userPreferences.custom_preferences?.model) {
+        console.log('Found model in custom_preferences:', userPreferences.custom_preferences.model);
+        // If no plan but model exists, try to find the plan for this model
+        const model = userPreferences.custom_preferences!.model;
+        const targetPlan = Object.entries(subscriptionConfig).find(
+          ([_, config]) => config.model === model
+        )?.[0] as SubscriptionPlan;
+
+        if (targetPlan) {
+          const planConfig = subscriptionConfig[targetPlan];
+          setSubscription(prev => ({
+            ...prev,
+            plan: targetPlan,
+            model: model,
+            tokenLimit: planConfig.tokenLimit,
+          }));
+          console.log('Updated subscription from model to:', {
+            plan: targetPlan,
+            model,
+            tokenLimit: planConfig.tokenLimit,
+          });
+        }
+      } else {
+        console.log('No plan or model found in custom_preferences');
       }
     } catch (error) {
       console.warn('Failed to load preferences from backend:', error);
@@ -1184,7 +1495,6 @@ const Settings: React.FC = () => {
         animations,
         compactMode,
         dateFormat,
-        use24HourFormat,
         tokenContextLimit,
         temperature,
         contextLength,
@@ -1208,7 +1518,6 @@ const Settings: React.FC = () => {
     animations,
     compactMode,
     dateFormat,
-    use24HourFormat,
     tokenContextLimit,
     temperature,
     contextLength,
@@ -1642,7 +1951,7 @@ const Settings: React.FC = () => {
             </SettingsSection>
 
             <SettingsSection
-              title="Language & Region"
+              title="Language & Date"
               icon={<Language sx={{ color: theme.palette.primary.main }} />}
             >
               <Grid container spacing={3}>
@@ -1752,36 +2061,6 @@ const Settings: React.FC = () => {
                       </Typography>
                     )}
                   </Box>
-
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                      Time Format
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={!use24HourFormat}
-                            onChange={() => setUse24HourFormat(false)}
-                            size="small"
-                          />
-                        }
-                        label="12-hour (AM/PM)"
-                        sx={{ flex: 1 }}
-                      />
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={use24HourFormat}
-                            onChange={() => setUse24HourFormat(true)}
-                            size="small"
-                          />
-                        }
-                        label="24-hour"
-                        sx={{ flex: 1 }}
-                      />
-                    </Box>
-                  </Box>
                 </Grid>
 
                 <Grid item xs={12} md={6}>
@@ -1835,34 +2114,32 @@ const Settings: React.FC = () => {
                         <EventOutlined fontSize="small" color="action" />
                         <Typography variant="body2">{dateFormat}</Typography>
                       </Box>
-
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <AccessTime fontSize="small" color="action" />
-                        <Typography variant="body2">
-                          {use24HourFormat ? '24-hour' : '12-hour (AM/PM)'}
-                        </Typography>
-                      </Box>
                     </Box>
 
                     <Box sx={{ mb: 2 }}>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        display="block"
-                        gutterBottom
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                        }}
                       >
-                        Preview:
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{ fontFamily: 'monospace', fontSize: '0.875rem' }}
-                      >
-                        {formatDateTimeWithPreference(new Date())}
-                      </Typography>
-                    </Box>
-
-                    <Box sx={{ mt: 5 }}>
-                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        <Box>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            display="block"
+                            gutterBottom
+                          >
+                            Preview:
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{ fontFamily: 'monospace', fontSize: '0.875rem' }}
+                          >
+                            {formatDateWithPreference(new Date())}
+                          </Typography>
+                        </Box>
                         <Button
                           size="small"
                           variant="outlined"
@@ -1870,24 +2147,10 @@ const Settings: React.FC = () => {
                             // Auto-detect based on browser locale
                             const browserLocale = navigator.language || 'en-US';
                             setDateFormat(getDefaultDateFormat(browserLocale));
-                            setUse24HourFormat(getDefaultTimeFormat(browserLocale));
                           }}
                           sx={{ py: 0.5, px: 1 }}
                         >
                           Auto-detect
-                        </Button>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          onClick={() => {
-                            setLanguage('en');
-                            const browserLocale = navigator.language || 'en-US';
-                            setDateFormat(getDefaultDateFormat(browserLocale));
-                            setUse24HourFormat(getDefaultTimeFormat(browserLocale));
-                          }}
-                          sx={{ py: 0.5, px: 1 }}
-                        >
-                          Reset to Default
                         </Button>
                       </Box>
                     </Box>
@@ -1933,18 +2196,37 @@ const Settings: React.FC = () => {
                             '&.Mui-disabled': {
                               opacity: 0.7,
                             },
+                            '&.Mui-selected': {
+                              backgroundColor: theme.palette.primary.main + '20',
+                            },
                           }}
                         >
-                          {config.label}
-                          {plan !== subscription.plan && (
-                            <Typography
-                              component="span"
-                              variant="caption"
-                              sx={{ ml: 1, color: 'text.secondary' }}
-                            >
-                              ({plan.charAt(0).toUpperCase() + plan.slice(1)} plan)
-                            </Typography>
-                          )}
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              width: '100%',
+                            }}
+                          >
+                            <Box>
+                              <Typography
+                                variant="body2"
+                                fontWeight={plan === subscription.plan ? 600 : 400}
+                              >
+                                {config.label}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {plan.charAt(0).toUpperCase() + plan.slice(1)} Plan •{' '}
+                                {config.tokenLimit.toLocaleString()} tokens
+                              </Typography>
+                            </Box>
+                            {plan === subscription.plan && (
+                              <Typography variant="caption" color="primary.main" fontWeight={600}>
+                                Current
+                              </Typography>
+                            )}
+                          </Box>
                         </MenuItem>
                       ))}
                     </Select>
@@ -1953,7 +2235,9 @@ const Settings: React.FC = () => {
                       color="text.secondary"
                       sx={{ mt: 1, display: 'block' }}
                     >
-                      Model is determined by your subscription plan
+                      Current plan:{' '}
+                      {subscription.plan.charAt(0).toUpperCase() + subscription.plan.slice(1)} •
+                      Model: {subscriptionConfig[subscription.plan].label}
                     </Typography>
                   </FormControl>
                   <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
@@ -1987,10 +2271,31 @@ const Settings: React.FC = () => {
                 <Grid item xs={12} md={6}>
                   <Typography gutterBottom>
                     Token Context Limit (Max: {subscription.tokenLimit.toLocaleString()})
+                    {tokenContextLimit === subscription.tokenLimit && (
+                      <Typography
+                        component="span"
+                        variant="caption"
+                        color="success.main"
+                        sx={{ ml: 1, fontWeight: 600 }}
+                      >
+                        • At Plan Limit
+                      </Typography>
+                    )}
                   </Typography>
                   <Slider
                     value={tokenContextLimit}
-                    onChange={(_e, value) => setTokenContextLimit(value as number)}
+                    onChange={(_e, value) => {
+                      const newValue = value as number;
+                      // Ensure the value doesn't exceed the plan limit
+                      const clampedValue = Math.min(newValue, subscription.tokenLimit);
+                      setTokenContextLimit(clampedValue);
+
+                      if (newValue > subscription.tokenLimit) {
+                        console.log(
+                          `Requested ${newValue.toLocaleString()} tokens, but plan limit is ${subscription.tokenLimit.toLocaleString()}. Setting to ${clampedValue.toLocaleString()}.`
+                        );
+                      }
+                    }}
                     min={1000}
                     max={subscription.tokenLimit}
                     step={1000}
@@ -2022,14 +2327,18 @@ const Settings: React.FC = () => {
                       },
                     }}
                   />
+                  <Typography variant="caption" color="error.main" sx={{ mt: 1, display: 'block' }}>
+                    Current: {tokenContextLimit.toLocaleString()} tokens • Maximum:{' '}
+                    {subscription.tokenLimit.toLocaleString()} tokens
+                  </Typography>
                   <Typography
                     variant="caption"
                     color="text.secondary"
-                    sx={{ mt: 1, display: 'block' }}
+                    sx={{ mt: 0.5, display: 'block' }}
                   >
-                    Maximum token context limit is determined by your subscription plan. Higher
-                    limits allow for more context to be considered in AI responses, improving
-                    relevance and continuity.
+                    Higher limits allow for more context to be considered in AI responses, improving
+                    relevance and continuity. Your {subscription.plan} plan allows up to{' '}
+                    {subscription.tokenLimit.toLocaleString()} tokens.
                   </Typography>
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -2230,14 +2539,22 @@ const Settings: React.FC = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
                     <Typography variant="body2" color="text.secondary">
                       Active features:{' '}
-                      {[
-                        autoComplete && 'Auto-complete',
-                        codeSnippets && 'Code snippets',
-                        aiSuggestions && 'AI suggestions',
-                        realTimeAnalysis && 'Real-time analysis',
-                      ]
-                        .filter(Boolean)
-                        .join(', ') || 'None'}
+                      {(() => {
+                        const activeFeatures = [
+                          autoComplete && 'Auto-complete',
+                          codeSnippets && 'Code snippets',
+                          aiSuggestions && 'AI suggestions',
+                          realTimeAnalysis && 'Real-time analysis',
+                        ].filter(Boolean);
+
+                        if (activeFeatures.length === 4) {
+                          return 'All';
+                        } else if (activeFeatures.length === 0) {
+                          return 'None';
+                        } else {
+                          return activeFeatures.join(', ');
+                        }
+                      })()}
                     </Typography>
                     <Button
                       variant="outlined"
@@ -2288,7 +2605,7 @@ const Settings: React.FC = () => {
                 </Alert>
               )}
 
-              <Box sx={{ mb: 4 }}>
+              <Box sx={{ mb: 4, position: 'relative' }}>
                 <Box
                   sx={{
                     display: 'flex',
@@ -2302,40 +2619,49 @@ const Settings: React.FC = () => {
                   <Typography
                     variant="h4"
                     sx={{
-                      color:
-                        calculateSecurityScore() >= 80
-                          ? 'success.main'
-                          : calculateSecurityScore() >= 50
-                          ? 'warning.main'
-                          : 'error.main',
+                      color: progressBarColor,
+                      transition: 'color 0.3s ease-in-out',
                     }}
                   >
-                    {calculateSecurityScore()}%
+                    {Math.round(animatedSecurityScore)}%
                   </Typography>
                 </Box>
-                <LinearProgress
-                  variant="determinate"
-                  value={calculateSecurityScore()}
-                  sx={{
-                    height: 10,
-                    borderRadius: 5,
-                    backgroundColor: 'rgba(0,0,0,0.1)',
-                    '& .MuiLinearProgress-bar': {
-                      backgroundColor:
-                        calculateSecurityScore() >= 80
-                          ? 'success.main'
-                          : calculateSecurityScore() >= 50
-                          ? 'warning.main'
-                          : 'error.main',
-                    },
-                  }}
-                />
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box
+                    sx={{
+                      flex: 1,
+                      height: 10,
+                      borderRadius: 5,
+                      background: 'rgba(0,0,0,0.1)',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: `${animatedSecurityScore}%`,
+                        height: '100%',
+                        background: progressBarColor,
+                        borderRadius: 5,
+                        transition: 'width 0.5s ease-in-out, background-color 0.3s ease-in-out',
+                      }}
+                    />
+                  </Box>
+                  <Typography
+                    variant="body2"
+                    fontWeight="600"
+                    color={progressBarColor}
+                    sx={{ transition: 'color 0.3s ease-in-out' }}
+                  >
+                    {Math.round(animatedSecurityScore)}%
+                  </Typography>
+                </Box>
                 <Typography
                   variant="caption"
                   color="text.secondary"
                   sx={{ mt: 1, display: 'block' }}
                 >
-                  Last Security Audit: {securitySettings.lastSecurityAudit}
+                  Last Security Audit:{' '}
+                  {formatDateWithPreference(securitySettings.lastSecurityAudit)}
                 </Typography>
               </Box>
 
@@ -2750,12 +3076,75 @@ const Settings: React.FC = () => {
                         },
                       }}
                     >
-                      <MenuItem value={5}>5 minutes</MenuItem>
-                      <MenuItem value={15}>15 minutes</MenuItem>
+                      <MenuItem value={0.167}>10 seconds (testing)</MenuItem>
                       <MenuItem value={30}>30 minutes</MenuItem>
                       <MenuItem value={60}>1 hour</MenuItem>
+                      <MenuItem value={120}>2 hours</MenuItem>
+                      <MenuItem value={240}>4 hours</MenuItem>
                     </Select>
                   </FormControl>
+
+                  {/* Debug Info */}
+                  <Box sx={{ mt: 2, textAlign: 'center' }}>
+                    <Typography variant="caption" color="text.secondary">
+                      Auto-lock: {privacySettings.autoLock ? 'ON' : 'OFF'} | Timeout:{' '}
+                      {privacySettings.lockTimeout} min
+                    </Typography>
+                  </Box>
+
+                  {/* Auto-lock Countdown */}
+                  {privacySettings.autoLock && (
+                    <AutoLockCountdown
+                      lockTimeout={privacySettings.lockTimeout}
+                      lastActivityRef={lastActivityRef}
+                      isWarningShowing={showAutoLockWarning}
+                      onTimeout={() => {
+                        console.log('Countdown timeout reached - showing warning popup');
+                        console.log('Setting showAutoLockWarning to true');
+                        setIsShowingWarning(true); // Prevent activity resets
+                        setShowAutoLockWarning(true);
+                        setAutoLockCountdown(600); // 10 minutes
+
+                        // Start the warning countdown
+                        if (countdownIntervalRef.current) {
+                          clearInterval(countdownIntervalRef.current);
+                        }
+
+                        console.log('Starting warning countdown from 600 seconds');
+                        countdownIntervalRef.current = setInterval(() => {
+                          console.log('Warning countdown interval triggered');
+                          setAutoLockCountdown(prev => {
+                            const newValue = prev - 1;
+                            console.log('Warning countdown: prev =', prev, 'new =', newValue);
+                            if (newValue <= 0) {
+                              // Time's up, log out
+                              console.log('Warning timeout reached - logging out');
+                              if (countdownIntervalRef.current) {
+                                clearInterval(countdownIntervalRef.current);
+                                countdownIntervalRef.current = null;
+                              }
+                              localStorage.removeItem('token');
+                              localStorage.removeItem('user');
+                              window.location.href = '/login';
+                              return 0;
+                            }
+                            return newValue;
+                          });
+                        }, 1000);
+
+                        // Set final timeout for logout
+                        if (warningTimeoutRef.current) {
+                          clearTimeout(warningTimeoutRef.current);
+                        }
+                        warningTimeoutRef.current = setTimeout(() => {
+                          console.log('Final timeout reached - logging out');
+                          localStorage.removeItem('token');
+                          localStorage.removeItem('user');
+                          window.location.href = '/login';
+                        }, 600000); // 10 minutes
+                      }}
+                    />
+                  )}
                 </Grid>
 
                 <Grid item xs={12}>
@@ -2850,8 +3239,8 @@ const Settings: React.FC = () => {
                         <VpnKeyOutlined fontSize="small" color="action" />
                         <Typography variant="body2">
                           Password:{' '}
-                          {getSecuritySummary().passwordStrength.charAt(0).toUpperCase() +
-                            getSecuritySummary().passwordStrength.slice(1)}
+                          {getCurrentPasswordStrength().charAt(0).toUpperCase() +
+                            getCurrentPasswordStrength().slice(1)}
                         </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
@@ -3335,7 +3724,9 @@ const Settings: React.FC = () => {
               {selectedModelPlan === subscription.plan
                 ? 'Current Plan'
                 : `Upgrade to ${
-                    selectedModelPlan.charAt(0).toUpperCase() + selectedModelPlan.slice(1)
+                    selectedModelPlan
+                      ? selectedModelPlan.charAt(0).toUpperCase() + selectedModelPlan.slice(1)
+                      : ''
                   }`}
             </Button>
           )}
@@ -4043,7 +4434,7 @@ const Settings: React.FC = () => {
                     Last Login:
                   </Typography>
                   <Typography variant="body2" fontWeight="medium">
-                    {formatDateTimeWithPreference(new Date())}
+                    {formatDateWithPreference(new Date())}
                   </Typography>
                 </Box>
               </Box>
@@ -4540,6 +4931,45 @@ const Settings: React.FC = () => {
           }
         }
       `}</style>
+
+      {/* Auto-Lock Warning Popup */}
+      <AutoLockWarningDialog
+        open={showAutoLockWarning}
+        countdown={autoLockCountdown}
+        onClose={() => {
+          setShowAutoLockWarning(false);
+          setIsShowingWarning(false); // Re-enable activity resets
+
+          // Clean up any running countdown intervals
+          if (countdownIntervalRef.current) {
+            clearInterval(countdownIntervalRef.current);
+            countdownIntervalRef.current = null;
+          }
+          if (warningTimeoutRef.current) {
+            clearTimeout(warningTimeoutRef.current);
+            warningTimeoutRef.current = null;
+          }
+
+          console.log('Warning popup closed - cleaned up timers and reset flags');
+        }}
+      />
+
+      {/* Debug: Show current countdown value */}
+      {showAutoLockWarning && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 10,
+            right: 10,
+            bgcolor: 'black',
+            color: 'white',
+            p: 1,
+            zIndex: 10000,
+          }}
+        >
+          Debug: Countdown = {autoLockCountdown}
+        </Box>
+      )}
     </Box>
   );
 };

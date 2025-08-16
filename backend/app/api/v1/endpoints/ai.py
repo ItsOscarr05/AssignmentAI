@@ -282,7 +282,8 @@ async def analyze_submission(
         await ai_service.enforce_token_limit(current_user.id, tokens_needed)
         analysis = await ai_service.analyze_submission(
             submission_content=submission.content,
-            assignment_requirements=submission.assignment.content
+            assignment_requirements=submission.assignment.content,
+            user_id=current_user.id
         )
         return analysis
     except Exception as e:

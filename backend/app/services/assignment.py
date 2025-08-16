@@ -7,16 +7,22 @@ from app.models.assignment import Assignment
 from openai import OpenAI
 
 class AssignmentService:
-    def __init__(self):
+    def __init__(self, db: AsyncSession):
         self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        self.db = db
 
-    async def generate_content(self, assignment_data: AssignmentCreate) -> str:
+    async def generate_content(self, assignment_data: AssignmentCreate, user_id: int) -> str:
         """Generate assignment content using OpenAI API."""
         prompt = self._create_prompt(assignment_data)
         
+        # Get the user's assigned model from their subscription
+        from app.services.ai_service import AIService
+        ai_service = AIService(self.db)
+        model = await ai_service.get_user_model(user_id)
+        
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4",
+                model=model,
                 messages=[
                     {"role": "system", "content": "You are an expert teacher creating educational assignments."},
                     {"role": "user", "content": prompt}
@@ -56,7 +62,7 @@ Format the response in a clear, structured manner."""
     ) -> Optional[Assignment]:
         """Create a new assignment with AI-generated content."""
         # Generate content using AI
-        content = await self.generate_content(obj_in)
+        content = await self.generate_content(obj_in, user_id)
         
         # Update the assignment data with generated content
         obj_in_data = obj_in.model_dump()
@@ -69,4 +75,5 @@ Format the response in a clear, structured manner."""
         
         return db_obj
 
-assignment_service = AssignmentService() 
+# Note: AssignmentService now requires a db parameter when instantiated
+# assignment_service = AssignmentService(db) 

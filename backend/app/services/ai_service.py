@@ -365,7 +365,8 @@ class AIService:
     async def analyze_submission(
         self,
         submission_content: str,
-        assignment_requirements: Dict[str, Any]
+        assignment_requirements: Dict[str, Any],
+        user_id: int
     ) -> Dict[str, Any]:
         """
         Analyze a student's submission using OpenAI API.
@@ -387,8 +388,11 @@ class AIService:
         5. Specific suggestions for improvement
         """
 
+        # Get the user's assigned model for evaluation
+        model = await self.get_user_model(user_id)
+        
         response = await self.client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model=model,
             messages=[
                 {"role": "system", "content": "You are a helpful teacher's assistant that evaluates student submissions."},
                 {"role": "user", "content": prompt}

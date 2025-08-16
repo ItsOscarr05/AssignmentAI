@@ -115,8 +115,7 @@ export const parseDate = (dateString: string, format: DateFormat): Date | null =
 export const formatDateTime = (
   date: Date,
   format: DateFormat,
-  includeTime: boolean = true,
-  use24Hour: boolean = false
+  includeTime: boolean = true
 ): string => {
   const dateStr = formatDate(date, format);
 
@@ -128,19 +127,10 @@ export const formatDateTime = (
   const minutes = date.getMinutes();
   const seconds = date.getSeconds();
 
-  let timeStr: string;
-
-  if (use24Hour) {
-    timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds
-      .toString()
-      .padStart(2, '0')}`;
-  } else {
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    const displayHours = hours % 12 || 12;
-    timeStr = `${displayHours.toString().padStart(2, '0')}:${minutes
-      .toString()
-      .padStart(2, '0')}:${seconds.toString().padStart(2, '0')} ${ampm}`;
-  }
+  // Always use 24-hour format for consistency
+  const timeStr = `${hours.toString().padStart(2, '0')}:${minutes
+    .toString()
+    .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
   return `${dateStr} ${timeStr}`;
 };
@@ -277,34 +267,4 @@ export const getDefaultDateFormat = (locale: string = 'en-US'): DateFormat => {
   };
 
   return localeFormatMap[locale] || 'MM/DD/YYYY';
-};
-
-/**
- * Get the default time format based on locale
- */
-export const getDefaultTimeFormat = (locale: string = 'en-US'): boolean => {
-  // Map common locales to time formats (true = 24-hour, false = 12-hour)
-  const localeTimeFormatMap: Record<string, boolean> = {
-    'en-US': false, // 12-hour format
-    'en-GB': true, // 24-hour format
-    'en-CA': false, // 12-hour format
-    'en-AU': false, // 12-hour format
-    'de-DE': true, // 24-hour format
-    'de-AT': true, // 24-hour format
-    'de-CH': true, // 24-hour format
-    'fr-FR': true, // 24-hour format
-    'fr-CA': false, // 12-hour format
-    'es-ES': true, // 24-hour format
-    'es-MX': false, // 12-hour format
-    'it-IT': true, // 24-hour format
-    'pt-BR': false, // 12-hour format
-    'pt-PT': true, // 24-hour format
-    'ru-RU': true, // 24-hour format
-    'ja-JP': true, // 24-hour format
-    'ko-KR': true, // 24-hour format
-    'zh-CN': true, // 24-hour format
-    'zh-TW': true, // 24-hour format
-  };
-
-  return localeTimeFormatMap[locale] || false; // Default to 12-hour format
 };

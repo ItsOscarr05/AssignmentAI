@@ -194,28 +194,28 @@ class PaymentService:
                 "name": "Free", 
                 "price": 0.0,
                 "plan_id": settings.STRIPE_PRICE_FREE,  # Store actual Stripe price ID
-                "ai_model": "gpt-3.5-turbo",
+                "ai_model": "gpt-4.1-nano",
                 "token_limit": 30000
             },
             settings.STRIPE_PRICE_PLUS: {
                 "name": "Plus", 
                 "price": 4.99,
                 "plan_id": settings.STRIPE_PRICE_PLUS,  # Store actual Stripe price ID
-                "ai_model": "gpt-4",
+                "ai_model": "gpt-3.5-turbo",
                 "token_limit": 50000
             },
             settings.STRIPE_PRICE_PRO: {
                 "name": "Pro", 
                 "price": 9.99,
                 "plan_id": settings.STRIPE_PRICE_PRO,  # Store actual Stripe price ID
-                "ai_model": "gpt-4",
+                "ai_model": "gpt-4-turbo",
                 "token_limit": 75000
             },
             settings.STRIPE_PRICE_MAX: {
                 "name": "Max", 
                 "price": 14.99,
                 "plan_id": settings.STRIPE_PRICE_MAX,  # Store actual Stripe price ID
-                "ai_model": "gpt-4-turbo",
+                "ai_model": "gpt-4",
                 "token_limit": 100000
             },
         }
@@ -456,7 +456,7 @@ class PaymentService:
                 plan_name="Free",
                 plan_price=0.0,
                 plan_id=settings.STRIPE_PRICE_FREE,
-                ai_model="gpt-3.5-turbo",
+                ai_model="gpt-4.1-nano",
                 token_limit=30000,
                 status=SubscriptionStatus.ACTIVE,
                 current_period_start=datetime.now(),
@@ -487,7 +487,7 @@ class PaymentService:
                 "plan_id": settings.STRIPE_PRICE_FREE,
                 "current_period_end": (datetime.now() + timedelta(days=30)).isoformat(),
                 "cancel_at_period_end": False,
-                "ai_model": "gpt-3.5-turbo",
+                "ai_model": "gpt-4.1-nano",
                 "token_limit": 30000
             }
 

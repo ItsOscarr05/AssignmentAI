@@ -5,11 +5,9 @@ import { DateFormat } from '../utils/dateFormat';
 interface DateFormatContextType {
   // State
   dateFormat: DateFormat;
-  use24HourFormat: boolean;
 
   // Actions
   setDateFormat: (format: DateFormat) => void;
-  setUse24HourFormat: (use24Hour: boolean) => void;
 
   // Formatting functions
   formatDate: (date: Date) => string;

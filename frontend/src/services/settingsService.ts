@@ -14,7 +14,6 @@ export interface UserSettings {
     auto_translate: boolean;
     show_original_text: boolean;
     use_metric_system: boolean;
-    use_24_hour_format: boolean;
   };
   sound: {
     sound_effects: boolean;
@@ -214,10 +213,9 @@ class SettingsService {
 
     // Language settings
     const dateFormat = localStorage.getItem('dateFormat');
-    const use24HourFormat = localStorage.getItem('use24HourFormat');
     const language = localStorage.getItem('language');
 
-    if (dateFormat || use24HourFormat || language) {
+    if (dateFormat || language) {
       settings.language = {
         language: language || 'en',
 
@@ -225,7 +223,6 @@ class SettingsService {
         auto_translate: localStorage.getItem('autoTranslate') === 'true',
         show_original_text: localStorage.getItem('showOriginalText') !== 'false',
         use_metric_system: localStorage.getItem('useMetricSystem') === 'true',
-        use_24_hour_format: use24HourFormat === 'true',
       };
     }
 
@@ -255,7 +252,6 @@ class SettingsService {
   saveToLocalStorage(settings: Partial<UserSettings>): void {
     if (settings.language) {
       localStorage.setItem('dateFormat', settings.language.date_format);
-      localStorage.setItem('use24HourFormat', settings.language.use_24_hour_format.toString());
       localStorage.setItem('language', settings.language.language);
 
       localStorage.setItem('autoTranslate', settings.language.auto_translate.toString());

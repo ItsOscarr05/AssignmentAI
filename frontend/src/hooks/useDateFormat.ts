@@ -6,7 +6,6 @@ import {
   formatDateTime,
   formatRelativeDate,
   getDayName,
-  getDefaultTimeFormat,
   getMonthName,
   isToday,
   isTomorrow,
@@ -16,7 +15,6 @@ import {
 
 export const useDateFormat = (userDateFormat: DateFormat = 'MM/DD/YYYY') => {
   const [dateFormat, setDateFormat] = useState<DateFormat>(userDateFormat);
-  const [use24HourFormat, setUse24HourFormat] = useState<boolean>(getDefaultTimeFormat());
 
   const formatDateWithSetting = useMemo(() => {
     return (date: Date | string) => {
@@ -26,11 +24,11 @@ export const useDateFormat = (userDateFormat: DateFormat = 'MM/DD/YYYY') => {
   }, [dateFormat]);
 
   const formatDateTimeWithSetting = useMemo(() => {
-    return (date: Date | string, includeTime: boolean = true, use24Hour: boolean = false) => {
+    return (date: Date | string, includeTime: boolean = true) => {
       const dateObj = typeof date === 'string' ? new Date(date) : date;
-      return formatDateTime(dateObj, dateFormat, includeTime, use24Hour || use24HourFormat);
+      return formatDateTime(dateObj, dateFormat, includeTime);
     };
-  }, [dateFormat, use24HourFormat]);
+  }, [dateFormat]);
 
   const formatRelativeDateWithSetting = useMemo(() => {
     return (date: Date | string, now: Date = new Date()) => {
@@ -94,11 +92,9 @@ export const useDateFormat = (userDateFormat: DateFormat = 'MM/DD/YYYY') => {
   return {
     // State
     dateFormat,
-    use24HourFormat,
 
     // Actions
     setDateFormat,
-    setUse24HourFormat,
 
     // Formatting functions
     formatDate: formatDateWithSetting,

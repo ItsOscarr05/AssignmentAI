@@ -288,10 +288,10 @@ export const theme = lightTheme;
 
 // Dark theme color variants
 export const darkThemeColors = {
-  navy: '#000814', // Current dark blue-black
-  charcoal: '#1a1a1a', // Lighter dark gray
-  darkGray: '#282828', // Medium dark gray
-  pitchBlack: '#141414', // Very dark gray, almost black
+  navy: '#000814', // Current dark blue-black (keeping as is)
+  charcoal: '#141414', // Previous pitch black (was #0a0a0a)
+  darkGray: '#121212', // Much darker gray (was #282828)
+  pitchBlack: '#000000', // True pitch black (was #141414)
 };
 
 // Function to create dark theme with custom background color

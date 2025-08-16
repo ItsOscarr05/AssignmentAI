@@ -62,10 +62,10 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
           darkThemeColor === 'navy'
             ? '#000814'
             : darkThemeColor === 'charcoal'
-            ? '#1a1a1a'
+            ? '#141414'
             : darkThemeColor === 'darkGray'
-            ? '#282828'
-            : '#141414' // pitchBlack
+            ? '#121212'
+            : '#000000' // pitchBlack
         );
 
   return (

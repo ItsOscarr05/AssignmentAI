@@ -520,7 +520,7 @@ async def get_current_subscription_test(
         if result.get("plan_id") is None:
             result["plan_id"] = settings.STRIPE_PRICE_FREE
         if result.get("ai_model") is None:
-            result["ai_model"] = "gpt-3.5-turbo"
+            result["ai_model"] = "gpt-4.1-nano"
         if result.get("token_limit") is None:
             result["token_limit"] = 30000
         
