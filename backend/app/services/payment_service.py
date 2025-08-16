@@ -308,6 +308,56 @@ class PaymentService:
 
         return plan_mapping.get(subscription.plan_id, plan_mapping[settings.STRIPE_PRICE_FREE])
 
+    async def cancel_subscription(self, user: User) -> Dict[str, Any]:
+        """
+        Cancels the user's current subscription and reverts them to the free plan.
+        - Cancels the subscription in Stripe
+        - Updates the local database to mark subscription as cancelled
+        - Returns confirmation message
+        """
+        try:
+            # Get the user's current active subscription
+            subscription = self.db.query(Subscription).filter(
+                Subscription.user_id == user.id,
+                Subscription.status.in_([SubscriptionStatus.ACTIVE, SubscriptionStatus.CANCELING])
+            ).first()
+            
+            if not subscription:
+                raise HTTPException(
+                    status_code=404, 
+                    detail="No active subscription found to cancel"
+                )
+            
+            # Cancel the subscription in Stripe if it's a real Stripe subscription
+            if (subscription.stripe_subscription_id and 
+                not subscription.stripe_subscription_id.startswith('test_') and
+                not subscription.stripe_subscription_id.startswith('free_sub_')):
+                
+                try:
+                    stripe_sub = stripe.Subscription.modify(
+                        subscription.stripe_subscription_id,
+                        cancel_at_period_end=True
+                    )
+                    print(f"Stripe subscription {subscription.stripe_subscription_id} marked for cancellation")
+                except stripe.error.StripeError as e:
+                    print(f"Warning: Could not cancel Stripe subscription: {e}")
+                    # Continue with local cancellation even if Stripe fails
+            
+            # Update the subscription status in local database
+            subscription.status = SubscriptionStatus.CANCELED
+            subscription.canceled_at = datetime.now()
+            self.db.commit()
+            
+            return {
+                "message": "Subscription cancelled successfully",
+                "subscription_id": subscription.id,
+                "plan_name": subscription.plan_name,
+                "status": "cancelled"
+            }
+            
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+
     async def get_current_subscription(self, user: User) -> Dict[str, Any]:
         """Get current user's subscription"""
         print(f"DEBUG: get_current_subscription called for user {user.id} ({user.email})")

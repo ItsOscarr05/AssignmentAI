@@ -42,6 +42,16 @@ async def upgrade_subscription(
     )
 
 
+@router.post("/cancel-subscription")
+async def cancel_subscription(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Cancel the current user's subscription and revert to free plan"""
+    payment_service = PaymentService(db)
+    return await payment_service.cancel_subscription(user=current_user)
+
+
 @router.post("/test-upgrade-subscription")
 async def test_upgrade_subscription(
     request: CreateSubscriptionRequest,
@@ -256,6 +266,7 @@ async def get_plans_with_status(
             "name": "Free",
             "price": 0,
             "interval": "month",
+            "color": "#2196f3",
             "features": [
                 "Basic assignment generation",
                 "5 assignments per month",
@@ -271,6 +282,7 @@ async def get_plans_with_status(
             "name": "Plus",
             "price": 4.99,
             "interval": "month",
+            "color": "#4caf50",
             "features": [
                 "Enhanced assignment generation",
                 "25 assignments per month",
@@ -287,6 +299,7 @@ async def get_plans_with_status(
             "name": "Pro",
             "price": 9.99,
             "interval": "month",
+            "color": "#9c27b0",
             "features": [
                 "Unlimited assignment generation",
                 "Premium AI model",
@@ -304,6 +317,7 @@ async def get_plans_with_status(
             "name": "Max",
             "price": 14.99,
             "interval": "month",
+            "color": "#ff9800",
             "features": [
                 "Everything in Pro",
                 "Custom AI models",

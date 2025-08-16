@@ -17,6 +17,7 @@ import {
   LibraryBooksOutlined,
   LocalOffer,
   MilitaryTechOutlined,
+  MoreVert,
   PaletteOutlined,
   SchoolOutlined,
   ScienceOutlined,
@@ -35,12 +36,15 @@ import {
   CircularProgress,
   Container,
   Dialog,
+  DialogActions,
   DialogContent,
   DialogTitle,
   Divider,
   FormControlLabel,
   Grid,
   IconButton,
+  Menu,
+  MenuItem,
   Stack,
   Switch,
   Tooltip,
@@ -54,6 +58,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import PaymentForm from '../components/payment/PaymentForm';
 import SuccessPopup from '../components/payment/SuccessPopup';
+import SorryToSeeYouGoPopup from '../components/subscription/SorryToSeeYouGoPopup';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { api } from '../services/api';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
@@ -85,14 +90,6 @@ interface Plan {
   tokenBoost?: number;
   isCurrentPlan?: boolean;
   status?: 'current' | 'available';
-}
-
-interface CurrentPlan {
-  id: string;
-  name: string;
-  price: number;
-  interval: string;
-  features: string[];
 }
 
 const features: Feature[] = [
@@ -318,6 +315,22 @@ const plans: Plan[] = [
   },
 ];
 
+// Helper function to always return the correct color for each plan
+const getPlanColor = (planName: string, backendColor?: string) => {
+  switch (planName) {
+    case 'Free':
+      return '#2196f3'; // Always blue
+    case 'Plus':
+      return '#4caf50'; // Always green
+    case 'Pro':
+      return '#9c27b0'; // Always purple
+    case 'Max':
+      return '#ff9800'; // Always gold
+    default:
+      return backendColor || '#2196f3';
+  }
+};
+
 const getFeatureIcon = (featureName: string, color: string) => {
   switch (featureName) {
     case 'Basic Assignment Analysis':
@@ -369,10 +382,14 @@ const PricePlan: React.FC = () => {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [showDetailedComparison, setShowDetailedComparison] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-  const [, setCurrentPlan] = useState<CurrentPlan | null>(null);
+
   const [plansWithCurrentPlan, setPlansWithCurrentPlan] = useState<Plan[]>([]);
   const [currentSubscription, setCurrentSubscription] = useState<any>(null);
   const [plansLoading, setPlansLoading] = useState(true);
+  const [cancelMenuAnchor, setCancelMenuAnchor] = useState<null | HTMLElement>(null);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [showSorryPopup, setShowSorryPopup] = useState(false);
 
   useEffect(() => {
     // Debug: Log environment variables
@@ -388,7 +405,6 @@ const PricePlan: React.FC = () => {
       plans.map(p => ({ name: p.name, priceId: p.priceId }))
     );
 
-    fetchCurrentPlan();
     fetchPlansWithPrices();
     fetchCurrentSubscription();
   }, []);
@@ -443,6 +459,7 @@ const PricePlan: React.FC = () => {
         const updatedPlan = {
           ...plan,
           priceId: finalPriceId,
+          color: getPlanColor(plan.name, backendPlan?.color), // Always use correct colors regardless of backend
           isCurrentPlan: backendPlan?.isCurrentPlan || false,
           status: backendPlan?.status || 'available',
         };
@@ -481,29 +498,13 @@ const PricePlan: React.FC = () => {
         plans.map(p => ({ name: p.name, priceId: p.priceId }))
       );
 
-      setPlansWithCurrentPlan(plans); // Use plans with environment variable fallbacks
+      // Ensure plans have correct colors even when using fallbacks
+      const fallbackPlans = plans.map(plan => ({
+        ...plan,
+        color: getPlanColor(plan.name, plan.color),
+      }));
+      setPlansWithCurrentPlan(fallbackPlans); // Use plans with environment variable fallbacks
       setPlansLoading(false);
-    }
-  };
-
-  const fetchCurrentPlan = async () => {
-    try {
-      const response = await api.get<CurrentPlan>('/payments/plans/current/public');
-      setCurrentPlan(response.data);
-
-      // Update plans to mark current plan, but preserve existing price IDs
-      setPlansWithCurrentPlan(prevPlans =>
-        prevPlans.map(plan => ({
-          ...plan,
-          isCurrentPlan: plan.name.toLowerCase() === (response.data.name || '').toLowerCase(),
-        }))
-      );
-    } catch (error) {
-      console.error('Failed to fetch current plan:', error);
-      // If no current plan, all plans are available, but preserve existing price IDs
-      setPlansWithCurrentPlan(prevPlans =>
-        prevPlans.map(plan => ({ ...plan, isCurrentPlan: false }))
-      );
     }
   };
 
@@ -625,6 +626,61 @@ const PricePlan: React.FC = () => {
     enqueueSnackbar(`Payment failed: ${error}`, { variant: 'error' });
   };
 
+  const handleCancelMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setCancelMenuAnchor(event.currentTarget);
+  };
+
+  const handleCancelMenuClose = () => {
+    setCancelMenuAnchor(null);
+  };
+
+  const handleCancelSubscription = () => {
+    handleCancelMenuClose();
+    setShowCancelDialog(true);
+  };
+
+  const confirmCancelSubscription = async () => {
+    setCancelling(true);
+    try {
+      // Call backend to cancel subscription
+      await api.post('/payments/cancel-subscription');
+
+      // Update local state
+      setCurrentSubscription(null);
+
+      // Refresh plans to update current plan status
+      await fetchPlansWithPrices();
+
+      setShowCancelDialog(false);
+
+      // Show the "Sorry to see you go" popup
+      setShowSorryPopup(true);
+
+      enqueueSnackbar(
+        'Subscription cancelled successfully. You have been reverted to the Free plan.',
+        {
+          variant: 'success',
+          autoHideDuration: 5000,
+        }
+      );
+
+      toast.success('Subscription cancelled successfully!', {
+        duration: 5000,
+        position: 'top-center',
+      });
+    } catch (error: any) {
+      console.error('Failed to cancel subscription:', error);
+      enqueueSnackbar(
+        `Failed to cancel subscription: ${error.response?.data?.detail || error.message}`,
+        {
+          variant: 'error',
+        }
+      );
+    } finally {
+      setCancelling(false);
+    }
+  };
+
   // Determine if this is an upgrade based on current subscription and selected plan
   const isUpgrade = (): boolean => {
     if (!currentSubscription || !selectedPlan) return false;
@@ -683,8 +739,10 @@ const PricePlan: React.FC = () => {
                   mb: 2,
                   px: 2,
                   py: 1,
-                  borderBottom: '2px solid #eee',
-                  background: '#fff',
+                  borderBottom: theme =>
+                    `2px solid ${theme.palette.mode === 'dark' ? '#444' : '#eee'}`,
+                  background: theme =>
+                    theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
                 }}
               >
                 <Box
@@ -729,7 +787,8 @@ const PricePlan: React.FC = () => {
                     minHeight: 40,
                     px: 2,
                     py: 1,
-                    background: '#fff', // Always white background
+                    background: theme =>
+                      theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
                   }}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center', minHeight: 32 }}>
@@ -785,7 +844,13 @@ const PricePlan: React.FC = () => {
                         {isIncluded ? (
                           <CheckCircle sx={{ color: plan.color, fontSize: 28 }} />
                         ) : (
-                          <Typography sx={{ color: '#aaa', fontSize: 28, fontWeight: 700 }}>
+                          <Typography
+                            sx={{
+                              color: theme => (theme.palette.mode === 'dark' ? '#666' : '#aaa'),
+                              fontSize: 28,
+                              fontWeight: 700,
+                            }}
+                          >
                             —
                           </Typography>
                         )}
@@ -897,7 +962,7 @@ const PricePlan: React.FC = () => {
                           },
                           minWidth: '240px',
                           overflow: 'visible',
-                          // Enhanced glow effect for current plan
+                          // Enhanced glow effect for current plan only
                           ...(plan.isCurrentPlan && {
                             borderWidth: '3px',
                             animation: 'currentPlanGlow 2s ease-in-out infinite alternate',
@@ -934,6 +999,25 @@ const PricePlan: React.FC = () => {
                               color: 'white',
                             }}
                           />
+                        )}
+
+                        {/* Cancel subscription menu for current plan */}
+                        {plan.isCurrentPlan && plan.name !== 'Free' && (
+                          <IconButton
+                            onClick={handleCancelMenuOpen}
+                            sx={{
+                              position: 'absolute',
+                              top: 8,
+                              right: 8,
+                              zIndex: 2,
+                              color: 'text.secondary',
+                              '&:hover': {
+                                color: 'error.main',
+                              },
+                            }}
+                          >
+                            <MoreVert />
+                          </IconButton>
                         )}
 
                         <CardContent sx={{ flexGrow: 1, p: 3 }}>
@@ -1124,6 +1208,45 @@ const PricePlan: React.FC = () => {
                                   Free Features
                                 </Typography>
                               )}
+                              {plan.name === 'Plus' && (
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    color: theme =>
+                                      theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+                                    fontSize: { xs: '0.95rem', md: '1.05rem' },
+                                    pl: 0.5,
+                                  }}
+                                >
+                                  +Everything in Free
+                                </Typography>
+                              )}
+                              {plan.name === 'Pro' && (
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    color: theme =>
+                                      theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+                                    fontSize: { xs: '0.95rem', md: '1.05rem' },
+                                    pl: 0.5,
+                                  }}
+                                >
+                                  +Everything in Plus
+                                </Typography>
+                              )}
+                              {plan.name === 'Max' && (
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    color: theme =>
+                                      theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+                                    fontSize: { xs: '0.95rem', md: '1.05rem' },
+                                    pl: 0.5,
+                                  }}
+                                >
+                                  +Everything in Pro
+                                </Typography>
+                              )}
                               {plan.features.map(feature =>
                                 feature.startsWith('Everything in') ? (
                                   <Typography
@@ -1165,7 +1288,14 @@ const PricePlan: React.FC = () => {
                               variant={plan.popular ? 'contained' : 'outlined'}
                               color="primary"
                               size="large"
-                              onClick={() => handlePlanSelect(plan)}
+                              onClick={() => {
+                                if (plan.price === 0) {
+                                  // For Free plan, show the cancel subscription popup
+                                  setShowCancelDialog(true);
+                                } else {
+                                  handlePlanSelect(plan);
+                                }
+                              }}
                               disabled={plan.isCurrentPlan}
                               sx={{
                                 px: 3.5,
@@ -1267,6 +1397,130 @@ const PricePlan: React.FC = () => {
         onClose={() => setShowSuccessMessage(false)}
         planName={selectedPlan?.name}
       />
+
+      {/* Cancel Subscription Menu */}
+      <Menu
+        anchorEl={cancelMenuAnchor}
+        open={Boolean(cancelMenuAnchor)}
+        onClose={handleCancelMenuClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+      >
+        <MenuItem
+          onClick={handleCancelSubscription}
+          sx={{
+            color: 'error.main',
+            '&:hover': {
+              backgroundColor: 'error.light',
+              color: 'white',
+            },
+          }}
+        >
+          Cancel Subscription
+        </MenuItem>
+      </Menu>
+
+      {/* Cancel Subscription Confirmation Dialog */}
+      <Dialog
+        open={showCancelDialog}
+        onClose={() => setShowCancelDialog(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: theme =>
+              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+          },
+        }}
+      >
+        <DialogTitle sx={{ color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black') }}>
+          {currentSubscription && currentSubscription.status === 'active'
+            ? 'Cancel Subscription'
+            : 'Free Plan Details'}
+        </DialogTitle>
+        <DialogContent>
+          {currentSubscription && currentSubscription.status === 'active' ? (
+            <>
+              <Typography variant="body1" sx={{ mt: 1 }}>
+                Are you sure you want to cancel your subscription? This action will:
+              </Typography>
+              <Box component="ul" sx={{ mt: 2, pl: 3 }}>
+                <Typography component="li" variant="body2" sx={{ mb: 1 }}>
+                  Immediately cancel your current paid plan
+                </Typography>
+                <Typography component="li" variant="body2" sx={{ mb: 1 }}>
+                  Revert you to the Free plan
+                </Typography>
+                <Typography component="li" variant="body2" sx={{ mb: 1 }}>
+                  Remove access to premium features
+                </Typography>
+              </Box>
+              <Typography variant="body2" color="warning.main" sx={{ mt: 2, fontWeight: 500 }}>
+                This action cannot be undone. You can resubscribe at any time.
+              </Typography>
+            </>
+          ) : (
+            <>
+              <Typography variant="body1" sx={{ mt: 1, mb: 2 }}>
+                You're currently on our Free plan! Here's what you have access to:
+              </Typography>
+              <Box component="ul" sx={{ mt: 2, pl: 3 }}>
+                <Typography component="li" variant="body2" sx={{ mb: 1 }}>
+                  Basic assignment analysis
+                </Typography>
+                <Typography component="li" variant="body2" sx={{ mb: 1 }}>
+                  Grammar and spelling checks
+                </Typography>
+                <Typography component="li" variant="body2" sx={{ mb: 1 }}>
+                  Basic writing suggestions
+                </Typography>
+                <Typography component="li" variant="body2" sx={{ mb: 1 }}>
+                  30,000 tokens per month
+                </Typography>
+              </Box>
+              <Typography variant="body2" color="info.main" sx={{ mt: 2, fontWeight: 500 }}>
+                Ready to unlock more features? Check out our premium plans above!
+              </Typography>
+            </>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          {currentSubscription && currentSubscription.status === 'active' ? (
+            <>
+              <Button onClick={() => setShowCancelDialog(false)} disabled={cancelling}>
+                Keep Subscription
+              </Button>
+              <Button
+                onClick={confirmCancelSubscription}
+                variant="contained"
+                color="error"
+                disabled={cancelling}
+                sx={{ minWidth: 120 }}
+              >
+                {cancelling ? 'Cancelling...' : 'Cancel Subscription'}
+              </Button>
+            </>
+          ) : (
+            <Button
+              onClick={() => setShowCancelDialog(false)}
+              variant="contained"
+              color="primary"
+              sx={{ minWidth: 120 }}
+            >
+              Got it
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
+
+      {/* Sorry to see you go popup */}
+      <SorryToSeeYouGoPopup open={showSorryPopup} onClose={() => setShowSorryPopup(false)} />
     </Box>
   );
 };
