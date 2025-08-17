@@ -1,103 +1,60 @@
-import { api } from './api';
+import { api } from '../lib/api';
 
-export class SecurityService {
-  private static instance: SecurityService;
-  private encryptionKey: string | null = null;
+export interface UserSecurityInfo {
+  password_strength: string;
+  last_password_change: string | null;
+  last_security_audit: string | null;
+  failed_login_attempts: number;
+  active_sessions: number;
+  security_score: number;
+  is_verified: boolean;
+  two_factor_enabled: boolean;
+  account_locked_until: string | null;
+}
 
-  private constructor() {}
-
-  public static getInstance(): SecurityService {
-    if (!SecurityService.instance) {
-      SecurityService.instance = new SecurityService();
-    }
-    return SecurityService.instance;
+class SecurityService {
+  /**
+   * Get current user's security information
+   */
+  async getUserSecurityInfo(): Promise<UserSecurityInfo> {
+    const response = await api.get('/security/user-info');
+    return response.data;
   }
 
-  // Initialize encryption key
-  public async initializeEncryption(): Promise<void> {
-    try {
-      const response = await api.get('/api/security/encryption-key');
-      this.encryptionKey = response.data.key;
-    } catch (error) {
-      console.error('Failed to initialize encryption:', error);
-      throw new Error('Failed to initialize encryption');
-    }
+  /**
+   * Update password strength (for when user changes password)
+   */
+  async updatePasswordStrength(password: string): Promise<{ strength: string; score: number }> {
+    // This would call a backend endpoint to validate password strength
+    // For now, return a simple calculation
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChars = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    const isLongEnough = password.length >= 8;
+
+    let score = 0;
+    if (isLongEnough) score += 20;
+    if (hasUpperCase) score += 20;
+    if (hasLowerCase) score += 20;
+    if (hasNumbers) score += 20;
+    if (hasSpecialChars) score += 20;
+
+    let strength = 'weak';
+    if (score >= 80) strength = 'strong';
+    else if (score >= 60) strength = 'medium';
+
+    return { strength, score };
   }
 
-  // Encrypt sensitive data
-  public async encryptData(data: string): Promise<string> {
-    if (!this.encryptionKey) {
-      await this.initializeEncryption();
-    }
-    try {
-      const response = await api.post('/api/security/encrypt', {
-        data,
-        key: this.encryptionKey,
-      });
-      return response.data.encryptedData;
-    } catch (error) {
-      console.error('Failed to encrypt data:', error);
-      throw new Error('Failed to encrypt data');
-    }
-  }
-
-  // Decrypt sensitive data
-  public async decryptData(encryptedData: string): Promise<string> {
-    if (!this.encryptionKey) {
-      await this.initializeEncryption();
-    }
-    try {
-      const response = await api.post('/api/security/decrypt', {
-        encryptedData,
-        key: this.encryptionKey,
-      });
-      return response.data.decryptedData;
-    } catch (error) {
-      console.error('Failed to decrypt data:', error);
-      throw new Error('Failed to decrypt data');
-    }
-  }
-
-  // Log security events
-  public async logSecurityEvent(event: {
-    type: string;
-    description: string;
-    userId?: string;
-    metadata?: Record<string, any>;
-  }): Promise<void> {
-    try {
-      await api.post('/api/security/audit-log', event);
-    } catch (error) {
-      console.error('Failed to log security event:', error);
-      // Don't throw error here to prevent disrupting the main flow
-    }
-  }
-
-  // Get audit logs
-  public async getAuditLogs(params: {
-    startDate?: string;
-    endDate?: string;
-    type?: string;
-    userId?: string;
-    page?: number;
-    limit?: number;
-  }): Promise<{
-    logs: Array<{
-      id: string;
-      type: string;
-      description: string;
-      userId?: string;
-      metadata?: Record<string, any>;
-      timestamp: string;
-    }>;
-    total: number;
-  }> {
-    try {
-      const response = await api.get('/api/security/audit-logs', { params });
-      return response.data;
-    } catch (error) {
-      console.error('Failed to get audit logs:', error);
-      throw new Error('Failed to get audit logs');
-    }
+  /**
+   * Record a security audit event
+   */
+  async recordSecurityAudit(): Promise<{ message: string; audit_id: number; timestamp: string }> {
+    const response = await api.post('/security/audit');
+    return response.data;
   }
 }
+
+export const securityService = new SecurityService();
+export default securityService;

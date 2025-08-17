@@ -1,14 +1,5 @@
-import { Close, LockOutlined, ReportProblemOutlined, TimerOutlined } from '@mui/icons-material';
-import {
-  Box,
-  Dialog,
-  DialogContent,
-  Fade,
-  Grow,
-  IconButton,
-  LinearProgress,
-  Typography,
-} from '@mui/material';
+import { LockOutlined, TimerOutlined } from '@mui/icons-material';
+import { Box, Dialog, DialogContent, Fade, Grow, LinearProgress, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import React, { useEffect, useState } from 'react';
 
@@ -36,34 +27,26 @@ const AutoLockWarningDialog: React.FC<AutoLockWarningDialogProps> = ({
 
   const getUrgencyLevel = () => {
     if (countdown <= 120) return 'critical';
-    if (countdown <= 300) return 'high';
-    return 'medium';
+    return 'high';
   };
 
   const urgencyLevel = getUrgencyLevel();
-  const urgencyColor =
-    urgencyLevel === 'critical'
-      ? 'error.main'
-      : urgencyLevel === 'high'
-      ? 'warning.main'
-      : 'info.main';
+  const urgencyColor = 'error.main';
 
   return (
     <Dialog
       open={open}
       maxWidth="sm"
       fullWidth
-      onClose={onClose}
+      disableEscapeKeyDown
+      onClose={() => {}} // Prevent closing on backdrop click
       PaperProps={{
         sx: {
           borderRadius: 3,
           boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
           border: '3px solid',
           borderColor: 'error.main',
-          background:
-            theme.palette.mode === 'dark'
-              ? 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)'
-              : 'linear-gradient(135deg, #fff 0%, #f8f9fa 100%)',
+          background: theme.palette.mode === 'dark' ? theme.palette.background.default : '#fff',
           overflow: 'hidden',
           '&::before': {
             content: '""',
@@ -78,22 +61,6 @@ const AutoLockWarningDialog: React.FC<AutoLockWarningDialogProps> = ({
       }}
     >
       <DialogContent sx={{ p: 4, textAlign: 'center', position: 'relative' }}>
-        {/* Close Button */}
-        <IconButton
-          onClick={onClose}
-          sx={{
-            position: 'absolute',
-            top: 16,
-            right: 16,
-            color: 'error.main',
-            '&:hover': {
-              backgroundColor: 'rgba(255, 0, 0, 0.1)',
-            },
-          }}
-        >
-          <Close />
-        </IconButton>
-
         {/* Header */}
         <Box sx={{ mb: 3 }}>
           {/* Lock Icon */}
@@ -142,7 +109,9 @@ const AutoLockWarningDialog: React.FC<AutoLockWarningDialogProps> = ({
                 p: 3,
                 borderRadius: 2,
                 background:
-                  theme.palette.mode === 'dark' ? 'rgba(255, 0, 0, 0.15)' : 'rgba(255, 0, 0, 0.05)',
+                  theme.palette.mode === 'dark'
+                    ? theme.palette.background.paper
+                    : 'rgba(255, 0, 0, 0.05)',
                 border: '2px solid',
                 borderColor: 'error.main',
                 position: 'relative',
@@ -178,13 +147,16 @@ const AutoLockWarningDialog: React.FC<AutoLockWarningDialogProps> = ({
                 variant="body2"
                 color="error.main"
                 fontWeight={600}
-                sx={{ textTransform: 'uppercase', letterSpacing: 1 }}
+                sx={{ textTransform: 'uppercase', letterSpacing: 1, mb: 1 }}
               >
-                {urgencyLevel === 'critical'
-                  ? 'CRITICAL - ACT NOW!'
-                  : urgencyLevel === 'high'
-                  ? 'HIGH URGENCY'
-                  : 'MEDIUM URGENCY'}
+                {urgencyLevel === 'critical' ? 'CRITICAL - ACT NOW!' : 'IMMEDIATE ACTION REQUIRED'}
+              </Typography>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: 'block', textAlign: 'center' }}
+              >
+                Move your mouse, type, or click anywhere to extend your session
               </Typography>
             </Box>
           </Grow>
@@ -207,7 +179,9 @@ const AutoLockWarningDialog: React.FC<AutoLockWarningDialogProps> = ({
                   height: 12,
                   borderRadius: 6,
                   backgroundColor:
-                    theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                    theme.palette.mode === 'dark'
+                      ? theme.palette.background.paper
+                      : 'rgba(0,0,0,0.1)',
                   '& .MuiLinearProgress-bar': {
                     backgroundColor: 'error.main',
                     borderRadius: 6,
@@ -218,39 +192,45 @@ const AutoLockWarningDialog: React.FC<AutoLockWarningDialogProps> = ({
               />
             </Box>
           </Fade>
-        </Box>
 
-        {/* Enhanced Footer */}
-        <Fade in={isVisible} timeout={1800}>
-          <Box
-            sx={{
-              p: 2,
-              borderRadius: 2,
-              background:
-                theme.palette.mode === 'dark' ? 'rgba(255, 0, 0, 0.15)' : 'rgba(255, 0, 0, 0.05)',
-              border: '1px solid',
-              borderColor: 'error.light',
-            }}
-          >
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 1,
-                mb: 1,
-              }}
-            >
-              <ReportProblemOutlined sx={{ color: 'error.main', fontSize: 20 }} />
-              <Typography variant="body2" color="error.main" fontWeight={600}>
-                IMMEDIATE ACTION REQUIRED
-              </Typography>
+          {/* I'M BACK Button */}
+          <Fade in={isVisible} timeout={2000}>
+            <Box sx={{ mt: 3 }}>
+              <Box
+                component="button"
+                onClick={onClose}
+                sx={{
+                  width: '100%',
+                  py: 3,
+                  px: 4,
+                  backgroundColor: 'transparent',
+                  color: 'error.main',
+                  border: '3px solid',
+                  borderColor: 'error.main',
+                  borderRadius: 3,
+                  fontSize: '1.5rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: 2,
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 8px 25px rgba(211, 47, 47, 0.2)',
+                  '&:hover': {
+                    backgroundColor: 'error.main',
+                    color: 'white',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 12px 35px rgba(211, 47, 47, 0.3)',
+                  },
+                  '&:active': {
+                    transform: 'translateY(0)',
+                  },
+                }}
+              >
+                I'M BACK
+              </Box>
             </Box>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-              Move your mouse, type, or click anywhere to extend your session
-            </Typography>
-          </Box>
-        </Fade>
+          </Fade>
+        </Box>
       </DialogContent>
     </Dialog>
   );

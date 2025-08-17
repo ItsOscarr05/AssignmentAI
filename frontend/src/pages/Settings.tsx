@@ -5,6 +5,7 @@ import {
   BarChartOutlined,
   Brush,
   CheckCircle,
+  CheckCircleOutlined,
   CompareArrows,
   CurrencyBitcoin as CurrencyBitcoinIcon,
   DataUsageOutlined,
@@ -86,6 +87,8 @@ import DateFormatSelector from '../components/common/DateFormatSelector';
 import AutoLockWarningDialog from '../components/security/AutoLockWarningDialog';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { preferences, users } from '../services/api';
+import securityService from '../services/SecurityService';
+import sessionService from '../services/sessionService';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 import { useTheme as useAppTheme } from '../theme/ThemeProvider';
 import { DateFormat, getDefaultDateFormat } from '../utils/dateFormat';
@@ -177,6 +180,7 @@ const Settings: React.FC = () => {
   // Privacy & Security Settings Validation & Feedback
   const [privacySettingsError, setPrivacySettingsError] = useState<string | null>(null);
   const [showSecurityAudit, setShowSecurityAudit] = useState(false);
+  const [isRecordingAudit, setIsRecordingAudit] = useState(false);
   const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
   const [showDownloadDataDialog, setShowDownloadDataDialog] = useState(false);
   const [exportFormat, setExportFormat] = useState<'json' | 'pdf' | 'csv' | 'xml'>('json');
@@ -211,18 +215,17 @@ const Settings: React.FC = () => {
     showOnlineStatus: true,
     allowTracking: false,
     autoLock: true,
-    lockTimeout: 5, // minutes
+    lockTimeout: 60, // 1 hour
     passwordExpiry: 90, // days
     sessionTimeout: 30, // minutes
   });
 
-  const [securitySettings] = useState({
-    passwordStrength: 'strong', // 'weak', 'medium', 'strong'
-    lastPasswordChange: '2024-01-15',
-    lastSecurityAudit: '2024-02-01',
-    failedLoginAttempts: 0,
-    activeSessions: 2,
-    securityScore: 85,
+  const [securitySettings, setSecuritySettings] = useState({
+    passwordStrength: 'strong',
+    lastPasswordChange: null as string | null,
+    lastSecurityAudit: null as string | null,
+    activeSessions: 1,
+    securityScore: 0, // Start at 0, will be updated from backend
   });
 
   // Subscription Settings
@@ -373,7 +376,7 @@ const Settings: React.FC = () => {
       showOnlineStatus: true,
       allowTracking: false,
       autoLock: true,
-      lockTimeout: 5,
+      lockTimeout: 60, // 1 hour
       passwordExpiry: 90,
       sessionTimeout: 30,
     });
@@ -398,30 +401,6 @@ const Settings: React.FC = () => {
       showOnlineStatus: false,
       allowTracking: false,
     });
-  };
-
-  const getSecuritySummary = () => {
-    const enabledFeatures = [];
-    if (privacySettings.twoFactorAuth) enabledFeatures.push('2FA');
-    if (privacySettings.biometricLogin) enabledFeatures.push('Biometric');
-    if (privacySettings.autoLock) enabledFeatures.push('Auto-lock');
-    if (privacySettings.dataCollection) enabledFeatures.push('Data Collection');
-    if (privacySettings.shareAnalytics) enabledFeatures.push('Analytics');
-
-    const securityLevel =
-      privacySettings.twoFactorAuth && privacySettings.autoLock
-        ? 'High'
-        : privacySettings.autoLock
-        ? 'Medium'
-        : 'Low';
-
-    return {
-      enabledFeatures: enabledFeatures.join(', ') || 'None',
-      securityLevel,
-      passwordStrength: securitySettings.passwordStrength,
-      activeSessions: securitySettings.activeSessions,
-      lastAudit: securitySettings.lastSecurityAudit,
-    };
   };
 
   // Calculate actual password strength based on requirements
@@ -469,6 +448,45 @@ const Settings: React.FC = () => {
 
     return Math.min(100, score);
   };
+
+  const getSecuritySummary = () => {
+    const enabledFeatures = [];
+    if (privacySettings.twoFactorAuth) enabledFeatures.push('2FA');
+    if (privacySettings.biometricLogin) enabledFeatures.push('Biometric');
+    if (privacySettings.autoLock) enabledFeatures.push('Auto-lock');
+    if (privacySettings.dataCollection) enabledFeatures.push('Data Collection');
+    if (privacySettings.shareAnalytics) enabledFeatures.push('Analytics');
+
+    // Calculate security level based on frontend calculated score
+    const calculatedScore = calculateSecurityScore();
+    let securityLevel = 'Low';
+    if (calculatedScore >= 80) securityLevel = 'High';
+    else if (calculatedScore >= 60) securityLevel = 'Medium';
+
+    return {
+      enabledFeatures: enabledFeatures.join(', ') || 'None',
+      securityLevel,
+      passwordStrength: securitySettings.passwordStrength,
+      activeSessions: securitySettings.activeSessions,
+      lastAudit: securitySettings.lastSecurityAudit,
+    };
+  };
+
+  // Memoized security summary to avoid recalculation
+  const securitySummary = React.useMemo(() => {
+    const summary = getSecuritySummary();
+    return summary;
+  }, [
+    privacySettings.twoFactorAuth,
+    privacySettings.biometricLogin,
+    privacySettings.autoLock,
+    privacySettings.dataCollection,
+    privacySettings.shareAnalytics,
+    securitySettings.securityScore,
+    securitySettings.passwordStrength,
+    securitySettings.activeSessions,
+    securitySettings.lastSecurityAudit,
+  ]);
 
   const getSecurityRecommendations = () => {
     const recommendations = [];
@@ -921,11 +939,17 @@ const Settings: React.FC = () => {
 
   const progressBarColor = getProgressBarColor(calculateSecurityScore());
 
-  // Animated percentage for smooth counting
-  const [animatedSecurityScore, setAnimatedSecurityScore] = useState(calculateSecurityScore());
+  // Animated percentage for smooth counting - start with calculated score, then update with backend data
+  const [animatedSecurityScore, setAnimatedSecurityScore] = useState(() => {
+    // Start with calculated score based on current settings
+    const initialScore = calculateSecurityScore();
+    return initialScore;
+  });
 
   // Animate security score progress bar
   useEffect(() => {
+    // Always use calculated score for now since backend doesn't have all privacy settings
+    // TODO: Update backend to include autoLock, biometricLogin, etc.
     const targetScore = calculateSecurityScore();
     const currentScore = animatedSecurityScore;
 
@@ -955,7 +979,13 @@ const Settings: React.FC = () => {
     }, stepDuration);
 
     return () => clearInterval(timer);
-  }, [calculateSecurityScore()]);
+  }, [
+    privacySettings.twoFactorAuth,
+    privacySettings.biometricLogin,
+    privacySettings.autoLock,
+    securitySettings.activeSessions,
+    securitySettings.passwordStrength,
+  ]); // Watch for changes in relevant settings
 
   // Debug subscription state changes
   useEffect(() => {
@@ -964,89 +994,74 @@ const Settings: React.FC = () => {
 
   // Auto-lock functionality
   const [showAutoLockWarning, setShowAutoLockWarning] = useState(false);
-  const [autoLockCountdown, setAutoLockCountdown] = useState(600); // 10 minutes in seconds
-  const [isShowingWarning, setIsShowingWarning] = useState(false); // Flag to prevent activity resets while showing warning
+  const [warningCountdown, setWarningCountdown] = useState(10); // 10 seconds for testing
 
   const autoLockTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const warningTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const warningCountdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastActivityRef = useRef(Date.now());
 
   // Isolated countdown component that doesn't affect parent re-renders
-  const AutoLockCountdown = React.memo(
-    ({ lockTimeout, lastActivityRef, onTimeout, isWarningShowing }: any) => {
-      const [countdown, setCountdown] = useState(0);
+  const AutoLockCountdown = React.memo(({ lockTimeout, lastActivityRef, onTimeout }: any) => {
+    const [countdown, setCountdown] = useState(0);
 
-      useEffect(() => {
-        if (lockTimeout && !isWarningShowing) {
-          // Pause countdown when warning is showing
-          const interval = setInterval(() => {
-            const timeSinceLastActivity = (Date.now() - lastActivityRef.current) / 1000;
-            const timeoutSeconds = lockTimeout * 60;
-            const remaining = Math.max(0, timeoutSeconds - timeSinceLastActivity);
-            const roundedRemaining = Math.round(remaining);
-            setCountdown(roundedRemaining); // Round to nearest whole second
+    useEffect(() => {
+      if (lockTimeout) {
+        const interval = setInterval(() => {
+          const timeSinceLastActivity = (Date.now() - lastActivityRef.current) / 1000;
+          const timeoutSeconds = lockTimeout * 60;
+          const remaining = Math.max(0, timeoutSeconds - timeSinceLastActivity);
+          const roundedRemaining = Math.round(remaining);
+          setCountdown(roundedRemaining); // Round to nearest whole second
 
-            console.log(
-              'Countdown:',
-              roundedRemaining,
-              'seconds remaining, Warning showing:',
-              isWarningShowing
-            );
+          console.log('Countdown:', roundedRemaining, 'seconds remaining');
 
-            // Trigger warning popup when countdown reaches 0
-            if (remaining <= 0 && onTimeout) {
-              console.log('Countdown reached 0, triggering timeout!');
-              onTimeout();
-            }
-          }, 1000);
+          // Trigger warning popup when countdown reaches 0
+          if (remaining <= 0 && onTimeout) {
+            console.log('Countdown reached 0, triggering timeout!');
+            onTimeout();
+          }
+        }, 1000);
 
-          return () => clearInterval(interval);
-        }
-      }, [lockTimeout, lastActivityRef, onTimeout, isWarningShowing]);
+        return () => clearInterval(interval);
+      }
+    }, [lockTimeout, lastActivityRef, onTimeout]);
 
-      return (
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          display="block"
-          sx={{
-            mt: 1,
-            textAlign: 'center',
-            minHeight: '20px', // Fixed height to prevent bouncing
-            fontFamily: 'monospace', // Monospace font for consistent character width
-          }}
-        >
-          {isWarningShowing
-            ? 'Session expired - Warning popup active'
-            : `Session expires in: ${Math.floor(countdown / 60)}m ${Math.floor(countdown % 60)}s`}
-        </Typography>
-      );
-    }
-  );
+    return (
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        display="block"
+        sx={{
+          mt: 1,
+          textAlign: 'center',
+          minHeight: '20px', // Fixed height to prevent bouncing
+          fontFamily: 'monospace', // Monospace font for consistent character width
+        }}
+      >
+        {`Session expires in: ${Math.floor(countdown / 60)}m ${Math.floor(countdown % 60)}s`}
+      </Typography>
+    );
+  });
 
   // Reset activity timer on user interaction
   const resetActivityTimer = useCallback(() => {
-    // Don't reset if we're in the process of showing a warning
-    if (isShowingWarning) {
-      console.log('Skipping activity reset - showing warning');
-      return;
-    }
-
     lastActivityRef.current = Date.now();
 
-    // If warning is showing, close it and reset countdown
-    if (showAutoLockWarning) {
-      console.log('Activity detected while warning is showing - closing warning');
-      setShowAutoLockWarning(false);
-      setAutoLockCountdown(600);
-      if (countdownIntervalRef.current) {
-        clearInterval(countdownIntervalRef.current);
-      }
-      if (warningTimeoutRef.current) {
-        clearTimeout(warningTimeoutRef.current);
-      }
-    }
+    // Disable automatic popup closure - only close via explicit button click
+    // if (showAutoLockWarning && !popupJustOpened) {
+    //   console.log('Activity detected while warning is showing - closing warning');
+    //   setShowAutoLockWarning(false);
+    //   setPopupJustOpened(false); // Reset the flag
+    //   setAutoLockCountdown(600);
+    //   if (countdownIntervalRef.current) {
+    //     clearInterval(countdownIntervalRef.current);
+    //   }
+    //   if (warningTimeoutRef.current) {
+    //     clearTimeout(warningTimeoutRef.current);
+    //   }
+    // }
 
     // Clear any existing auto-lock timeout (we're using the isolated countdown now)
     if (autoLockTimeoutRef.current) {
@@ -1081,6 +1096,24 @@ const Settings: React.FC = () => {
   useEffect(() => {
     console.log('showAutoLockWarning state changed to:', showAutoLockWarning);
   }, [showAutoLockWarning]);
+
+  // Cleanup intervals on unmount
+  useEffect(() => {
+    return () => {
+      if (warningCountdownIntervalRef.current) {
+        clearInterval(warningCountdownIntervalRef.current);
+      }
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+      }
+      if (warningTimeoutRef.current) {
+        clearTimeout(warningTimeoutRef.current);
+      }
+      if (autoLockTimeoutRef.current) {
+        clearTimeout(autoLockTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Set up activity listeners
   useEffect(() => {
@@ -1295,7 +1328,58 @@ const Settings: React.FC = () => {
     loadPreferencesFromBackend().catch(() => {
       loadSavedSettings();
     });
+
+    // Load session data
+    loadSessionData();
+
+    // Load security data
+    loadSecurityData();
   }, []);
+
+  // Load session data from backend
+  const loadSessionData = async () => {
+    try {
+      const countResponse = await sessionService.getActiveSessionCount();
+
+      // Update security settings with real session count
+      setSecuritySettings(prev => ({
+        ...prev,
+        activeSessions: countResponse.active_sessions,
+      }));
+    } catch (error) {
+      console.error('Failed to load session data:', error);
+      // Fall back to default values
+      setSecuritySettings(prev => ({
+        ...prev,
+        activeSessions: 1,
+      }));
+    }
+  };
+
+  // Load security data from backend
+  const loadSecurityData = async () => {
+    try {
+      console.log('Loading security data from backend...');
+      const securityInfo = await securityService.getUserSecurityInfo();
+      console.log('Backend security data:', securityInfo);
+
+      setSecuritySettings(prev => {
+        const newSettings = {
+          ...prev,
+          passwordStrength: securityInfo.password_strength,
+          lastPasswordChange: securityInfo.last_password_change,
+          lastSecurityAudit: securityInfo.last_security_audit,
+          securityScore: securityInfo.security_score,
+          activeSessions: securityInfo.active_sessions,
+        };
+
+        return newSettings;
+      });
+    } catch (error) {
+      console.error('Failed to load security data:', error);
+      // Keep existing values if security data fails to load
+    }
+  };
 
   // Load preferences from backend
   const loadPreferencesFromBackend = async () => {
@@ -2597,7 +2681,7 @@ const Settings: React.FC = () => {
           <TabPanel value={tabValue} index={2} breakpoint={breakpoint}>
             <SettingsSection
               title="Security Score"
-              icon={<SecurityOutlined sx={{ color: theme.palette.primary.main }} />}
+              icon={<BarChartOutlined sx={{ color: theme.palette.primary.main }} />}
             >
               {privacySettingsError && (
                 <Alert severity="error" sx={{ mb: 3 }}>
@@ -2661,7 +2745,9 @@ const Settings: React.FC = () => {
                   sx={{ mt: 1, display: 'block' }}
                 >
                   Last Security Audit:{' '}
-                  {formatDateWithPreference(securitySettings.lastSecurityAudit)}
+                  {securitySettings.lastSecurityAudit
+                    ? formatDateWithPreference(securitySettings.lastSecurityAudit)
+                    : 'Never'}
                 </Typography>
               </Box>
 
@@ -2679,14 +2765,14 @@ const Settings: React.FC = () => {
                       component="span"
                       sx={{
                         color:
-                          getSecuritySummary().securityLevel === 'High'
+                          securitySummary.securityLevel === 'High'
                             ? 'success.main'
-                            : getSecuritySummary().securityLevel === 'Medium'
+                            : securitySummary.securityLevel === 'Medium'
                             ? 'warning.main'
                             : 'error.main',
                       }}
                     >
-                      {getSecuritySummary().securityLevel}
+                      {securitySummary.securityLevel}
                     </Box>
                   </Typography>
                 </Box>
@@ -3097,51 +3183,90 @@ const Settings: React.FC = () => {
                     <AutoLockCountdown
                       lockTimeout={privacySettings.lockTimeout}
                       lastActivityRef={lastActivityRef}
-                      isWarningShowing={showAutoLockWarning}
                       onTimeout={() => {
                         console.log('Countdown timeout reached - showing warning popup');
                         console.log('Setting showAutoLockWarning to true');
-                        setIsShowingWarning(true); // Prevent activity resets
                         setShowAutoLockWarning(true);
-                        setAutoLockCountdown(600); // 10 minutes
 
-                        // Start the warning countdown
-                        if (countdownIntervalRef.current) {
-                          clearInterval(countdownIntervalRef.current);
+                        // Reset warning countdown to 10 seconds for testing
+                        setWarningCountdown(10);
+
+                        // Start the warning countdown timer
+                        if (warningCountdownIntervalRef.current) {
+                          clearInterval(warningCountdownIntervalRef.current);
                         }
-
-                        console.log('Starting warning countdown from 600 seconds');
-                        countdownIntervalRef.current = setInterval(() => {
-                          console.log('Warning countdown interval triggered');
-                          setAutoLockCountdown(prev => {
-                            const newValue = prev - 1;
-                            console.log('Warning countdown: prev =', prev, 'new =', newValue);
-                            if (newValue <= 0) {
+                        warningCountdownIntervalRef.current = setInterval(() => {
+                          setWarningCountdown(prev => {
+                            if (prev <= 1) {
                               // Time's up, log out
-                              console.log('Warning timeout reached - logging out');
-                              if (countdownIntervalRef.current) {
-                                clearInterval(countdownIntervalRef.current);
-                                countdownIntervalRef.current = null;
+                              console.log('Warning countdown reached 0 - logging out');
+                              if (warningCountdownIntervalRef.current) {
+                                clearInterval(warningCountdownIntervalRef.current);
+                                warningCountdownIntervalRef.current = null;
                               }
+
+                              // Override any existing beforeunload handlers
+                              window.onbeforeunload = null;
+                              window.removeEventListener('beforeunload', () => {});
+
+                              // Clear session data
                               localStorage.removeItem('token');
                               localStorage.removeItem('user');
-                              window.location.href = '/login';
+                              sessionStorage.clear();
+
+                              // Force immediate logout without any warnings
+                              try {
+                                // Stop the current page execution immediately
+                                window.stop();
+                                // Force redirect
+                                window.location.replace('/login');
+                              } catch (error) {
+                                // Nuclear option - force page unload
+                                window.location.href = 'about:blank';
+                                setTimeout(() => {
+                                  window.location.href = '/login';
+                                }, 100);
+                              }
                               return 0;
                             }
-                            return newValue;
+                            return prev - 1;
                           });
                         }, 1000);
 
-                        // Set final timeout for logout
+                        // Set a longer timeout for automatic logout (e.g., 30 minutes)
                         if (warningTimeoutRef.current) {
                           clearTimeout(warningTimeoutRef.current);
                         }
                         warningTimeoutRef.current = setTimeout(() => {
                           console.log('Final timeout reached - logging out');
+                          if (warningCountdownIntervalRef.current) {
+                            clearInterval(warningCountdownIntervalRef.current);
+                            warningCountdownIntervalRef.current = null;
+                          }
+
+                          // Override any existing beforeunload handlers
+                          window.onbeforeunload = null;
+                          window.removeEventListener('beforeunload', () => {});
+
+                          // Clear session data
                           localStorage.removeItem('token');
                           localStorage.removeItem('user');
-                          window.location.href = '/login';
-                        }, 600000); // 10 minutes
+                          sessionStorage.clear();
+
+                          // Force immediate logout without any warnings
+                          try {
+                            // Stop the current page execution immediately
+                            window.stop();
+                            // Force redirect
+                            window.location.replace('/login');
+                          } catch (error) {
+                            // Nuclear option - force page unload
+                            window.location.href = 'about:blank';
+                            setTimeout(() => {
+                              window.location.href = '/login';
+                            }, 100);
+                          }
+                        }, 1800000); // 30 minutes instead of 10
                       }}
                     />
                   )}
@@ -3180,7 +3305,11 @@ const Settings: React.FC = () => {
                       </ListItemIcon>
                       <ListItemText
                         primary="Last Password Change"
-                        secondary={formatDateWithPreference(securitySettings.lastPasswordChange)}
+                        secondary={
+                          securitySettings.lastPasswordChange
+                            ? formatDateWithPreference(securitySettings.lastPasswordChange)
+                            : 'Never'
+                        }
                         primaryTypographyProps={{
                           sx: { fontSize: { xs: '0.875rem', md: '1rem' } },
                         }}
@@ -3195,7 +3324,27 @@ const Settings: React.FC = () => {
                       </ListItemIcon>
                       <ListItemText
                         primary="Active Sessions"
-                        secondary={`${securitySettings.activeSessions} active sessions`}
+                        secondary={
+                          securitySettings.activeSessions === 1
+                            ? '1 Active Session'
+                            : `${securitySettings.activeSessions} Active Sessions`
+                        }
+                        primaryTypographyProps={{
+                          sx: { fontSize: { xs: '0.875rem', md: '1rem' } },
+                        }}
+                        secondaryTypographyProps={{
+                          sx: { fontSize: { xs: '0.75rem', md: '0.875rem' } },
+                        }}
+                      />
+                    </ListItem>
+
+                    <ListItem sx={{ px: { xs: 0, md: 2 } }}>
+                      <ListItemIcon sx={{ minWidth: { xs: 40, md: 56 } }}>
+                        <BarChartOutlined />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Security Score"
+                        secondary={`${Math.round(animatedSecurityScore)}/100`}
                         primaryTypographyProps={{
                           sx: { fontSize: { xs: '0.875rem', md: '1rem' } },
                         }}
@@ -3232,7 +3381,7 @@ const Settings: React.FC = () => {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                         <SecurityOutlined fontSize="small" color="action" />
                         <Typography variant="body2" fontWeight="medium">
-                          Level: {getSecuritySummary().securityLevel}
+                          Level: {securitySummary.securityLevel}
                         </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
@@ -3244,30 +3393,41 @@ const Settings: React.FC = () => {
                         </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                        <HistoryOutlined fontSize="small" color="action" />
+                        <BarChartOutlined fontSize="small" color="action" />
                         <Typography variant="body2">
-                          Sessions: {getSecuritySummary().activeSessions} active
+                          Score: {Math.round(animatedSecurityScore)}/100
+                        </Typography>
+                      </Box>
+
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <VerifiedUserOutlined fontSize="small" color="action" />
+                        <Typography variant="body2">
+                          Sessions:{' '}
+                          {securitySummary.activeSessions === 1
+                            ? '1 Active Session'
+                            : `${securitySummary.activeSessions} Active Sessions`}
                         </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 0.5 }}>
-                        <SecurityOutlined fontSize="small" color="action" sx={{ mt: 0.5 }} />
+                        <CheckCircleOutlined fontSize="small" color="action" sx={{ mt: 0.5 }} />
                         <Box>
                           <Typography variant="body2" sx={{ mb: 0.5 }}>
                             Features:
                           </Typography>
-                          {getSecuritySummary()
-                            .enabledFeatures.split(', ')
-                            .map((feature, index) => (
-                              <Typography key={index} variant="body2" sx={{ ml: 1 }}>
-                                - {feature}
-                              </Typography>
-                            ))}
+                          {securitySummary.enabledFeatures.split(', ').map((feature, index) => (
+                            <Typography key={index} variant="body2" sx={{ ml: 1 }}>
+                              - {feature}
+                            </Typography>
+                          ))}
                         </Box>
                       </Box>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <HistoryOutlined fontSize="small" color="action" />
                         <Typography variant="body2">
-                          Last Audit: {formatDateWithPreference(getSecuritySummary().lastAudit)}
+                          Last Audit:{' '}
+                          {securitySummary.lastAudit
+                            ? formatDateWithPreference(securitySummary.lastAudit)
+                            : 'Never'}
                         </Typography>
                       </Box>
                     </Box>
@@ -3904,12 +4064,32 @@ const Settings: React.FC = () => {
           <Button onClick={() => setShowSecurityAudit(false)}>Close</Button>
           <Button
             variant="contained"
-            onClick={() => {
-              setShowSecurityAudit(false);
-              // TODO: Generate and download security report
+            disabled={isRecordingAudit}
+            onClick={async () => {
+              try {
+                setIsRecordingAudit(true);
+
+                // Record the security audit
+                await securityService.recordSecurityAudit();
+
+                // Refresh security data to get updated audit timestamp
+                await loadSecurityData();
+
+                // Close the dialog
+                setShowSecurityAudit(false);
+
+                // Show success message
+                console.log('Security audit recorded successfully');
+                // You could add a toast notification here if you have a notification system
+              } catch (error) {
+                console.error('Failed to record security audit:', error);
+                // Keep dialog open on error so user can try again
+              } finally {
+                setIsRecordingAudit(false);
+              }
             }}
           >
-            Download Report
+            {isRecordingAudit ? 'Recording Audit...' : 'Record Audit & Close'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -4935,15 +5115,18 @@ const Settings: React.FC = () => {
       {/* Auto-Lock Warning Popup */}
       <AutoLockWarningDialog
         open={showAutoLockWarning}
-        countdown={autoLockCountdown}
+        countdown={warningCountdown}
         onClose={() => {
           setShowAutoLockWarning(false);
-          setIsShowingWarning(false); // Re-enable activity resets
 
           // Clean up any running countdown intervals
           if (countdownIntervalRef.current) {
             clearInterval(countdownIntervalRef.current);
             countdownIntervalRef.current = null;
+          }
+          if (warningCountdownIntervalRef.current) {
+            clearInterval(warningCountdownIntervalRef.current);
+            warningCountdownIntervalRef.current = null;
           }
           if (warningTimeoutRef.current) {
             clearTimeout(warningTimeoutRef.current);
@@ -4953,23 +5136,6 @@ const Settings: React.FC = () => {
           console.log('Warning popup closed - cleaned up timers and reset flags');
         }}
       />
-
-      {/* Debug: Show current countdown value */}
-      {showAutoLockWarning && (
-        <Box
-          sx={{
-            position: 'fixed',
-            top: 10,
-            right: 10,
-            bgcolor: 'black',
-            color: 'white',
-            p: 1,
-            zIndex: 10000,
-          }}
-        >
-          Debug: Countdown = {autoLockCountdown}
-        </Box>
-      )}
     </Box>
   );
 };

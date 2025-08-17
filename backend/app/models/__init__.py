@@ -7,6 +7,7 @@ from .feedback import Feedback
 from .ai_assignment import AIAssignment
 from .class_model import Class
 from .security import SecurityAlert, AuditLog, TwoFactorSetup
+from .session import UserSession
 from .log import SystemLog
 
 from .subscription import Subscription
@@ -24,6 +25,7 @@ __all__ = [
     "SecurityAlert",
     "AuditLog",
     "TwoFactorSetup",
+    "UserSession",
     "SystemLog",
 
     "Subscription",
