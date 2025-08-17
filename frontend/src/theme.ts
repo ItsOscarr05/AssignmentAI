@@ -176,7 +176,7 @@ const baseTheme: ThemeOptions = {
           lineHeight: 1.3,
         },
         h6: {
-          fontSize: 'calc(1.4 * var(--app-font-size, 16px)) !important',
+          fontSize: 'calc(1.8 * var(--app-font-size, 16px)) !important',
           fontWeight: 600,
           lineHeight: 1.3,
         },
@@ -753,7 +753,7 @@ export const darkTheme = createTheme({
           lineHeight: 1.3,
         },
         h6: {
-          fontSize: 'calc(1.4 * var(--app-font-size, 16px)) !important',
+          fontSize: 'calc(1.8 * var(--app-font-size, 16px)) !important',
           fontWeight: 600,
           lineHeight: 1.3,
         },

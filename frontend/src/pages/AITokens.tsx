@@ -38,7 +38,6 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-  Paper,
   Popover,
   TextField,
   ToggleButton,
@@ -593,7 +592,7 @@ const AITokens: React.FC = () => {
       </Typography>
       <Grid container spacing={3}>
         <Grid item xs={12} md={breakpoint === 'standard' ? 12 : 8}>
-          <Paper sx={{ p: 2, mb: 2, ...redOutline }}>
+          <Box sx={{ p: 2, mb: 2, ...redOutline }}>
             <Typography
               variant="h6"
               gutterBottom
@@ -646,7 +645,7 @@ const AITokens: React.FC = () => {
             </Box>
             <Grid container spacing={2}>
               <Grid item xs={4}>
-                <Card sx={{ ...redOutline }}>
+                <Card sx={{ ...redOutline, borderRadius: 3 }}>
                   <CardContent
                     sx={{
                       display: 'flex',
@@ -697,7 +696,7 @@ const AITokens: React.FC = () => {
                 </Card>
               </Grid>
               <Grid item xs={4}>
-                <Card sx={{ ...redOutline }}>
+                <Card sx={{ ...redOutline, borderRadius: 3 }}>
                   <CardContent
                     sx={{
                       display: 'flex',
@@ -748,7 +747,7 @@ const AITokens: React.FC = () => {
                 </Card>
               </Grid>
               <Grid item xs={4}>
-                <Card sx={{ ...redOutline }}>
+                <Card sx={{ ...redOutline, borderRadius: 3 }}>
                   <CardContent
                     sx={{
                       display: 'flex',
@@ -799,9 +798,9 @@ const AITokens: React.FC = () => {
                 </Card>
               </Grid>
             </Grid>
-          </Paper>
+          </Box>
 
-          <Paper sx={{ p: 2, mb: 2, ...redOutline }}>
+          <Box sx={{ p: 2, mb: 2, ...redOutline }}>
             <Typography
               variant="h6"
               gutterBottom
@@ -898,7 +897,7 @@ const AITokens: React.FC = () => {
                               })
                             : '';
                           return (
-                            <Paper sx={{ p: 2 }}>
+                            <Box sx={{ p: 2 }}>
                               <Typography variant="subtitle2">{formattedDate}</Typography>
                               <Typography variant="body2">
                                 +{point.used} tokens (used that day)
@@ -917,7 +916,7 @@ const AITokens: React.FC = () => {
                                   </>
                                 )}
                               </Typography>
-                            </Paper>
+                            </Box>
                           );
                         }
                         return null;
@@ -935,9 +934,9 @@ const AITokens: React.FC = () => {
                 </ResponsiveContainer>
               </Box>
             )}
-          </Paper>
+          </Box>
 
-          <Paper sx={{ p: 2, mb: 2, ...redOutline }}>
+          <Box sx={{ p: 2, mb: 2, ...redOutline }}>
             <Typography
               variant="h6"
               gutterBottom
@@ -1105,8 +1104,8 @@ const AITokens: React.FC = () => {
                 </Button>
               </Box>
             </Box>
-          </Paper>
-          <Paper sx={{ p: 2, mb: 2, ...redOutline }}>
+          </Box>
+          <Box sx={{ p: 2, mb: 2, ...redOutline }}>
             <Typography
               variant="h6"
               gutterBottom
@@ -1293,12 +1292,12 @@ const AITokens: React.FC = () => {
                 </Box>
               )}
             </Popover>
-          </Paper>
+          </Box>
           <Box sx={{ mb: 4 }} />
         </Grid>
 
         <Grid item xs={12} md={breakpoint === 'standard' ? 12 : 4}>
-          <Paper sx={{ p: 3, mb: 4, ...redOutline }} ref={guideRef}>
+          <Box sx={{ p: 3, mb: 4, ...redOutline }} ref={guideRef}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
               <Typography
                 variant="h6"
@@ -1332,7 +1331,7 @@ const AITokens: React.FC = () => {
                         flexDirection: 'column',
                         alignItems: 'flex-start',
                         bgcolor: 'background.paper',
-                        borderRadius: 2,
+                        borderRadius: 3,
                         mb: 2,
                         p: 2,
                         border: '2px solid red',
@@ -1512,7 +1511,7 @@ const AITokens: React.FC = () => {
             >
               See All AI Features
             </Button>
-          </Paper>
+          </Box>
 
           {/* All Transactions Modal */}
           <Dialog

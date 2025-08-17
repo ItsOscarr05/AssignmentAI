@@ -12,6 +12,8 @@ from .log import SystemLog
 
 from .subscription import Subscription
 from .usage import Usage, UsageLimit
+from .file import File
+from .activity import Activity
 
 __all__ = [
     "Base",
@@ -31,4 +33,6 @@ __all__ = [
     "Subscription",
     "Usage",
     "UsageLimit",
+    "File",
+    "Activity",
 ] 

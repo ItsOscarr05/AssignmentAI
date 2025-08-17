@@ -82,6 +82,7 @@ import {
 } from '@mui/material';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import AccountInformationDialog from '../components/account/AccountInformationDialog';
 import AIFeaturesDemo from '../components/ai/AIFeaturesDemo';
 import DateFormatSelector from '../components/common/DateFormatSelector';
 import AutoLockWarningDialog from '../components/security/AutoLockWarningDialog';
@@ -89,6 +90,7 @@ import { useAspectRatio } from '../hooks/useAspectRatio';
 import { preferences, users } from '../services/api';
 import securityService from '../services/SecurityService';
 import sessionService from '../services/sessionService';
+import UserService from '../services/userService';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 import { useTheme as useAppTheme } from '../theme/ThemeProvider';
 import { DateFormat, getDefaultDateFormat } from '../utils/dateFormat';
@@ -177,6 +179,36 @@ const Settings: React.FC = () => {
   const [isValidatingSettings, setIsValidatingSettings] = useState(false);
   const [showAIFeaturesDemo, setShowAIFeaturesDemo] = useState(false);
 
+  // User Data for Account Information
+  const [userData, setUserData] = useState<{
+    id: string;
+    email: string;
+    full_name: string;
+    role: string;
+    is_active: boolean;
+    is_verified: boolean;
+    created_at: string;
+  } | null>(null);
+  const [userProfile, setUserProfile] = useState<{
+    firstName: string;
+    lastName: string;
+    email: string;
+    bio?: string;
+    avatarUrl?: string;
+  } | null>(null);
+  const [dashboardStats, setDashboardStats] = useState<{
+    totalAssignments: number;
+    completedAssignments: number;
+    pendingAssignments: number;
+    totalFiles: number;
+    storageUsed: number;
+    storageLimit: number;
+    monthlyUsage: number;
+    monthlyLimit: number;
+  } | null>(null);
+  const [isLoadingUserData, setIsLoadingUserData] = useState(false);
+  const [userDataError, setUserDataError] = useState<string | null>(null);
+
   // Privacy & Security Settings Validation & Feedback
   const [privacySettingsError, setPrivacySettingsError] = useState<string | null>(null);
   const [showSecurityAudit, setShowSecurityAudit] = useState(false);
@@ -254,6 +286,16 @@ const Settings: React.FC = () => {
       default:
         return `${month}/${day}/${year}`;
     }
+  };
+
+  // Calculate days since account creation
+  const calculateDaysSinceCreation = (createdAt: string) => {
+    if (!createdAt) return 0;
+    const created = new Date(createdAt);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - created.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
   };
 
   // Map subscription plans to their respective models and token limits
@@ -1334,6 +1376,9 @@ const Settings: React.FC = () => {
 
     // Load security data
     loadSecurityData();
+
+    // Load user data for account information
+    loadUserData();
   }, []);
 
   // Load session data from backend
@@ -1378,6 +1423,28 @@ const Settings: React.FC = () => {
     } catch (error) {
       console.error('Failed to load security data:', error);
       // Keep existing values if security data fails to load
+    }
+  };
+
+  // Load user data for account information
+  const loadUserData = async () => {
+    try {
+      setIsLoadingUserData(true);
+      setUserDataError(null);
+      const [currentUser, profile, stats] = await Promise.all([
+        UserService.getCurrentUser(),
+        UserService.getUserProfile(),
+        UserService.getDashboardStats(),
+      ]);
+
+      setUserData(currentUser);
+      setUserProfile(profile);
+      setDashboardStats(stats);
+    } catch (error) {
+      console.error('Error loading user data:', error);
+      setUserDataError('Failed to load user data. Please try again.');
+    } finally {
+      setIsLoadingUserData(false);
     }
   };
 
@@ -3457,7 +3524,10 @@ const Settings: React.FC = () => {
                         startIcon={<VerifiedUserOutlined />}
                         fullWidth
                         sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
-                        onClick={() => setShowAccountInfoDialog(true)}
+                        onClick={() => {
+                          setShowAccountInfoDialog(true);
+                          loadUserData();
+                        }}
                       >
                         Account Information
                       </Button>
@@ -4543,234 +4613,21 @@ const Settings: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Account Information Dialog */}
-      <Dialog
+      <AccountInformationDialog
         open={showAccountInfoDialog}
         onClose={() => setShowAccountInfoDialog(false)}
-        maxWidth="md"
-        fullWidth
-        PaperProps={{
-          sx: {
-            backgroundColor: theme =>
-              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
-          },
-        }}
-      >
-        <DialogTitle sx={{ color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black') }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <VerifiedUserOutlined />
-            Account Information
-          </Box>
-        </DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Your account details and current status information.
-          </Typography>
-
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <Typography
-                variant="subtitle2"
-                gutterBottom
-                sx={{ color: theme.palette.primary.main }}
-              >
-                Basic Information
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Box
-                  sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                >
-                  <Typography variant="body2" color="text.secondary">
-                    Username:
-                  </Typography>
-                  <Typography variant="body2" fontWeight="medium">
-                    user@example.com
-                  </Typography>
-                </Box>
-                <Box
-                  sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                >
-                  <Typography variant="body2" color="text.secondary">
-                    Email:
-                  </Typography>
-                  <Typography variant="body2" fontWeight="medium">
-                    user@example.com
-                  </Typography>
-                </Box>
-                <Box
-                  sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                >
-                  <Typography variant="body2" color="text.secondary">
-                    Account Created:
-                  </Typography>
-                  <Typography variant="body2" fontWeight="medium">
-                    {formatDateWithPreference('2024-01-15')}
-                  </Typography>
-                </Box>
-                <Box
-                  sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                >
-                  <Typography variant="body2" color="text.secondary">
-                    Last Login:
-                  </Typography>
-                  <Typography variant="body2" fontWeight="medium">
-                    {formatDateWithPreference(new Date())}
-                  </Typography>
-                </Box>
-              </Box>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Typography
-                variant="subtitle2"
-                gutterBottom
-                sx={{ color: theme.palette.primary.main }}
-              >
-                Subscription & Status
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Box
-                  sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                >
-                  <Typography variant="body2" color="text.secondary">
-                    Current Plan:
-                  </Typography>
-                  <Chip
-                    label={subscription.plan.charAt(0).toUpperCase() + subscription.plan.slice(1)}
-                    size="small"
-                    sx={{
-                      backgroundColor:
-                        subscription.plan === 'free'
-                          ? '#2196f3'
-                          : subscription.plan === 'plus'
-                          ? '#4caf50'
-                          : subscription.plan === 'pro'
-                          ? '#9c27b0'
-                          : '#ff9800',
-                      color: theme => (theme.palette.mode === 'dark' ? 'white' : 'white'),
-                    }}
-                  />
-                </Box>
-                <Box
-                  sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                >
-                  <Typography variant="body2" color="text.secondary">
-                    Account Status:
-                  </Typography>
-                  <Chip label="Active" size="small" color="success" />
-                </Box>
-                <Box
-                  sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                >
-                  <Typography variant="body2" color="text.secondary">
-                    Email Verified:
-                  </Typography>
-                  <Chip label="Verified" size="small" color="success" />
-                </Box>
-                <Box
-                  sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                >
-                  <Typography variant="body2" color="text.secondary">
-                    2FA Enabled:
-                  </Typography>
-                  <Chip
-                    label={privacySettings.twoFactorAuth ? 'Enabled' : 'Disabled'}
-                    size="small"
-                    color={privacySettings.twoFactorAuth ? 'success' : 'error'}
-                  />
-                </Box>
-              </Box>
-            </Grid>
-
-            <Grid item xs={12}>
-              <Typography
-                variant="subtitle2"
-                gutterBottom
-                sx={{ color: theme.palette.primary.main }}
-              >
-                Usage Statistics
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={6} md={3}>
-                  <Box
-                    sx={{
-                      textAlign: 'center',
-                      p: 2,
-                      border: 1,
-                      borderColor: 'divider',
-                      borderRadius: 1,
-                    }}
-                  >
-                    <Typography variant="h6" color="primary.main">
-                      15
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Assignments
-                    </Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={6} md={3}>
-                  <Box
-                    sx={{
-                      textAlign: 'center',
-                      p: 2,
-                      border: 1,
-                      borderColor: 'divider',
-                      borderRadius: 1,
-                    }}
-                  >
-                    <Typography variant="h6" color="primary.main">
-                      85%
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Completion Rate
-                    </Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={6} md={3}>
-                  <Box
-                    sx={{
-                      textAlign: 'center',
-                      p: 2,
-                      border: 1,
-                      borderColor: 'divider',
-                      borderRadius: 1,
-                    }}
-                  >
-                    <Typography variant="h6" color="primary.main">
-                      2
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Active Sessions
-                    </Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={6} md={3}>
-                  <Box
-                    sx={{
-                      textAlign: 'center',
-                      p: 2,
-                      border: 1,
-                      borderColor: 'divider',
-                      borderRadius: 1,
-                    }}
-                  >
-                    <Typography variant="h6" color="primary.main">
-                      30
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Days Active
-                    </Typography>
-                  </Box>
-                </Grid>
-              </Grid>
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowAccountInfoDialog(false)}>Close</Button>
-        </DialogActions>
-      </Dialog>
+        userData={userData}
+        userProfile={userProfile}
+        dashboardStats={dashboardStats}
+        securitySettings={securitySettings}
+        subscription={subscription}
+        privacySettings={privacySettings}
+        isLoadingUserData={isLoadingUserData}
+        userDataError={userDataError}
+        onRefresh={loadUserData}
+        formatDateWithPreference={formatDateWithPreference}
+        calculateDaysSinceCreation={calculateDaysSinceCreation}
+      />
 
       {/* AI Features Status Dialog */}
       <Dialog

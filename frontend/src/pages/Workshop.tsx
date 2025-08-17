@@ -1,7 +1,6 @@
 import {
   Add as AddIcon,
-  BarChartOutlined as BarChartOutlinedIcon,
-  Chat as ChatIcon,
+  BarChart as BarChartIcon,
   ChatOutlined as ChatOutlinedIcon,
   ContentCopy as ContentCopyIcon,
   DeleteOutlined,
@@ -9,11 +8,8 @@ import {
   EditOutlined as EditOutlinedIcon,
   FormatListBulleted as FormatListBulletedIcon,
   History as HistoryIcon,
-  HistoryOutlined as HistoryOutlinedIcon,
   InfoOutlined as InfoOutlinedIcon,
   LinkOutlined as LinkOutlinedIcon,
-  PushPin as PushPinIcon,
-  PushPinOutlined as PushPinOutlinedIcon,
   RecordVoiceOverOutlined,
   Refresh as RefreshIcon,
   Send as SendIcon,
@@ -24,26 +20,22 @@ import {
   alpha,
   Box,
   Button,
-  Card,
-  CardContent,
   Chip,
   CircularProgress,
   Divider,
-  Drawer,
   Grid,
   IconButton,
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
-  Paper,
   Snackbar,
   TextField,
   Tooltip,
   Typography,
   useTheme,
 } from '@mui/material';
-import { animate, motion } from 'framer-motion';
+import { animate } from 'framer-motion';
 import React, { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
@@ -58,6 +50,7 @@ import {
   YAxis,
 } from 'recharts';
 import { FeatureAccessErrorComponent } from '../components/workshop/FeatureAccessError';
+import RecentHistorySidebar from '../components/workshop/RecentHistorySidebar';
 import WorkshopFileUpload from '../components/workshop/WorkshopFileUpload';
 import WorkshopLiveModal from '../components/workshop/WorkshopLiveModal';
 
@@ -280,8 +273,9 @@ const Workshop: React.FC = () => {
 
   // Custom styles
   const cardStyle = {
-    backgroundColor: (theme: any) =>
-      theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+    backgroundColor: (theme: any) => {
+      return theme.palette.mode === 'dark' ? theme.palette.background.default : '#fff';
+    },
     boxShadow: '0 2px 12px rgba(0, 0, 0, 0.1)',
     borderRadius: '12px',
     transition: 'all 0.2s ease-in-out',
@@ -346,17 +340,6 @@ const Workshop: React.FC = () => {
     );
   };
 
-  const getHistoryIcon = (type: HistoryItem['type']) => {
-    switch (type) {
-      case 'file':
-        return <UploadOutlinedIcon />;
-      case 'link':
-        return <LinkOutlinedIcon />;
-      case 'chat':
-        return <ChatOutlinedIcon />;
-    }
-  };
-
   const handleCopy = () => {
     if (workshopHistory.length > 0) {
       const lastResponse = workshopHistory[workshopHistory.length - 1].content;
@@ -411,7 +394,7 @@ const Workshop: React.FC = () => {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   backgroundColor: theme =>
-                    theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff',
+                    theme.palette.mode === 'dark' ? theme.palette.background.default : '#ffffff',
                   '& fieldset': {
                     borderColor: 'red',
                   },
@@ -533,7 +516,7 @@ const Workshop: React.FC = () => {
       { key: 'files', label: 'Files', color: '#8E24AA' },
     ];
     return (
-      <Paper sx={{ p: 2, boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
+      <Box sx={{ p: 2, boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
         <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
           {label}
         </Typography>
@@ -560,7 +543,7 @@ const Workshop: React.FC = () => {
             );
           })}
         </Box>
-      </Paper>
+      </Box>
     );
   };
 
@@ -590,7 +573,7 @@ const Workshop: React.FC = () => {
       sx={{
         p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2),
         backgroundColor: theme =>
-          theme.palette.mode === 'dark' ? theme.palette.background.paper : 'white',
+          theme.palette.mode === 'dark' ? theme.palette.background.default : 'white',
         minHeight: '100vh',
         overflow: 'hidden',
         width: '100%',
@@ -628,15 +611,11 @@ const Workshop: React.FC = () => {
             width: '99% !important',
             mx: 'auto !important',
           },
-          '& .MuiPaper-root': {
-            width: '99% !important',
-            mx: 'auto !important',
-          },
         },
       }}
     >
       {/* Header */}
-      <Card
+      <Box
         sx={{
           ...cardStyle,
           mb: { xs: 3, sm: 4, md: 6 },
@@ -648,7 +627,7 @@ const Workshop: React.FC = () => {
           },
         }}
       >
-        <CardContent sx={{ p: { xs: 1, sm: 1, md: 2 } }}>
+        <Box sx={{ p: { xs: 1, sm: 1, md: 2 } }}>
           <Box
             sx={{
               display: 'flex',
@@ -661,7 +640,8 @@ const Workshop: React.FC = () => {
             <Typography
               variant="h4"
               sx={{
-                color: theme.palette.primary.main,
+                color: theme =>
+                  theme.palette.mode === 'dark' ? 'red' : theme.palette.primary.main,
                 fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2.25rem' },
                 fontWeight: { xs: 600, md: 400 },
               }}
@@ -685,8 +665,8 @@ const Workshop: React.FC = () => {
               History
             </Button>
           </Box>
-        </CardContent>
-      </Card>
+        </Box>
+      </Box>
 
       {/* Feature Access Error Display */}
       {featureAccessError && (
@@ -720,7 +700,7 @@ const Workshop: React.FC = () => {
           sx={{ overflow: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
         >
           {/* Activity Chart */}
-          <Paper
+          <Box
             sx={{
               ...cardStyle,
               p: { xs: 0.75, sm: 1, md: 3 },
@@ -728,6 +708,8 @@ const Workshop: React.FC = () => {
               overflow: 'hidden',
               width: { xs: '95%', sm: '100%' },
               mx: { xs: 'auto', sm: 0 },
+              backgroundColor: theme =>
+                theme.palette.mode === 'dark' ? theme.palette.background.default : '#fff',
               '@media (max-width: 480px)': {
                 width: '98%',
                 mx: 'auto',
@@ -748,8 +730,9 @@ const Workshop: React.FC = () => {
                 gutterBottom
                 sx={{
                   fontWeight: 'bold',
-                  fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' },
+                  fontSize: { xs: '1.3rem', sm: '1.5rem', md: '1.8rem' },
                   mb: { xs: 0.5, sm: 1 },
+                  color: theme => (theme.palette.mode === 'dark' ? 'red' : 'inherit'),
                 }}
               >
                 Weekly Activity Overview
@@ -779,7 +762,7 @@ const Workshop: React.FC = () => {
                 justifyContent="center"
                 sx={{ minHeight: 300 }}
               >
-                <BarChartOutlinedIcon sx={{ fontSize: 64, color: 'red', mb: 2, opacity: 0.5 }} />
+                <BarChartIcon sx={{ fontSize: 64, color: '#ff6b6b', mb: 2, opacity: 0.5 }} />
                 <Typography variant="h5" color="text.secondary" gutterBottom>
                   No Activity Yet
                 </Typography>
@@ -908,17 +891,16 @@ const Workshop: React.FC = () => {
                 </ResponsiveContainer>
               </Box>
             )}
-          </Paper>
+          </Box>
 
           {/* Upload Content and Input Section */}
-          <Paper
+          <Box
             ref={uploadContentRef}
             id="upload-content-card"
             sx={{
+              ...cardStyle,
               p: { xs: 0.75, sm: 1, md: 3 },
               mb: { xs: 2, sm: 3, md: 4 },
-              border: '2px solid #D32F2F',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
               overflow: 'hidden',
               width: { xs: '95%', sm: '100%' },
               mx: { xs: 'auto', sm: 0 },
@@ -943,9 +925,10 @@ const Workshop: React.FC = () => {
                 variant="h6"
                 sx={{
                   fontWeight: 700,
-                  fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' },
+                  fontSize: { xs: '1.3rem', sm: '1.5rem', md: '1.8rem' },
                   mb: { xs: 0.5, sm: 0 },
                   textAlign: { xs: 'left', sm: 'left' },
+                  color: theme => (theme.palette.mode === 'dark' ? 'red' : 'inherit'),
                 }}
               >
                 Upload Content
@@ -957,18 +940,18 @@ const Workshop: React.FC = () => {
                     display: 'flex',
                     alignItems: 'center',
                     gap: 1,
-                    color: 'red',
-                    borderBottom: activeTab === 0 ? '2px solid red' : 'none',
+                    color: '#ff6b6b',
+                    borderBottom: activeTab === 0 ? '2px solid #ff6b6b' : 'none',
                     backgroundColor: 'transparent',
                     textTransform: 'none',
                     fontWeight: activeTab === 0 ? 'bold' : 'normal',
                     '&:hover': {
                       backgroundColor: 'transparent',
-                      color: 'red',
+                      color: '#ff6b6b',
                     },
                   }}
                 >
-                  <ChatOutlinedIcon sx={{ color: 'red' }} />
+                  <ChatOutlinedIcon sx={{ color: '#ff6b6b' }} />
                   <Typography sx={{ display: { xs: 'none', sm: 'block' } }}>CHAT</Typography>
                 </Button>
                 <Button
@@ -1024,10 +1007,10 @@ const Workshop: React.FC = () => {
                 {renderInputSection()}
               </TabPanel>
             </Box>
-          </Paper>
+          </Box>
 
           {/* AI Response Area */}
-          <Paper
+          <Box
             ref={aiResponseRef}
             sx={{
               ...cardStyle,
@@ -1063,6 +1046,7 @@ const Workshop: React.FC = () => {
                   sx={{
                     fontWeight: 700,
                     fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' },
+                    color: theme => (theme.palette.mode === 'dark' ? 'red' : 'inherit'),
                   }}
                 >
                   AI Response
@@ -1261,7 +1245,7 @@ const Workshop: React.FC = () => {
                 workshopHistory.map(item => (
                   <React.Fragment key={item.id}>
                     {/* User Prompt */}
-                    <Paper
+                    <Box
                       sx={{
                         p: 2,
                         mb: 2,
@@ -1276,10 +1260,10 @@ const Workshop: React.FC = () => {
                           {new Date(item.timestamp).toLocaleTimeString()}
                         </Typography>
                       </Box>
-                    </Paper>
+                    </Box>
 
                     {/* AI Content */}
-                    <Paper
+                    <Box
                       sx={{
                         p: 2,
                         mb: 2,
@@ -1341,7 +1325,7 @@ const Workshop: React.FC = () => {
                           {new Date(item.timestamp).toLocaleTimeString()}
                         </Typography>
                       </Box>
-                    </Paper>
+                    </Box>
                   </React.Fragment>
                 ))
               ) : (
@@ -1357,10 +1341,10 @@ const Workshop: React.FC = () => {
                     p: 3,
                   }}
                 >
-                  <ChatIcon
+                  <ChatOutlinedIcon
                     sx={{
                       fontSize: 48,
-                      color: theme => (theme.palette.mode === 'dark' ? '#D32F2F' : 'red'),
+                      color: theme => (theme.palette.mode === 'dark' ? '#ff6b6b' : 'red'),
                       mb: 2,
                       opacity: 0.5,
                     }}
@@ -1392,7 +1376,7 @@ const Workshop: React.FC = () => {
                 </Button>
               </Box>
             )}
-          </Paper>
+          </Box>
         </Grid>
 
         {/* Sidebar */}
@@ -1402,7 +1386,7 @@ const Workshop: React.FC = () => {
           md={breakpoint === 'standard' ? 12 : 3}
           sx={{ overflow: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
         >
-          <Paper
+          <Box
             sx={{
               ...cardStyle,
               p: { xs: 0.75, sm: 1, md: 3 },
@@ -1419,7 +1403,10 @@ const Workshop: React.FC = () => {
             <Typography
               variant="h6"
               gutterBottom
-              sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' } }}
+              sx={{
+                fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' },
+                color: theme => (theme.palette.mode === 'dark' ? 'red' : 'inherit'),
+              }}
             >
               Quick Actions
             </Typography>
@@ -1427,10 +1414,17 @@ const Workshop: React.FC = () => {
               <ListItem button onClick={() => handleQuickActionClick(0)}>
                 <ListItemIcon>
                   <ChatOutlinedIcon
-                    sx={{ color: theme => (theme.palette.mode === 'dark' ? '#D32F2F' : 'red') }}
+                    sx={{ color: theme => (theme.palette.mode === 'dark' ? '#ff6b6b' : 'red') }}
                   />
                 </ListItemIcon>
-                <ListItemText primary="Start New Chat" />
+                <ListItemText
+                  primary="Start New Chat"
+                  sx={{
+                    '& .MuiTypography-root': {
+                      color: theme => (theme.palette.mode === 'dark' ? 'white' : 'inherit'),
+                    },
+                  }}
+                />
               </ListItem>
               <ListItem button onClick={() => handleQuickActionClick(1)}>
                 <ListItemIcon>
@@ -1438,7 +1432,14 @@ const Workshop: React.FC = () => {
                     sx={{ color: theme => (theme.palette.mode === 'dark' ? '#8884d8' : '#8884d8') }}
                   />
                 </ListItemIcon>
-                <ListItemText primary="Upload New Document" />
+                <ListItemText
+                  primary="Upload New Document"
+                  sx={{
+                    '& .MuiTypography-root': {
+                      color: theme => (theme.palette.mode === 'dark' ? 'white' : 'inherit'),
+                    },
+                  }}
+                />
               </ListItem>
               <ListItem button onClick={() => handleQuickActionClick(2)}>
                 <ListItemIcon>
@@ -1446,13 +1447,20 @@ const Workshop: React.FC = () => {
                     sx={{ color: theme => (theme.palette.mode === 'dark' ? '#82ca9d' : '#82ca9d') }}
                   />
                 </ListItemIcon>
-                <ListItemText primary="Add External Link" />
+                <ListItemText
+                  primary="Add External Link"
+                  sx={{
+                    '& .MuiTypography-root': {
+                      color: theme => (theme.palette.mode === 'dark' ? 'white' : 'inherit'),
+                    },
+                  }}
+                />
               </ListItem>
             </List>
-          </Paper>
+          </Box>
 
           {/* AI Suggestions */}
-          <Paper
+          <Box
             sx={{
               ...cardStyle,
               p: { xs: 0.75, sm: 1, md: 3 },
@@ -1469,7 +1477,10 @@ const Workshop: React.FC = () => {
             <Typography
               variant="h6"
               gutterBottom
-              sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' } }}
+              sx={{
+                fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' },
+                color: theme => (theme.palette.mode === 'dark' ? 'red' : 'inherit'),
+              }}
             >
               AI Suggestions
             </Typography>
@@ -1481,26 +1492,56 @@ const Workshop: React.FC = () => {
                 <ListItemText
                   primary="Summarize"
                   secondary="Get a concise summary of the content"
+                  sx={{
+                    '& .MuiTypography-root.MuiTypography-body1': {
+                      color: '#ff9800',
+                    },
+                    '& .MuiTypography-root.MuiTypography-body2': {
+                      color: theme => (theme.palette.mode === 'dark' ? 'white' : 'inherit'),
+                    },
+                  }}
                 />
               </ListItem>
               <ListItem button onClick={() => handleSuggestionClick('Extract key points', 2)}>
                 <ListItemIcon>
                   <FormatListBulletedIcon sx={{ color: '#ffc107' }} />
                 </ListItemIcon>
-                <ListItemText primary="Extract" secondary="Extract the main points and insights" />
+                <ListItemText
+                  primary="Extract"
+                  secondary="Extract the main points and insights"
+                  sx={{
+                    '& .MuiTypography-root.MuiTypography-body1': {
+                      color: '#ffc107',
+                    },
+                    '& .MuiTypography-root.MuiTypography-body2': {
+                      color: theme => (theme.palette.mode === 'dark' ? 'white' : 'inherit'),
+                    },
+                  }}
+                />
               </ListItem>
               <ListItem button onClick={() => handleSuggestionClick('Rewrite this content', 1)}>
                 <ListItemIcon>
                   <EditOutlinedIcon sx={{ color: '#2196f3' }} />
                 </ListItemIcon>
-                <ListItemText primary="Rewrite" secondary="Rewrite content in a different style" />
+                <ListItemText
+                  primary="Rewrite"
+                  secondary="Rewrite content in a different style"
+                  sx={{
+                    '& .MuiTypography-root.MuiTypography-body1': {
+                      color: '#2196f3',
+                    },
+                    '& .MuiTypography-root.MuiTypography-body2': {
+                      color: theme => (theme.palette.mode === 'dark' ? 'white' : 'inherit'),
+                    },
+                  }}
+                />
               </ListItem>
             </List>
-          </Paper>
+          </Box>
 
           {/* File Actions */}
           {files.length > 0 && (
-            <Paper
+            <Box
               sx={{
                 ...cardStyle,
                 p: { xs: 0.75, sm: 1, md: 3 },
@@ -1517,7 +1558,10 @@ const Workshop: React.FC = () => {
               <Typography
                 variant="h6"
                 gutterBottom
-                sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' } }}
+                sx={{
+                  fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' },
+                  color: theme => (theme.palette.mode === 'dark' ? 'red' : 'inherit'),
+                }}
               >
                 File Actions
               </Typography>
@@ -1541,11 +1585,11 @@ const Workshop: React.FC = () => {
                   <ListItemText primary="Rewrite Content" />
                 </ListItem>
               </List>
-            </Paper>
+            </Box>
           )}
 
           {/* Assignment Tokens */}
-          <Paper
+          <Box
             sx={{
               ...cardStyle,
               p: { xs: 0.75, sm: 1, md: 3 },
@@ -1566,7 +1610,10 @@ const Workshop: React.FC = () => {
             <Typography
               variant="h6"
               gutterBottom
-              sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' } }}
+              sx={{
+                fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' },
+                color: theme => (theme.palette.mode === 'dark' ? 'red' : 'inherit'),
+              }}
             >
               Assignment Tokens
             </Typography>
@@ -1738,103 +1785,17 @@ const Workshop: React.FC = () => {
                 </Typography>
               </Box>
             </Box>
-          </Paper>
+          </Box>
         </Grid>
       </Grid>
 
-      {/* History Drawer */}
-      <Drawer
-        anchor="right"
+      {/* Recent History Sidebar */}
+      <RecentHistorySidebar
         open={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
-        sx={{
-          '& .MuiDrawer-paper': {
-            backgroundColor: theme =>
-              theme.palette.mode === 'dark' ? theme.palette.background.paper : 'white',
-            borderTopRightRadius: 0,
-            borderBottomRightRadius: 0,
-          },
-        }}
-      >
-        <Box sx={{ width: 350, p: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-            <Typography variant="h6">Recent History</Typography>
-            <Tooltip title="Pin important items for quick access" arrow>
-              <InfoOutlinedIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
-            </Tooltip>
-          </Box>
-          {history.length === 0 ? (
-            <Box
-              display="flex"
-              flexDirection="column"
-              alignItems="center"
-              justifyContent="center"
-              sx={{ mt: 8 }}
-            >
-              <HistoryOutlinedIcon sx={{ fontSize: 54, color: 'red', mb: 2, opacity: 0.5 }} />
-              <Typography variant="h5" color="text.secondary" gutterBottom>
-                No History Yet
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Your workshop activity will appear here
-              </Typography>
-            </Box>
-          ) : (
-            <motion.div layout>
-              <List>
-                {history
-                  .slice()
-                  .sort((a, b) => Number(b.isPinned) - Number(a.isPinned))
-                  .map(item => (
-                    <motion.div layout key={item.id}>
-                      <ListItem
-                        button
-                        onClick={() => handlePinHistory(item.id)}
-                        sx={{
-                          border: '1px solid red',
-                          borderRadius: '8px',
-                          mb: 1,
-                          backgroundColor: theme =>
-                            theme.palette.mode === 'dark'
-                              ? theme.palette.background.paper
-                              : 'transparent',
-                        }}
-                      >
-                        <ListItemIcon>
-                          {React.cloneElement(getHistoryIcon(item.type), { sx: { color: 'red' } })}
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={item.title}
-                          secondary={item.date.toLocaleString()}
-                          primaryTypographyProps={{
-                            style: {
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                            },
-                          }}
-                        />
-                        <IconButton
-                          size="small"
-                          onClick={e => {
-                            e.stopPropagation();
-                            handlePinHistory(item.id);
-                          }}
-                        >
-                          {item.isPinned ? (
-                            <PushPinIcon color="primary" />
-                          ) : (
-                            <PushPinOutlinedIcon />
-                          )}
-                        </IconButton>
-                      </ListItem>
-                    </motion.div>
-                  ))}
-              </List>
-            </motion.div>
-          )}
-        </Box>
-      </Drawer>
+        history={history}
+        onPinHistory={handlePinHistory}
+      />
 
       {/* Snackbar for alerts */}
       <Snackbar

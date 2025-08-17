@@ -15,8 +15,6 @@ import {
 import {
   Box,
   Button,
-  Card,
-  CardContent,
   CircularProgress,
   Dialog,
   DialogActions,
@@ -30,7 +28,6 @@ import {
   InputLabel,
   Menu,
   MenuItem,
-  Paper,
   Select,
   Table,
   TableBody,
@@ -155,9 +152,9 @@ const Assignments: React.FC = () => {
   // Custom styles
   const cardStyle = {
     backgroundColor: (theme: any) =>
-      theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+      theme.palette.mode === 'dark' ? theme.palette.background.default : '#fff',
     boxShadow: '0 2px 12px rgba(0, 0, 0, 0.1)',
-    borderRadius: '12px',
+    borderRadius: 3,
     transition: 'all 0.2s ease-in-out',
     border: '2px solid red',
     '&:hover': {
@@ -453,23 +450,23 @@ const Assignments: React.FC = () => {
         sx={{
           p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2),
           backgroundColor: theme =>
-            theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fafafa',
+            theme.palette.mode === 'dark' ? theme.palette.background.default : '#fafafa',
           minHeight: '100vh',
           overflow: 'hidden',
           width: '100%',
         }}
       >
         {/* Header Section */}
-        <Card
+        <Box
           sx={{
             ...cardStyle,
             mb: breakpoint === 'tall' ? 2 : 4,
             p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2),
+            borderRadius: 3,
+            overflow: 'hidden',
           }}
         >
-          <CardContent
-            sx={{ p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2) }}
-          >
+          <Box sx={{ p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2) }}>
             <Box
               sx={{
                 display: 'flex',
@@ -538,8 +535,8 @@ const Assignments: React.FC = () => {
                 </Typography>
               </Box>
             </Box>
-          </CardContent>
-        </Card>
+          </Box>
+        </Box>
 
         {/* Filters and Search */}
         <Grid
@@ -569,7 +566,8 @@ const Assignments: React.FC = () => {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   backgroundColor: theme =>
-                    theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff',
+                    theme.palette.mode === 'dark' ? theme.palette.background.default : '#ffffff',
+                  borderRadius: 2,
                 },
                 '& .MuiOutlinedInput-notchedOutline': {
                   borderColor: 'red',
@@ -619,7 +617,8 @@ const Assignments: React.FC = () => {
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     backgroundColor: theme =>
-                      theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff',
+                      theme.palette.mode === 'dark' ? theme.palette.background.default : '#ffffff',
+                    borderRadius: 3,
                   },
                   '& .MuiOutlinedInput-notchedOutline': {
                     borderColor: 'red',
@@ -652,7 +651,8 @@ const Assignments: React.FC = () => {
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     backgroundColor: theme =>
-                      theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff',
+                      theme.palette.mode === 'dark' ? theme.palette.background.default : '#ffffff',
+                    borderRadius: 3,
                   },
                   '& .MuiOutlinedInput-notchedOutline': {
                     borderColor: 'red',
@@ -687,7 +687,8 @@ const Assignments: React.FC = () => {
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     backgroundColor: theme =>
-                      theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff',
+                      theme.palette.mode === 'dark' ? theme.palette.background.default : '#ffffff',
+                    borderRadius: 3,
                   },
                   '& .MuiOutlinedInput-notchedOutline': {
                     borderColor: 'red',
@@ -733,8 +734,9 @@ const Assignments: React.FC = () => {
                       '& .MuiOutlinedInput-root': {
                         backgroundColor: theme =>
                           theme.palette.mode === 'dark'
-                            ? theme.palette.background.paper
+                            ? theme.palette.background.default
                             : '#ffffff',
+                        borderRadius: 2,
                       },
                       '& .MuiOutlinedInput-notchedOutline': {
                         borderColor: 'red',
@@ -766,12 +768,29 @@ const Assignments: React.FC = () => {
 
         {/* Assignments Table */}
         <TableContainer
-          component={Paper}
-          sx={{ ...tableStyle, overflow: 'hidden', maxWidth: '100%', width: '100%' }}
+          sx={{
+            ...tableStyle,
+            overflow: 'hidden',
+            maxWidth: '100%',
+            width: '100%',
+            backgroundColor: theme =>
+              theme.palette.mode === 'dark' ? theme.palette.background.default : '#ffffff',
+            borderRadius: 3,
+          }}
         >
           <Table sx={{ width: '100%' }}>
-            <TableHead>
-              <TableRow>
+            <TableHead
+              sx={{
+                backgroundColor: theme =>
+                  theme.palette.mode === 'dark' ? theme.palette.background.default : '#ffffff',
+              }}
+            >
+              <TableRow
+                sx={{
+                  backgroundColor: theme =>
+                    theme.palette.mode === 'dark' ? theme.palette.background.default : '#ffffff',
+                }}
+              >
                 <TableCell
                   sx={{
                     fontSize: { xs: '0.75rem', md: '1rem' },
@@ -852,7 +871,12 @@ const Assignments: React.FC = () => {
             </TableHead>
             <TableBody>
               {displayedRows.length === 0 ? (
-                <TableRow>
+                <TableRow
+                  sx={{
+                    backgroundColor: theme =>
+                      theme.palette.mode === 'dark' ? theme.palette.background.default : '#ffffff',
+                  }}
+                >
                   <TableCell colSpan={5} align="center" sx={{ p: 0 }}>
                     <Box
                       minHeight={530}
@@ -876,7 +900,15 @@ const Assignments: React.FC = () => {
                 </TableRow>
               ) : (
                 displayedRows.map(assignment => (
-                  <TableRow key={assignment.id}>
+                  <TableRow
+                    key={assignment.id}
+                    sx={{
+                      backgroundColor: theme =>
+                        theme.palette.mode === 'dark'
+                          ? theme.palette.background.default
+                          : '#ffffff',
+                    }}
+                  >
                     <TableCell sx={{ p: { xs: 1, md: 2 } }}>
                       <Box>
                         <Typography
