@@ -1,12 +1,12 @@
 import {
-  AccountCircle as AccountCircleIcon,
-  Assignment as AssignmentIcon,
+  AccountCircleOutlined as AccountCircleIcon,
+  AssignmentOutlined as AssignmentIcon,
   CurrencyBitcoin as CurrencyBitcoinIcon,
-  Edit as EditIcon,
-  Help as HelpIcon,
-  Home as HomeIcon,
-  MonetizationOn as MonetizationOnIcon,
-  Settings as SettingsIcon,
+  EditOutlined as EditIcon,
+  HelpOutline as HelpIcon,
+  HomeOutlined as HomeIcon,
+  MonetizationOnOutlined as MonetizationOnIcon,
+  SettingsOutlined as SettingsIcon,
 } from '@mui/icons-material';
 import CloseIcon from '@mui/icons-material/Close';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -234,14 +234,20 @@ const Dashboard: React.FC = () => {
             top: 16,
             right: 16,
             zIndex: theme.zIndex.drawer + 3,
-            background: theme.palette.mode === 'dark' ? theme.palette.background.default : 'rgba(255,255,255,1)',
+            background:
+              theme.palette.mode === 'dark'
+                ? theme.palette.background.default
+                : 'rgba(255,255,255,1)',
             color: '#d32f2f',
             boxShadow: 2,
             width: 48,
             height: 48,
             border: '2px solid #D32F2F',
             '&:hover': {
-              background: theme.palette.mode === 'dark' ? theme.palette.background.default : 'rgba(255,255,255,1)',
+              background:
+                theme.palette.mode === 'dark'
+                  ? theme.palette.background.default
+                  : 'rgba(255,255,255,1)',
               borderColor: '#B71C1C',
             },
           }}

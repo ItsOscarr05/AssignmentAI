@@ -17,6 +17,7 @@ export interface Subscription {
   plan_id: string;
   current_period_end: string;
   cancel_at_period_end: boolean;
+  token_limit?: number;
 }
 
 export interface Plan {

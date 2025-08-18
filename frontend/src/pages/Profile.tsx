@@ -15,7 +15,6 @@ import {
   Avatar,
   Box,
   Button,
-  Chip,
   CircularProgress,
   Divider,
   Grid,
@@ -34,6 +33,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useAssignments } from '../hooks/useApiQuery';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { useProfileStore } from '../services/ProfileService';
+import { paymentService, Subscription } from '../services/paymentService';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 
 interface TabPanelProps {
@@ -74,7 +74,7 @@ const ProfileSection = ({ title, icon, children }: any) => {
         borderRadius: 3,
         background:
           theme.palette.mode === 'dark'
-            ? 'linear-gradient(145deg, rgba(0,8,20,0.9) 0%, rgba(0,8,20,0.9) 100%)'
+            ? `linear-gradient(145deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`
             : 'linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(240,240,240,0.9) 100%)',
         backdropFilter: 'blur(10px)',
         transition: 'all 0.3s ease-in-out',
@@ -90,7 +90,8 @@ const ProfileSection = ({ title, icon, children }: any) => {
           sx={{
             p: 1.5,
             borderRadius: 2,
-            background: theme => (theme.palette.mode === 'dark' ? '#000814' : '#ffffff'),
+            background: theme =>
+              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff',
             color: theme.palette.primary.main,
             display: 'flex',
             alignItems: 'center',
@@ -115,7 +116,7 @@ const ProfileSection = ({ title, icon, children }: any) => {
 const StatCard = ({ icon, title, value, color, onClick, sx }: any) => {
   const theme = useTheme();
   return (
-    <Paper
+    <Box
       onClick={onClick}
       sx={{
         p: 3,
@@ -123,13 +124,18 @@ const StatCard = ({ icon, title, value, color, onClick, sx }: any) => {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'flex-start',
-        background: theme.palette.mode === 'dark' ? 'rgba(0,8,20,0.8)' : 'rgba(0,0,0,0.02)',
+        background:
+          theme.palette.mode === 'dark'
+            ? `rgba(${theme.palette.background.paper}, 0.8)`
+            : 'rgba(0,0,0,0.02)',
         borderRadius: 2,
+        border: '2px solid',
+        borderColor: 'error.main',
         transition: 'all 0.3s ease',
         '&:hover': {
           transform: onClick ? 'translateY(-4px) scale(1.03)' : 'translateY(-4px)',
           boxShadow: theme.shadows[4],
-          background: onClick ? 'rgba(0,8,20,0.9)' : undefined,
+          background: onClick ? `rgba(${theme.palette.background.paper}, 0.9)` : undefined,
         },
         cursor: onClick ? 'pointer' : 'default',
         ...sx,
@@ -139,7 +145,8 @@ const StatCard = ({ icon, title, value, color, onClick, sx }: any) => {
         sx={{
           p: 1,
           borderRadius: 1.5,
-          background: theme => (theme.palette.mode === 'dark' ? '#000814' : '#ffffff'),
+          background: theme =>
+            theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff',
           color: color || theme.palette.primary.main,
           mb: 2,
         }}
@@ -150,7 +157,7 @@ const StatCard = ({ icon, title, value, color, onClick, sx }: any) => {
         {value}
       </Typography>
       <Typography color="text.secondary">{title}</Typography>
-    </Paper>
+    </Box>
   );
 };
 
@@ -162,7 +169,7 @@ const Profile: React.FC = () => {
 
   const [tabValue, setTabValue] = useState(0);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isAvatarUploading, setIsAvatarUploading] = useState(false);
+  const [currentSubscription, setCurrentSubscription] = useState<Subscription | null>(null);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -180,15 +187,30 @@ const Profile: React.FC = () => {
     department: '',
   });
 
-  // Avatar state
-  const [avatarPreview, setAvatarPreview] = useState<string>('');
-
   // Load profile data on component mount
   useEffect(() => {
     if (!profile) {
       fetchProfile();
     }
   }, [profile, fetchProfile]);
+
+  // Load subscription data on component mount
+  useEffect(() => {
+    const fetchSubscription = async () => {
+      try {
+        console.log('Profile: Fetching subscription data...');
+        const subscription = await paymentService.getCurrentSubscription();
+        console.log('Profile: Subscription data received:', subscription);
+        setCurrentSubscription(subscription);
+      } catch (error) {
+        console.error('Profile: Failed to fetch subscription:', error);
+        // Set default to free plan if subscription fetch fails
+        setCurrentSubscription(null);
+      }
+    };
+
+    fetchSubscription();
+  }, []);
 
   // Initialize form with profile data
   useEffect(() => {
@@ -260,7 +282,6 @@ const Profile: React.FC = () => {
 
   const handleCloseEditDialog = () => {
     setIsEditDialogOpen(false);
-    setAvatarPreview('');
   };
 
   const handleFormChange = (field: string, value: string) => {
@@ -270,37 +291,8 @@ const Profile: React.FC = () => {
     }));
   };
 
-  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      // Validate file type and size
-      if (!file.type.startsWith('image/')) {
-        setSnackbar({
-          open: true,
-          message: 'Please select an image file',
-          severity: 'error',
-        });
-        return;
-      }
-
-      if (file.size > 5 * 1024 * 1024) {
-        // 5MB limit
-        setSnackbar({
-          open: true,
-          message: 'Image size must be less than 5MB',
-          severity: 'error',
-        });
-        return;
-      }
-
-      setAvatarPreview(URL.createObjectURL(file));
-    }
-  };
-
   const handleSaveProfile = async () => {
     try {
-      setIsAvatarUploading(true);
-
       // Combine first and last name into a single name field
       const fullName = `${editForm.firstName} ${editForm.lastName}`.trim();
 
@@ -327,8 +319,6 @@ const Profile: React.FC = () => {
         message: error.response?.data?.message || 'Failed to update profile',
         severity: 'error',
       });
-    } finally {
-      setIsAvatarUploading(false);
     }
   };
 
@@ -338,6 +328,39 @@ const Profile: React.FC = () => {
 
   // Calculate stats from real data
   const totalAssignments = assignments.length;
+
+  // Helper function to map plan_id to readable plan name
+  const getPlanDisplayName = (planId?: string): string => {
+    if (!planId) return 'Free';
+
+    // Map the plan IDs to readable names
+    switch (planId) {
+      case 'price_test_free':
+        return 'Free';
+      case 'price_test_plus':
+        return 'Plus';
+      case 'price_test_pro':
+        return 'Pro';
+      case 'price_test_max':
+        return 'Max';
+      default:
+        // For real Stripe price IDs, we need to determine the plan based on token limits
+        // Since we have access to token_limit in the subscription data, we can use that
+        if (currentSubscription?.token_limit) {
+          const tokenLimit = currentSubscription.token_limit;
+          if (tokenLimit >= 100000) return 'Max';
+          if (tokenLimit >= 75000) return 'Pro';
+          if (tokenLimit >= 50000) return 'Plus';
+          if (tokenLimit >= 30000) return 'Free';
+        }
+
+        // Fallback: try to extract the plan name from the price ID
+        if (planId.includes('plus')) return 'Plus';
+        if (planId.includes('pro')) return 'Pro';
+        if (planId.includes('max')) return 'Max';
+        return 'Free';
+    }
+  };
 
   // Loading state
   if (isLoading) {
@@ -374,13 +397,53 @@ const Profile: React.FC = () => {
       : 'John Doe'
     : 'John Doe';
   const displayEmail = profileData?.email || 'john.doe@example.com';
-  const memberSince =
-    profileData && 'createdAt' in profileData && profileData.createdAt
-      ? new Date((profileData as any).createdAt).toLocaleDateString(undefined, {
+  // Get member since date from multiple possible sources
+  const getMemberSince = (): string | undefined => {
+    // Try to get from subscription data first (most reliable)
+    if (currentSubscription?.current_period_end) {
+      try {
+        const periodEnd = new Date(currentSubscription.current_period_end);
+        // Calculate approximate start date (subtract 1 month from period end)
+        const startDate = new Date(periodEnd);
+        startDate.setMonth(startDate.getMonth() - 1);
+        return startDate.toLocaleDateString(undefined, {
           year: 'numeric',
           month: 'long',
-        })
-      : undefined;
+        });
+      } catch (error) {
+        console.error('Error parsing subscription period:', error);
+      }
+    }
+
+    // Try to get from profile data
+    if (profileData && 'createdAt' in profileData && profileData.createdAt) {
+      try {
+        return new Date((profileData as any).createdAt).toLocaleDateString(undefined, {
+          year: 'numeric',
+          month: 'long',
+        });
+      } catch (error) {
+        console.error('Error parsing profile createdAt:', error);
+      }
+    }
+
+    // Try to get from user data
+    if (user && 'createdAt' in user && (user as any).createdAt) {
+      try {
+        return new Date((user as any).createdAt).toLocaleDateString(undefined, {
+          year: 'numeric',
+          month: 'long',
+        });
+      } catch (error) {
+        console.error('Error parsing user createdAt:', error);
+      }
+    }
+
+    // If no date is available, return undefined
+    return undefined;
+  };
+
+  const memberSince = getMemberSince();
 
   // Language label logic
   const language =
@@ -438,13 +501,14 @@ const Profile: React.FC = () => {
               theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff',
             color: theme.palette.primary.main,
             fontSize: { xs: '0.875rem', md: '1rem' },
-            boxShadow: '0 4px 20px 0px rgba(0,0,0,0.14), 0 7px 10px -5px rgba(33,150,243,0.4)',
+            boxShadow: '0 4px 20px 0px rgba(0,0,0,0.14), 0 7px 10px -5px rgba(244,67,54,0.4)',
             transition: 'all 0.3s ease',
             '&:hover': {
               transform: 'translateY(-2px)',
-              backgroundColor: theme => (theme.palette.mode === 'dark' ? '#001122' : '#f5f5f5'),
+              backgroundColor: theme =>
+                theme.palette.mode === 'dark' ? theme.palette.background.default : '#f5f5f5',
               color: theme.palette.primary.dark,
-              boxShadow: '0 7px 30px -10px rgba(33,150,243,0.6)',
+              boxShadow: '0 7px 30px -10px rgba(244,67,54,0.6)',
             },
           }}
           onClick={handleEditProfile}
@@ -513,7 +577,8 @@ const Profile: React.FC = () => {
                     border: '4px solid',
                     borderColor: theme.palette.primary.main,
                     boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                    background: theme => (theme.palette.mode === 'dark' ? '#000814' : '#fff'),
+                    background: theme =>
+                      theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
                   }}
                   aria-label="User avatar"
                 >
@@ -528,15 +593,6 @@ const Profile: React.FC = () => {
                 >
                   {displayName}
                 </Typography>
-                {memberSince && (
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ mb: 1, fontSize: { xs: '0.75rem', md: '0.875rem' } }}
-                  >
-                    Member Since {memberSince}
-                  </Typography>
-                )}
                 <Stack
                   direction="row"
                   spacing={1}
@@ -549,72 +605,103 @@ const Profile: React.FC = () => {
                   }}
                 >
                   <Tooltip title="Email" arrow>
-                    <Chip
-                      icon={<EmailOutlined aria-label="Email icon" />}
-                      label={displayEmail}
-                      aria-label="User email"
+                    <Box
                       sx={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        px: 1.5,
+                        py: 0.5,
                         background: theme =>
                           theme.palette.mode === 'dark'
-                            ? 'rgba(0,8,20,0.9)'
+                            ? `rgba(${theme.palette.background.paper}, 0.9)`
                             : 'rgba(255,255,255,0.9)',
                         border: '1px solid',
                         borderColor: theme.palette.primary.main,
+                        borderRadius: 16,
                         fontSize: { xs: '0.75rem', md: '0.875rem' },
                         height: { xs: 28, md: 32 },
-                        '& .MuiChip-icon': {
-                          color: theme.palette.primary.main,
-                          fontSize: { xs: '1rem', md: '1.25rem' },
-                        },
+                        color: 'white',
                         mr: 0.5,
+                        cursor: 'default',
                       }}
-                    />
+                      aria-label="User email"
+                    >
+                      <EmailOutlined
+                        aria-label="Email icon"
+                        sx={{
+                          fontSize: { xs: '1rem', md: '1.25rem' },
+                          color: theme.palette.error.main,
+                        }}
+                      />
+                      {displayEmail}
+                    </Box>
                   </Tooltip>
                   <Tooltip title="Country" arrow>
-                    <Chip
-                      icon={<LocationOnOutlined aria-label="Location icon" />}
-                      label={
-                        (profileData as any)?.location ||
-                        (user as any)?.location ||
-                        'No data available'
-                      }
-                      aria-label="User country"
+                    <Box
                       sx={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        px: 1.5,
+                        py: 0.5,
                         background: theme =>
                           theme.palette.mode === 'dark'
-                            ? 'rgba(0,8,20,0.9)'
+                            ? `rgba(${theme.palette.background.paper}, 0.9)`
                             : 'rgba(255,255,255,0.9)',
                         border: '1px solid',
                         borderColor: theme.palette.primary.main,
+                        borderRadius: 16,
                         fontSize: { xs: '0.75rem', md: '0.875rem' },
                         height: { xs: 28, md: 32 },
-                        '& .MuiChip-icon': {
-                          color: theme.palette.primary.main,
-                          fontSize: { xs: '1rem', md: '1.25rem' },
-                        },
+                        color: 'white',
+                        cursor: 'default',
                       }}
-                    />
+                      aria-label="User country"
+                    >
+                      <LocationOnOutlined
+                        aria-label="Location icon"
+                        sx={{
+                          fontSize: { xs: '1rem', md: '1.25rem' },
+                          color: theme.palette.error.main,
+                        }}
+                      />
+                      {(profileData as any)?.location ||
+                        (user as any)?.location ||
+                        'No data available'}
+                    </Box>
                   </Tooltip>
                   <Tooltip title="Language" arrow>
-                    <Chip
-                      icon={<LanguageOutlined aria-label="Language icon" />}
-                      label={languageLabel}
-                      aria-label="User language"
+                    <Box
                       sx={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        px: 1.5,
+                        py: 0.5,
                         background: theme =>
                           theme.palette.mode === 'dark'
-                            ? 'rgba(0,8,20,0.9)'
+                            ? `rgba(${theme.palette.background.paper}, 0.9)`
                             : 'rgba(255,255,255,0.9)',
                         border: '1px solid',
                         borderColor: theme.palette.primary.main,
+                        borderRadius: 16,
                         fontSize: { xs: '0.75rem', md: '0.875rem' },
                         height: { xs: 28, md: 32 },
-                        '& .MuiChip-icon': {
-                          color: theme.palette.primary.main,
-                          fontSize: { xs: '1rem', md: '1.25rem' },
-                        },
+                        color: 'white',
+                        cursor: 'default',
                       }}
-                    />
+                      aria-label="User language"
+                    >
+                      <LanguageOutlined
+                        aria-label="Language icon"
+                        sx={{
+                          fontSize: { xs: '1rem', md: '1.25rem' },
+                          color: theme.palette.error.main,
+                        }}
+                      />
+                      {languageLabel}
+                    </Box>
                   </Tooltip>
                 </Stack>
               </Box>
@@ -640,13 +727,41 @@ const Profile: React.FC = () => {
                   />
                 </Grid>
                 <Grid item xs={12} sm={6} md={4}>
-                  <StatCard icon={<BadgeOutlined />} title="Subscription Type" value="Free" />
+                  <StatCard
+                    icon={<BadgeOutlined />}
+                    title="Subscription Type"
+                    value={
+                      currentSubscription === undefined ? (
+                        <CircularProgress size={28} />
+                      ) : currentSubscription === null ? (
+                        'Free (No subscription)'
+                      ) : (
+                        (() => {
+                          const planName = getPlanDisplayName(currentSubscription?.plan_id);
+                          console.log('Profile: Rendering subscription card with:', {
+                            currentSubscription,
+                            planId: currentSubscription?.plan_id,
+                            planName,
+                          });
+                          return planName;
+                        })()
+                      )
+                    }
+                  />
                 </Grid>
                 <Grid item xs={12} sm={6} md={4}>
                   <StatCard
                     icon={<VerifiedOutlined />}
                     title="Member Since"
-                    value={memberSince || 'N/A'}
+                    value={
+                      currentSubscription === undefined ? (
+                        <CircularProgress size={28} />
+                      ) : memberSince ? (
+                        memberSince
+                      ) : (
+                        'N/A'
+                      )
+                    }
                   />
                 </Grid>
               </Grid>
@@ -724,10 +839,8 @@ const Profile: React.FC = () => {
         editForm={editForm}
         onFormChange={handleFormChange}
         onSave={handleSaveProfile}
-        onAvatarChange={handleAvatarChange}
-        avatarPreview={avatarPreview}
         profileData={profileData}
-        isAvatarUploading={isAvatarUploading}
+        currentSubscription={currentSubscription}
       />
 
       {/* Snackbar for alerts */}

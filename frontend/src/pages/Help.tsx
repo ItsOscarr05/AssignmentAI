@@ -20,7 +20,6 @@ import {
   InputAdornment,
   InputLabel,
   MenuItem,
-  Paper,
   Select,
   Snackbar,
   Stack,
@@ -65,8 +64,7 @@ function TabPanel(props: TabPanelProps & { breakpoint?: string }) {
 const HelpSection = ({ title, icon, children, breakpoint = 'standard' }: any) => {
   const theme = useTheme();
   return (
-    <Paper
-      elevation={0}
+    <Box
       sx={{
         p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 3),
         mb: getAspectRatioStyle(aspectRatioStyles.spacing.element.margin, breakpoint, 3),
@@ -115,7 +113,7 @@ const HelpSection = ({ title, icon, children, breakpoint = 'standard' }: any) =>
         </Typography>
       </Stack>
       {children}
-    </Paper>
+    </Box>
   );
 };
 
@@ -142,17 +140,22 @@ const Help: React.FC = () => {
         {
           question: 'How do I get started with AssignmentAI?',
           answer:
-            'Getting started is easy! Simply create an account, upload your first assignment, and our AI will help you analyze and improve it.',
+            'Getting started with AssignmentAI is simple! Create your account using your email or Google account, then navigate to the Assignments page and click "Upload Content" to add your first assignment. Our AI will immediately begin analyzing your work and providing detailed feedback.',
         },
         {
           question: 'What types of assignments are supported?',
           answer:
-            'We support a wide range of academic assignments including essays, research papers, reports, and more.',
+            'AssignmentAI supports a comprehensive range of academic assignments including essays, research papers, lab reports, case studies, literature reviews, thesis statements, and business reports. We also support various citation styles (APA, MLA, Chicago, Harvard) and multiple languages.',
         },
         {
           question: 'How do I create my first assignment?',
           answer:
-            'Navigate to the Assignments page and click "Upload Content" to add your first assignment.',
+            'Creating your first assignment is straightforward! Navigate to the Assignments page and click "Upload Content" to either type directly, paste content, or upload files in formats like .docx, .pdf, .txt, or .rtf.',
+        },
+        {
+          question: 'What makes AssignmentAI different from other writing tools?',
+          answer:
+            "AssignmentAI uses advanced AI technology specifically designed for academic writing, understanding academic context and subject-specific terminology. We offer real-time collaboration, comprehensive plagiarism detection, and personalized learning recommendations that generic tools can't provide.",
         },
       ],
     },
@@ -162,21 +165,27 @@ const Help: React.FC = () => {
         {
           question: 'How does the AI token system work?',
           answer:
-            'Tokens are used to power AI features. Each action consumes tokens based on complexity.',
+            'Our AI token system provides fair access to advanced features, with each AI action consuming tokens based on content complexity and length. Free users receive a monthly token allowance, while premium subscribers get significantly more tokens and access to advanced AI features.',
         },
         {
-          question: 'Can I collaborate with others?',
-          answer: 'Yes! You can share assignments and collaborate with classmates or study groups.',
+          question: 'Can I collaborate with others on assignments?',
+          answer:
+            'Absolutely! AssignmentAI offers robust collaboration features that make group work seamless. You can invite classmates and instructors through secure sharing links, with real-time commenting and editing capabilities.',
         },
         {
           question: 'How accurate is the AI analysis?',
           answer:
-            'Our AI provides high-quality analysis, but we recommend reviewing all suggestions.',
+            'Our AI analysis achieves industry-leading accuracy with 95%+ grammar accuracy, 90%+ style consistency, and 85%+ content structure accuracy. The AI continuously learns from academic writing standards and adapts to specialized subjects.',
         },
         {
-          question: 'Does AssignmentAI detect plagiarism?',
+          question: 'Does AssignmentAI detect plagiarism effectively?',
           answer:
-            'Yes, our system includes plagiarism detection features to ensure academic integrity.',
+            'Yes, AssignmentAI includes a sophisticated plagiarism detection system that scans against billions of web pages and academic databases. Our AI can identify both direct copying and paraphrased content with high accuracy.',
+        },
+        {
+          question: 'What AI-powered writing suggestions do you offer?',
+          answer:
+            'AssignmentAI provides comprehensive AI-powered writing suggestions including Style Enhancement, Clarity Analyzer, Academic Tone Optimization, and Content Expansion tools. All suggestions are contextual and respect your original intent.',
         },
       ],
     },
@@ -184,16 +193,24 @@ const Help: React.FC = () => {
       category: 'Account & Settings',
       questions: [
         {
-          question: 'How do I change my password?',
-          answer: 'Go to Settings > Privacy & Security to change your password.',
+          question: 'How do I change my password and manage security?',
+          answer:
+            'Managing your account security is straightforward through Settings > Privacy & Security. We recommend using strong passwords and enabling two-factor authentication for enhanced security.',
         },
         {
-          question: 'Can I export my assignments?',
-          answer: 'Yes, you can export assignments in various formats from the Assignments page.',
+          question: 'Can I export my assignments and data?',
+          answer:
+            'Yes, AssignmentAI provides comprehensive export options for all your content in multiple formats including .docx, .pdf, .txt, and .rtf. You can also request a complete export of all your data for portability.',
         },
         {
           question: 'How do I enable two-factor authentication?',
-          answer: 'Navigate to Settings > Privacy & Security to set up 2FA for enhanced security.',
+          answer:
+            'Go to Settings > Privacy & Security and click "Two-Factor Authentication" to choose between SMS, authenticator apps, or hardware security keys. We recommend authenticator apps for enhanced security.',
+        },
+        {
+          question: 'How do I manage my privacy and data settings?',
+          answer:
+            'AssignmentAI gives you complete control over your privacy and data settings. You can control data collection, visibility settings, and request data deletion at any time.',
         },
       ],
     },
@@ -202,11 +219,43 @@ const Help: React.FC = () => {
       questions: [
         {
           question: 'How do I change my subscription plan?',
-          answer: 'Visit the Price Plan page to upgrade or downgrade your subscription.',
+          answer:
+            'Changing your subscription plan is simple through the Price Plan page. You can upgrade, downgrade, or switch between monthly and annual billing cycles with immediate effect.',
         },
         {
-          question: 'Is there a free trial available?',
-          answer: 'Yes, we offer a free trial for new users to explore our features.',
+          question: "What's included in the free trial and how long does it last?",
+          answer:
+            'Our free trial gives you full access to all AssignmentAI features for 14 days, including premium features like advanced analytics and unlimited collaboration. No credit card is required to start.',
+        },
+        {
+          question: 'What payment methods do you accept and is billing secure?',
+          answer:
+            'AssignmentAI accepts all major credit cards, PayPal, and Apple Pay through secure, PCI-compliant payment gateways. We never store your payment information on our servers.',
+        },
+        {
+          question: 'Do you offer discounts for students and educational institutions?',
+          answer:
+            'Yes, students with valid .edu email addresses receive 25% off all subscription plans. We also provide special pricing for educational institutions with volume discounts and institutional features.',
+        },
+      ],
+    },
+    {
+      category: 'Technical Support',
+      questions: [
+        {
+          question: 'What browsers and devices are supported?',
+          answer:
+            'AssignmentAI works seamlessly across all modern browsers (Chrome, Firefox, Safari, Edge) and devices. We offer native mobile apps for iOS and Android with full feature parity.',
+        },
+        {
+          question: 'How do I report bugs or request new features?',
+          answer:
+            'You can submit bug reports through the Help & Support section or use the "Feature Request" category in our contact form. We review all submissions and respond within 24-48 hours.',
+        },
+        {
+          question: 'What happens if I lose internet connection while working?',
+          answer:
+            'AssignmentAI automatically saves your work every few seconds and offers offline mode for critical work. All changes are stored locally and sync automatically when you reconnect.',
         },
       ],
     },
@@ -451,7 +500,7 @@ const Help: React.FC = () => {
           <Box sx={{ display: { xs: 'block', md: 'none' } }}>
             <Grid
               container
-              spacing={1}
+              spacing={0.5}
               sx={{
                 maxWidth: '100%',
               }}
@@ -462,13 +511,29 @@ const Help: React.FC = () => {
                     label={cat}
                     color={selectedCategory === cat ? 'primary' : 'default'}
                     onClick={() => setSelectedCategory(cat)}
+                    size="small"
                     sx={{
                       fontWeight: 500,
-                      fontSize: { xs: '0.75rem', md: '0.875rem' },
+                      fontSize: { xs: '0.7rem', md: '0.8rem' },
                       borderRadius: 2,
-                      height: { xs: 36, md: 40 },
+                      height: { xs: 28, md: 32 },
                       width: '100%',
                       justifyContent: 'center',
+                      backgroundColor: theme =>
+                        theme.palette.mode === 'dark'
+                          ? selectedCategory === cat
+                            ? 'error.main'
+                            : 'transparent'
+                          : undefined,
+                      border: theme => (theme.palette.mode === 'dark' ? '1px solid' : undefined),
+                      borderColor: theme =>
+                        theme.palette.mode === 'dark' ? 'error.main' : undefined,
+                      color: theme =>
+                        theme.palette.mode === 'dark'
+                          ? selectedCategory === cat
+                            ? 'black'
+                            : 'error.main'
+                          : undefined,
                       '& .MuiChip-label': {
                         textAlign: 'center',
                         whiteSpace: 'normal',
@@ -486,10 +551,10 @@ const Help: React.FC = () => {
           <Box sx={{ display: { xs: 'none', md: 'block' } }}>
             <Stack
               direction="row"
-              spacing={1}
+              spacing={0.5}
               sx={{
                 flexWrap: 'wrap',
-                gap: 1,
+                gap: 0.5,
                 justifyContent: 'flex-start',
               }}
             >
@@ -499,11 +564,27 @@ const Help: React.FC = () => {
                   label={cat}
                   color={selectedCategory === cat ? 'primary' : 'default'}
                   onClick={() => setSelectedCategory(cat)}
+                  size="small"
                   sx={{
                     fontWeight: 500,
-                    fontSize: '1rem',
+                    fontSize: '0.8rem',
                     borderRadius: 2,
-                    height: 40,
+                    height: 32,
+                    backgroundColor: theme =>
+                      theme.palette.mode === 'dark'
+                        ? selectedCategory === cat
+                          ? 'error.main'
+                          : 'transparent'
+                        : undefined,
+                    border: theme => (theme.palette.mode === 'dark' ? '1px solid' : undefined),
+                    borderColor: theme =>
+                      theme.palette.mode === 'dark' ? 'error.main' : undefined,
+                    color: theme =>
+                      theme.palette.mode === 'dark'
+                        ? selectedCategory === cat
+                          ? 'black'
+                          : 'error.main'
+                        : undefined,
                   }}
                   aria-pressed={selectedCategory === cat}
                   tabIndex={0}
@@ -543,13 +624,13 @@ const Help: React.FC = () => {
                 backgroundColor: theme =>
                   theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff',
                 borderColor: theme =>
-                  theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
-                color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+                  theme.palette.mode === 'dark' ? 'error.main' : 'rgba(0,0,0,0.2)',
+                color: theme => (theme.palette.mode === 'dark' ? 'error.main' : 'black'),
                 '&:hover': {
                   backgroundColor: theme =>
                     theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
                   borderColor: theme =>
-                    theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
+                    theme.palette.mode === 'dark' ? 'error.dark' : 'rgba(0,0,0,0.3)',
                 },
               }}
             >
@@ -567,13 +648,13 @@ const Help: React.FC = () => {
                 backgroundColor: theme =>
                   theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff',
                 borderColor: theme =>
-                  theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
-                color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+                  theme.palette.mode === 'dark' ? 'error.main' : 'rgba(0,0,0,0.2)',
+                color: theme => (theme.palette.mode === 'dark' ? 'error.main' : 'black'),
                 '&:hover': {
                   backgroundColor: theme =>
                     theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
                   borderColor: theme =>
-                    theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
+                    theme.palette.mode === 'dark' ? 'error.dark' : 'rgba(0,0,0,0.3)',
                 },
               }}
             >
@@ -736,13 +817,13 @@ const Help: React.FC = () => {
                           sx={{
                             background:
                               theme.palette.mode === 'dark'
-                                ? 'rgba(255,255,255,0.05)'
+                                ? `${theme.palette.background.paper}cc`
                                 : 'rgba(0,0,0,0.02)',
                             borderRadius: 2,
                             '&:hover': {
                               background:
                                 theme.palette.mode === 'dark'
-                                  ? 'rgba(255,255,255,0.08)'
+                                  ? `${theme.palette.background.paper}e6`
                                   : 'rgba(0,0,0,0.04)',
                             },
                             '& .MuiAccordionSummary-expandIconWrapper': {
@@ -762,7 +843,7 @@ const Help: React.FC = () => {
                           sx={{
                             background:
                               theme.palette.mode === 'dark'
-                                ? 'rgba(255,255,255,0.02)'
+                                ? `${theme.palette.background.paper}99`
                                 : 'rgba(0,0,0,0.01)',
                             borderTop: '1px solid',
                             borderColor:
@@ -820,7 +901,10 @@ const Help: React.FC = () => {
                   <Typography
                     variant="h6"
                     gutterBottom
-                    sx={{ fontSize: { xs: '1.125rem', md: '1.25rem' } }}
+                    sx={{
+                      fontSize: { xs: '1.125rem', md: '1.25rem' },
+                      color: 'white',
+                    }}
                   >
                     Send Message
                   </Typography>
@@ -1014,19 +1098,36 @@ const Help: React.FC = () => {
                         )}
                       </Button>
 
-                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          gap: 2,
+                          alignItems: 'center',
+                          flexWrap: 'wrap',
+                          justifyContent: 'space-between',
+                        }}
+                      >
+                        {contactForm.priority === 'urgent' && (
+                          <Chip
+                            label="Urgent"
+                            color="error"
+                            size="small"
+                            icon={<ContactSupportOutlined />}
+                            sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}
+                          />
+                        )}
                         <Button
                           type="submit"
                           variant="contained"
                           startIcon={
-                            isSubmitting ? <CircularProgress size={20} /> : <SendOutlined />
+                            isSubmitting ? <CircularProgress size={24} /> : <SendOutlined />
                           }
                           disabled={isSubmitting}
                           sx={{
-                            px: { xs: 3, md: 4 },
-                            py: { xs: 1, md: 1.5 },
+                            px: { xs: 4, md: 6 },
+                            py: { xs: 1.5, md: 2 },
                             borderRadius: 3,
-                            fontSize: { xs: '0.875rem', md: '1rem' },
+                            fontSize: { xs: '1rem', md: '1.25rem' },
                             background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
                             boxShadow:
                               '0 4px 20px 0px rgba(0,0,0,0.14), 0 7px 10px -5px rgba(33,150,243,0.4)',
@@ -1040,16 +1141,6 @@ const Help: React.FC = () => {
                         >
                           {isSubmitting ? 'Sending...' : 'Send Message'}
                         </Button>
-
-                        {contactForm.priority === 'urgent' && (
-                          <Chip
-                            label="Urgent"
-                            color="error"
-                            size="small"
-                            icon={<ContactSupportOutlined />}
-                            sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}
-                          />
-                        )}
                       </Box>
                     </Stack>
                   </Box>
@@ -1064,80 +1155,97 @@ const Help: React.FC = () => {
                   )}
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <Paper
+                  <Box
                     sx={{
                       p: { xs: 2, md: 3 },
-                      background:
-                        theme.palette.mode === 'dark'
-                          ? 'rgba(255,255,255,0.05)'
-                          : 'rgba(0,0,0,0.02)',
-                      borderRadius: 2,
                       border: '2px solid',
                       borderColor: 'error.main',
-                      '&:hover': {
-                        borderColor: 'error.dark',
-                      },
+                      borderRadius: 2,
                     }}
                   >
                     <Typography
                       variant="h6"
                       gutterBottom
                       color={theme => (theme.palette.mode === 'dark' ? 'white' : 'black')}
-                      sx={{ fontSize: { xs: '1.125rem', md: '1.25rem' } }}
+                      sx={{ fontSize: { xs: '1.125rem', md: '1.25rem' }, mb: 2 }}
                     >
                       Contact Information
                     </Typography>
                     <Stack spacing={2}>
                       <Box>
                         <Typography
-                          color="text.secondary"
+                          color="error.main"
                           gutterBottom
                           sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
                         >
                           Email
                         </Typography>
-                        <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
+                        <Typography
+                          sx={{
+                            fontSize: { xs: '0.875rem', md: '1rem' },
+                            color: theme =>
+                              theme.palette.mode === 'dark' ? 'white' : 'text.primary',
+                          }}
+                        >
                           support@assignmentai.com
                         </Typography>
                       </Box>
                       <Box>
                         <Typography
-                          color="text.secondary"
+                          color="error.main"
                           gutterBottom
                           sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
                         >
                           Response Time
                         </Typography>
-                        <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
+                        <Typography
+                          sx={{
+                            fontSize: { xs: '0.875rem', md: '1rem' },
+                            color: theme =>
+                              theme.palette.mode === 'dark' ? 'white' : 'text.primary',
+                          }}
+                        >
                           24-48 hours
                         </Typography>
                       </Box>
                       <Box>
                         <Typography
-                          color="text.secondary"
+                          color="error.main"
                           gutterBottom
                           sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}
                         >
                           Office Hours
                         </Typography>
-                        <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
+                        <Typography
+                          sx={{
+                            fontSize: { xs: '0.875rem', md: '1rem' },
+                            color: theme =>
+                              theme.palette.mode === 'dark' ? 'white' : 'text.primary',
+                          }}
+                        >
                           Monday - Friday, 9 AM - 6 PM EST
                         </Typography>
                       </Box>
                       <Box>
                         <Typography
-                          color="text.secondary"
+                          color="error.main"
                           gutterBottom
                           sx={{ fontSize: '0.875rem', md: '1rem' }}
                         >
                           Emergency Support
                         </Typography>
-                        <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
+                        <Typography
+                          sx={{
+                            fontSize: { xs: '0.875rem', md: '1rem' },
+                            color: theme =>
+                              theme.palette.mode === 'dark' ? 'white' : 'text.primary',
+                          }}
+                        >
                           For urgent issues, please mark your message as urgent.
                         </Typography>
                       </Box>
                     </Stack>
-                  </Paper>
+                  </Box>
                 </Grid>
               </Grid>
             </HelpSection>

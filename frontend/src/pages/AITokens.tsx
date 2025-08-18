@@ -22,8 +22,6 @@ import {
 import {
   Box,
   Button,
-  Card,
-  CardContent,
   Chip,
   Dialog,
   DialogActions,
@@ -592,7 +590,7 @@ const AITokens: React.FC = () => {
       </Typography>
       <Grid container spacing={3}>
         <Grid item xs={12} md={breakpoint === 'standard' ? 12 : 8}>
-          <Box sx={{ p: 2, mb: 2, ...redOutline }}>
+          <Box sx={{ p: 2, mb: 2, ...redOutline, borderRadius: 3 }}>
             <Typography
               variant="h6"
               gutterBottom
@@ -616,7 +614,10 @@ const AITokens: React.FC = () => {
                 }}
               >
                 <Tooltip title="Tokens remaining in your plan for this month">
-                  <Typography variant="body1">
+                  <Typography
+                    variant="body1"
+                    sx={{ color: theme => (theme.palette.mode === 'dark' ? 'white' : 'inherit') }}
+                  >
                     Remaining Tokens: {tokenUsage.remaining.toLocaleString()}
                   </Typography>
                 </Tooltip>
@@ -645,8 +646,8 @@ const AITokens: React.FC = () => {
             </Box>
             <Grid container spacing={2}>
               <Grid item xs={4}>
-                <Card sx={{ ...redOutline, borderRadius: 3 }}>
-                  <CardContent
+                <Box sx={{ ...redOutline, borderRadius: 3, p: 2 }}>
+                  <Box
                     sx={{
                       display: 'flex',
                       flexDirection: 'column',
@@ -670,7 +671,7 @@ const AITokens: React.FC = () => {
                           color="textSecondary"
                           sx={{
                             fontSize: '0.875rem',
-                            fontWeight: 600,
+                            fontWeight: '600',
                           }}
                         >
                           Total Tokens
@@ -688,16 +689,17 @@ const AITokens: React.FC = () => {
                       sx={{
                         fontSize: { xs: '1.1rem', md: '1.5rem' },
                         textAlign: 'center',
+                        color: theme => (theme.palette.mode === 'dark' ? 'white' : 'inherit'),
                       }}
                     >
                       {tokenUsage.total.toLocaleString()}
                     </Typography>
-                  </CardContent>
-                </Card>
+                  </Box>
+                </Box>
               </Grid>
               <Grid item xs={4}>
-                <Card sx={{ ...redOutline, borderRadius: 3 }}>
-                  <CardContent
+                <Box sx={{ ...redOutline, borderRadius: 3, p: 2 }}>
+                  <Box
                     sx={{
                       display: 'flex',
                       flexDirection: 'column',
@@ -721,7 +723,7 @@ const AITokens: React.FC = () => {
                           color="textSecondary"
                           sx={{
                             fontSize: '0.875rem',
-                            fontWeight: 600,
+                            fontWeight: '600',
                           }}
                         >
                           Used Tokens
@@ -739,16 +741,17 @@ const AITokens: React.FC = () => {
                       sx={{
                         fontSize: { xs: '1.1rem', md: '1.5rem' },
                         textAlign: 'center',
+                        color: theme => (theme.palette.mode === 'dark' ? 'white' : 'inherit'),
                       }}
                     >
                       {tokenUsage.used.toLocaleString()}
                     </Typography>
-                  </CardContent>
-                </Card>
+                  </Box>
+                </Box>
               </Grid>
               <Grid item xs={4}>
-                <Card sx={{ ...redOutline, borderRadius: 3 }}>
-                  <CardContent
+                <Box sx={{ ...redOutline, borderRadius: 3, p: 2 }}>
+                  <Box
                     sx={{
                       display: 'flex',
                       flexDirection: 'column',
@@ -772,7 +775,11 @@ const AITokens: React.FC = () => {
                           color="textSecondary"
                           sx={{
                             fontSize: '0.875rem',
-                            fontWeight: 600,
+                            fontWeight: '600',
+                            color: theme =>
+                              theme.palette.mode === 'dark'
+                                ? 'white'
+                                : theme.palette.text.secondary,
                           }}
                         >
                           Remaining Tokens
@@ -790,17 +797,18 @@ const AITokens: React.FC = () => {
                       sx={{
                         fontSize: { xs: '1.1rem', md: '1.5rem' },
                         textAlign: 'center',
+                        color: theme => (theme.palette.mode === 'dark' ? 'white' : 'inherit'),
                       }}
                     >
                       {tokenUsage.remaining.toLocaleString()}
                     </Typography>
-                  </CardContent>
-                </Card>
+                  </Box>
+                </Box>
               </Grid>
             </Grid>
           </Box>
 
-          <Box sx={{ p: 2, mb: 2, ...redOutline }}>
+          <Box sx={{ p: 2, mb: 2, ...redOutline, borderRadius: 3 }}>
             <Typography
               variant="h6"
               gutterBottom
@@ -936,7 +944,7 @@ const AITokens: React.FC = () => {
             )}
           </Box>
 
-          <Box sx={{ p: 2, mb: 2, ...redOutline }}>
+          <Box sx={{ p: 2, mb: 2, ...redOutline, borderRadius: 3 }}>
             <Typography
               variant="h6"
               gutterBottom
@@ -1025,7 +1033,13 @@ const AITokens: React.FC = () => {
                 />
                 <Typography
                   variant="body1"
-                  sx={{ minWidth: 120, fontWeight: 700, fontSize: '1rem', mt: 1 }}
+                  sx={{
+                    minWidth: 120,
+                    fontWeight: 700,
+                    fontSize: '1rem',
+                    mt: 1,
+                    color: theme => (theme.palette.mode === 'dark' ? 'white' : 'inherit'),
+                  }}
                 >
                   Estimated Cost: <b>${calcCost.toFixed(2)}</b>
                 </Typography>
@@ -1105,7 +1119,7 @@ const AITokens: React.FC = () => {
               </Box>
             </Box>
           </Box>
-          <Box sx={{ p: 2, mb: 2, ...redOutline }}>
+          <Box sx={{ p: 2, mb: 2, ...redOutline, borderRadius: 3 }}>
             <Typography
               variant="h6"
               gutterBottom
@@ -1293,11 +1307,11 @@ const AITokens: React.FC = () => {
               )}
             </Popover>
           </Box>
-          <Box sx={{ mb: 4 }} />
+          <Box sx={{ mb: 2 }} />
         </Grid>
 
         <Grid item xs={12} md={breakpoint === 'standard' ? 12 : 4}>
-          <Box sx={{ p: 3, mb: 4, ...redOutline }} ref={guideRef}>
+          <Box sx={{ p: 3, mb: 4, ...redOutline, borderRadius: 3 }} ref={guideRef}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
               <Typography
                 variant="h6"
@@ -1319,7 +1333,13 @@ const AITokens: React.FC = () => {
             <Box sx={{ mb: 2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                 <SchoolIcon color="primary" />
-                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    fontWeight: 600,
+                    color: theme => (theme.palette.mode === 'dark' ? 'white' : 'inherit'),
+                  }}
+                >
                   Academic
                 </Typography>
               </Box>
@@ -1407,7 +1427,6 @@ const AITokens: React.FC = () => {
                         ))}
                       </Box>
                     </ListItem>
-                    {index < academicFeatures.length - 1 && <Divider sx={{ my: 1 }} />}
                   </React.Fragment>
                 ))}
               </List>
@@ -1497,7 +1516,6 @@ const AITokens: React.FC = () => {
                         ))}
                       </Box>
                     </ListItem>
-                    {index < technicalFeatures.length - 1 && <Divider sx={{ my: 1 }} />}
                   </React.Fragment>
                 ))}
               </List>
@@ -1662,65 +1680,95 @@ const AITokens: React.FC = () => {
       </Grid>
 
       {/* Features Navigation Confirmation Dialog */}
-      <Dialog
-        open={showFeaturesConfirmation}
-        onClose={() => setShowFeaturesConfirmation(false)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            border: '2px solid',
-            borderColor: 'primary.main',
-            backgroundColor: theme =>
-              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
-          },
-        }}
-      >
-        <DialogTitle sx={{ borderBottom: '1px solid', borderColor: 'divider', pb: 2 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <InfoIcon sx={{ color: 'primary.main', fontSize: 28 }} />
-              <Typography
-                variant="h6"
-                sx={{
-                  color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
-                  fontWeight: 600,
-                }}
-              >
-                Leave Dashboard?
+      {showFeaturesConfirmation && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 1300,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            p: 2,
+          }}
+          onClick={() => setShowFeaturesConfirmation(false)}
+        >
+          <Box
+            onClick={e => e.stopPropagation()}
+            sx={{
+              width: { xs: '95vw', sm: '400px' },
+              maxWidth: '400px',
+              backgroundColor: theme =>
+                theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+              borderRadius: 3,
+              border: '2px solid',
+              borderColor: 'primary.main',
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            {/* Header */}
+            <Box sx={{ borderBottom: '1px solid', borderColor: 'divider', pb: 2, p: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <InfoIcon sx={{ color: 'primary.main', fontSize: 28 }} />
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+                      fontWeight: 600,
+                    }}
+                  >
+                    Leave Dashboard?
+                  </Typography>
+                </Box>
+                <IconButton
+                  onClick={() => setShowFeaturesConfirmation(false)}
+                  size="small"
+                  sx={{ color: 'text.secondary' }}
+                >
+                  <CloseIcon />
+                </IconButton>
+              </Box>
+            </Box>
+
+            {/* Content */}
+            <Box sx={{ pt: 3, pb: 1, px: 2 }}>
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+                You're about to leave the dashboard and navigate to the AI Features section. Are you
+                sure this is what you want to do?
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                You can always return to the dashboard using the navigation menu.
               </Typography>
             </Box>
-            <IconButton
-              onClick={() => setShowFeaturesConfirmation(false)}
-              size="small"
-              sx={{ color: 'text.secondary' }}
+
+            {/* Actions */}
+            <Box
+              sx={{
+                p: 2,
+                borderTop: '1px solid',
+                borderColor: 'divider',
+                justifyContent: 'center',
+                display: 'flex',
+              }}
             >
-              <CloseIcon />
-            </IconButton>
+              <Button
+                onClick={handleConfirmFeaturesNavigation}
+                variant="contained"
+                sx={{ minWidth: 120 }}
+              >
+                Continue
+              </Button>
+            </Box>
           </Box>
-        </DialogTitle>
-        <DialogContent sx={{ pt: 3, pb: 1 }}>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-            You're about to leave the dashboard and navigate to the AI Features section. Are you
-            sure this is what you want to do?
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-            You can always return to the dashboard using the navigation menu.
-          </Typography>
-        </DialogContent>
-        <DialogActions
-          sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider', justifyContent: 'center' }}
-        >
-          <Button
-            onClick={handleConfirmFeaturesNavigation}
-            variant="contained"
-            sx={{ minWidth: 120 }}
-          >
-            Continue
-          </Button>
-        </DialogActions>
-      </Dialog>
+        </Box>
+      )}
     </Box>
   );
 };

@@ -7,13 +7,11 @@ import {
   BlockOutlined,
   CheckCircle,
   Close as CloseIcon,
-  CompareArrows,
   DesignServicesOutlined,
   Diamond,
   EmojiEvents,
   FormatQuoteOutlined,
   GppGoodOutlined,
-  HelpOutline,
   LibraryBooksOutlined,
   LocalOffer,
   MilitaryTechOutlined,
@@ -30,8 +28,6 @@ import {
 import {
   Box,
   Button,
-  Card,
-  CardContent,
   Chip,
   CircularProgress,
   Container,
@@ -47,7 +43,6 @@ import {
   MenuItem,
   Stack,
   Switch,
-  Tooltip,
   Typography,
 } from '@mui/material';
 import { Elements } from '@stripe/react-stripe-js';
@@ -56,6 +51,7 @@ import { useSnackbar } from 'notistack';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import DetailedFeatureComparison from '../components/DetailedFeatureComparison';
 import PaymentForm from '../components/payment/PaymentForm';
 import SuccessPopup from '../components/payment/SuccessPopup';
 import SorryToSeeYouGoPopup from '../components/subscription/SorryToSeeYouGoPopup';
@@ -694,178 +690,6 @@ const PricePlan: React.FC = () => {
     return false;
   };
 
-  const renderDetailedComparison = () => {
-    return (
-      <Dialog
-        open={showDetailedComparison}
-        onClose={() => setShowDetailedComparison(false)}
-        maxWidth="lg"
-        fullWidth
-        PaperProps={{
-          sx: {
-            width: { xs: '95vw', md: 'auto' },
-            maxWidth: { xs: '95vw', md: 'lg' },
-            backgroundColor: theme =>
-              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
-          },
-        }}
-      >
-        {/* Remove DialogTitle so there is no header or X button */}
-        <DialogContent sx={{ p: { xs: 2, md: 3 }, position: 'relative' }}>
-          <IconButton
-            onClick={() => setShowDetailedComparison(false)}
-            size="small"
-            sx={{
-              position: 'absolute',
-              top: 8,
-              left: 8,
-              color: 'red',
-              zIndex: 2,
-            }}
-            aria-label="Close"
-          >
-            <CloseIcon fontSize="small" />
-          </IconButton>
-          <Box sx={{ mt: { xs: 1, md: 2 } }}>
-            {/* Replace the feature comparison rows with a grid layout for perfect alignment */}
-            <Box sx={{ width: '100%', overflowX: 'auto', mt: 2 }}>
-              <Box
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns:
-                    'minmax(220px, 1.5fr) repeat(' + plansWithCurrentPlan.length + ', 1fr)',
-                  alignItems: 'center',
-                  fontWeight: 700,
-                  mb: 2,
-                  px: 2,
-                  py: 1,
-                  borderBottom: theme =>
-                    `2px solid ${theme.palette.mode === 'dark' ? '#444' : '#eee'}`,
-                  background: theme =>
-                    theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
-                }}
-              >
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    fontSize: { xs: '1.1rem', md: '1.2rem' },
-                    color: 'red',
-                    fontWeight: 700,
-                  }}
-                >
-                  Detailed Feature Comparison
-                  <CompareArrows sx={{ ml: 1, color: 'red', fontSize: { xs: 22, md: 26 } }} />
-                </Box>
-                {plansWithCurrentPlan.map(plan => (
-                  <Box
-                    key={plan.name}
-                    sx={{
-                      textAlign: 'center',
-                      color: plan.color,
-                      fontWeight: 700,
-                      fontSize: { xs: '1.1rem', md: '1.2rem' },
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 1,
-                    }}
-                  >
-                    {plan.icon}
-                    {plan.name}
-                  </Box>
-                ))}
-              </Box>
-              {features.map(feature => (
-                <Box
-                  key={feature.name}
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns:
-                      'minmax(220px, 1.5fr) repeat(' + plansWithCurrentPlan.length + ', 1fr)',
-                    alignItems: 'center',
-                    minHeight: 40,
-                    px: 2,
-                    py: 1,
-                    background: theme =>
-                      theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', minHeight: 32 }}>
-                    <Typography
-                      sx={{
-                        fontWeight: 600,
-                        fontSize: { xs: '1.1rem', md: '1.2rem' },
-                        color: 'text.primary',
-                      }}
-                    >
-                      {feature.name}
-                    </Typography>
-                    <Box
-                      sx={{
-                        width: 28,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        ml: 0.5,
-                      }}
-                    >
-                      {feature.description ? (
-                        <Tooltip title={feature.description} arrow>
-                          <IconButton size="small" sx={{ p: 0 }}>
-                            <HelpOutline
-                              fontSize="small"
-                              sx={{ color: 'error.main', fontSize: { xs: 16, md: 20 } }}
-                            />
-                          </IconButton>
-                        </Tooltip>
-                      ) : (
-                        <IconButton size="small" sx={{ p: 0, opacity: 0, pointerEvents: 'none' }}>
-                          <HelpOutline fontSize="small" />
-                        </IconButton>
-                      )}
-                    </Box>
-                  </Box>
-                  {plansWithCurrentPlan.map(plan => {
-                    const isIncluded = plansWithCurrentPlan
-                      .slice(0, plansWithCurrentPlan.indexOf(plan) + 1)
-                      .some(p => p.features.includes(feature.name));
-                    return (
-                      <Box
-                        key={plan.name}
-                        sx={{
-                          textAlign: 'center',
-                          display: 'flex',
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                          minHeight: 32,
-                        }}
-                      >
-                        {isIncluded ? (
-                          <CheckCircle sx={{ color: plan.color, fontSize: 28 }} />
-                        ) : (
-                          <Typography
-                            sx={{
-                              color: theme => (theme.palette.mode === 'dark' ? '#666' : '#aaa'),
-                              fontSize: 28,
-                              fontWeight: 700,
-                            }}
-                          >
-                            —
-                          </Typography>
-                        )}
-                      </Box>
-                    );
-                  })}
-                </Box>
-              ))}
-            </Box>
-          </Box>
-        </DialogContent>
-      </Dialog>
-    );
-  };
-
   return (
     <Box
       sx={{
@@ -939,7 +763,7 @@ const PricePlan: React.FC = () => {
                   .filter(plan => plan.priceId && plan.priceId !== '') // Only show plans with valid price IDs
                   .map(plan => (
                     <Grid item xs={12} sm={6} md={6} lg={3} xl={3} key={plan.name}>
-                      <Card
+                      <Box
                         sx={{
                           height: '100%',
                           display: 'flex',
@@ -1020,7 +844,7 @@ const PricePlan: React.FC = () => {
                           </IconButton>
                         )}
 
-                        <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                        <Box sx={{ flexGrow: 1, p: 3 }}>
                           <Stack spacing={2}>
                             <Box
                               sx={{
@@ -1336,8 +1160,8 @@ const PricePlan: React.FC = () => {
                                 : 'Choose Plan'}
                             </Button>
                           </Stack>
-                        </CardContent>
-                      </Card>
+                        </Box>
+                      </Box>
                     </Grid>
                   ))}
               </>
@@ -1389,7 +1213,12 @@ const PricePlan: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {renderDetailedComparison()}
+      <DetailedFeatureComparison
+        open={showDetailedComparison}
+        onClose={() => setShowDetailedComparison(false)}
+        features={features}
+        plansWithCurrentPlan={plansWithCurrentPlan}
+      />
 
       {/* Success Popup Dialog */}
       <SuccessPopup
