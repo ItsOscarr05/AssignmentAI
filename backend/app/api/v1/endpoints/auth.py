@@ -283,7 +283,7 @@ async def login(
         # Create access token with session ID
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
-            subject=user.id, expires_delta=access_token_expires
+            subject=user.id, expires_delta=access_token_expires, session_id=session_id
         )
         
         # Create refresh token
@@ -356,10 +356,33 @@ async def logout(
         token = request.headers.get("Authorization", "").split(" ")[1]
         payload = verify_token(token)
         
+        # Get session service
+        session_service = get_session_service(db)
+        
         # Revoke session if session_id is in token
         if payload and "session_id" in payload:
-            session_service = get_session_service(db)
-            await session_service.revoke_session(current_user.id, payload["session_id"])
+            session_id = payload["session_id"]
+            await session_service.revoke_session(current_user.id, session_id)
+            logger.info(f"Revoked session {session_id} for user {current_user.id}")
+        else:
+            # If no session_id in token, try to revoke by device info
+            # This handles cases where the token doesn't have session_id
+            device_info = {
+                "ip_address": request.client.host if request.client else "unknown",
+                "user_agent": request.headers.get("user-agent", ""),
+                "device_fingerprint": "logout_device"  # Fallback fingerprint
+            }
+            
+            success = await session_service.revoke_current_session_by_device(current_user.id, device_info)
+            if success:
+                logger.info(f"Revoked current session by device for user {current_user.id}")
+            else:
+                # Last resort: try to find and revoke the most recent active session
+                active_sessions = await session_service.get_user_sessions(current_user.id)
+                if active_sessions:
+                    most_recent_session = active_sessions[0]
+                    await session_service.revoke_session(current_user.id, most_recent_session["id"])
+                    logger.info(f"Revoked most recent session {most_recent_session['id']} for user {current_user.id}")
         
         # Log logout event
         from app.models.security import AuditLog

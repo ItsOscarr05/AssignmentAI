@@ -38,8 +38,6 @@ import {
   TextSnippetOutlined,
   Tune,
   VerifiedUserOutlined,
-  Visibility,
-  VisibilityOff,
   VisibilityOffOutlined,
   VisibilityOutlined,
   VpnKeyOutlined,
@@ -61,7 +59,6 @@ import {
   FormControlLabel,
   FormGroup,
   Grid,
-  IconButton,
   InputAdornment,
   InputLabel,
   List,
@@ -83,6 +80,9 @@ import {
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import AccountInformationDialog from '../components/account/AccountInformationDialog';
+import ChangePasswordDialog from '../components/account/ChangePasswordDialog';
+import DeleteAccountDialog from '../components/account/DeleteAccountDialog';
+import DownloadDataDialog from '../components/account/DownloadDataDialog';
 import AIFeaturesDemo from '../components/ai/AIFeaturesDemo';
 import DateFormatSelector from '../components/common/DateFormatSelector';
 import AutoLockWarningDialog from '../components/security/AutoLockWarningDialog';
@@ -215,28 +215,14 @@ const Settings: React.FC = () => {
   const [isRecordingAudit, setIsRecordingAudit] = useState(false);
   const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
   const [showDownloadDataDialog, setShowDownloadDataDialog] = useState(false);
-  const [exportFormat, setExportFormat] = useState<'json' | 'pdf' | 'csv' | 'xml'>('json');
-  const [exportDataTypes, setExportDataTypes] = useState({
-    assignments: true,
-    preferences: true,
-    activity: true,
-    analytics: false,
-  });
+
   const [isExportingData, setIsExportingData] = useState(false);
   const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false);
   const [showAccountInfoDialog, setShowAccountInfoDialog] = useState(false);
   const [showAIFeaturesTestDialog, setShowAIFeaturesTestDialog] = useState(false);
-  const [passwordForm, setPasswordForm] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
+
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
 
   // Privacy & Security
   const [privacySettings, setPrivacySettings] = useState({
@@ -445,23 +431,9 @@ const Settings: React.FC = () => {
     });
   };
 
-  // Calculate actual password strength based on requirements
-  const calculateActualPasswordStrength = () => {
-    const requirements = passwordRequirements;
-    const fulfilledCount = Object.values(requirements).filter(Boolean).length;
-
-    if (fulfilledCount === 5) return 'strong';
-    if (fulfilledCount >= 3) return 'medium';
-    return 'weak';
-  };
-
   // Get current password strength (either from form or stored settings)
   const getCurrentPasswordStrength = () => {
-    // If we're in password change mode, use the actual calculated strength
-    if (passwordForm.newPassword) {
-      return calculateActualPasswordStrength();
-    }
-    // Otherwise, use the stored strength from settings
+    // Use the stored strength from settings
     return securitySettings.passwordStrength;
   };
 
@@ -503,7 +475,7 @@ const Settings: React.FC = () => {
     const calculatedScore = calculateSecurityScore();
     let securityLevel = 'Low';
     if (calculatedScore >= 80) securityLevel = 'High';
-    else if (calculatedScore >= 60) securityLevel = 'Medium';
+    else if (calculatedScore >= 50) securityLevel = 'Medium';
 
     return {
       enabledFeatures: enabledFeatures.join(', ') || 'None',
@@ -1179,31 +1151,35 @@ const Settings: React.FC = () => {
   }, [privacySettings.autoLock, resetActivityTimer]);
 
   // Password change function
-  const handlePasswordChange = async () => {
+  const handlePasswordChange = async (passwordData: {
+    currentPassword: string;
+    newPassword: string;
+    confirmPassword: string;
+  }) => {
     // Reset error state
     setPasswordError(null);
 
     // Validate form
     if (
-      !passwordForm.currentPassword ||
-      !passwordForm.newPassword ||
-      !passwordForm.confirmPassword
+      !passwordData.currentPassword ||
+      !passwordData.newPassword ||
+      !passwordData.confirmPassword
     ) {
       setPasswordError('All fields are required');
       return;
     }
 
-    if (passwordForm.newPassword.length < 8) {
+    if (passwordData.newPassword.length < 8) {
       setPasswordError('New password must be at least 8 characters long');
       return;
     }
 
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
       setPasswordError('New passwords do not match');
       return;
     }
 
-    if (passwordForm.currentPassword === passwordForm.newPassword) {
+    if (passwordData.currentPassword === passwordData.newPassword) {
       setPasswordError('New password must be different from current password');
       return;
     }
@@ -1213,17 +1189,12 @@ const Settings: React.FC = () => {
 
       // Call the API
       await users.changePassword({
-        currentPassword: passwordForm.currentPassword,
-        newPassword: passwordForm.newPassword,
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword,
       });
 
       // Success - close dialog and reset form
       setShowChangePasswordDialog(false);
-      setPasswordForm({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      });
       setPasswordError(null);
 
       // Show success message (you could add a snackbar here)
@@ -1240,29 +1211,38 @@ const Settings: React.FC = () => {
     }
   };
 
-  // Password requirements validation
-  const passwordRequirements = {
-    minLength: passwordForm.newPassword.length >= 8,
-    hasUpperCase: /[A-Z]/.test(passwordForm.newPassword),
-    hasLowerCase: /[a-z]/.test(passwordForm.newPassword),
-    hasNumber: /\d/.test(passwordForm.newPassword),
-    hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(passwordForm.newPassword),
-  };
+  const handleDeleteAccount = async (confirmationText: string) => {
+    try {
+      // TODO: Implement actual account deletion API call
+      console.log('Deleting account with confirmation:', confirmationText);
 
-  const validateConfirmPassword = (confirmPassword: string) => {
-    if (confirmPassword !== passwordForm.newPassword) {
-      setConfirmPasswordError('Passwords do not match');
-      return false;
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // For now, just close the dialog
+      setShowDeleteAccountDialog(false);
+
+      // TODO: Redirect to logout or show success message
+      console.log('Account deletion completed');
+    } catch (error) {
+      console.error('Account deletion failed:', error);
+      // TODO: Handle error appropriately
     }
-    setConfirmPasswordError('');
-    return true;
   };
 
-  const handleDataExport = async () => {
+  const handleDataExport = async (exportData: {
+    format: 'json' | 'pdf' | 'csv' | 'xml';
+    dataTypes: {
+      assignments: boolean;
+      preferences: boolean;
+      activity: boolean;
+      analytics: boolean;
+    };
+  }) => {
     setIsExportingData(true);
     try {
       // Check if at least one data type is selected
-      const selectedTypes = Object.values(exportDataTypes).filter(Boolean);
+      const selectedTypes = Object.values(exportData.dataTypes).filter(Boolean);
       if (selectedTypes.length === 0) {
         alert('Please select at least one data type to export.');
         return;
@@ -1270,26 +1250,26 @@ const Settings: React.FC = () => {
 
       // TODO: Implement actual data export API call
       // This would typically call your backend API to generate the export
-      console.log('Exporting data in', exportFormat, 'format:', exportDataTypes);
+      console.log('Exporting data in', exportData.format, 'format:', exportData.dataTypes);
 
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       // For now, create a mock download
       const mockData = {
-        format: exportFormat,
-        dataTypes: exportDataTypes,
+        format: exportData.format,
+        dataTypes: exportData.dataTypes,
         timestamp: new Date().toISOString(),
         user: 'current_user',
       };
 
       const blob = new Blob([JSON.stringify(mockData, null, 2)], {
         type:
-          exportFormat === 'pdf'
+          exportData.format === 'pdf'
             ? 'application/pdf'
-            : exportFormat === 'csv'
+            : exportData.format === 'csv'
             ? 'text/csv'
-            : exportFormat === 'xml'
+            : exportData.format === 'xml'
             ? 'application/xml'
             : 'application/json',
       });
@@ -1297,7 +1277,9 @@ const Settings: React.FC = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `assignmentai_export_${new Date().toISOString().split('T')[0]}.${exportFormat}`;
+      a.download = `assignmentai_export_${new Date().toISOString().split('T')[0]}.${
+        exportData.format
+      }`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -4165,453 +4147,31 @@ const Settings: React.FC = () => {
       </Dialog>
 
       {/* Delete Account Confirmation Dialog */}
-      <Dialog
+      <DeleteAccountDialog
         open={showDeleteAccountDialog}
         onClose={() => setShowDeleteAccountDialog(false)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            backgroundColor: theme =>
-              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
-          },
-        }}
-      >
-        <DialogTitle sx={{ color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black') }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <DeleteForeverOutlined color="error" />
-            Delete Account
-          </Box>
-        </DialogTitle>
-        <DialogContent>
-          <Alert severity="error" sx={{ mb: 2 }}>
-            <Typography variant="body2">
-              <strong>Warning:</strong> This action cannot be undone. All your data will be
-              permanently deleted.
-            </Typography>
-          </Alert>
-          <Typography variant="body2" color="text.secondary">
-            Before deleting your account, please consider:
-          </Typography>
-          <List dense>
-            <ListItem sx={{ px: 0 }}>
-              <ListItemIcon sx={{ minWidth: 32 }}>
-                <Warning fontSize="small" color="warning" />
-              </ListItemIcon>
-              <ListItemText
-                primary="All assignments and submissions will be lost"
-                primaryTypographyProps={{ variant: 'body2' }}
-              />
-            </ListItem>
-            <ListItem sx={{ px: 0 }}>
-              <ListItemIcon sx={{ minWidth: 32 }}>
-                <Warning fontSize="small" color="warning" />
-              </ListItemIcon>
-              <ListItemText
-                primary="Your account cannot be recovered"
-                primaryTypographyProps={{ variant: 'body2' }}
-              />
-            </ListItem>
-            <ListItem sx={{ px: 0 }}>
-              <ListItemIcon sx={{ minWidth: 32 }}>
-                <Warning fontSize="small" color="warning" />
-              </ListItemIcon>
-              <ListItemText
-                primary="Consider downloading your data first"
-                primaryTypographyProps={{ variant: 'body2' }}
-              />
-            </ListItem>
-          </List>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowDeleteAccountDialog(false)}>Cancel</Button>
-          <Button
-            variant="contained"
-            color="error"
-            onClick={() => {
-              setShowDeleteAccountDialog(false);
-              // TODO: Implement account deletion
-            }}
-          >
-            Delete Account
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onSubmit={handleDeleteAccount}
+        isLoading={false}
+        error={null}
+      />
 
       {/* Download Data Dialog */}
-      <Dialog
+      <DownloadDataDialog
         open={showDownloadDataDialog}
         onClose={() => setShowDownloadDataDialog(false)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            backgroundColor: theme =>
-              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
-          },
-        }}
-      >
-        <DialogTitle sx={{ color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black') }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <DownloadOutlined />
-            Download Your Data
-          </Box>
-        </DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Choose what data you'd like to download from your account and select your preferred
-            export format.
-          </Typography>
-
-          {/* Export Format Selection */}
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="subtitle2" sx={{ mb: 2, color: 'primary.main' }}>
-              Export Format
-            </Typography>
-            <FormControl fullWidth>
-              <Select
-                value={exportFormat}
-                onChange={e => setExportFormat(e.target.value as 'json' | 'pdf' | 'csv' | 'xml')}
-                displayEmpty
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    backgroundColor: theme =>
-                      theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
-                  },
-                }}
-              >
-                <MenuItem value="json">JSON (JavaScript Object Notation)</MenuItem>
-                <MenuItem value="pdf">PDF (Portable Document Format)</MenuItem>
-                <MenuItem value="csv">CSV (Comma-Separated Values)</MenuItem>
-                <MenuItem value="xml">XML (Extensible Markup Language)</MenuItem>
-              </Select>
-            </FormControl>
-          </Box>
-
-          {/* Data Type Selection */}
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="subtitle2" sx={{ mb: 2, color: 'primary.main' }}>
-              Data to Export
-            </Typography>
-            <FormGroup>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={exportDataTypes.assignments}
-                    onChange={e =>
-                      setExportDataTypes({
-                        ...exportDataTypes,
-                        assignments: e.target.checked,
-                      })
-                    }
-                  />
-                }
-                label="Assignments and Submissions"
-              />
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={exportDataTypes.preferences}
-                    onChange={e =>
-                      setExportDataTypes({
-                        ...exportDataTypes,
-                        preferences: e.target.checked,
-                      })
-                    }
-                  />
-                }
-                label="User Preferences and Settings"
-              />
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={exportDataTypes.activity}
-                    onChange={e =>
-                      setExportDataTypes({
-                        ...exportDataTypes,
-                        activity: e.target.checked,
-                      })
-                    }
-                  />
-                }
-                label="Activity History"
-              />
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={exportDataTypes.analytics}
-                    onChange={e =>
-                      setExportDataTypes({
-                        ...exportDataTypes,
-                        analytics: e.target.checked,
-                      })
-                    }
-                  />
-                }
-                label="Analytics Data (if enabled)"
-              />
-            </FormGroup>
-          </Box>
-
-          <Alert severity="info" sx={{ mt: 2 }}>
-            <Typography variant="caption">
-              Data will be exported in {exportFormat.toUpperCase()} format and may take a few
-              minutes to prepare.
-              {exportFormat === 'pdf' &&
-                ' PDF exports include formatted reports with charts and summaries.'}
-              {exportFormat === 'csv' && ' CSV exports are ideal for spreadsheet applications.'}
-              {exportFormat === 'xml' && ' XML exports provide structured data with metadata.'}
-            </Typography>
-          </Alert>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowDownloadDataDialog(false)} disabled={isExportingData}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleDataExport}
-            disabled={isExportingData}
-            startIcon={isExportingData ? <CircularProgress size={16} /> : <DownloadOutlined />}
-          >
-            {isExportingData ? 'Preparing Export...' : 'Download Data'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onSubmit={handleDataExport}
+        isLoading={isExportingData}
+        error={null}
+      />
 
       {/* Change Password Dialog */}
-      <Dialog
+      <ChangePasswordDialog
         open={showChangePasswordDialog}
         onClose={() => setShowChangePasswordDialog(false)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            backgroundColor: theme =>
-              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
-          },
-        }}
-      >
-        <DialogTitle sx={{ color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black') }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <VpnKeyOutlined />
-            Change Password
-          </Box>
-        </DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Enter your current password and choose a new password to update your account security.
-          </Typography>
-
-          {passwordError && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {passwordError}
-            </Alert>
-          )}
-
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <TextField
-              label="Current Password"
-              type={showCurrentPassword ? 'text' : 'password'}
-              fullWidth
-              variant="outlined"
-              placeholder="Enter your current password"
-              value={passwordForm.currentPassword}
-              onChange={e =>
-                setPasswordForm({
-                  ...passwordForm,
-                  currentPassword: e.target.value,
-                })
-              }
-              disabled={isChangingPassword}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                      edge="end"
-                      disabled={isChangingPassword}
-                    >
-                      {showCurrentPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <TextField
-              label="New Password"
-              type={showNewPassword ? 'text' : 'password'}
-              fullWidth
-              variant="outlined"
-              placeholder="Enter your new password"
-              value={passwordForm.newPassword}
-              onChange={e => {
-                const newPasswordValue = e.target.value;
-                setPasswordForm({
-                  ...passwordForm,
-                  newPassword: newPasswordValue,
-                });
-                // Re-validate confirm password when new password changes
-                if (passwordForm.confirmPassword) {
-                  // Check if passwords match with the new password value
-                  if (passwordForm.confirmPassword !== newPasswordValue) {
-                    setConfirmPasswordError('Passwords do not match');
-                  } else {
-                    setConfirmPasswordError('');
-                  }
-                }
-              }}
-              disabled={isChangingPassword}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowNewPassword(!showNewPassword)}
-                      edge="end"
-                      disabled={isChangingPassword}
-                    >
-                      {showNewPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-
-            {/* Password Requirements Display */}
-            {passwordForm.newPassword.length > 0 && (
-              <Box sx={{ mt: 1, mb: 1 }}>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: 'text.secondary',
-                    fontWeight: 400,
-                    fontSize: '0.8rem',
-                    mb: 1,
-                  }}
-                >
-                  Password Requirements:
-                </Typography>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: passwordRequirements.minLength ? 'success.main' : 'error.main',
-                      fontWeight: 400,
-                      fontSize: '0.75rem',
-                    }}
-                  >
-                    • At least 8 characters {passwordRequirements.minLength ? '✓' : '✗'}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: passwordRequirements.hasUpperCase ? 'success.main' : 'error.main',
-                      fontWeight: 400,
-                      fontSize: '0.75rem',
-                    }}
-                  >
-                    • One uppercase letter {passwordRequirements.hasUpperCase ? '✓' : '✗'}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: passwordRequirements.hasLowerCase ? 'success.main' : 'error.main',
-                      fontWeight: 400,
-                      fontSize: '0.75rem',
-                    }}
-                  >
-                    • One lowercase letter {passwordRequirements.hasLowerCase ? '✓' : '✗'}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: passwordRequirements.hasNumber ? 'success.main' : 'error.main',
-                      fontWeight: 400,
-                      fontSize: '0.75rem',
-                    }}
-                  >
-                    • One number {passwordRequirements.hasNumber ? '✓' : '✗'}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: passwordRequirements.hasSpecialChar ? 'success.main' : 'error.main',
-                      fontWeight: 400,
-                      fontSize: '0.75rem',
-                    }}
-                  >
-                    • One special character {passwordRequirements.hasSpecialChar ? '✓' : '✗'}
-                  </Typography>
-                </Box>
-              </Box>
-            )}
-
-            <TextField
-              label="Confirm New Password"
-              type={showConfirmPassword ? 'text' : 'password'}
-              fullWidth
-              variant="outlined"
-              placeholder="Confirm your new password"
-              value={passwordForm.confirmPassword}
-              onChange={e => {
-                setPasswordForm({
-                  ...passwordForm,
-                  confirmPassword: e.target.value,
-                });
-                validateConfirmPassword(e.target.value);
-              }}
-              onBlur={e => validateConfirmPassword(e.target.value)}
-              error={!!confirmPasswordError}
-              helperText={confirmPasswordError}
-              disabled={isChangingPassword}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      edge="end"
-                      disabled={isChangingPassword}
-                    >
-                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Box>
-
-          <Alert severity="info" sx={{ mt: 2 }}>
-            <Typography variant="caption">
-              Your password will be updated immediately. You'll need to use your new password for
-              future logins.
-            </Typography>
-          </Alert>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => {
-              setShowChangePasswordDialog(false);
-              setPasswordForm({
-                currentPassword: '',
-                newPassword: '',
-                confirmPassword: '',
-              });
-              setPasswordError(null);
-            }}
-            disabled={isChangingPassword}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handlePasswordChange}
-            disabled={isChangingPassword}
-            startIcon={isChangingPassword ? <CircularProgress size={16} /> : null}
-          >
-            {isChangingPassword ? 'Changing Password...' : 'Change Password'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onSubmit={handlePasswordChange}
+        isLoading={isChangingPassword}
+        error={passwordError}
+      />
 
       <AccountInformationDialog
         open={showAccountInfoDialog}

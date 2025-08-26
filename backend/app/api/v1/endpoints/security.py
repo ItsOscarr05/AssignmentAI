@@ -11,6 +11,7 @@ from app.services.security_monitoring import security_monitoring
 from app.services.audit_service import audit_service
 from app.schemas.security import SecurityAlertCreate, SecurityAlertUpdate
 from app.crud.session import session
+from app.services.session_service import get_session_service
 import json
 
 router = APIRouter()
@@ -228,25 +229,9 @@ async def get_user_sessions(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get all active sessions for the current user"""
-    active_sessions = session.get_active_sessions_by_user(db, current_user.id)
-    
-    session_list = []
-    for sess in active_sessions:
-        # Determine if this is the current session
-        is_current = False
-        # This would need to be implemented based on your token/session management
-        # For now, we'll mark the most recent session as current
-        
-        session_data = {
-            "id": sess.id,
-            "device_info": sess.device_info,
-            "created_at": sess.created_at.isoformat(),
-            "last_accessed": sess.last_accessed.isoformat() if sess.last_accessed else None,
-            "expires_at": sess.expires_at.isoformat(),
-            "is_current": is_current
-        }
-        session_list.append(session_data)
+    """Get all active sessions for the current user with device deduplication"""
+    session_service = get_session_service(db)
+    session_list = await session_service.get_user_sessions(current_user.id)
     
     return {
         "sessions": session_list,
@@ -259,7 +244,8 @@ async def get_active_session_count(
     current_user: User = Depends(get_current_user)
 ):
     """Get the count of active sessions for the current user"""
-    count = session.get_session_count_by_user(db, current_user.id)
+    session_service = get_session_service(db)
+    count = await session_service.get_active_session_count(current_user.id)
     return {"active_sessions": count}
 
 @router.delete("/sessions/{session_id}")
@@ -269,21 +255,15 @@ async def revoke_session(
     current_user: User = Depends(get_current_user)
 ):
     """Revoke a specific session"""
-    # Verify the session belongs to the current user
-    sess = session.get_session_by_id(db, session_id)
-    if not sess or sess.user_id != current_user.id:
-        raise HTTPException(
-            status_code=404,
-            detail="Session not found"
-        )
+    session_service = get_session_service(db)
+    success = await session_service.revoke_session(current_user.id, session_id)
     
-    success = session.invalidate_session(db, session_id)
     if success:
         return {"message": "Session revoked successfully"}
     else:
         raise HTTPException(
-            status_code=500,
-            detail="Failed to revoke session"
+            status_code=404,
+            detail="Session not found or already revoked"
         )
 
 @router.delete("/sessions")
@@ -292,10 +272,16 @@ async def revoke_all_sessions(
     current_user: User = Depends(get_current_user)
 ):
     """Revoke all sessions except the current one"""
-    # This would need to be implemented to identify the current session
-    # For now, we'll revoke all sessions
-    count = session.invalidate_all_user_sessions(db, current_user.id)
-    return {"message": f"Revoked {count} sessions"}
+    session_service = get_session_service(db)
+    success = await session_service.invalidate_all_sessions(current_user.id)
+    
+    if success:
+        return {"message": "All sessions revoked successfully"}
+    else:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to revoke sessions"
+        )
 
 @router.get("/sessions/analytics")
 async def get_session_analytics(
@@ -303,7 +289,8 @@ async def get_session_analytics(
     current_user: User = Depends(get_current_user)
 ):
     """Get session analytics for the current user"""
-    analytics = session.get_session_analytics(db, current_user.id)
+    session_service = get_session_service(db)
+    analytics = await session_service.get_session_analytics(current_user.id)
     return analytics
 
 @router.get("/user-info")
@@ -339,25 +326,15 @@ async def get_user_security_info(
     
     last_security_audit = last_audit.timestamp.isoformat() if last_audit else None
     
-    # Clean up expired sessions first
-    cleaned_count = session.cleanup_expired_sessions(db)
-    print(f"Cleaned up {cleaned_count} expired sessions for user {current_user.id}")
+    # Get active sessions count using new session service with device deduplication
+    session_service = get_session_service(db)
+    active_sessions = await session_service.get_active_session_count(current_user.id)
+    print(f"User {current_user.id} has {active_sessions} active sessions (unique devices)")
     
-    # Clean up sessions that don't meet our 'active' criteria
-    inactive_cleaned_count = session.cleanup_inactive_sessions(db, current_user.id)
-    print(f"Cleaned up {inactive_cleaned_count} inactive sessions for user {current_user.id}")
-    
-    # Get active sessions count (now using stricter criteria)
-    active_sessions = session.get_session_count_by_user(db, current_user.id)
-    print(f"User {current_user.id} has {active_sessions} active sessions")
-    
-    # Get session diagnostics for debugging
-    session_diagnostics = session.get_session_diagnostics(db, current_user.id)
-    print(f"Session diagnostics: {session_diagnostics}")
-    
-    # Get detailed active sessions for debugging
-    detailed_sessions = session.get_detailed_active_sessions(db, current_user.id)
-    print(f"Detailed active sessions: {detailed_sessions}")
+    # Clean up inactive sessions using new service
+    cleaned_count = await session_service.cleanup_inactive_sessions(current_user.id)
+    if cleaned_count > 0:
+        print(f"Cleaned up {cleaned_count} inactive sessions for user {current_user.id}")
     
     # Calculate security score based on various factors
     security_score = 0  # Start from 0 and add points for enabled features

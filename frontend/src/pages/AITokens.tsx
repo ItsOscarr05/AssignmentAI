@@ -590,7 +590,16 @@ const AITokens: React.FC = () => {
       </Typography>
       <Grid container spacing={3}>
         <Grid item xs={12} md={breakpoint === 'standard' ? 12 : 8}>
-          <Box sx={{ p: 2, mb: 2, ...redOutline, borderRadius: 3 }}>
+          <Box
+            sx={{
+              p: 2,
+              mb: 2,
+              ...redOutline,
+              borderRadius: 3,
+              backgroundColor: theme =>
+                theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+            }}
+          >
             <Typography
               variant="h6"
               gutterBottom
@@ -601,7 +610,13 @@ const AITokens: React.FC = () => {
             >
               Token Usage
             </Typography>
-            <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>
+            <Typography
+              variant="subtitle2"
+              sx={{
+                mb: 1,
+                color: theme => (theme.palette.mode === 'dark' ? 'text.secondary' : 'black'),
+              }}
+            >
               {tokenUsage.label}
             </Typography>
             <Box sx={{ mb: 2 }}>
@@ -616,13 +631,18 @@ const AITokens: React.FC = () => {
                 <Tooltip title="Tokens remaining in your plan for this month">
                   <Typography
                     variant="body1"
-                    sx={{ color: theme => (theme.palette.mode === 'dark' ? 'white' : 'inherit') }}
+                    sx={{ color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black') }}
                   >
                     Remaining Tokens: {tokenUsage.remaining.toLocaleString()}
                   </Typography>
                 </Tooltip>
                 <Tooltip title="Percentage of tokens used this month">
-                  <Typography variant="body1" color="text.secondary">
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      color: theme => (theme.palette.mode === 'dark' ? 'text.secondary' : 'black'),
+                    }}
+                  >
                     {tokenUsage.percentUsed}% Used
                   </Typography>
                 </Tooltip>
@@ -646,7 +666,15 @@ const AITokens: React.FC = () => {
             </Box>
             <Grid container spacing={2}>
               <Grid item xs={4}>
-                <Box sx={{ ...redOutline, borderRadius: 3, p: 2 }}>
+                <Box
+                  sx={{
+                    ...redOutline,
+                    borderRadius: 3,
+                    p: 2,
+                    backgroundColor: theme =>
+                      theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+                  }}
+                >
                   <Box
                     sx={{
                       display: 'flex',
@@ -668,10 +696,11 @@ const AITokens: React.FC = () => {
                     >
                       <Tooltip title="Total tokens available in your plan per month">
                         <Typography
-                          color="textSecondary"
                           sx={{
                             fontSize: '0.875rem',
                             fontWeight: '600',
+                            color: theme =>
+                              theme.palette.mode === 'dark' ? 'text.secondary' : 'black',
                           }}
                         >
                           Total Tokens
@@ -689,7 +718,7 @@ const AITokens: React.FC = () => {
                       sx={{
                         fontSize: { xs: '1.1rem', md: '1.5rem' },
                         textAlign: 'center',
-                        color: theme => (theme.palette.mode === 'dark' ? 'white' : 'inherit'),
+                        color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
                       }}
                     >
                       {tokenUsage.total.toLocaleString()}
@@ -698,7 +727,15 @@ const AITokens: React.FC = () => {
                 </Box>
               </Grid>
               <Grid item xs={4}>
-                <Box sx={{ ...redOutline, borderRadius: 3, p: 2 }}>
+                <Box
+                  sx={{
+                    ...redOutline,
+                    borderRadius: 3,
+                    p: 2,
+                    backgroundColor: theme =>
+                      theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+                  }}
+                >
                   <Box
                     sx={{
                       display: 'flex',
@@ -720,10 +757,11 @@ const AITokens: React.FC = () => {
                     >
                       <Tooltip title="Tokens consumed by AI services this month">
                         <Typography
-                          color="textSecondary"
                           sx={{
                             fontSize: '0.875rem',
                             fontWeight: '600',
+                            color: theme =>
+                              theme.palette.mode === 'dark' ? 'text.secondary' : 'black',
                           }}
                         >
                           Used Tokens
@@ -741,7 +779,7 @@ const AITokens: React.FC = () => {
                       sx={{
                         fontSize: { xs: '1.1rem', md: '1.5rem' },
                         textAlign: 'center',
-                        color: theme => (theme.palette.mode === 'dark' ? 'white' : 'inherit'),
+                        color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
                       }}
                     >
                       {tokenUsage.used.toLocaleString()}
@@ -750,7 +788,15 @@ const AITokens: React.FC = () => {
                 </Box>
               </Grid>
               <Grid item xs={4}>
-                <Box sx={{ ...redOutline, borderRadius: 3, p: 2 }}>
+                <Box
+                  sx={{
+                    ...redOutline,
+                    borderRadius: 3,
+                    p: 2,
+                    backgroundColor: theme =>
+                      theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+                  }}
+                >
                   <Box
                     sx={{
                       display: 'flex',
@@ -772,14 +818,11 @@ const AITokens: React.FC = () => {
                     >
                       <Tooltip title="Tokens you have left for this month">
                         <Typography
-                          color="textSecondary"
                           sx={{
                             fontSize: '0.875rem',
                             fontWeight: '600',
                             color: theme =>
-                              theme.palette.mode === 'dark'
-                                ? 'white'
-                                : theme.palette.text.secondary,
+                              theme.palette.mode === 'dark' ? 'text.secondary' : 'black',
                           }}
                         >
                           Remaining Tokens
@@ -797,7 +840,7 @@ const AITokens: React.FC = () => {
                       sx={{
                         fontSize: { xs: '1.1rem', md: '1.5rem' },
                         textAlign: 'center',
-                        color: theme => (theme.palette.mode === 'dark' ? 'white' : 'inherit'),
+                        color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
                       }}
                     >
                       {tokenUsage.remaining.toLocaleString()}
@@ -808,7 +851,16 @@ const AITokens: React.FC = () => {
             </Grid>
           </Box>
 
-          <Box sx={{ p: 2, mb: 2, ...redOutline, borderRadius: 3 }}>
+          <Box
+            sx={{
+              p: 2,
+              mb: 2,
+              ...redOutline,
+              borderRadius: 3,
+              backgroundColor: theme =>
+                theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+            }}
+          >
             <Typography
               variant="h6"
               gutterBottom
@@ -875,10 +927,21 @@ const AITokens: React.FC = () => {
                 sx={{ minHeight: 220 }}
               >
                 <BarChartOutlinedIcon sx={{ fontSize: 54, color: 'red', mb: 2, opacity: 0.5 }} />
-                <Typography variant="h5" color="text.secondary" gutterBottom>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    color: theme => (theme.palette.mode === 'dark' ? 'text.secondary' : 'black'),
+                  }}
+                  gutterBottom
+                >
                   No Activity Yet
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: theme => (theme.palette.mode === 'dark' ? 'text.secondary' : 'black'),
+                  }}
+                >
                   Your usage history will appear here once you start using AI services.
                 </Typography>
               </Box>
@@ -944,7 +1007,16 @@ const AITokens: React.FC = () => {
             )}
           </Box>
 
-          <Box sx={{ p: 2, mb: 2, ...redOutline, borderRadius: 3 }}>
+          <Box
+            sx={{
+              p: 2,
+              mb: 2,
+              ...redOutline,
+              borderRadius: 3,
+              backgroundColor: theme =>
+                theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+            }}
+          >
             <Typography
               variant="h6"
               gutterBottom
@@ -1038,7 +1110,7 @@ const AITokens: React.FC = () => {
                     fontWeight: 700,
                     fontSize: '1rem',
                     mt: 1,
-                    color: theme => (theme.palette.mode === 'dark' ? 'white' : 'inherit'),
+                    color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
                   }}
                 >
                   Estimated Cost: <b>${calcCost.toFixed(2)}</b>
@@ -1119,7 +1191,16 @@ const AITokens: React.FC = () => {
               </Box>
             </Box>
           </Box>
-          <Box sx={{ p: 2, mb: 2, ...redOutline, borderRadius: 3 }}>
+          <Box
+            sx={{
+              p: 2,
+              mb: 2,
+              ...redOutline,
+              borderRadius: 3,
+              backgroundColor: theme =>
+                theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+            }}
+          >
             <Typography
               variant="h6"
               gutterBottom
@@ -1139,10 +1220,21 @@ const AITokens: React.FC = () => {
                 sx={{ minHeight: 120 }}
               >
                 <ReceiptLongOutlinedIcon sx={{ fontSize: 48, color: 'red', mb: 2, opacity: 0.5 }} />
-                <Typography variant="h6" color="text.secondary" gutterBottom>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    color: theme => (theme.palette.mode === 'dark' ? 'text.secondary' : 'black'),
+                  }}
+                  gutterBottom
+                >
                   No Transactions Yet
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: theme => (theme.palette.mode === 'dark' ? 'text.secondary' : 'black'),
+                  }}
+                >
                   Your recent transactions will appear here once you start using tokens.
                 </Typography>
               </Box>
@@ -1273,13 +1365,26 @@ const AITokens: React.FC = () => {
               anchorEl={anchorEl}
               onClose={handlePopoverClose}
               anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+              PaperProps={{
+                sx: {
+                  backgroundColor: theme =>
+                    theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+                  border: '2px solid red',
+                  borderRadius: 2,
+                },
+              }}
             >
               {popoverContent && (
                 <Box sx={{ p: 2, minWidth: 220 }}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                     {popoverContent.description}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: theme => (theme.palette.mode === 'dark' ? 'text.secondary' : 'black'),
+                    }}
+                  >
                     {popoverContent.date}
                   </Typography>
                   {popoverContent.assignment && (
@@ -1311,7 +1416,17 @@ const AITokens: React.FC = () => {
         </Grid>
 
         <Grid item xs={12} md={breakpoint === 'standard' ? 12 : 4}>
-          <Box sx={{ p: 3, mb: 4, ...redOutline, borderRadius: 3 }} ref={guideRef}>
+          <Box
+            sx={{
+              p: 3,
+              mb: 4,
+              ...redOutline,
+              borderRadius: 3,
+              backgroundColor: theme =>
+                theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+            }}
+            ref={guideRef}
+          >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
               <Typography
                 variant="h6"
@@ -1327,7 +1442,13 @@ const AITokens: React.FC = () => {
                 <InfoIcon sx={{ color: 'text.secondary', fontSize: 20, cursor: 'pointer' }} />
               </Tooltip>
             </Box>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: theme => (theme.palette.mode === 'dark' ? 'text.secondary' : 'black'),
+                mb: 3,
+              }}
+            >
               Understand how tokens are used for different AI-powered features
             </Typography>
             <Box sx={{ mb: 2 }}>
@@ -1337,7 +1458,7 @@ const AITokens: React.FC = () => {
                   variant="subtitle2"
                   sx={{
                     fontWeight: 600,
-                    color: theme => (theme.palette.mode === 'dark' ? 'white' : 'inherit'),
+                    color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
                   }}
                 >
                   Academic
@@ -1739,11 +1860,23 @@ const AITokens: React.FC = () => {
 
             {/* Content */}
             <Box sx={{ pt: 3, pb: 1, px: 2 }}>
-              <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+              <Typography
+                variant="body1"
+                sx={{
+                  color: theme => (theme.palette.mode === 'dark' ? 'text.secondary' : 'black'),
+                  mb: 2,
+                }}
+              >
                 You're about to leave the dashboard and navigate to the AI Features section. Are you
                 sure this is what you want to do?
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: theme => (theme.palette.mode === 'dark' ? 'text.secondary' : 'black'),
+                  fontStyle: 'italic',
+                }}
+              >
                 You can always return to the dashboard using the navigation menu.
               </Typography>
             </Box>

@@ -242,7 +242,7 @@ h1 {
 }
 
 /* Dark mode specific styling for save button */
-.settings-save-button.MuiButton-contained[class*="MuiButton-contained"] {
+.settings-save-button.MuiButton-contained[class*='MuiButton-contained'] {
   background: transparent !important;
   background-color: transparent !important;
   color: #d32f2f !important;
@@ -250,26 +250,26 @@ h1 {
   box-shadow: none !important;
 }
 
-.settings-save-button.MuiButton-contained[class*="MuiButton-contained"]:hover {
+.settings-save-button.MuiButton-contained[class*='MuiButton-contained']:hover {
   background: rgba(211, 47, 47, 0.1) !important;
   background-color: rgba(211, 47, 47, 0.1) !important;
   box-shadow: 0 4px 20px 0px rgba(211, 47, 47, 0.3) !important;
 }
 
-.settings-save-button.MuiButton-contained[class*="MuiButton-contained"]:disabled {
+.settings-save-button.MuiButton-contained[class*='MuiButton-contained']:disabled {
   background: rgba(0, 0, 0, 0.12) !important;
   background-color: rgba(0, 0, 0, 0.12) !important;
   color: rgba(0, 0, 0, 0.38) !important;
   border: 2px solid rgba(0, 0, 0, 0.12) !important;
 }
 
-.settings-save-button.MuiButton-contained[class*="MuiButton-contained"] .MuiSvgIcon-root {
+.settings-save-button.MuiButton-contained[class*='MuiButton-contained'] .MuiSvgIcon-root {
   color: #d32f2f !important;
 }
 
 /* Alternative dark mode targeting */
-body[class*="dark"] .settings-save-button.MuiButton-contained,
-html[class*="dark"] .settings-save-button.MuiButton-contained {
+body[class*='dark'] .settings-save-button.MuiButton-contained,
+html[class*='dark'] .settings-save-button.MuiButton-contained {
   background: transparent !important;
   background-color: transparent !important;
   color: #d32f2f !important;
@@ -277,22 +277,22 @@ html[class*="dark"] .settings-save-button.MuiButton-contained {
   box-shadow: none !important;
 }
 
-body[class*="dark"] .settings-save-button.MuiButton-contained:hover,
-html[class*="dark"] .settings-save-button.MuiButton-contained:hover {
+body[class*='dark'] .settings-save-button.MuiButton-contained:hover,
+html[class*='dark'] .settings-save-button.MuiButton-contained:hover {
   background: rgba(211, 47, 47, 0.1) !important;
   background-color: rgba(211, 47, 47, 0.1) !important;
   box-shadow: 0 4px 20px 0px rgba(211, 47, 47, 0.3) !important;
 }
 
-body[class*="dark"] .settings-save-button.MuiButton-contained:disabled,
-html[class*="dark"] .settings-save-button.MuiButton-contained:disabled {
+body[class*='dark'] .settings-save-button.MuiButton-contained:disabled,
+html[class*='dark'] .settings-save-button.MuiButton-contained:disabled {
   background: rgba(0, 0, 0, 0.12) !important;
   background-color: rgba(0, 0, 0, 0.12) !important;
   color: rgba(0, 0, 0, 0.38) !important;
   border: 2px solid rgba(0, 0, 0, 0.12) !important;
 }
 
-body[class*="dark"] .settings-save-button.MuiButton-contained .MuiSvgIcon-root,
-html[class*="dark"] .settings-save-button.MuiButton-contained .MuiSvgIcon-root {
+body[class*='dark'] .settings-save-button.MuiButton-contained .MuiSvgIcon-root,
+html[class*='dark'] .settings-save-button.MuiButton-contained .MuiSvgIcon-root {
   color: #d32f2f !important;
 }

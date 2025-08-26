@@ -482,7 +482,7 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
                         sx={{
                           fontWeight: 'bold',
                           fontSize: { xs: '1.25rem', md: '1.5rem' },
-                          color: 'white',
+                          color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
                         }}
                       >
                         {editForm.firstName} {editForm.lastName}
@@ -562,7 +562,9 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
 
                         <Typography
                           variant="body2"
-                          color="text.primary"
+                          color={theme =>
+                            theme.palette.mode === 'dark' ? 'text.primary' : 'black'
+                          }
                           sx={{ mb: 1, fontWeight: 500 }}
                         >
                           Profile Completion
@@ -612,18 +614,39 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
                           <LightbulbOutlined
                             sx={{ color: theme.palette.error.main, fontSize: 20 }}
                           />
-                          <Typography variant="body2" color="text.primary" sx={{ fontWeight: 600 }}>
+                          <Typography
+                            variant="body2"
+                            color={theme =>
+                              theme.palette.mode === 'dark' ? 'text.primary' : 'black'
+                            }
+                            sx={{ fontWeight: 600 }}
+                          >
                             Tips
                           </Typography>
                         </Stack>
                         <Stack spacing={0.5}>
-                          <Typography variant="caption" color="text.secondary">
+                          <Typography
+                            variant="caption"
+                            color={theme =>
+                              theme.palette.mode === 'dark' ? 'text.secondary' : 'black'
+                            }
+                          >
                             • Add a profile picture to make your profile more personal
                           </Typography>
-                          <Typography variant="caption" color="text.secondary">
+                          <Typography
+                            variant="caption"
+                            color={theme =>
+                              theme.palette.mode === 'dark' ? 'text.secondary' : 'black'
+                            }
+                          >
                             • Keep your name and email up to date for better communication
                           </Typography>
-                          <Typography variant="caption" color="text.secondary">
+                          <Typography
+                            variant="caption"
+                            color={theme =>
+                              theme.palette.mode === 'dark' ? 'text.secondary' : 'black'
+                            }
+                          >
                             • Update your location to connect with nearby users
                           </Typography>
                         </Stack>
@@ -637,7 +660,10 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
                   <Typography
                     variant="h6"
                     fontWeight="600"
-                    sx={{ mb: 3, color: theme.palette.text.primary }}
+                    sx={{
+                      mb: 3,
+                      color: theme => (theme.palette.mode === 'dark' ? 'text.primary' : 'black'),
+                    }}
                   >
                     Personal Information
                   </Typography>
@@ -669,6 +695,13 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
                               borderWidth: 2,
                             },
                           },
+                          '& .MuiInputBase-input': {
+                            color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+                          },
+                          '& .MuiInputLabel-root': {
+                            color: theme =>
+                              theme.palette.mode === 'dark' ? 'text.secondary' : 'black',
+                          },
                         }}
                       />
                     </Grid>
@@ -698,6 +731,13 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
                               borderColor: theme.palette.primary.main,
                               borderWidth: 2,
                             },
+                          },
+                          '& .MuiInputBase-input': {
+                            color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+                          },
+                          '& .MuiInputLabel-root': {
+                            color: theme =>
+                              theme.palette.mode === 'dark' ? 'text.secondary' : 'black',
                           },
                         }}
                       />
@@ -788,7 +828,10 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
                     <Typography
                       variant="h6"
                       fontWeight="600"
-                      sx={{ mb: 3, color: theme.palette.text.primary }}
+                      sx={{
+                        mb: 3,
+                        color: theme => (theme.palette.mode === 'dark' ? 'text.primary' : 'black'),
+                      }}
                     >
                       Account Information
                     </Typography>
@@ -807,7 +850,9 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
                         >
                           <Typography
                             variant="body1"
-                            color="text.primary"
+                            color={theme =>
+                              theme.palette.mode === 'dark' ? 'text.primary' : 'black'
+                            }
                             sx={{ mb: 1, fontWeight: 500 }}
                           >
                             Subscription Plan
@@ -851,7 +896,9 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
                         >
                           <Typography
                             variant="body1"
-                            color="text.primary"
+                            color={theme =>
+                              theme.palette.mode === 'dark' ? 'text.primary' : 'black'
+                            }
                             sx={{ mb: 1, fontWeight: 500 }}
                           >
                             Account Created

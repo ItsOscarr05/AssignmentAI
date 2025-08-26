@@ -516,7 +516,16 @@ const Workshop: React.FC = () => {
       { key: 'files', label: 'Files', color: '#8E24AA' },
     ];
     return (
-      <Box sx={{ p: 2, boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
+      <Box
+        sx={{
+          p: 2,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+          backgroundColor: theme =>
+            theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+          border: '2px solid red',
+          borderRadius: 2,
+        }}
+      >
         <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
           {label}
         </Typography>
@@ -614,60 +623,6 @@ const Workshop: React.FC = () => {
         },
       }}
     >
-      {/* Header */}
-      <Box
-        sx={{
-          ...cardStyle,
-          mb: { xs: 3, sm: 4, md: 6 },
-          width: { xs: '95%', sm: '100%' },
-          mx: { xs: 'auto', sm: 0 },
-          '@media (max-width: 480px)': {
-            width: '98%',
-            mx: 'auto',
-          },
-        }}
-      >
-        <Box sx={{ p: { xs: 1, sm: 1, md: 2 } }}>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', md: 'row' },
-              justifyContent: 'space-between',
-              alignItems: { xs: 'flex-start', md: 'center' },
-              gap: { xs: 1, md: 0 },
-            }}
-          >
-            <Typography
-              variant="h4"
-              sx={{
-                color: theme =>
-                  theme.palette.mode === 'dark' ? 'red' : theme.palette.primary.main,
-                fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2.25rem' },
-                fontWeight: { xs: 600, md: 400 },
-              }}
-            >
-              Workshop
-            </Typography>
-            <Button
-              variant="outlined"
-              startIcon={<HistoryIcon />}
-              onClick={() => setIsDrawerOpen(true)}
-              size="small"
-              sx={{
-                borderColor: 'red',
-                color: 'red',
-                '&:hover': { borderColor: 'red' },
-                fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.875rem' },
-                px: { xs: 1, sm: 2 },
-                py: { xs: 0.5, sm: 1 },
-              }}
-            >
-              History
-            </Button>
-          </Box>
-        </Box>
-      </Box>
-
       {/* Feature Access Error Display */}
       {featureAccessError && (
         <FeatureAccessErrorComponent
@@ -699,6 +654,53 @@ const Workshop: React.FC = () => {
           md={breakpoint === 'standard' ? 12 : 9}
           sx={{ overflow: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
         >
+          {/* Header */}
+          <Box
+            sx={{
+              ...cardStyle,
+              mb: { xs: 2, sm: 3, md: 4 },
+            }}
+          >
+            <Box sx={{ p: { xs: 1, sm: 1, md: 2 } }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', md: 'row' },
+                  justifyContent: 'space-between',
+                  alignItems: { xs: 'flex-start', md: 'center' },
+                  gap: { xs: 1, md: 0 },
+                }}
+              >
+                <Typography
+                  variant="h4"
+                  sx={{
+                    color: theme =>
+                      theme.palette.mode === 'dark' ? 'red' : theme.palette.primary.main,
+                    fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2.25rem' },
+                    fontWeight: { xs: 600, md: 400 },
+                  }}
+                >
+                  Workshop
+                </Typography>
+                <Button
+                  variant="outlined"
+                  startIcon={<HistoryIcon />}
+                  onClick={() => setIsDrawerOpen(true)}
+                  size="small"
+                  sx={{
+                    borderColor: 'red',
+                    color: 'red',
+                    '&:hover': { borderColor: 'red' },
+                    fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.875rem' },
+                    px: { xs: 1, sm: 2 },
+                    py: { xs: 0.5, sm: 1 },
+                  }}
+                >
+                  History
+                </Button>
+              </Box>
+            </Box>
+          </Box>
           {/* Activity Chart */}
           <Box
             sx={{
@@ -732,7 +734,7 @@ const Workshop: React.FC = () => {
                   fontWeight: 'bold',
                   fontSize: { xs: '1.3rem', sm: '1.5rem', md: '1.8rem' },
                   mb: { xs: 0.5, sm: 1 },
-                  color: theme => (theme.palette.mode === 'dark' ? 'red' : 'inherit'),
+                  color: theme => (theme.palette.mode === 'dark' ? 'red' : 'black'),
                 }}
               >
                 Weekly Activity Overview
@@ -928,7 +930,7 @@ const Workshop: React.FC = () => {
                   fontSize: { xs: '1.3rem', sm: '1.5rem', md: '1.8rem' },
                   mb: { xs: 0.5, sm: 0 },
                   textAlign: { xs: 'left', sm: 'left' },
-                  color: theme => (theme.palette.mode === 'dark' ? 'red' : 'inherit'),
+                  color: theme => (theme.palette.mode === 'dark' ? 'red' : 'black'),
                 }}
               >
                 Upload Content
@@ -1046,7 +1048,7 @@ const Workshop: React.FC = () => {
                   sx={{
                     fontWeight: 700,
                     fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' },
-                    color: theme => (theme.palette.mode === 'dark' ? 'red' : 'inherit'),
+                    color: theme => (theme.palette.mode === 'dark' ? 'red' : 'black'),
                   }}
                 >
                   AI Response
@@ -1405,7 +1407,7 @@ const Workshop: React.FC = () => {
               gutterBottom
               sx={{
                 fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' },
-                color: theme => (theme.palette.mode === 'dark' ? 'red' : 'inherit'),
+                color: theme => (theme.palette.mode === 'dark' ? 'red' : 'black'),
               }}
             >
               Quick Actions
@@ -1479,7 +1481,7 @@ const Workshop: React.FC = () => {
               gutterBottom
               sx={{
                 fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' },
-                color: theme => (theme.palette.mode === 'dark' ? 'red' : 'inherit'),
+                color: theme => (theme.palette.mode === 'dark' ? 'red' : 'black'),
               }}
             >
               AI Suggestions
@@ -1560,7 +1562,7 @@ const Workshop: React.FC = () => {
                 gutterBottom
                 sx={{
                   fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' },
-                  color: theme => (theme.palette.mode === 'dark' ? 'red' : 'inherit'),
+                  color: theme => (theme.palette.mode === 'dark' ? 'red' : 'black'),
                 }}
               >
                 File Actions
@@ -1612,7 +1614,7 @@ const Workshop: React.FC = () => {
               gutterBottom
               sx={{
                 fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' },
-                color: theme => (theme.palette.mode === 'dark' ? 'red' : 'inherit'),
+                color: theme => (theme.palette.mode === 'dark' ? 'red' : 'black'),
               }}
             >
               Assignment Tokens

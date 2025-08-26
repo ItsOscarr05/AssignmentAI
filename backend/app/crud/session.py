@@ -7,24 +7,15 @@ import uuid
 
 class CRUDSession(CRUDBase[UserSession, str, str]):
     def get_active_sessions_by_user(self, db: Session, user_id: int) -> List[UserSession]:
-        """Get all active sessions for a specific user"""
-        # Define what makes a session "active":
-        # 1. Must be marked as active
-        # 2. Must not be expired
-        # 3. Must have been accessed within the last 2 hours OR created within the last 2 hours
-        # 4. Must not be older than 1 day (very strict for session age)
-        
-        cutoff_time = datetime.utcnow() - timedelta(hours=2)   # 2 hours ago (very strict)
-        max_age = datetime.utcnow() - timedelta(days=1)        # 1 day ago (very strict)
+        """Get all active sessions for a specific user with device deduplication"""
+        # Get unique active sessions by device key (one per device)
+        # This prevents counting multiple sessions from the same device as separate active sessions
         
         return db.query(UserSession).filter(
             UserSession.user_id == user_id,
-            UserSession.is_active == True,
-            UserSession.expires_at > datetime.utcnow(),
-            # Either recently accessed OR recently created (for new sessions)
-            ((UserSession.last_accessed >= cutoff_time) | (UserSession.created_at >= cutoff_time)),
-            UserSession.created_at >= max_age          # Not too old
-        ).order_by(UserSession.created_at.desc()).all()
+            UserSession.is_active,
+            UserSession.expires_at > datetime.utcnow()
+        ).distinct(UserSession.device_key).order_by(UserSession.created_at.desc()).all()
     
     def get_session_by_id(self, db: Session, session_id: str) -> Optional[UserSession]:
         """Get a specific session by ID"""
@@ -140,33 +131,25 @@ class CRUDSession(CRUDBase[UserSession, str, str]):
         return count
     
     def get_session_count_by_user(self, db: Session, user_id: int) -> int:
-        """Get the count of active sessions for a user"""
-        # Use the same logic as get_active_sessions_by_user
-        cutoff_time = datetime.utcnow() - timedelta(hours=2)   # 2 hours ago (very strict)
-        max_age = datetime.utcnow() - timedelta(days=1)        # 1 day ago (very strict)
+        """Get the count of active sessions for a user with device deduplication"""
+        # Count unique active sessions by device key (one per device)
+        # This prevents counting multiple sessions from the same device as separate active sessions
         
-        return db.query(UserSession).filter(
+        return db.query(UserSession.device_key).filter(
             UserSession.user_id == user_id,
-            UserSession.is_active == True,
-            UserSession.expires_at > datetime.utcnow(),
-            # Either recently accessed OR recently created (for new sessions)
-            ((UserSession.last_accessed >= cutoff_time) | (UserSession.created_at >= cutoff_time)),
-            UserSession.created_at >= max_age          # Not too old
-        ).count()
+            UserSession.is_active,
+            UserSession.expires_at > datetime.utcnow()
+        ).distinct().count()
     
     def get_session_analytics(self, db: Session, user_id: int) -> Dict[str, Any]:
-        """Get comprehensive session analytics for a user"""
+        """Get comprehensive session analytics for a user with device deduplication"""
         # Total sessions (all time)
         total_sessions = db.query(UserSession).filter(
             UserSession.user_id == user_id
         ).count()
         
-        # Active sessions
-        active_sessions = db.query(UserSession).filter(
-            UserSession.user_id == user_id,
-            UserSession.is_active == True,
-            UserSession.expires_at > datetime.utcnow()
-        ).count()
+        # Active sessions (unique devices)
+        active_sessions = self.get_session_count_by_user(db, user_id)
         
         # Sessions created in last 30 days
         thirty_days_ago = datetime.utcnow() - timedelta(days=30)
@@ -175,13 +158,15 @@ class CRUDSession(CRUDBase[UserSession, str, str]):
             UserSession.created_at >= thirty_days_ago
         ).count()
         
-        # Device type analysis
+        # Device type analysis (unique devices)
         device_types = {}
-        sessions = db.query(UserSession).filter(
-            UserSession.user_id == user_id
-        ).all()
+        unique_sessions = db.query(UserSession).filter(
+            UserSession.user_id == user_id,
+            UserSession.is_active,
+            UserSession.expires_at > datetime.utcnow()
+        ).distinct(UserSession.device_key).all()
         
-        for session in sessions:
+        for session in unique_sessions:
             device_type = session.device_info.get('type', 'unknown')
             device_types[device_type] = device_types.get(device_type, 0) + 1
         

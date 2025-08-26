@@ -74,12 +74,12 @@ const RecentHistorySidebar: React.FC<RecentHistorySidebarProps> = ({
         <Box
           sx={{
             background: theme =>
-              theme.palette.mode === 'dark'
-                ? theme.palette.background.paper
-                : `linear-gradient(45deg, ${theme.palette.primary.dark} 30%, ${theme.palette.primary.main} 90%)`,
+              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
             height: '100%',
             width: '100%',
             p: 3,
+            borderLeft: '2px solid red',
+            borderRadius: '12px 0 0 12px',
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>

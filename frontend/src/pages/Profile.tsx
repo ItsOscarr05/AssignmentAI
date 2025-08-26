@@ -153,7 +153,7 @@ const StatCard = ({ icon, title, value, color, onClick, sx }: any) => {
       >
         {icon}
       </Box>
-      <Typography variant="h4" fontWeight="bold" sx={{ mb: 1 }}>
+      <Typography variant="h6" fontWeight="bold" sx={{ mb: 1 }}>
         {value}
       </Typography>
       <Typography color="text.secondary">{title}</Typography>
@@ -408,7 +408,7 @@ const Profile: React.FC = () => {
         startDate.setMonth(startDate.getMonth() - 1);
         return startDate.toLocaleDateString(undefined, {
           year: 'numeric',
-          month: 'long',
+          month: '2-digit',
         });
       } catch (error) {
         console.error('Error parsing subscription period:', error);
@@ -420,7 +420,7 @@ const Profile: React.FC = () => {
       try {
         return new Date((profileData as any).createdAt).toLocaleDateString(undefined, {
           year: 'numeric',
-          month: 'long',
+          month: '2-digit',
         });
       } catch (error) {
         console.error('Error parsing profile createdAt:', error);
@@ -432,7 +432,7 @@ const Profile: React.FC = () => {
       try {
         return new Date((user as any).createdAt).toLocaleDateString(undefined, {
           year: 'numeric',
-          month: 'long',
+          month: '2-digit',
         });
       } catch (error) {
         console.error('Error parsing user createdAt:', error);
@@ -621,7 +621,7 @@ const Profile: React.FC = () => {
                         borderRadius: 16,
                         fontSize: { xs: '0.75rem', md: '0.875rem' },
                         height: { xs: 28, md: 32 },
-                        color: 'white',
+                        color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
                         mr: 0.5,
                         cursor: 'default',
                       }}
@@ -654,7 +654,7 @@ const Profile: React.FC = () => {
                         borderRadius: 16,
                         fontSize: { xs: '0.75rem', md: '0.875rem' },
                         height: { xs: 28, md: 32 },
-                        color: 'white',
+                        color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
                         cursor: 'default',
                       }}
                       aria-label="User country"
@@ -688,7 +688,7 @@ const Profile: React.FC = () => {
                         borderRadius: 16,
                         fontSize: { xs: '0.75rem', md: '0.875rem' },
                         height: { xs: 28, md: 32 },
-                        color: 'white',
+                        color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
                         cursor: 'default',
                       }}
                       aria-label="User language"

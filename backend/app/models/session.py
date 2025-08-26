@@ -9,6 +9,7 @@ class UserSession(Base):
     id = Column(String, primary_key=True, index=True)
     user_id = Column(Integer, nullable=False)
     device_info = Column(JSON, default={})
+    device_key = Column(String, nullable=True, index=True)  # For session deduplication
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     last_accessed = Column(DateTime, nullable=True)
     expires_at = Column(DateTime, nullable=False)
