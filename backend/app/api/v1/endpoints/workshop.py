@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Body
 from sqlalchemy.orm import Session
 from app.core.deps import get_current_user, get_db
 from app.core.feature_access import require_feature, has_feature_access, get_user_plan, get_available_features, get_feature_requirements
@@ -20,6 +20,18 @@ import json
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+@router.get("/health")
+async def workshop_health_check():
+    """
+    Health check endpoint for the workshop service.
+    """
+    return {
+        "status": "healthy",
+        "service": "workshop",
+        "timestamp": datetime.utcnow().isoformat(),
+        "message": "Workshop service is running and ready to process requests!"
+    }
 
 # Initialize services
 image_analysis_service = ImageAnalysisService()
@@ -72,7 +84,7 @@ def detect_file_type_and_service(content_type: str, filename: str) -> dict:
 
 @router.post("/generate")
 async def generate_content(
-    prompt: str = Form(...),
+    prompt: str = Body(..., embed=True),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -80,14 +92,26 @@ async def generate_content(
     Generate AI content based on a prompt. This endpoint now routes to different services
     based on the content of the prompt and enforces feature access controls.
     """
+    # Add comprehensive logging
+    logger.info(f"=== WORKSHOP GENERATE ENDPOINT CALLED ===")
+    logger.info(f"User ID: {current_user.id}")
+    logger.info(f"User email: {current_user.email}")
+    logger.info(f"Received prompt: {prompt}")
+    logger.info(f"Prompt length: {len(prompt)} characters")
+    logger.info(f"Request timestamp: {datetime.utcnow()}")
+    
     try:
         prompt_lower = prompt.lower()
         
         # Detect diagram requests
+        logger.info("Checking for diagram generation keywords...")
         if any(keyword in prompt_lower for keyword in ['create a diagram', 'generate chart', 'make a graph', 'draw a flowchart', 'create a bar chart', 'pie chart', 'line graph', 'scatter plot']):
+            logger.info("Diagram generation keywords detected!")
             # Check if user has access to diagram generation
+            logger.info("Checking diagram generation feature access...")
             if not has_feature_access(current_user, "diagram_generation", db):
                 plan = get_user_plan(current_user, db)
+                logger.warning(f"User {current_user.id} denied access to diagram generation. Plan: {plan}")
                 raise HTTPException(
                     status_code=403,
                     detail={
@@ -101,11 +125,13 @@ async def generate_content(
             
             try:
                 # Route to diagram service
+                logger.info("Calling diagram service...")
                 result = await diagram_service.generate_diagram(
                     description=prompt,
                     diagram_type="auto",
                     style="modern"
                 )
+                logger.info(f"Diagram generation successful! Result length: {len(str(result))}")
                 return {
                     "content": f"Diagram generated successfully!\n\n{result}",
                     "timestamp": datetime.utcnow().isoformat(),
@@ -114,14 +140,24 @@ async def generate_content(
                 }
             except Exception as e:
                 logger.error(f"Diagram generation failed: {str(e)}")
+                logger.info("Falling back to general AI service...")
                 # Fallback to general AI
-                pass
+                content = await ai_service.generate_assignment_content_from_prompt(prompt)
+                logger.info(f"General AI fallback completed. Content length: {len(content)} characters")
+                return {
+                    "content": content,
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "service_used": "general_ai_fallback"
+                }
         
         # Detect code generation requests
         elif any(keyword in prompt_lower for keyword in ['write code', 'generate function', 'create a script', 'program in', 'code for', 'python script', 'javascript function', 'java class', 'html code']):
+            logger.info("Code generation keywords detected!")
             # Check if user has access to code generation
+            logger.info("Checking code generation feature access...")
             if not has_feature_access(current_user, "code_generation", db):
                 plan = get_user_plan(current_user, db)
+                logger.warning(f"User {current_user.id} denied access to code generation. Plan: {plan}")
                 raise HTTPException(
                     status_code=403,
                     detail={
@@ -134,8 +170,10 @@ async def generate_content(
                 )
             
             # Route to AI service with code generation focus
+            logger.info("Routing to AI service for code generation...")
             code_prompt = f"Generate code for the following request: {prompt}\n\nPlease provide complete, working code with comments and explanations."
             content = await ai_service.generate_assignment_content_from_prompt(code_prompt)
+            logger.info(f"Code generation completed. Content length: {len(content)} characters")
             return {
                 "content": content,
                 "timestamp": datetime.utcnow().isoformat(),
@@ -144,9 +182,12 @@ async def generate_content(
         
         # Detect math problem solving
         elif any(keyword in prompt_lower for keyword in ['solve this math', 'calculate', 'equation', 'mathematical', 'solve for', 'find the value']):
+            logger.info("Math problem solving keywords detected!")
             # Route to AI service with math focus
+            logger.info("Routing to AI service for math solving...")
             math_prompt = f"Solve this mathematical problem step by step: {prompt}\n\nPlease show your work and explain each step."
             content = await ai_service.generate_assignment_content_from_prompt(math_prompt)
+            logger.info(f"Math solving completed. Content length: {len(content)} characters")
             return {
                 "content": content,
                 "timestamp": datetime.utcnow().isoformat(),
@@ -155,19 +196,36 @@ async def generate_content(
         
         # Default to general AI content generation
         else:
+            logger.info("No specific service detected, using general AI content generation...")
+            logger.info("Routing to AI service for general content...")
             content = await ai_service.generate_assignment_content_from_prompt(prompt)
+            logger.info(f"General AI generation completed. Content length: {len(content)} characters")
             return {
                 "content": content,
                 "timestamp": datetime.utcnow().isoformat(),
                 "service_used": "general_ai"
             }
+        
+        # Add final success log
+        logger.info("=== WORKSHOP GENERATE ENDPOINT COMPLETED SUCCESSFULLY ===")
+        logger.info(f"User ID: {current_user.id}")
+        logger.info(f"Service used: general_ai")
+        logger.info(f"Timestamp: {datetime.utcnow()}")
             
     except HTTPException:
         # Re-raise HTTPExceptions (like 403 errors) without wrapping them
+        logger.warning(f"HTTPException raised: {str(e)}")
         raise
     except Exception as e:
-        logger.error(f"Error generating content: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to generate content: {str(e)}")
+        logger.error(f"=== ERROR IN WORKSHOP GENERATE ENDPOINT ===")
+        logger.error(f"Error type: {type(e).__name__}")
+        logger.error(f"Error message: {str(e)}")
+        logger.error(f"User ID: {current_user.id}")
+        logger.error(f"Prompt: {prompt}")
+        logger.error(f"Timestamp: {datetime.utcnow()}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail="Internal server error during content generation")
 
 @router.post("/files")
 async def upload_and_process_file(
@@ -179,8 +237,18 @@ async def upload_and_process_file(
     Upload a file, extract its content, and process it with the appropriate service.
     Now supports images, code files, data files, and documents.
     """
+    # Add comprehensive logging
+    logger.info(f"=== WORKSHOP FILES ENDPOINT CALLED ===")
+    logger.info(f"User ID: {current_user.id}")
+    logger.info(f"User email: {current_user.email}")
+    logger.info(f"File name: {file.filename}")
+    logger.info(f"File size: {file.size} bytes")
+    logger.info(f"File content type: {file.content_type}")
+    logger.info(f"Request timestamp: {datetime.utcnow()}")
+    
     try:
         # Save the file
+        logger.info("Saving uploaded file...")
         file_path, _ = await file_service.save_file(file, current_user.id)
         
         # Detect file type and determine service
@@ -322,17 +390,26 @@ async def upload_and_process_file(
 
 @router.post("/files/process")
 async def process_uploaded_file(
-    file_id: str = Form(...),
-    action: str = Form(...),  # "summarize", "extract", "rewrite", "analyze"
+    file_id: str = Body(..., embed=True),
+    action: str = Body(..., embed=True),  # "summarize", "extract", "rewrite", "analyze"
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
     Process an uploaded file with specific AI actions.
     """
+    # Add comprehensive logging
+    logger.info(f"=== WORKSHOP FILES/PROCESS ENDPOINT CALLED ===")
+    logger.info(f"User ID: {current_user.id}")
+    logger.info(f"User email: {current_user.email}")
+    logger.info(f"File ID: {file_id}")
+    logger.info(f"Action: {action}")
+    logger.info(f"Request timestamp: {datetime.utcnow()}")
+    
     try:
         # In a real implementation, you'd fetch the file from storage
         # For now, we'll simulate the processing
+        logger.info("Processing file with AI service...")
         if action == "summarize":
             prompt = "Please provide a comprehensive summary of the document content."
         elif action == "extract":
@@ -342,8 +419,14 @@ async def process_uploaded_file(
         elif action == "analyze":
             prompt = "Please analyze the document structure, arguments, and provide feedback."
         else:
+            logger.error(f"Invalid action specified: {action}")
             raise HTTPException(status_code=400, detail="Invalid action specified")
+        
+        logger.info(f"Generated prompt: {prompt}")
         result = await ai_service.generate_assignment_content_from_prompt(prompt)
+        logger.info(f"AI processing completed. Result length: {len(result)}")
+        logger.info("=== WORKSHOP FILES/PROCESS ENDPOINT COMPLETED SUCCESSFULLY ===")
+        
         return {
             "action": action,
             "result": result,
@@ -357,21 +440,34 @@ async def process_uploaded_file(
 
 @router.post("/links")
 async def process_link(
-    url: str = Form(...),
+    url: str = Body(..., embed=True),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
     Process a link and extract its content.
     """
+    # Add comprehensive logging
+    logger.info(f"=== WORKSHOP LINKS ENDPOINT CALLED ===")
+    logger.info(f"User ID: {current_user.id}")
+    logger.info(f"User email: {current_user.email}")
+    logger.info(f"URL: {url}")
+    logger.info(f"Request timestamp: {datetime.utcnow()}")
+    
     try:
+        logger.info("Initializing web scraping service...")
         async with WebScrapingService() as scraper:
+            logger.info("Extracting content from URL...")
             result = await scraper.extract_content_from_url(url)
+            logger.info(f"Content extraction completed. Title: {result['title']}, Content length: {len(result['content'])}")
             
             # Generate AI analysis of the extracted content
+            logger.info("Generating AI analysis of extracted content...")
             analysis_prompt = f"Analyze the following web content and provide insights:\n\n{result['content'][:2000]}..."
             analysis = await ai_service.generate_assignment_content_from_prompt(analysis_prompt)
+            logger.info(f"AI analysis completed. Analysis length: {len(analysis)}")
             
+            logger.info("=== WORKSHOP LINKS ENDPOINT COMPLETED SUCCESSFULLY ===")
             return {
                 "id": str(uuid.uuid4()),
                 "url": url,

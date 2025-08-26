@@ -1,14 +1,17 @@
 import {
   Add as AddIcon,
   BarChart as BarChartIcon,
+  Psychology as BrainIcon,
   ChatOutlined as ChatOutlinedIcon,
   ContentCopy as ContentCopyIcon,
   DeleteOutlined,
   DownloadOutlined as DownloadOutlinedIcon,
   EditOutlined as EditOutlinedIcon,
   FormatListBulleted as FormatListBulletedIcon,
+  FullscreenExit as FullscreenExitIcon,
+  Fullscreen as FullscreenIcon,
   History as HistoryIcon,
-  InfoOutlined as InfoOutlinedIcon,
+  InfoOutlined as InfoIcon,
   LinkOutlined as LinkOutlinedIcon,
   RecordVoiceOverOutlined,
   Refresh as RefreshIcon,
@@ -18,10 +21,14 @@ import {
 import {
   Alert,
   alpha,
+  Avatar,
   Box,
   Button,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   Divider,
   Grid,
   IconButton,
@@ -29,6 +36,7 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
+  Paper,
   Snackbar,
   TextField,
   Tooltip,
@@ -174,6 +182,9 @@ const Workshop: React.FC = () => {
     remaining: 30000,
     percentUsed: 0,
   });
+
+  // Fullscreen message state
+  const [fullscreenMessage, setFullscreenMessage] = useState<string | null>(null);
 
   const { totalTokens } = useTokenUsage();
 
@@ -376,6 +387,10 @@ const Workshop: React.FC = () => {
         URL.revokeObjectURL(url);
       }, 0);
     }
+  };
+
+  const handleFullscreenToggle = (messageId: string) => {
+    setFullscreenMessage(fullscreenMessage === messageId ? null : messageId);
   };
 
   const renderInputSection = () => {
@@ -740,7 +755,7 @@ const Workshop: React.FC = () => {
                 Weekly Activity Overview
               </Typography>
               <Tooltip title="View your AI activity over time" arrow>
-                <InfoOutlinedIcon
+                <InfoIcon
                   sx={{
                     color: 'gray',
                     fontSize: { xs: 14, sm: 16, md: 20 },
@@ -1244,92 +1259,156 @@ const Workshop: React.FC = () => {
             <Divider sx={{ mb: 2 }} />
             <Box sx={{ minHeight: '200px', width: '100%', px: { xs: 0, sm: 2 } }}>
               {workshopHistory.length > 0 ? (
-                workshopHistory.map(item => (
-                  <React.Fragment key={item.id}>
-                    {/* User Prompt */}
-                    <Box
-                      sx={{
-                        p: 2,
-                        mb: 2,
-                        backgroundColor: 'rgba(25, 118, 210, 0.04)',
-                        borderRadius: '8px',
-                        border: '1px solid red',
-                      }}
-                    >
-                      <Typography variant="body1">{item.prompt}</Typography>
-                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
-                        <Typography variant="caption" color="text.secondary">
-                          {new Date(item.timestamp).toLocaleTimeString()}
-                        </Typography>
-                      </Box>
-                    </Box>
-
-                    {/* AI Content */}
-                    <Box
-                      sx={{
-                        p: 2,
-                        mb: 2,
-                        backgroundColor: 'rgba(76, 175, 80, 0.04)',
-                        borderRadius: '8px',
-                        border: '1px solid #4caf50',
-                        position: 'relative',
-                      }}
-                    >
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {workshopHistory.map(item => (
+                    <React.Fragment key={item.id}>
+                      {/* User Message - Right Side */}
                       <Box
                         sx={{
                           display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'flex-start',
-                          mb: 1,
+                          justifyContent: 'flex-end',
+                          mb: 2,
                         }}
                       >
-                        <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', flex: 1 }}>
-                          {item.content}
-                        </Typography>
-                        {item.serviceUsed && (
-                          <Chip
-                            label={item.serviceUsed.replace('_', ' ').toUpperCase()}
-                            size="small"
+                        <Box sx={{ maxWidth: '70%', position: 'relative' }}>
+                          <Paper
+                            elevation={1}
                             sx={{
-                              ml: 1,
-                              backgroundColor: 'rgba(76, 175, 80, 0.1)',
-                              color: '#4caf50',
-                              fontWeight: 500,
+                              p: 2,
+                              backgroundColor: 'rgba(25, 118, 210, 0.1)',
+                              border: '1px solid red',
+                              borderRadius: 2,
                             }}
-                          />
-                        )}
-                      </Box>
-                      {item.fileCategory && (
-                        <Chip
-                          label={`File: ${item.fileCategory}`}
-                          size="small"
+                          >
+                            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                              {item.prompt}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ display: 'block', mt: 1, textAlign: 'right' }}
+                            >
+                              {new Date(item.timestamp).toLocaleTimeString()}
+                            </Typography>
+                          </Paper>
+                        </Box>
+                        <Avatar
                           sx={{
+                            bgcolor: 'red',
+                            width: 32,
+                            height: 32,
+                            ml: 1,
+                            mt: 0.5,
+                          }}
+                        >
+                          <Typography variant="caption" sx={{ color: 'white', fontWeight: 'bold' }}>
+                            U
+                          </Typography>
+                        </Avatar>
+                      </Box>
+
+                      {/* AI Response - Left Side */}
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'flex-start',
+                          mb: 2,
+                        }}
+                      >
+                        <Avatar
+                          sx={{
+                            bgcolor: 'red',
+                            width: 32,
+                            height: 32,
                             mr: 1,
-                            backgroundColor: 'rgba(33, 150, 243, 0.1)',
-                            color: '#2196f3',
-                            fontWeight: 500,
+                            mt: 0.5,
                           }}
-                        />
-                      )}
-                      {item.hasDiagram && (
-                        <Chip
-                          label="Diagram Generated"
-                          size="small"
-                          sx={{
-                            backgroundColor: 'rgba(255, 152, 0, 0.1)',
-                            color: '#ff9800',
-                            fontWeight: 500,
-                          }}
-                        />
-                      )}
-                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
-                        <Typography variant="caption" color="text.secondary">
-                          {new Date(item.timestamp).toLocaleTimeString()}
-                        </Typography>
+                        >
+                          <BrainIcon />
+                        </Avatar>
+                        <Box sx={{ maxWidth: '70%', position: 'relative' }}>
+                          <Paper
+                            elevation={1}
+                            sx={{
+                              p: 2,
+                              backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                              border: '1px solid #4caf50',
+                              borderRadius: 2,
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'flex-start',
+                                mb: 1,
+                              }}
+                            >
+                              <Typography variant="caption" color="text.secondary">
+                                AI Assistant
+                              </Typography>
+                              <IconButton
+                                size="small"
+                                onClick={() => handleFullscreenToggle(item.id)}
+                                sx={{ p: 0.5, ml: 1 }}
+                              >
+                                <FullscreenIcon fontSize="small" />
+                              </IconButton>
+                            </Box>
+                            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                              {item.content}
+                            </Typography>
+                            {item.serviceUsed && (
+                              <Chip
+                                label={item.serviceUsed.replace('_', ' ').toUpperCase()}
+                                size="small"
+                                sx={{
+                                  mt: 1,
+                                  mr: 1,
+                                  backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                                  color: '#4caf50',
+                                  fontWeight: 500,
+                                }}
+                              />
+                            )}
+                            {item.fileCategory && (
+                              <Chip
+                                label={`File: ${item.fileCategory}`}
+                                size="small"
+                                sx={{
+                                  mt: 1,
+                                  mr: 1,
+                                  backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                                  color: '#2196f3',
+                                  fontWeight: 500,
+                                }}
+                              />
+                            )}
+                            {item.hasDiagram && (
+                              <Chip
+                                label="Diagram Generated"
+                                size="small"
+                                sx={{
+                                  mt: 1,
+                                  backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                                  color: '#ff9800',
+                                  fontWeight: 500,
+                                }}
+                              />
+                            )}
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ display: 'block', mt: 1, textAlign: 'right' }}
+                            >
+                              {new Date(item.timestamp).toLocaleTimeString()}
+                            </Typography>
+                          </Paper>
+                        </Box>
                       </Box>
-                    </Box>
-                  </React.Fragment>
-                ))
+                    </React.Fragment>
+                  ))}
+                </Box>
               ) : (
                 <Box
                   sx={{
@@ -1823,6 +1902,55 @@ const Workshop: React.FC = () => {
         isLoading={false}
         title="AI Response"
       />
+
+      {/* Fullscreen Message Dialog */}
+      <Dialog
+        open={!!fullscreenMessage}
+        onClose={() => setFullscreenMessage(null)}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            border: '2px solid red',
+            maxHeight: '90vh',
+            backgroundColor: theme =>
+              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+          },
+        }}
+      >
+        <DialogTitle sx={{ borderBottom: '1px solid', borderColor: 'divider', pb: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography
+              variant="h6"
+              sx={{
+                color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+                fontWeight: 'normal',
+              }}
+            >
+              AI Response - Full View
+            </Typography>
+            <IconButton onClick={() => setFullscreenMessage(null)} size="small">
+              <FullscreenExitIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ p: 3 }}>
+          {fullscreenMessage && (
+            <Typography
+              variant="body1"
+              sx={{
+                whiteSpace: 'pre-wrap',
+                color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+                lineHeight: 1.6,
+                fontSize: '1.1rem',
+              }}
+            >
+              {workshopHistory.find(m => m.id === fullscreenMessage)?.content}
+            </Typography>
+          )}
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 };

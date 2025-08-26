@@ -85,10 +85,7 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
   generateContent: async (prompt: string) => {
     set({ isLoading: true, error: null, featureAccessError: null });
     try {
-      const formData = new FormData();
-      formData.append('prompt', prompt);
-
-      const response = await api.post('/api/workshop/generate', formData);
+      const response = await api.post('/workshop/generate', { prompt: prompt });
       const content = response.data.content;
       const historyItem: HistoryItem = {
         id: Date.now().toString(),
@@ -123,7 +120,7 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
   saveContent: async (content: string) => {
     set({ isLoading: true, error: null, featureAccessError: null });
     try {
-      await api.post('/api/workshop/save', { content });
+      await api.post('/workshop/save', { content: content });
       set({
         generatedContent: content,
         isLoading: false,
@@ -163,7 +160,7 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await api.post('/api/workshop/files', formData);
+      const response = await api.post('/workshop/files', formData);
       const fileData = response.data;
 
       // Add to history
@@ -206,7 +203,7 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
   deleteFile: async (id: string) => {
     set({ isLoading: true, error: null, featureAccessError: null });
     try {
-      await api.delete(`/api/workshop/files/${id}`);
+      await api.delete(`/workshop/files/${id}`);
       set(state => ({
         files: state.files.filter(file => file.id !== id),
         isLoading: false,
@@ -229,10 +226,7 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
   addLink: async (link: Omit<Link, 'id'>) => {
     set({ isLoading: true, error: null, featureAccessError: null });
     try {
-      const formData = new FormData();
-      formData.append('url', link.url);
-
-      const response = await api.post('/api/workshop/links', formData);
+      const response = await api.post('/workshop/links', { url: link.url });
 
       set(state => ({
         links: [...state.links, response.data],
@@ -272,7 +266,7 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
   deleteLink: async (id: string) => {
     set({ isLoading: true, error: null, featureAccessError: null });
     try {
-      await api.delete(`/api/workshop/links/${id}`);
+      await api.delete(`/workshop/links/${id}`);
       set(state => ({
         links: state.links.filter(link => link.id !== id),
         isLoading: false,
@@ -295,11 +289,10 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
   processFile: async (fileId: string, action: 'summarize' | 'extract' | 'rewrite' | 'analyze') => {
     set({ isLoading: true, error: null, featureAccessError: null });
     try {
-      const formData = new FormData();
-      formData.append('file_id', fileId);
-      formData.append('action', action);
-
-      const response = await api.post('/api/workshop/files/process', formData);
+      const response = await api.post('/workshop/files/process', {
+        file_id: fileId,
+        action: action,
+      });
 
       // Add to history
       const historyItem: HistoryItem = {
