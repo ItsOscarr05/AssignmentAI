@@ -136,8 +136,7 @@ class AIService:
                     {"role": "system", "content": "You are a helpful teacher's assistant that provides constructive feedback on student submissions."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=max_tokens,
-                temperature=temperature,
+                max_completion_tokens=max_tokens,
                 top_p=settings.AI_TOP_P,
                 frequency_penalty=settings.AI_FREQUENCY_PENALTY,
                 presence_penalty=settings.AI_PRESENCE_PENALTY
@@ -209,11 +208,10 @@ class AIService:
                         {"role": "system", "content": "You are a helpful teacher's assistant that creates educational assignments."},
                         {"role": "user", "content": prompt}
                     ],
-                    max_tokens=max_tokens,
-                    temperature=temperature,
-                    top_p=settings.AI_TOP_P,
-                    frequency_penalty=settings.AI_FREQUENCY_PENALTY,
-                    presence_penalty=settings.AI_PRESENCE_PENALTY
+                    max_completion_tokens=max_tokens,
+                                    top_p=settings.AI_TOP_P,
+                frequency_penalty=settings.AI_FREQUENCY_PENALTY,
+                presence_penalty=settings.AI_PRESENCE_PENALTY
                 )
                 content = response.choices[0].message.content
                 if content is None:
@@ -397,8 +395,7 @@ class AIService:
                 {"role": "system", "content": "You are a helpful teacher's assistant that evaluates student submissions."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=1000,
-            temperature=0.3
+                                            max_completion_tokens=1000
         )
 
         analysis = response.choices[0].message.content
@@ -526,8 +523,7 @@ class AIService:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=settings.AI_MAX_TOKENS,
-                temperature=settings.AI_TEMPERATURE,
+                max_completion_tokens=settings.AI_MAX_TOKENS,
                 top_p=settings.AI_TOP_P,
                 frequency_penalty=settings.AI_FREQUENCY_PENALTY,
                 presence_penalty=settings.AI_PRESENCE_PENALTY

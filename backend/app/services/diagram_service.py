@@ -109,19 +109,22 @@ class DiagramService:
         Respond with only the diagram type.
         """
         
-        response = await self.client.chat.completions.create(
-            model="gpt-5-nano",
-            messages=[
-                {"role": "system", "content": "You are an expert at determining the best visualization type for data and concepts."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.3,
-            max_tokens=50
-        )
-        
-        content = response.choices[0].message.content
-        diagram_type = content.strip().lower() if content else 'infographic'
-        return diagram_type if diagram_type in self.supported_types else 'infographic'
+        try:
+            response = await self.client.chat.completions.create(
+                model="gpt-5-nano",
+                messages=[
+                    {"role": "system", "content": "You are an expert at determining the best visualization type for data and concepts."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_completion_tokens=50
+            )
+            
+            content = response.choices[0].message.content
+            diagram_type = content.strip().lower() if content else 'infographic'
+            return diagram_type if diagram_type in self.supported_types else 'infographic'
+        except Exception as e:
+            logger.error(f"Error determining diagram type: {str(e)}")
+            return 'infographic'
 
     async def _generate_data_visualization(
         self, 
@@ -211,8 +214,7 @@ class DiagramService:
                     {"role": "system", "content": "You are an expert at generating sample data for charts."},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0.2,
-                max_tokens=150
+                max_completion_tokens=150
             )
             content = response.choices[0].message.content
             return self._safe_json_parse(content, self._get_fallback_data(chart_type))
@@ -297,8 +299,7 @@ class DiagramService:
                 {"role": "system", "content": "You are an expert at creating flowchart structures."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.5,
-            max_tokens=300
+            max_completion_tokens=300
         )
         
         try:
@@ -347,8 +348,7 @@ class DiagramService:
                 {"role": "system", "content": "You are an expert at creating mind map structures."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.7,
-            max_tokens=400
+            max_completion_tokens=400
         )
         
         try:
@@ -390,8 +390,7 @@ class DiagramService:
                 {"role": "system", "content": "You are an expert at creating Venn diagram structures."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.5,
-            max_tokens=300
+            max_completion_tokens=300
         )
         
         try:
@@ -438,8 +437,7 @@ class DiagramService:
                 {"role": "system", "content": "You are an expert at creating organizational chart structures."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.5,
-            max_tokens=400
+            max_completion_tokens=400
         )
         
         try:
@@ -486,12 +484,12 @@ class DiagramService:
                 {"role": "system", "content": "You are an expert at creating timeline structures."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.5,
-            max_tokens=400
+            max_completion_tokens=400
         )
         
         try:
             timeline_data = json.loads(response.choices[0].message.content)
+            return timeline_data
         except:
             timeline_data = {
                 "events": [
@@ -529,8 +527,7 @@ class DiagramService:
                 {"role": "system", "content": "You are an expert at creating comparison table structures."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.5,
-            max_tokens=400
+            max_completion_tokens=400
         )
         
         try:
@@ -579,8 +576,7 @@ class DiagramService:
                 {"role": "system", "content": "You are an expert at creating infographic structures."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.7,
-            max_tokens=500
+            max_completion_tokens=500
         )
         
         try:

@@ -11,7 +11,7 @@ class FileCompletionService:
         self.model = settings.OPENAI_MODEL
         self.client = openai.AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
         self.max_context_lines = 50
-        self.max_completion_tokens = 1000
+        self.max_tokens = 1000
 
     async def get_completion(
         self,
@@ -68,7 +68,7 @@ class FileCompletionService:
                     }
                 ],
                 temperature=0.2,
-                max_tokens=self.max_completion_tokens,
+                max_tokens=self.max_tokens,
                 top_p=0.95,
                 frequency_penalty=0.0,
                 presence_penalty=0.0,

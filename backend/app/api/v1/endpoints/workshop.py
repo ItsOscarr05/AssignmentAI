@@ -57,7 +57,7 @@ async def check_openai_quota():
             response = client.chat.completions.create(
                 model="gpt-5-nano",
                 messages=[{"role": "user", "content": "Hello"}],
-                max_tokens=5
+                max_completion_tokens=5
             )
             
             return {

@@ -128,11 +128,10 @@ async def generate_chat_response(
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=settings.AI_MAX_TOKENS,
-            temperature=settings.AI_TEMPERATURE,
-            top_p=settings.AI_TOP_P,
-            frequency_penalty=settings.AI_FREQUENCY_PENALTY,
-            presence_penalty=settings.AI_PRESENCE_PENALTY
+                            max_completion_tokens=settings.AI_MAX_TOKENS,
+                            top_p=settings.AI_TOP_P,
+                frequency_penalty=settings.AI_FREQUENCY_PENALTY,
+                presence_penalty=settings.AI_PRESENCE_PENALTY
         )
         
         content = response.choices[0].message.content
@@ -286,8 +285,7 @@ async def process_multiple_inputs(
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": chat_prompt}
                 ],
-                max_tokens=settings.AI_MAX_TOKENS,
-                temperature=settings.AI_TEMPERATURE,
+                max_completion_tokens=settings.AI_MAX_TOKENS,
                 top_p=settings.AI_TOP_P,
                 frequency_penalty=settings.AI_FREQUENCY_PENALTY,
                 presence_penalty=settings.AI_PRESENCE_PENALTY

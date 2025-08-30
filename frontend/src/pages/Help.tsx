@@ -687,87 +687,100 @@ const Help: React.FC = () => {
         </Box>
         <Box sx={{ p: { xs: 2, md: 4 } }}>
           <TabPanel value={tabValue} index={0} breakpoint={breakpoint}>
-            <HelpSection
-              title="Popular Questions"
-              icon={<QuestionAnswerOutlined />}
-              breakpoint={breakpoint}
+            {/* Only show Popular Questions when "All Questions" is selected */}
+            <Box
+              sx={{
+                overflow: 'hidden',
+                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                maxHeight: selectedCategory === 'All Questions' ? '2000px' : '0px',
+                opacity: selectedCategory === 'All Questions' ? 1 : 0,
+                transform:
+                  selectedCategory === 'All Questions' ? 'translateY(0)' : 'translateY(-20px)',
+                mb: selectedCategory === 'All Questions' ? 3 : 0,
+              }}
             >
-              <Stack spacing={2}>
-                {popularFaqs.map((faq, idx) => (
-                  <Accordion
-                    key={faq.question + idx}
-                    expanded={!!expandedFaqs[faq.question]}
-                    onChange={() =>
-                      setExpandedFaqs(f => ({ ...f, [faq.question]: !f[faq.question] }))
-                    }
-                    sx={{
-                      background: 'transparent',
-                      boxShadow: 'none',
-                      '&:before': { display: 'none' },
-                      mb: 2,
-                      border: '1px solid',
-                      borderColor:
-                        theme.palette.mode === 'dark'
-                          ? 'rgba(255,255,255,0.1)'
-                          : 'rgba(0,0,0,0.06)',
-                      borderRadius: 2,
-                      overflow: 'hidden',
-                      transition: 'all 0.3s ease',
-                      '&:hover': {
-                        borderColor: theme.palette.primary.main,
-                        transform: 'translateY(-2px)',
-                        boxShadow: theme.shadows[4],
-                      },
-                    }}
-                  >
-                    <AccordionSummary
-                      expandIcon={<ExpandMore />}
+              <HelpSection
+                title="Popular Questions"
+                icon={<QuestionAnswerOutlined />}
+                breakpoint={breakpoint}
+              >
+                <Stack spacing={2}>
+                  {popularFaqs.map((faq, idx) => (
+                    <Accordion
+                      key={faq.question + idx}
+                      expanded={!!expandedFaqs[faq.question]}
+                      onChange={() =>
+                        setExpandedFaqs(f => ({ ...f, [faq.question]: !f[faq.question] }))
+                      }
                       sx={{
-                        background:
-                          theme.palette.mode === 'dark'
-                            ? `${theme.palette.background.paper}cc`
-                            : 'rgba(0,0,0,0.02)',
-                        borderRadius: 2,
-                        '&:hover': {
-                          background:
-                            theme.palette.mode === 'dark'
-                              ? `${theme.palette.background.paper}e6`
-                              : 'rgba(0,0,0,0.04)',
-                        },
-                        '& .MuiAccordionSummary-expandIconWrapper': {
-                          color: theme.palette.primary.main,
-                          transition: 'transform 0.3s ease',
-                        },
-                        '& .MuiAccordionSummary-expandIconWrapper.Mui-expanded': {
-                          transform: 'rotate(180deg)',
-                        },
-                      }}
-                    >
-                      <Typography fontWeight="500" sx={{ color: theme.palette.primary.main }}>
-                        {highlightSearchTerm(faq.question, searchQuery)}
-                      </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails
-                      sx={{
-                        background:
-                          theme.palette.mode === 'dark'
-                            ? `${theme.palette.background.paper}99`
-                            : 'rgba(0,0,0,0.01)',
-                        borderTop: '1px solid',
+                        background: 'transparent',
+                        boxShadow: 'none',
+                        '&:before': { display: 'none' },
+                        mb: 2,
+                        border: '1px solid',
                         borderColor:
                           theme.palette.mode === 'dark'
                             ? 'rgba(255,255,255,0.1)'
                             : 'rgba(0,0,0,0.06)',
+                        borderRadius: 2,
+                        overflow: 'hidden',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          borderColor: theme.palette.primary.main,
+                          transform: 'translateY(-2px)',
+                          boxShadow: theme.shadows[4],
+                        },
                       }}
                     >
-                      <Typography color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                        {highlightSearchTerm(faq.answer, searchQuery)}
-                      </Typography>
-                    </AccordionDetails>
-                  </Accordion>
-                ))}
-              </Stack>
-            </HelpSection>
+                      <AccordionSummary
+                        expandIcon={<ExpandMore />}
+                        sx={{
+                          background:
+                            theme.palette.mode === 'dark'
+                              ? `${theme.palette.background.paper}cc`
+                              : 'rgba(0,0,0,0.02)',
+                          borderRadius: 2,
+                          '&:hover': {
+                            background:
+                              theme.palette.mode === 'dark'
+                                ? `${theme.palette.background.paper}e6`
+                                : 'rgba(0,0,0,0.04)',
+                          },
+                          '& .MuiAccordionSummary-expandIconWrapper': {
+                            color: theme.palette.primary.main,
+                            transition: 'transform 0.3s ease',
+                          },
+                          '& .MuiAccordionSummary-expandIconWrapper.Mui-expanded': {
+                            transform: 'rotate(180deg)',
+                          },
+                        }}
+                      >
+                        <Typography fontWeight="500" sx={{ color: theme.palette.primary.main }}>
+                          {highlightSearchTerm(faq.question, searchQuery)}
+                        </Typography>
+                      </AccordionSummary>
+                      <AccordionDetails
+                        sx={{
+                          background:
+                            theme.palette.mode === 'dark'
+                              ? `${theme.palette.background.paper}99`
+                              : 'rgba(0,0,0,0.01)',
+                          borderTop: '1px solid',
+                          borderColor:
+                            theme.palette.mode === 'dark'
+                              ? 'rgba(255,255,255,0.1)'
+                              : 'rgba(0,0,0,0.06)',
+                        }}
+                      >
+                        <Typography color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                          {highlightSearchTerm(faq.answer, searchQuery)}
+                        </Typography>
+                      </AccordionDetails>
+                    </Accordion>
+                  ))}
+                </Stack>
+              </HelpSection>
+            </Box>
             <HelpSection title="FAQ" icon={<QuestionAnswerOutlined />}>
               {filteredFaqData.length > 0 ? (
                 filteredFaqData.map((category, categoryIndex) => (

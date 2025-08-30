@@ -1,10 +1,10 @@
 from typing import Optional
-from openai import OpenAI
+from openai import AsyncOpenAI
 from app.core.config import settings
 from app.schemas.assignment import AssignmentCreate
 
 # Initialize OpenAI client
-client = OpenAI(api_key=settings.OPENAI_API_KEY)
+client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
 
 class AIService:
     @staticmethod
@@ -42,8 +42,7 @@ class AIService:
                     {"role": "system", "content": "You are an expert educational content creator."},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=settings.OPENAI_TEMPERATURE,
-                max_tokens=settings.OPENAI_MAX_TOKENS,
+                max_completion_tokens=settings.OPENAI_MAX_TOKENS,
             )
             
             return response.choices[0].message.content
@@ -95,8 +94,7 @@ Would you like me to help you with anything specific once the service is back on
                     {"role": "system", "content": "You are an expert educational content creator."},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=settings.OPENAI_TEMPERATURE,
-                max_tokens=settings.OPENAI_MAX_TOKENS,
+                max_completion_tokens=settings.OPENAI_MAX_TOKENS,
             )
             
             return response.choices[0].message.content
