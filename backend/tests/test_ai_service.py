@@ -80,7 +80,7 @@ class TestAIService:
         
         result = await ai_service.get_user_model(1)
         
-        assert result == "gpt-4.1-nano"
+        assert result == "gpt-5-nano"
 
     async def test_generate_assignment_success(self, ai_service, sample_assignment_request, mock_openai_response):
         """Test successful assignment generation"""

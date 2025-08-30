@@ -42,7 +42,7 @@ class AIService:
         subscription = result.scalar_one_or_none()
         
         if not subscription:
-            return "gpt-4.1-nano"  # Default model for users without subscription (Free plan model)
+            return "gpt-5-nano"  # Default model for users without subscription (Free plan model)
         
         return str(subscription.ai_model)
 

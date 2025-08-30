@@ -36,7 +36,7 @@ const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
-  const { login, mockLogin } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   // Auto-fill email and password if remember me was previously enabled
@@ -186,10 +186,9 @@ const Login: React.FC = () => {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        height: '100vh',
         display: 'flex',
         background: 'white',
-        overflow: 'auto',
       }}
     >
       <Container
@@ -203,7 +202,7 @@ const Login: React.FC = () => {
           container
           direction={{ xs: 'column', md: 'row' }}
           sx={{
-            minHeight: '100vh',
+            height: '100vh',
             borderRadius: 0,
           }}
         >
@@ -221,7 +220,7 @@ const Login: React.FC = () => {
               alignItems: 'center',
               color: 'white',
               position: 'relative',
-              minHeight: { xs: '35vh', md: '100vh' },
+              height: { xs: '35vh', md: '100vh' },
             }}
           >
             <HeroParticles />
@@ -235,8 +234,8 @@ const Login: React.FC = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                justifyContent: 'flex-start',
-                minHeight: { xs: 'auto', md: '100vh' },
+                justifyContent: 'center',
+                height: { xs: 'auto', md: '100vh' },
                 pt: { xs: 2, md: 4 },
                 pb: { xs: 2, md: 2 },
               }}
@@ -246,8 +245,8 @@ const Login: React.FC = () => {
                 src="/scroll_transparent.png"
                 alt="Logo"
                 sx={{
-                  height: { xs: 220, sm: 260, md: 360 },
-                  mb: { xs: -1, md: -2.5 },
+                  height: { xs: 180, sm: 220, md: 320 },
+                  mb: { xs: 0, md: 1 },
                   width: 'auto',
                   maxWidth: '100%',
                   objectFit: 'contain',
@@ -308,7 +307,7 @@ const Login: React.FC = () => {
               height: { xs: 'auto', md: '100vh' },
               display: 'flex',
               flexDirection: 'column',
-              justifyContent: 'flex-start',
+              justifyContent: 'center',
               background: 'white',
               position: 'relative',
             }}
@@ -320,7 +319,7 @@ const Login: React.FC = () => {
                 position: 'relative',
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'flex-start',
+                justifyContent: 'center',
                 height: 'auto',
                 pt: { xs: 1, md: 2 },
               }}
@@ -593,16 +592,6 @@ const Login: React.FC = () => {
                   ) : (
                     'Sign In'
                   )}
-                </Button>
-
-                <Button
-                  variant="contained"
-                  color="primary"
-                  fullWidth
-                  onClick={mockLogin}
-                  sx={{ mt: 2 }}
-                >
-                  Demo Login
                 </Button>
 
                 <Divider sx={{ my: 3 }}>

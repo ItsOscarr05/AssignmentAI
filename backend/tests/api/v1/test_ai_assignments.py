@@ -48,7 +48,7 @@ def test_get_ai_assignment(client, test_user, test_token, test_ai_assignment):
 def test_update_ai_assignment(client, test_user, test_token, test_ai_assignment):
     update_data = {
         "prompt": "Updated AI prompt",
-        "model": "gpt-3.5-turbo",
+        "model": "gpt-5-nano",
     }
     
     response = client.put(

@@ -2,6 +2,7 @@
 import {
   AccessTimeOutlined,
   AllInclusive,
+  AutoAwesomeOutlined,
   AutoFixHighOutlined,
   BarChartOutlined,
   BlockOutlined,
@@ -17,9 +18,12 @@ import {
   MilitaryTechOutlined,
   MoreVert,
   PaletteOutlined,
+  PsychologyOutlined,
+  RocketLaunchOutlined,
   SchoolOutlined,
   ScienceOutlined,
   Search,
+  SmartToyOutlined,
   Speed,
   Spellcheck,
   Star,
@@ -902,8 +906,8 @@ const PricePlan: React.FC = () => {
                             >
                               {plan.name === 'Free' && (
                                 <Chip
-                                  icon={<LocalOffer />}
-                                  label="GPT-4.1 Nano"
+                                  icon={<SmartToyOutlined />}
+                                  label="GPT-5 Nano"
                                   size="small"
                                   sx={{
                                     backgroundColor: '#e3f2fd',
@@ -919,8 +923,8 @@ const PricePlan: React.FC = () => {
                               )}
                               {plan.name === 'Plus' && (
                                 <Chip
-                                  icon={<Star />}
-                                  label="GPT-3.5 Turbo"
+                                  icon={<PsychologyOutlined />}
+                                  label="GPT-4.1 Mini"
                                   size="small"
                                   sx={{
                                     backgroundColor: '#e8f5e9',
@@ -936,7 +940,7 @@ const PricePlan: React.FC = () => {
                               )}
                               {plan.name === 'Pro' && (
                                 <Chip
-                                  icon={<Diamond />}
+                                  icon={<AutoAwesomeOutlined />}
                                   label="GPT-4 Turbo"
                                   size="small"
                                   sx={{
@@ -953,8 +957,8 @@ const PricePlan: React.FC = () => {
                               )}
                               {plan.name === 'Max' && (
                                 <Chip
-                                  icon={<EmojiEvents />}
-                                  label="GPT-4"
+                                  icon={<RocketLaunchOutlined />}
+                                  label="GPT-5"
                                   size="small"
                                   sx={{
                                     backgroundColor: '#fff3e0',

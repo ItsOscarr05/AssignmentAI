@@ -234,7 +234,6 @@ export interface AuthContextType {
   updateUser: (userData: Partial<User>) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updatePassword: (token: string, newPassword: string) => Promise<void>;
-  mockLogin: () => void;
 }
 
 export interface ThemeContextType {

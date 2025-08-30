@@ -1065,7 +1065,7 @@ const AITokens: React.FC = () => {
                     textAlign: 'center',
                   }}
                 >
-                  AI Model: GPT 4.1-nano
+                  AI Model: GPT 5-nano
                 </Typography>
                 <TextField
                   label="Tokens"

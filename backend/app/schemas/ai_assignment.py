@@ -118,7 +118,7 @@ class AIAssignmentBase(BaseModel):
     @classmethod
     def validate_model(cls, v):
         """Validate AI model name."""
-        valid_models = ['gpt-4', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'claude-3', 'claude-2']
+        valid_models = ['gpt-4', 'gpt-4-turbo', 'gpt-4.1-mini', 'gpt-5-nano', 'gpt-5', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'claude-3', 'claude-2']
         if v not in valid_models:
             raise ValueError(f"Model must be one of: {', '.join(valid_models)}")
         return v
@@ -158,7 +158,7 @@ class AIAssignmentCreateRequest(BaseModel):
     @classmethod
     def validate_model(cls, v):
         """Validate AI model name."""
-        valid_models = ['gpt-4', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'claude-3', 'claude-2']
+        valid_models = ['gpt-4', 'gpt-4-turbo', 'gpt-4.1-mini', 'gpt-5-nano', 'gpt-5', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'claude-3', 'claude-2']
         if v not in valid_models:
             raise ValueError(f"Model must be one of: {', '.join(valid_models)}")
         return v
@@ -194,7 +194,7 @@ class AIAssignmentUpdate(BaseModel):
         """Validate AI model name."""
         if v is None:
             return v
-        valid_models = ['gpt-4', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'claude-3', 'claude-2']
+        valid_models = ['gpt-4', 'gpt-4-turbo', 'gpt-4.1-mini', 'gpt-5-nano', 'gpt-5', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'claude-3', 'claude-2']
         if v not in valid_models:
             raise ValueError(f"Model must be one of: {', '.join(valid_models)}")
         return v

@@ -379,52 +379,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const mockLogin = () => {
-    const mockUser: User = {
-      id: 'mock-user-id',
-      email: 'dev@example.com',
-      name: 'Development User',
-      role: 'teacher',
-      firstName: 'Development',
-      lastName: 'User',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    // Create a mock token for development
-    const mockToken = 'mock-access-token-for-development';
-    localStorage.setItem('access_token', mockToken);
-    localStorage.setItem('token', mockToken); // Also store for AuthManager compatibility
-    localStorage.setItem('token_expiry', (Date.now() + 3600000).toString()); // 1 hour from now
-
-    setUser(mockUser);
-    setIsMockUser(false); // Disable mock user mode since test users are removed
-    localStorage.setItem('user', JSON.stringify(mockUser));
-    localStorage.setItem('isMockUser', 'false'); // Disable mock user mode
-
-    // For testing remember me, let's simulate storing the mock credentials
-    const mockCredentials = {
-      email: 'dev@example.com',
-      password: 'devpassword123',
-      rememberMe: true,
-    };
-
-    if (mockCredentials.rememberMe) {
-      console.log('Mock login: Storing remember me data');
-      localStorage.setItem('rememberMe', 'true');
-      localStorage.setItem('rememberedEmail', mockCredentials.email);
-      localStorage.setItem('rememberedPassword', mockCredentials.password);
-    }
-
-    // Log mock login (but mock mode is disabled)
-    securityMonitor.logEvent('login_success', 'low', {
-      isMockUser: false,
-      email: mockUser.email,
-    });
-
-    navigate('/dashboard');
-  };
-
   const resetPassword = async (email: string) => {
     try {
       await AuthService.forgotPassword(email);
@@ -475,7 +429,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     logoutAll,
     updateUser,
     register,
-    mockLogin,
+
     resetPassword,
     updatePassword,
   };

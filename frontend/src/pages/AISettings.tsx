@@ -18,7 +18,7 @@ const AISettings: React.FC = () => {
   const [settings, setSettings] = useState({
     responseLength: 50,
     creativityLevel: 3,
-    languageModel: 'gpt-4',
+    languageModel: 'gpt-5-nano',
     autoSave: true,
     showSuggestions: true,
     darkMode: false,
@@ -74,8 +74,10 @@ const AISettings: React.FC = () => {
                     onChange={handleChange('languageModel')}
                     label="Language Model"
                   >
-                    <MenuItem value="gpt-4">GPT-4</MenuItem>
-                    <MenuItem value="gpt-3.5">GPT-3.5</MenuItem>
+                    <MenuItem value="gpt-5-nano">GPT-5 Nano</MenuItem>
+                    <MenuItem value="gpt-4.1-mini">GPT-4.1 Mini</MenuItem>
+                    <MenuItem value="gpt-4-turbo">GPT-4 Turbo</MenuItem>
+                    <MenuItem value="gpt-5">GPT-5</MenuItem>
                     <MenuItem value="claude">Claude</MenuItem>
                   </Select>
                 </FormControl>

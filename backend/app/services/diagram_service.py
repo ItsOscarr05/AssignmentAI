@@ -110,7 +110,7 @@ class DiagramService:
         """
         
         response = await self.client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-5-nano",
             messages=[
                 {"role": "system", "content": "You are an expert at determining the best visualization type for data and concepts."},
                 {"role": "user", "content": prompt}
@@ -206,7 +206,7 @@ class DiagramService:
         """
         try:
             response = await self.client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model="gpt-5-nano",
                 messages=[
                     {"role": "system", "content": "You are an expert at generating sample data for charts."},
                     {"role": "user", "content": prompt}
@@ -292,7 +292,7 @@ class DiagramService:
         """
         
         response = await self.client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-5-nano",
             messages=[
                 {"role": "system", "content": "You are an expert at creating flowchart structures."},
                 {"role": "user", "content": prompt}
@@ -342,7 +342,7 @@ class DiagramService:
         """
         
         response = await self.client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-5-nano",
             messages=[
                 {"role": "system", "content": "You are an expert at creating mind map structures."},
                 {"role": "user", "content": prompt}
@@ -385,7 +385,7 @@ class DiagramService:
         """
         
         response = await self.client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-5-nano",
             messages=[
                 {"role": "system", "content": "You are an expert at creating Venn diagram structures."},
                 {"role": "user", "content": prompt}
@@ -433,7 +433,7 @@ class DiagramService:
         """
         
         response = await self.client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-5-nano",
             messages=[
                 {"role": "system", "content": "You are an expert at creating organizational chart structures."},
                 {"role": "user", "content": prompt}
@@ -481,7 +481,7 @@ class DiagramService:
         """
         
         response = await self.client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-5-nano",
             messages=[
                 {"role": "system", "content": "You are an expert at creating timeline structures."},
                 {"role": "user", "content": prompt}
@@ -524,7 +524,7 @@ class DiagramService:
         """
         
         response = await self.client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-5-nano",
             messages=[
                 {"role": "system", "content": "You are an expert at creating comparison table structures."},
                 {"role": "user", "content": prompt}
@@ -574,7 +574,7 @@ class DiagramService:
         """
         
         response = await self.client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-5-nano",
             messages=[
                 {"role": "system", "content": "You are an expert at creating infographic structures."},
                 {"role": "user", "content": prompt}

@@ -265,7 +265,7 @@ class Settings(BaseSettings):
     
     # OpenAI
     OPENAI_API_KEY: Optional[str] = None
-    OPENAI_MODEL: str = "gpt-4.1-nano"  # Default model (overridden by subscription)
+    OPENAI_MODEL: str = "gpt-5-nano"  # Default model (overridden by subscription)
     OPENAI_TEMPERATURE: float = 0.7
     OPENAI_MAX_TOKENS: int = 2000
     

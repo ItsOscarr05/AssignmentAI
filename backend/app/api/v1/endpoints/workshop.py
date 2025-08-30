@@ -33,6 +33,77 @@ async def workshop_health_check():
         "message": "Workshop service is running and ready to process requests!"
     }
 
+@router.get("/quota-status")
+async def check_openai_quota():
+    """
+    Check OpenAI API quota status and usage.
+    """
+    try:
+        import os
+        from openai import OpenAI
+        
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            return {
+                "status": "error",
+                "message": "OpenAI API key not configured",
+                "timestamp": datetime.utcnow().isoformat()
+            }
+        
+        client = OpenAI(api_key=api_key)
+        
+        # Try to make a minimal API call to check quota
+        try:
+            response = client.chat.completions.create(
+                model="gpt-5-nano",
+                messages=[{"role": "user", "content": "Hello"}],
+                max_tokens=5
+            )
+            
+            return {
+                "status": "healthy",
+                "message": "OpenAI API quota available",
+                "quota_status": "available",
+                "timestamp": datetime.utcnow().isoformat(),
+                "test_response": "Success"
+            }
+            
+        except Exception as e:
+            error_message = str(e)
+            if "insufficient_quota" in error_message.lower() or "quota_exceeded" in error_message.lower():
+                return {
+                    "status": "quota_exceeded",
+                    "message": "OpenAI API quota exceeded",
+                    "quota_status": "exceeded",
+                    "error": error_message,
+                    "timestamp": datetime.utcnow().isoformat()
+                }
+            elif "rate_limit" in error_message.lower() or "429" in error_message:
+                return {
+                    "status": "rate_limited",
+                    "message": "OpenAI API rate limit hit",
+                    "quota_status": "rate_limited",
+                    "error": error_message,
+                    "timestamp": datetime.utcnow().isoformat()
+                }
+            else:
+                return {
+                    "status": "error",
+                    "message": "OpenAI API error",
+                    "quota_status": "error",
+                    "error": error_message,
+                    "timestamp": datetime.utcnow().isoformat()
+                }
+                
+    except Exception as e:
+        logger.error(f"Error checking OpenAI quota: {e}")
+        return {
+            "status": "error",
+            "message": "Failed to check quota status",
+            "error": str(e),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
 # Initialize services
 image_analysis_service = ImageAnalysisService()
 

@@ -21,12 +21,12 @@ const About = () => {
     {
       icon: <AutoAwesomeOutlined sx={{ fontSize: 40, color: 'primary.main' }} />,
       title: 'AI Innovation',
-      description: `Leveraging cutting-edge artificial intelligence to provide intelligent assistance. Our team is dedicated to staying at the forefront of AI research and development, ensuring that AssignmentAI delivers the most advanced, reliable, and ethical solutions to real academic challenges.`,
+      description: `Leveraging cutting-edge artificial intelligence to provide intelligent assistance. I am dedicated to staying at the forefront of AI research and development, ensuring that AssignmentAI delivers the most advanced, reliable, and ethical solutions to real academic challenges.`,
     },
     {
       icon: <SecurityOutlined sx={{ fontSize: 40, color: 'primary.main' }} />,
       title: 'Privacy & Security',
-      description: `Ensuring the highest standards of data protection and user privacy. We implement robust security protocols and are transparent about our data practices, so users can trust that their information is safe and handled with care.`,
+      description: `Ensuring the highest standards of data protection and user privacy. I implement robust security protocols and am transparent about data practices, so users can trust that their information is safe and handled with care.`,
     },
     {
       icon: <SpeedOutlined sx={{ fontSize: 40, color: 'primary.main' }} />,
@@ -36,12 +36,12 @@ const About = () => {
     {
       icon: <GroupOutlined sx={{ fontSize: 40, color: 'primary.main' }} />,
       title: 'Community',
-      description: `Building a supportive network of students and educators. We believe in the power of collaboration and shared knowledge, and we strive to create a welcoming environment where everyone can contribute, learn, and succeed together.`,
+      description: `Building a supportive network of students and educators. I believe in the power of collaboration and shared knowledge, and I strive to create a welcoming environment where everyone can contribute, learn, and succeed together.`,
     },
     {
       icon: <EmojiObjectsOutlined sx={{ fontSize: 40, color: 'primary.main' }} />,
       title: 'Continuous Improvement',
-      description: `Constantly evolving our platform based on user feedback and needs. We listen to our community and are committed to refining and expanding our features to better serve the ever-changing landscape of education.`,
+      description: `Constantly evolving this platform based on user feedback and needs. I listen to our community and am committed to refining and expanding features to better serve the ever-changing landscape of education.`,
     },
   ];
 
@@ -88,16 +88,16 @@ const About = () => {
           </Typography>
           <Typography variant="body1" sx={{ mb: 3, fontSize: '1.15rem', color: 'black' }}>
             AssignmentAI was born from a simple yet powerful vision: to democratize access to
-            intelligent academic assistance. We believe that every student deserves the opportunity
+            intelligent academic assistance. I believe that every student deserves the opportunity
             to excel in their educational journey, regardless of their background or circumstances.
             <br />
             <br />
-            Our mission is to provide cutting-edge AI-powered tools that enhance learning, improve
-            writing skills, and foster critical thinking. We strive to create an inclusive platform
+            My mission is to provide cutting-edge AI-powered tools that enhance learning, improve
+            writing skills, and foster critical thinking. I strive to create an inclusive platform
             that supports diverse learning styles and academic needs.
             <br />
             <br />
-            By combining the power of artificial intelligence with human-centered design, we aim to
+            By combining the power of artificial intelligence with human-centered design, I aim to
             transform the way students approach their assignments, making learning more engaging,
             efficient, and effective.
           </Typography>
@@ -106,20 +106,22 @@ const About = () => {
             Our Story
           </Typography>
           <Typography variant="body1" sx={{ mb: 3, fontSize: '1.15rem', color: 'black' }}>
-            Founded by a team of educators, technologists, and students who experienced firsthand
-            the challenges of academic writing and research, AssignmentAI emerged from the
-            recognition that traditional study methods often fall short in today's fast-paced,
-            information-rich world.
+            Founded by a single James Madison University freshman who experienced firsthand the
+            challenges of academic writing and research, AssignmentAI emerged from the recognition
+            that paying students are forced to do mundane, repetitive work just to graduate.
             <br />
             <br />
-            We started with a simple question: "How can we leverage technology to make learning more
-            accessible and effective?" This question led us to develop innovative AI solutions that
-            not only assist with writing but also teach valuable skills that last a lifetime.
+            It started with a simple question: "How can I leverage technology to eliminate the
+            tedious tasks that don't contribute to real learning?" This question led to developing
+            innovative AI solutions that not only assist with writing but also free students from
+            unnecessary busywork so they can focus on what truly matters.
             <br />
             <br />
             The journey from a dorm room idea to a fully realized application is a testament to the
             belief that meaningful change can start with a single voice—and that technology can help
-            reshape the educational experience for the better.
+            reshape the educational experience for the better. Developed entirely independently
+            without any outside help, this project represents the power of individual determination
+            and the potential for one person to make a significant impact in educational technology.
           </Typography>
 
           <Typography variant="h5" sx={{ mb: 1, fontWeight: 600, color: '#D32F2F' }}>
@@ -162,17 +164,16 @@ const About = () => {
             Our Commitment
           </Typography>
           <Typography variant="body1" sx={{ mb: 3, fontSize: '1.15rem', color: 'black' }}>
-            We are committed to continuous innovation, user privacy, and educational excellence. Our
-            platform evolves based on real user feedback, ensuring that we remain at the forefront
+            I am committed to continuous innovation, user privacy, and educational excellence. This
+            platform evolves based on real user feedback, ensuring that it remains at the forefront
             of educational technology while maintaining the highest standards of security and
             ethical AI use.
             <br />
-            <br />
-            We believe in open communication and transparency. Our support team is always ready to
-            assist, and we value every piece of feedback as an opportunity to grow. We are dedicated
-            to building trust with our users by being responsive, honest, and proactive in
-            addressing concerns. AssignmentAI is more than a tool—it's a promise to support your
-            academic journey every step of the way.
+            <br />I believe in open communication and transparency. I'm always ready to assist, and
+            I value every piece of feedback as an opportunity to grow. I am dedicated to building
+            trust with users by being responsive, honest, and proactive in addressing concerns.
+            AssignmentAI is more than a tool—it's a promise to support your academic journey every
+            step of the way.
           </Typography>
 
           <Typography variant="h5" sx={{ mb: 1, fontWeight: 600, color: '#D32F2F' }}>
@@ -183,9 +184,8 @@ const About = () => {
             seeking innovative teaching tools, or an institution aiming to enhance learning
             outcomes, AssignmentAI is here to support your educational journey.
             <br />
-            <br />
-            We invite you to connect with us, share your experiences, and help shape the future of
-            AssignmentAI. Participate in our community forums, attend our webinars, or contribute
+            <br />I invite you to connect with me, share your experiences, and help shape the future
+            of AssignmentAI. Participate in our community forums, attend our webinars, or contribute
             your ideas for new features. Together, we can create a smarter, more inclusive, and more
             effective educational environment for everyone.
           </Typography>

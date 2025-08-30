@@ -3,20 +3,24 @@ import {
   BarChart as BarChartIcon,
   Psychology as BrainIcon,
   ChatOutlined as ChatOutlinedIcon,
+  CheckCircle as CheckCircleIcon,
   ContentCopy as ContentCopyIcon,
   DeleteOutlined,
   DownloadOutlined as DownloadOutlinedIcon,
   EditOutlined as EditOutlinedIcon,
+  Error as ErrorIcon,
   FormatListBulleted as FormatListBulletedIcon,
   FullscreenExit as FullscreenExitIcon,
   Fullscreen as FullscreenIcon,
   History as HistoryIcon,
   InfoOutlined as InfoIcon,
   LinkOutlined as LinkOutlinedIcon,
+  Person as PersonIcon,
   RecordVoiceOverOutlined,
   Refresh as RefreshIcon,
   Send as SendIcon,
   UploadOutlined as UploadOutlinedIcon,
+  Warning as WarningIcon,
 } from '@mui/icons-material';
 import {
   Alert,
@@ -176,6 +180,14 @@ const Workshop: React.FC = () => {
     message: '',
     severity: 'success',
   });
+
+  const [quotaStatus, setQuotaStatus] = useState<{
+    status: string;
+    message: string;
+    quota_status: string;
+    timestamp: string;
+  } | null>(null);
+  const [isCheckingQuota, setIsCheckingQuota] = useState(false);
   const [realTokenUsage, setRealTokenUsage] = useState({
     total: 30000,
     used: 0,
@@ -281,6 +293,30 @@ const Workshop: React.FC = () => {
       });
     }
   }, [error]);
+
+  // Check OpenAI quota status
+  const checkQuotaStatus = async () => {
+    setIsCheckingQuota(true);
+    try {
+      const response = await api.get('/workshop/quota-status');
+      setQuotaStatus(response.data);
+    } catch (error) {
+      console.error('Failed to check quota status:', error);
+      setQuotaStatus({
+        status: 'error',
+        message: 'Failed to check quota status',
+        quota_status: 'unknown',
+        timestamp: new Date().toISOString(),
+      });
+    } finally {
+      setIsCheckingQuota(false);
+    }
+  };
+
+  // Check quota status on component mount
+  useEffect(() => {
+    checkQuotaStatus();
+  }, []);
 
   // Custom styles
   const cardStyle = {
@@ -716,6 +752,91 @@ const Workshop: React.FC = () => {
               </Box>
             </Box>
           </Box>
+
+          {/* OpenAI Quota Status */}
+          {quotaStatus && (
+            <Box
+              sx={{
+                ...cardStyle,
+                mb: { xs: 2, sm: 3, md: 4 },
+                p: { xs: 1.5, sm: 2, md: 2.5 },
+                border: '2px solid',
+                borderColor:
+                  quotaStatus.quota_status === 'available'
+                    ? 'green'
+                    : quotaStatus.quota_status === 'exceeded'
+                    ? 'red'
+                    : quotaStatus.quota_status === 'rate_limited'
+                    ? 'orange'
+                    : 'gray',
+                backgroundColor:
+                  quotaStatus.quota_status === 'available'
+                    ? 'rgba(76, 175, 80, 0.1)'
+                    : quotaStatus.quota_status === 'exceeded'
+                    ? 'rgba(244, 67, 54, 0.1)'
+                    : quotaStatus.quota_status === 'rate_limited'
+                    ? 'rgba(255, 152, 0, 0.1)'
+                    : 'rgba(158, 158, 158, 0.1)',
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                {quotaStatus.quota_status === 'available' ? (
+                  <CheckCircleIcon sx={{ color: 'green', fontSize: 24 }} />
+                ) : quotaStatus.quota_status === 'exceeded' ? (
+                  <ErrorIcon sx={{ color: 'red', fontSize: 24 }} />
+                ) : quotaStatus.quota_status === 'rate_limited' ? (
+                  <WarningIcon sx={{ color: 'orange', fontSize: 24 }} />
+                ) : (
+                  <InfoIcon sx={{ color: 'gray', fontSize: 24 }} />
+                )}
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 'bold',
+                    color:
+                      quotaStatus.quota_status === 'available'
+                        ? 'green'
+                        : quotaStatus.quota_status === 'exceeded'
+                        ? 'red'
+                        : quotaStatus.quota_status === 'rate_limited'
+                        ? 'orange'
+                        : 'gray',
+                  }}
+                >
+                  OpenAI API Status:{' '}
+                  {quotaStatus.quota_status === 'available'
+                    ? 'Available'
+                    : quotaStatus.quota_status === 'exceeded'
+                    ? 'Quota Exceeded'
+                    : quotaStatus.quota_status === 'rate_limited'
+                    ? 'Rate Limited'
+                    : 'Unknown'}
+                </Typography>
+              </Box>
+              <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+                {quotaStatus.message}
+              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  Last checked: {new Date(quotaStatus.timestamp).toLocaleString()}
+                </Typography>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={checkQuotaStatus}
+                  disabled={isCheckingQuota}
+                  startIcon={isCheckingQuota ? <CircularProgress size={16} /> : <RefreshIcon />}
+                  sx={{
+                    borderColor: 'red',
+                    color: 'red',
+                    '&:hover': { borderColor: 'red' },
+                  }}
+                >
+                  {isCheckingQuota ? 'Checking...' : 'Refresh Status'}
+                </Button>
+              </Box>
+            </Box>
+          )}
           {/* Activity Chart */}
           <Box
             sx={{
@@ -1301,9 +1422,7 @@ const Workshop: React.FC = () => {
                             mt: 0.5,
                           }}
                         >
-                          <Typography variant="caption" sx={{ color: 'white', fontWeight: 'bold' }}>
-                            U
-                          </Typography>
+                          <PersonIcon sx={{ color: 'white', fontSize: 20 }} />
                         </Avatar>
                       </Box>
 
@@ -1317,22 +1436,23 @@ const Workshop: React.FC = () => {
                       >
                         <Avatar
                           sx={{
-                            bgcolor: 'red',
+                            bgcolor: 'white',
                             width: 32,
                             height: 32,
                             mr: 1,
                             mt: 0.5,
+                            border: '1px solid #e0e0e0',
                           }}
                         >
-                          <BrainIcon />
+                          <BrainIcon sx={{ color: 'red', fontSize: 20 }} />
                         </Avatar>
                         <Box sx={{ maxWidth: '70%', position: 'relative' }}>
                           <Paper
                             elevation={1}
                             sx={{
                               p: 2,
-                              backgroundColor: 'rgba(76, 175, 80, 0.1)',
-                              border: '1px solid #4caf50',
+                              backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                              border: '1px solid #f44336',
                               borderRadius: 2,
                             }}
                           >
@@ -1912,7 +2032,7 @@ const Workshop: React.FC = () => {
         PaperProps={{
           sx: {
             borderRadius: 3,
-            border: '2px solid red',
+            border: '2px solid #f44336',
             maxHeight: '90vh',
             backgroundColor: theme =>
               theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',

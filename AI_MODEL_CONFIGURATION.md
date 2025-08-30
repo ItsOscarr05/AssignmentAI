@@ -8,10 +8,10 @@ AssignmentAI uses different OpenAI models based on user subscription tiers to op
 
 | Subscription Plan | AI Model        | Token Limit | Description                                         |
 | ----------------- | --------------- | ----------- | --------------------------------------------------- |
-| **Free**          | `gpt-4.1-nano`  | 30,000      | Fast, efficient model for basic assignments         |
-| **Plus**          | `gpt-3.5-turbo` | 50,000      | Balanced performance and cost for enhanced features |
+| **Free**          | `gpt-5-nano`    | 30,000      | Fast, efficient model for basic assignments         |
+| **Plus**          | `gpt-4.1-mini`  | 50,000      | Balanced performance and cost for enhanced features |
 | **Pro**           | `gpt-4-turbo`   | 75,000      | Advanced model for professional-grade assignments   |
-| **Max**           | `gpt-4`         | 100,000     | Premium model for maximum quality and complexity    |
+| **Max**           | `gpt-5`         | 100,000     | Premium model for maximum quality and complexity    |
 
 ## Implementation Details
 
@@ -22,11 +22,11 @@ The model selection is handled in `backend/app/services/payment_service.py`:
 ```python
 model_mapping = {
     'price_free': {
-        'model': 'gpt-4.1-nano',
+        'model': 'gpt-5-nano',
         'token_limit': 30000
     },
     'price_plus': {
-        'model': 'gpt-3.5-turbo',
+        'model': 'gpt-4.1-mini',
         'token_limit': 50000
     },
     'price_pro': {
@@ -34,7 +34,7 @@ model_mapping = {
         'token_limit': 75000
     },
     'price_max': {
-        'model': 'gpt-4',
+        'model': 'gpt-5',
         'token_limit': 100000
     }
 }
@@ -47,14 +47,14 @@ The frontend displays the appropriate model in `frontend/src/pages/Settings.tsx`
 ```typescript
 const subscriptionConfig: Record<SubscriptionPlan, SubscriptionConfig> = {
   free: {
-    model: 'gpt-4.1-nano',
+    model: 'gpt-5-nano',
     tokenLimit: 30000,
-    label: 'GPT-4.1 Nano',
+    label: 'GPT-5 Nano',
   },
   plus: {
-    model: 'gpt-3.5-turbo',
+    model: 'gpt-4.1-mini',
     tokenLimit: 50000,
-    label: 'GPT-3.5 Turbo',
+    label: 'GPT-4.1 Mini',
   },
   pro: {
     model: 'gpt-4-turbo',
@@ -62,9 +62,9 @@ const subscriptionConfig: Record<SubscriptionPlan, SubscriptionConfig> = {
     label: 'GPT-4 Turbo',
   },
   max: {
-    model: 'gpt-4',
+    model: 'gpt-5',
     tokenLimit: 100000,
-    label: 'GPT-4',
+    label: 'GPT-5',
   },
 };
 ```
@@ -80,14 +80,14 @@ OPENAI_MODEL=gpt-4.1-nano  # Default model (overridden by subscription)
 
 ## Model Characteristics
 
-### GPT-4.1 Nano (Free Plan)
+### GPT-5 Nano (Free Plan)
 
 - **Speed**: Very fast
 - **Cost**: Lowest
 - **Capabilities**: Good for basic assignment generation
 - **Best for**: Simple tasks, quick responses
 
-### GPT-3.5 Turbo (Plus Plan)
+### GPT-4.1 Mini (Plus Plan)
 
 - **Speed**: Fast
 - **Cost**: Low
@@ -96,12 +96,12 @@ OPENAI_MODEL=gpt-4.1-nano  # Default model (overridden by subscription)
 
 ### GPT-4 Turbo (Pro Plan)
 
-- **Speed**: Moderate
+- **Speed**: Fast
 - **Cost**: Medium
 - **Capabilities**: Advanced reasoning and analysis
 - **Best for**: Complex assignments, detailed analysis
 
-### GPT-4 (Max Plan)
+### GPT-5 (Max Plan)
 
 - **Speed**: Slower
 - **Cost**: Highest

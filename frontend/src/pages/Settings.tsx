@@ -287,14 +287,14 @@ const Settings: React.FC = () => {
   // Map subscription plans to their respective models and token limits
   const subscriptionConfig: Record<SubscriptionPlan, SubscriptionConfig> = {
     free: {
-      model: 'gpt-4.1-nano',
+      model: 'gpt-5-nano',
       tokenLimit: 30000,
-      label: 'GPT-4.1 Nano',
+      label: 'GPT-5 Nano',
     },
     plus: {
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-4.1-mini',
       tokenLimit: 50000,
-      label: 'GPT-3.5 Turbo',
+      label: 'GPT-4.1 Mini',
     },
     pro: {
       model: 'gpt-4-turbo',
@@ -302,9 +302,9 @@ const Settings: React.FC = () => {
       label: 'GPT-4 Turbo',
     },
     max: {
-      model: 'gpt-4',
+      model: 'gpt-5',
       tokenLimit: 100000,
-      label: 'GPT-4',
+      label: 'GPT-5',
     },
   };
 
@@ -1453,20 +1453,23 @@ const Settings: React.FC = () => {
           // Determine plan based on ai_model and token_limit
           let plan: SubscriptionPlan = 'free';
 
-          if (subscriptionData.ai_model === 'gpt-4' && subscriptionData.token_limit === 75000) {
+          if (
+            subscriptionData.ai_model === 'gpt-4-turbo' &&
+            subscriptionData.token_limit === 75000
+          ) {
             plan = 'pro';
           } else if (
-            subscriptionData.ai_model === 'gpt-4' &&
+            subscriptionData.ai_model === 'gpt-5' &&
             subscriptionData.token_limit === 100000
           ) {
             plan = 'max';
           } else if (
-            subscriptionData.ai_model === 'gpt-3.5-turbo' &&
+            subscriptionData.ai_model === 'gpt-4.1-mini' &&
             subscriptionData.token_limit === 50000
           ) {
             plan = 'plus';
           } else if (
-            subscriptionData.ai_model === 'gpt-4.1-nano' &&
+            subscriptionData.ai_model === 'gpt-5-nano' &&
             subscriptionData.token_limit === 30000
           ) {
             plan = 'free';
@@ -4322,14 +4325,14 @@ const Settings: React.FC = () => {
                     Model Version
                   </Typography>
                   <Typography variant="body1">
-                    {subscription.model === 'gpt-4.1-nano'
-                      ? 'GPT-4.1 Nano'
-                      : subscription.model === 'gpt-3.5-turbo'
-                      ? 'GPT-3.5 Turbo'
+                    {subscription.model === 'gpt-5-nano'
+                      ? 'GPT-5 Nano'
+                      : subscription.model === 'gpt-4.1-mini'
+                      ? 'GPT-4.1 Mini'
                       : subscription.model === 'gpt-4-turbo'
                       ? 'GPT-4 Turbo'
-                      : subscription.model === 'gpt-4'
-                      ? 'GPT-4'
+                      : subscription.model === 'gpt-5'
+                      ? 'GPT-5'
                       : subscription.model}
                   </Typography>
                 </Grid>

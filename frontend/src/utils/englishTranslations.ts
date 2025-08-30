@@ -13,7 +13,7 @@ export const t = (key: string): string => {
     'pages.login.togglePasswordVisibility': 'Toggle password visibility',
     'pages.login.forgotPassword': 'Forgot password?',
     'pages.login.signInDisabled': 'Sign In',
-    'pages.login.mockLogin': 'Demo Login',
+
     'pages.login.orContinueWith': 'Or continue with',
     'pages.login.google': 'Google',
     'pages.login.github': 'GitHub',

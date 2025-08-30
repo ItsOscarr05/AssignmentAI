@@ -1525,7 +1525,7 @@ const Landing: React.FC = () => {
                           {plan.name === 'Free' && (
                             <Chip
                               icon={<SmartToyOutlined />}
-                              label="GPT-4.1 Nano"
+                              label="GPT-5 Nano"
                               size="small"
                               sx={{
                                 backgroundColor: '#e3f2fd',
@@ -1542,7 +1542,7 @@ const Landing: React.FC = () => {
                           {plan.name === 'Plus' && (
                             <Chip
                               icon={<PsychologyOutlined />}
-                              label="GPT-3.5 Turbo"
+                              label="GPT-4.1 Mini"
                               size="small"
                               sx={{
                                 backgroundColor: '#e8f5e9',
@@ -1576,7 +1576,7 @@ const Landing: React.FC = () => {
                           {plan.name === 'Max' && (
                             <Chip
                               icon={<RocketLaunchOutlined />}
-                              label="GPT-4"
+                              label="GPT-5"
                               size="small"
                               sx={{
                                 backgroundColor: '#fff3e0',
