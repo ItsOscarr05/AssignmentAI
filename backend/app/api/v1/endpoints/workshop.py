@@ -226,16 +226,16 @@ async def generate_content(
             logger.info("Code generation keywords detected!")
             # Check if user has access to code generation
             logger.info("Checking code generation feature access...")
-            if not has_feature_access(current_user, "code_generation", db):
+            if not has_feature_access(current_user, "code_analysis", db):
                 plan = get_user_plan(current_user, db)
-                logger.warning(f"User {current_user.id} denied access to code generation. Plan: {plan}")
+                logger.warning(f"User {current_user.id} denied access to code analysis. Plan: {plan}")
                 raise HTTPException(
                     status_code=403,
                     detail={
-                        "error": "Code generation not available in your plan",
-                        "feature": "code_generation",
+                        "error": "Code analysis not available in your plan",
+                        "feature": "code_analysis",
                         "current_plan": plan,
-                        "upgrade_message": "Upgrade to Pro plan to access code generation",
+                        "upgrade_message": "Upgrade to Pro plan to access code analysis",
                         "upgrade_url": "/dashboard/price-plan"
                     }
                 )
@@ -248,7 +248,7 @@ async def generate_content(
             return {
                 "content": content,
                 "timestamp": datetime.utcnow().isoformat(),
-                "service_used": "code_generation"
+                "service_used": "code_analysis"
             }
         
         # Detect math problem solving
@@ -386,13 +386,13 @@ async def upload_and_process_file(
             # Create specialized prompts based on file type
             if file_info['type'] == 'code':
                 # Check if user has access to code analysis
-                if not has_feature_access(current_user, "code_generation", db):
+                if not has_feature_access(current_user, "code_analysis", db):
                     plan = get_user_plan(current_user, db)
                     raise HTTPException(
                         status_code=403,
                         detail={
                             "error": "Code analysis not available in your plan",
-                            "feature": "code_generation",
+                            "feature": "code_analysis",
                             "current_plan": plan,
                             "upgrade_message": "Upgrade to Pro plan to access code analysis",
                             "upgrade_url": "/dashboard/price-plan"

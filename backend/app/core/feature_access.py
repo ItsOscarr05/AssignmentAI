@@ -16,101 +16,101 @@ FEATURE_ACCESS_MATRIX = {
         "basic_assignment_generation": True,
         "grammar_spelling_check": True,
         "basic_writing_suggestions": True,
-        "standard_response_time": True,
         "basic_templates": True,
         # Premium features - NOT available
         "advanced_writing_analysis": False,
         "style_tone_suggestions": False,
-        "priority_response_time": False,
         "extended_templates": False,
         "ad_free_experience": False,
-        "ai_research_assistance": False,
-        "citation_reference_check": False,
-        "advanced_plagiarism_detection": False,
+        "citation_management": False,
+        "basic_plagiarism_detection": False,
         "diagram_generation": False,
-        "image_analysis": False,
-        "code_generation": False,
+        "image_analysis": True,
+        "code_analysis": False,
+        "smart_content_summarization": False,
         "data_analysis": False,
-        "unlimited_analysis": False,
-        "custom_ai_training": False,
-        "personalized_insights": False,
-        "dedicated_support": False,
+        "advanced_research_assistant": False,
+        "advanced_analytics": False,
+        "custom_templates": False,
+        "ai_learning_path": False,
+        "advanced_content_optimization": False,
+        "enterprise_collaboration": False,
     },
     "plus": {
         # Inherit all free features
         "basic_assignment_generation": True,
         "grammar_spelling_check": True,
         "basic_writing_suggestions": True,
-        "standard_response_time": True,
         "basic_templates": True,
+        "image_analysis": True,
+        "code_analysis": True,
+        "smart_content_summarization": True,
         # Plus-specific features
         "advanced_writing_analysis": True,
         "style_tone_suggestions": True,
-        "priority_response_time": True,
         "extended_templates": True,
         "ad_free_experience": True,
         # Higher tier features - NOT available
-        "ai_research_assistance": False,
-        "citation_reference_check": False,
-        "advanced_plagiarism_detection": False,
+        "citation_management": False,
+        "basic_plagiarism_detection": False,
         "diagram_generation": False,
-        "image_analysis": False,
-        "code_generation": False,
         "data_analysis": False,
-        "unlimited_analysis": False,
-        "custom_ai_training": False,
-        "personalized_insights": False,
-        "dedicated_support": False,
+        "advanced_research_assistant": False,
+        "advanced_analytics": False,
+        "custom_templates": False,
+        "ai_learning_path": False,
+        "advanced_content_optimization": False,
+        "enterprise_collaboration": False,
     },
     "pro": {
         # Inherit all free and plus features
         "basic_assignment_generation": True,
         "grammar_spelling_check": True,
         "basic_writing_suggestions": True,
-        "standard_response_time": True,
         "basic_templates": True,
         "advanced_writing_analysis": True,
         "style_tone_suggestions": True,
-        "priority_response_time": True,
         "extended_templates": True,
         "ad_free_experience": True,
-        # Pro-specific features
-        "ai_research_assistance": True,
-        "citation_reference_check": True,
-        "advanced_plagiarism_detection": True,
-        "diagram_generation": True,
         "image_analysis": True,
-        "code_generation": True,
+        "code_analysis": True,
+        "smart_content_summarization": True,
+        # Pro-specific features
+        "citation_management": True,
+        "basic_plagiarism_detection": True,
+        "diagram_generation": True,
         "data_analysis": True,
+        "advanced_research_assistant": True,
         # Max tier features - NOT available
-        "unlimited_analysis": False,
-        "custom_ai_training": False,
-        "personalized_insights": False,
-        "dedicated_support": False,
+        "advanced_analytics": False,
+        "custom_templates": False,
+        "ai_learning_path": False,
+        "advanced_content_optimization": False,
+        "enterprise_collaboration": False,
     },
     "max": {
         # All features available
         "basic_assignment_generation": True,
         "grammar_spelling_check": True,
         "basic_writing_suggestions": True,
-        "standard_response_time": True,
         "basic_templates": True,
         "advanced_writing_analysis": True,
         "style_tone_suggestions": True,
-        "priority_response_time": True,
         "extended_templates": True,
         "ad_free_experience": True,
-        "ai_research_assistance": True,
-        "citation_reference_check": True,
-        "advanced_plagiarism_detection": True,
+        "citation_management": True,
+        "basic_plagiarism_detection": True,
         "diagram_generation": True,
         "image_analysis": True,
-        "code_generation": True,
+        "code_analysis": True,
+        "smart_content_summarization": True,
         "data_analysis": True,
-        "unlimited_analysis": True,
-        "custom_ai_training": True,
-        "personalized_insights": True,
-        "dedicated_support": True,
+        "advanced_research_assistant": True,
+        "advanced_analytics": True,
+        "custom_templates": True,
+        "ai_learning_path": True,
+        "advanced_content_optimization": True,
+        "enterprise_collaboration": True,
     }
 }
 
@@ -180,19 +180,22 @@ def require_feature(feature: str):
 def get_upgrade_message(current_plan: str, feature: str) -> str:
     """Get appropriate upgrade message based on current plan and required feature"""
     if current_plan == "free":
-        if feature in ["advanced_writing_analysis", "style_tone_suggestions", "priority_response_time", "extended_templates", "ad_free_experience"]:
+        if feature in ["advanced_writing_analysis", "style_tone_suggestions", "extended_templates", "ad_free_experience", "code_analysis", "smart_content_summarization"]:
             return "Upgrade to Plus plan to access this feature"
-        elif feature in ["ai_research_assistance", "citation_reference_check", "advanced_plagiarism_detection", "diagram_generation", "image_analysis", "code_generation", "data_analysis"]:
+        elif feature in ["citation_management", "basic_plagiarism_detection", "diagram_generation", "data_analysis", "advanced_research_assistant"]:
             return "Upgrade to Pro plan to access this feature"
         else:
             return "Upgrade to Max plan to access this feature"
     elif current_plan == "plus":
-        if feature in ["ai_research_assistance", "citation_reference_check", "advanced_plagiarism_detection", "diagram_generation", "image_analysis", "code_generation", "data_analysis"]:
+        if feature in ["citation_management", "basic_plagiarism_detection", "diagram_generation", "data_analysis", "advanced_research_assistant"]:
             return "Upgrade to Pro plan to access this feature"
         else:
             return "Upgrade to Max plan to access this feature"
     elif current_plan == "pro":
-        return "Upgrade to Max plan to access this feature"
+        if feature in ["advanced_analytics", "custom_templates", "ai_learning_path", "advanced_content_optimization", "enterprise_collaboration"]:
+            return "Upgrade to Max plan to access this feature"
+        else:
+            return "Contact support for access to this feature"
     else:
         return "Contact support for access to this feature"
 
@@ -205,19 +208,19 @@ def get_feature_requirements() -> Dict[str, Dict[str, List[str]]]:
     """Get feature requirements for each plan"""
     return {
         "free": {
-            "available": ["basic_assignment_generation", "grammar_spelling_check", "basic_writing_suggestions", "standard_response_time", "basic_templates"],
-            "unavailable": ["advanced_writing_analysis", "style_tone_suggestions", "priority_response_time", "extended_templates", "ad_free_experience", "ai_research_assistance", "citation_reference_check", "advanced_plagiarism_detection", "diagram_generation", "image_analysis", "code_generation", "data_analysis", "unlimited_analysis", "custom_ai_training", "personalized_insights", "dedicated_support"]
+            "available": ["basic_assignment_generation", "grammar_spelling_check", "basic_writing_suggestions", "basic_templates", "image_analysis"],
+            "unavailable": ["advanced_writing_analysis", "style_tone_suggestions", "extended_templates", "ad_free_experience", "citation_management", "basic_plagiarism_detection", "diagram_generation", "code_analysis", "smart_content_summarization", "data_analysis", "advanced_research_assistant", "advanced_analytics", "custom_templates", "ai_learning_path", "advanced_content_optimization", "enterprise_collaboration"]
         },
         "plus": {
-            "available": ["basic_assignment_generation", "grammar_spelling_check", "basic_writing_suggestions", "standard_response_time", "basic_templates", "advanced_writing_analysis", "style_tone_suggestions", "priority_response_time", "extended_templates", "ad_free_experience"],
-            "unavailable": ["ai_research_assistance", "citation_reference_check", "advanced_plagiarism_detection", "diagram_generation", "image_analysis", "code_generation", "data_analysis", "unlimited_analysis", "custom_ai_training", "personalized_insights", "dedicated_support"]
+            "available": ["basic_assignment_generation", "grammar_spelling_check", "basic_writing_suggestions", "basic_templates", "advanced_writing_analysis", "style_tone_suggestions", "extended_templates", "ad_free_experience", "image_analysis", "code_analysis", "smart_content_summarization"],
+            "unavailable": ["citation_management", "basic_plagiarism_detection", "diagram_generation", "data_analysis", "advanced_research_assistant", "advanced_analytics", "custom_templates", "ai_learning_path", "advanced_content_optimization", "enterprise_collaboration"]
         },
         "pro": {
-            "available": ["basic_assignment_generation", "grammar_spelling_check", "basic_writing_suggestions", "standard_response_time", "basic_templates", "advanced_writing_analysis", "style_tone_suggestions", "priority_response_time", "extended_templates", "ad_free_experience", "ai_research_assistance", "citation_reference_check", "advanced_plagiarism_detection", "diagram_generation", "image_analysis", "code_generation", "data_analysis"],
-            "unavailable": ["unlimited_analysis", "custom_ai_training", "personalized_insights", "dedicated_support"]
+            "available": ["basic_assignment_generation", "grammar_spelling_check", "basic_writing_suggestions", "basic_templates", "advanced_writing_analysis", "style_tone_suggestions", "extended_templates", "ad_free_experience", "citation_management", "basic_plagiarism_detection", "diagram_generation", "image_analysis", "code_analysis", "smart_content_summarization", "data_analysis", "advanced_research_assistant"],
+            "unavailable": ["advanced_analytics", "custom_templates", "ai_learning_path", "advanced_content_optimization", "enterprise_collaboration"]
         },
         "max": {
-            "available": ["basic_assignment_generation", "grammar_spelling_check", "basic_writing_suggestions", "standard_response_time", "basic_templates", "advanced_writing_analysis", "style_tone_suggestions", "priority_response_time", "extended_templates", "ad_free_experience", "ai_research_assistance", "citation_reference_check", "advanced_plagiarism_detection", "diagram_generation", "image_analysis", "code_generation", "data_analysis", "unlimited_analysis", "custom_ai_training", "personalized_insights", "dedicated_support"],
+            "available": ["basic_assignment_generation", "grammar_spelling_check", "basic_writing_suggestions", "basic_templates", "advanced_writing_analysis", "style_tone_suggestions", "extended_templates", "ad_free_experience", "citation_management", "basic_plagiarism_detection", "diagram_generation", "image_analysis", "code_analysis", "smart_content_summarization", "data_analysis", "advanced_research_assistant", "advanced_analytics", "custom_templates", "ai_learning_path", "advanced_content_optimization", "enterprise_collaboration"],
             "unavailable": []
         }
     } 

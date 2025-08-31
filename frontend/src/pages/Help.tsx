@@ -145,7 +145,7 @@ const Help: React.FC = () => {
         {
           question: 'What types of assignments are supported?',
           answer:
-            'AssignmentAI supports a comprehensive range of academic assignments including essays, research papers, lab reports, case studies, literature reviews, thesis statements, and business reports. We also support various citation styles (APA, MLA, Chicago, Harvard) and multiple languages.',
+            'AssignmentAI supports basic academic assignment types including essays, quizzes, projects, and homework. We also support various citation styles (APA, MLA, Chicago, Harvard) and multiple file formats including PDF, DOCX, DOC, TXT, RTF, and more.',
         },
         {
           question: 'How do I create my first assignment?',
@@ -155,7 +155,7 @@ const Help: React.FC = () => {
         {
           question: 'What makes AssignmentAI different from other writing tools?',
           answer:
-            "AssignmentAI uses advanced AI technology specifically designed for academic writing, understanding academic context and subject-specific terminology. We offer real-time collaboration, comprehensive plagiarism detection, and personalized learning recommendations that generic tools can't provide.",
+            'AssignmentAI completes the work for you, instead of you always having to copy and paste or do the work manually. However, you can do the work manually if you choose to. We use advanced AI technology specifically designed for academic writing, understanding academic context and subject-specific terminology.',
         },
       ],
     },
@@ -167,21 +167,13 @@ const Help: React.FC = () => {
           answer:
             'Our AI token system provides fair access to advanced features, with each AI action consuming tokens based on content complexity and length. Free users receive a monthly token allowance, while premium subscribers get significantly more tokens and access to advanced AI features.',
         },
-        {
-          question: 'Can I collaborate with others on assignments?',
-          answer:
-            'Absolutely! AssignmentAI offers robust collaboration features that make group work seamless. You can invite classmates and instructors through secure sharing links, with real-time commenting and editing capabilities.',
-        },
+
         {
           question: 'How accurate is the AI analysis?',
           answer:
             'Our AI analysis achieves industry-leading accuracy with 95%+ grammar accuracy, 90%+ style consistency, and 85%+ content structure accuracy. The AI continuously learns from academic writing standards and adapts to specialized subjects.',
         },
-        {
-          question: 'Does AssignmentAI detect plagiarism effectively?',
-          answer:
-            'Yes, AssignmentAI includes a sophisticated plagiarism detection system that scans against billions of web pages and academic databases. Our AI can identify both direct copying and paraphrased content with high accuracy.',
-        },
+
         {
           question: 'What AI-powered writing suggestions do you offer?',
           answer:
@@ -222,20 +214,11 @@ const Help: React.FC = () => {
           answer:
             'Changing your subscription plan is simple through the Price Plan page. You can upgrade, downgrade, or switch between monthly and annual billing cycles with immediate effect.',
         },
-        {
-          question: "What's included in the free trial and how long does it last?",
-          answer:
-            'Our free trial gives you full access to all AssignmentAI features for 14 days, including premium features like advanced analytics and unlimited collaboration. No credit card is required to start.',
-        },
+
         {
           question: 'What payment methods do you accept and is billing secure?',
           answer:
             'AssignmentAI accepts all major credit cards, PayPal, and Apple Pay through secure, PCI-compliant payment gateways. We never store your payment information on our servers.',
-        },
-        {
-          question: 'Do you offer discounts for students and educational institutions?',
-          answer:
-            'Yes, students with valid .edu email addresses receive 25% off all subscription plans. We also provide special pricing for educational institutions with volume discounts and institutional features.',
         },
       ],
     },
@@ -255,7 +238,7 @@ const Help: React.FC = () => {
         {
           question: 'What happens if I lose internet connection while working?',
           answer:
-            'AssignmentAI automatically saves your work every few seconds and offers offline mode for critical work. All changes are stored locally and sync automatically when you reconnect.',
+            'AssignmentAI saves your work to local storage and maintains offline data persistence. When you reconnect, your changes are automatically synced with the server. However, some features may require an internet connection to function fully.',
         },
       ],
     },

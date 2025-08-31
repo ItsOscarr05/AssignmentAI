@@ -458,10 +458,10 @@ class TestWorkshopFeatureAccess:
         
         assert response.status_code == 403
         data = response.json()
-        assert data["detail"]["error"] == "Code generation not available in your plan"
-        assert data["detail"]["feature"] == "code_generation"
+        assert data["detail"]["error"] == "Feature not available in your plan"
+        assert data["detail"]["feature"] == "code_analysis"
         assert data["detail"]["current_plan"] == "free"
-        assert "Upgrade to Pro plan" in data["detail"]["upgrade_message"]
+        assert "Upgrade to Plus plan" in data["detail"]["upgrade_message"]
 
     @patch('app.api.v1.endpoints.workshop.has_feature_access')
     @patch('app.api.v1.endpoints.workshop.get_user_plan')
@@ -499,7 +499,7 @@ class TestWorkshopFeatureAccess:
     @patch('app.api.v1.endpoints.workshop.file_service.save_file')
     @patch('app.api.v1.endpoints.workshop.extract_file_content')
     @patch('app.api.v1.endpoints.workshop.ai_service.generate_assignment_content_from_prompt')
-    async def test_upload_image_free_user_denied(
+    async def test_upload_image_free_user_allowed(
         self, 
         mock_generate_content, 
         mock_extract_content, 
@@ -511,11 +511,12 @@ class TestWorkshopFeatureAccess:
         mock_db,
         mock_free_subscription
     ):
-        """Test that free users cannot upload images for analysis"""
+        """Test that free users can upload images for analysis"""
         mock_get_plan.return_value = "free"
-        mock_has_access.return_value = False
+        mock_has_access.return_value = True
         mock_db.query.return_value.filter.return_value.first.return_value = mock_free_subscription
         mock_save_file.return_value = ("/path/to/image.jpg", 1024)
+        mock_generate_content.return_value = "Image analysis completed"
         
         file_content = io.BytesIO(b"fake image data")
         
@@ -524,12 +525,10 @@ class TestWorkshopFeatureAccess:
             files={"file": ("test.jpg", file_content, "image/jpeg")}
         )
         
-        assert response.status_code == 403
+        assert response.status_code == 200
         data = response.json()
-        assert data["detail"]["error"] == "Image analysis not available in your plan"
-        assert data["detail"]["feature"] == "image_analysis"
-        assert data["detail"]["current_plan"] == "free"
-        assert "Upgrade to Pro plan" in data["detail"]["upgrade_message"]
+        assert data["name"] == "test.jpg"
+        assert data["analysis"] == "Image analysis completed"
 
     @patch('app.api.v1.endpoints.workshop.has_feature_access')
     @patch('app.api.v1.endpoints.workshop.get_user_plan')
@@ -564,10 +563,10 @@ class TestWorkshopFeatureAccess:
         
         assert response.status_code == 403
         data = response.json()
-        assert data["detail"]["error"] == "Code analysis not available in your plan"
-        assert data["detail"]["feature"] == "code_generation"
+        assert data["detail"]["error"] == "Feature not available in your plan"
+        assert data["detail"]["feature"] == "code_analysis"
         assert data["detail"]["current_plan"] == "free"
-        assert "Upgrade to Pro plan" in data["detail"]["upgrade_message"]
+        assert "Upgrade to Plus plan" in data["detail"]["upgrade_message"]
 
     @patch('app.api.v1.endpoints.workshop.has_feature_access')
     @patch('app.api.v1.endpoints.workshop.get_user_plan')
@@ -662,12 +661,12 @@ class TestWorkshopFeatureAccess:
             "basic_assignment_generation": True,
             "diagram_generation": True,
             "image_analysis": True,
-            "unlimited_analysis": False
+            "advanced_analytics": False
         }
         mock_get_requirements.return_value = {
             "pro": {
                 "available": ["basic_assignment_generation", "diagram_generation"],
-                "unavailable": ["unlimited_analysis"]
+                "unavailable": ["advanced_analytics"]
             }
         }
         mock_db.query.return_value.filter.return_value.first.return_value = mock_pro_subscription
@@ -678,5 +677,5 @@ class TestWorkshopFeatureAccess:
         data = response.json()
         assert data["current_plan"] == "pro"
         assert data["available_features"]["diagram_generation"] == True
-        assert data["available_features"]["unlimited_analysis"] == False
+        assert data["available_features"]["advanced_analytics"] == False
         assert "upgrade_url" in data 

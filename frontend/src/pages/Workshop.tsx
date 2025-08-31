@@ -3,12 +3,10 @@ import {
   BarChart as BarChartIcon,
   Psychology as BrainIcon,
   ChatOutlined as ChatOutlinedIcon,
-  CheckCircle as CheckCircleIcon,
   ContentCopy as ContentCopyIcon,
   DeleteOutlined,
   DownloadOutlined as DownloadOutlinedIcon,
   EditOutlined as EditOutlinedIcon,
-  Error as ErrorIcon,
   FormatListBulleted as FormatListBulletedIcon,
   FullscreenExit as FullscreenExitIcon,
   Fullscreen as FullscreenIcon,
@@ -20,7 +18,6 @@ import {
   Refresh as RefreshIcon,
   Send as SendIcon,
   UploadOutlined as UploadOutlinedIcon,
-  Warning as WarningIcon,
 } from '@mui/icons-material';
 import {
   Alert,
@@ -45,10 +42,9 @@ import {
   TextField,
   Tooltip,
   Typography,
-  useTheme,
 } from '@mui/material';
 import { animate } from 'framer-motion';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
   Bar,
@@ -144,7 +140,6 @@ const VerticalDividers = ({ xAxisMap, yAxisMap }: any) => {
 };
 
 const Workshop: React.FC = () => {
-  const theme = useTheme();
   const location = useLocation();
 
   const { breakpoint } = useAspectRatio();
@@ -181,13 +176,6 @@ const Workshop: React.FC = () => {
     severity: 'success',
   });
 
-  const [quotaStatus, setQuotaStatus] = useState<{
-    status: string;
-    message: string;
-    quota_status: string;
-    timestamp: string;
-  } | null>(null);
-  const [isCheckingQuota, setIsCheckingQuota] = useState(false);
   const [realTokenUsage, setRealTokenUsage] = useState({
     total: 30000,
     used: 0,
@@ -195,10 +183,33 @@ const Workshop: React.FC = () => {
     percentUsed: 0,
   });
 
+  const [subscription, setSubscription] = useState<any>(null);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+
   // Fullscreen message state
   const [fullscreenMessage, setFullscreenMessage] = useState<string | null>(null);
 
   const { totalTokens } = useTokenUsage();
+
+  // Fetch subscription data
+  useEffect(() => {
+    const fetchSubscription = async () => {
+      try {
+        setSubscriptionLoading(true);
+        const response = await api.get('/payments/subscriptions/current');
+        console.log('Subscription response:', response.data);
+        setSubscription(response.data);
+      } catch (error) {
+        console.error('Failed to fetch subscription:', error);
+        // Default to free plan if subscription fetch fails
+        setSubscription(null);
+      } finally {
+        setSubscriptionLoading(false);
+      }
+    };
+
+    fetchSubscription();
+  }, []);
 
   // Fetch real token usage
   useEffect(() => {
@@ -209,7 +220,10 @@ const Workshop: React.FC = () => {
         ? res.data.assignments
         : [];
       const used = data.reduce((sum: number, a: any) => sum + (a.tokensUsed || 0), 0);
-      const total = totalTokens || 30000;
+
+      // Use subscription token limit if available, otherwise fall back to useTokenUsage hook
+      const total = subscription?.token_limit || totalTokens || 30000;
+
       setRealTokenUsage({
         total,
         used,
@@ -217,7 +231,7 @@ const Workshop: React.FC = () => {
         percentUsed: total > 0 ? Math.round((used / total) * 100) : 0,
       });
     });
-  }, [totalTokens]);
+  }, [totalTokens, subscription]);
 
   const uploadContentRef = useRef<HTMLDivElement>(null);
   const aiResponseRef = useRef<HTMLDivElement>(null);
@@ -226,13 +240,51 @@ const Workshop: React.FC = () => {
   const [liveModalOpen, setLiveModalOpen] = useState(false);
 
   // Use real token usage for the circular progress bar
-  const tokenUsage = {
-    label: 'Free Plan (30,000 tokens/month)',
-    total: realTokenUsage.total,
-    used: realTokenUsage.used,
-    remaining: realTokenUsage.remaining,
-    percentUsed: realTokenUsage.percentUsed,
+  const getPlanLabel = () => {
+    console.log('getPlanLabel called with:', { subscription, subscriptionLoading });
+
+    if (subscriptionLoading) return 'Loading...';
+    if (!subscription) return 'Free Plan (30,000 tokens/month)';
+
+    const planId = subscription.plan_id;
+    const tokenLimit = subscription.token_limit || 30000;
+
+    console.log('Plan details:', { planId, tokenLimit });
+
+    // Map plan IDs to friendly names
+    const planNames: { [key: string]: string } = {
+      price_free: 'Free Plan',
+      price_plus: 'Plus Plan',
+      price_pro: 'Pro Plan',
+      price_max: 'Max Plan',
+      // Add Stripe price IDs (you may need to update these with your actual price IDs)
+      price_1Rss0zBXiGe9D9aVna3SwH62: 'Pro Plan', // 75,000 tokens
+      // Add more Stripe price IDs as needed
+    };
+
+    const planName = planNames[planId] || 'Free Plan';
+    console.log('Final plan name:', planName);
+
+    return `${planName} (${tokenLimit.toLocaleString()} tokens/month)`;
   };
+
+  const tokenUsage = useMemo(
+    () => ({
+      label: getPlanLabel(),
+      total: realTokenUsage.total,
+      used: realTokenUsage.used,
+      remaining: realTokenUsage.remaining,
+      percentUsed: realTokenUsage.percentUsed,
+    }),
+    [
+      subscription,
+      subscriptionLoading,
+      realTokenUsage.total,
+      realTokenUsage.used,
+      realTokenUsage.remaining,
+      realTokenUsage.percentUsed,
+    ]
+  );
 
   useEffect(() => {
     if (location.hash === '#upload-content-card' && uploadContentRef.current) {
@@ -293,30 +345,6 @@ const Workshop: React.FC = () => {
       });
     }
   }, [error]);
-
-  // Check OpenAI quota status
-  const checkQuotaStatus = async () => {
-    setIsCheckingQuota(true);
-    try {
-      const response = await api.get('/workshop/quota-status');
-      setQuotaStatus(response.data);
-    } catch (error) {
-      console.error('Failed to check quota status:', error);
-      setQuotaStatus({
-        status: 'error',
-        message: 'Failed to check quota status',
-        quota_status: 'unknown',
-        timestamp: new Date().toISOString(),
-      });
-    } finally {
-      setIsCheckingQuota(false);
-    }
-  };
-
-  // Check quota status on component mount
-  useEffect(() => {
-    checkQuotaStatus();
-  }, []);
 
   // Custom styles
   const cardStyle = {
@@ -753,90 +781,6 @@ const Workshop: React.FC = () => {
             </Box>
           </Box>
 
-          {/* OpenAI Quota Status */}
-          {quotaStatus && (
-            <Box
-              sx={{
-                ...cardStyle,
-                mb: { xs: 2, sm: 3, md: 4 },
-                p: { xs: 1.5, sm: 2, md: 2.5 },
-                border: '2px solid',
-                borderColor:
-                  quotaStatus.quota_status === 'available'
-                    ? 'green'
-                    : quotaStatus.quota_status === 'exceeded'
-                    ? 'red'
-                    : quotaStatus.quota_status === 'rate_limited'
-                    ? 'orange'
-                    : 'gray',
-                backgroundColor:
-                  quotaStatus.quota_status === 'available'
-                    ? 'rgba(76, 175, 80, 0.1)'
-                    : quotaStatus.quota_status === 'exceeded'
-                    ? 'rgba(244, 67, 54, 0.1)'
-                    : quotaStatus.quota_status === 'rate_limited'
-                    ? 'rgba(255, 152, 0, 0.1)'
-                    : 'rgba(158, 158, 158, 0.1)',
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-                {quotaStatus.quota_status === 'available' ? (
-                  <CheckCircleIcon sx={{ color: 'green', fontSize: 24 }} />
-                ) : quotaStatus.quota_status === 'exceeded' ? (
-                  <ErrorIcon sx={{ color: 'red', fontSize: 24 }} />
-                ) : quotaStatus.quota_status === 'rate_limited' ? (
-                  <WarningIcon sx={{ color: 'orange', fontSize: 24 }} />
-                ) : (
-                  <InfoIcon sx={{ color: 'gray', fontSize: 24 }} />
-                )}
-                <Typography
-                  variant="h6"
-                  sx={{
-                    fontWeight: 'bold',
-                    color:
-                      quotaStatus.quota_status === 'available'
-                        ? 'green'
-                        : quotaStatus.quota_status === 'exceeded'
-                        ? 'red'
-                        : quotaStatus.quota_status === 'rate_limited'
-                        ? 'orange'
-                        : 'gray',
-                  }}
-                >
-                  OpenAI API Status:{' '}
-                  {quotaStatus.quota_status === 'available'
-                    ? 'Available'
-                    : quotaStatus.quota_status === 'exceeded'
-                    ? 'Quota Exceeded'
-                    : quotaStatus.quota_status === 'rate_limited'
-                    ? 'Rate Limited'
-                    : 'Unknown'}
-                </Typography>
-              </Box>
-              <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
-                {quotaStatus.message}
-              </Typography>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                  Last checked: {new Date(quotaStatus.timestamp).toLocaleString()}
-                </Typography>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={checkQuotaStatus}
-                  disabled={isCheckingQuota}
-                  startIcon={isCheckingQuota ? <CircularProgress size={16} /> : <RefreshIcon />}
-                  sx={{
-                    borderColor: 'red',
-                    color: 'red',
-                    '&:hover': { borderColor: 'red' },
-                  }}
-                >
-                  {isCheckingQuota ? 'Checking...' : 'Refresh Status'}
-                </Button>
-              </Box>
-            </Box>
-          )}
           {/* Activity Chart */}
           <Box
             sx={{
@@ -1817,6 +1761,7 @@ const Workshop: React.FC = () => {
               }}
             >
               Assignment Tokens
+              {subscriptionLoading && <CircularProgress size={16} sx={{ ml: 1, color: 'red' }} />}
             </Typography>
             <Box
               sx={{
@@ -1834,24 +1779,24 @@ const Workshop: React.FC = () => {
               <Box
                 sx={{
                   position: 'relative',
-                  width:
-                    breakpoint === 'tall'
-                      ? 200
-                      : breakpoint === 'square'
-                      ? 300
-                      : breakpoint === 'standard'
-                      ? 350
-                      : 450,
-                  height:
-                    breakpoint === 'tall'
-                      ? 200
-                      : breakpoint === 'square'
-                      ? 300
-                      : breakpoint === 'standard'
-                      ? 350
-                      : 450,
+                  width: {
+                    xs: 'min(80vw, 200px)',
+                    sm: 'min(70vw, 250px)',
+                    md: 'min(60vw, 300px)',
+                    lg: 'min(50vw, 350px)',
+                    xl: 'min(40vw, 400px)',
+                  },
+                  height: {
+                    xs: 'min(80vw, 200px)',
+                    sm: 'min(70vw, 250px)',
+                    md: 'min(60vw, 300px)',
+                    lg: 'min(50vw, 350px)',
+                    xl: 'min(40vw, 400px)',
+                  },
                   cursor: 'pointer',
                   margin: '0 auto',
+                  minWidth: { xs: 150, sm: 180, md: 220, lg: 260, xl: 300 },
+                  minHeight: { xs: 150, sm: 180, md: 220, lg: 260, xl: 300 },
                 }}
                 onMouseEnter={() => setIsTokenChartHovered(true)}
                 onMouseLeave={() => setIsTokenChartHovered(false)}
@@ -1860,15 +1805,7 @@ const Workshop: React.FC = () => {
                 <CircularProgress
                   variant="determinate"
                   value={100}
-                  size={
-                    breakpoint === 'tall'
-                      ? 200
-                      : breakpoint === 'square'
-                      ? 300
-                      : breakpoint === 'standard'
-                      ? 350
-                      : 450
-                  }
+                  size="100%"
                   thickness={6}
                   sx={{
                     color: alpha(progressColor, 0.2),
@@ -1876,21 +1813,15 @@ const Workshop: React.FC = () => {
                     top: '0%',
                     left: '0%',
                     transform: 'translate(-10%, -10%)',
+                    width: '100%',
+                    height: '100%',
                   }}
                 />
                 {/* Actual progress */}
                 <CircularProgress
                   variant="determinate"
                   value={animatedPercent}
-                  size={
-                    breakpoint === 'tall'
-                      ? 200
-                      : breakpoint === 'square'
-                      ? 300
-                      : breakpoint === 'standard'
-                      ? 350
-                      : 450
-                  }
+                  size="100%"
                   thickness={6}
                   sx={{
                     color: progressColor,
@@ -1898,6 +1829,8 @@ const Workshop: React.FC = () => {
                     top: '0%',
                     left: '0%',
                     transform: 'translate(-50%, -50%)',
+                    width: '100%',
+                    height: '100%',
                     [`& .MuiCircularProgress-circle`]: {
                       strokeLinecap: 'round',
                     },
@@ -1984,6 +1917,26 @@ const Workshop: React.FC = () => {
                 <Typography variant="body2" color="text.secondary">
                   {tokenUsage.label}
                 </Typography>
+
+                {/* Show upgrade button if user is close to token limit */}
+                {subscription && realTokenUsage.percentUsed > 80 && (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => window.open('/dashboard/price-plan', '_blank')}
+                    sx={{
+                      mt: 1,
+                      borderColor: 'red',
+                      color: 'red',
+                      '&:hover': {
+                        borderColor: 'red',
+                        backgroundColor: 'rgba(255, 0, 0, 0.04)',
+                      },
+                    }}
+                  >
+                    Upgrade Plan
+                  </Button>
+                )}
               </Box>
             </Box>
           </Box>

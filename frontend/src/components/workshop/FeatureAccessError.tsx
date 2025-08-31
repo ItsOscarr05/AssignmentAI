@@ -13,20 +13,18 @@ const getFeatureDisplayName = (feature: string): string => {
   const featureNames: Record<string, string> = {
     diagram_generation: 'Diagram Generation',
     image_analysis: 'Image Analysis',
-    code_generation: 'Code Generation & Analysis',
+    code_analysis: 'Code Analysis',
     data_analysis: 'Data Analysis',
     advanced_writing_analysis: 'Advanced Writing Analysis',
     style_tone_suggestions: 'Style & Tone Suggestions',
     priority_response_time: 'Priority Response Time',
     extended_templates: 'Extended Templates Library',
     ad_free_experience: 'Ad-Free Experience',
-    ai_research_assistance: 'AI Research Assistance',
-    citation_reference_check: 'Citation & Reference Check',
-    advanced_plagiarism_detection: 'Advanced Plagiarism Detection',
-    unlimited_analysis: 'Unlimited Analysis',
-    advanced_analytics_dashboard: 'Advanced Analytics Dashboard',
-    priority_customer_support: 'Priority Customer Support',
-    custom_assignment_templates: 'Custom Assignment Templates',
+    citation_management: 'Citation Management',
+    basic_plagiarism_detection: 'Basic Plagiarism Check',
+    advanced_analytics: 'Advanced Analytics Dashboard',
+    priority_support: 'Priority Support',
+    custom_templates: 'Custom Assignment Templates',
   };
 
   return featureNames[feature] || feature.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());

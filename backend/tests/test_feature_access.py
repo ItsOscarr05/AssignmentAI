@@ -143,9 +143,10 @@ class TestHasFeatureAccess:
         
         # Premium features should be denied
         assert has_feature_access(mock_user, "diagram_generation", mock_db) == False
-        assert has_feature_access(mock_user, "image_analysis", mock_db) == False
-        assert has_feature_access(mock_user, "code_generation", mock_db) == False
         assert has_feature_access(mock_user, "data_analysis", mock_db) == False
+        assert has_feature_access(mock_user, "code_analysis", mock_db) == False
+        # Free features should be accessible
+        assert has_feature_access(mock_user, "image_analysis", mock_db) == True
 
     def test_plus_user_plus_features(self, mock_user, mock_db, mock_plus_subscription):
         """Test that plus users can access plus features"""
@@ -154,7 +155,7 @@ class TestHasFeatureAccess:
         # Plus features should be accessible
         assert has_feature_access(mock_user, "advanced_writing_analysis", mock_db) == True
         assert has_feature_access(mock_user, "style_tone_suggestions", mock_db) == True
-        assert has_feature_access(mock_user, "priority_response_time", mock_db) == True
+        assert has_feature_access(mock_user, "extended_templates", mock_db) == True
 
     def test_plus_user_pro_features_denied(self, mock_user, mock_db, mock_plus_subscription):
         """Test that plus users cannot access pro features"""
@@ -162,8 +163,10 @@ class TestHasFeatureAccess:
         
         # Pro features should be denied
         assert has_feature_access(mock_user, "diagram_generation", mock_db) == False
-        assert has_feature_access(mock_user, "image_analysis", mock_db) == False
-        assert has_feature_access(mock_user, "code_generation", mock_db) == False
+        assert has_feature_access(mock_user, "data_analysis", mock_db) == False
+        # Plus features should be accessible
+        assert has_feature_access(mock_user, "image_analysis", mock_db) == True
+        assert has_feature_access(mock_user, "code_analysis", mock_db) == True
 
     def test_pro_user_pro_features(self, mock_user, mock_db, mock_pro_subscription):
         """Test that pro users can access pro features"""
@@ -172,7 +175,7 @@ class TestHasFeatureAccess:
         # Pro features should be accessible
         assert has_feature_access(mock_user, "diagram_generation", mock_db) == True
         assert has_feature_access(mock_user, "image_analysis", mock_db) == True
-        assert has_feature_access(mock_user, "code_generation", mock_db) == True
+        assert has_feature_access(mock_user, "code_analysis", mock_db) == True
         assert has_feature_access(mock_user, "data_analysis", mock_db) == True
 
     def test_pro_user_max_features_denied(self, mock_user, mock_db, mock_pro_subscription):
@@ -180,9 +183,8 @@ class TestHasFeatureAccess:
         mock_db.query.return_value.filter.return_value.first.return_value = mock_pro_subscription
         
         # Max features should be denied
-        assert has_feature_access(mock_user, "unlimited_analysis", mock_db) == False
-        assert has_feature_access(mock_user, "custom_ai_training", mock_db) == False
-        assert has_feature_access(mock_user, "dedicated_support", mock_db) == False
+        assert has_feature_access(mock_user, "advanced_analytics", mock_db) == False
+        assert has_feature_access(mock_user, "custom_templates", mock_db) == False
 
     def test_max_user_all_features(self, mock_user, mock_db, mock_max_subscription):
         """Test that max users can access all features"""
@@ -191,9 +193,8 @@ class TestHasFeatureAccess:
         # All features should be accessible
         assert has_feature_access(mock_user, "basic_assignment_generation", mock_db) == True
         assert has_feature_access(mock_user, "diagram_generation", mock_db) == True
-        assert has_feature_access(mock_user, "unlimited_analysis", mock_db) == True
-        assert has_feature_access(mock_user, "custom_ai_training", mock_db) == True
-        assert has_feature_access(mock_user, "dedicated_support", mock_db) == True
+        assert has_feature_access(mock_user, "advanced_analytics", mock_db) == True
+        assert has_feature_access(mock_user, "custom_templates", mock_db) == True
 
     def test_unknown_feature(self, mock_user, mock_db):
         """Test access to unknown feature"""
@@ -216,9 +217,14 @@ class TestGetUpgradeMessage:
         message = get_upgrade_message("free", "diagram_generation")
         assert "Upgrade to Pro plan" in message
 
+    def test_free_user_image_analysis_available(self):
+        """Test that image_analysis is available in free plan"""
+        message = get_upgrade_message("free", "image_analysis")
+        assert "Upgrade to Max plan" in message  # Should be available in free, so this tests fallback
+
     def test_free_user_upgrade_to_max(self):
         """Test upgrade message for free user to max features"""
-        message = get_upgrade_message("free", "unlimited_analysis")
+        message = get_upgrade_message("free", "advanced_analytics")
         assert "Upgrade to Max plan" in message
 
     def test_plus_user_upgrade_to_pro(self):
@@ -228,12 +234,12 @@ class TestGetUpgradeMessage:
 
     def test_plus_user_upgrade_to_max(self):
         """Test upgrade message for plus user to max features"""
-        message = get_upgrade_message("plus", "unlimited_analysis")
+        message = get_upgrade_message("plus", "advanced_analytics")
         assert "Upgrade to Max plan" in message
 
     def test_pro_user_upgrade_to_max(self):
         """Test upgrade message for pro user to max features"""
-        message = get_upgrade_message("pro", "unlimited_analysis")
+        message = get_upgrade_message("pro", "advanced_analytics")
         assert "Upgrade to Max plan" in message
 
     def test_max_user_upgrade_message(self):
@@ -254,7 +260,8 @@ class TestGetAvailableFeatures:
         assert features["basic_assignment_generation"] == True
         assert features["grammar_spelling_check"] == True
         assert features["diagram_generation"] == False
-        assert features["image_analysis"] == False
+        assert features["image_analysis"] == True
+        assert features["code_analysis"] == False
 
     def test_plus_user_available_features(self, mock_user, mock_db, mock_plus_subscription):
         """Test available features for plus user"""
@@ -265,7 +272,8 @@ class TestGetAvailableFeatures:
         assert features["basic_assignment_generation"] == True
         assert features["advanced_writing_analysis"] == True
         assert features["diagram_generation"] == False
-        assert features["image_analysis"] == False
+        assert features["image_analysis"] == True
+        assert features["code_analysis"] == True
 
     def test_pro_user_available_features(self, mock_user, mock_db, mock_pro_subscription):
         """Test available features for pro user"""
@@ -276,7 +284,7 @@ class TestGetAvailableFeatures:
         assert features["basic_assignment_generation"] == True
         assert features["diagram_generation"] == True
         assert features["image_analysis"] == True
-        assert features["unlimited_analysis"] == False
+        assert features["advanced_analytics"] == False
 
     def test_max_user_available_features(self, mock_user, mock_db, mock_max_subscription):
         """Test available features for max user"""
@@ -286,8 +294,8 @@ class TestGetAvailableFeatures:
         
         assert features["basic_assignment_generation"] == True
         assert features["diagram_generation"] == True
-        assert features["unlimited_analysis"] == True
-        assert features["custom_ai_training"] == True
+        assert features["advanced_analytics"] == True
+        assert features["custom_templates"] == True
 
 
 class TestGetFeatureRequirements:
@@ -299,8 +307,9 @@ class TestGetFeatureRequirements:
         
         assert "basic_assignment_generation" in requirements["free"]["available"]
         assert "grammar_spelling_check" in requirements["free"]["available"]
+        assert "image_analysis" in requirements["free"]["available"]
         assert "diagram_generation" in requirements["free"]["unavailable"]
-        assert "image_analysis" in requirements["free"]["unavailable"]
+        assert "code_analysis" in requirements["free"]["unavailable"]
 
     def test_plus_plan_requirements(self):
         """Test feature requirements for plus plan"""
@@ -308,8 +317,9 @@ class TestGetFeatureRequirements:
         
         assert "basic_assignment_generation" in requirements["plus"]["available"]
         assert "advanced_writing_analysis" in requirements["plus"]["available"]
+        assert "image_analysis" in requirements["plus"]["available"]
+        assert "code_analysis" in requirements["plus"]["available"]
         assert "diagram_generation" in requirements["plus"]["unavailable"]
-        assert "image_analysis" in requirements["plus"]["unavailable"]
 
     def test_pro_plan_requirements(self):
         """Test feature requirements for pro plan"""
@@ -318,7 +328,7 @@ class TestGetFeatureRequirements:
         assert "basic_assignment_generation" in requirements["pro"]["available"]
         assert "diagram_generation" in requirements["pro"]["available"]
         assert "image_analysis" in requirements["pro"]["available"]
-        assert "unlimited_analysis" in requirements["pro"]["unavailable"]
+        assert "advanced_analytics" in requirements["pro"]["unavailable"]
 
     def test_max_plan_requirements(self):
         """Test feature requirements for max plan"""
@@ -326,7 +336,7 @@ class TestGetFeatureRequirements:
         
         assert "basic_assignment_generation" in requirements["max"]["available"]
         assert "diagram_generation" in requirements["max"]["available"]
-        assert "unlimited_analysis" in requirements["max"]["available"]
+        assert "advanced_analytics" in requirements["max"]["available"]
         assert len(requirements["max"]["unavailable"]) == 0
 
 

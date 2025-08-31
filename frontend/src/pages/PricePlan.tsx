@@ -1,7 +1,5 @@
 // Material-UI Icons imports
 import {
-  AccessTimeOutlined,
-  AllInclusive,
   AutoAwesomeOutlined,
   AutoFixHighOutlined,
   BarChartOutlined,
@@ -13,18 +11,16 @@ import {
   EmojiEvents,
   FormatQuoteOutlined,
   GppGoodOutlined,
+  Group,
   LibraryBooksOutlined,
   LocalOffer,
-  MilitaryTechOutlined,
   MoreVert,
   PaletteOutlined,
   PsychologyOutlined,
   RocketLaunchOutlined,
   SchoolOutlined,
   ScienceOutlined,
-  Search,
   SmartToyOutlined,
-  Speed,
   Spellcheck,
   Star,
   TextSnippetOutlined,
@@ -118,14 +114,6 @@ const features: Feature[] = [
     description: 'Receive basic suggestions to improve your writing',
   },
   {
-    name: 'Standard Response Time',
-    free: true,
-    plus: true,
-    pro: true,
-    max: true,
-    description: 'Get responses within standard timeframes',
-  },
-  {
     name: 'Basic Templates',
     free: true,
     plus: true,
@@ -150,14 +138,6 @@ const features: Feature[] = [
     description: 'Get suggestions to improve writing style and tone',
   },
   {
-    name: 'Priority Response Time',
-    free: false,
-    plus: true,
-    pro: true,
-    max: true,
-    description: 'Faster response times for your requests',
-  },
-  {
     name: 'Extended Templates Library',
     free: false,
     plus: true,
@@ -174,44 +154,68 @@ const features: Feature[] = [
     description: 'Enjoy an ad-free experience',
   },
   {
-    name: 'AI-Powered Research Assistance',
+    name: 'Citation Management',
     free: false,
     plus: false,
     pro: true,
     max: true,
-    description: 'AI helps you find and analyze research materials',
+    description: 'Create and manage citations in APA, MLA, Chicago, and Harvard formats',
   },
   {
-    name: 'Citation & Reference Check',
+    name: 'Basic Plagiarism Check',
     free: false,
     plus: false,
     pro: true,
     max: true,
-    description: 'Automated checking of citations and references',
+    description: 'Basic plagiarism detection for submitted content',
   },
   {
-    name: 'Plagiarism Detection',
+    name: 'Diagram Generation',
     free: false,
     plus: false,
     pro: true,
     max: true,
-    description: 'Comprehensive plagiarism checking across multiple sources',
+    description: 'Generate charts, flowcharts, and visual diagrams',
   },
   {
-    name: '24/7 Priority Support',
+    name: 'Image Analysis',
+    free: true,
+    plus: true,
+    pro: true,
+    max: true,
+    description: 'Analyze images and extract text using AI',
+  },
+  {
+    name: 'Code Analysis',
+    free: false,
+    plus: true,
+    pro: true,
+    max: true,
+    description: 'AI-powered code review and analysis',
+  },
+  {
+    name: 'Smart Content Summarization',
+    free: false,
+    plus: true,
+    pro: true,
+    max: true,
+    description: 'Intelligent content summarization with key insights',
+  },
+  {
+    name: 'Data File Analysis',
     free: false,
     plus: false,
     pro: true,
     max: true,
-    description: 'Round-the-clock priority customer support',
+    description: 'Analyze CSV, Excel, and other data files',
   },
   {
-    name: 'Unlimited Assignment Analysis',
+    name: 'Advanced Research Assistant',
     free: false,
     plus: false,
-    pro: false,
+    pro: true,
     max: true,
-    description: 'No limits on the number of assignments you can analyze',
+    description: 'AI-powered research and fact-checking',
   },
   {
     name: 'Advanced Analytics Dashboard',
@@ -222,20 +226,36 @@ const features: Feature[] = [
     description: 'Detailed analytics and insights about your usage and performance',
   },
   {
-    name: 'Priority Customer Support',
-    free: false,
-    plus: false,
-    pro: false,
-    max: true,
-    description: 'Faster response times and dedicated support channel',
-  },
-  {
     name: 'Custom Assignment Templates',
     free: false,
     plus: false,
     pro: false,
     max: true,
     description: 'Create and save custom templates for repeated use',
+  },
+  {
+    name: 'AI-Powered Learning Path',
+    free: false,
+    plus: false,
+    pro: false,
+    max: true,
+    description: 'Personalized learning recommendations and progress tracking',
+  },
+  {
+    name: 'Advanced Content Optimization',
+    free: false,
+    plus: false,
+    pro: false,
+    max: true,
+    description: 'AI-powered content optimization for maximum impact',
+  },
+  {
+    name: 'Enterprise Collaboration Tools',
+    free: false,
+    plus: false,
+    pro: false,
+    max: true,
+    description: 'Team collaboration features and shared workspaces',
   },
 ];
 
@@ -250,8 +270,8 @@ const plans: Plan[] = [
       'Basic Assignment Analysis',
       'Grammar & Spelling Check',
       'Basic Writing Suggestions',
-      'Standard Response Time',
       'Basic Templates',
+      'Image Analysis',
     ],
     priceId: import.meta.env.VITE_STRIPE_PRICE_FREE || '', // Use environment variable as fallback
     bestFor: 'Perfect starting tool with basic writing assistance',
@@ -267,8 +287,9 @@ const plans: Plan[] = [
     features: [
       'Advanced Writing Analysis',
       'Style & Tone Suggestions',
-      'Priority Response Time',
       'Extended Templates Library',
+      'Code Analysis',
+      'Smart Content Summarization',
       'Ad-Free Experience',
     ],
     popular: true,
@@ -284,10 +305,11 @@ const plans: Plan[] = [
     icon: <Diamond />,
     color: '#9c27b0',
     features: [
-      'AI-Powered Research Assistance',
-      'Citation & Reference Check',
-      'Plagiarism Detection',
-      '24/7 Priority Support',
+      'Citation Management',
+      'Basic Plagiarism Check',
+      'Diagram Generation',
+      'Data File Analysis',
+      'Advanced Research Assistant',
       'Ad-Free Experience',
     ],
     priceId: import.meta.env.VITE_STRIPE_PRICE_PRO || '', // Use environment variable as fallback
@@ -302,10 +324,11 @@ const plans: Plan[] = [
     icon: <EmojiEvents />,
     color: '#ff9800',
     features: [
-      'Unlimited Assignment Analysis',
       'Advanced Analytics Dashboard',
-      'Priority Customer Support',
       'Custom Assignment Templates',
+      'AI-Powered Learning Path',
+      'Advanced Content Optimization',
+      'Enterprise Collaboration Tools',
       'Ad-Free Experience',
     ],
     priceId: import.meta.env.VITE_STRIPE_PRICE_MAX || '', // Use environment variable as fallback
@@ -339,34 +362,40 @@ const getFeatureIcon = (featureName: string, color: string) => {
       return <Spellcheck sx={{ color }} />;
     case 'Basic Writing Suggestions':
       return <AutoFixHighOutlined sx={{ color }} />;
-    case 'Standard Response Time':
-      return <Speed sx={{ color }} />;
     case 'Basic Templates':
       return <TextSnippetOutlined sx={{ color }} />;
     case 'Advanced Writing Analysis':
       return <ScienceOutlined sx={{ color }} />;
     case 'Style & Tone Suggestions':
       return <PaletteOutlined sx={{ color }} />;
-    case 'Priority Response Time':
-      return <Speed sx={{ color }} />;
     case 'Extended Templates Library':
       return <LibraryBooksOutlined sx={{ color }} />;
-    case 'AI-Powered Research Assistance':
-      return <Search sx={{ color }} />;
-    case 'Citation & Reference Check':
+    case 'Citation Management':
       return <FormatQuoteOutlined sx={{ color }} />;
-    case 'Plagiarism Detection':
+    case 'Basic Plagiarism Check':
       return <GppGoodOutlined sx={{ color }} />;
-    case '24/7 Priority Support':
-      return <AccessTimeOutlined sx={{ color }} />;
-    case 'Unlimited Assignment Analysis':
-      return <AllInclusive sx={{ color }} />;
+    case 'Diagram Generation':
+      return <DesignServicesOutlined sx={{ color }} />;
+    case 'Image Analysis':
+      return <SmartToyOutlined sx={{ color }} />;
+    case 'Code Analysis':
+      return <PsychologyOutlined sx={{ color }} />;
+    case 'Data File Analysis':
+      return <BarChartOutlined sx={{ color }} />;
+    case 'Advanced Research Assistant':
+      return <PsychologyOutlined sx={{ color }} />;
     case 'Advanced Analytics Dashboard':
       return <BarChartOutlined sx={{ color }} />;
-    case 'Priority Customer Support':
-      return <MilitaryTechOutlined sx={{ color }} />;
     case 'Custom Assignment Templates':
       return <DesignServicesOutlined sx={{ color }} />;
+    case 'AI-Powered Learning Path':
+      return <SchoolOutlined sx={{ color }} />;
+    case 'Advanced Content Optimization':
+      return <AutoAwesomeOutlined sx={{ color }} />;
+    case 'Enterprise Collaboration Tools':
+      return <Group sx={{ color }} />;
+    case 'Smart Content Summarization':
+      return <AutoAwesomeOutlined sx={{ color }} />;
     case 'Ad-Free Experience':
       return <BlockOutlined sx={{ color }} />;
     default:
