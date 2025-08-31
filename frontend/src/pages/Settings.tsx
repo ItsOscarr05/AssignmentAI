@@ -2044,6 +2044,7 @@ const Settings: React.FC = () => {
                   <Slider
                     value={fontSize}
                     onChange={(_e, value) => setFontSize(value as number)}
+                    onChangeCommitted={(_e, value) => setFontSize(value as number)}
                     min={12}
                     max={28}
                     step={2}
@@ -2061,6 +2062,23 @@ const Settings: React.FC = () => {
                     valueLabelDisplay="auto"
                     valueLabelFormat={value => `${value}px`}
                     disableSwap
+                    track="normal"
+                    size="medium"
+                    sx={{
+                      '& .MuiSlider-track': {
+                        height: 4,
+                      },
+                      '& .MuiSlider-rail': {
+                        height: 4,
+                      },
+                      '& .MuiSlider-thumb': {
+                        height: 20,
+                        width: 20,
+                        '&:hover, &:focus, &:active': {
+                          boxShadow: '0 0 0 8px rgba(25, 118, 210, 0.16)',
+                        },
+                      },
+                    }}
                   />
                   <FormGroup sx={{ mt: 3 }}>
                     <FormControlLabel
@@ -2432,6 +2450,11 @@ const Settings: React.FC = () => {
                         );
                       }
                     }}
+                    onChangeCommitted={(_e, value) => {
+                      const newValue = value as number;
+                      const clampedValue = Math.min(newValue, subscription.tokenLimit);
+                      setTokenContextLimit(clampedValue);
+                    }}
                     min={1000}
                     max={subscription.tokenLimit}
                     step={1000}
@@ -2457,9 +2480,24 @@ const Settings: React.FC = () => {
                       },
                     ]}
                     disableSwap
+                    track="normal"
+                    size="medium"
                     sx={{
                       '& .MuiSlider-markLabel': {
                         fontSize: '0.75rem',
+                      },
+                      '& .MuiSlider-track': {
+                        height: 4,
+                      },
+                      '& .MuiSlider-rail': {
+                        height: 4,
+                      },
+                      '& .MuiSlider-thumb': {
+                        height: 20,
+                        width: 20,
+                        '&:hover, &:focus, &:active': {
+                          boxShadow: '0 0 0 8px rgba(25, 118, 210, 0.16)',
+                        },
                       },
                     }}
                   />
@@ -2482,12 +2520,30 @@ const Settings: React.FC = () => {
                   <Slider
                     value={parseFloat(temperature)}
                     onChange={(_e, value) => setTemperature(value.toString())}
+                    onChangeCommitted={(_e, value) => setTemperature(value.toString())}
                     min={0}
                     max={1}
                     step={0.1}
                     marks
                     valueLabelDisplay="auto"
                     disableSwap
+                    track="normal"
+                    size="medium"
+                    sx={{
+                      '& .MuiSlider-track': {
+                        height: 4,
+                      },
+                      '& .MuiSlider-rail': {
+                        height: 4,
+                      },
+                      '& .MuiSlider-thumb': {
+                        height: 20,
+                        width: 20,
+                        '&:hover, &:focus, &:active': {
+                          boxShadow: '0 0 0 8px rgba(25, 118, 210, 0.16)',
+                        },
+                      },
+                    }}
                   />
                   <Typography
                     variant="caption"
@@ -2503,12 +2559,30 @@ const Settings: React.FC = () => {
                   <Slider
                     value={contextLength}
                     onChange={(_e, value) => setContextLength(value as number)}
+                    onChangeCommitted={(_e, value) => setContextLength(value as number)}
                     min={1}
                     max={20}
                     step={1}
                     marks
                     valueLabelDisplay="auto"
                     disableSwap
+                    track="normal"
+                    size="medium"
+                    sx={{
+                      '& .MuiSlider-track': {
+                        height: 4,
+                      },
+                      '& .MuiSlider-rail': {
+                        height: 4,
+                      },
+                      '& .MuiSlider-thumb': {
+                        height: 20,
+                        width: 20,
+                        '&:hover, &:focus, &:active': {
+                          boxShadow: '0 0 0 8px rgba(25, 118, 210, 0.16)',
+                        },
+                      },
+                    }}
                   />
                   <Typography
                     variant="caption"
@@ -4383,15 +4457,33 @@ const Settings: React.FC = () => {
       </Dialog>
 
       <style>{`
+        /* Enhanced Slider Animations */
         .MuiSlider-thumb {
-          transition: transform 0.2s;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          cursor: grab;
+          touch-action: none;
         }
         .MuiSlider-thumb:hover {
-          transform: scale(1.2);
+          transform: scale(1.3);
+          box-shadow: 0 0 0 8px rgba(25, 118, 210, 0.16);
+        }
+        .MuiSlider-thumb:active {
+          transform: scale(1.1);
+          transition: all 0.1s ease;
+          cursor: grabbing;
+        }
+        .MuiSlider-thumb:focus {
+          outline: none;
+          box-shadow: 0 0 0 8px rgba(25, 118, 210, 0.16);
+        }
+        
+        /* Enhanced Switch Animations */
+        .MuiSwitch-switchBase {
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .MuiSwitch-switchBase.Mui-checked {
           transform: translateX(20px);
-          transition: transform 0.3s;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track {
           background: linear-gradient(
@@ -4400,21 +4492,88 @@ const Settings: React.FC = () => {
             ${theme.palette.primary.light}
           ) !important;
           opacity: 1;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
+        .MuiSwitch-track {
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Enhanced Slider Track and Rail Animations */
         .MuiSlider-track {
-          transition: all 0.3s ease;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          cursor: pointer;
         }
         .MuiSlider-rail {
-          transition: all 0.3s ease;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          cursor: pointer;
+        }
+        .MuiSlider-root {
+          cursor: pointer;
+          touch-action: pan-x;
+          user-select: none;
         }
         .MuiSlider-valueLabel {
-          transition: all 0.3s ease;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          transform-origin: center;
         }
         .MuiSlider-mark {
-          transition: all 0.3s ease;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .MuiSlider-markLabel {
-          transition: all 0.3s ease;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Smooth hover effects for interactive elements */
+        .MuiFormControlLabel-root {
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .MuiFormControlLabel-root:hover {
+          transform: translateX(4px);
+        }
+        
+        /* Smooth transitions for all form controls */
+        .MuiSlider-root,
+        .MuiSwitch-root,
+        .MuiFormControl-root,
+        .MuiTextField-root {
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Enhanced value label animations */
+        .MuiSlider-valueLabel {
+          animation: fadeInScale 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Smooth mark animations */
+        .MuiSlider-mark {
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .MuiSlider-mark:hover {
+          transform: scale(1.2);
+          opacity: 0.8;
+        }
+        
+        /* Keyframe animations */
+        @keyframes fadeInScale {
+          from {
+            opacity: 0;
+            transform: scale(0.8);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        
+        /* Smooth focus states */
+        .MuiSlider-root:focus-within .MuiSlider-thumb {
+          box-shadow: 0 0 0 8px rgba(25, 118, 210, 0.16);
+          transform: scale(1.1);
+        }
+        
+        /* Enhanced switch focus states */
+        .MuiSwitch-root:focus-within .MuiSwitch-switchBase {
+          box-shadow: 0 0 0 8px rgba(25, 118, 210, 0.16);
         }
         
         /* Compact mode styles - exclude sidebar */

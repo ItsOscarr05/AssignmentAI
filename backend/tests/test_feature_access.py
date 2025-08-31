@@ -34,7 +34,7 @@ def mock_free_subscription():
     subscription = Mock(spec=Subscription)
     subscription.user_id = 1
     subscription.status = SubscriptionStatus.ACTIVE
-    subscription.plan_id = "price_free"
+    subscription.plan_id = "price_free_test"
     return subscription
 
 
@@ -44,7 +44,7 @@ def mock_plus_subscription():
     subscription = Mock(spec=Subscription)
     subscription.user_id = 1
     subscription.status = SubscriptionStatus.ACTIVE
-    subscription.plan_id = "price_plus"
+    subscription.plan_id = "price_plus_test"
     return subscription
 
 
@@ -54,7 +54,7 @@ def mock_pro_subscription():
     subscription = Mock(spec=Subscription)
     subscription.user_id = 1
     subscription.status = SubscriptionStatus.ACTIVE
-    subscription.plan_id = "price_pro"
+    subscription.plan_id = "price_pro_test"
     return subscription
 
 
@@ -64,7 +64,7 @@ def mock_max_subscription():
     subscription = Mock(spec=Subscription)
     subscription.user_id = 1
     subscription.status = SubscriptionStatus.ACTIVE
-    subscription.plan_id = "price_max"
+    subscription.plan_id = "price_max_test"
     return subscription
 
 

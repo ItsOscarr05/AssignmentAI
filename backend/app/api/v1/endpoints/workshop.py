@@ -283,7 +283,7 @@ async def generate_content(
         logger.info(f"Service used: general_ai")
         logger.info(f"Timestamp: {datetime.utcnow()}")
             
-    except HTTPException:
+    except HTTPException as e:
         # Re-raise HTTPExceptions (like 403 errors) without wrapping them
         logger.warning(f"HTTPException raised: {str(e)}")
         raise
@@ -378,6 +378,19 @@ async def upload_and_process_file(
                 logger.error(f"Image analysis failed: {str(e)}")
                 # Fallback to general analysis
                 analysis = f"Image uploaded successfully. Analysis failed: {str(e)}"
+                
+                return {
+                    "id": str(uuid.uuid4()),
+                    "name": file.filename,
+                    "size": file.size,
+                    "type": content_type,
+                    "path": file_path,
+                    "content": f"Image Upload Results:\n{analysis}",
+                    "analysis": analysis,
+                    "service_used": "image_upload",
+                    "file_category": "image",
+                    "uploaded_at": datetime.utcnow().isoformat()
+                }
         
         elif file_info['service'] == 'ai_analysis':
             # Handle text-based files (documents, code, data)
@@ -394,7 +407,7 @@ async def upload_and_process_file(
                             "error": "Code analysis not available in your plan",
                             "feature": "code_analysis",
                             "current_plan": plan,
-                            "upgrade_message": "Upgrade to Pro plan to access code analysis",
+                            "upgrade_message": "Upgrade to Plus plan to access code analysis",
                             "upgrade_url": "/dashboard/price-plan"
                         }
                     )

@@ -730,7 +730,9 @@ const Workshop: React.FC = () => {
         <Grid
           item
           xs={12}
-          md={breakpoint === 'standard' ? 12 : 9}
+          md={breakpoint === 'standard' ? 12 : 8}
+          lg={breakpoint === 'standard' ? 12 : 8}
+          xl={breakpoint === 'standard' ? 12 : 7}
           sx={{ overflow: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
         >
           {/* Header */}
@@ -1528,7 +1530,9 @@ const Workshop: React.FC = () => {
         <Grid
           item
           xs={12}
-          md={breakpoint === 'standard' ? 12 : 3}
+          md={breakpoint === 'standard' ? 12 : 4}
+          lg={breakpoint === 'standard' ? 12 : 4}
+          xl={breakpoint === 'standard' ? 12 : 5}
           sx={{ overflow: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
         >
           <Box
@@ -1539,6 +1543,10 @@ const Workshop: React.FC = () => {
               overflow: 'hidden',
               width: { xs: '95%', sm: '100%' },
               mx: { xs: 'auto', sm: 0 },
+              '@media (min-width: 960px)': {
+                width: '100%',
+                maxWidth: '100%',
+              },
               '@media (max-width: 480px)': {
                 width: '98%',
                 mx: 'auto',
@@ -1613,6 +1621,10 @@ const Workshop: React.FC = () => {
               overflow: 'hidden',
               width: { xs: '95%', sm: '100%' },
               mx: { xs: 'auto', sm: 0 },
+              '@media (min-width: 960px)': {
+                width: '100%',
+                maxWidth: '100%',
+              },
               '@media (max-width: 480px)': {
                 width: '98%',
                 mx: 'auto',
@@ -1694,6 +1706,10 @@ const Workshop: React.FC = () => {
                 overflow: 'hidden',
                 width: { xs: '95%', sm: '100%' },
                 mx: { xs: 'auto', sm: 0 },
+                '@media (min-width: 960px)': {
+                  width: '100%',
+                  maxWidth: '100%',
+                },
                 '@media (max-width: 480px)': {
                   width: '98%',
                   mx: 'auto',
@@ -1745,6 +1761,10 @@ const Workshop: React.FC = () => {
               flexDirection: 'column',
               justifyContent: 'center',
               minHeight: { xs: '380px', sm: '320px', md: '280px' },
+              '@media (min-width: 960px)': {
+                width: '100%',
+                maxWidth: '100%',
+              },
               '@media (max-width: 480px)': {
                 width: '98%',
                 mx: 'auto',
@@ -1783,20 +1803,50 @@ const Workshop: React.FC = () => {
                     xs: 'min(80vw, 200px)',
                     sm: 'min(70vw, 250px)',
                     md: 'min(60vw, 300px)',
-                    lg: 'min(50vw, 350px)',
-                    xl: 'min(40vw, 400px)',
+                    lg: 'min(45vw, 320px)',
+                    xl: 'min(30vw, 350px)',
+                    '@media (min-width: 1920px)': {
+                      width: 'min(25vw, 400px)',
+                    },
+                    '@media (min-width: 2560px)': {
+                      width: 'min(20vw, 450px)',
+                    },
                   },
                   height: {
                     xs: 'min(80vw, 200px)',
                     sm: 'min(70vw, 250px)',
                     md: 'min(60vw, 300px)',
-                    lg: 'min(50vw, 350px)',
-                    xl: 'min(40vw, 400px)',
+                    lg: 'min(45vw, 320px)',
+                    xl: 'min(30vw, 350px)',
+                    '@media (min-width: 1920px)': {
+                      height: 'min(25vw, 400px)',
+                    },
+                    '@media (min-width: 2560px)': {
+                      height: 'min(20vw, 450px)',
+                    },
                   },
                   cursor: 'pointer',
                   margin: '0 auto',
                   minWidth: { xs: 150, sm: 180, md: 220, lg: 260, xl: 300 },
                   minHeight: { xs: 150, sm: 180, md: 220, lg: 260, xl: 300 },
+                  maxWidth: {
+                    xs: 200,
+                    sm: 250,
+                    md: 300,
+                    lg: 320,
+                    xl: 350,
+                    '@media (min-width: 1920px)': 400,
+                    '@media (min-width: 2560px)': 450,
+                  },
+                  maxHeight: {
+                    xs: 200,
+                    sm: 250,
+                    md: 300,
+                    lg: 320,
+                    xl: 350,
+                    '@media (min-width: 1920px)': 400,
+                    '@media (min-width: 2560px)': 450,
+                  },
                 }}
                 onMouseEnter={() => setIsTokenChartHovered(true)}
                 onMouseLeave={() => setIsTokenChartHovered(false)}

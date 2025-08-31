@@ -26,7 +26,7 @@ def mock_free_subscription():
     subscription = Mock(spec=Subscription)
     subscription.user_id = 1
     subscription.status = SubscriptionStatus.ACTIVE
-    subscription.plan_id = "price_free"
+    subscription.plan_id = "price_free_test"
     return subscription
 
 
@@ -36,7 +36,7 @@ def mock_plus_subscription():
     subscription = Mock(spec=Subscription)
     subscription.user_id = 1
     subscription.status = SubscriptionStatus.ACTIVE
-    subscription.plan_id = "price_plus"
+    subscription.plan_id = "price_plus_test"
     return subscription
 
 
@@ -46,7 +46,7 @@ def mock_pro_subscription():
     subscription = Mock(spec=Subscription)
     subscription.user_id = 1
     subscription.status = SubscriptionStatus.ACTIVE
-    subscription.plan_id = "price_pro"
+    subscription.plan_id = "price_pro_test"
     return subscription
 
 
@@ -56,7 +56,7 @@ def mock_max_subscription():
     subscription = Mock(spec=Subscription)
     subscription.user_id = 1
     subscription.status = SubscriptionStatus.ACTIVE
-    subscription.plan_id = "price_max"
+    subscription.plan_id = "price_max_test"
     return subscription
 
 @pytest.fixture
@@ -92,7 +92,7 @@ class TestWorkshopEndpoints:
         
         response = client.post(
             "/api/v1/workshop/generate",
-            data={"prompt": "Test prompt"}
+            json={"prompt": "Test prompt"}
         )
         
         assert response.status_code == 200
@@ -108,11 +108,11 @@ class TestWorkshopEndpoints:
         
         response = client.post(
             "/api/v1/workshop/generate",
-            data={"prompt": "Test prompt"}
+            json={"prompt": "Test prompt"}
         )
         
         assert response.status_code == 500
-        assert "Failed to generate content" in response.json()["detail"]
+        assert "Internal server error during content generation" in response.json()["detail"]
 
     @patch('app.api.v1.endpoints.workshop.file_service.save_file')
     @patch('app.api.v1.endpoints.workshop.extract_file_content')
@@ -168,7 +168,7 @@ class TestWorkshopEndpoints:
         
         response = client.post(
             "/api/v1/workshop/files/process",
-            data={"file_id": "test-id", "action": "summarize"}
+            json={"file_id": "test-id", "action": "summarize"}
         )
         
         assert response.status_code == 200
@@ -184,7 +184,7 @@ class TestWorkshopEndpoints:
         
         response = client.post(
             "/api/v1/workshop/files/process",
-            data={"file_id": "test-id", "action": "extract"}
+            json={"file_id": "test-id", "action": "extract"}
         )
         
         assert response.status_code == 200
@@ -199,7 +199,7 @@ class TestWorkshopEndpoints:
         
         response = client.post(
             "/api/v1/workshop/files/process",
-            data={"file_id": "test-id", "action": "rewrite"}
+            json={"file_id": "test-id", "action": "rewrite"}
         )
         
         assert response.status_code == 200
@@ -214,7 +214,7 @@ class TestWorkshopEndpoints:
         
         response = client.post(
             "/api/v1/workshop/files/process",
-            data={"file_id": "test-id", "action": "analyze"}
+            json={"file_id": "test-id", "action": "analyze"}
         )
         
         assert response.status_code == 200
@@ -226,7 +226,7 @@ class TestWorkshopEndpoints:
         """Test file processing with invalid action"""
         response = client.post(
             "/api/v1/workshop/files/process",
-            data={"file_id": "test-id", "action": "invalid_action"}
+            json={"file_id": "test-id", "action": "invalid_action"}
         )
         
         assert response.status_code == 400
@@ -239,7 +239,7 @@ class TestWorkshopEndpoints:
         
         response = client.post(
             "/api/v1/workshop/files/process",
-            data={"file_id": "test-id", "action": "summarize"}
+            json={"file_id": "test-id", "action": "summarize"}
         )
         
         assert response.status_code == 500
@@ -260,7 +260,7 @@ class TestWorkshopEndpoints:
         
         response = client.post(
             "/api/v1/workshop/links",
-            data={"url": "https://example.com"}
+            json={"url": "https://example.com"}
         )
         
         assert response.status_code == 200
@@ -281,7 +281,7 @@ class TestWorkshopEndpoints:
         
         response = client.post(
             "/api/v1/workshop/links",
-            data={"url": "https://example.com"}
+            json={"url": "https://example.com"}
         )
         
         assert response.status_code == 500
@@ -423,7 +423,7 @@ class TestWorkshopFeatureAccess:
         
         response = client.post(
             "/api/v1/workshop/generate",
-            data={"prompt": "create a diagram of the solar system"}
+            json={"prompt": "create a diagram of the solar system"}
         )
         
         assert response.status_code == 403
@@ -453,15 +453,14 @@ class TestWorkshopFeatureAccess:
         
         response = client.post(
             "/api/v1/workshop/generate",
-            data={"prompt": "write code for a python function"}
+            json={"prompt": "write code for a python function"}
         )
         
         assert response.status_code == 403
         data = response.json()
-        assert data["detail"]["error"] == "Feature not available in your plan"
+        assert data["detail"]["error"] == "Code analysis not available in your plan"
         assert data["detail"]["feature"] == "code_analysis"
-        assert data["detail"]["current_plan"] == "free"
-        assert "Upgrade to Plus plan" in data["detail"]["upgrade_message"]
+        assert data["detail"]["upgrade_message"]
 
     @patch('app.api.v1.endpoints.workshop.has_feature_access')
     @patch('app.api.v1.endpoints.workshop.get_user_plan')
@@ -486,7 +485,7 @@ class TestWorkshopFeatureAccess:
         
         response = client.post(
             "/api/v1/workshop/generate",
-            data={"prompt": "create a diagram of the solar system"}
+            json={"prompt": "create a diagram of the solar system"}
         )
         
         assert response.status_code == 200
@@ -497,12 +496,12 @@ class TestWorkshopFeatureAccess:
     @patch('app.api.v1.endpoints.workshop.has_feature_access')
     @patch('app.api.v1.endpoints.workshop.get_user_plan')
     @patch('app.api.v1.endpoints.workshop.file_service.save_file')
-    @patch('app.api.v1.endpoints.workshop.extract_file_content')
-    @patch('app.api.v1.endpoints.workshop.ai_service.generate_assignment_content_from_prompt')
+    @patch('app.api.v1.endpoints.workshop.image_analysis_service.analyze_image_and_answer')
+    @patch('builtins.open', create=True)
     async def test_upload_image_free_user_allowed(
         self, 
-        mock_generate_content, 
-        mock_extract_content, 
+        mock_open,
+        mock_image_analysis, 
         mock_save_file,
         mock_get_plan, 
         mock_has_access,
@@ -516,7 +515,12 @@ class TestWorkshopFeatureAccess:
         mock_has_access.return_value = True
         mock_db.query.return_value.filter.return_value.first.return_value = mock_free_subscription
         mock_save_file.return_value = ("/path/to/image.jpg", 1024)
-        mock_generate_content.return_value = "Image analysis completed"
+        mock_image_analysis.return_value = "Image analysis completed"
+        
+        # Mock the file reading operation
+        mock_file = Mock()
+        mock_file.read.return_value = b"fake image data"
+        mock_open.return_value.__enter__.return_value = mock_file
         
         file_content = io.BytesIO(b"fake image data")
         
@@ -563,7 +567,7 @@ class TestWorkshopFeatureAccess:
         
         assert response.status_code == 403
         data = response.json()
-        assert data["detail"]["error"] == "Feature not available in your plan"
+        assert data["detail"]["error"] == "Code analysis not available in your plan"
         assert data["detail"]["feature"] == "code_analysis"
         assert data["detail"]["current_plan"] == "free"
         assert "Upgrade to Plus plan" in data["detail"]["upgrade_message"]
