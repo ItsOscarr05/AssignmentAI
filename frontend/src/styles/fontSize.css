@@ -4,7 +4,6 @@
 }
 
 /* Apply font size to all text elements */
-body,
 html {
   font-size: var(--app-font-size) !important;
 }
