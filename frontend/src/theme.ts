@@ -70,18 +70,18 @@ const baseTheme: ThemeOptions = {
           backgroundColor: '#d32f2f',
           borderRight: '1px solid rgba(0, 0, 0, 0.12)',
           '& .dashboard-sidebar-title': {
-            fontSize: 'calc(1.7rem * var(--app-font-size, 16px) / 16px) !important',
+            fontSize: 'calc(1.7rem * var(--app-font-size, 20px) / 20px) !important',
             fontWeight: 700,
           },
           '& .dashboard-sidebar-menu-text': {
-            fontSize: 'calc(1.1rem * var(--app-font-size, 16px) / 16px) !important',
+            fontSize: 'calc(1.1rem * var(--app-font-size, 20px) / 20px) !important',
             fontWeight: 500,
           },
           '& .dashboard-sidebar-copyright': {
-            fontSize: 'calc(0.9rem * var(--app-font-size, 16px) / 16px) !important',
+            fontSize: 'calc(0.9rem * var(--app-font-size, 20px) / 20px) !important',
           },
           '& .dashboard-sidebar-icon': {
-            fontSize: 'calc(28px * var(--app-font-size, 16px) / 16px) !important',
+            fontSize: 'calc(28px * var(--app-font-size, 20px) / 20px) !important',
           },
         },
       },
@@ -166,22 +166,22 @@ const baseTheme: ThemeOptions = {
     MuiTypography: {
       styleOverrides: {
         caption: {
-          fontSize: 'calc(0.7 * var(--app-font-size, 16px)) !important',
+          fontSize: 'calc(0.7 * var(--app-font-size, 20px)) !important',
           lineHeight: 1.4,
           fontWeight: 400,
         },
         subtitle1: {
-          fontSize: 'calc(1.3 * var(--app-font-size, 16px)) !important',
+          fontSize: 'calc(1.3 * var(--app-font-size, 20px)) !important',
           fontWeight: 600,
           lineHeight: 1.3,
         },
         h6: {
-          fontSize: 'calc(1.8 * var(--app-font-size, 16px)) !important',
+          fontSize: 'calc(1.8 * var(--app-font-size, 20px)) !important',
           fontWeight: 600,
           lineHeight: 1.3,
         },
         h4: {
-          fontSize: 'calc(2.5 * var(--app-font-size, 16px)) !important',
+          fontSize: 'calc(2.5 * var(--app-font-size, 20px)) !important',
           fontWeight: 500,
           lineHeight: 1.2,
         },
@@ -197,14 +197,14 @@ const baseTheme: ThemeOptions = {
     MuiDialogTitle: {
       styleOverrides: {
         root: {
-          fontSize: 'calc(1.5 * var(--app-font-size, 16px)) !important',
+          fontSize: 'calc(1.5 * var(--app-font-size, 20px)) !important',
           fontWeight: 700,
           color: '#d32f2f',
           padding:
-            'calc(1.25 * var(--app-font-size, 16px)) calc(1.5 * var(--app-font-size, 16px)) calc(1 * var(--app-font-size, 16px)) calc(1.5 * var(--app-font-size, 16px))',
+            'calc(1.25 * var(--app-font-size, 20px)) calc(1.5 * var(--app-font-size, 20px)) calc(1 * var(--app-font-size, 20px)) calc(1.5 * var(--app-font-size, 20px))',
           '& .MuiSvgIcon-root': {
             color: '#d32f2f',
-            fontSize: 'calc(1.5 * var(--app-font-size, 16px)) !important',
+            fontSize: 'calc(1.5 * var(--app-font-size, 20px)) !important',
           },
         },
       },
@@ -579,14 +579,14 @@ export const darkTheme = createTheme({
     MuiDialogTitle: {
       styleOverrides: {
         root: {
-          fontSize: 'calc(1.5 * var(--app-font-size, 16px)) !important',
+          fontSize: 'calc(1.5 * var(--app-font-size, 20px)) !important',
           fontWeight: 700,
           color: '#d32f2f', // Keep red
           padding:
-            'calc(1.25 * var(--app-font-size, 16px)) calc(1.5 * var(--app-font-size, 16px)) calc(1 * var(--app-font-size, 16px)) calc(1.5 * var(--app-font-size, 16px))',
+            'calc(1.25 * var(--app-font-size, 20px)) calc(1.5 * var(--app-font-size, 20px)) calc(1 * var(--app-font-size, 20px)) calc(1.5 * var(--app-font-size, 20px))',
           '& .MuiSvgIcon-root': {
             color: '#d32f2f', // Keep red
-            fontSize: 'calc(1.5 * var(--app-font-size, 16px)) !important',
+            fontSize: 'calc(1.5 * var(--app-font-size, 20px)) !important',
           },
         },
       },
@@ -595,8 +595,8 @@ export const darkTheme = createTheme({
       styleOverrides: {
         root: {
           '& .MuiTab-root': {
-            minHeight: 'calc(4.375 * var(--app-font-size, 16px))',
-            fontSize: 'calc(1 * var(--app-font-size, 16px)) !important',
+            minHeight: 'calc(4.375 * var(--app-font-size, 20px))',
+            fontSize: 'calc(1 * var(--app-font-size, 20px)) !important',
             fontWeight: 500,
             textTransform: 'uppercase',
             transition: 'all 0.2s',
@@ -609,7 +609,7 @@ export const darkTheme = createTheme({
               color: '#d32f2f', // Keep red
             },
             '& .MuiSvgIcon-root': {
-              fontSize: 'calc(1.7 * var(--app-font-size, 16px)) !important',
+              fontSize: 'calc(1.7 * var(--app-font-size, 20px)) !important',
               color: '#d32f2f', // Keep red
             },
           },
@@ -743,22 +743,22 @@ export const darkTheme = createTheme({
     MuiTypography: {
       styleOverrides: {
         caption: {
-          fontSize: 'calc(0.7 * var(--app-font-size, 16px)) !important',
+          fontSize: 'calc(0.7 * var(--app-font-size, 20px)) !important',
           lineHeight: 1.4,
           fontWeight: 400,
         },
         subtitle1: {
-          fontSize: 'calc(1.3 * var(--app-font-size, 16px)) !important',
+          fontSize: 'calc(1.3 * var(--app-font-size, 20px)) !important',
           fontWeight: 600,
           lineHeight: 1.3,
         },
         h6: {
-          fontSize: 'calc(1.8 * var(--app-font-size, 16px)) !important',
+          fontSize: 'calc(1.8 * var(--app-font-size, 20px)) !important',
           fontWeight: 600,
           lineHeight: 1.3,
         },
         h4: {
-          fontSize: 'calc(2.5 * var(--app-font-size, 16px)) !important',
+          fontSize: 'calc(2.5 * var(--app-font-size, 20px)) !important',
           fontWeight: 500,
           lineHeight: 1.2,
         },
@@ -773,9 +773,9 @@ export const darkTheme = createTheme({
           fontSize: '0.8rem !important',
           padding: '6px 12px',
           '&.save-changes': {
-            borderRadius: 'calc(0.375 * var(--app-font-size, 16px))',
-            padding: `calc(0.6 * var(--app-font-size, 16px)) calc(1.2 * var(--app-font-size, 16px))`,
-            fontSize: 'calc(0.85 * var(--app-font-size, 16px)) !important',
+            borderRadius: 'calc(0.375 * var(--app-font-size, 20px))',
+            padding: `calc(0.6 * var(--app-font-size, 20px)) calc(1.2 * var(--app-font-size, 20px))`,
+            fontSize: 'calc(0.85 * var(--app-font-size, 20px)) !important',
             fontWeight: 500,
             background: 'transparent',
             color: '#d32f2f',

@@ -86,6 +86,7 @@ import DownloadDataDialog from '../components/account/DownloadDataDialog';
 import AIFeaturesDemo from '../components/ai/AIFeaturesDemo';
 import DateFormatSelector from '../components/common/DateFormatSelector';
 import AutoLockWarningDialog from '../components/security/AutoLockWarningDialog';
+import { useFontSize } from '../contexts/FontSizeContext';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { preferences, users } from '../services/api';
 import securityService from '../services/SecurityService';
@@ -152,7 +153,7 @@ const Settings: React.FC = () => {
   const { mode: appTheme, toggleTheme, darkThemeColor, setDarkThemeColor } = useAppTheme();
   const darkMode = appTheme === 'dark';
   const [language, setLanguage] = useState('en');
-  const [fontSize, setFontSize] = useState(20);
+  const { fontSize, setFontSize } = useFontSize();
   const [animations, setAnimations] = useState(true);
   const [compactMode, setCompactMode] = useState(false);
 
@@ -890,11 +891,6 @@ const Settings: React.FC = () => {
     </Paper>
   );
 
-  useEffect(() => {
-    // Apply font size using CSS custom property for better compatibility
-    document.documentElement.style.setProperty('--app-font-size', `${fontSize}px`);
-  }, [fontSize]);
-
   // Apply animations setting
   useEffect(() => {
     if (!animations) {
@@ -1516,9 +1512,7 @@ const Settings: React.FC = () => {
       if (userPreferences.theme) {
         // Theme is handled by context, no need to set here
       }
-      if (userPreferences.font_size) {
-        setFontSize(parseInt(userPreferences.font_size) || 20);
-      }
+
       if (userPreferences.compact_mode !== undefined) {
         setCompactMode(userPreferences.compact_mode);
       }
@@ -1716,7 +1710,6 @@ const Settings: React.FC = () => {
       await preferences.update({
         language,
         theme: darkMode ? 'dark' : 'light',
-        font_size: fontSize.toString(),
         compact_mode: compactMode,
         custom_preferences: {
           dateFormat,
@@ -2080,6 +2073,7 @@ const Settings: React.FC = () => {
                       },
                     }}
                   />
+
                   <FormGroup sx={{ mt: 3 }}>
                     <FormControlLabel
                       control={

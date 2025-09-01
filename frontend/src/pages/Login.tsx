@@ -191,11 +191,11 @@ const Login: React.FC = () => {
         background: 'white',
       }}
     >
-      <Container maxWidth={false} disableGutters sx={{ height: { xs: 'auto', md: '100%' } }}>
+      <Container maxWidth={false} disableGutters sx={{ height: { xs: 'auto', md: '100vh' } }}>
         <Grid
           container
           direction={{ xs: 'column', md: 'row' }}
-          sx={{ height: { xs: 'auto', md: '100%' }, borderRadius: 0 }}
+          sx={{ height: { xs: 'auto', md: '100vh' }, borderRadius: 0 }}
         >
           {/* Left side - Branding */}
           <Grid
@@ -211,8 +211,8 @@ const Login: React.FC = () => {
               alignItems: 'center',
               color: 'white',
               position: 'relative',
-              height: { xs: 'auto', md: 'auto' },
-              minHeight: { xs: '35vh', md: 'auto' },
+              height: { xs: 'auto', md: '100vh' },
+              minHeight: { xs: '35vh', md: '100vh' },
             }}
           >
             <HeroParticles />
@@ -302,7 +302,7 @@ const Login: React.FC = () => {
               justifyContent: 'center',
               background: 'white',
               position: 'relative',
-              minHeight: { xs: '65vh', md: 'auto' },
+              minHeight: { xs: '65vh', md: '100vh' },
             }}
           >
             <Box

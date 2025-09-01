@@ -25,20 +25,7 @@ import {
 import React from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-
-// Get font size from localStorage or default to 20
-const getFontSize = () => {
-  try {
-    const savedSettings = localStorage.getItem('userSettings');
-    if (savedSettings) {
-      const settings = JSON.parse(savedSettings);
-      return settings.appearance?.font_size || 20;
-    }
-  } catch (error) {
-    console.warn('Failed to parse user settings:', error);
-  }
-  return 20;
-};
+import { useFontSize } from '../contexts/FontSizeContext';
 
 const expandedWidth = 250;
 
@@ -48,23 +35,7 @@ const Dashboard: React.FC = () => {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [fontSize, setFontSize] = React.useState(getFontSize());
-
-  // Listen for font size changes
-  React.useEffect(() => {
-    const handleStorageChange = () => {
-      setFontSize(getFontSize());
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    // Also check periodically for changes
-    const interval = setInterval(handleStorageChange, 1000);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
-    };
-  }, []);
+  const { fontSize } = useFontSize();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
