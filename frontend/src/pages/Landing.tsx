@@ -5,7 +5,6 @@ import React, { lazy, useEffect, useRef, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import HeroParticles from '../components/HeroParticles';
 import RedStarField from '../components/RedStarField';
-import { getAdminStats } from '../services/AdminService';
 // Remove the Next.js Link wrapper and use MUI's styled directly
 
 // For MUI Links that need to use React Router
@@ -22,36 +21,42 @@ const RouterMuiLink = styled(RouterLink)({
 // Optimize imports
 import {
   AccessTimeOutlined,
-  AllInclusive,
   AssignmentOutlined,
   AutoAwesomeOutlined,
   AutoFixHighOutlined,
   BarChartOutlined,
   BlockOutlined,
   BoltOutlined,
+  BuildOutlined,
+  CalculateOutlined,
+  CancelOutlined,
   CheckCircle,
   CheckCircleOutlineOutlined,
   CodeOutlined,
+  DescriptionOutlined,
   DesignServicesOutlined,
   Diamond,
   DiamondOutlined,
   EmailOutlined,
   FormatQuoteOutlined,
   GppGoodOutlined,
+  Group,
+  InsertChartOutlined,
+  LanguageOutlined,
   LibraryBooksOutlined,
-  MilitaryTechOutlined,
   PaletteOutlined,
+  PhotoCameraOutlined,
   PsychologyOutlined,
   RocketLaunchOutlined,
   SchoolOutlined,
   ScienceOutlined,
-  Search,
   SecurityOutlined,
   SmartToyOutlined,
-  Speed,
   Spellcheck,
-  StyleOutlined,
   TextSnippetOutlined,
+  ThumbDownOutlined,
+  ThumbUpOutlined,
+  TrendingUpOutlined,
 } from '@mui/icons-material';
 import { Grid } from '@mui/material';
 import Box from '@mui/material/Box';
@@ -104,38 +109,40 @@ const getFeatureIcon = (featureName: string, color: string) => {
       return <Spellcheck sx={{ color }} />;
     case 'Basic Writing Suggestions':
       return <AutoFixHighOutlined sx={{ color }} />;
-    case 'Standard Response Time':
-      return <Speed sx={{ color }} />;
     case 'Basic Templates':
       return <TextSnippetOutlined sx={{ color }} />;
     case 'Advanced Writing Analysis':
       return <ScienceOutlined sx={{ color }} />;
     case 'Style & Tone Suggestions':
       return <PaletteOutlined sx={{ color }} />;
-    case 'Priority Response Time':
-      return <Speed sx={{ color }} />;
     case 'Extended Templates Library':
       return <LibraryBooksOutlined sx={{ color }} />;
-    case 'AI-Powered Research Assistance':
-      return <Search sx={{ color }} />;
-    case 'Citation & Reference Check':
+    case 'Citation Management':
       return <FormatQuoteOutlined sx={{ color }} />;
-    case 'Custom Writing Style Guide':
-      return <StyleOutlined sx={{ color }} />;
-    case 'Advanced Plagiarism Detection':
+    case 'Basic Plagiarism Check':
       return <GppGoodOutlined sx={{ color }} />;
-    case '24/7 Priority Support':
-      return <AccessTimeOutlined sx={{ color }} />;
-    case 'Unlimited Assignment Analysis':
-      return <AllInclusive sx={{ color }} />;
+    case 'Diagram Generation':
+      return <DesignServicesOutlined sx={{ color }} />;
+    case 'Image Analysis':
+      return <SmartToyOutlined sx={{ color }} />;
+    case 'Code Analysis':
+      return <PsychologyOutlined sx={{ color }} />;
+    case 'Data File Analysis':
+      return <BarChartOutlined sx={{ color }} />;
+    case 'Advanced Research Assistant':
+      return <PsychologyOutlined sx={{ color }} />;
     case 'Advanced Analytics Dashboard':
       return <BarChartOutlined sx={{ color }} />;
-    case 'Priority Customer Support':
-      return <MilitaryTechOutlined sx={{ color }} />;
     case 'Custom Assignment Templates':
       return <DesignServicesOutlined sx={{ color }} />;
-    case 'API Access':
-      return <CodeOutlined sx={{ color }} />;
+    case 'AI-Powered Learning Path':
+      return <SchoolOutlined sx={{ color }} />;
+    case 'Advanced Content Optimization':
+      return <AutoAwesomeOutlined sx={{ color }} />;
+    case 'Enterprise Collaboration Tools':
+      return <Group sx={{ color }} />;
+    case 'Smart Content Summarization':
+      return <AutoAwesomeOutlined sx={{ color }} />;
     case 'Ad-Free Experience':
       return <BlockOutlined sx={{ color }} />;
     default:
@@ -148,28 +155,28 @@ const plans = [
     name: 'Free',
     price: 0,
     description: 'Perfect starting tool with basic assistance',
-    icon: <LocalOffer sx={{ color: '#2196f3' }} />,
+    icon: <LocalOffer />,
     color: '#2196f3',
     features: [
       'Basic Assignment Analysis',
       'Grammar & Spelling Check',
       'Basic Writing Suggestions',
-      'Standard Response Time',
       'Basic Templates',
+      'Image Analysis',
     ],
   },
   {
     name: 'Plus',
     price: 4.99,
     description: 'Enhanced features for more serious students',
-    icon: <Star sx={{ color: '#4caf50' }} />,
+    icon: <Star />,
     color: '#4caf50',
     features: [
-      'Everything in Free',
       'Advanced Writing Analysis',
       'Style & Tone Suggestions',
-      'Priority Response Time',
       'Extended Templates Library',
+      'Code Analysis',
+      'Smart Content Summarization',
       'Ad-Free Experience',
     ],
     popular: true,
@@ -178,14 +185,14 @@ const plans = [
     name: 'Pro',
     price: 9.99,
     description: 'Advanced features for professional students',
-    icon: <Diamond sx={{ color: '#9c27b0' }} />,
+    icon: <Diamond />,
     color: '#9c27b0',
     features: [
-      'Everything in Plus',
-      'AI-Powered Research Assistance',
-      'Citation & Reference Check',
-      'Advanced Plagiarism Detection',
-      '24/7 Priority Support',
+      'Citation Management',
+      'Basic Plagiarism Check',
+      'Diagram Generation',
+      'Data File Analysis',
+      'Advanced Research Assistant',
       'Ad-Free Experience',
     ],
   },
@@ -193,14 +200,14 @@ const plans = [
     name: 'Max',
     price: 14.99,
     description: 'Ultimate package for power users',
-    icon: <EmojiEvents sx={{ color: '#ff9800' }} />,
+    icon: <EmojiEvents />,
     color: '#ff9800',
     features: [
-      'Everything in Pro',
-      'Unlimited Assignment Analysis',
       'Advanced Analytics Dashboard',
-      'Priority Customer Support',
       'Custom Assignment Templates',
+      'AI-Powered Learning Path',
+      'Advanced Content Optimization',
+      'Enterprise Collaboration Tools',
       'Ad-Free Experience',
     ],
   },
@@ -208,40 +215,49 @@ const plans = [
 
 const faqs = [
   {
-    question: 'Is there a free version?',
-    answer: 'Yes! AssignmentAI offers a robust free plan for all users.',
+    question: 'How do I get started with AssignmentAI?',
+    answer:
+      'Create your account with email or Google, then upload your first assignment. Our AI will immediately begin analyzing and providing detailed feedback.',
   },
   {
-    question: 'Can I upgrade or downgrade my plan?',
-    answer: 'You can change your plan at any time from your dashboard.',
+    question: 'What makes AssignmentAI different from other writing tools?',
+    answer:
+      'AssignmentAI completes the work for you instead of just suggesting edits. We use advanced AI specifically designed for academic writing and subject-specific terminology.',
   },
   {
-    question: 'Is my data secure?',
-    answer: 'Absolutely. We use enterprise-grade security to protect your academic work.',
+    question: 'How accurate is the AI analysis?',
+    answer:
+      'Industry-leading accuracy: 95%+ grammar, 90%+ style consistency, and 85%+ content structure. Our AI continuously learns from academic standards.',
   },
   {
-    question: 'What platforms are supported?',
-    answer: 'AssignmentAI is fully web-based and works on all modern browsers.',
+    question: 'What types of assignments are supported?',
+    answer:
+      'Essays, quizzes, projects, and homework with support for APA, MLA, Chicago, Harvard citations. File formats: PDF, DOCX, DOC, TXT, RTF.',
   },
   {
-    question: 'Can I collaborate with others?',
-    answer: 'Yes, you can invite classmates or teammates to work together on assignments.',
+    question: 'How do I change my subscription plan?',
+    answer:
+      'Simple plan changes through the Price Plan page. Upgrade, downgrade, or switch billing cycles with immediate effect.',
   },
   {
-    question: 'How do I reset my password?',
-    answer: 'Click "Forgot Password" on the login page and follow the instructions.',
+    question: 'What payment methods do you accept and is billing secure?',
+    answer:
+      'All major credit cards, PayPal, and Apple Pay through secure, PCI-compliant gateways. We never store your payment information.',
   },
   {
-    question: 'Do you offer customer support?',
-    answer: 'Yes, our support team is available 24/7 via email.',
+    question: 'What browsers and devices are supported?',
+    answer:
+      'Works on all modern browsers (Chrome, Firefox, Safari, Edge) and devices. Native mobile apps for iOS and Android with full features.',
   },
   {
-    question: 'Can I use AssignmentAI on my phone?',
-    answer: 'Absolutely! The platform is fully responsive and works on all devices.',
+    question: 'Can I export my assignments and data?',
+    answer:
+      'Yes, export in multiple formats (.docx, .pdf, .txt, .rtf) or request complete data export for portability.',
   },
   {
-    question: 'How do I delete my account?',
-    answer: 'You can request account deletion from your profile settings at any time.',
+    question: 'How do I manage my privacy and data settings?',
+    answer:
+      'Complete control over privacy and data settings. Control data collection, visibility, and request deletion at any time.',
   },
 ];
 
@@ -265,7 +281,6 @@ const blogPosts = [
 
 const Landing: React.FC = () => {
   const [] = useState<null | HTMLElement>(null);
-  const [totalUsers, setTotalUsers] = useState<number>(0);
   const mainContentRef = useRef<HTMLDivElement>(null);
   const [contentHeight, setContentHeight] = useState<number>(0);
 
@@ -305,34 +320,6 @@ const Landing: React.FC = () => {
       console.log(`Existing user clicked ${planName} plan - no storage clearing needed`);
     }
   };
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const stats = await getAdminStats();
-        const userCount =
-          stats.total_users < 100
-            ? stats.total_users
-            : stats.total_users < 1000
-            ? Math.floor(stats.total_users / 100) * 100
-            : Math.floor(stats.total_users / 1000) * 1000;
-        setTotalUsers(userCount);
-      } catch (error) {
-        console.error('Error fetching stats:', error);
-        // Don't redirect on error, just use default value
-        setTotalUsers(10000);
-      }
-    };
-
-    // Only fetch stats if user is authenticated
-    const token = localStorage.getItem('token');
-    if (token) {
-      fetchStats();
-    } else {
-      // Use default value for unauthenticated users
-      setTotalUsers(10000);
-    }
-  }, []);
 
   useEffect(() => {
     const updateHeight = () => {
@@ -404,7 +391,7 @@ const Landing: React.FC = () => {
               }}
             />
             <Typography
-              variant="h4"
+              variant="h3"
               sx={{
                 fontWeight: 800,
                 color: 'common.white',
@@ -545,6 +532,7 @@ const Landing: React.FC = () => {
               pl: 0, // Hug left edge
               pr: { xs: 0, md: 4 },
               minWidth: 0,
+              mt: { xs: 4, sm: 6, md: 8 },
             }}
           >
             <Typography
@@ -705,37 +693,43 @@ const Landing: React.FC = () => {
                     title: 'Assignment Expert',
                     description:
                       'Use AssignmentAI for quick and accurate answers to study questions. Essential for students striving for high grades.',
-                    icon: '📚',
+                    icon: <SchoolOutlined />,
+                    color: '#D32F2F',
                   },
                   {
                     title: 'Grammar Guru',
                     description:
                       'Improve your writing with instant grammar, style, and punctuation suggestions. Ideal for crafting flawless essays and emails.',
-                    icon: '✍️',
+                    icon: <Spellcheck />,
+                    color: '#FFC107',
                   },
                   {
                     title: 'Diagram Maker',
                     description:
                       'Easily generate diagrams and charts to visually represent data and concepts, making complex information clear and engaging.',
-                    icon: '📊',
+                    icon: <InsertChartOutlined />,
+                    color: '#388E3C',
                   },
                   {
                     title: 'Image to Answer',
                     description:
                       'Take a photo of your problem and get the answer instantly – a revolutionary tool for homework and studies.',
-                    icon: '📷',
+                    icon: <PhotoCameraOutlined />,
+                    color: '#F57C00',
                   },
                   {
                     title: 'AI Detector & Humanizer',
                     description:
                       'AssignmentWriter adds a human touch to AI text, making engaging and relatable content for your audience.',
-                    icon: '🤖',
+                    icon: <SmartToyOutlined />,
+                    color: '#7B1FA2',
                   },
                   {
                     title: 'Creative Code Generator',
                     description:
                       'Need help with code? Generate unique codes for your projects and seamlessly integrate them into your products.',
-                    icon: '💻',
+                    icon: <CodeOutlined />,
+                    color: '#0288D1',
                   },
                 ].map((feature, index) => (
                   <Grid item xs={12} sm={6} md={4} key={index}>
@@ -748,7 +742,7 @@ const Landing: React.FC = () => {
                         flexDirection: 'column',
                         alignItems: 'center',
                         textAlign: 'center',
-                        border: '2.25px solid #D32F2F',
+                        border: `2.25px solid ${feature.color}`,
                         borderRadius: 3,
                         transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
                         backgroundColor: 'white',
@@ -756,14 +750,25 @@ const Landing: React.FC = () => {
                         zIndex: 1,
                         '&:hover': {
                           transform: 'translateY(-6px) scale(1.03)',
-                          boxShadow:
-                            '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
-                          borderColor: '#B71C1C',
+                          boxShadow: `0 0 32px ${feature.color}40, 0 0 64px ${feature.color}30`,
+                          borderColor: feature.color,
                         },
                       }}
                     >
-                      <Box sx={{ mb: 2, fontSize: { xs: '2.5rem', md: '2.5rem' } }}>
-                        {feature.icon}
+                      <Box
+                        sx={{
+                          mb: 2,
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                        }}
+                      >
+                        {React.cloneElement(feature.icon, {
+                          sx: {
+                            fontSize: { xs: '2.5rem', md: '2.5rem' },
+                            color: feature.color,
+                          },
+                        })}
                       </Box>
                       <Typography
                         variant="h5"
@@ -868,7 +873,7 @@ const Landing: React.FC = () => {
                     <List>
                       <ListItem>
                         <ListItemIcon sx={{ minWidth: 40 }}>
-                          <span style={{ fontSize: '1.75rem' }}>🎓</span>
+                          <SchoolOutlined sx={{ fontSize: '1.75rem', color: '#D32F2F' }} />
                         </ListItemIcon>
                         <ListItemText
                           primary="Designed for Students & Academia"
@@ -880,7 +885,7 @@ const Landing: React.FC = () => {
                       </ListItem>
                       <ListItem>
                         <ListItemIcon sx={{ minWidth: 40 }}>
-                          <span style={{ fontSize: '1.75rem' }}>🧠</span>
+                          <PsychologyOutlined sx={{ fontSize: '1.75rem', color: '#FFC107' }} />
                         </ListItemIcon>
                         <ListItemText
                           primary="Superior AI Model Built for Students & Academia"
@@ -892,7 +897,7 @@ const Landing: React.FC = () => {
                       </ListItem>
                       <ListItem>
                         <ListItemIcon sx={{ minWidth: 40 }}>
-                          <span style={{ fontSize: '1.75rem' }}>📖</span>
+                          <LibraryBooksOutlined sx={{ fontSize: '1.75rem', color: '#388E3C' }} />
                         </ListItemIcon>
                         <ListItemText
                           primary="Enriched with 20+ Academia Use Cases"
@@ -904,7 +909,7 @@ const Landing: React.FC = () => {
                       </ListItem>
                       <ListItem>
                         <ListItemIcon sx={{ minWidth: 40 }}>
-                          <span style={{ fontSize: '1.75rem', color: '#000000' }}>✔</span>
+                          <BuildOutlined sx={{ fontSize: '1.75rem', color: '#1976D2' }} />
                         </ListItemIcon>
                         <ListItemText
                           primary="Specialized Tools: AI Diagram Maker, Code Generation/Programming, Math Solver"
@@ -916,7 +921,7 @@ const Landing: React.FC = () => {
                       </ListItem>
                       <ListItem>
                         <ListItemIcon sx={{ minWidth: 40 }}>
-                          <span style={{ fontSize: '1.75rem' }}>👍</span>
+                          <ThumbUpOutlined sx={{ fontSize: '1.75rem', color: '#7B1FA2' }} />
                         </ListItemIcon>
                         <ListItemText
                           primary="Real-Time Reference: Answers with Real-Time References"
@@ -964,7 +969,7 @@ const Landing: React.FC = () => {
                     <List>
                       <ListItem>
                         <ListItemIcon sx={{ minWidth: 40 }}>
-                          <span style={{ fontSize: '1.75rem' }}>🌐</span>
+                          <LanguageOutlined sx={{ fontSize: '1.75rem', color: '#666666' }} />
                         </ListItemIcon>
                         <ListItemText
                           primary="Designed for General-Purpose"
@@ -976,7 +981,7 @@ const Landing: React.FC = () => {
                       </ListItem>
                       <ListItem>
                         <ListItemIcon sx={{ minWidth: 40 }}>
-                          <span style={{ fontSize: '1.75rem' }}>🤖</span>
+                          <SmartToyOutlined sx={{ fontSize: '1.75rem', color: '#666666' }} />
                         </ListItemIcon>
                         <ListItemText
                           primary="General-Purpose AI Model"
@@ -988,7 +993,7 @@ const Landing: React.FC = () => {
                       </ListItem>
                       <ListItem>
                         <ListItemIcon sx={{ minWidth: 40 }}>
-                          <span style={{ fontSize: '1.75rem' }}>📃</span>
+                          <DescriptionOutlined sx={{ fontSize: '1.75rem', color: '#666666' }} />
                         </ListItemIcon>
                         <ListItemText
                           primary="Limited Academic Focus"
@@ -1000,7 +1005,7 @@ const Landing: React.FC = () => {
                       </ListItem>
                       <ListItem>
                         <ListItemIcon sx={{ minWidth: 40 }}>
-                          <span style={{ fontSize: '1.75rem' }}>❌</span>
+                          <CancelOutlined sx={{ fontSize: '1.75rem', color: '#666666' }} />
                         </ListItemIcon>
                         <ListItemText
                           primary="Specialized Tools: N/A"
@@ -1012,7 +1017,7 @@ const Landing: React.FC = () => {
                       </ListItem>
                       <ListItem>
                         <ListItemIcon sx={{ minWidth: 40 }}>
-                          <span style={{ fontSize: '1.75rem' }}>👎</span>
+                          <ThumbDownOutlined sx={{ fontSize: '1.75rem', color: '#666666' }} />
                         </ListItemIcon>
                         <ListItemText
                           primary="References may not be real-time"
@@ -1074,19 +1079,22 @@ const Landing: React.FC = () => {
                     title: 'Quick Photo Answers',
                     description:
                       'Snap a photo of your homework and get the answer right away. No more scratching your head over tough questions!',
-                    icon: '📷',
+                    icon: <PhotoCameraOutlined />,
+                    color: '#F57C00',
                   },
                   {
                     title: 'Easy Diagram Maker',
                     description:
                       'Create diagrams for your assignments with just a few clicks. No need for drawing or fancy software.',
-                    icon: '📊',
+                    icon: <BarChartOutlined />,
+                    color: '#388E3C',
                   },
                   {
                     title: 'Math Problem Solver',
                     description:
                       'Stuck on a math problem? AssignmentAI can solve it for free! Simply upload your problem and receive high-quality, precise answers within seconds.',
-                    icon: '🔢',
+                    icon: <CalculateOutlined />,
+                    color: '#1976D2',
                   },
                 ].map((feature, index) => (
                   <Grid item xs={12} sm={6} md={4} key={index}>
@@ -1099,7 +1107,7 @@ const Landing: React.FC = () => {
                         flexDirection: 'column',
                         alignItems: 'center',
                         textAlign: 'center',
-                        border: '2.25px solid #D32F2F',
+                        border: `2.25px solid ${feature.color}`,
                         borderRadius: 3,
                         transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
                         backgroundColor: 'white',
@@ -1107,14 +1115,25 @@ const Landing: React.FC = () => {
                         zIndex: 1,
                         '&:hover': {
                           transform: 'translateY(-6px) scale(1.03)',
-                          boxShadow:
-                            '0 0 32px rgba(211, 47, 47, 0.4), 0 0 64px rgba(211, 47, 47, 0.3)',
-                          borderColor: '#B71C1C',
+                          boxShadow: `0 0 32px ${feature.color}40, 0 0 64px ${feature.color}30`,
+                          borderColor: feature.color,
                         },
                       }}
                     >
-                      <Box sx={{ mb: 2, fontSize: { xs: '2.5rem', md: '2.5rem' } }}>
-                        {feature.icon}
+                      <Box
+                        sx={{
+                          mb: 2,
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                        }}
+                      >
+                        {React.cloneElement(feature.icon, {
+                          sx: {
+                            fontSize: { xs: '2.5rem', md: '2.5rem' },
+                            color: feature.color,
+                          },
+                        })}
                       </Box>
                       <Typography
                         variant="h5"
@@ -1247,7 +1266,15 @@ const Landing: React.FC = () => {
                     }}
                   >
                     <Box sx={{ mb: 1.5 }}>{feature.icon}</Box>
-                    <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, color: '#000000' }}>
+                    <Typography
+                      variant="h5"
+                      sx={{
+                        fontWeight: 700,
+                        mb: 1,
+                        color: '#000000',
+                        fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.5rem' },
+                      }}
+                    >
                       {feature.title}
                     </Typography>
                     <Typography sx={{ color: '#666666' }}>{feature.desc}</Typography>
@@ -1296,54 +1323,51 @@ const Landing: React.FC = () => {
             <Grid container spacing={4} justifyContent="center">
               {[
                 {
-                  number:
-                    totalUsers < 100
-                      ? totalUsers.toLocaleString()
-                      : `${totalUsers.toLocaleString()}+`,
-                  label: totalUsers === 1 ? 'Student Helped' : 'Students Helped',
-                  icon: '👨‍🎓',
-                  color: '#2196f3',
+                  number: '4',
+                  label: 'AI Models',
+                  icon: <PsychologyOutlined />,
+                  color: '#D32F2F',
                 },
                 {
                   number: '95%',
                   label: 'Success Rate',
-                  icon: '📈',
-                  color: '#4caf50',
+                  icon: <TrendingUpOutlined />,
+                  color: '#FF9800',
                 },
                 {
                   number: '24/7',
                   label: 'AI Support',
-                  icon: '🤖',
-                  color: '#9c27b0',
+                  icon: <SmartToyOutlined />,
+                  color: '#4CAF50',
                 },
                 {
-                  number: '50+',
+                  number: '10',
                   label: 'Subject Areas',
-                  icon: '📚',
-                  color: '#ff9800',
+                  icon: <LibraryBooksOutlined />,
+                  color: '#2196F3',
                 },
               ].map((stat, index) => (
                 <Grid item xs={6} sm={6} md={3} key={index}>
                   <Paper
-                    elevation={2}
+                    elevation={0}
                     sx={{
-                      p: { xs: 2, sm: 3, md: 5 },
-                      minHeight: { xs: 160, sm: 180, md: 220 },
+                      p: { xs: 3, sm: 4, md: 5 },
+                      minHeight: { xs: 180, sm: 200, md: 240 },
                       textAlign: 'center',
                       backgroundColor: 'white',
-                      boxShadow: 3,
-                      transition: 'transform 0.2s, box-shadow 0.2s',
-                      border: '2.25px solid #D32F2F',
-                      borderColor: stat.color,
-                      borderRadius: 4,
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                      transition: 'all 0.3s ease',
+                      border: `2.25px solid ${stat.color}`,
+                      borderRadius: 3.5,
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'center',
                       position: 'relative',
                       zIndex: 1,
                       '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: `0 0 32px ${stat.color}40, 0 0 64px ${stat.color}30`,
+                        transform: 'translateY(-8px)',
+                        boxShadow: `0 8px 32px ${stat.color}40`,
+                        borderColor: stat.color,
                       },
                     }}
                   >
@@ -1351,33 +1375,42 @@ const Landing: React.FC = () => {
                       variant="h2"
                       component="div"
                       sx={{
-                        fontWeight: 700,
+                        fontWeight: 800,
                         color: stat.color,
-                        mb: 1,
-                        fontSize: { xs: '2rem', sm: '2.5rem', md: '3.5rem' },
-                        lineHeight: 1.2,
+                        mb: 2,
+                        fontSize: { xs: '1.8rem', sm: '2.2rem', md: '2.8rem' },
+                        lineHeight: 1.1,
+                        fontFamily: '"Mike Sans", "Audiowide", Arial, sans-serif',
                       }}
                     >
                       {stat.number}
                     </Typography>
-                    <Typography
-                      variant="h3"
+                    <Box
                       sx={{
-                        mb: 1,
-                        fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
-                        lineHeight: 1.2,
+                        mb: 2,
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        color: stat.color,
                       }}
                     >
-                      {stat.icon}
-                    </Typography>
+                      {React.cloneElement(stat.icon, {
+                        sx: {
+                          fontSize: { xs: '1.8rem', sm: '2.2rem', md: '2.8rem' },
+                          color: stat.color,
+                        },
+                      })}
+                    </Box>
                     <Typography
                       variant="h5"
                       sx={{
-                        color: '#666666',
-                        fontWeight: 600,
-                        fontSize: { xs: '1rem', sm: '1.1rem', md: '1.25rem' },
-                        lineHeight: 1.2,
+                        color: '#333333',
+                        fontWeight: 700,
+                        fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
+                        lineHeight: 1.3,
                         px: 1,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
                       }}
                     >
                       {stat.label}
@@ -2077,11 +2110,12 @@ const Landing: React.FC = () => {
                 sx={{
                   bgcolor: '#D32F2F',
                   color: 'white',
-                  fontSize: '1.25rem',
-                  px: 4.5,
-                  py: 2.2,
+                  fontSize: '1.2rem !important',
+                  px: 6,
+                  py: 2.8,
                   borderRadius: 2,
                   textTransform: 'none',
+                  minHeight: '60px',
                   '&:hover': {
                     bgcolor: '#B71C1C',
                     transform: 'translateY(-2px)',
@@ -2130,46 +2164,6 @@ const Landing: React.FC = () => {
                   Your AI-powered assignment companion. Helping students excel, one assignment at a
                   time.
                 </Typography>
-                {/* Newsletter Signup */}
-                <Box
-                  component="form"
-                  action="#"
-                  method="post"
-                  sx={{ mt: 4, display: 'flex', gap: 1 }}
-                >
-                  <input
-                    type="email"
-                    name="newsletter-email"
-                    placeholder="Your email for updates"
-                    required
-                    aria-label="Newsletter email"
-                    style={{
-                      padding: '10px 14px',
-                      border: '1px solid #444',
-                      borderRadius: '4px 0 0 4px',
-                      fontSize: '1rem',
-                      outline: 'none',
-                      width: 180,
-                      maxWidth: '100%',
-                    }}
-                  />
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    color="primary"
-                    sx={{
-                      borderRadius: '0 4px 4px 0',
-                      px: 3,
-                      fontWeight: 600,
-                      height: '42px',
-                      bgcolor: '#D32F2F',
-                      color: 'white',
-                      '&:hover': { bgcolor: '#B71C1C' },
-                    }}
-                  >
-                    Subscribe
-                  </Button>
-                </Box>
               </Grid>
               <Grid item xs={12} md={2}>
                 <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2, color: '#E53E3E' }}>
