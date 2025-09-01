@@ -4520,9 +4520,19 @@ const Settings: React.FC = () => {
         /* Smooth hover effects for interactive elements */
         .MuiFormControlLabel-root {
           transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          pointer-events: none; /* Disable clicks on the label area */
         }
         .MuiFormControlLabel-root:hover {
           transform: translateX(4px);
+        }
+        /* Make only the switch clickable */
+        .MuiFormControlLabel-root .MuiSwitch-root {
+          pointer-events: auto; /* Re-enable clicks on the switch */
+        }
+        /* Ensure the switch thumb and track are clickable */
+        .MuiFormControlLabel-root .MuiSwitch-switchBase,
+        .MuiFormControlLabel-root .MuiSwitch-track {
+          pointer-events: auto;
         }
         
         /* Smooth transitions for all form controls */
