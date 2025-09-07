@@ -135,7 +135,7 @@ const DetailedFeatureComparison: React.FC<DetailedFeatureComparisonProps> = ({
                   gap: 1,
                 }}
               >
-                {plan.icon}
+                <Box sx={{ fontSize: 16, display: 'flex', alignItems: 'center' }}>{plan.icon}</Box>
                 {plan.name}
               </Box>
             ))}

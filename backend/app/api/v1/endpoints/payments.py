@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from app.core.deps import get_current_user, get_db
 from app.core.config import settings
 from app.models.user import User
+from app.models.transaction import Transaction
 from app.services.payment_service import PaymentService
 from app.schemas.payment import CreateSubscriptionRequest, CreateTokenPurchaseRequest, CreatePaymentIntentRequest
 
@@ -630,6 +631,38 @@ async def get_invoices(
     """Get user's invoices"""
     payment_service = PaymentService(db)
     return await payment_service.get_invoices(current_user)
+
+
+@router.get("/transactions")
+async def get_transactions(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get user's transaction history"""
+    print(f"🔍 TRANSACTIONS: Endpoint called for user {current_user.email} (ID: {current_user.id})")
+    
+    transactions = db.query(Transaction).filter(
+        Transaction.user_id == current_user.id
+    ).order_by(Transaction.created_at.desc()).limit(50).all()
+    
+    print(f"🔍 TRANSACTIONS: Found {len(transactions)} transactions for user {current_user.email}")
+    
+    result = [
+        {
+            "id": transaction.id,
+            "type": transaction.transaction_type,
+            "amount": transaction.amount,
+            "currency": transaction.currency,
+            "description": transaction.description,
+            "created_at": transaction.created_at.isoformat(),
+            "metadata": transaction.transaction_metadata
+        }
+        for transaction in transactions
+    ]
+    
+    print(f"🔍 TRANSACTIONS: Returning {len(result)} transactions: {[t['description'] for t in result]}")
+    
+    return result
 
 
 @router.post("/stripe/webhook")

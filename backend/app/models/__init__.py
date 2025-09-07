@@ -13,6 +13,7 @@ from .subscription import Subscription
 from .usage import Usage, UsageLimit
 from .file import File
 from .activity import Activity
+from .transaction import Transaction
 
 __all__ = [
     "Base",
@@ -33,4 +34,5 @@ __all__ = [
     "UsageLimit",
     "File",
     "Activity",
+    "Transaction",
 ] 

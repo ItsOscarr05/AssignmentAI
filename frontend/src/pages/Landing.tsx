@@ -35,7 +35,6 @@ import {
   CodeOutlined,
   DescriptionOutlined,
   DesignServicesOutlined,
-  Diamond,
   DiamondOutlined,
   EmailOutlined,
   FormatQuoteOutlined,
@@ -75,8 +74,8 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 // Lazy load icons
-const EmojiEvents = lazy(() =>
-  import('@mui/icons-material/EmojiEvents').then(module => ({
+const EmojiEventsOutlined = lazy(() =>
+  import('@mui/icons-material/EmojiEventsOutlined').then(module => ({
     default: module.default,
   }))
 );
@@ -85,13 +84,13 @@ const HelpOutline = lazy(() =>
     default: module.default,
   }))
 );
-const LocalOffer = lazy(() =>
-  import('@mui/icons-material/LocalOffer').then(module => ({
+const LocalOfferOutlined = lazy(() =>
+  import('@mui/icons-material/LocalOfferOutlined').then(module => ({
     default: module.default,
   }))
 );
-const Star = lazy(() =>
-  import('@mui/icons-material/Star').then(module => ({
+const StarOutline = lazy(() =>
+  import('@mui/icons-material/StarOutline').then(module => ({
     default: module.default,
   }))
 );
@@ -155,7 +154,7 @@ const plans = [
     name: 'Free',
     price: 0,
     description: 'Perfect starting tool with basic assistance',
-    icon: <LocalOffer />,
+    icon: <LocalOfferOutlined sx={{ fontSize: 48 }} />,
     color: '#2196f3',
     features: [
       'Basic Assignment Analysis',
@@ -169,7 +168,7 @@ const plans = [
     name: 'Plus',
     price: 4.99,
     description: 'Enhanced features for more serious students',
-    icon: <Star />,
+    icon: <StarOutline sx={{ fontSize: 48 }} />,
     color: '#4caf50',
     features: [
       'Advanced Writing Analysis',
@@ -185,7 +184,7 @@ const plans = [
     name: 'Pro',
     price: 9.99,
     description: 'Advanced features for professional students',
-    icon: <Diamond />,
+    icon: <DiamondOutlined sx={{ fontSize: 48 }} />,
     color: '#9c27b0',
     features: [
       'Citation Management',
@@ -200,7 +199,7 @@ const plans = [
     name: 'Max',
     price: 14.99,
     description: 'Ultimate package for power users',
-    icon: <EmojiEvents />,
+    icon: <EmojiEventsOutlined sx={{ fontSize: 48 }} />,
     color: '#ff9800',
     features: [
       'Advanced Analytics Dashboard',
@@ -693,42 +692,42 @@ const Landing: React.FC = () => {
                     title: 'Assignment Expert',
                     description:
                       'Use AssignmentAI for quick and accurate answers to study questions. Essential for students striving for high grades.',
-                    icon: <SchoolOutlined />,
+                    icon: <SchoolOutlined sx={{ fontSize: 48 }} />,
                     color: '#D32F2F',
                   },
                   {
                     title: 'Grammar Guru',
                     description:
                       'Improve your writing with instant grammar, style, and punctuation suggestions. Ideal for crafting flawless essays and emails.',
-                    icon: <Spellcheck />,
+                    icon: <Spellcheck sx={{ fontSize: 48 }} />,
                     color: '#FFC107',
                   },
                   {
                     title: 'Diagram Maker',
                     description:
                       'Easily generate diagrams and charts to visually represent data and concepts, making complex information clear and engaging.',
-                    icon: <InsertChartOutlined />,
+                    icon: <InsertChartOutlined sx={{ fontSize: 48 }} />,
                     color: '#388E3C',
                   },
                   {
                     title: 'Image to Answer',
                     description:
                       'Take a photo of your problem and get the answer instantly – a revolutionary tool for homework and studies.',
-                    icon: <PhotoCameraOutlined />,
+                    icon: <PhotoCameraOutlined sx={{ fontSize: 48 }} />,
                     color: '#F57C00',
                   },
                   {
                     title: 'AI Detector & Humanizer',
                     description:
                       'AssignmentWriter adds a human touch to AI text, making engaging and relatable content for your audience.',
-                    icon: <SmartToyOutlined />,
+                    icon: <SmartToyOutlined sx={{ fontSize: 48 }} />,
                     color: '#7B1FA2',
                   },
                   {
                     title: 'Creative Code Generator',
                     description:
                       'Need help with code? Generate unique codes for your projects and seamlessly integrate them into your products.',
-                    icon: <CodeOutlined />,
+                    icon: <CodeOutlined sx={{ fontSize: 48 }} />,
                     color: '#0288D1',
                   },
                 ].map((feature, index) => (
@@ -1079,21 +1078,21 @@ const Landing: React.FC = () => {
                     title: 'Quick Photo Answers',
                     description:
                       'Snap a photo of your homework and get the answer right away. No more scratching your head over tough questions!',
-                    icon: <PhotoCameraOutlined />,
+                    icon: <PhotoCameraOutlined sx={{ fontSize: 48 }} />,
                     color: '#F57C00',
                   },
                   {
                     title: 'Easy Diagram Maker',
                     description:
                       'Create diagrams for your assignments with just a few clicks. No need for drawing or fancy software.',
-                    icon: <BarChartOutlined />,
+                    icon: <BarChartOutlined sx={{ fontSize: 48 }} />,
                     color: '#388E3C',
                   },
                   {
                     title: 'Math Problem Solver',
                     description:
                       'Stuck on a math problem? AssignmentAI can solve it for free! Simply upload your problem and receive high-quality, precise answers within seconds.',
-                    icon: <CalculateOutlined />,
+                    icon: <CalculateOutlined sx={{ fontSize: 48 }} />,
                     color: '#1976D2',
                   },
                 ].map((feature, index) => (
@@ -1325,25 +1324,25 @@ const Landing: React.FC = () => {
                 {
                   number: '4',
                   label: 'AI Models',
-                  icon: <PsychologyOutlined />,
+                  icon: <PsychologyOutlined sx={{ fontSize: 48 }} />,
                   color: '#D32F2F',
                 },
                 {
                   number: '95%',
                   label: 'Success Rate',
-                  icon: <TrendingUpOutlined />,
+                  icon: <TrendingUpOutlined sx={{ fontSize: 48 }} />,
                   color: '#FF9800',
                 },
                 {
                   number: '24/7',
                   label: 'AI Support',
-                  icon: <SmartToyOutlined />,
+                  icon: <SmartToyOutlined sx={{ fontSize: 48 }} />,
                   color: '#4CAF50',
                 },
                 {
                   number: '10',
                   label: 'Subject Areas',
-                  icon: <LibraryBooksOutlined />,
+                  icon: <LibraryBooksOutlined sx={{ fontSize: 48 }} />,
                   color: '#2196F3',
                 },
               ].map((stat, index) => (

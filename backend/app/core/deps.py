@@ -18,8 +18,11 @@ def get_current_user(
     token: str = Depends(oauth2_scheme)
 ) -> User:
     try:
+        print(f"🔐 AUTH: Token received: {token[:20]}..." if token else "🔐 AUTH: No token provided")
+        
         # Check if this is a mock token (allow in both development and production for testing)
         if token == "mock-access-token-for-development":
+            print("🔐 AUTH: Using mock token for development")
             try:
                 # Create a mock user for development
                 mock_user = User(
@@ -31,18 +34,22 @@ def get_current_user(
                     is_verified=True,
                     is_superuser=False
                 )
+                print(f"🔐 AUTH: Mock user created: {mock_user.email}")
                 return mock_user
             except Exception as e:
+                print(f"🔐 AUTH: Error creating mock user: {e}")
                 raise
         
         payload = verify_token(token)
         if payload is None:
+            print("🔐 AUTH: Token validation failed - invalid token")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Could not validate credentials",
                 headers={"WWW-Authenticate": "Bearer"},
             )
         token_data = TokenPayload(**payload)
+        print(f"🔐 AUTH: Token validated successfully for subject: {token_data.sub}")
     except (jwt.JWTError, ValidationError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

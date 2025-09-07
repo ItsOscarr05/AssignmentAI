@@ -6,20 +6,20 @@ import {
   BlockOutlined,
   Close as CloseIcon,
   DesignServicesOutlined,
-  Diamond,
-  EmojiEvents,
+  DiamondOutlined,
+  EmojiEventsOutlined,
   FlagOutlined,
   FormatQuoteOutlined,
   GppGoodOutlined,
   LibraryBooksOutlined,
-  LocalOffer,
+  LocalOfferOutlined,
   MilitaryTechOutlined,
   PaletteOutlined,
   SchoolOutlined,
   Search,
   Speed,
   Spellcheck,
-  Star,
+  StarOutline,
 } from '@mui/icons-material';
 import { Box, Button, Dialog, DialogContent, Grid, IconButton, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
@@ -58,7 +58,7 @@ const SuccessPopup: React.FC<SuccessPopupProps> = ({ open, onClose, planName = '
     switch (plan.toLowerCase()) {
       case 'free':
         return (
-          <LocalOffer
+          <LocalOfferOutlined
             sx={{
               fontSize: 64,
               color: planColor,
@@ -67,7 +67,7 @@ const SuccessPopup: React.FC<SuccessPopupProps> = ({ open, onClose, planName = '
         );
       case 'plus':
         return (
-          <Star
+          <StarOutline
             sx={{
               fontSize: 64,
               color: planColor,
@@ -76,7 +76,7 @@ const SuccessPopup: React.FC<SuccessPopupProps> = ({ open, onClose, planName = '
         );
       case 'pro':
         return (
-          <Diamond
+          <DiamondOutlined
             sx={{
               fontSize: 64,
               color: planColor,
@@ -85,7 +85,7 @@ const SuccessPopup: React.FC<SuccessPopupProps> = ({ open, onClose, planName = '
         );
       case 'max':
         return (
-          <EmojiEvents
+          <EmojiEventsOutlined
             sx={{
               fontSize: 64,
               color: planColor,
@@ -94,7 +94,7 @@ const SuccessPopup: React.FC<SuccessPopupProps> = ({ open, onClose, planName = '
         );
       default:
         return (
-          <Diamond
+          <DiamondOutlined
             sx={{
               fontSize: 64,
               color: planColor,

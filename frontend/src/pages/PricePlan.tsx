@@ -7,13 +7,13 @@ import {
   CheckCircle,
   Close as CloseIcon,
   DesignServicesOutlined,
-  Diamond,
-  EmojiEvents,
+  DiamondOutlined,
+  EmojiEventsOutlined,
   FormatQuoteOutlined,
   GppGoodOutlined,
   Group,
   LibraryBooksOutlined,
-  LocalOffer,
+  LocalOfferOutlined,
   MoreVert,
   PaletteOutlined,
   PsychologyOutlined,
@@ -22,7 +22,7 @@ import {
   ScienceOutlined,
   SmartToyOutlined,
   Spellcheck,
-  Star,
+  StarOutline,
   TextSnippetOutlined,
 } from '@mui/icons-material';
 import {
@@ -264,7 +264,7 @@ const plans: Plan[] = [
     name: 'Free',
     price: 0,
     description: 'Perfect starting tool with basic assistance',
-    icon: <LocalOffer />,
+    icon: <LocalOfferOutlined sx={{ fontSize: 48 }} />,
     color: '#2196f3',
     features: [
       'Basic Assignment Analysis',
@@ -282,7 +282,7 @@ const plans: Plan[] = [
     name: 'Plus',
     price: 4.99,
     description: 'Enhanced features for more serious students',
-    icon: <Star />,
+    icon: <StarOutline sx={{ fontSize: 48 }} />,
     color: '#4caf50',
     features: [
       'Advanced Writing Analysis',
@@ -302,7 +302,7 @@ const plans: Plan[] = [
     name: 'Pro',
     price: 9.99,
     description: 'Advanced features for professional students',
-    icon: <Diamond />,
+    icon: <DiamondOutlined sx={{ fontSize: 48 }} />,
     color: '#9c27b0',
     features: [
       'Citation Management',
@@ -321,7 +321,7 @@ const plans: Plan[] = [
     name: 'Max',
     price: 14.99,
     description: 'Ultimate package for power users',
-    icon: <EmojiEvents />,
+    icon: <EmojiEventsOutlined sx={{ fontSize: 48 }} />,
     color: '#ff9800',
     features: [
       'Advanced Analytics Dashboard',
@@ -838,7 +838,7 @@ const PricePlan: React.FC = () => {
                       >
                         {plan.popular && (
                           <Chip
-                            icon={<Star />}
+                            icon={<StarOutline />}
                             label="Most Popular"
                             color="primary"
                             sx={{

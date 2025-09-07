@@ -1,15 +1,15 @@
 import {
   AccountCircleOutlined,
   CancelOutlined,
-  Diamond,
+  DiamondOutlined,
   EditOutlined,
   EmailOutlined,
   LightbulbOutlined,
-  LocalOffer,
+  LocalOfferOutlined,
   LocationOnOutlined,
   PersonOutlined,
   SaveOutlined,
-  Star,
+  StarOutline,
   WorkspacePremium,
 } from '@mui/icons-material';
 import {
@@ -864,13 +864,17 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
                               />
                             )}
                             {actualSubscriptionPlan === 'Pro' && (
-                              <Diamond sx={{ fontSize: 20, color: subscriptionBorderColor }} />
+                              <DiamondOutlined
+                                sx={{ fontSize: 20, color: subscriptionBorderColor }}
+                              />
                             )}
                             {actualSubscriptionPlan === 'Plus' && (
-                              <Star sx={{ fontSize: 20, color: subscriptionBorderColor }} />
+                              <StarOutline sx={{ fontSize: 20, color: subscriptionBorderColor }} />
                             )}
                             {actualSubscriptionPlan === 'Free' && (
-                              <LocalOffer sx={{ fontSize: 20, color: subscriptionBorderColor }} />
+                              <LocalOfferOutlined
+                                sx={{ fontSize: 20, color: subscriptionBorderColor }}
+                              />
                             )}
                             <Typography
                               variant="body1"

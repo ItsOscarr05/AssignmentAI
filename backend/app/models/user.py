@@ -46,6 +46,7 @@ class User(Base):
     )
 
     # Relationships - minimal for basic authentication
+    transactions: Mapped[List["Transaction"]] = relationship("Transaction", back_populates="user")
 
 
     def __init__(self, **kwargs):

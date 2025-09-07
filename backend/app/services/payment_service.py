@@ -5,6 +5,7 @@ from datetime import datetime
 from app.core.config import settings
 from app.models.user import User
 from app.models.subscription import Subscription, SubscriptionStatus
+from app.models.transaction import Transaction, TransactionType
 from sqlalchemy.orm import Session
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -82,6 +83,19 @@ class PaymentService:
                 token_limit=plan_details["token_limit"]
             )
             self.db.add(db_subscription)
+            self.db.commit()
+            
+            # Create transaction record for subscription
+            transaction = Transaction(
+                user_id=user.id,
+                transaction_type=TransactionType.SUBSCRIPTION,
+                amount=plan_details["price"],
+                currency="USD",
+                description=f"Subscription - {plan_details['name']}",
+                stripe_subscription_id=subscription.id,
+                transaction_metadata=f'{{"plan_name": "{plan_details["name"]}", "plan_id": "{plan_details["plan_id"]}", "token_limit": {plan_details["token_limit"]}}}'
+            )
+            self.db.add(transaction)
             self.db.commit()
 
             return subscription
@@ -813,6 +827,18 @@ class PaymentService:
                 # Add tokens to the existing subscription
                 subscription.token_limit += token_amount
                 subscription.updated_at = datetime.now()
+                
+                # Create transaction record
+                transaction = Transaction(
+                    user_id=user_id,
+                    transaction_type=TransactionType.TOKEN_PURCHASE,
+                    amount=payment_intent.amount / 100,  # Convert from cents
+                    currency=payment_intent.currency.upper(),
+                    description=f"Token Purchase - {token_amount:,} tokens",
+                    stripe_payment_intent_id=payment_intent_id,
+                    transaction_metadata=f'{{"token_amount": {token_amount}, "price_per_token": {payment_intent.amount / 100 / token_amount}}}'
+                )
+                self.db.add(transaction)
                 self.db.commit()
                 
                 print(f"Successfully added {token_amount} tokens to user {user_id}'s subscription")

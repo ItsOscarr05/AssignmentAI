@@ -1,22 +1,25 @@
 import {
-  Autorenew as AutorenewIcon,
   BarChartOutlined as BarChartOutlinedIcon,
-  Psychology as BrainIcon,
   CalculateOutlined as CalculateIcon,
   CheckCircleOutline as CheckCircleIcon,
   Close as CloseIcon,
   CodeOutlined as CodeIcon,
   CreditCard as CreditCardIcon,
+  CurrencyBitcoin as CurrencyBitcoinIcon,
   DescriptionOutlined as DescriptionIcon,
+  DiamondOutlined as DiamondOutlineIcon,
+  EmojiEventsOutlined as EmojiEventsOutlineIcon,
   History as HistoryIcon,
   HourglassEmpty as HourglassEmptyIcon,
   ImageOutlined as ImageIcon,
   InfoOutlined as InfoIcon,
+  LocalOfferOutlined as LocalOfferOutlineIcon,
   OpenInNew as OpenInNewIcon,
   RateReviewOutlined as RateReviewIcon,
   ReceiptLongOutlined as ReceiptLongOutlinedIcon,
   ReportOutlined as ReportIcon,
   SchoolOutlined as SchoolIcon,
+  StarOutline as StarOutlineIcon,
   TerminalOutlined as TerminalIcon,
 } from '@mui/icons-material';
 import {
@@ -27,7 +30,6 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Divider,
   Grid,
   IconButton,
   InputAdornment,
@@ -192,7 +194,8 @@ const AITokens: React.FC = () => {
       fetchSubscriptionData();
     };
     window.addEventListener('subscription-updated', handler);
-    return () => window.removeEventListener('subscription-updated', handler);
+
+    // Fetch assignments
     api
       .get('/assignments')
       .then(res => {
@@ -204,13 +207,21 @@ const AITokens: React.FC = () => {
         setAssignments(data);
       })
       .catch(() => setAssignments([]));
+
     // Fetch real transactions
+    console.log('AITokens: fetching transactions from /payments/transactions');
     api
-      .get('/transactions')
+      .get('/payments/transactions')
       .then(res => {
+        console.log('AITokens: transactions response:', res.data);
         setTransactions(Array.isArray(res.data) ? res.data : []);
       })
-      .catch(() => setTransactions([]));
+      .catch(error => {
+        console.error('AITokens: failed to fetch transactions:', error);
+        setTransactions([]);
+      });
+
+    return () => window.removeEventListener('subscription-updated', handler);
   }, []);
 
   const fetchSubscriptionData = async () => {
@@ -541,12 +552,6 @@ const AITokens: React.FC = () => {
   };
   const open = Boolean(anchorEl);
 
-  const getTransactionIcon = (desc: string) => {
-    if (/purchase/i.test(desc)) return <CreditCardIcon color="primary" />;
-    if (/refund/i.test(desc)) return <AutorenewIcon color="success" />;
-    return <BrainIcon color="error" />;
-  };
-
   // Group features by category
   const academicFeatures = tokenUsageInfo.filter(info =>
     ['Assignment Analysis', 'Essay Review', 'Image Analysis'].includes(info.title)
@@ -646,12 +651,60 @@ const AITokens: React.FC = () => {
   const getTransactionType = (desc: string) => {
     if (/purchase/i.test(desc)) return 'Purchase';
     if (/refund/i.test(desc)) return 'Refund';
-    return 'AI Service';
+    if (/subscription/i.test(desc)) return 'Subscription';
+    return 'Purchase';
   };
-  const getTypeColor = (type: string) => {
-    if (type === 'Purchase') return 'success.main';
-    if (type === 'Refund') return 'info.main';
-    return 'error.main';
+
+  // Get transaction icon based on type and description
+  const getTransactionIcon = (transaction: any) => {
+    if (transaction.type === 'token_purchase') {
+      return <CurrencyBitcoinIcon />;
+    }
+
+    if (transaction.type === 'subscription') {
+      // Extract plan name from description
+      const planName = transaction.description.replace('Subscription - ', '').toLowerCase();
+      switch (planName) {
+        case 'free':
+          return <LocalOfferOutlineIcon />;
+        case 'plus':
+          return <StarOutlineIcon />;
+        case 'pro':
+          return <DiamondOutlineIcon />;
+        case 'max':
+          return <EmojiEventsOutlineIcon />;
+        default:
+          return <CreditCardIcon />;
+      }
+    }
+
+    return <CreditCardIcon />;
+  };
+
+  // Get transaction color based on type and description
+  const getTransactionColor = (transaction: any) => {
+    if (transaction.type === 'token_purchase') {
+      return '#4a148c'; // Dark purple for token purchases
+    }
+
+    if (transaction.type === 'subscription') {
+      // Extract plan name from description
+      const planName = transaction.description.replace('Subscription - ', '').toLowerCase();
+      switch (planName) {
+        case 'free':
+          return '#2196f3'; // Blue
+        case 'plus':
+          return '#4caf50'; // Green
+        case 'pro':
+          return '#9c27b0'; // Purple
+        case 'max':
+          return '#ff9800'; // Orange
+        default:
+          return '#757575'; // Grey
+      }
+    }
+
+    return '#757575'; // Default grey
   };
 
   return (
@@ -1382,11 +1435,12 @@ const AITokens: React.FC = () => {
             ) : (
               <List>
                 {transactions
-                  .filter(t => /purchase/i.test(t.description))
+                  .filter(t => /purchase|subscription/i.test(t.description))
                   .slice(0, 3)
                   .map((transaction, index) => {
                     const type = getTransactionType(transaction.description);
-                    const color = getTypeColor(type);
+                    const transactionIcon = getTransactionIcon(transaction);
+                    const transactionColor = getTransactionColor(transaction);
                     return (
                       <React.Fragment key={index}>
                         <ListItem
@@ -1400,10 +1454,14 @@ const AITokens: React.FC = () => {
                               theme.palette.mode === 'dark'
                                 ? theme.palette.background.paper
                                 : '#fff',
-                            border: `2px solid ${color}`,
-                            transition: 'box-shadow 0.2s',
+                            border: `2px solid ${transactionColor}`,
+                            transition: 'all 0.2s ease-in-out',
                             '&:hover': {
-                              boxShadow: '0 2px 8px rgba(211,47,47,0.08)',
+                              boxShadow: theme =>
+                                theme.palette.mode === 'dark'
+                                  ? '0 4px 12px rgba(255, 255, 255, 0.1)'
+                                  : '0 2px 8px rgba(211,47,47,0.08)',
+                              transform: 'translateY(-1px)',
                             },
                             mb: 1,
                             borderRadius: 2,
@@ -1416,22 +1474,27 @@ const AITokens: React.FC = () => {
                               width: '6px',
                               borderTopLeftRadius: '6px',
                               borderBottomLeftRadius: '6px',
-                              background:
-                                type === 'Purchase'
-                                  ? '#388e3c'
-                                  : type === 'Refund'
-                                  ? '#1976d2'
-                                  : '#d32f2f',
+                              background: transactionColor,
                             },
                           }}
                         >
                           <ListItemIcon sx={{ minWidth: 40, pl: 1 }}>
-                            {React.cloneElement(getTransactionIcon(transaction.description), {
-                              sx: { color, fontSize: 28 },
+                            {React.cloneElement(transactionIcon, {
+                              sx: { color: transactionColor, fontSize: 28 },
                             })}
                           </ListItemIcon>
                           <ListItemText
-                            primary={transaction.description}
+                            primary={
+                              <Typography
+                                sx={{
+                                  color: theme =>
+                                    theme.palette.mode === 'dark' ? 'white' : 'black',
+                                  fontWeight: 500,
+                                }}
+                              >
+                                {transaction.description}
+                              </Typography>
+                            }
                             secondaryTypographyProps={{ component: 'span' }}
                             secondary={
                               <>
@@ -1439,7 +1502,7 @@ const AITokens: React.FC = () => {
                                   label={type}
                                   size="small"
                                   sx={{
-                                    backgroundColor: color,
+                                    backgroundColor: transactionColor,
                                     color: theme =>
                                       theme.palette.mode === 'dark'
                                         ? theme.palette.background.paper
@@ -1448,41 +1511,41 @@ const AITokens: React.FC = () => {
                                     mr: 1,
                                   }}
                                 />
-                                {formatDistanceToNow(parseISO(transaction.date), {
-                                  addSuffix: true,
-                                })}
+                                <Typography
+                                  component="span"
+                                  sx={{
+                                    color: theme =>
+                                      theme.palette.mode === 'dark'
+                                        ? 'text.secondary'
+                                        : 'text.secondary',
+                                    fontSize: '0.875rem',
+                                  }}
+                                >
+                                  {formatDistanceToNow(parseISO(transaction.created_at), {
+                                    addSuffix: true,
+                                  })}
+                                </Typography>
                               </>
                             }
                           />
                           <Chip
-                            label={`${transaction.tokens > 0 ? '+' : ''}${
-                              transaction.tokens
-                            } tokens`}
+                            label={`$${transaction.amount.toFixed(2)}`}
                             size="medium"
                             sx={{
-                              backgroundColor: theme =>
-                                theme.palette.mode === 'dark'
-                                  ? theme.palette.background.paper
-                                  : '#fff',
-                              color: color,
-                              border: `2px solid ${color}`,
+                              backgroundColor: 'transparent',
+                              color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+                              border: 'none',
                               fontWeight: 700,
-                              fontSize: '1rem',
+                              fontSize: '1.5rem',
                             }}
                           />
                         </ListItem>
-                        {index <
-                          Math.min(
-                            3,
-                            transactions.filter(t => /purchase/i.test(t.description)).length
-                          ) -
-                            1 && <Divider sx={{ borderColor: color, opacity: 0.5, ml: 1.5 }} />}
                       </React.Fragment>
                     );
                   })}
               </List>
             )}
-            {transactions.filter(t => /purchase/i.test(t.description)).length > 3 && (
+            {transactions.filter(t => /purchase|subscription/i.test(t.description)).length > 3 && (
               <Button
                 variant="outlined"
                 fullWidth
@@ -1492,9 +1555,14 @@ const AITokens: React.FC = () => {
                   borderColor: 'red',
                   color: 'red',
                   fontWeight: 600,
+                  backgroundColor: theme =>
+                    theme.palette.mode === 'dark' ? 'transparent' : 'transparent',
                   '&:hover': {
                     borderColor: 'red',
-                    backgroundColor: 'rgba(211, 47, 47, 0.04)',
+                    backgroundColor: theme =>
+                      theme.palette.mode === 'dark'
+                        ? 'rgba(211, 47, 47, 0.1)'
+                        : 'rgba(211, 47, 47, 0.04)',
                   },
                 }}
               >
@@ -1517,24 +1585,43 @@ const AITokens: React.FC = () => {
             >
               {popoverContent && (
                 <Box sx={{ p: 2, minWidth: 220 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  <Typography
+                    variant="subtitle1"
+                    sx={{
+                      fontWeight: 600,
+                      color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+                    }}
+                  >
                     {popoverContent.description}
                   </Typography>
                   <Typography
                     variant="body2"
                     sx={{
-                      color: theme => (theme.palette.mode === 'dark' ? 'text.secondary' : 'black'),
+                      color: theme =>
+                        theme.palette.mode === 'dark' ? 'text.secondary' : 'text.secondary',
                     }}
                   >
                     {popoverContent.date}
                   </Typography>
                   {popoverContent.assignment && (
-                    <Typography variant="body2" sx={{ mt: 1 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        mt: 1,
+                        color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+                      }}
+                    >
                       Assignment: <b>{popoverContent.assignment}</b>
                     </Typography>
                   )}
                   {popoverContent.summary && (
-                    <Typography variant="body2" sx={{ mt: 1 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        mt: 1,
+                        color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+                      }}
+                    >
                       {popoverContent.summary}
                     </Typography>
                   )}
@@ -1544,7 +1631,18 @@ const AITokens: React.FC = () => {
                       target="_blank"
                       size="small"
                       startIcon={<OpenInNewIcon />}
-                      sx={{ mt: 1 }}
+                      sx={{
+                        mt: 1,
+                        color: theme => (theme.palette.mode === 'dark' ? 'white' : 'primary.main'),
+                        borderColor: theme =>
+                          theme.palette.mode === 'dark' ? 'white' : 'primary.main',
+                        '&:hover': {
+                          backgroundColor: theme =>
+                            theme.palette.mode === 'dark'
+                              ? 'rgba(255, 255, 255, 0.1)'
+                              : 'rgba(211, 47, 47, 0.04)',
+                        },
+                      }}
                     >
                       View Full Response
                     </Button>
@@ -1830,10 +1928,11 @@ const AITokens: React.FC = () => {
             <DialogContent sx={{ p: 0, overflow: 'hidden' }}>
               <List sx={{ py: 0, width: '100%' }}>
                 {transactions
-                  .filter(t => /purchase/i.test(t.description))
+                  .filter(t => /purchase|subscription/i.test(t.description))
                   .map((transaction, index) => {
                     const type = getTransactionType(transaction.description);
-                    const color = getTypeColor(type);
+                    const transactionIcon = getTransactionIcon(transaction);
+                    const transactionColor = getTransactionColor(transaction);
                     return (
                       <React.Fragment key={index}>
                         <ListItem
@@ -1848,10 +1947,14 @@ const AITokens: React.FC = () => {
                               theme.palette.mode === 'dark'
                                 ? theme.palette.background.paper
                                 : '#fff',
-                            border: `2px solid ${color}`,
-                            transition: 'box-shadow 0.2s',
+                            border: `2px solid ${transactionColor}`,
+                            transition: 'all 0.2s ease-in-out',
                             '&:hover': {
-                              boxShadow: '0 2px 8px rgba(211,47,47,0.08)',
+                              boxShadow: theme =>
+                                theme.palette.mode === 'dark'
+                                  ? '0 4px 12px rgba(255, 255, 255, 0.1)'
+                                  : '0 2px 8px rgba(211,47,47,0.08)',
+                              transform: 'translateY(-1px)',
                             },
                             mb: 1,
                             mx: 2,
@@ -1865,29 +1968,34 @@ const AITokens: React.FC = () => {
                               width: '6px',
                               borderTopLeftRadius: '6px',
                               borderBottomLeftRadius: '6px',
-                              background:
-                                type === 'Purchase'
-                                  ? '#388e3c'
-                                  : type === 'Refund'
-                                  ? '#1976d2'
-                                  : '#d32f2f',
+                              background: transactionColor,
                             },
                           }}
                         >
                           <ListItemIcon sx={{ minWidth: 40, pl: 1 }}>
-                            {React.cloneElement(getTransactionIcon(transaction.description), {
-                              sx: { color, fontSize: 28 },
+                            {React.cloneElement(transactionIcon, {
+                              sx: { color: transactionColor, fontSize: 28 },
                             })}
                           </ListItemIcon>
                           <ListItemText
-                            primary={transaction.description}
+                            primary={
+                              <Typography
+                                sx={{
+                                  color: theme =>
+                                    theme.palette.mode === 'dark' ? 'white' : 'black',
+                                  fontWeight: 500,
+                                }}
+                              >
+                                {transaction.description}
+                              </Typography>
+                            }
                             secondary={
                               <>
                                 <Chip
                                   label={type}
                                   size="small"
                                   sx={{
-                                    backgroundColor: color,
+                                    backgroundColor: transactionColor,
                                     color: theme =>
                                       theme.palette.mode === 'dark'
                                         ? theme.palette.background.paper
@@ -1896,33 +2004,35 @@ const AITokens: React.FC = () => {
                                     mr: 1,
                                   }}
                                 />
-                                {formatDistanceToNow(parseISO(transaction.date), {
-                                  addSuffix: true,
-                                })}
+                                <Typography
+                                  component="span"
+                                  sx={{
+                                    color: theme =>
+                                      theme.palette.mode === 'dark'
+                                        ? 'text.secondary'
+                                        : 'text.secondary',
+                                    fontSize: '0.875rem',
+                                  }}
+                                >
+                                  {formatDistanceToNow(parseISO(transaction.created_at), {
+                                    addSuffix: true,
+                                  })}
+                                </Typography>
                               </>
                             }
                           />
                           <Chip
-                            label={`${transaction.tokens > 0 ? '+' : ''}${
-                              transaction.tokens
-                            } tokens`}
+                            label={`$${transaction.amount.toFixed(2)}`}
                             size="medium"
                             sx={{
-                              backgroundColor: theme =>
-                                theme.palette.mode === 'dark'
-                                  ? theme.palette.background.paper
-                                  : '#fff',
-                              color: color,
-                              border: `2px solid ${color}`,
+                              backgroundColor: 'transparent',
+                              color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+                              border: 'none',
                               fontWeight: 700,
-                              fontSize: '1rem',
+                              fontSize: '1.5rem',
                             }}
                           />
                         </ListItem>
-                        {index <
-                          transactions.filter(t => /purchase/i.test(t.description)).length - 1 && (
-                          <Divider sx={{ borderColor: color, opacity: 0.5, mx: 2 }} />
-                        )}
                       </React.Fragment>
                     );
                   })}
