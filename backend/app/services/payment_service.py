@@ -626,7 +626,14 @@ class PaymentService:
             raise HTTPException(status_code=400, detail='Invalid signature')
 
         # Handle the event
-        if event['type'] == 'invoice.payment_succeeded':
+        if event['type'] == 'payment_intent.succeeded':
+            payment_intent = event['data']['object']
+            # Check if this is a token purchase
+            if payment_intent.get('metadata', {}).get('type') == 'token_purchase':
+                await self.handle_token_purchase_success(payment_intent['id'])
+            else:
+                self._handle_payment_succeeded(payment_intent)
+        elif event['type'] == 'invoice.payment_succeeded':
             self._handle_payment_succeeded(event['data']['object'])
         elif event['type'] in (
             'customer.subscription.updated',
@@ -683,4 +690,164 @@ class PaymentService:
                 db_subscription.current_period_end = datetime.fromtimestamp(subscription['current_period_end'])
             
             db_subscription.updated_at = datetime.now()
-            self.db.commit() 
+            self.db.commit()
+
+    async def purchase_tokens(self, user: User, token_amount: int, payment_method_id: str) -> Dict[str, Any]:
+        """Purchase additional tokens for the user"""
+        try:
+            # Define pricing tiers ($1.00 per 1K tokens minus 1 cent)
+            pricing_tiers = {
+                1000: 0.99,
+                2000: 1.99,
+                5000: 4.99,
+                10000: 9.99
+            }
+            
+            if token_amount not in pricing_tiers:
+                raise HTTPException(status_code=400, detail="Invalid token amount. Please select 1000, 2000, 5000, or 10000 tokens.")
+            
+            total_cost = pricing_tiers[token_amount]
+            
+            # Create a payment intent for the token purchase
+            payment_intent = stripe.PaymentIntent.create(
+                amount=int(total_cost * 100),  # Convert to cents
+                currency='usd',
+                customer=user.stripe_customer_id or await self.create_customer(user),
+                payment_method=payment_method_id,
+                confirmation_method='manual',
+                confirm=True,
+                return_url='https://assignmentai.com/success',  # You can customize this
+                metadata={
+                    'user_id': str(user.id),
+                    'token_amount': str(token_amount),
+                    'type': 'token_purchase'
+                }
+            )
+            
+            if payment_intent.status == 'succeeded':
+                # Add tokens to user's subscription
+                subscription = self.db.query(Subscription).filter(
+                    Subscription.user_id == user.id,
+                    Subscription.status == SubscriptionStatus.ACTIVE
+                ).first()
+                
+                if subscription:
+                    # Add tokens to the existing subscription
+                    subscription.token_limit += token_amount
+                    subscription.updated_at = datetime.now()
+                    self.db.commit()
+                    
+                    return {
+                        "success": True,
+                        "message": f"Successfully purchased {token_amount:,} tokens for ${total_cost:.2f}",
+                        "payment_intent_id": payment_intent.id,
+                        "tokens_purchased": token_amount,
+                        "total_cost": total_cost,
+                        "new_token_limit": subscription.token_limit
+                    }
+                else:
+                    raise HTTPException(status_code=404, detail="No active subscription found")
+            else:
+                raise HTTPException(status_code=400, detail=f"Payment failed: {payment_intent.status}")
+                
+        except stripe.error.StripeError as e:
+            raise HTTPException(status_code=400, detail=f"Stripe error: {str(e)}")
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Error purchasing tokens: {str(e)}")
+
+    async def create_payment_intent(self, user: User, token_amount: int, amount: float) -> Dict[str, Any]:
+        """Create a payment intent for token purchase"""
+        try:
+            # Validate token amount (minimum 1000 tokens)
+            if token_amount < 1000:
+                raise HTTPException(status_code=400, detail="Minimum token amount is 1000 tokens.")
+            
+            # Calculate expected amount based on new formula: (tokens/1000) - 0.01
+            expected_amount = (token_amount / 1000) - 0.01
+            if abs(amount - expected_amount) > 0.01:  # Allow for small floating point differences
+                raise HTTPException(status_code=400, detail="Amount does not match expected price for token amount.")
+            
+            # Create payment intent using the custom token price ID
+            payment_intent = stripe.PaymentIntent.create(
+                amount=int(amount * 100),  # Convert to cents
+                currency='usd',
+                customer=user.stripe_customer_id or await self.create_customer(user),
+                metadata={
+                    'user_id': str(user.id),
+                    'token_amount': str(token_amount),
+                    'type': 'token_purchase',
+                    'price_id': settings.STRIPE_TOKEN_PRICE_CUSTOM
+                }
+            )
+            
+            return {
+                "client_secret": payment_intent.client_secret,
+                "payment_intent_id": payment_intent.id
+            }
+                
+        except stripe.error.StripeError as e:
+            raise HTTPException(status_code=400, detail=f"Stripe error: {str(e)}")
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Error creating payment intent: {str(e)}")
+
+    async def handle_token_purchase_success(self, payment_intent_id: str) -> None:
+        """Handle successful token purchase by adding tokens to user's subscription"""
+        try:
+            # Retrieve payment intent from Stripe
+            payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id)
+            
+            if payment_intent.status != 'succeeded':
+                return
+            
+            # Get user ID and token amount from metadata
+            user_id = int(payment_intent.metadata.get('user_id'))
+            token_amount = int(payment_intent.metadata.get('token_amount'))
+            
+            # Find user's active subscription
+            subscription = self.db.query(Subscription).filter(
+                Subscription.user_id == user_id,
+                Subscription.status == SubscriptionStatus.ACTIVE
+            ).first()
+            
+            if subscription:
+                # Add tokens to the existing subscription
+                subscription.token_limit += token_amount
+                subscription.updated_at = datetime.now()
+                self.db.commit()
+                
+                print(f"Successfully added {token_amount} tokens to user {user_id}'s subscription")
+            else:
+                print(f"No active subscription found for user {user_id}")
+                
+        except Exception as e:
+            print(f"Error handling token purchase success: {str(e)}")
+
+    async def create_subscription_payment_intent(self, user: User, price_id: str, is_upgrade: bool = False) -> Dict[str, Any]:
+        """Create a payment intent for subscription"""
+        try:
+            # Get plan details
+            plan_details = self._get_plan_details_from_price_id(price_id)
+            
+            # Create payment intent
+            payment_intent = stripe.PaymentIntent.create(
+                amount=int(plan_details['price'] * 100),  # Convert to cents
+                currency='usd',
+                customer=user.stripe_customer_id or await self.create_customer(user),
+                metadata={
+                    'user_id': str(user.id),
+                    'price_id': price_id,
+                    'plan_name': plan_details['name'],
+                    'type': 'subscription',
+                    'is_upgrade': str(is_upgrade)
+                }
+            )
+            
+            return {
+                "client_secret": payment_intent.client_secret,
+                "payment_intent_id": payment_intent.id
+            }
+                
+        except stripe.error.StripeError as e:
+            raise HTTPException(status_code=400, detail=f"Stripe error: {str(e)}")
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Error creating subscription payment intent: {str(e)}") 

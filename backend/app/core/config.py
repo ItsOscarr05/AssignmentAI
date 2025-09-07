@@ -27,8 +27,9 @@ class Settings(BaseSettings):
     STRIPE_PRICE_PLUS: str = os.getenv("STRIPE_PRICE_PLUS", "")
     STRIPE_PRICE_PRO: str = os.getenv("STRIPE_PRICE_PRO", "")
     STRIPE_PRICE_MAX: str = os.getenv("STRIPE_PRICE_MAX", "")
+    STRIPE_TOKEN_PRICE_CUSTOM: str = os.getenv("STRIPE_TOKEN_PRICE_CUSTOM", "")
     
-    @field_validator('STRIPE_PRICE_FREE', 'STRIPE_PRICE_PLUS', 'STRIPE_PRICE_PRO', 'STRIPE_PRICE_MAX')
+    @field_validator('STRIPE_PRICE_FREE', 'STRIPE_PRICE_PLUS', 'STRIPE_PRICE_PRO', 'STRIPE_PRICE_MAX', 'STRIPE_TOKEN_PRICE_CUSTOM')
     @classmethod
     def validate_stripe_price_ids(cls, v: str) -> str:
         if not v:

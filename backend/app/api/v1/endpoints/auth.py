@@ -28,11 +28,8 @@ from app.services.email_service import email_service
 from app.services.security_monitoring import security_monitoring
 from app.core.rate_limit import get_rate_limiter
 from app.database import get_db
-from app.services.session_service import session_service, get_session_service
 from app.core.rate_limit import rate_limit_middleware
 from app.middleware.security import SecurityHeadersMiddleware
-from app.services.session_service import SessionService
-from app.models.session import UserSession
 from app.services.two_factor import TwoFactorAuthService
 from app.models.security import SecurityAlert
 # Simple device fingerprinting fallback
@@ -268,22 +265,10 @@ async def login(
             device_fingerprint = None
             device_risk_analysis = None
         
-        # Create session with device fingerprint
-        session_service = get_session_service(db)
-        device_info = {
-            "ip_address": client_ip,
-            "user_agent": user_agent,
-            "device_fingerprint": device_fingerprint
-        }
-        session_id = await session_service.create_session(
-            user_id=user.id,
-            device_info=device_info
-        )
-        
-        # Create access token with session ID
+        # Create access token
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
-            subject=user.id, expires_delta=access_token_expires, session_id=session_id
+            subject=user.id, expires_delta=access_token_expires
         )
         
         # Create refresh token
@@ -294,7 +279,6 @@ async def login(
         
         # Log successful login
         audit_log.details["success"] = True
-        audit_log.details["session_id"] = str(session_id)
         audit_log.details["requires_2fa"] = False
         db.commit()
         
@@ -351,39 +335,8 @@ async def logout(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Logout user and revoke current session"""
+    """Logout user"""
     try:
-        token = request.headers.get("Authorization", "").split(" ")[1]
-        payload = verify_token(token)
-        
-        # Get session service
-        session_service = get_session_service(db)
-        
-        # Revoke session if session_id is in token
-        if payload and "session_id" in payload:
-            session_id = payload["session_id"]
-            await session_service.revoke_session(current_user.id, session_id)
-            logger.info(f"Revoked session {session_id} for user {current_user.id}")
-        else:
-            # If no session_id in token, try to revoke by device info
-            # This handles cases where the token doesn't have session_id
-            device_info = {
-                "ip_address": request.client.host if request.client else "unknown",
-                "user_agent": request.headers.get("user-agent", ""),
-                "device_fingerprint": "logout_device"  # Fallback fingerprint
-            }
-            
-            success = await session_service.revoke_current_session_by_device(current_user.id, device_info)
-            if success:
-                logger.info(f"Revoked current session by device for user {current_user.id}")
-            else:
-                # Last resort: try to find and revoke the most recent active session
-                active_sessions = await session_service.get_user_sessions(current_user.id)
-                if active_sessions:
-                    most_recent_session = active_sessions[0]
-                    await session_service.revoke_session(current_user.id, most_recent_session["id"])
-                    logger.info(f"Revoked most recent session {most_recent_session['id']} for user {current_user.id}")
-        
         # Log logout event
         from app.models.security import AuditLog
         audit_log = AuditLog(
@@ -391,8 +344,7 @@ async def logout(
             action="logout",
             details={
                 "ip_address": request.client.host,
-                "user_agent": request.headers.get("user-agent", ""),
-                "session_id": payload.get("session_id") if payload else None
+                "user_agent": request.headers.get("user-agent", "")
             },
             ip_address=request.client.host
         )
@@ -407,328 +359,7 @@ async def logout(
             detail="Error during logout"
         )
 
-@router.post("/logout-all")
-async def logout_all(
-    request: Request,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """
-    Logout from all devices (revoke all sessions)
-    """
-    try:
-        session_service = get_session_service(db)
-        
-        # Get current sessions before revoking
-        sessions = await session_service.get_user_sessions(current_user.id)
-        
-        # Revoke all sessions
-        success = await session_service.invalidate_all_sessions(current_user.id)
-        if not success:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Failed to logout from all devices"
-            )
-        
-        # Log logout from all devices
-        from app.models.security import AuditLog
-        audit_log = AuditLog(
-            user_id=current_user.id,
-            action="logout_all_devices",
-            details={
-                "sessions_revoked": len(sessions),
-                "ip_address": request.client.host if request.client else "N/A",
-                "user_agent": request.headers.get("user-agent", "N/A")
-            },
-            ip_address=request.client.host if request.client else "N/A"
-        )
-        db.add(audit_log)
-        db.commit()
-        
-        return {
-            "message": "Logged out from all devices",
-            "sessions_revoked": len(sessions)
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error logging out from all devices for user {current_user.id}: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error logging out from all devices"
-        )
 
-@router.get("/sessions")
-async def get_active_sessions(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """
-    Get all active sessions for the user with enhanced device information
-    """
-    try:
-        session_service = get_session_service(db)
-        sessions = await session_service.get_user_sessions(current_user.id)
-        
-        # Add current session identification
-        current_session_id = None
-        # In a real implementation, you'd get this from the JWT token
-        # For now, we'll mark the most recent session as current
-        
-        for session in sessions:
-            if current_session_id is None:
-                session["is_current"] = True
-                current_session_id = session["id"]
-            else:
-                session["is_current"] = False
-        
-        return {
-            "sessions": sessions,
-            "total_sessions": len(sessions),
-            "current_session_id": current_session_id
-        }
-        
-    except Exception as e:
-        logger.error(f"Error getting sessions for user {current_user.id}: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error retrieving sessions"
-        )
-
-@router.delete("/sessions/{session_id}")
-async def revoke_session(
-    session_id: str,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """
-    Revoke a specific session
-    """
-    try:
-        session_service = get_session_service(db)
-        
-        # Check if session exists and belongs to user
-        session = await session_service.validate_session(session_id)
-        if not session or session.user_id != current_user.id:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Session not found"
-            )
-        
-        # Revoke the session
-        success = await session_service.revoke_session(current_user.id, session_id)
-        if not success:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Failed to revoke session"
-            )
-        
-        # Log session revocation
-        from app.models.security import AuditLog
-        audit_log = AuditLog(
-            user_id=current_user.id,
-            action="session_revoked",
-            details={
-                "session_id": session_id,
-                "device_info": session.device_info
-            },
-            ip_address="N/A"  # Would be available in request context
-        )
-        db.add(audit_log)
-        db.commit()
-        
-        return {"message": "Session revoked successfully"}
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error revoking session {session_id} for user {current_user.id}: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error revoking session"
-        )
-
-@router.get("/sessions/{session_id}/analytics")
-async def get_session_analytics(
-    session_id: str,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """Get analytics for a specific session"""
-    try:
-        session_service = get_session_service(db)
-        
-        # Verify session exists and belongs to user
-        session = await session_service.validate_session(session_id)
-        if not session or session.user_id != current_user.id:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Session not found"
-            )
-        
-        # Get analytics for the specific session
-        analytics = session_service.get_session_analytics_by_id(session_id)
-        if not analytics:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Session analytics not found"
-            )
-        
-        return analytics
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error getting analytics for session {session_id}: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error retrieving session analytics"
-        )
-
-@router.get("/sessions/analytics")
-async def get_user_session_analytics(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """Get analytics for all sessions of current user"""
-    try:
-        session_service = get_session_service(db)
-        analytics = await session_service.get_session_analytics(current_user.id)
-        
-        return {
-            "user_id": current_user.id,
-            "total_sessions": analytics.get("total_sessions", 0),
-            "active_sessions": analytics.get("active_sessions", 0),
-            "session_analytics": analytics.get("session_analytics", []),
-            "summary": {
-                "total_duration": analytics.get("total_duration", 0),
-                "average_session_duration": analytics.get("average_session_duration", 0),
-                "most_active_device": analytics.get("most_active_device", "Unknown")
-            }
-        }
-        
-    except Exception as e:
-        logger.error(f"Error getting session analytics for user {current_user.id}: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error retrieving session analytics"
-        )
-
-@router.post("/sessions/{session_id}/activity")
-async def track_session_activity(
-    session_id: str,
-    request: Request,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """Track activity for a specific session"""
-    try:
-        # Parse activity data
-        if request.headers.get("content-type", "").startswith("application/json"):
-            activity_data = await request.json()
-        else:
-            activity_data = await request.form()
-        
-        session_service = get_session_service(db)
-        
-        # Verify session exists and belongs to user
-        session = await session_service.validate_session(session_id)
-        if not session or session.user_id != current_user.id:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Session not found"
-            )
-        
-        # Track the activity
-        activity_type = activity_data.get("activity_type", "unknown")
-        details = activity_data.get("details", {})
-        
-        session_service.track_session_activity(
-            session_id=session_id,
-            activity_type=activity_type,
-            details=details
-        )
-        
-        return {
-            "message": "Activity tracked successfully",
-            "session_id": session_id,
-            "activity_type": activity_type
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error tracking activity for session {session_id}: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error tracking session activity"
-        )
-
-@router.post("/sessions/cleanup")
-async def cleanup_expired_sessions(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """Clean up expired sessions for the current user"""
-    try:
-        session_service = get_session_service(db)
-        
-        # Clean up expired sessions
-        cleaned_count = await session_service.cleanup_expired_sessions()
-        
-        return {
-            "message": "Session cleanup completed",
-            "sessions_cleaned": cleaned_count
-        }
-        
-    except Exception as e:
-        logger.error(f"Error cleaning up sessions for user {current_user.id}: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error cleaning up sessions"
-        )
-
-@router.get("/sessions/status")
-async def get_session_status(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """Get current session status and statistics"""
-    try:
-        session_service = get_session_service(db)
-        
-        # Get active sessions
-        sessions = await session_service.get_user_sessions(current_user.id)
-        
-        # Calculate statistics
-        total_sessions = len(sessions)
-        active_sessions = len([s for s in sessions if s.get("is_active", True)])
-        
-        # Get session analytics
-        analytics = await session_service.get_session_analytics(current_user.id)
-        
-        return {
-            "user_id": current_user.id,
-            "session_stats": {
-                "total_sessions": total_sessions,
-                "active_sessions": active_sessions,
-                "expired_sessions": total_sessions - active_sessions
-            },
-            "analytics_summary": {
-                "total_duration": analytics.get("total_duration", 0),
-                "average_session_duration": analytics.get("average_session_duration", 0),
-                "most_active_device": analytics.get("most_active_device", "Unknown")
-            },
-            "last_activity": analytics.get("last_activity", None)
-        }
-        
-    except Exception as e:
-        logger.error(f"Error getting session status for user {current_user.id}: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error retrieving session status"
-        )
 
 # @router.post("/test-token", response_model=schemas.User)
 # def test_token(current_user: models.User = Depends(get_current_user)) -> Any:
@@ -1377,13 +1008,7 @@ async def verify_2fa_code(
                     detail="Invalid 2FA code"
                 )
         
-        # Create session after successful 2FA verification
-        session_service = get_session_service(db)
-        session = await session_service.create_session(
-            user_id=current_user.id,
-            ip_address=request.client.host if request.client else "N/A",
-            user_agent=request.headers.get("user-agent", "N/A")
-        )
+        # Session management removed - using JWT tokens only
         
         # Create access token
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -1405,8 +1030,7 @@ async def verify_2fa_code(
             details={
                 "ip_address": request.client.host if request.client else "N/A",
                 "user_agent": request.headers.get("user-agent", "N/A"),
-                "used_backup_code": is_backup_code,
-                "session_id": str(session.id)
+                "used_backup_code": is_backup_code
             },
             ip_address=request.client.host if request.client else "N/A"
         )

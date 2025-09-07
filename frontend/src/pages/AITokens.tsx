@@ -43,6 +43,8 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -55,10 +57,16 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import TokenPurchaseForm from '../components/payment/TokenPurchaseForm';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { useTokenUsage } from '../hooks/useTokenUsage';
 import { api } from '../services/api';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
+
+const stripePromise = loadStripe(
+  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ||
+    'pk_test_51RYem5BGydvd9sZlgu1k8rVc5y13Y0uVJ1sTjdDe3Ao2CLwgcSiG03GYxtYBLrz1tjN15d1PK38QAqnkf9YMy3HZ00hap3ZOqt'
+);
 
 interface Subscription {
   id: string;
@@ -67,6 +75,7 @@ interface Subscription {
   current_period_end: string;
   cancel_at_period_end: boolean;
   token_limit: number;
+  ai_model?: string;
 }
 
 const AITokens: React.FC = () => {
@@ -78,15 +87,71 @@ const AITokens: React.FC = () => {
   const guideRef = React.useRef<HTMLDivElement>(null);
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [popoverContent, setPopoverContent] = React.useState<any>(null);
-  const [calcTokens, setCalcTokens] = React.useState(0);
-  const [calcCost, setCalcCost] = React.useState(0);
+  const calculateCost = (tokens: number) => tokens / 1000 - 0.01; // $1.00 per 1,000 tokens minus 1 cent
+  const [calcTokens, setCalcTokens] = React.useState(1000);
+  const [calcCost, setCalcCost] = React.useState(calculateCost(1000));
   const [modalOpen, setModalOpen] = React.useState(false);
   const [showFeaturesConfirmation, setShowFeaturesConfirmation] = React.useState(false);
   const navigate = useNavigate();
   const [assignments, setAssignments] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [tokenPurchaseDialogOpen, setTokenPurchaseDialogOpen] = useState(false);
+  const [selectedTokenAmount, setSelectedTokenAmount] = useState(0);
+  const [purchaseSuccess, setPurchaseSuccess] = useState(false);
+  const [paymentIntentClientSecret, setPaymentIntentClientSecret] = useState<string | null>(null);
+  const [creatingPaymentIntent, setCreatingPaymentIntent] = useState(false);
 
   const { totalTokens, usedTokens, remainingTokens } = useTokenUsage(subscription);
+
+  // Token purchase handlers
+  const handleTokenAmountSelect = (amount: number) => {
+    setSelectedTokenAmount(amount);
+    setCalcTokens(amount);
+    setCalcCost(calculateCost(amount));
+  };
+
+  const handleTokenPurchaseClick = async () => {
+    if (selectedTokenAmount > 0) {
+      setCreatingPaymentIntent(true);
+      try {
+        // Calculate cost using the new formula: (tokens/1000) - 0.01
+        const totalCost = calculateCost(selectedTokenAmount);
+
+        // Create payment intent
+        const response = await api.post('/payments/create-payment-intent', {
+          token_amount: selectedTokenAmount,
+          amount: totalCost,
+        });
+
+        setPaymentIntentClientSecret(response.data.client_secret);
+        setTokenPurchaseDialogOpen(true);
+        setPurchaseSuccess(false);
+      } catch (error: any) {
+        console.error('Error creating payment intent:', error);
+        // Handle error - maybe show a toast or alert
+      } finally {
+        setCreatingPaymentIntent(false);
+      }
+    }
+  };
+
+  const handleTokenPurchaseSuccess = () => {
+    setPurchaseSuccess(true);
+    setTokenPurchaseDialogOpen(false);
+    // Refresh subscription data
+    fetchSubscriptionData();
+  };
+
+  const handleTokenPurchaseError = (error: string) => {
+    console.error('Token purchase error:', error);
+    // You could add a toast notification here
+  };
+
+  const handleTokenPurchaseDialogClose = () => {
+    setTokenPurchaseDialogOpen(false);
+    setPaymentIntentClientSecret(null);
+    setCreatingPaymentIntent(false);
+  };
   const mapPlanToLimit = (planId?: string): number | undefined => {
     if (!planId) return undefined;
     if (planId === 'price_test_free') return 30000;
@@ -507,11 +572,61 @@ const AITokens: React.FC = () => {
     }
   };
 
-  const costPerToken = 1 / 2000; // $1 per 2,000 tokens
+  // Get AI model display name based on subscription
+  const getAIModelDisplayName = () => {
+    if (!subscription?.ai_model) return 'GPT-4';
+
+    switch (subscription.ai_model) {
+      case 'gpt-5-nano':
+        return 'GPT-5 Nano';
+      case 'gpt-4.1-mini':
+        return 'GPT-4.1 Mini';
+      case 'gpt-4-turbo':
+        return 'GPT-4 Turbo';
+      case 'gpt-5':
+        return 'GPT-5';
+      default:
+        return subscription.ai_model;
+    }
+  };
   const handleCalcChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value, 10) || 0;
+    const inputValue = e.target.value;
+
+    // Allow empty string for user to clear and retype
+    if (inputValue === '') {
+      setCalcTokens(0);
+      setCalcCost(0);
+      setSelectedTokenAmount(0); // Grey out purchase button when empty
+      return;
+    }
+
+    // Only allow numbers
+    const numericValue = inputValue.replace(/[^0-9]/g, '');
+
+    // Prevent typing more than 7 digits
+    if (numericValue.length > 7) {
+      return; // Don't update state if more than 7 digits
+    }
+
+    const value = parseInt(numericValue, 10) || 0;
+
+    // Don't clamp while typing - let user type freely (but respect 7-digit limit)
     setCalcTokens(value);
-    setCalcCost(value * costPerToken);
+    setCalcCost(calculateCost(value));
+    setSelectedTokenAmount(value); // Update selected amount for purchase button
+  };
+
+  const handleCalcBlur = () => {
+    // Apply validation only when user is done typing (on blur)
+    const minTokens = 1000;
+    const maxTokens = 1000000; // 7 figures cap
+
+    // Clamp value between min and max
+    const clampedValue = Math.max(minTokens, Math.min(calcTokens, maxTokens));
+
+    setCalcTokens(clampedValue);
+    setCalcCost(calculateCost(clampedValue));
+    setSelectedTokenAmount(clampedValue); // Update selected amount for purchase button
   };
 
   // Red outline style
@@ -1025,7 +1140,7 @@ const AITokens: React.FC = () => {
                 fontWeight: 'normal',
               }}
             >
-              Token Cost Calculator ($1 per 2,000 tokens)
+              Token Cost Calculator
             </Typography>
             <Box
               sx={{
@@ -1065,13 +1180,16 @@ const AITokens: React.FC = () => {
                     textAlign: 'center',
                   }}
                 >
-                  AI Model: GPT 5-nano
+                  AI Model: {getAIModelDisplayName()}
                 </Typography>
                 <TextField
-                  label="Tokens"
-                  type="number"
-                  value={calcTokens}
+                  label="Custom Token Amount"
+                  type="text"
+                  value={calcTokens || ''}
                   onChange={handleCalcChange}
+                  onBlur={handleCalcBlur}
+                  placeholder="1000"
+                  helperText="Min: 1,000 tokens | Max: 1,000,000 tokens"
                   sx={{
                     width: { xs: '100%', md: 320 },
                     mb: 1,
@@ -1088,9 +1206,24 @@ const AITokens: React.FC = () => {
                         borderColor: 'red',
                       },
                     },
+                    '& .MuiInputLabel-root': {
+                      color: 'red',
+                      '&.Mui-focused': {
+                        color: 'red',
+                      },
+                    },
+                    '& .MuiFormHelperText-root': {
+                      color: theme =>
+                        theme.palette.mode === 'dark'
+                          ? 'rgba(255, 255, 255, 0.7)'
+                          : 'rgba(0, 0, 0, 0.6)',
+                      fontSize: '0.75rem',
+                      textAlign: 'center',
+                    },
                   }}
                   inputProps={{
-                    min: 0,
+                    inputMode: 'numeric',
+                    pattern: '[0-9]*',
                     style: { fontSize: '1.25rem', height: 48, padding: '8px' },
                   }}
                   InputProps={{
@@ -1125,6 +1258,7 @@ const AITokens: React.FC = () => {
                   minWidth: 0,
                   flex: 1,
                   width: { xs: '100%', md: 'auto' },
+                  mx: 'auto',
                 }}
               >
                 <Typography
@@ -1151,11 +1285,12 @@ const AITokens: React.FC = () => {
                   {[1000, 2000, 5000, 10000].map(amount => (
                     <Button
                       key={amount}
-                      variant="outlined"
+                      variant={selectedTokenAmount === amount ? 'contained' : 'outlined'}
                       size="small"
                       sx={{
                         borderColor: 'red',
-                        color: 'red',
+                        color: selectedTokenAmount === amount ? 'white' : 'red',
+                        backgroundColor: selectedTokenAmount === amount ? 'red' : 'transparent',
                         minWidth: 0,
                         px: 2,
                         py: 0.5,
@@ -1163,10 +1298,7 @@ const AITokens: React.FC = () => {
                         fontWeight: 700,
                         width: '100%',
                       }}
-                      onClick={() => {
-                        setCalcTokens(amount);
-                        setCalcCost(amount * costPerToken);
-                      }}
+                      onClick={() => handleTokenAmountSelect(amount)}
                     >
                       {amount.toLocaleString()}
                     </Button>
@@ -1176,6 +1308,7 @@ const AITokens: React.FC = () => {
                   variant="contained"
                   color="error"
                   size="small"
+                  disabled={selectedTokenAmount < 1000 || creatingPaymentIntent}
                   sx={{
                     mt: 1,
                     width: '100%',
@@ -1184,9 +1317,17 @@ const AITokens: React.FC = () => {
                     boxShadow: 2,
                     py: 0.5,
                     maxWidth: { xs: '100%', md: 340 },
+                    opacity: selectedTokenAmount === 0 ? 0.5 : 1,
                   }}
+                  onClick={handleTokenPurchaseClick}
                 >
-                  Purchase
+                  {creatingPaymentIntent
+                    ? 'Creating Payment Form...'
+                    : selectedTokenAmount > 0
+                    ? `Purchase ${selectedTokenAmount.toLocaleString()} Tokens - $${calcCost.toFixed(
+                        2
+                      )}`
+                    : 'Select Token Amount'}
                 </Button>
               </Box>
             </Box>
@@ -1899,6 +2040,250 @@ const AITokens: React.FC = () => {
                 Continue
               </Button>
             </Box>
+          </Box>
+        </Box>
+      )}
+
+      {/* Token Purchase Box */}
+      {tokenPurchaseDialogOpen && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1300,
+          }}
+          onClick={handleTokenPurchaseDialogClose}
+        >
+          <Box
+            sx={{
+              backgroundColor: theme =>
+                theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+              border: '2px solid red',
+              borderRadius: 2,
+              maxWidth: '600px',
+              width: '90%',
+              maxHeight: '90vh',
+              overflow: 'auto',
+              position: 'relative',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <Box
+              sx={{
+                p: 2,
+                borderBottom: '1px solid #e0e0e0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <Typography
+                variant="h6"
+                sx={{ color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black') }}
+              >
+                Purchase {selectedTokenAmount.toLocaleString()} Tokens
+              </Typography>
+              <IconButton
+                aria-label="Close"
+                onClick={handleTokenPurchaseDialogClose}
+                sx={{
+                  color: theme => theme.palette.grey[500],
+                }}
+              >
+                <CloseIcon />
+              </IconButton>
+            </Box>
+
+            {/* Content */}
+            <Box sx={{ p: 2 }}>
+              {selectedTokenAmount > 0 && paymentIntentClientSecret && (
+                <Elements
+                  stripe={stripePromise}
+                  options={{ clientSecret: paymentIntentClientSecret }}
+                >
+                  <TokenPurchaseForm
+                    tokenAmount={selectedTokenAmount}
+                    onSuccess={handleTokenPurchaseSuccess}
+                    onError={handleTokenPurchaseError}
+                  />
+                </Elements>
+              )}
+              {creatingPaymentIntent && (
+                <Box sx={{ p: 4, textAlign: 'center' }}>
+                  <Typography>Creating payment form...</Typography>
+                </Box>
+              )}
+            </Box>
+          </Box>
+        </Box>
+      )}
+
+      {/* Purchase Success Box */}
+      {purchaseSuccess && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+          }}
+          onClick={() => setPurchaseSuccess(false)}
+        >
+          <Box
+            sx={{
+              backgroundColor: theme =>
+                theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+              border: theme => `2px solid ${theme.palette.mode === 'dark' ? '#ff4444' : 'red'}`,
+              borderRadius: 2,
+              p: 4,
+              maxWidth: 400,
+              width: '90%',
+              textAlign: 'center',
+              boxShadow: 3,
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <Box sx={{ position: 'relative', display: 'inline-block', mb: 2 }}>
+              <CheckCircleIcon sx={{ fontSize: 64, color: 'green' }} />
+              {/* Confetti Animation */}
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  width: 100,
+                  height: 100,
+                  pointerEvents: 'none',
+                  '& .confetti': {
+                    position: 'absolute',
+                    width: 8,
+                    height: 8,
+                    backgroundColor: theme => (theme.palette.mode === 'dark' ? '#ff4444' : 'red'),
+                    animation: 'confetti-fall 1.5s ease-out forwards',
+                    '&:nth-of-type(1)': {
+                      top: '50%',
+                      left: '50%',
+                      animationDelay: '0s',
+                      backgroundColor: '#ff4444',
+                      transform: 'rotate(0deg)',
+                    },
+                    '&:nth-of-type(2)': {
+                      top: '50%',
+                      left: '50%',
+                      animationDelay: '0.1s',
+                      backgroundColor: '#44ff44',
+                      transform: 'rotate(45deg)',
+                    },
+                    '&:nth-of-type(3)': {
+                      top: '50%',
+                      left: '50%',
+                      animationDelay: '0.2s',
+                      backgroundColor: '#4444ff',
+                      transform: 'rotate(90deg)',
+                    },
+                    '&:nth-of-type(4)': {
+                      top: '50%',
+                      left: '50%',
+                      animationDelay: '0.3s',
+                      backgroundColor: '#ffff44',
+                      transform: 'rotate(135deg)',
+                    },
+                    '&:nth-of-type(5)': {
+                      top: '50%',
+                      left: '50%',
+                      animationDelay: '0.4s',
+                      backgroundColor: '#ff44ff',
+                      transform: 'rotate(180deg)',
+                    },
+                    '&:nth-of-type(6)': {
+                      top: '50%',
+                      left: '50%',
+                      animationDelay: '0.5s',
+                      backgroundColor: '#44ffff',
+                      transform: 'rotate(225deg)',
+                    },
+                    '&:nth-of-type(7)': {
+                      top: '50%',
+                      left: '50%',
+                      animationDelay: '0.6s',
+                      backgroundColor: '#ff8844',
+                      transform: 'rotate(270deg)',
+                    },
+                    '&:nth-of-type(8)': {
+                      top: '50%',
+                      left: '50%',
+                      animationDelay: '0.7s',
+                      backgroundColor: '#8844ff',
+                      transform: 'rotate(315deg)',
+                    },
+                  },
+                  '@keyframes confetti-fall': {
+                    '0%': {
+                      transform: 'translate(0, 0) rotate(0deg) scale(1)',
+                      opacity: 1,
+                    },
+                    '100%': {
+                      transform:
+                        'translate(var(--random-x, 0), var(--random-y, 0)) rotate(720deg) scale(0)',
+                      opacity: 0,
+                    },
+                  },
+                }}
+              >
+                {[...Array(8)].map((_, i) => (
+                  <Box
+                    key={i}
+                    className="confetti"
+                    sx={{
+                      '--random-x': `${(Math.random() - 0.5) * 200}px`,
+                      '--random-y': `${(Math.random() - 0.5) * 200}px`,
+                    }}
+                  />
+                ))}
+              </Box>
+            </Box>
+            <Typography
+              variant="h5"
+              sx={{
+                mb: 2,
+                color: theme => (theme.palette.mode === 'dark' ? 'white' : 'green'),
+              }}
+            >
+              Purchase Successful!
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{
+                mb: 3,
+                color: theme => (theme.palette.mode === 'dark' ? 'white' : 'inherit'),
+              }}
+            >
+              You have successfully purchased {selectedTokenAmount.toLocaleString()} tokens. Your
+              token limit has been updated.
+            </Typography>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => setPurchaseSuccess(false)}
+              sx={{ mt: 2 }}
+            >
+              Continue
+            </Button>
           </Box>
         </Box>
       )}

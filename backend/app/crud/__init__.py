@@ -5,7 +5,6 @@ from .submission import get_sync as get_submission, get_submissions_sync as get_
 from .class_crud import get_class, get_classes, create_class, update_class, delete_class
 from .log import create_log, get_logs, get_log, delete_log, get_logs_sync, delete_log_sync
 from .activity import get_recent
-from .session import session
 
 __all__ = [
     "get_user",
@@ -44,5 +43,4 @@ __all__ = [
     "get_logs_sync",
     "delete_log_sync",
     "get_recent",
-    "session"
 ] 

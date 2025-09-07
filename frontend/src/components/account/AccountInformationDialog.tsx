@@ -59,7 +59,6 @@ interface AccountInformationDialogProps {
     lastPasswordChange: string | null;
     lastSecurityAudit: string | null;
     securityScore: number;
-    activeSessions: number;
   };
   subscription: {
     plan: string;
@@ -549,8 +548,8 @@ const AccountInformationDialog: React.FC<AccountInformationDialogProps> = ({
                       justifyContent: 'center',
                     }}
                   >
-                    <Typography variant="h4" color="info.main" fontWeight="bold" sx={{ mb: 1 }}>
-                      {securitySettings.activeSessions}
+                    <Typography variant="h4" color="success.main" fontWeight="bold" sx={{ mb: 1 }}>
+                      {securitySettings.securityScore}
                     </Typography>
                     <Typography
                       variant="body2"
@@ -558,16 +557,11 @@ const AccountInformationDialog: React.FC<AccountInformationDialogProps> = ({
                       fontWeight="medium"
                       sx={{ mb: 2 }}
                     >
-                      Active Sessions
+                      Security Score
                     </Typography>
                   </Box>
                   <Box sx={{ mt: 'auto' }}>
-                    <Chip
-                      label={securitySettings.activeSessions === 1 ? 'Secure' : 'Multiple'}
-                      size="small"
-                      color={securitySettings.activeSessions === 1 ? 'success' : 'warning'}
-                      variant="outlined"
-                    />
+                    <Chip label="Protected" size="small" color="success" variant="outlined" />
                   </Box>
                 </Box>
               </Grid>

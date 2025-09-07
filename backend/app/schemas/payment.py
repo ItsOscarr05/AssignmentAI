@@ -5,6 +5,14 @@ class CreateSubscriptionRequest(BaseModel):
     price_id: str
     payment_method_id: str
 
+class CreateTokenPurchaseRequest(BaseModel):
+    token_amount: int
+    payment_method_id: str
+
+class CreatePaymentIntentRequest(BaseModel):
+    token_amount: int
+    amount: float
+
 class SubscriptionResponse(BaseModel):
     id: str
     status: str

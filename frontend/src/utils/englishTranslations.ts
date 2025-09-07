@@ -149,7 +149,6 @@ export const t = (key: string): string => {
     'settings.privacy.securityInformation': 'Security Information',
     'settings.privacy.passwordStrength': 'Password Strength',
     'settings.privacy.lastPasswordChange': 'Last Password Change',
-    'settings.privacy.activeSessions': 'Active Sessions',
     'settings.privacy.accountManagement': 'Account Management',
     'settings.privacy.downloadMyData': 'Download My Data',
     'settings.privacy.deleteAccount': 'Delete Account',

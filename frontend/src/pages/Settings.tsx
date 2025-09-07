@@ -90,7 +90,6 @@ import { useFontSize } from '../contexts/FontSizeContext';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { preferences, users } from '../services/api';
 import securityService from '../services/SecurityService';
-import sessionService from '../services/sessionService';
 import UserService from '../services/userService';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 import { useTheme as useAppTheme } from '../theme/ThemeProvider';
@@ -243,7 +242,6 @@ const Settings: React.FC = () => {
     passwordStrength: 'strong',
     lastPasswordChange: null as string | null,
     lastSecurityAudit: null as string | null,
-    activeSessions: 1,
     securityScore: 0, // Start at 0, will be updated from backend
   });
 
@@ -458,9 +456,6 @@ const Settings: React.FC = () => {
     // Auto-lock
     if (privacySettings.autoLock) score += 10;
 
-    // Session management
-    if (securitySettings.activeSessions <= 2) score += 10;
-
     return Math.min(100, score);
   };
 
@@ -482,7 +477,6 @@ const Settings: React.FC = () => {
       enabledFeatures: enabledFeatures.join(', ') || 'None',
       securityLevel,
       passwordStrength: securitySettings.passwordStrength,
-      activeSessions: securitySettings.activeSessions,
       lastAudit: securitySettings.lastSecurityAudit,
     };
   };
@@ -499,7 +493,6 @@ const Settings: React.FC = () => {
     privacySettings.shareAnalytics,
     securitySettings.securityScore,
     securitySettings.passwordStrength,
-    securitySettings.activeSessions,
     securitySettings.lastSecurityAudit,
   ]);
 
@@ -519,14 +512,6 @@ const Settings: React.FC = () => {
         text: 'Strengthen your password with symbols and numbers',
         priority: 'high',
         color: 'error.main',
-      });
-    }
-
-    if (securitySettings.activeSessions > 3) {
-      recommendations.push({
-        text: 'Review and close unused active sessions',
-        priority: 'medium',
-        color: 'warning.main',
       });
     }
 
@@ -993,7 +978,6 @@ const Settings: React.FC = () => {
     privacySettings.twoFactorAuth,
     privacySettings.biometricLogin,
     privacySettings.autoLock,
-    securitySettings.activeSessions,
     securitySettings.passwordStrength,
   ]); // Watch for changes in relevant settings
 
@@ -1349,35 +1333,12 @@ const Settings: React.FC = () => {
       loadSavedSettings();
     });
 
-    // Load session data
-    loadSessionData();
-
     // Load security data
     loadSecurityData();
 
     // Load user data for account information
     loadUserData();
   }, []);
-
-  // Load session data from backend
-  const loadSessionData = async () => {
-    try {
-      const countResponse = await sessionService.getActiveSessionCount();
-
-      // Update security settings with real session count
-      setSecuritySettings(prev => ({
-        ...prev,
-        activeSessions: countResponse.active_sessions,
-      }));
-    } catch (error) {
-      console.error('Failed to load session data:', error);
-      // Fall back to default values
-      setSecuritySettings(prev => ({
-        ...prev,
-        activeSessions: 1,
-      }));
-    }
-  };
 
   // Load security data from backend
   const loadSecurityData = async () => {
@@ -1393,7 +1354,6 @@ const Settings: React.FC = () => {
           lastPasswordChange: securityInfo.last_password_change,
           lastSecurityAudit: securityInfo.last_security_audit,
           securityScore: securityInfo.security_score,
-          activeSessions: securityInfo.active_sessions,
         };
 
         return newSettings;
@@ -3443,12 +3403,8 @@ const Settings: React.FC = () => {
                         <VerifiedUserOutlined />
                       </ListItemIcon>
                       <ListItemText
-                        primary="Active Sessions"
-                        secondary={
-                          securitySettings.activeSessions === 1
-                            ? '1 Active Session'
-                            : `${securitySettings.activeSessions} Active Sessions`
-                        }
+                        primary="Security Status"
+                        secondary="Account Protected"
                         primaryTypographyProps={{
                           sx: { fontSize: { xs: '0.875rem', md: '1rem' } },
                         }}
@@ -3521,12 +3477,7 @@ const Settings: React.FC = () => {
 
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                         <VerifiedUserOutlined fontSize="small" color="action" />
-                        <Typography variant="body2">
-                          Sessions:{' '}
-                          {securitySummary.activeSessions === 1
-                            ? '1 Active Session'
-                            : `${securitySummary.activeSessions} Active Sessions`}
-                        </Typography>
+                        <Typography variant="body2">Security: Account Protected</Typography>
                       </Box>
                       <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 0.5 }}>
                         <CheckCircleOutlined fontSize="small" color="action" sx={{ mt: 0.5 }} />
@@ -4105,10 +4056,8 @@ const Settings: React.FC = () => {
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2">Session Management</Typography>
-                  <Typography variant="body2">
-                    {securitySettings.activeSessions <= 2 ? '10/10' : '5/10'}
-                  </Typography>
+                  <Typography variant="body2">Account Security</Typography>
+                  <Typography variant="body2">10/10</Typography>
                 </Box>
                 <Divider sx={{ my: 1 }} />
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>

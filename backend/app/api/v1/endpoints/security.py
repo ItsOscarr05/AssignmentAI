@@ -6,12 +6,9 @@ from app.database import get_db
 from app.core.deps import get_current_user
 from app.models.user import User
 from app.models.security import SecurityAlert, AuditLog
-from app.models.session import UserSession
 from app.services.security_monitoring import security_monitoring
 from app.services.audit_service import audit_service
 from app.schemas.security import SecurityAlertCreate, SecurityAlertUpdate
-from app.crud.session import session
-from app.services.session_service import get_session_service
 import json
 
 router = APIRouter()
@@ -224,74 +221,6 @@ async def generate_security_report(
     
     return report
 
-@router.get("/sessions")
-async def get_user_sessions(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Get all active sessions for the current user with device deduplication"""
-    session_service = get_session_service(db)
-    session_list = await session_service.get_user_sessions(current_user.id)
-    
-    return {
-        "sessions": session_list,
-        "total_count": len(session_list)
-    }
-
-@router.get("/sessions/count")
-async def get_active_session_count(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Get the count of active sessions for the current user"""
-    session_service = get_session_service(db)
-    count = await session_service.get_active_session_count(current_user.id)
-    return {"active_sessions": count}
-
-@router.delete("/sessions/{session_id}")
-async def revoke_session(
-    session_id: str,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Revoke a specific session"""
-    session_service = get_session_service(db)
-    success = await session_service.revoke_session(current_user.id, session_id)
-    
-    if success:
-        return {"message": "Session revoked successfully"}
-    else:
-        raise HTTPException(
-            status_code=404,
-            detail="Session not found or already revoked"
-        )
-
-@router.delete("/sessions")
-async def revoke_all_sessions(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Revoke all sessions except the current one"""
-    session_service = get_session_service(db)
-    success = await session_service.invalidate_all_sessions(current_user.id)
-    
-    if success:
-        return {"message": "All sessions revoked successfully"}
-    else:
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to revoke sessions"
-        )
-
-@router.get("/sessions/analytics")
-async def get_session_analytics(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Get session analytics for the current user"""
-    session_service = get_session_service(db)
-    analytics = await session_service.get_session_analytics(current_user.id)
-    return analytics
 
 @router.get("/user-info")
 async def get_user_security_info(
@@ -326,16 +255,6 @@ async def get_user_security_info(
     
     last_security_audit = last_audit.timestamp.isoformat() if last_audit else None
     
-    # Get active sessions count using new session service with device deduplication
-    session_service = get_session_service(db)
-    active_sessions = await session_service.get_active_session_count(current_user.id)
-    print(f"User {current_user.id} has {active_sessions} active sessions (unique devices)")
-    
-    # Clean up inactive sessions using new service
-    cleaned_count = await session_service.cleanup_inactive_sessions(current_user.id)
-    if cleaned_count > 0:
-        print(f"Cleaned up {cleaned_count} inactive sessions for user {current_user.id}")
-    
     # Calculate security score based on various factors
     security_score = 0  # Start from 0 and add points for enabled features
     
@@ -356,12 +275,6 @@ async def get_user_security_info(
     if hasattr(current_user, 'is_verified') and current_user.is_verified:
         security_score += 15
     
-    # Session management (10 points) - fewer sessions is better
-    if active_sessions <= 2:
-        security_score += 10
-    elif active_sessions <= 5:
-        security_score += 5
-    
     # Penalties for security issues
     if failed_login_attempts > 0:
         security_score -= min(failed_login_attempts * 5, 20)
@@ -374,7 +287,6 @@ async def get_user_security_info(
         "last_password_change": last_password_change,
         "last_security_audit": last_security_audit,
         "failed_login_attempts": failed_login_attempts,
-        "active_sessions": active_sessions,
         "security_score": max(security_score, 0),
         "is_verified": getattr(current_user, 'is_verified', False),
         "two_factor_enabled": getattr(current_user, 'two_factor_enabled', False),

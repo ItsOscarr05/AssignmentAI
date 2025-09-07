@@ -21,7 +21,6 @@ from app.models.subscription import Subscription
 from app.models.usage import Usage, UsageLimit
 from app.models.activity import Activity
 from app.models.preference import Preference
-from app.models.session import UserSession
 from app.models.template import Template
 from app.models.citation import Citation
 from app.models.file import File

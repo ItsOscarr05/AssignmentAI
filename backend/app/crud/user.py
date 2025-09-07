@@ -247,41 +247,6 @@ def delete_user_account(db: Session, user_id: str) -> None:
     db.delete(user)
     db.commit()
 
-def get_sessions(db: Session, user_id: str) -> List[Dict[str, Any]]:
-    """Get user's active sessions"""
-    # Convert user_id to int since User.id is an integer
-    try:
-        user_id_int = int(user_id)
-    except (ValueError, TypeError):
-        raise ValueError("Invalid user ID")
-    
-    user = db.query(User).filter(User.id == user_id_int).first()
-    if not user:
-        raise ValueError("User not found")
-    
-    # This is a placeholder. In a real application, you would query a sessions table
-    # or use a session management system like Redis
-    return [
-        {
-            "id": "current",
-            "device": "Web Browser",
-            "location": "Unknown",
-            "last_active": "2024-03-20T12:00:00Z",
-            "created_at": "2024-03-20T12:00:00Z"
-        }
-    ]
-
-def revoke_session(db: Session, user_id: str, session_id: str) -> None:
-    """Revoke a specific session"""
-    # This is a placeholder. In a real application, you would invalidate the session
-    # in your session management system
-    pass
-
-def revoke_all_sessions(db: Session, user_id: str) -> None:
-    """Revoke all sessions except current"""
-    # This is a placeholder. In a real application, you would invalidate all sessions
-    # in your session management system
-    pass
 
 def count(db: Session) -> int:
     """Count total users"""

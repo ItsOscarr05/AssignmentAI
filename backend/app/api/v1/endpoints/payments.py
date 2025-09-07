@@ -6,7 +6,7 @@ from app.core.deps import get_current_user, get_db
 from app.core.config import settings
 from app.models.user import User
 from app.services.payment_service import PaymentService
-from app.schemas.payment import CreateSubscriptionRequest
+from app.schemas.payment import CreateSubscriptionRequest, CreateTokenPurchaseRequest, CreatePaymentIntentRequest
 
 
 router = APIRouter()
@@ -39,6 +39,51 @@ async def upgrade_subscription(
         user=current_user,
         new_price_id=request.price_id,
         payment_method_id=request.payment_method_id
+    )
+
+
+@router.post("/purchase-tokens")
+async def purchase_tokens(
+    request: CreateTokenPurchaseRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Purchase additional tokens for the user"""
+    payment_service = PaymentService(db)
+    return await payment_service.purchase_tokens(
+        user=current_user,
+        token_amount=request.token_amount,
+        payment_method_id=request.payment_method_id
+    )
+
+
+@router.post("/create-payment-intent")
+async def create_payment_intent(
+    request: CreatePaymentIntentRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Create a payment intent for token purchase"""
+    payment_service = PaymentService(db)
+    return await payment_service.create_payment_intent(
+        user=current_user,
+        token_amount=request.token_amount,
+        amount=request.amount
+    )
+
+
+@router.post("/create-subscription-payment-intent")
+async def create_subscription_payment_intent(
+    request: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Create a payment intent for subscription"""
+    payment_service = PaymentService(db)
+    return await payment_service.create_subscription_payment_intent(
+        user=current_user,
+        price_id=request['price_id'],
+        is_upgrade=request.get('is_upgrade', False)
     )
 
 

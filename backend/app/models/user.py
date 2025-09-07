@@ -28,7 +28,6 @@ class User(Base):
     failed_login_attempts: Mapped[int] = mapped_column(Integer, default=0)
     account_locked_until: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     password_history: Mapped[Optional[List[Dict[str, Any]]]] = mapped_column(JSON, nullable=True)  # Store last N password hashes
-    sessions: Mapped[Optional[List[Dict[str, Any]]]] = mapped_column(JSON, nullable=True)  # Store active sessions
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     stripe_customer_id: Mapped[Optional[str]] = mapped_column(String, unique=True, index=True, nullable=True)
@@ -51,23 +50,8 @@ class User(Base):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.sessions = []
         self.password_history = []
 
-    def add_session(self, session_data: dict) -> None:
-        """Add a new session to the user's active sessions"""
-        if not self.sessions:
-            self.sessions = []
-        self.sessions.append(session_data)
-
-    def remove_session(self, session_id: str) -> None:
-        """Remove a session from the user's active sessions"""
-        if self.sessions:
-            self.sessions = [s for s in self.sessions if s["id"] != session_id]
-
-    def clear_sessions(self) -> None:
-        """Clear all active sessions"""
-        self.sessions = []
 
     def add_password_to_history(self, password_hash: str) -> None:
         """Add a password hash to the history"""
