@@ -2,24 +2,16 @@ import {
   Psychology as BrainIcon,
   ContentCopy as CopyIcon,
   Delete as DeleteIcon,
-  Download as DownloadIcon,
   Edit as EditIcon,
-  MoreVert as MoreVertIcon,
-  Person as PersonIcon,
+  SmartToy as RobotIcon,
   Send as SendIcon,
-  ThumbDown as ThumbDownIcon,
-  ThumbUp as ThumbUpIcon,
 } from '@mui/icons-material';
 import {
   Alert,
   Avatar,
   Box,
   Button,
-  Chip,
-  CircularProgress,
   IconButton,
-  Menu,
-  MenuItem,
   Paper,
   Snackbar,
   TextField,
@@ -45,22 +37,28 @@ interface ChatMessage {
 interface EnhancedChatInterfaceProps {
   initialText?: string;
   onMessageSent?: (message: string) => void;
-  onExport?: (content: string) => void;
+  onClear?: (clearFn: () => void) => void;
+  onMessagesUpdate?: (messages: ChatMessage[]) => void;
 }
 
 const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   initialText,
   onMessageSent,
-  onExport,
+  onClear,
+  onMessagesUpdate,
 }) => {
   const { generateContent, history: workshopHistory, isLoading } = useWorkshopStore();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState('');
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
+  const [streamingContent, setStreamingContent] = useState('');
+  const [streamingInterval, setStreamingInterval] = useState<NodeJS.Timeout | null>(null);
+  const [hasStreamed, setHasStreamed] = useState(false);
+  const [conversationMemory, setConversationMemory] = useState<ChatMessage[]>([]);
+  const [isCleared, setIsCleared] = useState(false);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -69,10 +67,23 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const hasInitializedMessages = useRef(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
+
+  // Auto-scroll during streaming with throttling
+  const scrollToBottomThrottled = useCallback(() => {
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+    }
+
+    scrollTimeoutRef.current = setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100); // Throttle to every 100ms during streaming
   }, []);
 
   useEffect(() => {
@@ -86,9 +97,9 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     }
   }, [initialText]);
 
-  // Convert workshop history to chat messages
+  // Convert workshop history to chat messages only on initial load
   useEffect(() => {
-    if (workshopHistory.length > 0) {
+    if (workshopHistory.length > 0 && !hasInitializedMessages.current && !isCleared) {
       const chatMessages: ChatMessage[] = [];
 
       workshopHistory.forEach(item => {
@@ -114,15 +125,174 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       });
 
       setMessages(chatMessages);
+      hasInitializedMessages.current = true;
     }
-  }, [workshopHistory]);
+  }, [workshopHistory, isCleared]);
+
+  // Listen for new AI responses from workshop history and simulate streaming
+  useEffect(() => {
+    if (workshopHistory.length > 0 && streamingMessageId && !hasStreamed) {
+      // Find the current streaming message to get its prompt
+      const currentStreamingMessage = messages.find(msg => msg.id === streamingMessageId);
+      if (!currentStreamingMessage) return;
+
+      // Find the AI response that matches the current user's prompt
+      const matchingResponse = workshopHistory.find(
+        item =>
+          item.prompt === currentStreamingMessage.prompt &&
+          item.content &&
+          item.content !== streamingContent
+      );
+
+      if (matchingResponse) {
+        console.log('Starting streaming for message:', currentStreamingMessage.prompt);
+        // Start streaming the response
+        simulateStreamingResponse(matchingResponse.content);
+        setHasStreamed(true);
+      }
+    }
+  }, [workshopHistory, streamingMessageId, hasStreamed, messages, streamingContent]);
+
+  // Function to simulate streaming response
+  const simulateStreamingResponse = (fullContent: string) => {
+    let currentIndex = 0;
+    const words = fullContent.split(' ');
+
+    const streamInterval = setInterval(() => {
+      if (currentIndex < words.length) {
+        const word = words[currentIndex];
+        setStreamingContent(prev => {
+          const newContent = prev + (prev ? ' ' : '') + word;
+          return newContent;
+        });
+        currentIndex++;
+
+        // Auto-scroll during streaming
+        scrollToBottomThrottled();
+      } else {
+        // Streaming complete
+        clearInterval(streamInterval);
+        setStreamingInterval(null);
+        setIsTyping(false);
+        setStreamingMessageId(null);
+        setHasStreamed(false);
+
+        // Update the final message with complete content
+        const currentMessage = messages.find(msg => msg.id === streamingMessageId);
+        if (currentMessage) {
+          const finalMessage: ChatMessage = { ...currentMessage, content: fullContent };
+          addToMemory(finalMessage); // Add AI message to memory
+        }
+
+        setMessages(prev =>
+          prev.map(msg => (msg.id === streamingMessageId ? { ...msg, content: fullContent } : msg))
+        );
+        setStreamingContent('');
+
+        // Final scroll to bottom when streaming completes
+        setTimeout(() => {
+          scrollToBottom();
+        }, 100);
+      }
+    }, 50); // Adjust speed as needed (50ms per word)
+
+    setStreamingInterval(streamInterval);
+  };
+
+  // Function to stop streaming
+  const stopStreaming = () => {
+    if (streamingInterval) {
+      clearInterval(streamingInterval);
+      setStreamingInterval(null);
+    }
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+      scrollTimeoutRef.current = null;
+    }
+    setIsTyping(false);
+    setStreamingMessageId(null);
+    setHasStreamed(false);
+    setStreamingContent('');
+  };
+
+  // Function to add message to conversation memory
+  const addToMemory = (message: ChatMessage) => {
+    setConversationMemory(prev => [...prev, message]);
+  };
+
+  // Function to get conversation context for AI
+  const getConversationContext = (): string => {
+    if (conversationMemory.length === 0) {
+      return '';
+    }
+
+    // Get last 10 messages for context (adjust as needed)
+    const recentMessages = conversationMemory.slice(-10);
+
+    return recentMessages
+      .map(msg => {
+        const role = msg.isUser ? 'User' : 'AI';
+        return `${role}: ${msg.content}`;
+      })
+      .join('\n\n');
+  };
+
+  // Create stable clear function
+  const clearMessages = useCallback(() => {
+    console.log('Clearing chat messages and memory');
+    setMessages([]);
+    setInput('');
+    setEditingMessageId(null);
+    setEditingContent('');
+    setIsTyping(false);
+    setStreamingMessageId(null);
+    setStreamingContent('');
+    setHasStreamed(false);
+    setIsCleared(true); // Set cleared flag to prevent restoration
+    if (streamingInterval) {
+      clearInterval(streamingInterval);
+      setStreamingInterval(null);
+    }
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+      scrollTimeoutRef.current = null;
+    }
+    hasInitializedMessages.current = false;
+    setHasStreamed(false);
+    setConversationMemory([]); // Clear conversation memory
+  }, [streamingInterval]);
+
+  // Set up clear function when onClear is provided
+  useEffect(() => {
+    if (onClear) {
+      onClear(clearMessages);
+    }
+  }, [onClear, clearMessages]);
+
+  // Notify parent when messages change
+  useEffect(() => {
+    if (onMessagesUpdate) {
+      onMessagesUpdate(messages);
+    }
+  }, [messages, onMessagesUpdate]);
+
+  // Cleanup streaming interval and scroll timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (streamingInterval) {
+        clearInterval(streamingInterval);
+      }
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, [streamingInterval]);
 
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setEditingMessageId(null);
-        setAnchorEl(null);
       }
     };
 
@@ -145,14 +315,41 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     };
 
     setMessages(prev => [...prev, userMessage]);
+    addToMemory(userMessage); // Add user message to memory
+    setIsCleared(false); // Reset cleared flag when new message is sent
     setInput('');
-
-    // Show typing indicator
     setIsTyping(true);
 
-    // Generate AI response
+    // Create a placeholder AI message for streaming
+    const aiMessageId = `ai-${Date.now()}`;
+    const aiMessage: ChatMessage = {
+      id: aiMessageId,
+      prompt: message,
+      content: '',
+      timestamp: new Date().toISOString(),
+      isUser: false,
+      reactions: { thumbsUp: 0, thumbsDown: 0 },
+    };
+
+    setMessages(prev => [...prev, aiMessage]);
+    setStreamingMessageId(aiMessageId);
+    setStreamingContent('');
+    setHasStreamed(false); // Reset hasStreamed for new message
+
+    console.log('Created AI message with ID:', aiMessageId, 'for prompt:', message);
+
+    // Scroll to bottom when AI message placeholder is added
+    setTimeout(() => {
+      scrollToBottom();
+    }, 50);
+
+    // Generate AI response using the workshop service with conversation context
     try {
-      await generateContent(message);
+      const context = getConversationContext();
+      const contextualMessage = context ? `${context}\n\nUser: ${message}` : message;
+
+      await generateContent(contextualMessage);
+
       if (onMessageSent) {
         onMessageSent(message);
       }
@@ -163,8 +360,9 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         message: 'Failed to generate response. Please try again.',
         severity: 'error',
       });
-    } finally {
       setIsTyping(false);
+      setStreamingMessageId(null);
+      setStreamingContent('');
     }
   };
 
@@ -178,7 +376,6 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     if (message) {
       setEditingMessageId(messageId);
       setEditingContent(message.content);
-      setAnchorEl(null);
     }
   };
 
@@ -203,7 +400,6 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
   const handleDeleteMessage = (messageId: string) => {
     setMessages(prev => prev.filter(msg => msg.id !== messageId));
-    setAnchorEl(null);
     setSnackbar({
       open: true,
       message: 'Message deleted',
@@ -226,53 +422,6 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         severity: 'error',
       });
     }
-  };
-
-  const handleReaction = (messageId: string, reaction: 'thumbsUp' | 'thumbsDown') => {
-    setMessages(prev =>
-      prev.map(msg =>
-        msg.id === messageId
-          ? {
-              ...msg,
-              reactions: {
-                ...msg.reactions!,
-                [reaction]: msg.reactions![reaction] + 1,
-              },
-            }
-          : msg
-      )
-    );
-  };
-
-  const handleExportConversation = () => {
-    const conversationText = messages
-      .map(msg => `${msg.isUser ? 'User' : 'AI'}: ${msg.content}`)
-      .join('\n\n');
-
-    if (onExport) {
-      onExport(conversationText);
-    } else {
-      // Fallback: download as text file
-      const blob = new Blob([conversationText], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `conversation-${new Date().toISOString().split('T')[0]}.txt`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
-  };
-
-  const handleMenuClick = (event: React.MouseEvent<HTMLElement>, messageId: string) => {
-    setAnchorEl(event.currentTarget);
-    setSelectedMessageId(messageId);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-    setSelectedMessageId(null);
   };
 
   return (
@@ -300,45 +449,40 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                   display: 'flex',
                   justifyContent: message.isUser ? 'flex-end' : 'flex-start',
                   mb: 2,
+                  '&:hover .message-actions': {
+                    opacity: 1,
+                  },
                 }}
               >
                 {!message.isUser && (
                   <Avatar
                     sx={{
-                      bgcolor: 'white',
-                      width: 32,
-                      height: 32,
-                      mr: 1,
+                      bgcolor: 'transparent',
+                      width: 28,
+                      height: 28,
+                      mr: 1.5,
                       mt: 0.5,
-                      border: '1px solid #e0e0e0',
+                      border: '2px solid #f44336',
                     }}
                   >
-                    <BrainIcon sx={{ color: 'red', fontSize: 20 }} />
+                    <RobotIcon sx={{ color: '#f44336', fontSize: '18px' }} />
                   </Avatar>
                 )}
 
-                <Box sx={{ maxWidth: '70%', position: 'relative' }}>
+                <Box sx={{ maxWidth: '80%', position: 'relative' }}>
                   <Paper
-                    elevation={1}
+                    elevation={0}
                     sx={{
-                      p: 2,
-                      backgroundColor: message.isUser
-                        ? 'rgba(25, 118, 210, 0.1)'
-                        : 'rgba(244, 67, 54, 0.1)',
-                      border: '1px solid red',
-                      borderRadius: 2,
+                      p: 2.5,
+                      backgroundColor: message.isUser ? '#f7f7f8' : '#ffffff',
+                      border: '1px solid #f44336',
+                      borderRadius: 3,
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                      '&:hover': {
+                        boxShadow: '0 2px 8px rgba(244, 67, 54, 0.2)',
+                      },
                     }}
                   >
-                    {!message.isUser && (
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ display: 'block', mb: 1 }}
-                      >
-                        AI Assistant
-                      </Typography>
-                    )}
-
                     {editingMessageId === message.id ? (
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                         <TextField
@@ -360,155 +504,224 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                       </Box>
                     ) : (
                       <>
-                        <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                          {message.content}
+                        <Typography
+                          variant="body1"
+                          sx={{
+                            whiteSpace: 'pre-wrap',
+                            lineHeight: 1.6,
+                            fontSize: '15px',
+                            color: message.isUser ? '#374151' : '#374151',
+                          }}
+                        >
+                          {message.id === streamingMessageId ? streamingContent : message.content}
+                          {message.id === streamingMessageId && (
+                            <Box
+                              component="span"
+                              sx={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                marginLeft: '8px',
+                                gap: '2px',
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  width: '4px',
+                                  height: '4px',
+                                  backgroundColor: '#f44336',
+                                  borderRadius: '50%',
+                                  animation: 'bounce 1.4s infinite ease-in-out both',
+                                  '&:nth-of-type(1)': {
+                                    animationDelay: '-0.32s',
+                                  },
+                                  '&:nth-of-type(2)': {
+                                    animationDelay: '-0.16s',
+                                  },
+                                  '@keyframes bounce': {
+                                    '0%, 80%, 100%': {
+                                      transform: 'scale(0)',
+                                    },
+                                    '40%': {
+                                      transform: 'scale(1)',
+                                    },
+                                  },
+                                }}
+                              />
+                              <Box
+                                sx={{
+                                  width: '4px',
+                                  height: '4px',
+                                  backgroundColor: '#f44336',
+                                  borderRadius: '50%',
+                                  animation: 'bounce 1.4s infinite ease-in-out both',
+                                  '&:nth-of-type(1)': {
+                                    animationDelay: '-0.32s',
+                                  },
+                                  '&:nth-of-type(2)': {
+                                    animationDelay: '-0.16s',
+                                  },
+                                  '@keyframes bounce': {
+                                    '0%, 80%, 100%': {
+                                      transform: 'scale(0)',
+                                    },
+                                    '40%': {
+                                      transform: 'scale(1)',
+                                    },
+                                  },
+                                }}
+                              />
+                              <Box
+                                sx={{
+                                  width: '4px',
+                                  height: '4px',
+                                  backgroundColor: '#f44336',
+                                  borderRadius: '50%',
+                                  animation: 'bounce 1.4s infinite ease-in-out both',
+                                  '&:nth-of-type(1)': {
+                                    animationDelay: '-0.32s',
+                                  },
+                                  '&:nth-of-type(2)': {
+                                    animationDelay: '-0.16s',
+                                  },
+                                  '@keyframes bounce': {
+                                    '0%, 80%, 100%': {
+                                      transform: 'scale(0)',
+                                    },
+                                    '40%': {
+                                      transform: 'scale(1)',
+                                    },
+                                  },
+                                }}
+                              />
+                            </Box>
+                          )}
                         </Typography>
                         {message.isEdited && (
                           <Typography
                             variant="caption"
                             color="text.secondary"
-                            sx={{ fontStyle: 'italic' }}
+                            sx={{ fontStyle: 'italic', fontSize: '12px' }}
                           >
                             (edited)
                           </Typography>
                         )}
                       </>
                     )}
+                  </Paper>
 
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{
-                        display: 'block',
-                        mt: 1,
-                        textAlign: message.isUser ? 'right' : 'left',
-                      }}
-                    >
-                      {new Date(message.timestamp).toLocaleTimeString()}
-                    </Typography>
-
-                    {/* Message Actions */}
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        gap: 0.5,
-                        mt: 1,
-                        justifyContent: message.isUser ? 'flex-end' : 'flex-start',
-                      }}
-                    >
-                      {!message.isUser && (
-                        <>
-                          <Tooltip title="Thumbs up">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleReaction(message.id, 'thumbsUp')}
-                            >
-                              <ThumbUpIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Thumbs down">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleReaction(message.id, 'thumbsDown')}
-                            >
-                              <ThumbDownIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </>
-                      )}
-
+                  {/* Message Actions - Only show on hover, outside the message box */}
+                  <Box
+                    className="message-actions"
+                    sx={{
+                      display: 'flex',
+                      gap: 0.5,
+                      mt: 0.5,
+                      justifyContent: message.isUser ? 'flex-end' : 'flex-start',
+                      opacity: 0,
+                      transition: 'opacity 0.2s ease-in-out',
+                    }}
+                  >
+                    {message.isUser ? (
+                      // User message order: Copy, Edit, Delete
+                      <>
+                        <Tooltip title="Copy">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleCopyMessage(message.content)}
+                          >
+                            <CopyIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Edit">
+                          <IconButton size="small" onClick={() => handleEditMessage(message.id)}>
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Delete">
+                          <IconButton size="small" onClick={() => handleDeleteMessage(message.id)}>
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </>
+                    ) : (
+                      // AI message: Copy only
                       <Tooltip title="Copy">
                         <IconButton size="small" onClick={() => handleCopyMessage(message.content)}>
                           <CopyIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
-
-                      {message.isUser && (
-                        <>
-                          <Tooltip title="Edit">
-                            <IconButton size="small" onClick={() => handleEditMessage(message.id)}>
-                              <EditIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="More options">
-                            <IconButton size="small" onClick={e => handleMenuClick(e, message.id)}>
-                              <MoreVertIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </>
-                      )}
-                    </Box>
-
-                    {/* Reactions */}
-                    {(message.reactions?.thumbsUp || message.reactions?.thumbsDown) && (
-                      <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                        {message.reactions.thumbsUp > 0 && (
-                          <Chip
-                            icon={<ThumbUpIcon />}
-                            label={message.reactions.thumbsUp}
-                            size="small"
-                            color="primary"
-                          />
-                        )}
-                        {message.reactions.thumbsDown > 0 && (
-                          <Chip
-                            icon={<ThumbDownIcon />}
-                            label={message.reactions.thumbsDown}
-                            size="small"
-                            color="error"
-                          />
-                        )}
-                      </Box>
                     )}
-                  </Paper>
+                  </Box>
                 </Box>
-
-                {message.isUser && (
-                  <Avatar
-                    sx={{
-                      bgcolor: 'red',
-                      width: 32,
-                      height: 32,
-                      ml: 1,
-                      mt: 0.5,
-                    }}
-                  >
-                    <PersonIcon sx={{ color: 'white', fontSize: 20 }} />
-                  </Avatar>
-                )}
               </Box>
             ))}
 
-            {isLoading && (
+            {/* Loading indicator when AI is thinking (but not streaming) */}
+            {(isTyping || isLoading) && !streamingMessageId && (
               <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 2 }}>
                 <Avatar
                   sx={{
-                    bgcolor: 'white',
-                    width: 32,
-                    height: 32,
-                    mr: 1,
+                    bgcolor: 'transparent',
+                    width: 28,
+                    height: 28,
+                    mr: 1.5,
                     mt: 0.5,
-                    border: '1px solid #e0e0e0',
+                    border: '2px solid #f44336',
                   }}
                 >
-                  <BrainIcon sx={{ color: 'red', fontSize: 20 }} />
+                  <RobotIcon sx={{ color: '#f44336', fontSize: '18px' }} />
                 </Avatar>
-                <Box sx={{ maxWidth: '70%' }}>
+                <Box sx={{ maxWidth: '80%' }}>
                   <Paper
-                    elevation={1}
+                    elevation={0}
                     sx={{
-                      p: 2,
-                      backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                      p: 2.5,
+                      backgroundColor: '#ffffff',
                       border: '1px solid #f44336',
-                      borderRadius: 2,
+                      borderRadius: 3,
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 1,
+                      gap: 1.5,
                     }}
                   >
-                    <CircularProgress size={16} sx={{ color: 'red' }} />
-                    <Typography variant="body2" color="text.secondary">
-                      AI is thinking...
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        gap: 0.5,
+                        '& > div': {
+                          width: 6,
+                          height: 6,
+                          borderRadius: '50%',
+                          backgroundColor: '#f44336',
+                          animation: 'pulse 1.4s ease-in-out infinite both',
+                          '&:nth-of-type(1)': { animationDelay: '-0.32s' },
+                          '&:nth-of-type(2)': { animationDelay: '-0.16s' },
+                        },
+                        '@keyframes pulse': {
+                          '0%, 80%, 100%': {
+                            transform: 'scale(0)',
+                            opacity: 0.5,
+                          },
+                          '40%': {
+                            transform: 'scale(1)',
+                            opacity: 1,
+                          },
+                        },
+                      }}
+                    >
+                      <div />
+                      <div />
+                      <div />
+                    </Box>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        color: '#6b7280',
+                        fontSize: '15px',
+                      }}
+                    >
+                      Generating response...
                     </Typography>
                   </Paper>
                 </Box>
@@ -549,85 +762,93 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       </Box>
 
       {/* Chat Input */}
-      <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', gap: 1 }}>
-        <TextField
-          ref={inputRef}
-          fullWidth
-          placeholder="Type your message... (Press Enter to send, Shift+Enter for new line)"
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          disabled={isLoading}
-          multiline
-          maxRows={4}
-          onKeyDown={e => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              handleSendMessage();
-            }
-          }}
+      <Box
+        component="form"
+        onSubmit={handleSubmit}
+        sx={{
+          display: 'flex',
+          alignItems: 'flex-end',
+          gap: 1,
+          p: 2,
+          backgroundColor: '#ffffff',
+          borderTop: '1px solid #e5e5e5',
+        }}
+      >
+        <Box sx={{ flex: 1, position: 'relative' }}>
+          <TextField
+            ref={inputRef}
+            fullWidth
+            placeholder="Message AssignmentAI..."
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            disabled={isTyping || isLoading}
+            multiline
+            maxRows={6}
+            minRows={1}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+              }
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 3,
+                backgroundColor: '#f7f7f8',
+                border: '1px solid #e5e5e5',
+                height: '40px',
+                '&:hover': {
+                  borderColor: '#d1d5db',
+                },
+                '&.Mui-focused': {
+                  borderColor: '#f44336',
+                  boxShadow: '0 0 0 2px rgba(244, 67, 54, 0.1)',
+                },
+                '& fieldset': {
+                  border: 'none',
+                },
+              },
+              '& .MuiInputBase-input': {
+                padding: '10px 16px',
+                fontSize: '15px',
+                lineHeight: 1.5,
+                height: '20px',
+              },
+            }}
+          />
+        </Box>
+        <Button
+          type="submit"
+          variant="contained"
+          disabled={!input.trim() && !streamingMessageId}
+          onClick={streamingMessageId ? stopStreaming : undefined}
           sx={{
-            '& .MuiOutlinedInput-root': {
-              '& fieldset': {
-                borderColor: '#e0e0e0',
-              },
-              '&:hover fieldset': {
-                borderColor: 'red',
-              },
-              '&.Mui-focused fieldset': {
-                borderColor: 'red',
-              },
+            backgroundColor: streamingMessageId ? '#ef4444' : '#f44336',
+            borderRadius: 2,
+            minWidth: '40px',
+            height: '40px',
+            '&:hover': {
+              backgroundColor: streamingMessageId ? '#dc2626' : '#d32f2f',
+            },
+            '&:disabled': {
+              backgroundColor: '#d1d5db',
             },
           }}
-        />
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={!input.trim() || isLoading}
-            sx={{
-              backgroundColor: 'red',
-              '&:hover': {
-                backgroundColor: 'darkred',
-              },
-              minWidth: 'auto',
-              px: 2,
-            }}
-          >
-            <SendIcon />
-          </Button>
-          {messages.length > 0 && (
-            <Tooltip title="Export conversation">
-              <IconButton size="small" onClick={handleExportConversation} sx={{ color: 'red' }}>
-                <DownloadIcon />
-              </IconButton>
-            </Tooltip>
+        >
+          {streamingMessageId ? (
+            <Box
+              sx={{
+                width: '12px',
+                height: '12px',
+                backgroundColor: 'white',
+                borderRadius: '2px',
+              }}
+            />
+          ) : (
+            <SendIcon sx={{ fontSize: '18px' }} />
           )}
-        </Box>
+        </Button>
       </Box>
-
-      {/* Context Menu */}
-      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-        <MenuItem
-          onClick={() => {
-            if (selectedMessageId) {
-              handleEditMessage(selectedMessageId);
-            }
-          }}
-        >
-          <EditIcon sx={{ mr: 1 }} fontSize="small" />
-          Edit
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            if (selectedMessageId) {
-              handleDeleteMessage(selectedMessageId);
-            }
-          }}
-        >
-          <DeleteIcon sx={{ mr: 1 }} fontSize="small" />
-          Delete
-        </MenuItem>
-      </Menu>
 
       {/* Snackbar for notifications */}
       <Snackbar

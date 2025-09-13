@@ -48,7 +48,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import EnhancedAIAnalysisPopup from '../components/workshop/EnhancedAIAnalysisPopup';
+import AIResponsePopup from '../components/workshop/AIResponsePopup';
 import { FeatureAccessErrorComponent } from '../components/workshop/FeatureAccessError';
 import RecentHistorySidebar from '../components/workshop/RecentHistorySidebar';
 import WorkshopFileUpload from '../components/workshop/WorkshopFileUpload';
@@ -385,9 +385,9 @@ const Workshop: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim()) {
-      await generateContent(input);
-      // Open NEW AI Response popup for text analysis
+      // Open popup immediately before generating content
       handleOpenAnalysisPopup('text', { text: input });
+      await generateContent(input);
       setInput('');
     }
   };
@@ -395,9 +395,9 @@ const Workshop: React.FC = () => {
   const handleLinkSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (linkInput.trim()) {
-      await addLink({ url: linkInput, title: linkInput });
-      // Open NEW AI Response popup for link analysis
+      // Open popup immediately before adding link
       handleOpenAnalysisPopup('link', { url: linkInput, title: linkInput });
+      await addLink({ url: linkInput, title: linkInput });
       setLinkInput('');
       setSnackbar({
         open: true,
@@ -424,17 +424,6 @@ const Workshop: React.FC = () => {
   const handleCloseAnalysisPopup = () => {
     setIsAnalysisPopupOpen(false);
     setPopupContent(null);
-  };
-
-  const handlePopupTabClick = (tabIndex: number) => {
-    setResponseTab(tabIndex);
-    // Handle tab-specific actions here
-  };
-
-  const handlePopupSuggestionClick = (suggestion: string, tabIndex: number) => {
-    setInput(suggestion);
-    setResponseTab(tabIndex);
-    handleCloseAnalysisPopup();
   };
 
   const handleFileAction = async (action: 'summarize' | 'extract' | 'rewrite' | 'analyze') => {
@@ -468,6 +457,12 @@ const Workshop: React.FC = () => {
               variant="outlined"
               value={input}
               onChange={e => setInput(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSubmit(e);
+                }
+              }}
               sx={{
                 '& .MuiOutlinedInput-root': {
                   backgroundColor: theme =>
@@ -530,6 +525,12 @@ const Workshop: React.FC = () => {
                 variant="outlined"
                 value={linkInput}
                 onChange={e => setLinkInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleLinkSubmit(e);
+                  }
+                }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     '& fieldset': {
@@ -1560,13 +1561,11 @@ const Workshop: React.FC = () => {
       </Dialog>
 
       {/* NEW AI Response Popup - Enhanced analysis interface */}
-      <EnhancedAIAnalysisPopup
+      <AIResponsePopup
         open={isAnalysisPopupOpen}
         onClose={handleCloseAnalysisPopup}
         uploadType={popupUploadType}
         content={popupContent}
-        onTabClick={handlePopupTabClick}
-        onSuggestionClick={handlePopupSuggestionClick}
       />
     </Box>
   );

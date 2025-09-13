@@ -61,6 +61,7 @@ export interface WorkshopState {
   addLink: (link: Omit<Link, 'id'>) => Promise<void>;
   deleteLink: (id: string) => Promise<void>;
   deleteHistoryItem: (id: string) => Promise<void>;
+  clearHistory: () => void;
   processFile: (
     fileId: string,
     action: 'summarize' | 'extract' | 'rewrite' | 'analyze'
@@ -327,6 +328,11 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
     set(state => ({
       history: state.history.filter(item => item.id !== id),
     }));
+  },
+
+  clearHistory: () => {
+    console.log('Clearing workshop history from store');
+    set({ history: [] });
   },
 
   clearWorkshop: () => {
