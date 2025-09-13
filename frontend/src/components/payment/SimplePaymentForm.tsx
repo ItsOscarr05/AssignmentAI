@@ -37,17 +37,15 @@ const SimplePaymentForm: React.FC<SimplePaymentFormProps> = ({
     setError(null);
 
     try {
-      // Create payment intent on the backend
-      const { data } = await api.post('/payments/create-subscription-payment-intent', {
-        price_id: priceId,
-        is_upgrade: isUpgrade,
-      });
-      const { client_secret } = data;
+      // Submit the payment element first (required by Stripe)
+      const { error: submitError } = await elements.submit();
+      if (submitError) {
+        throw new Error(submitError.message);
+      }
 
-      // Confirm payment with Stripe
+      // Confirm payment with Stripe (using the existing payment intent from SubscriptionPaymentWrapper)
       const { error: stripeError } = await stripe.confirmPayment({
         elements,
-        clientSecret: client_secret,
         confirmParams: {
           return_url: window.location.origin + '/pricing',
         },
@@ -58,9 +56,37 @@ const SimplePaymentForm: React.FC<SimplePaymentFormProps> = ({
         throw new Error(stripeError.message);
       }
 
-      // Broadcast subscription change
-      window.dispatchEvent(new Event('subscription-updated'));
-      window.dispatchEvent(new Event('payment-success'));
+      // Call backend to create subscription (fallback for webhook)
+      try {
+        console.log('Calling fallback endpoint with data:', {
+          priceId,
+          planName,
+          isUpgrade,
+        });
+
+        const response = await api.post('/payments/confirm-subscription-payment', {
+          status: 'succeeded',
+          metadata: {
+            user_id: 'current_user', // Will be resolved by backend
+            price_id: priceId,
+            plan_name: planName,
+            is_upgrade: isUpgrade,
+          },
+        });
+
+        console.log('Fallback endpoint response:', response.data);
+        console.log('Subscription created successfully via fallback endpoint');
+      } catch (fallbackError) {
+        console.error('Fallback subscription creation failed:', fallbackError);
+        console.error('Error details:', fallbackError.response?.data);
+        console.warn('Relying on webhook for subscription creation');
+      }
+
+      // Broadcast subscription change with a small delay to ensure backend processing
+      setTimeout(() => {
+        window.dispatchEvent(new Event('subscription-updated'));
+        window.dispatchEvent(new Event('payment-success'));
+      }, 1000);
 
       onSuccess();
     } catch (apiError: any) {

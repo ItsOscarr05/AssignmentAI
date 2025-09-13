@@ -212,6 +212,32 @@ const Profile: React.FC = () => {
     fetchSubscription();
   }, []);
 
+  // Listen for subscription updates (e.g., after payment success)
+  useEffect(() => {
+    const handleSubscriptionUpdate = () => {
+      console.log('Profile: subscription update event received, refreshing subscription data...');
+      const fetchSubscription = async () => {
+        try {
+          const subscription = await paymentService.getCurrentSubscription();
+          console.log('Profile: Updated subscription data received:', subscription);
+          setCurrentSubscription(subscription);
+        } catch (error) {
+          console.error('Profile: Failed to fetch updated subscription:', error);
+          setCurrentSubscription(null);
+        }
+      };
+      fetchSubscription();
+    };
+
+    window.addEventListener('subscription-updated', handleSubscriptionUpdate);
+    window.addEventListener('payment-success', handleSubscriptionUpdate);
+
+    return () => {
+      window.removeEventListener('subscription-updated', handleSubscriptionUpdate);
+      window.removeEventListener('payment-success', handleSubscriptionUpdate);
+    };
+  }, []);
+
   // Initialize form with profile data
   useEffect(() => {
     if (profile || user) {

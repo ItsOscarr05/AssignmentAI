@@ -45,14 +45,13 @@ import {
   Switch,
   Typography,
 } from '@mui/material';
-import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { useSnackbar } from 'notistack';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import DetailedFeatureComparison from '../components/DetailedFeatureComparison';
-import PaymentForm from '../components/payment/PaymentForm';
+import SubscriptionPaymentWrapper from '../components/payment/SubscriptionPaymentWrapper';
 import SuccessPopup from '../components/payment/SuccessPopup';
 import SorryToSeeYouGoPopup from '../components/subscription/SorryToSeeYouGoPopup';
 import { useAspectRatio } from '../hooks/useAspectRatio';
@@ -714,12 +713,12 @@ const PricePlan: React.FC = () => {
   const isUpgrade = (): boolean => {
     if (!currentSubscription || !selectedPlan) return false;
 
-    // If user has an active subscription, this is likely an upgrade
+    // If user has an active subscription, this is an upgrade/switch
     if (currentSubscription.status === 'active') {
       return true;
     }
 
-    // You could also compare plan prices here if needed
+    // If user has no subscription or free plan, this is not an upgrade
     return false;
   };
 
@@ -1232,16 +1231,14 @@ const PricePlan: React.FC = () => {
         </DialogTitle>
         <DialogContent>
           {selectedPlan && (
-            <Elements stripe={stripePromise}>
-              <PaymentForm
-                priceId={selectedPlan.priceId}
-                planName={selectedPlan.name}
-                planPrice={selectedPlan.price}
-                onSuccess={handlePaymentSuccess}
-                onError={handlePaymentError}
-                isUpgrade={isUpgrade()}
-              />
-            </Elements>
+            <SubscriptionPaymentWrapper
+              priceId={selectedPlan.priceId}
+              planName={selectedPlan.name}
+              planPrice={selectedPlan.price}
+              onSuccess={handlePaymentSuccess}
+              onError={handlePaymentError}
+              isUpgrade={isUpgrade()}
+            />
           )}
         </DialogContent>
       </Dialog>

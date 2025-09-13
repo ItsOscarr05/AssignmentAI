@@ -19,7 +19,7 @@ import {
 import { useSnackbar } from 'notistack';
 import React, { useEffect, useState } from 'react';
 import { api } from '../../services/api';
-import PaymentForm from '../payment/PaymentForm';
+import SubscriptionPaymentWrapper from '../payment/SubscriptionPaymentWrapper';
 
 interface Subscription {
   id: string;
@@ -259,7 +259,7 @@ const SubscriptionStatus: React.FC = () => {
                   p => p.priceId === selectedPlanId
                 );
                 return selectedPlan ? (
-                  <PaymentForm
+                  <SubscriptionPaymentWrapper
                     priceId={selectedPlanId}
                     planName={selectedPlan.name}
                     planPrice={selectedPlan.price}

@@ -211,6 +211,35 @@ const Workshop: React.FC = () => {
     fetchSubscription();
   }, []);
 
+  // Listen for subscription updates (e.g., after payment success)
+  useEffect(() => {
+    const handleSubscriptionUpdate = () => {
+      console.log('Workshop: subscription update event received, refreshing subscription data...');
+      const fetchSubscription = async () => {
+        try {
+          setSubscriptionLoading(true);
+          const response = await api.get('/payments/subscriptions/current');
+          console.log('Workshop: Updated subscription response:', response.data);
+          setSubscription(response.data);
+        } catch (error) {
+          console.error('Failed to fetch subscription:', error);
+          setSubscription(null);
+        } finally {
+          setSubscriptionLoading(false);
+        }
+      };
+      fetchSubscription();
+    };
+
+    window.addEventListener('subscription-updated', handleSubscriptionUpdate);
+    window.addEventListener('payment-success', handleSubscriptionUpdate);
+
+    return () => {
+      window.removeEventListener('subscription-updated', handleSubscriptionUpdate);
+      window.removeEventListener('payment-success', handleSubscriptionUpdate);
+    };
+  }, []);
+
   // Fetch real token usage
   useEffect(() => {
     api.get('/assignments').then(res => {

@@ -645,6 +645,9 @@ class PaymentService:
             # Check if this is a token purchase
             if payment_intent.get('metadata', {}).get('type') == 'token_purchase':
                 await self.handle_token_purchase_success(payment_intent['id'])
+            elif payment_intent.get('metadata', {}).get('type') == 'subscription':
+                # Handle subscription payment intent success
+                await self.handle_subscription_payment_success(payment_intent)
             else:
                 self._handle_payment_succeeded(payment_intent)
         elif event['type'] == 'invoice.payment_succeeded':
@@ -847,6 +850,145 @@ class PaymentService:
                 
         except Exception as e:
             print(f"Error handling token purchase success: {str(e)}")
+
+    async def handle_subscription_payment_success(self, payment_intent: Dict[str, Any]) -> None:
+        """Handle successful subscription payment by creating the subscription"""
+        try:
+            print("=" * 50)
+            print("HANDLING SUBSCRIPTION PAYMENT SUCCESS")
+            print("=" * 50)
+            print(f"Payment intent: {payment_intent}")
+            
+            if payment_intent.get('status') != 'succeeded':
+                print("Payment intent status is not succeeded, skipping")
+                return
+            
+            # Get user ID and plan details from metadata
+            user_id = int(payment_intent.get('metadata', {}).get('user_id'))
+            price_id = payment_intent.get('metadata', {}).get('price_id')
+            plan_name = payment_intent.get('metadata', {}).get('plan_name')
+            is_upgrade_value = payment_intent.get('metadata', {}).get('is_upgrade', 'False')
+            # Handle both string and boolean values
+            if isinstance(is_upgrade_value, bool):
+                is_upgrade = is_upgrade_value
+            else:
+                is_upgrade = str(is_upgrade_value).lower() == 'true'
+            
+            print(f"Extracted data: user_id={user_id}, price_id={price_id}, plan_name={plan_name}, is_upgrade={is_upgrade}")
+            
+            if not user_id or not price_id:
+                print(f"Missing required metadata: user_id={user_id}, price_id={price_id}")
+                return
+            
+            # Validate price_id against known price IDs
+            valid_price_ids = [settings.STRIPE_PRICE_FREE, settings.STRIPE_PRICE_PLUS, settings.STRIPE_PRICE_PRO, settings.STRIPE_PRICE_MAX]
+            if price_id not in valid_price_ids:
+                print(f"Invalid price_id: {price_id}. Valid IDs: {valid_price_ids}")
+                return
+            
+            # Get user from database
+            user = self.db.query(User).filter(User.id == user_id).first()
+            if not user:
+                print(f"User {user_id} not found")
+                return
+            
+            # Get plan details
+            plan_details = self._get_plan_details_from_price_id(price_id)
+            print(f"Plan details: {plan_details}")
+            
+            # Check if user already has an active subscription
+            existing_subscription = self.db.query(Subscription).filter(
+                Subscription.user_id == user_id,
+                Subscription.status == SubscriptionStatus.ACTIVE
+            ).first()
+            
+            print(f"Existing subscription: {existing_subscription}")
+            if existing_subscription:
+                print(f"Existing subscription details: ID={existing_subscription.id}, Plan={existing_subscription.plan_id}, Name={existing_subscription.plan_name}, Tokens={existing_subscription.token_limit}")
+            
+            if existing_subscription:
+                print(f"Found existing subscription: {existing_subscription.plan_name} with {existing_subscription.token_limit} tokens")
+                
+                # Check if this is a free plan subscription that should be upgraded
+                if existing_subscription.plan_id == settings.STRIPE_PRICE_FREE:
+                    print(f"User {user_id} has free plan subscription, upgrading to {plan_details['name']}")
+                    print(f"Before update: plan_id={existing_subscription.plan_id}, token_limit={existing_subscription.token_limit}")
+                    
+                    # Update existing subscription from free to paid plan
+                    existing_subscription.plan_name = plan_details["name"]
+                    existing_subscription.plan_price = plan_details["price"]
+                    existing_subscription.plan_id = plan_details["plan_id"]
+                    existing_subscription.ai_model = plan_details["ai_model"]
+                    existing_subscription.token_limit = plan_details["token_limit"]
+                    existing_subscription.updated_at = datetime.now()
+                    
+                    print(f"After update: plan_id={existing_subscription.plan_id}, token_limit={existing_subscription.token_limit}")
+                    print(f"Updated subscription for user {user_id} from free to {plan_details['name']} with {plan_details['token_limit']} tokens")
+                else:
+                    # Update existing paid subscription (upgrade or downgrade)
+                    print(f"Updating subscription from {existing_subscription.plan_name} to {plan_details['name']}")
+                    print(f"Before update: plan_id={existing_subscription.plan_id}, token_limit={existing_subscription.token_limit}")
+                    
+                    existing_subscription.plan_name = plan_details["name"]
+                    existing_subscription.plan_price = plan_details["price"]
+                    existing_subscription.plan_id = plan_details["plan_id"]
+                    existing_subscription.ai_model = plan_details["ai_model"]
+                    existing_subscription.token_limit = plan_details["token_limit"]
+                    existing_subscription.updated_at = datetime.now()
+                    
+                    print(f"After update: plan_id={existing_subscription.plan_id}, token_limit={existing_subscription.token_limit}")
+                    print(f"Updated subscription for user {user_id} to {plan_details['name']} with {plan_details['token_limit']} tokens")
+            else:
+                # Create new subscription
+                print(f"Creating new subscription for user {user_id}: {plan_details['name']} with {plan_details['token_limit']} tokens")
+                db_subscription = Subscription(
+                    user_id=user_id,
+                    stripe_subscription_id=f"pi_{payment_intent['id']}",  # Use payment intent ID as subscription ID
+                    stripe_customer_id=user.stripe_customer_id,
+                    plan_name=plan_details["name"],
+                    plan_price=plan_details["price"],
+                    status=SubscriptionStatus.ACTIVE,
+                    current_period_start=datetime.now(),
+                    current_period_end=datetime.now(),  # Will be updated by Stripe webhooks
+                    plan_id=plan_details["plan_id"],
+                    ai_model=plan_details["ai_model"],
+                    token_limit=plan_details["token_limit"]
+                )
+                self.db.add(db_subscription)
+                print(f"Created new subscription for user {user_id}: {plan_details['name']}")
+            
+            # Create transaction record
+            print("Creating transaction record...")
+            transaction = Transaction(
+                user_id=user_id,
+                transaction_type=TransactionType.SUBSCRIPTION,
+                amount=plan_details["price"],
+                currency="USD",
+                description=f"Subscription - {plan_details['name']}",
+                stripe_payment_intent_id=payment_intent['id'],
+                transaction_metadata=f'{{"plan_name": "{plan_details["name"]}", "plan_id": "{plan_details["plan_id"]}", "token_limit": {plan_details["token_limit"]}}}'
+            )
+            self.db.add(transaction)
+            
+            print("Committing to database...")
+            self.db.commit()
+            
+            # Verify the update by querying the database again
+            updated_subscription = self.db.query(Subscription).filter(
+                Subscription.user_id == user_id,
+                Subscription.status == SubscriptionStatus.ACTIVE
+            ).first()
+            
+            if updated_subscription:
+                print(f"VERIFICATION: Updated subscription in database: ID={updated_subscription.id}, Plan={updated_subscription.plan_id}, Name={updated_subscription.plan_name}, Tokens={updated_subscription.token_limit}")
+            else:
+                print("VERIFICATION: No active subscription found after update!")
+            
+            print(f"Successfully processed subscription payment for user {user_id}: {plan_details['name']} - {plan_details['token_limit']} tokens")
+            print("=" * 50)
+                
+        except Exception as e:
+            print(f"Error handling subscription payment success: {str(e)}")
 
     async def create_subscription_payment_intent(self, user: User, price_id: str, is_upgrade: bool = False) -> Dict[str, Any]:
         """Create a payment intent for subscription"""

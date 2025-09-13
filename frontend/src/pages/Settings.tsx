@@ -1340,6 +1340,22 @@ const Settings: React.FC = () => {
     loadUserData();
   }, []);
 
+  // Listen for subscription updates (e.g., after payment success)
+  useEffect(() => {
+    const handleSubscriptionUpdate = () => {
+      console.log('Settings: subscription update event received, refreshing subscription data...');
+      loadPreferencesFromBackend();
+    };
+
+    window.addEventListener('subscription-updated', handleSubscriptionUpdate);
+    window.addEventListener('payment-success', handleSubscriptionUpdate);
+
+    return () => {
+      window.removeEventListener('subscription-updated', handleSubscriptionUpdate);
+      window.removeEventListener('payment-success', handleSubscriptionUpdate);
+    };
+  }, []);
+
   // Load security data from backend
   const loadSecurityData = async () => {
     try {

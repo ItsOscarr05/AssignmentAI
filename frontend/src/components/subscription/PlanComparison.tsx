@@ -16,7 +16,7 @@ import {
 import { useSnackbar } from 'notistack';
 import React, { useEffect, useState } from 'react';
 import { paymentService, PlanWithStatus } from '../../services/paymentService';
-import PaymentForm from '../payment/PaymentForm';
+import SubscriptionPaymentWrapper from '../payment/SubscriptionPaymentWrapper';
 
 const PlanComparison: React.FC = () => {
   const theme = useTheme();
@@ -116,12 +116,12 @@ const PlanComparison: React.FC = () => {
   const isUpgrade = (): boolean => {
     if (!currentSubscription || !selectedPlan) return false;
 
-    // If user has an active subscription, this is likely an upgrade
+    // If user has an active subscription, this is an upgrade/switch
     if (currentSubscription.status === 'active') {
       return true;
     }
 
-    // You could also compare plan prices here if needed
+    // If user has no subscription or free plan, this is not an upgrade
     return false;
   };
 
@@ -242,7 +242,7 @@ const PlanComparison: React.FC = () => {
               <Typography variant="h6" gutterBottom>
                 Complete Your Subscription
               </Typography>
-              <PaymentForm
+              <SubscriptionPaymentWrapper
                 priceId={selectedPlan.priceId}
                 planName={selectedPlan.name}
                 planPrice={selectedPlan.price}
