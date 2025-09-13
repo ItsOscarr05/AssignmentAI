@@ -26,10 +26,6 @@ import {
   Box,
   Button,
   Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Grid,
   IconButton,
   InputAdornment,
@@ -60,6 +56,7 @@ import {
   YAxis,
 } from 'recharts';
 import TokenPurchaseForm from '../components/payment/TokenPurchaseForm';
+import TransactionsModal from '../components/transactions/TransactionsModal';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { useTokenUsage } from '../hooks/useTokenUsage';
 import { api } from '../services/api';
@@ -648,6 +645,7 @@ const AITokens: React.FC = () => {
     'Plagiarism Check': { icon: <ReportIcon />, color: '#d32f2f' }, // red
   };
 
+  // Helper functions for transaction display (used in recent transactions section)
   const getTransactionType = (desc: string) => {
     if (/purchase/i.test(desc)) return 'Purchase';
     if (/refund/i.test(desc)) return 'Refund';
@@ -655,14 +653,12 @@ const AITokens: React.FC = () => {
     return 'Purchase';
   };
 
-  // Get transaction icon based on type and description
   const getTransactionIcon = (transaction: any) => {
     if (transaction.type === 'token_purchase') {
       return <CurrencyBitcoinIcon />;
     }
 
     if (transaction.type === 'subscription') {
-      // Extract plan name from description
       const planName = transaction.description.replace('Subscription - ', '').toLowerCase();
       switch (planName) {
         case 'free':
@@ -681,14 +677,12 @@ const AITokens: React.FC = () => {
     return <CreditCardIcon />;
   };
 
-  // Get transaction color based on type and description
   const getTransactionColor = (transaction: any) => {
     if (transaction.type === 'token_purchase') {
       return '#4a148c'; // Dark purple for token purchases
     }
 
     if (transaction.type === 'subscription') {
-      // Extract plan name from description
       const planName = transaction.description.replace('Subscription - ', '').toLowerCase();
       switch (planName) {
         case 'free':
@@ -1892,162 +1886,12 @@ const AITokens: React.FC = () => {
           </Box>
 
           {/* All Transactions Modal */}
-          <Dialog
+          <TransactionsModal
             open={modalOpen}
             onClose={handleModalClose}
-            maxWidth="md"
-            fullWidth
-            PaperProps={{
-              sx: {
-                borderRadius: 3,
-                border: '2px solid red',
-                maxHeight: '80vh',
-                width: { xs: '95vw', sm: '90vw', md: 'auto' },
-                maxWidth: { xs: '95vw', sm: '90vw', md: 'md' },
-                backgroundColor: theme =>
-                  theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
-              },
-            }}
-          >
-            <DialogTitle sx={{ borderBottom: '1px solid', borderColor: 'divider', pb: 2 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography
-                  variant="h6"
-                  sx={{
-                    color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
-                    fontWeight: 'normal',
-                  }}
-                >
-                  All Transactions
-                </Typography>
-                <IconButton onClick={handleModalClose} size="small">
-                  <CloseIcon />
-                </IconButton>
-              </Box>
-            </DialogTitle>
-            <DialogContent sx={{ p: 0, overflow: 'hidden' }}>
-              <List sx={{ py: 0, width: '100%' }}>
-                {transactions
-                  .filter(t => /purchase|subscription/i.test(t.description))
-                  .map((transaction, index) => {
-                    const type = getTransactionType(transaction.description);
-                    const transactionIcon = getTransactionIcon(transaction);
-                    const transactionColor = getTransactionColor(transaction);
-                    return (
-                      <React.Fragment key={index}>
-                        <ListItem
-                          button
-                          onClick={e => handleTransactionClick(e, transaction)}
-                          sx={{
-                            pl: 2,
-                            pr: 2,
-                            position: 'relative',
-                            borderLeft: 'none',
-                            background: theme =>
-                              theme.palette.mode === 'dark'
-                                ? theme.palette.background.paper
-                                : '#fff',
-                            border: `2px solid ${transactionColor}`,
-                            transition: 'all 0.2s ease-in-out',
-                            '&:hover': {
-                              boxShadow: theme =>
-                                theme.palette.mode === 'dark'
-                                  ? '0 4px 12px rgba(255, 255, 255, 0.1)'
-                                  : '0 2px 8px rgba(211,47,47,0.08)',
-                              transform: 'translateY(-1px)',
-                            },
-                            mb: 1,
-                            mx: 2,
-                            borderRadius: 2,
-                            '::before': {
-                              content: '""',
-                              position: 'absolute',
-                              left: 0,
-                              top: 0,
-                              bottom: 0,
-                              width: '6px',
-                              borderTopLeftRadius: '6px',
-                              borderBottomLeftRadius: '6px',
-                              background: transactionColor,
-                            },
-                          }}
-                        >
-                          <ListItemIcon sx={{ minWidth: 40, pl: 1 }}>
-                            {React.cloneElement(transactionIcon, {
-                              sx: { color: transactionColor, fontSize: 28 },
-                            })}
-                          </ListItemIcon>
-                          <ListItemText
-                            primary={
-                              <Typography
-                                sx={{
-                                  color: theme =>
-                                    theme.palette.mode === 'dark' ? 'white' : 'black',
-                                  fontWeight: 500,
-                                }}
-                              >
-                                {transaction.description}
-                              </Typography>
-                            }
-                            secondary={
-                              <>
-                                <Chip
-                                  label={type}
-                                  size="small"
-                                  sx={{
-                                    backgroundColor: transactionColor,
-                                    color: theme =>
-                                      theme.palette.mode === 'dark'
-                                        ? theme.palette.background.paper
-                                        : '#fff',
-                                    fontWeight: 600,
-                                    mr: 1,
-                                  }}
-                                />
-                                <Typography
-                                  component="span"
-                                  sx={{
-                                    color: theme =>
-                                      theme.palette.mode === 'dark'
-                                        ? 'text.secondary'
-                                        : 'text.secondary',
-                                    fontSize: '0.875rem',
-                                  }}
-                                >
-                                  {formatDistanceToNow(parseISO(transaction.created_at), {
-                                    addSuffix: true,
-                                  })}
-                                </Typography>
-                              </>
-                            }
-                          />
-                          <Chip
-                            label={`$${transaction.amount.toFixed(2)}`}
-                            size="medium"
-                            sx={{
-                              backgroundColor: 'transparent',
-                              color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
-                              border: 'none',
-                              fontWeight: 700,
-                              fontSize: '1.5rem',
-                            }}
-                          />
-                        </ListItem>
-                      </React.Fragment>
-                    );
-                  })}
-              </List>
-            </DialogContent>
-            <DialogActions sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-              <Button
-                onClick={handleModalClose}
-                variant="outlined"
-                sx={{ borderColor: 'red', color: 'red' }}
-              >
-                Close
-              </Button>
-            </DialogActions>
-          </Dialog>
+            transactions={transactions}
+            onTransactionClick={handleTransactionClick}
+          />
         </Grid>
       </Grid>
 
