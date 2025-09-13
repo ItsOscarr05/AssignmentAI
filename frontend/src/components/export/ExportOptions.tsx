@@ -1,5 +1,5 @@
 import {
-  FileCopy as CopyIcon,
+  ContentCopy as CopyIcon,
   Download as DownloadIcon,
   Google as GoogleIcon,
   PictureAsPdf as PdfIcon,

@@ -1,31 +1,23 @@
 import {
   Add as AddIcon,
   BarChart as BarChartIcon,
-  Psychology as BrainIcon,
   ChatOutlined as ChatOutlinedIcon,
-  ContentCopy as ContentCopyIcon,
   DeleteOutlined,
-  DownloadOutlined as DownloadOutlinedIcon,
   EditOutlined as EditOutlinedIcon,
   FormatListBulleted as FormatListBulletedIcon,
   FullscreenExit as FullscreenExitIcon,
-  Fullscreen as FullscreenIcon,
   History as HistoryIcon,
   InfoOutlined as InfoIcon,
   LinkOutlined as LinkOutlinedIcon,
-  Person as PersonIcon,
   RecordVoiceOverOutlined,
-  Refresh as RefreshIcon,
   Send as SendIcon,
   UploadOutlined as UploadOutlinedIcon,
 } from '@mui/icons-material';
 import {
   Alert,
   alpha,
-  Avatar,
   Box,
   Button,
-  Chip,
   CircularProgress,
   Dialog,
   DialogContent,
@@ -37,7 +29,6 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-  Paper,
   Snackbar,
   TextField,
   Tooltip,
@@ -57,6 +48,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import EnhancedAIAnalysisPopup from '../components/workshop/EnhancedAIAnalysisPopup';
 import { FeatureAccessErrorComponent } from '../components/workshop/FeatureAccessError';
 import RecentHistorySidebar from '../components/workshop/RecentHistorySidebar';
 import WorkshopFileUpload from '../components/workshop/WorkshopFileUpload';
@@ -146,13 +138,11 @@ const Workshop: React.FC = () => {
   const {
     generateContent,
     history: workshopHistory,
-    isLoading,
     error,
     featureAccessError,
     files,
     addLink,
     processFile,
-    clearWorkshop,
     clearFeatureAccessError,
   } = useWorkshopStore();
   const [input, setInput] = useState('');
@@ -161,7 +151,6 @@ const Workshop: React.FC = () => {
   const [responseTab, setResponseTab] = useState(0);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [isCopied, setIsCopied] = useState(false);
   const [activityData] = useState<any[]>([]);
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
   const [animatedPercent, setAnimatedPercent] = useState(0);
@@ -185,6 +174,11 @@ const Workshop: React.FC = () => {
 
   const [subscription, setSubscription] = useState<any>(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+
+  // NEW AI Response Popup state - Enhanced analysis interface
+  const [isAnalysisPopupOpen, setIsAnalysisPopupOpen] = useState(false);
+  const [popupUploadType, setPopupUploadType] = useState<'text' | 'file' | 'link'>('text');
+  const [popupContent, setPopupContent] = useState<any>(null);
 
   // Fullscreen message state
   const [fullscreenMessage, setFullscreenMessage] = useState<string | null>(null);
@@ -263,7 +257,6 @@ const Workshop: React.FC = () => {
   }, [totalTokens, subscription]);
 
   const uploadContentRef = useRef<HTMLDivElement>(null);
-  const aiResponseRef = useRef<HTMLDivElement>(null);
   const rewriteTabRef = useRef<HTMLDivElement>(null);
   // Modal state for live AI response
   const [liveModalOpen, setLiveModalOpen] = useState(false);
@@ -393,6 +386,8 @@ const Workshop: React.FC = () => {
     e.preventDefault();
     if (input.trim()) {
       await generateContent(input);
+      // Open NEW AI Response popup for text analysis
+      handleOpenAnalysisPopup('text', { text: input });
       setInput('');
     }
   };
@@ -401,6 +396,8 @@ const Workshop: React.FC = () => {
     e.preventDefault();
     if (linkInput.trim()) {
       await addLink({ url: linkInput, title: linkInput });
+      // Open NEW AI Response popup for link analysis
+      handleOpenAnalysisPopup('link', { url: linkInput, title: linkInput });
       setLinkInput('');
       setSnackbar({
         open: true,
@@ -417,13 +414,27 @@ const Workshop: React.FC = () => {
     }
   };
 
-  const handleSuggestionClick = (text: string, tabIndex: number) => {
-    setInput(text);
-    setActiveTab(0);
+  // NEW AI Response Popup handlers - Enhanced analysis interface
+  const handleOpenAnalysisPopup = (uploadType: 'text' | 'file' | 'link', content: any) => {
+    setPopupUploadType(uploadType);
+    setPopupContent(content);
+    setIsAnalysisPopupOpen(true);
+  };
+
+  const handleCloseAnalysisPopup = () => {
+    setIsAnalysisPopupOpen(false);
+    setPopupContent(null);
+  };
+
+  const handlePopupTabClick = (tabIndex: number) => {
     setResponseTab(tabIndex);
-    if (aiResponseRef.current) {
-      aiResponseRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    // Handle tab-specific actions here
+  };
+
+  const handlePopupSuggestionClick = (suggestion: string, tabIndex: number) => {
+    setInput(suggestion);
+    setResponseTab(tabIndex);
+    handleCloseAnalysisPopup();
   };
 
   const handleFileAction = async (action: 'summarize' | 'extract' | 'rewrite' | 'analyze') => {
@@ -442,48 +453,6 @@ const Workshop: React.FC = () => {
     setHistory(prev =>
       prev.map(item => (item.id === id ? { ...item, isPinned: !item.isPinned } : item))
     );
-  };
-
-  const handleCopy = () => {
-    if (workshopHistory.length > 0) {
-      const lastResponse = workshopHistory[workshopHistory.length - 1].content;
-      navigator.clipboard.writeText(lastResponse);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
-    }
-  };
-
-  const handleRegenerate = () => {
-    if (workshopHistory.length > 0) {
-      const lastPrompt = workshopHistory[workshopHistory.length - 1].prompt;
-      generateContent(lastPrompt);
-    }
-  };
-
-  const handleClearChat = () => {
-    clearWorkshop();
-  };
-
-  // Add a download handler
-  const handleDownloadAIContent = () => {
-    if (workshopHistory.length > 0) {
-      const last = workshopHistory[workshopHistory.length - 1];
-      const blob = new Blob([last.content], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'ai_response.txt';
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }, 0);
-    }
-  };
-
-  const handleFullscreenToggle = (messageId: string) => {
-    setFullscreenMessage(fullscreenMessage === messageId ? null : messageId);
   };
 
   const renderInputSection = () => {
@@ -548,7 +517,9 @@ const Workshop: React.FC = () => {
           </Box>
         );
       case 1:
-        return <WorkshopFileUpload />;
+        return (
+          <WorkshopFileUpload onFileUploaded={file => handleOpenAnalysisPopup('file', file)} />
+        );
       case 2:
         return (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -1121,438 +1092,6 @@ const Workshop: React.FC = () => {
               </TabPanel>
             </Box>
           </Box>
-
-          {/* AI Response Area */}
-          <Box
-            ref={aiResponseRef}
-            sx={{
-              ...cardStyle,
-              p: { xs: 0.75, sm: 1, md: 3 },
-              overflow: 'hidden',
-              width: { xs: '95%', sm: '100%' },
-              mx: { xs: 'auto', sm: 0 },
-              '@media (max-width: 480px)': {
-                width: '98%',
-                mx: 'auto',
-              },
-            }}
-          >
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: { xs: 0.75, sm: 1 },
-                borderBottom: '1px solid #e0e0e0',
-                pb: { xs: 0.75, sm: 1 },
-              }}
-            >
-              {/* Top row: Title and Action Buttons */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
-                <Typography
-                  variant="h6"
-                  sx={{
-                    fontWeight: 700,
-                    fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' },
-                    color: theme => (theme.palette.mode === 'dark' ? 'red' : 'black'),
-                  }}
-                >
-                  AI Response
-                </Typography>
-                <Box sx={{ display: 'flex', gap: { xs: 0.5, sm: 1 } }}>
-                  <Tooltip title="Clear Chat">
-                    <IconButton
-                      size="small"
-                      sx={{
-                        color: 'red',
-                        width: { xs: 28, sm: 32, md: 36 },
-                        height: { xs: 28, sm: 32, md: 36 },
-                        '& .MuiSvgIcon-root': {
-                          fontSize: { xs: '1rem', sm: '1.1rem', md: '1.25rem' },
-                        },
-                      }}
-                      onClick={handleClearChat}
-                    >
-                      <DeleteOutlined />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title={isCopied ? 'Copied!' : 'Copy'}>
-                    <IconButton
-                      size="small"
-                      sx={{
-                        color: 'red',
-                        width: { xs: 28, sm: 32, md: 36 },
-                        height: { xs: 28, sm: 32, md: 36 },
-                        '& .MuiSvgIcon-root': {
-                          fontSize: { xs: '1rem', sm: '1.1rem', md: '1.25rem' },
-                        },
-                      }}
-                      onClick={handleCopy}
-                    >
-                      <ContentCopyIcon />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Regenerate">
-                    <IconButton
-                      size="small"
-                      sx={{
-                        color: 'red',
-                        width: { xs: 28, sm: 32, md: 36 },
-                        height: { xs: 28, sm: 32, md: 36 },
-                        '& .MuiSvgIcon-root': {
-                          fontSize: { xs: '1rem', sm: '1.1rem', md: '1.25rem' },
-                        },
-                      }}
-                      onClick={handleRegenerate}
-                    >
-                      <RefreshIcon />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
-              </Box>
-
-              {/* Bottom row: Tabs */}
-              <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                <Button
-                  onClick={() => setResponseTab(0)}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    color: '#9c27b0',
-                    borderBottom: responseTab === 0 ? '2px solid #9c27b0' : 'none',
-                    backgroundColor: 'transparent',
-                    textTransform: 'none',
-                    fontWeight: responseTab === 0 ? 'bold' : 'normal',
-                    minWidth: { xs: 50, sm: 100 },
-                    flex: { xs: 1, sm: 'none' },
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                    '&:hover': {
-                      backgroundColor: 'transparent',
-                      color: '#9c27b0',
-                    },
-                  }}
-                >
-                  <DownloadOutlinedIcon
-                    sx={{ color: '#9c27b0', fontSize: { xs: '1rem', sm: '1.25rem' } }}
-                  />
-                  <Typography
-                    sx={{
-                      display: { xs: 'none', sm: 'block' },
-                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                      color: 'inherit',
-                    }}
-                  >
-                    DOWNLOAD
-                  </Typography>
-                </Button>
-                <Button
-                  onClick={() => setResponseTab(1)}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    color: '#2196f3',
-                    borderBottom: responseTab === 1 ? '2px solid #2196f3' : 'none',
-                    backgroundColor: 'transparent',
-                    textTransform: 'none',
-                    fontWeight: responseTab === 1 ? 'bold' : 'normal',
-                    minWidth: { xs: 50, sm: 100 },
-                    flex: { xs: 1, sm: 'none' },
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                    '&:hover': {
-                      backgroundColor: 'transparent',
-                      color: '#2196f3',
-                    },
-                  }}
-                >
-                  <EditOutlinedIcon
-                    sx={{ color: '#2196f3', fontSize: { xs: '1rem', sm: '1.25rem' } }}
-                  />
-                  <Typography
-                    sx={{
-                      display: { xs: 'none', sm: 'block' },
-                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                      color: 'inherit',
-                    }}
-                  >
-                    REWRITE
-                  </Typography>
-                </Button>
-                <Button
-                  onClick={() => setResponseTab(2)}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    color: '#ffc107',
-                    borderBottom: responseTab === 2 ? '2px solid #ffc107' : 'none',
-                    backgroundColor: 'transparent',
-                    textTransform: 'none',
-                    fontWeight: responseTab === 2 ? 'bold' : 'normal',
-                    minWidth: { xs: 50, sm: 100 },
-                    flex: { xs: 1, sm: 'none' },
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                    '&:hover': {
-                      backgroundColor: 'transparent',
-                      color: '#ffc107',
-                    },
-                  }}
-                >
-                  <FormatListBulletedIcon
-                    sx={{ color: '#ffc107', fontSize: { xs: '1rem', sm: '1.25rem' } }}
-                  />
-                  <Typography
-                    sx={{
-                      display: { xs: 'none', sm: 'block' },
-                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                      color: 'inherit',
-                    }}
-                  >
-                    EXTRACT
-                  </Typography>
-                </Button>
-                <Button
-                  onClick={() => setResponseTab(3)}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    color: '#ff9800',
-                    borderBottom: responseTab === 3 ? '2px solid #ff9800' : 'none',
-                    backgroundColor: 'transparent',
-                    textTransform: 'none',
-                    fontWeight: responseTab === 3 ? 'bold' : 'normal',
-                    minWidth: { xs: 50, sm: 100 },
-                    flex: { xs: 1, sm: 'none' },
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                    '&:hover': {
-                      backgroundColor: 'transparent',
-                      color: '#ff9800',
-                    },
-                  }}
-                >
-                  <RecordVoiceOverOutlined
-                    sx={{ color: '#ff9800', fontSize: { xs: '1rem', sm: '1.25rem' } }}
-                  />
-                  <Typography
-                    sx={{
-                      display: { xs: 'none', sm: 'block' },
-                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                      color: 'inherit',
-                    }}
-                  >
-                    SUMMARIZE
-                  </Typography>
-                </Button>
-              </Box>
-            </Box>
-            <Divider sx={{ mb: 2 }} />
-            <Box sx={{ minHeight: '200px', width: '100%', px: { xs: 0, sm: 2 } }}>
-              {workshopHistory.length > 0 ? (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {workshopHistory.map(item => (
-                    <React.Fragment key={item.id}>
-                      {/* User Message - Right Side */}
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          justifyContent: 'flex-end',
-                          mb: 2,
-                        }}
-                      >
-                        <Box sx={{ maxWidth: '70%', position: 'relative' }}>
-                          <Paper
-                            elevation={1}
-                            sx={{
-                              p: 2,
-                              backgroundColor: 'rgba(25, 118, 210, 0.1)',
-                              border: '1px solid red',
-                              borderRadius: 2,
-                            }}
-                          >
-                            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                              {item.prompt}
-                            </Typography>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              sx={{ display: 'block', mt: 1, textAlign: 'right' }}
-                            >
-                              {new Date(item.timestamp).toLocaleTimeString()}
-                            </Typography>
-                          </Paper>
-                        </Box>
-                        <Avatar
-                          sx={{
-                            bgcolor: 'red',
-                            width: 32,
-                            height: 32,
-                            ml: 1,
-                            mt: 0.5,
-                          }}
-                        >
-                          <PersonIcon sx={{ color: 'white', fontSize: 20 }} />
-                        </Avatar>
-                      </Box>
-
-                      {/* AI Response - Left Side */}
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          justifyContent: 'flex-start',
-                          mb: 2,
-                        }}
-                      >
-                        <Avatar
-                          sx={{
-                            bgcolor: 'white',
-                            width: 32,
-                            height: 32,
-                            mr: 1,
-                            mt: 0.5,
-                            border: '1px solid #e0e0e0',
-                          }}
-                        >
-                          <BrainIcon sx={{ color: 'red', fontSize: 20 }} />
-                        </Avatar>
-                        <Box sx={{ maxWidth: '70%', position: 'relative' }}>
-                          <Paper
-                            elevation={1}
-                            sx={{
-                              p: 2,
-                              backgroundColor: 'rgba(244, 67, 54, 0.1)',
-                              border: '1px solid #f44336',
-                              borderRadius: 2,
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'flex-start',
-                                mb: 1,
-                              }}
-                            >
-                              <Typography variant="caption" color="text.secondary">
-                                AI Assistant
-                              </Typography>
-                              <IconButton
-                                size="small"
-                                onClick={() => handleFullscreenToggle(item.id)}
-                                sx={{ p: 0.5, ml: 1 }}
-                              >
-                                <FullscreenIcon fontSize="small" />
-                              </IconButton>
-                            </Box>
-                            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                              {item.content}
-                            </Typography>
-                            {item.serviceUsed && (
-                              <Chip
-                                label={item.serviceUsed.replace('_', ' ').toUpperCase()}
-                                size="small"
-                                sx={{
-                                  mt: 1,
-                                  mr: 1,
-                                  backgroundColor: 'rgba(76, 175, 80, 0.1)',
-                                  color: '#4caf50',
-                                  fontWeight: 500,
-                                }}
-                              />
-                            )}
-                            {item.fileCategory && (
-                              <Chip
-                                label={`File: ${item.fileCategory}`}
-                                size="small"
-                                sx={{
-                                  mt: 1,
-                                  mr: 1,
-                                  backgroundColor: 'rgba(33, 150, 243, 0.1)',
-                                  color: '#2196f3',
-                                  fontWeight: 500,
-                                }}
-                              />
-                            )}
-                            {item.hasDiagram && (
-                              <Chip
-                                label="Diagram Generated"
-                                size="small"
-                                sx={{
-                                  mt: 1,
-                                  backgroundColor: 'rgba(255, 152, 0, 0.1)',
-                                  color: '#ff9800',
-                                  fontWeight: 500,
-                                }}
-                              />
-                            )}
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              sx={{ display: 'block', mt: 1, textAlign: 'right' }}
-                            >
-                              {new Date(item.timestamp).toLocaleTimeString()}
-                            </Typography>
-                          </Paper>
-                        </Box>
-                      </Box>
-                    </React.Fragment>
-                  ))}
-                </Box>
-              ) : (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    height: '200px',
-                    color: 'text.secondary',
-                    textAlign: 'center',
-                    p: 3,
-                  }}
-                >
-                  <ChatOutlinedIcon
-                    sx={{
-                      fontSize: 48,
-                      color: theme => (theme.palette.mode === 'dark' ? '#ff6b6b' : 'red'),
-                      mb: 2,
-                      opacity: 0.5,
-                    }}
-                  />
-                  <Typography variant="h6" color="text.secondary" gutterBottom>
-                    No Responses Yet
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Start a conversation to see AI responses here
-                  </Typography>
-                </Box>
-              )}
-              {isLoading && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-                  <CircularProgress sx={{ color: 'red' }} />
-                </Box>
-              )}
-            </Box>
-            {responseTab === 0 && (
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-                <Button
-                  variant="contained"
-                  startIcon={<DownloadOutlinedIcon />}
-                  color="primary"
-                  onClick={handleDownloadAIContent}
-                  disabled={workshopHistory.length === 0}
-                >
-                  Download AI Response
-                </Button>
-              </Box>
-            )}
-          </Box>
         </Grid>
 
         {/* Sidebar */}
@@ -1633,90 +1172,6 @@ const Workshop: React.FC = () => {
                   primary="Add External Link"
                   sx={{
                     '& .MuiTypography-root': {
-                      color: theme => (theme.palette.mode === 'dark' ? 'white' : 'inherit'),
-                    },
-                  }}
-                />
-              </ListItem>
-            </List>
-          </Box>
-
-          {/* AI Suggestions */}
-          <Box
-            sx={{
-              ...cardStyle,
-              p: { xs: 0.75, sm: 1, md: 3 },
-              mb: { xs: 2, sm: 3, md: 4 },
-              overflow: 'hidden',
-              width: { xs: '95%', sm: '100%' },
-              mx: { xs: 'auto', sm: 0 },
-              '@media (min-width: 960px)': {
-                width: '100%',
-                maxWidth: '100%',
-              },
-              '@media (max-width: 480px)': {
-                width: '98%',
-                mx: 'auto',
-              },
-            }}
-          >
-            <Typography
-              variant="h6"
-              gutterBottom
-              sx={{
-                fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' },
-                color: theme => (theme.palette.mode === 'dark' ? 'red' : 'black'),
-              }}
-            >
-              AI Suggestions
-            </Typography>
-            <List>
-              <ListItem button onClick={() => handleSuggestionClick('Summarize this content', 3)}>
-                <ListItemIcon>
-                  <RecordVoiceOverOutlined sx={{ color: '#ff9800' }} />
-                </ListItemIcon>
-                <ListItemText
-                  primary="Summarize"
-                  secondary="Get a concise summary of the content"
-                  sx={{
-                    '& .MuiTypography-root.MuiTypography-body1': {
-                      color: '#ff9800',
-                    },
-                    '& .MuiTypography-root.MuiTypography-body2': {
-                      color: theme => (theme.palette.mode === 'dark' ? 'white' : 'inherit'),
-                    },
-                  }}
-                />
-              </ListItem>
-              <ListItem button onClick={() => handleSuggestionClick('Extract key points', 2)}>
-                <ListItemIcon>
-                  <FormatListBulletedIcon sx={{ color: '#ffc107' }} />
-                </ListItemIcon>
-                <ListItemText
-                  primary="Extract"
-                  secondary="Extract the main points and insights"
-                  sx={{
-                    '& .MuiTypography-root.MuiTypography-body1': {
-                      color: '#ffc107',
-                    },
-                    '& .MuiTypography-root.MuiTypography-body2': {
-                      color: theme => (theme.palette.mode === 'dark' ? 'white' : 'inherit'),
-                    },
-                  }}
-                />
-              </ListItem>
-              <ListItem button onClick={() => handleSuggestionClick('Rewrite this content', 1)}>
-                <ListItemIcon>
-                  <EditOutlinedIcon sx={{ color: '#2196f3' }} />
-                </ListItemIcon>
-                <ListItemText
-                  primary="Rewrite"
-                  secondary="Rewrite content in a different style"
-                  sx={{
-                    '& .MuiTypography-root.MuiTypography-body1': {
-                      color: '#2196f3',
-                    },
-                    '& .MuiTypography-root.MuiTypography-body2': {
                       color: theme => (theme.palette.mode === 'dark' ? 'white' : 'inherit'),
                     },
                   }}
@@ -2103,6 +1558,16 @@ const Workshop: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* NEW AI Response Popup - Enhanced analysis interface */}
+      <EnhancedAIAnalysisPopup
+        open={isAnalysisPopupOpen}
+        onClose={handleCloseAnalysisPopup}
+        uploadType={popupUploadType}
+        content={popupContent}
+        onTabClick={handlePopupTabClick}
+        onSuggestionClick={handlePopupSuggestionClick}
+      />
     </Box>
   );
 };

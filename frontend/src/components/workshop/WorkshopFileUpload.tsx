@@ -31,7 +31,11 @@ import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useWorkshopStore } from '../../services/WorkshopService';
 
-const WorkshopFileUpload: React.FC = () => {
+interface WorkshopFileUploadProps {
+  onFileUploaded?: (file: any) => void;
+}
+
+const WorkshopFileUpload: React.FC<WorkshopFileUploadProps> = ({ onFileUploaded }) => {
   const { files, uploadProgress, addFile, deleteFile } = useWorkshopStore();
   const [previewFile, setPreviewFile] = useState<any>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -39,10 +43,13 @@ const WorkshopFileUpload: React.FC = () => {
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
       for (const file of acceptedFiles) {
-        await addFile(file);
+        const uploadedFile = await addFile(file);
+        if (uploadedFile && onFileUploaded) {
+          onFileUploaded(uploadedFile);
+        }
       }
     },
-    [addFile]
+    [addFile, onFileUploaded]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
