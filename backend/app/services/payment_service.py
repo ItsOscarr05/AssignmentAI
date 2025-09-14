@@ -209,28 +209,28 @@ class PaymentService:
                 "price": 0.0,
                 "plan_id": settings.STRIPE_PRICE_FREE,  # Store actual Stripe price ID
                 "ai_model": "gpt-5-nano",
-                "token_limit": 30000
+                "token_limit": 100000
             },
             settings.STRIPE_PRICE_PLUS: {
                 "name": "Plus", 
                 "price": 4.99,
                 "plan_id": settings.STRIPE_PRICE_PLUS,  # Store actual Stripe price ID
                 "ai_model": "gpt-4.1-mini",
-                "token_limit": 50000
+                "token_limit": 200000
             },
             settings.STRIPE_PRICE_PRO: {
                 "name": "Pro", 
                 "price": 9.99,
                 "plan_id": settings.STRIPE_PRICE_PRO,  # Store actual Stripe price ID
                 "ai_model": "gpt-4-turbo",
-                "token_limit": 75000
+                "token_limit": 400000
             },
             settings.STRIPE_PRICE_MAX: {
                 "name": "Max", 
                 "price": 14.99,
                 "plan_id": settings.STRIPE_PRICE_MAX,  # Store actual Stripe price ID
                 "ai_model": "gpt-5",
-                "token_limit": 100000
+                "token_limit": 800000
             },
         }
         
@@ -243,7 +243,7 @@ class PaymentService:
                 "price": 9.99,
                 "plan_id": settings.STRIPE_PRICE_PRO,  # Store actual Stripe price ID
                 "ai_model": "gpt-4",
-                "token_limit": 75000
+                "token_limit": 400000
             }
 
 
@@ -471,7 +471,7 @@ class PaymentService:
                 plan_price=0.0,
                 plan_id=settings.STRIPE_PRICE_FREE,
                 ai_model="gpt-5-nano",
-                token_limit=30000,
+                token_limit=100000,
                 status=SubscriptionStatus.ACTIVE,
                 current_period_start=datetime.now(),
                 current_period_end=datetime.now() + timedelta(days=30),
@@ -502,7 +502,7 @@ class PaymentService:
                 "current_period_end": (datetime.now() + timedelta(days=30)).isoformat(),
                 "cancel_at_period_end": False,
                 "ai_model": "gpt-5-nano",
-                "token_limit": 30000
+                "token_limit": 100000
             }
 
     async def create_payment_method(self, user: User, payment_method_data: Dict[str, Any]) -> Dict[str, Any]:

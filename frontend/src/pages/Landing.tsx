@@ -1634,7 +1634,7 @@ const Landing: React.FC = () => {
                               mb: 0,
                             }}
                           >
-                            30,000 tokens/month
+                            100,000 tokens/month
                           </Typography>
                         )}
                         {plan.name === 'Plus' && (
@@ -1648,7 +1648,7 @@ const Landing: React.FC = () => {
                               mb: 0,
                             }}
                           >
-                            50,000 tokens/month
+                            200,000 tokens/month
                           </Typography>
                         )}
                         {plan.name === 'Pro' && (
@@ -1662,7 +1662,7 @@ const Landing: React.FC = () => {
                               mb: 0,
                             }}
                           >
-                            75,000 tokens/month
+                            400,000 tokens/month
                           </Typography>
                         )}
                         {plan.name === 'Max' && (
@@ -1676,7 +1676,7 @@ const Landing: React.FC = () => {
                               mb: 0,
                             }}
                           >
-                            100,000 tokens/month
+                            800,000 tokens/month
                           </Typography>
                         )}
                         <Divider />

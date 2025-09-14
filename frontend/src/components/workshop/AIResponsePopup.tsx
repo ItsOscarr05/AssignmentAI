@@ -56,7 +56,7 @@ const AIResponsePopup: React.FC<AIResponsePopupProps> = ({
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const { clearHistory } = useWorkshopStore();
+  const { clearHistory, history: workshopHistory, generatedContent } = useWorkshopStore();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [isScoreExpanded, setIsScoreExpanded] = useState(false);
@@ -69,43 +69,46 @@ const AIResponsePopup: React.FC<AIResponsePopupProps> = ({
   const [processedContent, setProcessedContent] = useState<string>('');
   const [showProcessedContent, setShowProcessedContent] = useState(false);
   const [clearChatRef, setClearChatRef] = useState<(() => void) | null>(null);
-  const [showMessageSelection, setShowMessageSelection] = useState(true); // Set to true for development
-  const [selectedAction, setSelectedAction] = useState<string>('SUMMARIZE'); // Set default action for development
-  const [chatMessages, setChatMessages] = useState<any[]>([
-    // Mock data for development
-    {
-      id: '1',
-      content: 'Hello! I need help with my assignment about machine learning algorithms.',
-      isUser: true,
-      timestamp: new Date().toISOString(),
-    },
-    {
-      id: '2',
-      content:
-        "I'd be happy to help you with your machine learning assignment! There are several key algorithms you should consider: supervised learning (like linear regression, decision trees), unsupervised learning (like clustering, PCA), and reinforcement learning. What specific aspect would you like to focus on?",
-      isUser: false,
-      timestamp: new Date(Date.now() + 1000).toISOString(),
-    },
-    {
-      id: '3',
-      content:
-        "I'm particularly interested in neural networks and deep learning. Can you explain how they work?",
-      isUser: true,
-      timestamp: new Date(Date.now() + 2000).toISOString(),
-    },
-    {
-      id: '4',
-      content:
-        'Neural networks are inspired by the human brain and consist of interconnected nodes (neurons) organized in layers. Deep learning uses multiple hidden layers to learn complex patterns. The key concepts include: forward propagation (data flows forward), backpropagation (learning from errors), activation functions (like ReLU, sigmoid), and optimization algorithms (like Adam, SGD). Would you like me to elaborate on any of these concepts?',
-      isUser: false,
-      timestamp: new Date(Date.now() + 3000).toISOString(),
-    },
-  ]);
+  const [showMessageSelection, setShowMessageSelection] = useState(false);
+  const [selectedAction, setSelectedAction] = useState<string>('SUMMARIZE');
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
     severity: 'success' | 'error' | 'info';
   }>({ open: false, message: '', severity: 'info' });
+
+  // Get conversation history from Workshop store
+  useEffect(() => {
+    const history = workshopHistory.filter((item: any) => item.type === 'chat');
+    const messages = history.map((item: any) => ({
+      id: item.id,
+      content: item.prompt,
+      isUser: true,
+      timestamp: item.timestamp,
+    }));
+
+    // Add AI responses
+    history.forEach((item: any) => {
+      if (item.content) {
+        messages.push({
+          id: `${item.id}-response`,
+          content: item.content,
+          isUser: false,
+          timestamp: item.timestamp,
+        });
+      }
+    });
+
+    // Sort by timestamp
+    messages.sort(
+      (a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+
+    setChatMessages(messages);
+    console.log('Updated chat messages from Workshop history:', messages);
+    console.log('Workshop history items:', workshopHistory);
+  }, [workshopHistory]);
 
   const handleClose = () => {
     // Clear chat history when popup is closed
@@ -1111,7 +1114,7 @@ const AIResponsePopup: React.FC<AIResponsePopupProps> = ({
               m: 2,
             }}
           >
-            {processedContent}
+            {generatedContent || processedContent}
           </Box>
         </DialogContent>
       </Dialog>
@@ -1123,6 +1126,118 @@ const AIResponsePopup: React.FC<AIResponsePopupProps> = ({
         action={selectedAction}
         messages={chatMessages}
         onProcess={handleProcessSelectedMessages}
+        onRedirectToAI={async message => {
+          // Close the conversation summarizer
+          setShowMessageSelection(false);
+
+          // Debug: Log the message being sent
+          console.log('Sending message to chat:', message);
+
+          // Inject the message into the actual chat interface (like typing and sending)
+          setTimeout(() => {
+            console.log('Looking for chat input to inject message...');
+
+            // Try multiple selectors to find the chat input
+            const selectors = [
+              'input[placeholder*="Message"]',
+              'textarea[placeholder*="Message"]',
+              'input[placeholder*="message"]',
+              'textarea[placeholder*="message"]',
+              'input[data-testid*="chat"]',
+              'textarea[data-testid*="chat"]',
+              'input[data-testid*="input"]',
+              'textarea[data-testid*="input"]',
+              'input[type="text"]',
+              'textarea',
+            ];
+
+            let chatInput: HTMLInputElement | HTMLTextAreaElement | null = null;
+
+            // Try each selector
+            for (const selector of selectors) {
+              const element = document.querySelector(selector) as
+                | HTMLInputElement
+                | HTMLTextAreaElement;
+              if (element && (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA')) {
+                chatInput = element;
+                console.log(`Found chat input with selector: ${selector}`, element);
+                break;
+              }
+            }
+
+            if (chatInput) {
+              console.log('Chat input found, injecting message:', message);
+
+              // Clear any existing content
+              chatInput.value = '';
+
+              // Simulate typing the message character by character
+              let i = 0;
+              const typeMessage = () => {
+                if (i < message.length) {
+                  chatInput!.value += message[i];
+                  chatInput!.dispatchEvent(new Event('input', { bubbles: true }));
+                  chatInput!.dispatchEvent(new Event('change', { bubbles: true }));
+                  i++;
+                  setTimeout(typeMessage, 10); // Type 100 characters per second
+                } else {
+                  // Message fully typed, now send it
+                  console.log('Message fully typed, sending...');
+
+                  // Focus the input
+                  chatInput!.focus();
+
+                  // Try to find and click send button
+                  const sendSelectors = [
+                    '[data-testid="send-button"]',
+                    'button[type="submit"]',
+                    'button[aria-label*="send"]',
+                    'button[aria-label*="Send"]',
+                    'button:has(svg)',
+                    '.send-button',
+                    'button[title*="send"]',
+                    'button[title*="Send"]',
+                  ];
+
+                  let sendButton: HTMLButtonElement | null = null;
+                  for (const selector of sendSelectors) {
+                    const button = document.querySelector(selector) as HTMLButtonElement;
+                    if (button && button.tagName === 'BUTTON') {
+                      sendButton = button;
+                      console.log(`Found send button with selector: ${selector}`, button);
+                      break;
+                    }
+                  }
+
+                  if (sendButton) {
+                    console.log('Clicking send button');
+                    sendButton.click();
+                  } else {
+                    console.log('Send button not found, trying Enter key');
+                    // Try Enter key
+                    chatInput!.dispatchEvent(
+                      new KeyboardEvent('keydown', {
+                        key: 'Enter',
+                        code: 'Enter',
+                        keyCode: 13,
+                        bubbles: true,
+                      })
+                    );
+                  }
+                }
+              };
+
+              // Start typing the message
+              typeMessage();
+            } else {
+              console.error('Chat input not found with any selector');
+              console.log(
+                'Available inputs on page:',
+                document.querySelectorAll('input, textarea')
+              );
+            }
+          }, 500);
+        }}
       />
 
       {/* Snackbar for notifications */}

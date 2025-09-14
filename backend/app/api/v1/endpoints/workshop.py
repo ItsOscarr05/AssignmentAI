@@ -1,9 +1,10 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Body
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from app.core.deps import get_current_user, get_db
 from app.core.feature_access import require_feature, has_feature_access, get_user_plan, get_available_features, get_feature_requirements
-from app.services.ai import ai_service
+from app.services.ai_service import AIService
 from app.services.file_service import file_service
 from app.services.web_scraping import WebScrapingService
 from app.services.image_analysis_service import ImageAnalysisService
@@ -20,6 +21,8 @@ import json
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+# Note: AIService will be instantiated per request with db session
 
 @router.get("/health")
 async def workshop_health_check():
@@ -156,21 +159,31 @@ def detect_file_type_and_service(content_type: str, filename: str) -> dict:
 @router.post("/generate")
 async def generate_content(
     prompt: str = Body(..., embed=True),
+    conversation_history: List[dict] = Body(default=[]),
+    stream: bool = Body(default=False, embed=True),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
     Generate AI content based on a prompt. This endpoint now routes to different services
     based on the content of the prompt and enforces feature access controls.
+    Supports streaming responses for real-time chat experience.
     """
     # Add comprehensive logging
     logger.info(f"=== WORKSHOP GENERATE ENDPOINT CALLED ===")
     logger.info(f"User ID: {current_user.id}")
     logger.info(f"User email: {current_user.email}")
-    logger.info(f"Received prompt: {prompt}")
+    # Log prompt with Unicode handling
+    try:
+        logger.info(f"Received prompt: {prompt}")
+    except UnicodeEncodeError:
+        logger.info(f"Received prompt (length: {len(prompt)} characters)")
     logger.info(f"Prompt length: {len(prompt)} characters")
     logger.info(f"Request timestamp: {datetime.utcnow()}")
-    
+
+    # Initialize AI service with database session
+    ai_service = AIService(db=db)
+
     try:
         prompt_lower = prompt.lower()
         
@@ -269,13 +282,67 @@ async def generate_content(
         else:
             logger.info("No specific service detected, using general AI content generation...")
             logger.info("Routing to AI service for general content...")
-            content = await ai_service.generate_assignment_content_from_prompt(prompt)
-            logger.info(f"General AI generation completed. Content length: {len(content)} characters")
-            return {
-                "content": content,
-                "timestamp": datetime.utcnow().isoformat(),
-                "service_used": "general_ai"
-            }
+            
+            # Check if this looks like a simple chat message vs assignment request
+            # Simple indicators: short message, conversational tone, questions, etc.
+            is_simple_chat = (
+                len(prompt.split()) <= 10 or  # Short messages
+                prompt.endswith('?') or  # Questions
+                any(word in prompt.lower() for word in ['hi', 'hello', 'hey', 'thanks', 'thank you', 'help', 'what', 'how', 'why', 'when', 'where', 'who']) or
+                not any(word in prompt.lower() for word in ['assignment', 'homework', 'project', 'essay', 'report', 'paper', 'lesson', 'curriculum'])
+            )
+            
+            if is_simple_chat:
+                logger.info("Detected simple chat message, using GPT conversational AI...")
+                
+                # Check if streaming is requested
+                if stream:
+                    logger.info("Streaming response requested for chat message")
+                    
+                    async def generate_stream():
+                        try:
+                            logger.info("Starting streaming generation...")
+                            chunk_count = 0
+                            async for chunk in ai_service.generate_chat_response_stream(prompt, conversation_history, current_user.id):
+                                chunk_count += 1
+                                logger.info(f"Yielding chunk {chunk_count}: {chunk}")
+                                # Format chunk as Server-Sent Events
+                                yield f"data: {json.dumps({'content': chunk, 'done': False})}\n\n"
+                            logger.info(f"Streaming completed. Total chunks: {chunk_count}")
+                            # Send final completion signal
+                            yield f"data: {json.dumps({'content': '', 'done': True, 'timestamp': datetime.utcnow().isoformat(), 'service_used': 'gpt_chat_stream'})}\n\n"
+                        except Exception as e:
+                            logger.error(f"Error in streaming response: {str(e)}")
+                            yield f"data: {json.dumps({'error': str(e), 'done': True})}\n\n"
+                    
+                    return StreamingResponse(
+                        generate_stream(),
+                        media_type="text/event-stream",
+                        headers={
+                            "Cache-Control": "no-cache",
+                            "Connection": "keep-alive",
+                            "Access-Control-Allow-Origin": "*",
+                            "Access-Control-Allow-Headers": "*"
+                        }
+                    )
+                else:
+                    # Use conversation history passed from frontend and user's subscription model
+                    content = await ai_service.generate_chat_response(prompt, conversation_history, current_user.id)
+                    logger.info(f"GPT chat response completed. Content length: {len(content)} characters")
+                    return {
+                        "content": content,
+                        "timestamp": datetime.utcnow().isoformat(),
+                        "service_used": "gpt_chat"
+                    }
+            else:
+                logger.info("Detected assignment request, using assignment-focused AI...")
+                content = await ai_service.generate_assignment_content_from_prompt(prompt)
+                logger.info(f"Assignment generation completed. Content length: {len(content)} characters")
+                return {
+                    "content": content,
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "service_used": "general_ai"
+                }
         
         # Add final success log
         logger.info("=== WORKSHOP GENERATE ENDPOINT COMPLETED SUCCESSFULLY ===")

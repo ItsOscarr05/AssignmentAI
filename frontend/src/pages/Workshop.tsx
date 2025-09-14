@@ -166,9 +166,9 @@ const Workshop: React.FC = () => {
   });
 
   const [realTokenUsage, setRealTokenUsage] = useState({
-    total: 30000,
+    total: 100000,
     used: 0,
-    remaining: 30000,
+    remaining: 100000,
     percentUsed: 0,
   });
 
@@ -245,7 +245,7 @@ const Workshop: React.FC = () => {
       const used = data.reduce((sum: number, a: any) => sum + (a.tokensUsed || 0), 0);
 
       // Use subscription token limit if available, otherwise fall back to useTokenUsage hook
-      const total = subscription?.token_limit || totalTokens || 30000;
+      const total = subscription?.token_limit || totalTokens || 100000;
 
       setRealTokenUsage({
         total,
@@ -266,10 +266,10 @@ const Workshop: React.FC = () => {
     console.log('getPlanLabel called with:', { subscription, subscriptionLoading });
 
     if (subscriptionLoading) return 'Loading...';
-    if (!subscription) return 'Free Plan (30,000 tokens/month)';
+    if (!subscription) return 'Free Plan (100,000 tokens/month)';
 
     const planId = subscription.plan_id;
-    const tokenLimit = subscription.token_limit || 30000;
+    const tokenLimit = subscription.token_limit || 100000;
 
     console.log('Plan details:', { planId, tokenLimit });
 

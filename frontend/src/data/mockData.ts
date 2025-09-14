@@ -81,7 +81,7 @@ const statuses = ['Completed', 'In Progress', 'Not Started'];
 const assignmentCount = Math.floor(Math.random() * (60 - 40 + 1)) + 40;
 
 // Set the monthly token limit (e.g., 30,000 for Free plan)
-const MONTHLY_TOKEN_LIMIT = 30000;
+const MONTHLY_TOKEN_LIMIT = 100000;
 const now = new Date();
 const currentMonth = now.getMonth();
 const currentYear = now.getFullYear();
@@ -231,7 +231,7 @@ export const recentAssignmentsWithSubject = recentAssignments.map(a => ({
 }));
 
 // Mock token usage data
-export const tokenLimits = [5000, 12000, 15000, 20000, 25000, 30000];
+export const tokenLimits = [50000, 100000, 150000, 200000, 250000, 400000, 800000];
 export const tokenThresholds = [
   { percent: 75, remaining: 22500 },
   { percent: 50, remaining: 15000 },
@@ -244,31 +244,31 @@ export const mockTransactions = [
   {
     date: new Date().toISOString().slice(0, 10),
     description: 'Token Purchase - Free Tier',
-    tokens: 30000,
+    tokens: 100000,
     summary: 'Monthly free token allocation',
   },
   {
     date: '2024-06-01',
     description: 'Token Purchase - Free Tier',
-    tokens: 30000,
+    tokens: 100000,
     summary: 'Monthly free token allocation',
   },
   {
     date: '2024-05-01',
     description: 'Token Purchase - Free Tier',
-    tokens: 30000,
+    tokens: 100000,
     summary: 'Monthly free token allocation',
   },
   {
     date: '2024-04-01',
     description: 'Token Purchase - Free Tier',
-    tokens: 30000,
+    tokens: 100000,
     summary: 'Monthly free token allocation',
   },
   {
     date: '2024-03-01',
     description: 'Token Purchase - Free Tier',
-    tokens: 30000,
+    tokens: 100000,
     summary: 'Monthly free token allocation',
   },
 ];
@@ -280,7 +280,7 @@ export const mockSubscription = {
   plan_id: (import.meta as any).env?.VITE_STRIPE_PRICE_FREE || 'price_free',
   current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
   cancel_at_period_end: false,
-  token_limit: 30000,
+  token_limit: 100000,
 };
 
 // Mock user data

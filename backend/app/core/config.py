@@ -218,11 +218,27 @@ class Settings(BaseSettings):
     
     # AI settings
     AI_MODEL_VERSION: str = "1.0.0"
-    AI_MAX_TOKENS: int = 2000
+    AI_MAX_TOKENS: int = 2000  # Default fallback
     AI_TEMPERATURE: float = 0.7
     AI_TOP_P: float = 0.9
     AI_FREQUENCY_PENALTY: float = 0.0
     AI_PRESENCE_PENALTY: float = 0.0
+    
+    # Subscription-based token limits (per month)
+    AI_TOKEN_LIMITS: dict[str, int] = {
+        "free": 100000,      # 100K tokens/month (GPT-5 Nano)
+        "plus": 200000,      # 200K tokens/month (GPT-4.1 Mini)
+        "pro": 400000,       # 400K tokens/month (GPT-4 Turbo)
+        "max": 800000        # 800K tokens/month (GPT-5)
+    }
+    
+    # Per-response token limits by plan
+    AI_RESPONSE_LIMITS: dict[str, int] = {
+        "free": 4000,        # 4K tokens per response
+        "plus": 6000,        # 6K tokens per response
+        "pro": 8000,         # 8K tokens per response
+        "max": 12000         # 12K tokens per response
+    }
     
     # Rate Limiting
     RATE_LIMIT_REQUESTS: int = 100  # requests per minute

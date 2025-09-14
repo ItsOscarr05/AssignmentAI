@@ -54,7 +54,11 @@ export interface WorkshopState {
   files: WorkshopFile[];
   links: Link[];
   uploadProgress: { [key: string]: number };
-  generateContent: (prompt: string) => Promise<void>;
+  generateContent: (
+    prompt: string,
+    useStreaming?: boolean,
+    onChunk?: (chunk: string) => void
+  ) => Promise<void>;
   saveContent: (content: string) => Promise<void>;
   addFile: (file: globalThis.File) => Promise<void>;
   deleteFile: (id: string) => Promise<void>;
@@ -83,25 +87,154 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
   links: [],
   uploadProgress: {},
 
-  generateContent: async (prompt: string) => {
+  generateContent: async (
+    prompt: string,
+    useStreaming: boolean = true,
+    onChunk?: (chunk: string) => void
+  ) => {
     set({ isLoading: true, error: null, featureAccessError: null });
     try {
-      const response = await api.post('/workshop/generate', { prompt: prompt });
-      const content = response.data.content;
-      const historyItem: HistoryItem = {
-        id: Date.now().toString(),
-        prompt,
-        content,
-        timestamp: new Date().toISOString(),
-        type: 'chat',
-        serviceUsed: response.data.service_used,
-        hasDiagram: response.data.has_diagram || false,
-      };
-      set(state => ({
-        generatedContent: content,
-        history: [...state.history, historyItem],
-        isLoading: false,
-      }));
+      // Get conversation history for context
+      const state = useWorkshopStore.getState();
+      const conversationHistory = state.history
+        .filter(item => item.type === 'chat')
+        .map(item => ({
+          content: item.prompt,
+          isUser: true,
+          timestamp: item.timestamp,
+        }));
+
+      if (useStreaming) {
+        // Use streaming for better performance with Fetch API
+        const token = localStorage.getItem('access_token');
+        const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+        console.log('Starting streaming request to:', `${baseURL}/api/v1/workshop/generate`);
+        console.log('Request payload:', {
+          prompt,
+          conversation_history: conversationHistory,
+          stream: true,
+        });
+
+        const response = await fetch(`${baseURL}/api/v1/workshop/generate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+          body: JSON.stringify({
+            prompt: prompt,
+            conversation_history: conversationHistory,
+            stream: true,
+          }),
+        });
+
+        console.log('Response status:', response.status);
+        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Response error:', errorText);
+          throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+        }
+
+        let fullContent = '';
+        let serviceUsed = 'gpt_chat_stream';
+
+        // Handle streaming response
+        const reader = response.body?.getReader();
+        if (!reader) {
+          throw new Error('Failed to get response reader');
+        }
+
+        const decoder = new TextDecoder();
+        console.log('Starting to read streaming response...');
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+              console.log('Stream reading completed');
+              break;
+            }
+
+            const chunk = decoder.decode(value);
+            console.log('Received chunk:', chunk);
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+              console.log('Processing line:', line);
+              if (line.startsWith('data: ')) {
+                try {
+                  const data = JSON.parse(line.slice(6));
+                  console.log('Parsed SSE data:', data);
+                  if (data.error) {
+                    throw new Error(data.error);
+                  }
+                  if (data.content) {
+                    fullContent += data.content;
+                    console.log('Content so far:', fullContent);
+                    // Call the chunk callback for real-time updates
+                    if (onChunk) {
+                      onChunk(data.content);
+                    }
+                  }
+                  if (data.done) {
+                    serviceUsed = data.service_used || serviceUsed;
+                    console.log('Stream completed, service used:', serviceUsed);
+                    break;
+                  }
+                } catch (e) {
+                  console.warn('Failed to parse SSE data:', e, 'Line:', line);
+                  // Continue processing other lines
+                }
+              }
+            }
+          }
+        } finally {
+          reader.releaseLock();
+        }
+
+        const historyItem: HistoryItem = {
+          id: Date.now().toString(),
+          prompt,
+          content: fullContent,
+          timestamp: new Date().toISOString(),
+          type: 'chat',
+          serviceUsed,
+          hasDiagram: false,
+        };
+
+        set(state => ({
+          generatedContent: fullContent,
+          history: [...state.history, historyItem],
+          isLoading: false,
+        }));
+      } else {
+        // Fallback to non-streaming
+        const response = await api.post('/workshop/generate', {
+          prompt: prompt,
+          conversation_history: conversationHistory,
+          stream: false,
+        });
+        const content = response.data.content;
+        const historyItem: HistoryItem = {
+          id: Date.now().toString(),
+          prompt,
+          content,
+          timestamp: new Date().toISOString(),
+          type: 'chat',
+          serviceUsed: response.data.service_used,
+          hasDiagram: response.data.has_diagram || false,
+        };
+        set(state => ({
+          generatedContent: content,
+          history: [...state.history, historyItem],
+          isLoading: false,
+        }));
+      }
     } catch (error: any) {
       if (error.response?.status === 403 && error.response?.data?.error) {
         // Feature access error

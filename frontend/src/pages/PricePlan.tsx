@@ -274,7 +274,7 @@ const plans: Plan[] = [
     ],
     priceId: import.meta.env.VITE_STRIPE_PRICE_FREE || '', // Use environment variable as fallback
     bestFor: 'Perfect starting tool with basic writing assistance',
-    tokenBoost: 30000,
+    tokenBoost: 100000,
     isCurrentPlan: false,
   },
   {
@@ -294,7 +294,7 @@ const plans: Plan[] = [
     popular: true,
     priceId: import.meta.env.VITE_STRIPE_PRICE_PLUS || '', // Use environment variable as fallback
     bestFor: 'Enhanced features for more serious students',
-    tokenBoost: 50000,
+    tokenBoost: 200000,
     isCurrentPlan: false,
   },
   {
@@ -313,7 +313,7 @@ const plans: Plan[] = [
     ],
     priceId: import.meta.env.VITE_STRIPE_PRICE_PRO || '', // Use environment variable as fallback
     bestFor: 'Advanced features for professional students',
-    tokenBoost: 75000,
+    tokenBoost: 400000,
     isCurrentPlan: false,
   },
   {
@@ -332,7 +332,7 @@ const plans: Plan[] = [
     ],
     priceId: import.meta.env.VITE_STRIPE_PRICE_MAX || '', // Use environment variable as fallback
     bestFor: 'Ultimate package for power users',
-    tokenBoost: 100000,
+    tokenBoost: 800000,
     isCurrentPlan: false,
   },
 ];
@@ -1010,7 +1010,7 @@ const PricePlan: React.FC = () => {
                                   mb: 0,
                                 }}
                               >
-                                30,000 tokens/month
+                                100,000 tokens/month
                               </Typography>
                             )}
                             {plan.name === 'Plus' && (
@@ -1022,7 +1022,7 @@ const PricePlan: React.FC = () => {
                                   mb: 0,
                                 }}
                               >
-                                50,000 tokens/month
+                                200,000 tokens/month
                               </Typography>
                             )}
                             {plan.name === 'Pro' && (
@@ -1034,7 +1034,7 @@ const PricePlan: React.FC = () => {
                                   mb: 0,
                                 }}
                               >
-                                75,000 tokens/month
+                                400,000 tokens/month
                               </Typography>
                             )}
                             {plan.name === 'Max' && (
@@ -1046,7 +1046,7 @@ const PricePlan: React.FC = () => {
                                   mb: 0,
                                 }}
                               >
-                                100,000 tokens/month
+                                800,000 tokens/month
                               </Typography>
                             )}
                             <Divider />
@@ -1340,7 +1340,7 @@ const PricePlan: React.FC = () => {
                   Basic writing suggestions
                 </Typography>
                 <Typography component="li" variant="body2" sx={{ mb: 1 }}>
-                  30,000 tokens per month
+                  100,000 tokens per month
                 </Typography>
               </Box>
               <Typography variant="body2" color="info.main" sx={{ mt: 2, fontWeight: 500 }}>

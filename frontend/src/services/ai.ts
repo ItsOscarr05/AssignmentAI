@@ -60,7 +60,7 @@ const checkTokenLimit = async (operation: keyof typeof TOKEN_ESTIMATES): Promise
       api.get('/usage/summary', { params: { period: 'monthly' } }),
     ]);
 
-    const tokenLimit = subscriptionResponse.data?.token_limit ?? 30000;
+    const tokenLimit = subscriptionResponse.data?.token_limit ?? 100000;
     const usedTokens = usageResponse.data?.total_tokens ?? 0;
     const remainingTokens = tokenLimit - usedTokens;
 

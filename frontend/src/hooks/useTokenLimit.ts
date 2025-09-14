@@ -64,10 +64,10 @@ export const useTokenLimit = () => {
   // Fetch token usage data
   const fetchTokenUsage = useCallback(async () => {
     const mapPlanToLimit = (planId?: string): number => {
-      if (planId === 'price_test_plus') return 50000;
-      if (planId === 'price_test_pro') return 75000;
-      if (planId === 'price_test_max') return 100000;
-      if (planId === 'price_test_free') return 30000;
+      if (planId === 'price_test_plus') return 200000;
+      if (planId === 'price_test_pro') return 400000;
+      if (planId === 'price_test_max') return 800000;
+      if (planId === 'price_test_free') return 100000;
 
       const envPlus = (import.meta as any).env?.VITE_STRIPE_PRICE_PLUS;
       const envPro = (import.meta as any).env?.VITE_STRIPE_PRICE_PRO;
@@ -76,12 +76,12 @@ export const useTokenLimit = () => {
 
       const is = (ids: Array<string | undefined>) => ids.filter(Boolean).includes(planId as string);
 
-      if (is([envFree])) return 30000;
-      if (is([envPlus])) return 50000;
-      if (is([envPro])) return 75000;
-      if (is([envMax])) return 100000;
+      if (is([envFree])) return 100000;
+      if (is([envPlus])) return 200000;
+      if (is([envPro])) return 400000;
+      if (is([envMax])) return 800000;
 
-      return 30000;
+      return 100000;
     };
     try {
       const response = await api.get('/usage/summary', {

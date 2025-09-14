@@ -75,16 +75,7 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
-  // Auto-scroll during streaming with throttling
-  const scrollToBottomThrottled = useCallback(() => {
-    if (scrollTimeoutRef.current) {
-      clearTimeout(scrollTimeoutRef.current);
-    }
-
-    scrollTimeoutRef.current = setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 100); // Throttle to every 100ms during streaming
-  }, []);
+  // Note: scrollToBottomThrottled removed as we're using real streaming now
 
   useEffect(() => {
     scrollToBottom();
@@ -96,6 +87,18 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       handleSendMessage(initialText);
     }
   }, [initialText]);
+
+  // Handle loading state changes from WorkshopService
+  useEffect(() => {
+    // If WorkshopService is no longer loading and we're still showing typing indicator,
+    // stop the typing indicator (fallback for cases where streaming doesn't work)
+    if (!isLoading && isTyping && streamingMessageId) {
+      console.log('WorkshopService loading finished, stopping typing indicator');
+      setIsTyping(false);
+      setStreamingMessageId(null);
+      setStreamingContent('');
+    }
+  }, [isLoading, isTyping, streamingMessageId]);
 
   // Convert workshop history to chat messages only on initial load
   useEffect(() => {
@@ -129,7 +132,7 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     }
   }, [workshopHistory, isCleared]);
 
-  // Listen for new AI responses from workshop history and simulate streaming
+  // Listen for new AI responses from workshop history and handle real streaming
   useEffect(() => {
     if (workshopHistory.length > 0 && streamingMessageId && !hasStreamed) {
       // Find the current streaming message to get its prompt
@@ -137,67 +140,40 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       if (!currentStreamingMessage) return;
 
       // Find the AI response that matches the current user's prompt
+      // Use a more flexible matching since the prompt might be contextualized
       const matchingResponse = workshopHistory.find(
         item =>
-          item.prompt === currentStreamingMessage.prompt &&
           item.content &&
-          item.content !== streamingContent
+          item.content !== streamingContent &&
+          // Match if the prompt contains the user's message or vice versa
+          (item.prompt.includes(currentStreamingMessage.prompt) ||
+            currentStreamingMessage.prompt.includes(item.prompt.split('\n\n').pop() || ''))
       );
 
       if (matchingResponse) {
-        console.log('Starting streaming for message:', currentStreamingMessage.prompt);
-        // Start streaming the response
-        simulateStreamingResponse(matchingResponse.content);
-        setHasStreamed(true);
+        console.log('Received complete response for message:', currentStreamingMessage.prompt);
+        // Update the message with the complete content immediately
+        setMessages(prev =>
+          prev.map(msg =>
+            msg.id === streamingMessageId ? { ...msg, content: matchingResponse.content } : msg
+          )
+        );
+        setIsTyping(false);
+        setStreamingMessageId(null);
+        setHasStreamed(false);
+        setStreamingContent('');
+
+        // Add AI message to memory
+        const finalMessage: ChatMessage = {
+          ...currentStreamingMessage,
+          content: matchingResponse.content,
+        };
+        addToMemory(finalMessage);
       }
     }
   }, [workshopHistory, streamingMessageId, hasStreamed, messages, streamingContent]);
 
-  // Function to simulate streaming response
-  const simulateStreamingResponse = (fullContent: string) => {
-    let currentIndex = 0;
-    const words = fullContent.split(' ');
-
-    const streamInterval = setInterval(() => {
-      if (currentIndex < words.length) {
-        const word = words[currentIndex];
-        setStreamingContent(prev => {
-          const newContent = prev + (prev ? ' ' : '') + word;
-          return newContent;
-        });
-        currentIndex++;
-
-        // Auto-scroll during streaming
-        scrollToBottomThrottled();
-      } else {
-        // Streaming complete
-        clearInterval(streamInterval);
-        setStreamingInterval(null);
-        setIsTyping(false);
-        setStreamingMessageId(null);
-        setHasStreamed(false);
-
-        // Update the final message with complete content
-        const currentMessage = messages.find(msg => msg.id === streamingMessageId);
-        if (currentMessage) {
-          const finalMessage: ChatMessage = { ...currentMessage, content: fullContent };
-          addToMemory(finalMessage); // Add AI message to memory
-        }
-
-        setMessages(prev =>
-          prev.map(msg => (msg.id === streamingMessageId ? { ...msg, content: fullContent } : msg))
-        );
-        setStreamingContent('');
-
-        // Final scroll to bottom when streaming completes
-        setTimeout(() => {
-          scrollToBottom();
-        }, 100);
-      }
-    }, 50); // Adjust speed as needed (50ms per word)
-
-    setStreamingInterval(streamInterval);
-  };
+  // Note: Real streaming is now handled by the WorkshopService
 
   // Function to stop streaming
   const stopStreaming = () => {
@@ -348,11 +324,29 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       const context = getConversationContext();
       const contextualMessage = context ? `${context}\n\nUser: ${message}` : message;
 
-      await generateContent(contextualMessage);
+      // Use streaming for better performance with real-time updates
+      await generateContent(contextualMessage, true, (chunk: string) => {
+        // Update streaming content in real-time
+        setStreamingContent(prev => prev + chunk);
+        // Auto-scroll during streaming
+        if (messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
 
       if (onMessageSent) {
         onMessageSent(message);
       }
+
+      // Add a safety timeout to stop loading state if streaming doesn't work
+      setTimeout(() => {
+        if (isTyping && streamingMessageId) {
+          console.log('Safety timeout: stopping loading state');
+          setIsTyping(false);
+          setStreamingMessageId(null);
+          setStreamingContent('');
+        }
+      }, 15000); // Increased to 15 seconds for streaming
     } catch (error) {
       console.error('Error generating content:', error);
       setSnackbar({

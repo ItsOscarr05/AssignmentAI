@@ -153,10 +153,10 @@ const AITokens: React.FC = () => {
   };
   const mapPlanToLimit = (planId?: string): number | undefined => {
     if (!planId) return undefined;
-    if (planId === 'price_test_free') return 30000;
-    if (planId === 'price_test_plus') return 50000;
-    if (planId === 'price_test_pro') return 75000;
-    if (planId === 'price_test_max') return 100000;
+    if (planId === 'price_test_free') return 100000;
+    if (planId === 'price_test_plus') return 200000;
+    if (planId === 'price_test_pro') return 400000;
+    if (planId === 'price_test_max') return 800000;
 
     const envPlus = (import.meta as any).env?.VITE_STRIPE_PRICE_PLUS;
     const envPro = (import.meta as any).env?.VITE_STRIPE_PRICE_PRO;
@@ -165,10 +165,10 @@ const AITokens: React.FC = () => {
 
     const is = (ids: Array<string | undefined>) => ids.filter(Boolean).includes(planId);
 
-    if (is([envFree])) return 30000;
-    if (is([envPlus])) return 50000;
-    if (is([envPro])) return 75000;
-    if (is([envMax])) return 100000;
+    if (is([envFree])) return 100000;
+    if (is([envPlus])) return 200000;
+    if (is([envPro])) return 400000;
+    if (is([envMax])) return 800000;
 
     return undefined;
   };

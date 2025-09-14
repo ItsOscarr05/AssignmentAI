@@ -374,10 +374,10 @@ const Profile: React.FC = () => {
         // Since we have access to token_limit in the subscription data, we can use that
         if (currentSubscription?.token_limit) {
           const tokenLimit = currentSubscription.token_limit;
-          if (tokenLimit >= 100000) return 'Max';
-          if (tokenLimit >= 75000) return 'Pro';
-          if (tokenLimit >= 50000) return 'Plus';
-          if (tokenLimit >= 30000) return 'Free';
+          if (tokenLimit >= 800000) return 'Max';
+          if (tokenLimit >= 400000) return 'Pro';
+          if (tokenLimit >= 200000) return 'Plus';
+          if (tokenLimit >= 100000) return 'Free';
         }
 
         // Fallback: try to extract the plan name from the price ID

@@ -249,7 +249,7 @@ const Settings: React.FC = () => {
   const [subscription, setSubscription] = useState({
     plan: 'free' as SubscriptionPlan,
     model: 'gpt-4.1-nano', // Will be updated based on actual plan
-    tokenLimit: 30000, // Will be updated based on actual plan
+    tokenLimit: 100000, // Will be updated based on actual plan
   });
 
   // Simple date formatting function based on user preference
@@ -287,22 +287,22 @@ const Settings: React.FC = () => {
   const subscriptionConfig: Record<SubscriptionPlan, SubscriptionConfig> = {
     free: {
       model: 'gpt-5-nano',
-      tokenLimit: 30000,
+      tokenLimit: 100000,
       label: 'GPT-5 Nano',
     },
     plus: {
       model: 'gpt-4.1-mini',
-      tokenLimit: 50000,
+      tokenLimit: 200000,
       label: 'GPT-4.1 Mini',
     },
     pro: {
       model: 'gpt-4-turbo',
-      tokenLimit: 75000,
+      tokenLimit: 400000,
       label: 'GPT-4 Turbo',
     },
     max: {
       model: 'gpt-5',
-      tokenLimit: 100000,
+      tokenLimit: 800000,
       label: 'GPT-5',
     },
   };
@@ -1427,7 +1427,7 @@ const Settings: React.FC = () => {
 
           if (
             subscriptionData.ai_model === 'gpt-4-turbo' &&
-            subscriptionData.token_limit === 75000
+            subscriptionData.token_limit === 400000
           ) {
             plan = 'pro';
           } else if (
@@ -1437,12 +1437,12 @@ const Settings: React.FC = () => {
             plan = 'max';
           } else if (
             subscriptionData.ai_model === 'gpt-4.1-mini' &&
-            subscriptionData.token_limit === 50000
+            subscriptionData.token_limit === 200000
           ) {
             plan = 'plus';
           } else if (
             subscriptionData.ai_model === 'gpt-5-nano' &&
-            subscriptionData.token_limit === 30000
+            subscriptionData.token_limit === 100000
           ) {
             plan = 'free';
           } else {
@@ -1499,7 +1499,7 @@ const Settings: React.FC = () => {
         if (aiUserSettings.tokenContextLimit) {
           const loadedLimit = Number(aiUserSettings.tokenContextLimit);
           // Ensure the loaded limit doesn't exceed the current plan's limit
-          const maxLimit = subscription.tokenLimit || 30000; // Default to free plan if not set yet
+          const maxLimit = subscription.tokenLimit || 100000; // Default to free plan if not set yet
           const validLimit = Math.min(loadedLimit, maxLimit);
           setTokenContextLimit(validLimit);
           if (loadedLimit > maxLimit) {
@@ -1519,7 +1519,7 @@ const Settings: React.FC = () => {
         // Fallback to custom_preferences if available
         if (userPreferences.custom_preferences?.maxTokens) {
           const loadedLimit = Number(userPreferences.custom_preferences.maxTokens) || 1000;
-          const maxLimit = subscription.tokenLimit || 30000;
+          const maxLimit = subscription.tokenLimit || 100000;
           const validLimit = Math.min(loadedLimit, maxLimit);
           setTokenContextLimit(validLimit);
         }

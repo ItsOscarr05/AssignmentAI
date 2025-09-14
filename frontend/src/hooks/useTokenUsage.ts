@@ -27,10 +27,10 @@ export function useTokenUsage(subscription?: Subscription | null) {
     const pid = subscription?.plan_id;
 
     // Always prefer explicit mapping for test plan ids to override fallback 30k
-    if (pid === 'price_test_plus') return 50000;
-    if (pid === 'price_test_pro') return 75000;
-    if (pid === 'price_test_max') return 100000;
-    if (pid === 'price_test_free') return 30000;
+    if (pid === 'price_test_plus') return 200000;
+    if (pid === 'price_test_pro') return 400000;
+    if (pid === 'price_test_max') return 800000;
+    if (pid === 'price_test_free') return 100000;
 
     // Otherwise, if backend provides a positive token_limit, use it
     if (subscription?.token_limit && subscription.token_limit > 0) {
@@ -45,12 +45,12 @@ export function useTokenUsage(subscription?: Subscription | null) {
 
     const is = (ids: Array<string | undefined>) => ids.filter(Boolean).includes(pid as string);
 
-    if (is([envFree])) return 30000;
-    if (is([envPlus])) return 50000;
-    if (is([envPro])) return 75000;
-    if (is([envMax])) return 100000;
+    if (is([envFree])) return 100000;
+    if (is([envPlus])) return 200000;
+    if (is([envPro])) return 400000;
+    if (is([envMax])) return 800000;
 
-    return 30000;
+    return 100000;
   };
 
   const totalTokens = inferTokenLimit();

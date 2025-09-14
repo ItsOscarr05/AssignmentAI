@@ -9,12 +9,12 @@ export interface TokenUsage {
 }
 
 export function getTokenUsage(assignments: { createdAt: string }[]): TokenUsage {
-  const totalTokens = 30000;
+  const totalTokens = 100000;
   const tokensPerAssignment = 500;
   const usedTokens = assignments.length * tokensPerAssignment;
   const remainingTokens = totalTokens - usedTokens;
   return {
-    label: 'Free Plan (30,000 tokens/month)',
+    label: 'Free Plan (100,000 tokens/month)',
     total: totalTokens,
     used: usedTokens,
     remaining: remainingTokens,

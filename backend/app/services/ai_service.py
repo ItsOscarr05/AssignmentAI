@@ -31,9 +31,9 @@ class AIService:
         self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
         self.model = settings.OPENAI_MODEL
 
-    async def get_user_model(self, user_id: int) -> str:
+    def get_user_model(self, user_id: int) -> str:
         """Get the AI model assigned to a user's subscription"""
-        result = await self.db.execute(
+        result = self.db.execute(
             select(Subscription).filter(
                 Subscription.user_id == user_id,
                 Subscription.status == SubscriptionStatus.ACTIVE
@@ -45,6 +45,29 @@ class AIService:
             return "gpt-5-nano"  # Default model for users without subscription (Free plan model)
         
         return str(subscription.ai_model)
+
+    def get_user_plan(self, user_id: int) -> str:
+        """Get the user's subscription plan for token limits"""
+        result = self.db.execute(
+            select(Subscription).filter(
+                Subscription.user_id == user_id,
+                Subscription.status == SubscriptionStatus.ACTIVE
+            )
+        )
+        subscription = result.scalar_one_or_none()
+        
+        if not subscription:
+            return "free"  # Default to free plan
+        
+        # Map subscription plan to our tier names
+        plan_mapping = {
+            "free": "free",
+            "plus": "plus", 
+            "pro": "pro",
+            "max": "max"
+        }
+        
+        return plan_mapping.get(subscription.plan_name.lower(), "free")
 
     async def generate_assignment(self, request: AssignmentGenerationRequest) -> AssignmentGenerationResponse:
         """
@@ -110,7 +133,7 @@ class AIService:
         """
         try:
             # Get the user's assigned model
-            model = await self.get_user_model(user_id)
+            model = self.get_user_model(user_id)
             
             # Construct the prompt for the AI model
             prompt = self._construct_feedback_prompt(submission_content, feedback_type)
@@ -387,7 +410,7 @@ class AIService:
         """
 
         # Get the user's assigned model for evaluation
-        model = await self.get_user_model(user_id)
+        model = self.get_user_model(user_id)
         
         response = await self.client.chat.completions.create(
             model=model,
@@ -460,7 +483,7 @@ class AIService:
             )
         )
         subscription = result.scalar_one_or_none()
-        token_limit = int(subscription.token_limit) if subscription is not None and subscription.token_limit is not None else 30000  # type: ignore # Default to free plan
+        token_limit = int(subscription.token_limit) if subscription is not None and subscription.token_limit is not None else 100000  # type: ignore # Default to free plan
 
         # Calculate start of current month
         now = datetime.utcnow()
@@ -487,6 +510,229 @@ class AIService:
             raise HTTPException(
                 status_code=403,
                 detail=f"Token limit exceeded: {tokens_used_int + tokens_needed_int} / {token_limit_int}"
+            )
+
+    async def generate_chat_response(self, prompt: str, conversation_history: list = None, user_id: int = None) -> str:
+        """
+        Generate a general chat response using the user's subscription model for conversational AI interactions.
+        This method uses the user's assigned model to handle typos, unclear messages, and general conversation
+        like ChatGPT does.
+        
+        Args:
+            prompt: User's message (can include typos or unclear language)
+            conversation_history: Previous conversation messages for context
+            user_id: User ID to determine subscription model
+            
+        Returns:
+            AI response as string
+        """
+        try:
+            # Get user's subscription model
+            user_model = self.get_user_model(user_id) if user_id else "gpt-5-nano"
+            logger.info(f"Using user model for chat: {user_model}")
+            
+            # Prepare conversation messages
+            messages = []
+            
+            # Add conversation history if provided
+            if conversation_history:
+                for msg in conversation_history[-10:]:  # Keep last 10 messages for context
+                    if isinstance(msg, dict) and msg.get('isUser'):
+                        messages.append({"role": "user", "content": msg.get('content', '')})
+                    else:
+                        messages.append({"role": "assistant", "content": msg.get('content', '')})
+            
+            # Add current user message
+            messages.append({"role": "user", "content": prompt})
+            
+            logger.info(f"Using {user_model} for chat response with {len(messages)} context messages")
+            
+            # Get user's plan for token limits
+            user_plan = self.get_user_plan(user_id) if user_id else "free"
+            max_tokens = settings.AI_RESPONSE_LIMITS.get(user_plan, settings.AI_MAX_TOKENS)
+            
+            logger.info(f"Using plan '{user_plan}' with max_tokens: {max_tokens}")
+            
+            # Configure parameters based on model capabilities
+            params = {
+                "model": user_model,
+                "messages": messages,
+                "max_completion_tokens": max_tokens
+            }
+            
+            # GPT-5 nano has limited parameter support
+            if "gpt-5-nano" not in user_model.lower():
+                params.update({
+                    "top_p": 0.9,
+                    "frequency_penalty": 0.1,
+                    "presence_penalty": 0.1,
+                    "temperature": 0.7
+                })
+            else:
+                # GPT-5 nano only supports default temperature (1.0)
+                logger.info(f"Using minimal parameters for {user_model}")
+            
+            # Use user's subscription model for chat responses
+            response = await self.client.chat.completions.create(**params)
+            
+            content = response.choices[0].message.content
+            if content is None:
+                logger.error(f"GPT returned None content for chat prompt: {prompt[:200]}...")
+                raise ValueError("GPT returned None content")
+            
+            logger.info(f"Successfully generated GPT chat response of length: {len(content)} characters")
+            return content
+            
+        except Exception as e:
+            logger.error(f"Error generating GPT chat response: {str(e)}")
+            # Fallback to custom prompt if GPT fails
+            logger.info("Falling back to custom chat prompt...")
+            return await self._generate_fallback_chat_response(prompt, user_id)
+
+    async def generate_chat_response_stream(self, prompt: str, conversation_history: list = None, user_id: int = None):
+        """
+        Generate a streaming chat response using the user's subscription model.
+        This method streams the response in real-time for better user experience.
+        
+        Args:
+            prompt: User's message
+            conversation_history: Previous conversation messages for context
+            user_id: User ID to determine subscription model
+            
+        Yields:
+            Chunks of the AI response as they are generated
+        """
+        try:
+            # Get user's subscription model
+            user_model = self.get_user_model(user_id) if user_id else "gpt-5-nano"
+            logger.info(f"Using streaming with user model: {user_model}")
+            
+            # Prepare conversation messages
+            messages = []
+            
+            # Add conversation history if provided
+            if conversation_history:
+                for msg in conversation_history[-10:]:  # Keep last 10 messages for context
+                    if isinstance(msg, dict) and msg.get('isUser'):
+                        messages.append({"role": "user", "content": msg.get('content', '')})
+                    else:
+                        messages.append({"role": "assistant", "content": msg.get('content', '')})
+            
+            # Add current user message
+            messages.append({"role": "user", "content": prompt})
+            
+            # Get user's plan for token limits
+            user_plan = self.get_user_plan(user_id) if user_id else "free"
+            max_tokens = settings.AI_RESPONSE_LIMITS.get(user_plan, settings.AI_MAX_TOKENS)
+            
+            logger.info(f"Using plan '{user_plan}' with max_tokens: {max_tokens}")
+            
+            # Configure parameters based on model capabilities
+            params = {
+                "model": user_model,
+                "messages": messages,
+                "max_completion_tokens": max_tokens,
+                "stream": True  # Enable streaming
+            }
+            
+            # GPT-5 nano has limited parameter support
+            if "gpt-5-nano" not in user_model.lower():
+                params.update({
+                    "top_p": 0.9,
+                    "frequency_penalty": 0.1,
+                    "presence_penalty": 0.1,
+                    "temperature": 0.7
+                })
+            else:
+                logger.info(f"Using minimal parameters for streaming with {user_model}")
+            
+            # Stream the response
+            logger.info("Creating streaming request to OpenAI...")
+            stream = await self.client.chat.completions.create(**params)
+            logger.info("Stream created, starting to process chunks...")
+            
+            chunk_count = 0
+            async for chunk in stream:
+                chunk_count += 1
+                logger.info(f"Processing chunk {chunk_count}")
+                if chunk.choices and len(chunk.choices) > 0:
+                    delta = chunk.choices[0].delta
+                    if hasattr(delta, 'content') and delta.content:
+                        logger.info(f"Yielding content chunk: '{delta.content}'")
+                        yield delta.content
+                    else:
+                        logger.info("Chunk has no content")
+                else:
+                    logger.info("Chunk has no choices")
+            
+            logger.info(f"Streaming completed. Total chunks processed: {chunk_count}")
+                        
+        except Exception as e:
+            logger.error(f"Error in streaming chat response: {str(e)}")
+            # Fallback to non-streaming if streaming fails
+            logger.info("Falling back to non-streaming response...")
+            fallback_content = await self.generate_chat_response(prompt, conversation_history, user_id)
+            yield fallback_content
+    
+    async def _generate_fallback_chat_response(self, prompt: str, user_id: int = None) -> str:
+        """
+        Fallback method using custom prompt if GPT integration fails.
+        """
+        try:
+            # Get user's subscription model for fallback too
+            user_model = self.get_user_model(user_id) if user_id else "gpt-5-nano"
+            logger.info(f"Using fallback method with user model: {user_model}")
+            
+            # Construct a system prompt for general chat/conversation
+            system_prompt = """You are a helpful AI assistant. You should:
+            
+            1. Respond naturally to user messages, even if they contain typos or unclear language
+            2. If a message is unclear, ask clarifying questions
+            3. If there are obvious typos, understand what the user likely meant and respond appropriately
+            4. Be conversational, helpful, and engaging
+            5. Provide accurate, useful information
+            6. If you're not sure about something, say so
+            7. Keep responses concise but informative
+            
+            Always try to understand the user's intent, even if their message isn't perfectly clear."""
+            
+            # Configure parameters based on model capabilities
+            params = {
+                "model": user_model,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt}
+                ],
+                "max_completion_tokens": settings.AI_MAX_TOKENS
+            }
+            
+            # GPT-5 nano has limited parameter support
+            if "gpt-5-nano" not in user_model.lower():
+                params.update({
+                    "top_p": settings.AI_TOP_P,
+                    "frequency_penalty": settings.AI_FREQUENCY_PENALTY,
+                    "presence_penalty": settings.AI_PRESENCE_PENALTY
+                })
+            else:
+                # GPT-5 nano only supports basic parameters
+                logger.info(f"Using minimal parameters for fallback with {user_model}")
+            
+            # Call OpenAI API with custom prompt using user's model
+            response = await self.client.chat.completions.create(**params)
+            
+            content = response.choices[0].message.content
+            if content is None:
+                logger.error(f"Fallback returned None content for chat prompt: {prompt[:200]}...")
+                raise ValueError("Fallback returned None content")
+            
+            logger.info(f"Successfully generated fallback chat response of length: {len(content)} characters")
+            return content
+            
+        except Exception as e:
+            logger.error(f"Error generating fallback chat response: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to generate chat response: {str(e)}"
             )
 
     async def generate_assignment_content_from_prompt(self, prompt: str) -> str:
@@ -531,7 +777,10 @@ class AIService:
             
             content = response.choices[0].message.content
             if content is None:
+                logger.error(f"OpenAI returned None content for prompt: {prompt[:200]}...")
                 raise ValueError("OpenAI returned None content")
+            
+            logger.info(f"Successfully generated content of length: {len(content)} characters")
             return content
             
         except Exception as e:

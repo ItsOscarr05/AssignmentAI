@@ -606,7 +606,7 @@ async def get_current_subscription_test(
         if result.get("ai_model") is None:
             result["ai_model"] = "gpt-5-nano"
         if result.get("token_limit") is None:
-            result["token_limit"] = 30000
+            result["token_limit"] = 100000
         
         # Debug: Print the final result being returned
         print(f"DEBUG: Final subscription result being returned: {result}")
