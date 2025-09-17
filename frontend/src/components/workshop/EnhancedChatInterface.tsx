@@ -1,5 +1,5 @@
 import {
-  Psychology as BrainIcon,
+  PsychologyOutlined as BrainIcon,
   ContentCopy as CopyIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
@@ -475,7 +475,7 @@ const EnhancedChatInterface = React.forwardRef<
           flex: 1,
           overflow: 'auto',
           p: 2,
-          border: '1px solid #e0e0e0',
+          border: theme => `1px solid ${theme.palette.mode === 'dark' ? 'white' : '#e0e0e0'}`,
           borderRadius: 1,
           mb: 2,
           minHeight: '400px',
@@ -514,10 +514,17 @@ const EnhancedChatInterface = React.forwardRef<
 
                 <Box sx={{ maxWidth: '80%', position: 'relative' }}>
                   <Paper
-                    elevation={0}
+                    elevation={15}
                     sx={{
                       p: 2.5,
-                      backgroundColor: message.isUser ? '#f7f7f8' : '#ffffff',
+                      backgroundColor: theme =>
+                        message.isUser
+                          ? theme.palette.mode === 'dark'
+                            ? theme.palette.background.paper
+                            : '#f7f7f8'
+                          : theme.palette.mode === 'dark'
+                          ? theme.palette.background.paper
+                          : '#ffffff',
                       border: '1px solid #f44336',
                       borderRadius: 3,
                       boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
@@ -553,7 +560,7 @@ const EnhancedChatInterface = React.forwardRef<
                             whiteSpace: 'pre-wrap',
                             lineHeight: 1.6,
                             fontSize: '15px',
-                            color: message.isUser ? '#374151' : '#374151',
+                            color: theme => (theme.palette.mode === 'dark' ? '#ffffff' : '#374151'),
                           }}
                         >
                           {message.id === streamingMessageId ? streamingContent : message.content}
@@ -661,7 +668,10 @@ const EnhancedChatInterface = React.forwardRef<
                       mt: 0.5,
                       justifyContent: message.isUser ? 'flex-end' : 'flex-start',
                       opacity: 0,
+                      transform: 'scale(0.65)',
                       transition: 'opacity 0.2s ease-in-out',
+                      ml: message.isUser ? 0 : -3.5,
+                      mr: message.isUser ? -1.5 : 0,
                     }}
                   >
                     {message.isUser ? (
@@ -671,17 +681,26 @@ const EnhancedChatInterface = React.forwardRef<
                           <IconButton
                             size="small"
                             onClick={() => handleCopyMessage(message.content)}
+                            sx={{}}
                           >
                             <CopyIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="Edit">
-                          <IconButton size="small" onClick={() => handleEditMessage(message.id)}>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleEditMessage(message.id)}
+                            sx={{}}
+                          >
                             <EditIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="Delete">
-                          <IconButton size="small" onClick={() => handleDeleteMessage(message.id)}>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDeleteMessage(message.id)}
+                            sx={{}}
+                          >
                             <DeleteIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
@@ -689,7 +708,16 @@ const EnhancedChatInterface = React.forwardRef<
                     ) : (
                       // AI message: Copy only
                       <Tooltip title="Copy">
-                        <IconButton size="small" onClick={() => handleCopyMessage(message.content)}>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleCopyMessage(message.content)}
+                          sx={{
+                            '&:hover': {
+                              transform: 'scale(0.95)',
+                              transition: 'transform 0.2s ease-in-out',
+                            },
+                          }}
+                        >
                           <CopyIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
@@ -789,16 +817,32 @@ const EnhancedChatInterface = React.forwardRef<
             <BrainIcon
               sx={{
                 fontSize: 48,
-                color: theme => (theme.palette.mode === 'dark' ? '#ff6b6b' : 'red'),
+                color: theme => (theme.palette.mode === 'dark' ? '#ff6b6b' : '#d32f2f'),
                 mb: 2,
                 opacity: 0.5,
               }}
             />
-            <Typography variant="h6" color="text.secondary" gutterBottom>
+            <Typography
+              variant="h6"
+              sx={{
+                mb: 1,
+                opacity: 0.7,
+                color: theme => (theme.palette.mode === 'dark' ? '#ff6b6b' : '#d32f2f'),
+                fontWeight: 600,
+              }}
+            >
               Start a conversation
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Ask me anything about your content
+            <Typography
+              variant="body2"
+              sx={{
+                opacity: 0.6,
+                color: theme => theme.palette.text.secondary,
+                maxWidth: '400px',
+                lineHeight: 1.5,
+              }}
+            >
+              Ask me anything about your assignments
             </Typography>
           </Box>
         )}
@@ -813,8 +857,9 @@ const EnhancedChatInterface = React.forwardRef<
           alignItems: 'flex-end',
           gap: 1,
           p: 2,
-          backgroundColor: '#ffffff',
-          borderTop: '1px solid #e5e5e5',
+          backgroundColor: theme =>
+            theme.palette.mode === 'dark' ? theme.palette.background.paper : '#ffffff',
+          borderTop: theme => `1px solid ${theme.palette.mode === 'dark' ? 'white' : '#e5e5e5'}`,
         }}
       >
         <Box sx={{ flex: 1, position: 'relative' }}>
@@ -837,11 +882,14 @@ const EnhancedChatInterface = React.forwardRef<
             sx={{
               '& .MuiOutlinedInput-root': {
                 borderRadius: 3,
-                backgroundColor: '#f7f7f8',
-                border: '1px solid #e5e5e5',
+                backgroundColor: theme =>
+                  theme.palette.mode === 'dark' ? theme.palette.background.default : '#f7f7f8',
+                border: theme =>
+                  `1px solid ${theme.palette.mode === 'dark' ? theme.palette.divider : '#e5e5e5'}`,
                 height: '40px',
                 '&:hover': {
-                  borderColor: '#d1d5db',
+                  borderColor: theme =>
+                    theme.palette.mode === 'dark' ? theme.palette.grey[600] : '#d1d5db',
                 },
                 '&.Mui-focused': {
                   borderColor: '#f44336',
@@ -856,6 +904,11 @@ const EnhancedChatInterface = React.forwardRef<
                 fontSize: '15px',
                 lineHeight: 1.5,
                 height: '20px',
+                color: theme => theme.palette.text.primary,
+                '&::placeholder': {
+                  color: theme => theme.palette.text.secondary,
+                  opacity: 1,
+                },
               },
             }}
           />
@@ -874,7 +927,10 @@ const EnhancedChatInterface = React.forwardRef<
               backgroundColor: streamingMessageId ? '#dc2626' : '#d32f2f',
             },
             '&:disabled': {
-              backgroundColor: '#d1d5db',
+              backgroundColor: theme =>
+                theme.palette.mode === 'dark' ? theme.palette.grey[700] : '#d1d5db',
+              color: theme =>
+                theme.palette.mode === 'dark' ? theme.palette.grey[500] : theme.palette.grey[400],
             },
           }}
         >

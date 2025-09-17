@@ -25,6 +25,8 @@ import {
   Alert,
   Box,
   Button,
+  Card,
+  CardContent,
   Dialog,
   DialogActions,
   DialogContent,
@@ -606,7 +608,15 @@ const ConversationSummarizer: React.FC<ConversationSummarizerProps> = ({
           },
         }}
       >
-        <DialogTitle sx={{ borderBottom: '1px solid', borderColor: 'divider', pb: 2 }}>
+        <DialogTitle
+          sx={{
+            borderBottom: '1px solid',
+            borderColor: '#f44336',
+            pb: 2,
+            backgroundColor: theme =>
+              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+          }}
+        >
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Typography
               variant="h6"
@@ -636,11 +646,12 @@ const ConversationSummarizer: React.FC<ConversationSummarizerProps> = ({
             sx={{
               flex: 1,
               p: 3,
-              borderRight: { md: '1px solid' },
-              borderBottom: { xs: '1px solid', md: 'none' },
-              borderColor: 'divider',
+              borderRight: { md: '1px solid #f44336' },
+              borderBottom: { xs: '1px solid #f44336', md: 'none' },
               maxHeight: { xs: '40vh', md: 'none' },
               overflowY: { xs: 'auto', md: 'visible' },
+              backgroundColor: theme =>
+                theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
             }}
           >
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -676,248 +687,222 @@ const ConversationSummarizer: React.FC<ConversationSummarizerProps> = ({
             >
               {action === 'DOWNLOAD'
                 ? downloadFormats.map(format => (
-                    <Box
+                    <Card
                       key={format.id}
                       sx={{
-                        p: 3,
-                        border: selectedAspects.includes(format.id)
-                          ? '2px solid #d32f2f'
-                          : '1px solid rgba(0, 0, 0, 0.12)',
-                        borderRadius: 3,
                         cursor: 'pointer',
-                        backgroundColor: selectedAspects.includes(format.id)
-                          ? 'rgba(211, 47, 47, 0.06)'
-                          : theme =>
-                              theme.palette.mode === 'dark'
-                                ? theme.palette.background.default
-                                : '#fff',
-                        '&:hover': {
-                          backgroundColor: selectedAspects.includes(format.id)
-                            ? 'rgba(211, 47, 47, 0.1)'
-                            : theme =>
-                                theme.palette.mode === 'dark'
-                                  ? 'rgba(255, 255, 255, 0.04)'
-                                  : '#fafafa',
-                          borderColor: selectedAspects.includes(format.id)
-                            ? '#d32f2f'
-                            : 'rgba(211, 47, 47, 0.3)',
-                          transform: 'translateY(-2px)',
-                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                        },
-                        transition: 'all 0.2s ease-in-out',
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
                         textAlign: 'center',
                         minHeight: expandedFormat === format.id ? '240px' : '120px',
                         position: 'relative',
+                        opacity: selectedAspects.includes(format.id) ? 1 : 0.7,
+                        transition: 'opacity 0.2s ease-in-out',
+                        border: selectedAspects.includes(format.id)
+                          ? '2px solid #d32f2f'
+                          : '1px solid rgba(0, 0, 0, 0.12)',
+                        '&:hover': {
+                          boxShadow: 2,
+                        },
                       }}
                       onClick={() => handleAspectSelection(format.id)}
                     >
-                      {/* Selection indicator */}
-                      {selectedAspects.includes(format.id) && (
-                        <Box
-                          sx={{
-                            position: 'absolute',
-                            top: 12,
-                            right: 12,
-                            width: 24,
-                            height: 24,
-                            borderRadius: '50%',
-                            backgroundColor: '#d32f2f',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: 'white',
-                            fontSize: '0.8rem',
-                            fontWeight: 'bold',
-                            zIndex: 1,
-                          }}
-                        >
-                          ✓
-                        </Box>
-                      )}
-
-                      {/* Icon */}
-                      <Box sx={{ mb: expandedFormat === format.id ? 2 : 1.5, mt: 1 }}>
-                        {format.icon}
-                      </Box>
-
-                      {/* Title */}
-                      <Typography
-                        variant="h6"
-                        sx={{
-                          color: format.color,
-                          fontWeight: 600,
-                          fontSize: '1.1rem',
-                          lineHeight: 1.2,
-                          mb: expandedFormat === format.id ? 1.5 : 1,
-                          textAlign: 'center',
-                        }}
+                      <CardContent
+                        sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}
                       >
-                        {format.name}
-                      </Typography>
-
-                      {/* Description - Only visible when expanded */}
-                      {expandedFormat === format.id && (
-                        <Box sx={{ flex: 1, width: '100%' }}>
-                          {/* Short Description */}
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              color: theme => theme.palette.text.secondary,
-                              fontSize: '0.85rem',
-                              lineHeight: 1.4,
-                              textAlign: 'left',
-                              mb: 1,
-                            }}
-                          >
-                            {format.shortDescription}
-                          </Typography>
-
-                          {/* Full Description */}
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              color: theme => theme.palette.text.secondary,
-                              fontSize: '0.85rem',
-                              lineHeight: 1.4,
-                              textAlign: 'left',
-                              mb: 1,
-                            }}
-                          >
-                            {format.fullDescription}
-                          </Typography>
-                        </Box>
-                      )}
-
-                      {/* Expand/Collapse Button - Always at bottom */}
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          mt: 'auto',
-                          cursor: 'pointer',
-                          '&:hover': {
-                            backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                            borderRadius: 1,
-                          },
-                          p: 0.5,
-                          borderRadius: 1,
-                          transition: 'background-color 0.2s ease',
-                        }}
-                        onClick={e => {
-                          e.stopPropagation();
-                          setExpandedFormat(expandedFormat === format.id ? null : format.id);
-                        }}
-                      >
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            color: theme => theme.palette.text.secondary,
-                            fontSize: '0.75rem',
-                            mr: 0.5,
-                          }}
-                        >
-                          {expandedFormat === format.id ? 'Show less' : 'Show more'}
-                        </Typography>
-                        <KeyboardArrowDownIcon
-                          sx={{
-                            fontSize: '1rem',
-                            color: theme => theme.palette.text.secondary,
-                            transform:
-                              expandedFormat === format.id ? 'rotate(180deg)' : 'rotate(0deg)',
-                            transition: 'transform 0.2s ease',
-                          }}
-                        />
-                      </Box>
-                    </Box>
-                  ))
-                : conversationAspects.map(aspect => (
-                    <Box
-                      key={aspect.id}
-                      sx={{
-                        p: 2,
-                        border: selectedAspects.includes(aspect.id)
-                          ? '2px solid #d32f2f'
-                          : '1px solid rgba(0, 0, 0, 0.12)',
-                        borderRadius: 3,
-                        cursor: 'pointer',
-                        backgroundColor: selectedAspects.includes(aspect.id)
-                          ? 'rgba(211, 47, 47, 0.06)'
-                          : theme =>
-                              theme.palette.mode === 'dark'
-                                ? theme.palette.background.default
-                                : '#fff',
-                        '&:hover': {
-                          backgroundColor: selectedAspects.includes(aspect.id)
-                            ? 'rgba(211, 47, 47, 0.1)'
-                            : theme =>
-                                theme.palette.mode === 'dark'
-                                  ? 'rgba(255, 255, 255, 0.04)'
-                                  : '#fafafa',
-                          borderColor: selectedAspects.includes(aspect.id)
-                            ? '#d32f2f'
-                            : 'rgba(211, 47, 47, 0.3)',
-                        },
-                        transition: 'all 0.2s ease-in-out',
-                      }}
-                      onClick={() => handleAspectSelection(aspect.id)}
-                    >
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <Box sx={{ mr: 1.5 }}>{aspect.icon}</Box>
-                          <Box>
-                            <Typography
-                              variant="subtitle1"
-                              sx={{
-                                color: aspect.color,
-                                fontWeight: 600,
-                                fontSize: '0.95rem',
-                                lineHeight: 1.2,
-                              }}
-                            >
-                              {aspect.name}
-                            </Typography>
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                color: theme => theme.palette.text.secondary,
-                                fontSize: '0.75rem',
-                                lineHeight: 1.3,
-                              }}
-                            >
-                              {aspect.description}
-                            </Typography>
-                          </Box>
-                        </Box>
-                        {selectedAspects.includes(aspect.id) && (
+                        {/* Selection indicator */}
+                        {selectedAspects.includes(format.id) && (
                           <Box
                             sx={{
-                              width: 20,
-                              height: 20,
+                              position: 'absolute',
+                              top: 12,
+                              right: 12,
+                              width: 24,
+                              height: 24,
                               borderRadius: '50%',
                               backgroundColor: '#d32f2f',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
                               color: 'white',
-                              fontSize: '0.7rem',
+                              fontSize: '0.8rem',
                               fontWeight: 'bold',
+                              zIndex: 1,
                             }}
                           >
                             ✓
                           </Box>
                         )}
-                      </Box>
-                    </Box>
+
+                        {/* Icon */}
+                        <Box sx={{ mb: expandedFormat === format.id ? 2 : 1.5, mt: 1 }}>
+                          {format.icon}
+                        </Box>
+
+                        {/* Title */}
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            color: format.color,
+                            fontWeight: 600,
+                            fontSize: '1.1rem',
+                            lineHeight: 1.2,
+                            mb: expandedFormat === format.id ? 1.5 : 1,
+                            textAlign: 'center',
+                          }}
+                        >
+                          {format.name}
+                        </Typography>
+
+                        {/* Description - Only visible when expanded */}
+                        {expandedFormat === format.id && (
+                          <Box sx={{ flex: 1, width: '100%' }}>
+                            {/* Short Description */}
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                color: theme => theme.palette.text.secondary,
+                                fontSize: '0.85rem',
+                                lineHeight: 1.4,
+                                textAlign: 'left',
+                                mb: 1,
+                              }}
+                            >
+                              {format.shortDescription}
+                            </Typography>
+
+                            {/* Full Description */}
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                color: theme => theme.palette.text.secondary,
+                                fontSize: '0.85rem',
+                                lineHeight: 1.4,
+                                textAlign: 'left',
+                                mb: 1,
+                              }}
+                            >
+                              {format.fullDescription}
+                            </Typography>
+                          </Box>
+                        )}
+
+                        {/* Expand/Collapse Button - Always at bottom */}
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            mt: 'auto',
+                            cursor: 'pointer',
+                            '&:hover': {
+                              backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                              borderRadius: 1,
+                            },
+                            p: 0.5,
+                            borderRadius: 1,
+                            transition: 'background-color 0.2s ease',
+                          }}
+                          onClick={e => {
+                            e.stopPropagation();
+                            setExpandedFormat(expandedFormat === format.id ? null : format.id);
+                          }}
+                        >
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: theme => theme.palette.text.secondary,
+                              fontSize: '0.75rem',
+                              mr: 0.5,
+                            }}
+                          >
+                            {expandedFormat === format.id ? 'Show less' : 'Show more'}
+                          </Typography>
+                          <KeyboardArrowDownIcon
+                            sx={{
+                              fontSize: '1rem',
+                              color: theme => theme.palette.text.secondary,
+                              transform:
+                                expandedFormat === format.id ? 'rotate(180deg)' : 'rotate(0deg)',
+                              transition: 'transform 0.2s ease',
+                            }}
+                          />
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  ))
+                : conversationAspects.map(aspect => (
+                    <Card
+                      key={aspect.id}
+                      sx={{
+                        cursor: 'pointer',
+                        opacity: selectedAspects.includes(aspect.id) ? 1 : 0.7,
+                        transition: 'opacity 0.2s ease-in-out',
+                        border: selectedAspects.includes(aspect.id)
+                          ? '2px solid #d32f2f'
+                          : '1px solid rgba(0, 0, 0, 0.12)',
+                        '&:hover': {
+                          boxShadow: 2,
+                        },
+                      }}
+                      onClick={() => handleAspectSelection(aspect.id)}
+                    >
+                      <CardContent sx={{ p: 2 }}>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Box sx={{ mr: 1.5 }}>{aspect.icon}</Box>
+                            <Box>
+                              <Typography
+                                variant="subtitle1"
+                                sx={{
+                                  color: aspect.color,
+                                  fontWeight: 600,
+                                  fontSize: '0.95rem',
+                                  lineHeight: 1.2,
+                                }}
+                              >
+                                {aspect.name}
+                              </Typography>
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  color: theme => theme.palette.text.secondary,
+                                  fontSize: '0.75rem',
+                                  lineHeight: 1.3,
+                                }}
+                              >
+                                {aspect.description}
+                              </Typography>
+                            </Box>
+                          </Box>
+                          {selectedAspects.includes(aspect.id) && (
+                            <Box
+                              sx={{
+                                width: 20,
+                                height: 20,
+                                borderRadius: '50%',
+                                backgroundColor: '#d32f2f',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: 'white',
+                                fontSize: '0.7rem',
+                                fontWeight: 'bold',
+                              }}
+                            >
+                              ✓
+                            </Box>
+                          )}
+                        </Box>
+                      </CardContent>
+                    </Card>
                   ))}
             </Box>
           </Box>
@@ -929,6 +914,8 @@ const ConversationSummarizer: React.FC<ConversationSummarizerProps> = ({
               p: 3,
               maxHeight: { xs: 'calc(70vh - 40vh)', md: 'none' },
               overflowY: { xs: 'auto', md: 'visible' },
+              backgroundColor: theme =>
+                theme.palette.mode === 'dark' ? theme.palette.background.paper : '#f8f9fa',
             }}
           >
             <Typography
@@ -963,10 +950,23 @@ const ConversationSummarizer: React.FC<ConversationSummarizerProps> = ({
                     color: '#d32f2f',
                   }}
                 />
-                <Typography variant="h6" sx={{ mb: 1, opacity: 0.7, color: '#d32f2f' }}>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    mb: 1,
+                    opacity: theme => (theme.palette.mode === 'dark' ? 1 : 0.7),
+                    color: theme => (theme.palette.mode === 'dark' ? '#ffffff' : '#d32f2f'),
+                  }}
+                >
                   Select aspects to see preview
                 </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.5 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    opacity: theme => (theme.palette.mode === 'dark' ? 0.8 : 0.5),
+                    color: theme => (theme.palette.mode === 'dark' ? '#ffffff' : 'inherit'),
+                  }}
+                >
                   Choose conversation aspects from the left to see a detailed preview and analysis
                 </Typography>
               </Box>
@@ -987,7 +987,12 @@ const ConversationSummarizer: React.FC<ConversationSummarizerProps> = ({
                         : 'rgba(211, 47, 47, 0.05)',
                     borderRadius: 3,
                     mb: 3,
-                    border: '1px solid rgba(211, 47, 47, 0.2)',
+                    border: theme =>
+                      `1px solid ${
+                        theme.palette.mode === 'dark'
+                          ? 'rgba(255, 255, 255, 0.2)'
+                          : 'rgba(211, 47, 47, 0.2)'
+                      }`,
                   }}
                 >
                   <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
@@ -1006,9 +1011,8 @@ const ConversationSummarizer: React.FC<ConversationSummarizerProps> = ({
                                 gap: 1,
                                 px: 2,
                                 py: 1,
-                                backgroundColor: theme => theme.palette.background.paper,
-                                borderRadius: 2,
-                                border: `1px solid ${format?.color}40`,
+                                color: format?.color,
+                                fontWeight: 500,
                               }}
                             >
                               <Box sx={{ fontSize: '0.9rem' }}>{format?.icon}</Box>
@@ -1032,9 +1036,8 @@ const ConversationSummarizer: React.FC<ConversationSummarizerProps> = ({
                                 gap: 1,
                                 px: 2,
                                 py: 1,
-                                backgroundColor: theme => theme.palette.background.paper,
-                                borderRadius: 2,
-                                border: `1px solid ${aspect?.color}40`,
+                                color: aspect?.color,
+                                fontWeight: 500,
                               }}
                             >
                               <Box sx={{ fontSize: '0.9rem' }}>{aspect?.icon}</Box>
@@ -1055,26 +1058,22 @@ const ConversationSummarizer: React.FC<ConversationSummarizerProps> = ({
                   ? selectedAspects.map(formatId => {
                       const format = downloadFormats.find(f => f.id === formatId);
                       return (
-                        <Box key={formatId} sx={{ mb: 3 }}>
-                          <Typography variant="h6" sx={{ mb: 2, color: format?.color }}>
-                            {format?.name}
-                          </Typography>
-                          <Box
-                            sx={{
-                              p: 2,
-                              backgroundColor: theme => theme.palette.background.paper,
-                              borderRadius: 2,
-                              border: `1px solid ${format?.color}40`,
-                            }}
-                          >
+                        <Card
+                          key={formatId}
+                          sx={{ mb: 3, borderLeft: `4px solid ${format?.color}` }}
+                        >
+                          <CardContent>
+                            <Typography variant="h6" sx={{ mb: 2, color: format?.color }}>
+                              {format?.name}
+                            </Typography>
                             <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
                               {format?.shortDescription}
                             </Typography>
                             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                               {format?.fullDescription}
                             </Typography>
-                          </Box>
-                        </Box>
+                          </CardContent>
+                        </Card>
                       );
                     })
                   : selectedAspects.map(aspectId => {
@@ -1082,59 +1081,56 @@ const ConversationSummarizer: React.FC<ConversationSummarizerProps> = ({
                       if (!aspect || !aspect.extractedContent) return null;
 
                       return (
-                        <Box
+                        <Card
                           key={aspectId}
                           sx={{
                             mb: 3,
-                            p: 2.5,
-                            backgroundColor: theme => theme.palette.background.paper,
-                            borderRadius: 3,
-                            border: '1px solid rgba(0, 0, 0, 0.08)',
-                            position: 'relative',
-                            '&::before': {
-                              content: '""',
-                              position: 'absolute',
-                              top: 0,
-                              left: 0,
-                              width: '4px',
-                              height: '100%',
-                              backgroundColor: aspect.color,
-                              borderRadius: '0 2px 2px 0',
-                            },
+                            borderLeft: `4px solid ${aspect.color}`,
                           }}
                         >
-                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                            <Box sx={{ mr: 1.5 }}>{aspect.icon}</Box>
+                          <CardContent>
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                              <Box sx={{ mr: 1.5 }}>{aspect.icon}</Box>
+                              <Typography
+                                variant="h6"
+                                sx={{
+                                  color: aspect.color,
+                                  fontWeight: 600,
+                                  fontSize: '1.1rem',
+                                }}
+                              >
+                                {aspect.name}
+                              </Typography>
+                            </Box>
                             <Typography
-                              variant="h6"
+                              variant="body2"
                               sx={{
-                                color: aspect.color,
-                                fontWeight: 600,
-                                fontSize: '1.1rem',
+                                whiteSpace: 'pre-wrap',
+                                lineHeight: 1.6,
+                                color: theme => theme.palette.text.primary,
+                                fontSize: '0.9rem',
                               }}
                             >
-                              {aspect.name}
+                              {aspect.extractedContent}
                             </Typography>
-                          </Box>
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              whiteSpace: 'pre-wrap',
-                              lineHeight: 1.6,
-                              color: theme => theme.palette.text.primary,
-                              fontSize: '0.9rem',
-                            }}
-                          >
-                            {aspect.extractedContent}
-                          </Typography>
-                        </Box>
+                          </CardContent>
+                        </Card>
                       );
                     })}
               </Box>
             )}
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 3, pt: 0, gap: 2 }}>
+        <DialogActions
+          sx={{
+            p: 3,
+            pt: 0,
+            gap: 2,
+            borderTop: '1px solid #f44336',
+            backgroundColor: theme =>
+              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+          }}
+        >
           <Button
             onClick={handleClose}
             variant="outlined"

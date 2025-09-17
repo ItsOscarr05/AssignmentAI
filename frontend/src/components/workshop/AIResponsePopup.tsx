@@ -5,7 +5,7 @@ import {
   EditOutlined as EditOutlinedIcon,
   FormatListBulleted as FormatListBulletedIcon,
   FullscreenExit as FullscreenExitIcon,
-  Fullscreen as FullscreenIcon,
+  ZoomOutMap as FullscreenIcon,
   KeyboardArrowDown as KeyboardArrowDownIcon,
   Remove as MinimizeIcon,
   RecordVoiceOverOutlined,
@@ -1048,8 +1048,8 @@ ${data.transcript
     <Box
       sx={{
         width: { xs: '100%', md: '300px' },
-        borderLeft: { xs: 'none', md: '1px solid #e0e0e0' },
-        borderTop: { xs: '1px solid #e0e0e0', md: 'none' },
+        borderLeft: { xs: 'none', md: '1px solid #f44336' },
+        borderTop: { xs: '1px solid #f44336', md: 'none' },
         p: 2,
         backgroundColor: theme =>
           theme.palette.mode === 'dark' ? theme.palette.background.default : '#f8f9fa',
@@ -1090,11 +1090,13 @@ ${data.transcript
                 viewBox="0 0 200 120"
                 style={{ position: 'absolute', top: 0, left: 0 }}
               >
-                {/* Background semicircle */}
+                {/* Background semicircle - outlined in dark mode */}
                 <path
                   d="M 20 100 A 80 80 0 0 1 180 100"
                   fill="none"
-                  stroke="rgba(0,0,0,0.1)"
+                  stroke={
+                    theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'
+                  }
                   strokeWidth="20"
                   strokeLinecap="round"
                 />
@@ -1267,7 +1269,8 @@ ${data.transcript
                   sx={{
                     width: '100%',
                     height: 4,
-                    backgroundColor: 'rgba(0,0,0,0.1)',
+                    backgroundColor: theme =>
+                      theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
                     borderRadius: 2,
                     overflow: 'hidden',
                   }}
@@ -1288,7 +1291,7 @@ ${data.transcript
         </Box>
       </Box>
 
-      <Divider sx={{ my: 2 }} />
+      <Divider sx={{ my: 2, borderColor: 'white' }} />
 
       {/* Quick Actions */}
       <Typography
@@ -1431,8 +1434,15 @@ ${data.transcript
             maxHeight: isFullscreen ? '100vh' : '90vh',
             width: isFullscreen ? '100vw' : { xs: '95vw', sm: '90vw', md: '80vw' },
             maxWidth: isFullscreen ? '100vw' : { xs: '95vw', sm: '90vw', md: '80vw' },
-            backgroundColor: theme =>
-              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+            backgroundColor: theme => {
+              console.log(
+                'Dialog background - mode:',
+                theme.palette.mode,
+                'default:',
+                theme.palette.background.default
+              );
+              return theme.palette.mode === 'dark' ? theme.palette.background.default : '#fff';
+            },
             ...(isMinimized && {
               height: '60px',
               maxHeight: '60px',
@@ -1445,8 +1455,10 @@ ${data.transcript
         <DialogTitle
           sx={{
             borderBottom: '1px solid',
-            borderColor: 'divider',
+            borderColor: '#f44336',
             pb: 2,
+            backgroundColor: theme =>
+              theme.palette.mode === 'dark' ? theme.palette.background.default : '#fff',
             ...(isMinimized && { display: 'none' }),
           }}
         >
@@ -1511,9 +1523,32 @@ ${data.transcript
         </DialogTitle>
 
         {!isMinimized ? (
-          <DialogContent sx={{ p: 0, display: 'flex', height: '70vh' }}>
+          <DialogContent
+            sx={{
+              p: 0,
+              display: 'flex',
+              height: '70vh',
+              backgroundColor: theme =>
+                theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+            }}
+          >
             {/* Main Content Area */}
-            <Box sx={{ flex: 1, p: 3, overflow: 'auto' }}>{renderMainContent()}</Box>
+            <Box
+              sx={{
+                flex: 1,
+                p: 3,
+                overflow: 'auto',
+                backgroundColor: theme =>
+                  theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+                // Ensure mobile view has correct background
+                '@media (max-width: 900px)': {
+                  backgroundColor: theme =>
+                    theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+                },
+              }}
+            >
+              {renderMainContent()}
+            </Box>
 
             {/* Quick Actions & AI Suggestions Sidebar */}
             <QuickActionsSidebar />
@@ -1526,7 +1561,8 @@ ${data.transcript
               alignItems: 'center',
               justifyContent: 'space-between',
               height: '48px',
-              backgroundColor: '#f8f9fa',
+              backgroundColor: theme =>
+                theme.palette.mode === 'dark' ? theme.palette.background.default : '#f8f9fa',
               borderTop: '1px solid #e5e5e5',
             }}
           >
