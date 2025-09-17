@@ -30,12 +30,19 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useWorkshopStore } from '../../services/WorkshopService';
 import ConversationSummarizer from './ConversationSummarizer';
-import EnhancedChatInterface from './EnhancedChatInterface';
+import EnhancedChatInterface, { EnhancedChatInterfaceRef } from './EnhancedChatInterface';
 import EnhancedFileAnalysisInterface from './EnhancedFileAnalysisInterface';
 import EnhancedLinkAnalysisInterface from './EnhancedLinkAnalysisInterface';
+
+interface ChatMessage {
+  id: string;
+  content: string;
+  isUser: boolean;
+  timestamp: string;
+}
 
 interface AIResponsePopupProps {
   open: boolean;
@@ -47,6 +54,231 @@ interface AIResponsePopupProps {
 const Transition = React.forwardRef(function Transition(props: any, ref: React.Ref<unknown>) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
+
+// Helper function for score colors
+const getScoreColor = (score: number) => {
+  if (score >= 80) return '#4caf50'; // Green - High/Good
+  if (score >= 50) return '#ffc107'; // Yellow/Gold - Medium
+  return '#f44336'; // Red - Low
+};
+
+// Interface for individual engagement metrics
+interface EngagementMetrics {
+  messageCount: number;
+  conversationBalance: number;
+  responseDepth: number;
+  questionAnswerFlow: number;
+  interactionQuality: number;
+  totalScore: number;
+}
+
+// Memoized engagement calculation for better performance
+const calculateEngagement = (messages: ChatMessage[]): EngagementMetrics => {
+  if (!messages || messages.length === 0) {
+    return {
+      messageCount: 0,
+      conversationBalance: 0,
+      responseDepth: 0,
+      questionAnswerFlow: 0,
+      interactionQuality: 0,
+      totalScore: 0,
+    };
+  }
+
+  try {
+    const totalMessages = messages.length;
+    const userMessages = messages.filter(msg => msg.isUser).length;
+    const aiMessages = messages.filter(msg => !msg.isUser).length;
+
+    // 1. Message Count Score (0-100) - with diminishing returns and penalties
+    let messageCountScore = Math.min(totalMessages * 8, 60); // Reduced base score
+
+    // Penalty for too many messages (might indicate spam or rambling)
+    if (totalMessages > 15) {
+      messageCountScore -= (totalMessages - 15) * 2; // Penalty for excessive messages
+    }
+
+    messageCountScore = Math.max(0, messageCountScore);
+
+    // 2. Conversation Balance Score (0-100) - with penalties for imbalance
+    let conversationBalanceScore = 0;
+    if (userMessages > 0 && aiMessages > 0) {
+      const balance = Math.min(userMessages, aiMessages) / Math.max(userMessages, aiMessages);
+      conversationBalanceScore = Math.round(balance * 100);
+
+      // Penalty for very imbalanced conversations
+      if (balance < 0.3) {
+        conversationBalanceScore -= 20; // Heavy penalty for very imbalanced
+      }
+    } else if (userMessages > 0 || aiMessages > 0) {
+      conversationBalanceScore = 15; // Reduced partial credit
+
+      // Additional penalty for extremely one-sided conversations
+      const maxSide = Math.max(userMessages, aiMessages);
+      if (maxSide > 5) {
+        conversationBalanceScore -= (maxSide - 5) * 3; // Increasing penalty
+      }
+    }
+
+    conversationBalanceScore = Math.max(0, conversationBalanceScore);
+
+    // 3. Response Depth Score (0-100) - with penalties for poor quality
+    const avgMessageLength =
+      messages.reduce((sum, msg) => {
+        return sum + (msg.content?.length || 0);
+      }, 0) / totalMessages;
+
+    let responseDepthScore = 0;
+    if (avgMessageLength > 100) {
+      responseDepthScore = 100;
+    } else if (avgMessageLength > 50) {
+      responseDepthScore = Math.round((avgMessageLength - 50) * 2);
+    } else if (avgMessageLength > 20) {
+      responseDepthScore = Math.round(avgMessageLength * 0.8);
+    } else if (avgMessageLength > 10) {
+      responseDepthScore = Math.round(avgMessageLength * 0.5);
+    } else {
+      responseDepthScore = Math.round(avgMessageLength * 0.3); // Heavy penalty for very short messages
+    }
+
+    // Penalty for very short messages (might indicate low engagement)
+    if (avgMessageLength < 15) {
+      responseDepthScore -= 10;
+    }
+
+    // Penalty for extremely long messages (might indicate rambling)
+    if (avgMessageLength > 200) {
+      responseDepthScore -= 15;
+    }
+
+    responseDepthScore = Math.max(0, responseDepthScore);
+
+    // 4. Question-Answer Flow Score (0-100) - with penalties for lack of interaction
+    const questions = messages.filter(msg => msg.content?.includes('?')).length;
+    let questionAnswerFlowScore = Math.min(questions * 15, 80); // Reduced multiplier and cap
+
+    // Penalty for long conversations without questions
+    if (totalMessages > 8 && questions === 0) {
+      questionAnswerFlowScore -= 20;
+    }
+
+    // Bonus for good question distribution
+    if (questions > 0 && totalMessages > 0) {
+      const questionRatio = questions / totalMessages;
+      if (questionRatio > 0.3) {
+        questionAnswerFlowScore += 10; // Bonus for high question ratio
+      }
+    }
+
+    questionAnswerFlowScore = Math.max(0, Math.min(questionAnswerFlowScore, 100));
+
+    // 5. Interaction Quality Score (0-100) - based on recent activity and patterns
+    let interactionQualityScore = 40; // Reduced base score
+
+    // Penalty for too many consecutive messages from same sender
+    let consecutiveSameSender = 0;
+    let maxConsecutive = 0;
+    let lastSender = null;
+
+    for (const msg of messages) {
+      if (msg.isUser === lastSender) {
+        consecutiveSameSender++;
+      } else {
+        maxConsecutive = Math.max(maxConsecutive, consecutiveSameSender);
+        consecutiveSameSender = 1;
+        lastSender = msg.isUser;
+      }
+    }
+    maxConsecutive = Math.max(maxConsecutive, consecutiveSameSender);
+
+    // Heavy penalty for monologues
+    if (maxConsecutive > 2) {
+      interactionQualityScore -= (maxConsecutive - 2) * 15; // Increased penalty
+    }
+
+    // Bonus for recent activity
+    const recentMessages = messages.slice(-3);
+    const recentUserMessages = recentMessages.filter(msg => msg.isUser).length;
+    const recentAIMessages = recentMessages.filter(msg => !msg.isUser).length;
+
+    if (recentUserMessages > 0 && recentAIMessages > 0) {
+      interactionQualityScore += 25; // Increased bonus
+    } else if (recentUserMessages === 0 || recentAIMessages === 0) {
+      interactionQualityScore -= 10; // Penalty for no recent interaction
+    }
+
+    // Penalty for very long conversations without questions
+    if (totalMessages > 8 && questions === 0) {
+      interactionQualityScore -= 20; // Increased penalty
+    }
+
+    // Penalty for very short conversations (might indicate low engagement)
+    if (totalMessages < 3) {
+      interactionQualityScore -= 15;
+    }
+
+    // Penalty for repetitive content (simple heuristic)
+    const uniqueWords = new Set();
+    messages.forEach(msg => {
+      const words = msg.content.toLowerCase().split(/\s+/);
+      words.forEach(word => uniqueWords.add(word));
+    });
+    const uniqueWordRatio = uniqueWords.size / (totalMessages * 5); // Rough estimate
+    if (uniqueWordRatio < 0.3) {
+      interactionQualityScore -= 10; // Penalty for repetitive content
+    }
+
+    interactionQualityScore = Math.max(0, Math.min(interactionQualityScore, 100));
+
+    // Calculate weighted average (all metrics equally weighted)
+    const scores = [
+      messageCountScore,
+      conversationBalanceScore,
+      responseDepthScore,
+      questionAnswerFlowScore,
+      interactionQualityScore,
+    ];
+
+    // Filter out any NaN or invalid values and calculate average
+    const validScores = scores.filter(score => !isNaN(score) && isFinite(score));
+
+    // Debug logging to help identify NaN issues
+    if (validScores.length !== scores.length) {
+      console.warn('Some engagement scores were invalid:', {
+        messageCountScore,
+        conversationBalanceScore,
+        responseDepthScore,
+        questionAnswerFlowScore,
+        interactionQualityScore,
+        validScores,
+      });
+    }
+
+    const totalScore =
+      validScores.length > 0
+        ? Math.round(validScores.reduce((sum, score) => sum + score, 0) / validScores.length)
+        : 0;
+
+    return {
+      messageCount: Math.max(0, Math.min(messageCountScore, 100)),
+      conversationBalance: Math.max(0, Math.min(conversationBalanceScore, 100)),
+      responseDepth: Math.max(0, Math.min(responseDepthScore, 100)),
+      questionAnswerFlow: Math.max(0, Math.min(questionAnswerFlowScore, 100)),
+      interactionQuality: Math.max(0, Math.min(interactionQualityScore, 100)),
+      totalScore: Math.max(0, Math.min(totalScore, 100)),
+    };
+  } catch (error) {
+    console.error('Error calculating engagement:', error);
+    return {
+      messageCount: 0,
+      conversationBalance: 0,
+      responseDepth: 0,
+      questionAnswerFlow: 0,
+      interactionQuality: 0,
+      totalScore: 0,
+    };
+  }
+};
 
 const AIResponsePopup: React.FC<AIResponsePopupProps> = ({
   open,
@@ -71,12 +303,71 @@ const AIResponsePopup: React.FC<AIResponsePopupProps> = ({
   const [clearChatRef, setClearChatRef] = useState<(() => void) | null>(null);
   const [showMessageSelection, setShowMessageSelection] = useState(false);
   const [selectedAction, setSelectedAction] = useState<string>('SUMMARIZE');
-  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
     severity: 'success' | 'error' | 'info';
   }>({ open: false, message: '', severity: 'info' });
+
+  // Ref to the chat interface for direct message sending
+  const chatInterfaceRef = useRef<EnhancedChatInterfaceRef>(null);
+
+  // State for smooth engagement animation
+  const [animatedScore, setAnimatedScore] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  // Memoized engagement calculation for performance
+  const engagementData = useMemo(() => {
+    const metrics = calculateEngagement(chatMessages);
+    const scoreColor = getScoreColor(animatedScore);
+    const circumference = Math.PI * 80; // Half circle circumference
+    const strokeDasharray = `${circumference * (animatedScore / 100)} ${circumference}`;
+
+    return { metrics, scoreColor, circumference, strokeDasharray };
+  }, [chatMessages, animatedScore]);
+
+  // Smooth animation effect for engagement score
+  useEffect(() => {
+    const metrics = calculateEngagement(chatMessages);
+    const currentScore = metrics.totalScore;
+
+    // Only animate if there are AI messages (AI has responded)
+    const hasAIMessages = chatMessages.some(msg => !msg.isUser);
+    if (!hasAIMessages) {
+      setAnimatedScore(0);
+      return;
+    }
+
+    // Only update if score actually changed
+    if (currentScore !== animatedScore) {
+      setIsAnimating(true);
+
+      // Smooth animation over 1.5 seconds
+      const duration = 1500;
+      const startScore = animatedScore;
+      const startTime = Date.now();
+
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+
+        // Easing function for smooth animation
+        const easeOutCubic = 1 - Math.pow(1 - progress, 3);
+        const newScore = Math.round(startScore + (currentScore - startScore) * easeOutCubic);
+
+        setAnimatedScore(newScore);
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          setIsAnimating(false);
+        }
+      };
+
+      requestAnimationFrame(animate);
+    }
+  }, [chatMessages, animatedScore]);
 
   // Get conversation history from Workshop store
   useEffect(() => {
@@ -127,7 +418,7 @@ const AIResponsePopup: React.FC<AIResponsePopupProps> = ({
     setClearChatRef(() => clearFn);
   };
 
-  const handleChatMessagesUpdate = (messages: any[]) => {
+  const handleChatMessagesUpdate = (messages: ChatMessage[]) => {
     setChatMessages(messages);
   };
 
@@ -267,6 +558,26 @@ const AIResponsePopup: React.FC<AIResponsePopupProps> = ({
       case 'REWRITE':
         processedText = `Please rewrite and improve the clarity of these conversation aspects:\n\n${selectedAspects}`;
         break;
+      case 'DOWNLOAD':
+        // Handle download format selection
+        const selectedFormat = selectedAspectIds[0];
+        switch (selectedFormat) {
+          case 'pdf':
+            downloadAsPdf();
+            return; // Exit early for download
+          case 'json':
+            downloadAsJson();
+            return;
+          case 'txt':
+            downloadAsTxt();
+            return;
+          case 'markdown':
+            downloadAsMarkdown();
+            return;
+          default:
+            console.error('Unknown download format:', selectedFormat);
+            return;
+        }
     }
 
     // Send the processed text to the chat
@@ -304,24 +615,9 @@ const AIResponsePopup: React.FC<AIResponsePopupProps> = ({
 
   const handleQuickAction = (action: string) => {
     if (action === 'DOWNLOAD') {
-      // Get current content based on upload type
-      let contentToExport = '';
-      switch (uploadType) {
-        case 'text':
-          contentToExport = content?.text || '';
-          break;
-        case 'file':
-          contentToExport = `File: ${content?.name || 'Document'}\nContent: ${
-            content?.content || ''
-          }`;
-          break;
-        case 'link':
-          contentToExport = `Link: ${content?.url || ''}\nTitle: ${
-            content?.title || ''
-          }\nContent: ${content?.content || ''}`;
-          break;
-      }
-      handleExport(contentToExport);
+      // Show download format selection
+      setSelectedAction('DOWNLOAD');
+      setShowMessageSelection(true);
     } else {
       // For SUMMARIZE, EXTRACT, REWRITE - show message selection
       setSelectedAction(action);
@@ -373,6 +669,244 @@ const AIResponsePopup: React.FC<AIResponsePopupProps> = ({
     }
   };
 
+  // Download functionality
+  const generateConversationData = () => {
+    const metrics = calculateEngagement(chatMessages);
+    const totalMessages = chatMessages.length;
+    const userMessages = chatMessages.filter(msg => msg.isUser).length;
+    const aiMessages = chatMessages.filter(msg => !msg.isUser).length;
+
+    // Calculate conversation duration (rough estimate)
+    const firstMessage = chatMessages[0];
+    const lastMessage = chatMessages[chatMessages.length - 1];
+    const duration =
+      firstMessage && lastMessage
+        ? new Date(lastMessage.timestamp).getTime() - new Date(firstMessage.timestamp).getTime()
+        : 0;
+
+    const durationMinutes = Math.round(duration / (1000 * 60));
+
+    return {
+      overview: {
+        engagementScore: metrics.totalScore,
+        messageCount: totalMessages,
+        userMessages,
+        aiMessages,
+        duration: durationMinutes,
+        timestamp: new Date().toISOString(),
+      },
+      metrics: {
+        messageCount: metrics.messageCount,
+        conversationBalance: metrics.conversationBalance,
+        responseDepth: metrics.responseDepth,
+        questionAnswerFlow: metrics.questionAnswerFlow,
+        interactionQuality: metrics.interactionQuality,
+      },
+      transcript: chatMessages.map(msg => ({
+        id: msg.id,
+        content: msg.content,
+        isUser: msg.isUser,
+        timestamp: msg.timestamp,
+        formattedTime: new Date(msg.timestamp).toLocaleString(),
+      })),
+    };
+  };
+
+  const downloadAsJson = () => {
+    const data = generateConversationData();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `conversation-export-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadAsTxt = () => {
+    const data = generateConversationData();
+    const content = `CONVERSATION EXPORT
+Generated: ${new Date().toLocaleString()}
+
+=== OVERVIEW ===
+Engagement Score: ${data.overview.engagementScore}%
+Total Messages: ${data.overview.messageCount}
+User Messages: ${data.overview.userMessages}
+AI Messages: ${data.overview.aiMessages}
+Duration: ${data.overview.duration} minutes
+
+=== ENGAGEMENT METRICS ===
+Message Count: ${data.metrics.messageCount}%
+Conversation Balance: ${data.metrics.conversationBalance}%
+Response Depth: ${data.metrics.responseDepth}%
+Question-Answer Flow: ${data.metrics.questionAnswerFlow}%
+Interaction Quality: ${data.metrics.interactionQuality}%
+
+=== CONVERSATION TRANSCRIPT ===
+${data.transcript
+  .map(msg => `[${msg.formattedTime}] ${msg.isUser ? 'USER' : 'AI'}: ${msg.content}`)
+  .join('\n\n')}`;
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `conversation-export-${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadAsMarkdown = () => {
+    const data = generateConversationData();
+    const content = `# Conversation Export
+*Generated: ${new Date().toLocaleString()}*
+
+## Overview
+- **Engagement Score:** ${data.overview.engagementScore}%
+- **Total Messages:** ${data.overview.messageCount}
+- **User Messages:** ${data.overview.userMessages}
+- **AI Messages:** ${data.overview.aiMessages}
+- **Duration:** ${data.overview.duration} minutes
+
+## Engagement Metrics
+| Metric | Score |
+|--------|-------|
+| Message Count | ${data.metrics.messageCount}% |
+| Conversation Balance | ${data.metrics.conversationBalance}% |
+| Response Depth | ${data.metrics.responseDepth}% |
+| Question-Answer Flow | ${data.metrics.questionAnswerFlow}% |
+| Interaction Quality | ${data.metrics.interactionQuality}% |
+
+## Conversation Transcript
+
+${data.transcript
+  .map(msg => `### ${msg.isUser ? '👤 User' : '🤖 AI'} - ${msg.formattedTime}\n\n${msg.content}`)
+  .join('\n\n---\n\n')}`;
+
+    const blob = new Blob([content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `conversation-export-${new Date().toISOString().split('T')[0]}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadAsPdf = () => {
+    // For PDF generation, we'll use a simple approach with window.print()
+    // In a production app, you might want to use a library like jsPDF or Puppeteer
+    const data = generateConversationData();
+
+    // Create a temporary div with the content
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = `
+      <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
+        <h1 style="color: #333; border-bottom: 2px solid #f44336; padding-bottom: 10px;">
+          Conversation Export
+        </h1>
+        <p style="color: #666; font-style: italic;">
+          Generated: ${new Date().toLocaleString()}
+        </p>
+        
+        <h2 style="color: #333; margin-top: 30px;">Overview</h2>
+        <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+          <p><strong>Engagement Score:</strong> ${data.overview.engagementScore}%</p>
+          <p><strong>Total Messages:</strong> ${data.overview.messageCount}</p>
+          <p><strong>User Messages:</strong> ${data.overview.userMessages}</p>
+          <p><strong>AI Messages:</strong> ${data.overview.aiMessages}</p>
+          <p><strong>Duration:</strong> ${data.overview.duration} minutes</p>
+        </div>
+        
+        <h2 style="color: #333; margin-top: 30px;">Engagement Metrics</h2>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+          <tr style="background: #f8f9fa;">
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Metric</th>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Score</th>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 8px;">Message Count</td>
+            <td style="border: 1px solid #ddd; padding: 8px;">${data.metrics.messageCount}%</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 8px;">Conversation Balance</td>
+            <td style="border: 1px solid #ddd; padding: 8px;">${
+              data.metrics.conversationBalance
+            }%</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 8px;">Response Depth</td>
+            <td style="border: 1px solid #ddd; padding: 8px;">${data.metrics.responseDepth}%</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 8px;">Question-Answer Flow</td>
+            <td style="border: 1px solid #ddd; padding: 8px;">${
+              data.metrics.questionAnswerFlow
+            }%</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 8px;">Interaction Quality</td>
+            <td style="border: 1px solid #ddd; padding: 8px;">${
+              data.metrics.interactionQuality
+            }%</td>
+          </tr>
+        </table>
+        
+        <h2 style="color: #333; margin-top: 30px;">Conversation Transcript</h2>
+        ${data.transcript
+          .map(
+            msg => `
+          <div style="margin-bottom: 20px; padding: 15px; border-left: 4px solid ${
+            msg.isUser ? '#2196f3' : '#4caf50'
+          }; background: ${msg.isUser ? '#f0f8ff' : '#f0fff0'};">
+            <p style="margin: 0 0 5px 0; font-weight: bold; color: #333;">
+              ${msg.isUser ? '👤 User' : '🤖 AI'} - ${msg.formattedTime}
+            </p>
+            <p style="margin: 0; white-space: pre-wrap;">${msg.content}</p>
+          </div>
+        `
+          )
+          .join('')}
+      </div>
+    `;
+
+    // Open in new window for printing
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Conversation Export</title>
+            <style>
+              @media print {
+                body { margin: 0; }
+                @page { margin: 0.5in; }
+              }
+            </style>
+          </head>
+          <body>
+            ${tempDiv.innerHTML}
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.focus();
+
+      // Wait for content to load, then trigger print
+      setTimeout(() => {
+        if (printWindow) {
+          printWindow.print();
+          printWindow.close();
+        }
+      }, 500);
+    }
+  };
+
   const handleDownloadProcessedContent = () => {
     handleExport(processedContent);
     setSnackbar({
@@ -408,12 +942,6 @@ const AIResponsePopup: React.FC<AIResponsePopupProps> = ({
     }
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return '#4caf50'; // Green - High/Good
-    if (score >= 60) return '#ffc107'; // Yellow/Gold - Medium
-    return '#f44336'; // Red - Low
-  };
-
   const getTitle = () => {
     switch (uploadType) {
       case 'text':
@@ -432,6 +960,7 @@ const AIResponsePopup: React.FC<AIResponsePopupProps> = ({
       case 'text':
         return (
           <EnhancedChatInterface
+            ref={chatInterfaceRef}
             initialText={content?.text}
             onMessageSent={message => {
               console.log('Message sent:', message);
@@ -528,7 +1057,7 @@ const AIResponsePopup: React.FC<AIResponsePopupProps> = ({
         maxHeight: { xs: '40vh', md: '100%' },
       }}
     >
-      {/* Chat Quality Score */}
+      {/* Conversation Engagement */}
       <Typography
         variant="h6"
         gutterBottom
@@ -536,18 +1065,16 @@ const AIResponsePopup: React.FC<AIResponsePopupProps> = ({
           fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' },
           color: theme => (theme.palette.mode === 'dark' ? 'red' : 'black'),
           mb: 2,
+          textAlign: 'center',
         }}
       >
-        Chat Quality Score
+        Conversation Engagement
       </Typography>
 
       {/* Overall Score - Always Visible */}
       <Box sx={{ mb: 3, textAlign: 'center' }}>
         {(() => {
-          const score = 85;
-          const scoreColor = getScoreColor(score);
-          const circumference = Math.PI * 80; // Half circle circumference
-          const strokeDasharray = `${circumference * (score / 100)} ${circumference}`;
+          const { scoreColor, strokeDasharray } = engagementData;
           return (
             <Box
               sx={{
@@ -571,7 +1098,7 @@ const AIResponsePopup: React.FC<AIResponsePopupProps> = ({
                   strokeWidth="20"
                   strokeLinecap="round"
                 />
-                {/* Progress semicircle */}
+                {/* Progress semicircle with smooth animation */}
                 <path
                   d="M 20 100 A 80 80 0 0 1 180 100"
                   fill="none"
@@ -580,9 +1107,14 @@ const AIResponsePopup: React.FC<AIResponsePopupProps> = ({
                   strokeDasharray={strokeDasharray}
                   strokeDashoffset="0"
                   strokeLinecap="round"
+                  style={{
+                    transition: isAnimating
+                      ? 'none'
+                      : 'stroke-dasharray 0.3s ease-in-out, stroke 0.3s ease-in-out',
+                  }}
                 />
               </svg>
-              {/* Score text - Clean layout */}
+              {/* Score text - Clean layout with smooth animation */}
               <Box
                 sx={{
                   position: 'absolute',
@@ -600,16 +1132,18 @@ const AIResponsePopup: React.FC<AIResponsePopupProps> = ({
                     color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
                     textShadow: '0 0 6px rgba(255,255,255,0.9)',
                     lineHeight: 1,
+                    transition: isAnimating ? 'none' : 'all 0.3s ease-in-out',
+                    transform: isAnimating ? 'scale(1.05)' : 'scale(1)',
                   }}
                 >
-                  {score}
+                  {animatedScore}
                 </Typography>
               </Box>
             </Box>
           );
         })()}
         <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.875rem', mb: 2 }}>
-          Overall Quality
+          Engagement Level
         </Typography>
 
         {/* View Score Details Button */}
@@ -646,13 +1180,60 @@ const AIResponsePopup: React.FC<AIResponsePopupProps> = ({
         <Box sx={{ mb: 2 }}>
           {/* Score Breakdown */}
           <Box sx={{ mb: 2 }}>
-            {[
-              { label: 'Clarity', score: 92, color: '#4caf50' },
-              { label: 'Relevance', score: 88, color: '#8bc34a' },
-              { label: 'Completeness', score: 85, color: '#ffc107' },
-              { label: 'Tone', score: 90, color: '#4caf50' },
-              { label: 'Structure', score: 78, color: '#ff9800' },
-            ].map(({ label, score, color }, index) => (
+            {(() => {
+              try {
+                const { metrics } = engagementData;
+
+                // Only show breakdown if AI has responded
+                const hasAIMessages = chatMessages.some(msg => !msg.isUser);
+                if (!hasAIMessages) {
+                  return [
+                    { label: 'Message Count', score: 0, color: '#f44336' },
+                    { label: 'Conversation Balance', score: 0, color: '#f44336' },
+                    { label: 'Response Depth', score: 0, color: '#f44336' },
+                    { label: 'Question-Answer Flow', score: 0, color: '#f44336' },
+                    { label: 'Interaction Quality', score: 0, color: '#f44336' },
+                  ];
+                }
+
+                return [
+                  {
+                    label: 'Message Count',
+                    score: metrics.messageCount,
+                    color: getScoreColor(metrics.messageCount),
+                  },
+                  {
+                    label: 'Conversation Balance',
+                    score: metrics.conversationBalance,
+                    color: getScoreColor(metrics.conversationBalance),
+                  },
+                  {
+                    label: 'Response Depth',
+                    score: metrics.responseDepth,
+                    color: getScoreColor(metrics.responseDepth),
+                  },
+                  {
+                    label: 'Question-Answer Flow',
+                    score: metrics.questionAnswerFlow,
+                    color: getScoreColor(metrics.questionAnswerFlow),
+                  },
+                  {
+                    label: 'Interaction Quality',
+                    score: metrics.interactionQuality,
+                    color: getScoreColor(metrics.interactionQuality),
+                  },
+                ];
+              } catch (error) {
+                console.error('Error calculating breakdown:', error);
+                return [
+                  { label: 'Message Count', score: 0, color: '#f44336' },
+                  { label: 'Conversation Balance', score: 0, color: '#f44336' },
+                  { label: 'Response Depth', score: 0, color: '#f44336' },
+                  { label: 'Question-Answer Flow', score: 0, color: '#f44336' },
+                  { label: 'Interaction Quality', score: 0, color: '#f44336' },
+                ];
+              }
+            })().map(({ label, score, color }, index) => (
               <Box
                 key={index}
                 sx={{
@@ -704,35 +1285,6 @@ const AIResponsePopup: React.FC<AIResponsePopupProps> = ({
               </Box>
             ))}
           </Box>
-
-          {/* Improvement Suggestions */}
-          <Box
-            sx={{
-              mt: 2,
-              transform: isScoreExpanded ? 'translateY(0)' : 'translateY(20px)',
-              opacity: isScoreExpanded ? 1 : 0,
-              transition:
-                'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1) 0.6s, opacity 0.4s ease 0.6s',
-            }}
-          >
-            <Typography
-              variant="subtitle2"
-              sx={{ mb: 1, fontSize: '0.875rem', fontWeight: 600, color: 'red' }}
-            >
-              💡 Suggestions
-            </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-              <Typography variant="caption" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-                • Add more specific examples
-              </Typography>
-              <Typography variant="caption" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-                • Improve paragraph structure
-              </Typography>
-              <Typography variant="caption" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-                • Consider adding a conclusion
-              </Typography>
-            </Box>
-          </Box>
         </Box>
       </Box>
 
@@ -760,7 +1312,7 @@ const AIResponsePopup: React.FC<AIResponsePopupProps> = ({
       >
         {[
           { index: 0, label: 'SUMMARIZE', icon: RecordVoiceOverOutlined, color: '#ff9800' },
-          { index: 1, label: 'EXTRACT', icon: FormatListBulletedIcon, color: '#ffc107' },
+          { index: 1, label: 'EXTRACT', icon: FormatListBulletedIcon, color: '#4caf50' },
           { index: 2, label: 'DOWNLOAD', icon: DownloadOutlinedIcon, color: '#9c27b0' },
           { index: 3, label: 'REWRITE', icon: EditOutlinedIcon, color: '#2196f3' },
         ].map(({ index, label, icon: Icon, color }) => (
@@ -1133,110 +1685,13 @@ const AIResponsePopup: React.FC<AIResponsePopupProps> = ({
           // Debug: Log the message being sent
           console.log('Sending message to chat:', message);
 
-          // Inject the message into the actual chat interface (like typing and sending)
-          setTimeout(() => {
-            console.log('Looking for chat input to inject message...');
-
-            // Try multiple selectors to find the chat input
-            const selectors = [
-              'input[placeholder*="Message"]',
-              'textarea[placeholder*="Message"]',
-              'input[placeholder*="message"]',
-              'textarea[placeholder*="message"]',
-              'input[data-testid*="chat"]',
-              'textarea[data-testid*="chat"]',
-              'input[data-testid*="input"]',
-              'textarea[data-testid*="input"]',
-              'input[type="text"]',
-              'textarea',
-            ];
-
-            let chatInput: HTMLInputElement | HTMLTextAreaElement | null = null;
-
-            // Try each selector
-            for (const selector of selectors) {
-              const element = document.querySelector(selector) as
-                | HTMLInputElement
-                | HTMLTextAreaElement;
-              if (element && (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA')) {
-                chatInput = element;
-                console.log(`Found chat input with selector: ${selector}`, element);
-                break;
-              }
-            }
-
-            if (chatInput) {
-              console.log('Chat input found, injecting message:', message);
-
-              // Clear any existing content
-              chatInput.value = '';
-
-              // Simulate typing the message character by character
-              let i = 0;
-              const typeMessage = () => {
-                if (i < message.length) {
-                  chatInput!.value += message[i];
-                  chatInput!.dispatchEvent(new Event('input', { bubbles: true }));
-                  chatInput!.dispatchEvent(new Event('change', { bubbles: true }));
-                  i++;
-                  setTimeout(typeMessage, 10); // Type 100 characters per second
-                } else {
-                  // Message fully typed, now send it
-                  console.log('Message fully typed, sending...');
-
-                  // Focus the input
-                  chatInput!.focus();
-
-                  // Try to find and click send button
-                  const sendSelectors = [
-                    '[data-testid="send-button"]',
-                    'button[type="submit"]',
-                    'button[aria-label*="send"]',
-                    'button[aria-label*="Send"]',
-                    'button:has(svg)',
-                    '.send-button',
-                    'button[title*="send"]',
-                    'button[title*="Send"]',
-                  ];
-
-                  let sendButton: HTMLButtonElement | null = null;
-                  for (const selector of sendSelectors) {
-                    const button = document.querySelector(selector) as HTMLButtonElement;
-                    if (button && button.tagName === 'BUTTON') {
-                      sendButton = button;
-                      console.log(`Found send button with selector: ${selector}`, button);
-                      break;
-                    }
-                  }
-
-                  if (sendButton) {
-                    console.log('Clicking send button');
-                    sendButton.click();
-                  } else {
-                    console.log('Send button not found, trying Enter key');
-                    // Try Enter key
-                    chatInput!.dispatchEvent(
-                      new KeyboardEvent('keydown', {
-                        key: 'Enter',
-                        code: 'Enter',
-                        keyCode: 13,
-                        bubbles: true,
-                      })
-                    );
-                  }
-                }
-              };
-
-              // Start typing the message
-              typeMessage();
-            } else {
-              console.error('Chat input not found with any selector');
-              console.log(
-                'Available inputs on page:',
-                document.querySelectorAll('input, textarea')
-              );
-            }
-          }, 500);
+          // Use the ref to send the message directly
+          if (chatInterfaceRef.current) {
+            console.log('Sending message via ref:', message);
+            chatInterfaceRef.current.sendMessage(message);
+          } else {
+            console.error('Chat interface ref not available');
+          }
         }}
       />
 

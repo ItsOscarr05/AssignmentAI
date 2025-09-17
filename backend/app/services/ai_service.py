@@ -152,18 +152,28 @@ class AIService:
                 max_tokens = settings.AI_MAX_TOKENS
                 temperature = settings.AI_TEMPERATURE
             
-            # Call OpenAI API
-            response = await self.client.chat.completions.create(
-                model=model,
-                messages=[
+            # Prepare parameters based on model
+            params = {
+                "model": model,
+                "messages": [
                     {"role": "system", "content": "You are a helpful teacher's assistant that provides constructive feedback on student submissions."},
                     {"role": "user", "content": prompt}
                 ],
-                max_completion_tokens=max_tokens,
-                top_p=settings.AI_TOP_P,
-                frequency_penalty=settings.AI_FREQUENCY_PENALTY,
-                presence_penalty=settings.AI_PRESENCE_PENALTY
-            )
+                "max_completion_tokens": max_tokens
+            }
+            
+            # GPT-5 models have limited parameter support
+            if "gpt-5" not in model.lower():
+                params.update({
+                    "top_p": settings.AI_TOP_P,
+                    "frequency_penalty": settings.AI_FREQUENCY_PENALTY,
+                    "presence_penalty": settings.AI_PRESENCE_PENALTY
+                })
+            else:
+                logger.info(f"Using minimal parameters for feedback generation with {model}")
+            
+            # Call OpenAI API
+            response = await self.client.chat.completions.create(**params)
             
             feedback_content = response.choices[0].message.content
             if feedback_content is None:
@@ -225,17 +235,27 @@ class AIService:
         
         for attempt in range(max_retries):
             try:
-                response = await self.client.chat.completions.create(
-                    model=self.model,
-                    messages=[
+                # Prepare parameters based on model
+                params = {
+                    "model": self.model,
+                    "messages": [
                         {"role": "system", "content": "You are a helpful teacher's assistant that creates educational assignments."},
                         {"role": "user", "content": prompt}
                     ],
-                    max_completion_tokens=max_tokens,
-                                    top_p=settings.AI_TOP_P,
-                frequency_penalty=settings.AI_FREQUENCY_PENALTY,
-                presence_penalty=settings.AI_PRESENCE_PENALTY
-                )
+                    "max_completion_tokens": max_tokens
+                }
+                
+                # GPT-5 models have limited parameter support
+                if "gpt-5" not in self.model.lower():
+                    params.update({
+                        "top_p": settings.AI_TOP_P,
+                        "frequency_penalty": settings.AI_FREQUENCY_PENALTY,
+                        "presence_penalty": settings.AI_PRESENCE_PENALTY
+                    })
+                else:
+                    logger.info(f"Using minimal parameters for retry with {self.model}")
+                
+                response = await self.client.chat.completions.create(**params)
                 content = response.choices[0].message.content
                 if content is None:
                     raise ValueError("OpenAI returned None content")
@@ -560,8 +580,8 @@ class AIService:
                 "max_completion_tokens": max_tokens
             }
             
-            # GPT-5 nano has limited parameter support
-            if "gpt-5-nano" not in user_model.lower():
+            # GPT-5 models have limited parameter support
+            if "gpt-5" not in user_model.lower():
                 params.update({
                     "top_p": 0.9,
                     "frequency_penalty": 0.1,
@@ -569,7 +589,7 @@ class AIService:
                     "temperature": 0.7
                 })
             else:
-                # GPT-5 nano only supports default temperature (1.0)
+                # GPT-5 models only support default temperature (1.0)
                 logger.info(f"Using minimal parameters for {user_model}")
             
             # Use user's subscription model for chat responses
@@ -577,7 +597,9 @@ class AIService:
             
             content = response.choices[0].message.content
             if content is None:
-                logger.error(f"GPT returned None content for chat prompt: {prompt[:200]}...")
+                # Log prompt preview without full content to avoid Unicode issues
+                prompt_preview = prompt[:100].replace('\n', ' ').replace('\r', ' ') if prompt else ""
+                logger.error(f"GPT returned None content for chat prompt: {prompt_preview}...")
                 raise ValueError("GPT returned None content")
             
             logger.info(f"Successfully generated GPT chat response of length: {len(content)} characters")
@@ -635,8 +657,8 @@ class AIService:
                 "stream": True  # Enable streaming
             }
             
-            # GPT-5 nano has limited parameter support
-            if "gpt-5-nano" not in user_model.lower():
+            # GPT-5 models have limited parameter support
+            if "gpt-5" not in user_model.lower():
                 params.update({
                     "top_p": 0.9,
                     "frequency_penalty": 0.1,
@@ -658,7 +680,9 @@ class AIService:
                 if chunk.choices and len(chunk.choices) > 0:
                     delta = chunk.choices[0].delta
                     if hasattr(delta, 'content') and delta.content:
-                        logger.info(f"Yielding content chunk: '{delta.content}'")
+                        # Log chunk info without full content to avoid Unicode issues
+                        chunk_preview = delta.content[:50].replace('\n', ' ').replace('\r', ' ') if delta.content else ""
+                        logger.info(f"Yielding content chunk ({len(delta.content)} chars): {chunk_preview}...")
                         yield delta.content
                     else:
                         logger.info("Chunk has no content")
@@ -706,15 +730,15 @@ class AIService:
                 "max_completion_tokens": settings.AI_MAX_TOKENS
             }
             
-            # GPT-5 nano has limited parameter support
-            if "gpt-5-nano" not in user_model.lower():
+            # GPT-5 models have limited parameter support
+            if "gpt-5" not in user_model.lower():
                 params.update({
                     "top_p": settings.AI_TOP_P,
                     "frequency_penalty": settings.AI_FREQUENCY_PENALTY,
                     "presence_penalty": settings.AI_PRESENCE_PENALTY
                 })
             else:
-                # GPT-5 nano only supports basic parameters
+                # GPT-5 models only support basic parameters
                 logger.info(f"Using minimal parameters for fallback with {user_model}")
             
             # Call OpenAI API with custom prompt using user's model
@@ -722,7 +746,9 @@ class AIService:
             
             content = response.choices[0].message.content
             if content is None:
-                logger.error(f"Fallback returned None content for chat prompt: {prompt[:200]}...")
+                # Log prompt preview without full content to avoid Unicode issues
+                prompt_preview = prompt[:100].replace('\n', ' ').replace('\r', ' ') if prompt else ""
+                logger.error(f"Fallback returned None content for chat prompt: {prompt_preview}...")
                 raise ValueError("Fallback returned None content")
             
             logger.info(f"Successfully generated fallback chat response of length: {len(content)} characters")
@@ -762,22 +788,34 @@ class AIService:
             Format the response in a clear, structured manner that students can easily follow.
             Make sure the assignment is appropriate for the described level and subject."""
             
-            # Call OpenAI API
-            response = await self.client.chat.completions.create(
-                model=self.model,
-                messages=[
+            # Prepare parameters based on model
+            params = {
+                "model": self.model,
+                "messages": [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": prompt}
                 ],
-                max_completion_tokens=settings.AI_MAX_TOKENS,
-                top_p=settings.AI_TOP_P,
-                frequency_penalty=settings.AI_FREQUENCY_PENALTY,
-                presence_penalty=settings.AI_PRESENCE_PENALTY
-            )
+                "max_completion_tokens": settings.AI_MAX_TOKENS
+            }
+            
+            # GPT-5 models have limited parameter support
+            if "gpt-5" not in self.model.lower():
+                params.update({
+                    "top_p": settings.AI_TOP_P,
+                    "frequency_penalty": settings.AI_FREQUENCY_PENALTY,
+                    "presence_penalty": settings.AI_PRESENCE_PENALTY
+                })
+            else:
+                logger.info(f"Using minimal parameters for assignment generation with {self.model}")
+            
+            # Call OpenAI API
+            response = await self.client.chat.completions.create(**params)
             
             content = response.choices[0].message.content
             if content is None:
-                logger.error(f"OpenAI returned None content for prompt: {prompt[:200]}...")
+                # Log prompt preview without full content to avoid Unicode issues
+                prompt_preview = prompt[:100].replace('\n', ' ').replace('\r', ' ') if prompt else ""
+                logger.error(f"OpenAI returned None content for prompt: {prompt_preview}...")
                 raise ValueError("OpenAI returned None content")
             
             logger.info(f"Successfully generated content of length: {len(content)} characters")

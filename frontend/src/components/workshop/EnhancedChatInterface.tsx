@@ -18,7 +18,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { useWorkshopStore } from '../../services/WorkshopService';
 
 interface ChatMessage {
@@ -41,12 +41,14 @@ interface EnhancedChatInterfaceProps {
   onMessagesUpdate?: (messages: ChatMessage[]) => void;
 }
 
-const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
-  initialText,
-  onMessageSent,
-  onClear,
-  onMessagesUpdate,
-}) => {
+export interface EnhancedChatInterfaceRef {
+  sendMessage: (message: string) => void;
+}
+
+const EnhancedChatInterface = React.forwardRef<
+  EnhancedChatInterfaceRef,
+  EnhancedChatInterfaceProps
+>(({ initialText, onMessageSent, onClear, onMessagesUpdate }, ref) => {
   const { generateContent, history: workshopHistory, isLoading } = useWorkshopStore();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -69,6 +71,17 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const hasInitializedMessages = useRef(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Expose sendMessage method to parent components
+  useImperativeHandle(
+    ref,
+    () => ({
+      sendMessage: (message: string) => {
+        handleSendMessage(message);
+      },
+    }),
+    []
+  );
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = useCallback(() => {
@@ -144,7 +157,6 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       const matchingResponse = workshopHistory.find(
         item =>
           item.content &&
-          item.content !== streamingContent &&
           // Match if the prompt contains the user's message or vice versa
           (item.prompt.includes(currentStreamingMessage.prompt) ||
             currentStreamingMessage.prompt.includes(item.prompt.split('\n\n').pop() || ''))
@@ -160,7 +172,7 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         );
         setIsTyping(false);
         setStreamingMessageId(null);
-        setHasStreamed(false);
+        setHasStreamed(true); // Mark as streamed to prevent re-processing
         setStreamingContent('');
 
         // Add AI message to memory
@@ -172,6 +184,29 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       }
     }
   }, [workshopHistory, streamingMessageId, hasStreamed, messages, streamingContent]);
+
+  // Fallback: If streaming completes but no matching response found, use the streaming content
+  useEffect(() => {
+    if (streamingMessageId && streamingContent && !isTyping && !hasStreamed) {
+      // Wait a bit to see if the workshop history gets updated
+      const timeout = setTimeout(() => {
+        if (streamingMessageId && streamingContent) {
+          console.log('Using streaming content as fallback for message:', streamingMessageId);
+          setMessages(prev =>
+            prev.map(msg =>
+              msg.id === streamingMessageId ? { ...msg, content: streamingContent } : msg
+            )
+          );
+          setIsTyping(false);
+          setStreamingMessageId(null);
+          setHasStreamed(true);
+          setStreamingContent('');
+        }
+      }, 1000); // Wait 1 second for workshop history to update
+
+      return () => clearTimeout(timeout);
+    }
+  }, [streamingMessageId, streamingContent, isTyping, hasStreamed]);
 
   // Note: Real streaming is now handled by the WorkshopService
 
@@ -333,6 +368,20 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
           messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
         }
       });
+
+      // After streaming completes, ensure the message content is set
+      if (streamingMessageId && streamingContent) {
+        console.log('Streaming completed, setting final content for message:', streamingMessageId);
+        setMessages(prev =>
+          prev.map(msg =>
+            msg.id === streamingMessageId ? { ...msg, content: streamingContent } : msg
+          )
+        );
+        setIsTyping(false);
+        setStreamingMessageId(null);
+        setHasStreamed(true);
+        setStreamingContent('');
+      }
 
       if (onMessageSent) {
         onMessageSent(message);
@@ -859,6 +908,8 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       </Snackbar>
     </Box>
   );
-};
+});
+
+EnhancedChatInterface.displayName = 'EnhancedChatInterface';
 
 export default EnhancedChatInterface;

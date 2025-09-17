@@ -305,7 +305,9 @@ async def generate_content(
                             chunk_count = 0
                             async for chunk in ai_service.generate_chat_response_stream(prompt, conversation_history, current_user.id):
                                 chunk_count += 1
-                                logger.info(f"Yielding chunk {chunk_count}: {chunk}")
+                                # Log chunk info without full content to avoid Unicode issues
+                                chunk_preview = chunk[:100].replace('\n', ' ').replace('\r', ' ') if chunk else ""
+                                logger.info(f"Yielding chunk {chunk_count} ({len(chunk)} chars): {chunk_preview}...")
                                 # Format chunk as Server-Sent Events
                                 yield f"data: {json.dumps({'content': chunk, 'done': False})}\n\n"
                             logger.info(f"Streaming completed. Total chunks: {chunk_count}")

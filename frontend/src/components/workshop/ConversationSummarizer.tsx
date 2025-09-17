@@ -1,14 +1,25 @@
 import {
+  ArrowForwardOutlined as ArrowForwardIcon,
   AssignmentOutlined as AssignmentIcon,
   BarChartOutlined as BarChartIcon,
   BookOutlined as BookIcon,
   BuildOutlined as BuildIcon,
   CheckCircleOutlined as CheckCircleIcon,
   Close as CloseIcon,
+  FlagOutlined as FlagIcon,
   HelpOutline as HelpIcon,
+  CodeOutlined as JsonIcon,
+  KeyboardArrowDown as KeyboardArrowDownIcon,
   LightbulbOutlined as LightbulbIcon,
+  TextFieldsOutlined as MarkdownIcon,
+  PictureAsPdfOutlined as PdfIcon,
   VisibilityOutlined as PreviewIcon,
+  PsychologyOutlined as PsychologyIcon,
   ScheduleOutlined as ScheduleIcon,
+  ThumbUpOutlined as ThumbUpIcon,
+  TopicOutlined as TopicIcon,
+  DescriptionOutlined as TxtIcon,
+  WarningAmberOutlined as WarningIcon,
 } from '@mui/icons-material';
 import {
   Alert,
@@ -58,6 +69,7 @@ const ConversationSummarizer: React.FC<ConversationSummarizerProps> = ({
   onRedirectToAI,
 }) => {
   const [selectedAspects, setSelectedAspects] = useState<string[]>([]);
+  const [expandedFormat, setExpandedFormat] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -161,73 +173,247 @@ const ConversationSummarizer: React.FC<ConversationSummarizerProps> = ({
     return timeline.join('\n');
   };
 
+  // Additional extraction functions for new aspects
+  const extractMainTopics = (messages: ChatMessage[]): string => {
+    const topics = messages
+      .filter(msg => msg.content.length > 50)
+      .map(msg => `• ${msg.content.substring(0, 100)}...`)
+      .slice(0, 6);
+    return topics.join('\n');
+  };
+
+  const extractOutcomes = (messages: ChatMessage[]): string => {
+    const outcomes = messages
+      .filter(
+        msg =>
+          msg.content.toLowerCase().includes('result') ||
+          msg.content.toLowerCase().includes('outcome') ||
+          msg.content.toLowerCase().includes('conclusion') ||
+          msg.content.toLowerCase().includes('achieved')
+      )
+      .map(msg => `• ${msg.content}`)
+      .slice(0, 5);
+    return outcomes.join('\n');
+  };
+
+  const extractChallenges = (messages: ChatMessage[]): string => {
+    const challenges = messages
+      .filter(
+        msg =>
+          msg.content.toLowerCase().includes('challenge') ||
+          msg.content.toLowerCase().includes('difficult') ||
+          msg.content.toLowerCase().includes('issue') ||
+          msg.content.toLowerCase().includes('problem')
+      )
+      .map(msg => `• ${msg.content}`)
+      .slice(0, 5);
+    return challenges.join('\n');
+  };
+
+  const extractRecommendations = (messages: ChatMessage[]): string => {
+    const recommendations = messages
+      .filter(
+        msg =>
+          msg.content.toLowerCase().includes('recommend') ||
+          msg.content.toLowerCase().includes('suggest') ||
+          msg.content.toLowerCase().includes('should') ||
+          msg.content.toLowerCase().includes('advise')
+      )
+      .map(msg => `• ${msg.content}`)
+      .slice(0, 5);
+    return recommendations.join('\n');
+  };
+
+  const extractInsights = (messages: ChatMessage[]): string => {
+    const insights = messages
+      .filter(
+        msg =>
+          msg.content.toLowerCase().includes('insight') ||
+          msg.content.toLowerCase().includes('realize') ||
+          msg.content.toLowerCase().includes('understand') ||
+          msg.content.toLowerCase().includes('learn')
+      )
+      .map(msg => `• ${msg.content}`)
+      .slice(0, 5);
+    return insights.join('\n');
+  };
+
+  const extractNextSteps = (messages: ChatMessage[]): string => {
+    const nextSteps = messages
+      .filter(
+        msg =>
+          msg.content.toLowerCase().includes('next') ||
+          msg.content.toLowerCase().includes('follow up') ||
+          msg.content.toLowerCase().includes('continue') ||
+          msg.content.toLowerCase().includes('proceed')
+      )
+      .map(msg => `• ${msg.content}`)
+      .slice(0, 5);
+    return nextSteps.join('\n');
+  };
+
   // Define conversation aspects in descending rainbow order (Red → Orange → Yellow → Green → Blue → Indigo → Violet)
-  const conversationAspects: ConversationAspect[] = [
+  // Define all conversation aspects
+  const allConversationAspects: ConversationAspect[] = [
     {
       id: 'action-items',
       name: 'Action Items',
-      description: 'Tasks, next steps, to-dos',
-      icon: <AssignmentIcon sx={{ color: '#f44336', fontSize: '1.2rem' }} />,
-      color: '#f44336', // Red
+      description:
+        'Extract specific tasks, assignments, and actionable next steps that require follow-up or completion',
+      icon: <AssignmentIcon sx={{ color: '#ffc107', fontSize: '1.2rem' }} />,
+      color: '#ffc107', // Yellow
       extractedContent: extractActionItems(messages),
     },
     {
       id: 'problems-solutions',
       name: 'Problems & Solutions',
-      description: 'Issues raised and how they were addressed',
-      icon: <BuildIcon sx={{ color: '#ff5722', fontSize: '1.2rem' }} />,
-      color: '#ff5722', // Red-Orange
+      description:
+        'Identify issues, challenges, or pain points discussed and the corresponding solutions or resolutions provided',
+      icon: <BuildIcon sx={{ color: '#2196f3', fontSize: '1.2rem' }} />,
+      color: '#2196f3', // Light Blue
       extractedContent: extractProblemsSolutions(messages),
     },
     {
       id: 'key-points',
       name: 'Key Points',
-      description: 'Main ideas, concepts, and important information',
-      icon: <LightbulbIcon sx={{ color: '#ff9800', fontSize: '1.2rem' }} />,
-      color: '#ff9800', // Orange
+      description:
+        'Capture the most important ideas, main concepts, and critical information that form the core of the discussion',
+      icon: <LightbulbIcon sx={{ color: '#f44336', fontSize: '1.2rem' }} />,
+      color: '#f44336', // Red
       extractedContent: extractKeyPoints(messages),
+    },
+    {
+      id: 'main-topics',
+      name: 'Main Topics',
+      description:
+        'Identify the primary subjects, central themes, and main areas of focus that were explored in the conversation',
+      icon: <TopicIcon sx={{ color: '#ff5722', fontSize: '1.2rem' }} />,
+      color: '#ff5722', // Red-Orange
+      extractedContent: extractMainTopics(messages),
     },
     {
       id: 'definitions',
       name: 'Definitions',
-      description: 'Terms, concepts, and explanations provided',
-      icon: <BookIcon sx={{ color: '#ffc107', fontSize: '1.2rem' }} />,
-      color: '#ffc107', // Yellow/Amber
+      description:
+        'Extract technical terms, jargon, concepts, and explanations that were defined or clarified during the discussion',
+      icon: <BookIcon sx={{ color: '#1976d2', fontSize: '1.2rem' }} />,
+      color: '#1976d2', // Dark Blue
       extractedContent: extractDefinitions(messages),
     },
     {
       id: 'data-facts',
       name: 'Data & Facts',
-      description: 'Specific data, numbers, statistics, dates',
-      icon: <BarChartIcon sx={{ color: '#4caf50', fontSize: '1.2rem' }} />,
-      color: '#4caf50', // Green
+      description:
+        'Collect specific numbers, statistics, dates, metrics, and factual information that were shared or referenced',
+      icon: <BarChartIcon sx={{ color: '#8bc34a', fontSize: '1.2rem' }} />,
+      color: '#8bc34a', // Light Green
       extractedContent: extractDataFacts(messages),
     },
     {
       id: 'questions',
       name: 'Questions',
-      description: 'All questions asked and answered',
-      icon: <HelpIcon sx={{ color: '#2196f3', fontSize: '1.2rem' }} />,
-      color: '#2196f3', // Blue
+      description:
+        'Gather all questions that were asked, answered, or raised during the conversation for future reference',
+      icon: <HelpIcon sx={{ color: '#66bb6a', fontSize: '1.2rem' }} />,
+      color: '#66bb6a', // Medium Green
       extractedContent: extractQuestions(messages),
     },
     {
       id: 'decisions',
       name: 'Decisions',
-      description: 'Conclusions, choices made, agreements',
-      icon: <CheckCircleIcon sx={{ color: '#9c27b0', fontSize: '1.2rem' }} />,
-      color: '#9c27b0', // Purple/Violet
+      description:
+        'Identify conclusions reached, choices made, agreements formed, and final determinations that were established',
+      icon: <CheckCircleIcon sx={{ color: '#ff9800', fontSize: '1.2rem' }} />,
+      color: '#ff9800', // Orange
       extractedContent: extractDecisions(messages),
     },
     {
       id: 'timeline',
       name: 'Timeline',
-      description: 'Chronological sequence of events or steps',
-      icon: <ScheduleIcon sx={{ color: '#795548', fontSize: '1.2rem' }} />,
-      color: '#795548', // Brown (Earth tone)
+      description:
+        'Create a chronological sequence of events, steps, or milestones that occurred during the conversation',
+      icon: <ScheduleIcon sx={{ color: '#ffc107', fontSize: '1.2rem' }} />,
+      color: '#ffc107', // Yellow
       extractedContent: extractTimeline(messages),
     },
+    {
+      id: 'outcomes',
+      name: 'Outcomes',
+      description:
+        'Capture the results achieved, goals accomplished, and successful conclusions that were reached',
+      icon: <FlagIcon sx={{ color: '#ffeb3b', fontSize: '1.2rem' }} />,
+      color: '#ffeb3b', // Light Yellow
+      extractedContent: extractOutcomes(messages),
+    },
+    {
+      id: 'challenges',
+      name: 'Challenges',
+      description:
+        'Identify difficulties encountered, obstacles faced, and problems that arose during the discussion or project',
+      icon: <WarningIcon sx={{ color: '#673ab7', fontSize: '1.2rem' }} />,
+      color: '#673ab7', // Dark Purple
+      extractedContent: extractChallenges(messages),
+    },
+    {
+      id: 'recommendations',
+      name: 'Recommendations',
+      description:
+        'Extract suggestions provided, advice given, and guidance offered for future actions or improvements',
+      icon: <ThumbUpIcon sx={{ color: '#4caf50', fontSize: '1.2rem' }} />,
+      color: '#4caf50', // Green
+      extractedContent: extractRecommendations(messages),
+    },
+    {
+      id: 'insights',
+      name: 'Insights',
+      description:
+        'Capture key learnings, realizations, discoveries, and deeper understanding that emerged from the conversation',
+      icon: <PsychologyIcon sx={{ color: '#e91e63', fontSize: '1.2rem' }} />,
+      color: '#e91e63', // Hot Pink
+      extractedContent: extractInsights(messages),
+    },
+    {
+      id: 'next-steps',
+      name: 'Next Steps',
+      description:
+        'Identify future actions planned, follow-up items scheduled, and continuation plans for moving forward',
+      icon: <ArrowForwardIcon sx={{ color: '#2196f3', fontSize: '1.2rem' }} />,
+      color: '#2196f3', // Blue
+      extractedContent: extractNextSteps(messages),
+    },
   ];
+
+  // Categorize aspects based on action type - each aspect appears in only one category
+  // Aspects are organized in priority order within each category
+  const getAspectsForAction = (actionType: string): ConversationAspect[] => {
+    switch (actionType) {
+      case 'SUMMARIZE':
+        // High-level overview and synthesis - focus on main themes and flow
+        // Priority order: Key Points (most important) → Main Topics → Decisions → Timeline → Outcomes
+        return allConversationAspects.filter(aspect =>
+          ['key-points', 'main-topics', 'decisions', 'timeline', 'outcomes'].includes(aspect.id)
+        );
+      case 'EXTRACT':
+        // Specific data and structured information - focus on actionable and factual content
+        // Priority order: Action Items (most actionable) → Data & Facts → Questions → Recommendations → Next Steps
+        return allConversationAspects.filter(aspect =>
+          ['action-items', 'data-facts', 'questions', 'recommendations', 'next-steps'].includes(
+            aspect.id
+          )
+        );
+      case 'REWRITE':
+        // Content transformation and improvement - focus on content that benefits from restructuring
+        // Priority order: Problems & Solutions (most complex) → Definitions → Challenges → Insights
+        return allConversationAspects.filter(aspect =>
+          ['problems-solutions', 'definitions', 'challenges', 'insights'].includes(aspect.id)
+        );
+      default:
+        return allConversationAspects;
+    }
+  };
+
+  // Get aspects for current action
+  const conversationAspects = getAspectsForAction(action);
 
   const handleAspectSelection = (aspectId: string) => {
     setSelectedAspects(prev =>
@@ -239,12 +425,40 @@ const ConversationSummarizer: React.FC<ConversationSummarizerProps> = ({
     if (selectedAspects.length === 0) {
       setSnackbar({
         open: true,
-        message: 'Please select at least one aspect to process',
+        message:
+          action === 'DOWNLOAD'
+            ? 'Please select at least one format to download'
+            : 'Please select at least one aspect to process',
         severity: 'error',
       });
       return;
     }
 
+    if (action === 'DOWNLOAD') {
+      // Handle download format selection
+      const selectedFormat = selectedAspects[0]; // Only allow one format selection
+      const format = downloadFormats.find(f => f.id === selectedFormat);
+
+      if (!format) {
+        setSnackbar({
+          open: true,
+          message: 'Invalid format selected',
+          severity: 'error',
+        });
+        return;
+      }
+
+      // Call the appropriate download function based on format
+      if (onProcess) {
+        onProcess([selectedFormat], action);
+      }
+
+      setSelectedAspects([]);
+      onClose();
+      return;
+    }
+
+    // Original logic for other actions (SUMMARIZE, EXTRACT, REWRITE)
     // Create a pre-filled message for the AI popup
     const selectedAspectNames = selectedAspects
       .map(aspectId => {
@@ -327,10 +541,51 @@ const ConversationSummarizer: React.FC<ConversationSummarizerProps> = ({
         return 'extract key points from';
       case 'REWRITE':
         return 'rewrite';
+      case 'DOWNLOAD':
+        return 'download conversation as';
       default:
         return 'process';
     }
   };
+
+  const downloadFormats = [
+    {
+      id: 'pdf',
+      name: 'PDF Document',
+      shortDescription: 'Professional formatted document for sharing and printing',
+      fullDescription:
+        'Professional formatted document with conversation overview, engagement metrics, and full transcript. Perfect for sharing, printing, or archiving conversations with proper formatting and visual appeal.',
+      icon: <PdfIcon sx={{ color: '#673ab7', fontSize: '1.5rem' }} />,
+      color: '#673ab7', // Dark Purple
+    },
+    {
+      id: 'json',
+      name: 'JSON Data',
+      shortDescription: 'Structured data format for developers and analysis',
+      fullDescription:
+        'Structured data format containing all conversation details, engagement metrics, and metadata. Ideal for developers, data analysis, integration with other tools, or programmatic processing.',
+      icon: <JsonIcon sx={{ color: '#f8bbd9', fontSize: '1.5rem' }} />,
+      color: '#f8bbd9', // Light Pink
+    },
+    {
+      id: 'txt',
+      name: 'Plain Text',
+      shortDescription: 'Simple text format, universally compatible',
+      fullDescription:
+        'Simple, clean text format with conversation overview and full transcript. Easy to read, edit, and share across any platform. Lightweight and universally compatible.',
+      icon: <TxtIcon sx={{ color: '#f06292', fontSize: '1.5rem' }} />,
+      color: '#f06292', // Normal Pink
+    },
+    {
+      id: 'markdown',
+      name: 'Markdown',
+      shortDescription: 'Formatted text for documentation and GitHub',
+      fullDescription:
+        'Formatted text using Markdown syntax with headers, tables, and styling. Perfect for documentation, GitHub, Notion, or any platform that supports Markdown rendering.',
+      icon: <MarkdownIcon sx={{ color: '#e91e63', fontSize: '1.5rem' }} />,
+      color: '#e91e63', // Hot Pink
+    },
+  ];
 
   return (
     <>
@@ -389,13 +644,17 @@ const ConversationSummarizer: React.FC<ConversationSummarizerProps> = ({
             }}
           >
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Choose the conversation aspects you want to {getActionDescription(action)}. Each
-              aspect will be intelligently extracted from your chat history.
+              {action === 'DOWNLOAD'
+                ? 'Choose the format you want to download your conversation in. The export will include conversation overview, engagement metrics, and full transcript.'
+                : `Choose the conversation aspects you want to ${getActionDescription(
+                    action
+                  )}. Each aspect will be intelligently extracted from your chat history.`}
             </Typography>
             <Box
               sx={{
                 display: 'grid',
-                gridTemplateColumns: '1fr',
+                gridTemplateColumns:
+                  action === 'DOWNLOAD' ? { xs: '1fr', sm: 'repeat(2, 1fr)' } : '1fr',
                 gap: 2,
                 maxHeight: { xs: 'calc(40vh - 120px)', md: 'calc(70vh - 120px)' },
                 overflowY: 'auto',
@@ -415,83 +674,251 @@ const ConversationSummarizer: React.FC<ConversationSummarizerProps> = ({
                 },
               }}
             >
-              {conversationAspects.map(aspect => (
-                <Box
-                  key={aspect.id}
-                  sx={{
-                    p: 2,
-                    border: selectedAspects.includes(aspect.id)
-                      ? '2px solid #d32f2f'
-                      : '1px solid rgba(0, 0, 0, 0.12)',
-                    borderRadius: 3,
-                    cursor: 'pointer',
-                    backgroundColor: selectedAspects.includes(aspect.id)
-                      ? 'rgba(211, 47, 47, 0.06)'
-                      : theme =>
-                          theme.palette.mode === 'dark' ? theme.palette.background.default : '#fff',
-                    '&:hover': {
-                      backgroundColor: selectedAspects.includes(aspect.id)
-                        ? 'rgba(211, 47, 47, 0.1)'
-                        : theme =>
-                            theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.04)' : '#fafafa',
-                      borderColor: selectedAspects.includes(aspect.id)
-                        ? '#d32f2f'
-                        : 'rgba(211, 47, 47, 0.3)',
-                    },
-                    transition: 'all 0.2s ease-in-out',
-                  }}
-                  onClick={() => handleAspectSelection(aspect.id)}
-                >
-                  <Box
-                    sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Box sx={{ mr: 1.5 }}>{aspect.icon}</Box>
-                      <Box>
-                        <Typography
-                          variant="subtitle1"
+              {action === 'DOWNLOAD'
+                ? downloadFormats.map(format => (
+                    <Box
+                      key={format.id}
+                      sx={{
+                        p: 3,
+                        border: selectedAspects.includes(format.id)
+                          ? '2px solid #d32f2f'
+                          : '1px solid rgba(0, 0, 0, 0.12)',
+                        borderRadius: 3,
+                        cursor: 'pointer',
+                        backgroundColor: selectedAspects.includes(format.id)
+                          ? 'rgba(211, 47, 47, 0.06)'
+                          : theme =>
+                              theme.palette.mode === 'dark'
+                                ? theme.palette.background.default
+                                : '#fff',
+                        '&:hover': {
+                          backgroundColor: selectedAspects.includes(format.id)
+                            ? 'rgba(211, 47, 47, 0.1)'
+                            : theme =>
+                                theme.palette.mode === 'dark'
+                                  ? 'rgba(255, 255, 255, 0.04)'
+                                  : '#fafafa',
+                          borderColor: selectedAspects.includes(format.id)
+                            ? '#d32f2f'
+                            : 'rgba(211, 47, 47, 0.3)',
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                        },
+                        transition: 'all 0.2s ease-in-out',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        textAlign: 'center',
+                        minHeight: expandedFormat === format.id ? '240px' : '120px',
+                        position: 'relative',
+                      }}
+                      onClick={() => handleAspectSelection(format.id)}
+                    >
+                      {/* Selection indicator */}
+                      {selectedAspects.includes(format.id) && (
+                        <Box
                           sx={{
-                            color: aspect.color,
-                            fontWeight: 600,
-                            fontSize: '0.95rem',
-                            lineHeight: 1.2,
+                            position: 'absolute',
+                            top: 12,
+                            right: 12,
+                            width: 24,
+                            height: 24,
+                            borderRadius: '50%',
+                            backgroundColor: '#d32f2f',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white',
+                            fontSize: '0.8rem',
+                            fontWeight: 'bold',
+                            zIndex: 1,
                           }}
                         >
-                          {aspect.name}
-                        </Typography>
+                          ✓
+                        </Box>
+                      )}
+
+                      {/* Icon */}
+                      <Box sx={{ mb: expandedFormat === format.id ? 2 : 1.5, mt: 1 }}>
+                        {format.icon}
+                      </Box>
+
+                      {/* Title */}
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          color: format.color,
+                          fontWeight: 600,
+                          fontSize: '1.1rem',
+                          lineHeight: 1.2,
+                          mb: expandedFormat === format.id ? 1.5 : 1,
+                          textAlign: 'center',
+                        }}
+                      >
+                        {format.name}
+                      </Typography>
+
+                      {/* Description - Only visible when expanded */}
+                      {expandedFormat === format.id && (
+                        <Box sx={{ flex: 1, width: '100%' }}>
+                          {/* Short Description */}
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color: theme => theme.palette.text.secondary,
+                              fontSize: '0.85rem',
+                              lineHeight: 1.4,
+                              textAlign: 'left',
+                              mb: 1,
+                            }}
+                          >
+                            {format.shortDescription}
+                          </Typography>
+
+                          {/* Full Description */}
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color: theme => theme.palette.text.secondary,
+                              fontSize: '0.85rem',
+                              lineHeight: 1.4,
+                              textAlign: 'left',
+                              mb: 1,
+                            }}
+                          >
+                            {format.fullDescription}
+                          </Typography>
+                        </Box>
+                      )}
+
+                      {/* Expand/Collapse Button - Always at bottom */}
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          mt: 'auto',
+                          cursor: 'pointer',
+                          '&:hover': {
+                            backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                            borderRadius: 1,
+                          },
+                          p: 0.5,
+                          borderRadius: 1,
+                          transition: 'background-color 0.2s ease',
+                        }}
+                        onClick={e => {
+                          e.stopPropagation();
+                          setExpandedFormat(expandedFormat === format.id ? null : format.id);
+                        }}
+                      >
                         <Typography
                           variant="caption"
                           sx={{
                             color: theme => theme.palette.text.secondary,
                             fontSize: '0.75rem',
-                            lineHeight: 1.3,
+                            mr: 0.5,
                           }}
                         >
-                          {aspect.description}
+                          {expandedFormat === format.id ? 'Show less' : 'Show more'}
                         </Typography>
+                        <KeyboardArrowDownIcon
+                          sx={{
+                            fontSize: '1rem',
+                            color: theme => theme.palette.text.secondary,
+                            transform:
+                              expandedFormat === format.id ? 'rotate(180deg)' : 'rotate(0deg)',
+                            transition: 'transform 0.2s ease',
+                          }}
+                        />
                       </Box>
                     </Box>
-                    {selectedAspects.includes(aspect.id) && (
+                  ))
+                : conversationAspects.map(aspect => (
+                    <Box
+                      key={aspect.id}
+                      sx={{
+                        p: 2,
+                        border: selectedAspects.includes(aspect.id)
+                          ? '2px solid #d32f2f'
+                          : '1px solid rgba(0, 0, 0, 0.12)',
+                        borderRadius: 3,
+                        cursor: 'pointer',
+                        backgroundColor: selectedAspects.includes(aspect.id)
+                          ? 'rgba(211, 47, 47, 0.06)'
+                          : theme =>
+                              theme.palette.mode === 'dark'
+                                ? theme.palette.background.default
+                                : '#fff',
+                        '&:hover': {
+                          backgroundColor: selectedAspects.includes(aspect.id)
+                            ? 'rgba(211, 47, 47, 0.1)'
+                            : theme =>
+                                theme.palette.mode === 'dark'
+                                  ? 'rgba(255, 255, 255, 0.04)'
+                                  : '#fafafa',
+                          borderColor: selectedAspects.includes(aspect.id)
+                            ? '#d32f2f'
+                            : 'rgba(211, 47, 47, 0.3)',
+                        },
+                        transition: 'all 0.2s ease-in-out',
+                      }}
+                      onClick={() => handleAspectSelection(aspect.id)}
+                    >
                       <Box
                         sx={{
-                          width: 20,
-                          height: 20,
-                          borderRadius: '50%',
-                          backgroundColor: '#d32f2f',
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'center',
-                          color: 'white',
-                          fontSize: '0.7rem',
-                          fontWeight: 'bold',
+                          justifyContent: 'space-between',
                         }}
                       >
-                        ✓
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Box sx={{ mr: 1.5 }}>{aspect.icon}</Box>
+                          <Box>
+                            <Typography
+                              variant="subtitle1"
+                              sx={{
+                                color: aspect.color,
+                                fontWeight: 600,
+                                fontSize: '0.95rem',
+                                lineHeight: 1.2,
+                              }}
+                            >
+                              {aspect.name}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: theme => theme.palette.text.secondary,
+                                fontSize: '0.75rem',
+                                lineHeight: 1.3,
+                              }}
+                            >
+                              {aspect.description}
+                            </Typography>
+                          </Box>
+                        </Box>
+                        {selectedAspects.includes(aspect.id) && (
+                          <Box
+                            sx={{
+                              width: 20,
+                              height: 20,
+                              borderRadius: '50%',
+                              backgroundColor: '#d32f2f',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: 'white',
+                              fontSize: '0.7rem',
+                              fontWeight: 'bold',
+                            }}
+                          >
+                            ✓
+                          </Box>
+                        )}
                       </Box>
-                    )}
-                  </Box>
-                </Box>
-              ))}
+                    </Box>
+                  ))}
             </Box>
           </Box>
 
@@ -567,89 +994,142 @@ const ConversationSummarizer: React.FC<ConversationSummarizerProps> = ({
                     Selection Summary
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                    {selectedAspects.map(aspectId => {
-                      const aspect = conversationAspects.find(a => a.id === aspectId);
-                      return (
-                        <Box
-                          key={aspectId}
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1,
-                            px: 2,
-                            py: 1,
-                            backgroundColor: theme => theme.palette.background.paper,
-                            borderRadius: 2,
-                            border: `1px solid ${aspect?.color}40`,
-                          }}
-                        >
-                          <Box sx={{ fontSize: '0.9rem' }}>{aspect?.icon}</Box>
-                          <Typography
-                            variant="caption"
-                            sx={{ fontSize: '0.75rem', fontWeight: 500 }}
-                          >
-                            {aspect?.name}
-                          </Typography>
-                        </Box>
-                      );
-                    })}
+                    {action === 'DOWNLOAD'
+                      ? selectedAspects.map(formatId => {
+                          const format = downloadFormats.find(f => f.id === formatId);
+                          return (
+                            <Box
+                              key={formatId}
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                                px: 2,
+                                py: 1,
+                                backgroundColor: theme => theme.palette.background.paper,
+                                borderRadius: 2,
+                                border: `1px solid ${format?.color}40`,
+                              }}
+                            >
+                              <Box sx={{ fontSize: '0.9rem' }}>{format?.icon}</Box>
+                              <Typography
+                                variant="caption"
+                                sx={{ fontSize: '0.75rem', fontWeight: 500 }}
+                              >
+                                {format?.name}
+                              </Typography>
+                            </Box>
+                          );
+                        })
+                      : selectedAspects.map(aspectId => {
+                          const aspect = conversationAspects.find(a => a.id === aspectId);
+                          return (
+                            <Box
+                              key={aspectId}
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                                px: 2,
+                                py: 1,
+                                backgroundColor: theme => theme.palette.background.paper,
+                                borderRadius: 2,
+                                border: `1px solid ${aspect?.color}40`,
+                              }}
+                            >
+                              <Box sx={{ fontSize: '0.9rem' }}>{aspect?.icon}</Box>
+                              <Typography
+                                variant="caption"
+                                sx={{ fontSize: '0.75rem', fontWeight: 500 }}
+                              >
+                                {aspect?.name}
+                              </Typography>
+                            </Box>
+                          );
+                        })}
                   </Box>
                 </Box>
 
                 {/* Preview Content */}
-                {selectedAspects.map(aspectId => {
-                  const aspect = conversationAspects.find(a => a.id === aspectId);
-                  if (!aspect || !aspect.extractedContent) return null;
+                {action === 'DOWNLOAD'
+                  ? selectedAspects.map(formatId => {
+                      const format = downloadFormats.find(f => f.id === formatId);
+                      return (
+                        <Box key={formatId} sx={{ mb: 3 }}>
+                          <Typography variant="h6" sx={{ mb: 2, color: format?.color }}>
+                            {format?.name}
+                          </Typography>
+                          <Box
+                            sx={{
+                              p: 2,
+                              backgroundColor: theme => theme.palette.background.paper,
+                              borderRadius: 2,
+                              border: `1px solid ${format?.color}40`,
+                            }}
+                          >
+                            <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                              {format?.shortDescription}
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                              {format?.fullDescription}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      );
+                    })
+                  : selectedAspects.map(aspectId => {
+                      const aspect = conversationAspects.find(a => a.id === aspectId);
+                      if (!aspect || !aspect.extractedContent) return null;
 
-                  return (
-                    <Box
-                      key={aspectId}
-                      sx={{
-                        mb: 3,
-                        p: 2.5,
-                        backgroundColor: theme => theme.palette.background.paper,
-                        borderRadius: 3,
-                        border: '1px solid rgba(0, 0, 0, 0.08)',
-                        position: 'relative',
-                        '&::before': {
-                          content: '""',
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          width: '4px',
-                          height: '100%',
-                          backgroundColor: aspect.color,
-                          borderRadius: '0 2px 2px 0',
-                        },
-                      }}
-                    >
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                        <Box sx={{ mr: 1.5 }}>{aspect.icon}</Box>
-                        <Typography
-                          variant="h6"
+                      return (
+                        <Box
+                          key={aspectId}
                           sx={{
-                            color: aspect.color,
-                            fontWeight: 600,
-                            fontSize: '1.1rem',
+                            mb: 3,
+                            p: 2.5,
+                            backgroundColor: theme => theme.palette.background.paper,
+                            borderRadius: 3,
+                            border: '1px solid rgba(0, 0, 0, 0.08)',
+                            position: 'relative',
+                            '&::before': {
+                              content: '""',
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              width: '4px',
+                              height: '100%',
+                              backgroundColor: aspect.color,
+                              borderRadius: '0 2px 2px 0',
+                            },
                           }}
                         >
-                          {aspect.name}
-                        </Typography>
-                      </Box>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          whiteSpace: 'pre-wrap',
-                          lineHeight: 1.6,
-                          color: theme => theme.palette.text.primary,
-                          fontSize: '0.9rem',
-                        }}
-                      >
-                        {aspect.extractedContent}
-                      </Typography>
-                    </Box>
-                  );
-                })}
+                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                            <Box sx={{ mr: 1.5 }}>{aspect.icon}</Box>
+                            <Typography
+                              variant="h6"
+                              sx={{
+                                color: aspect.color,
+                                fontWeight: 600,
+                                fontSize: '1.1rem',
+                              }}
+                            >
+                              {aspect.name}
+                            </Typography>
+                          </Box>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              whiteSpace: 'pre-wrap',
+                              lineHeight: 1.6,
+                              color: theme => theme.palette.text.primary,
+                              fontSize: '0.9rem',
+                            }}
+                          >
+                            {aspect.extractedContent}
+                          </Typography>
+                        </Box>
+                      );
+                    })}
               </Box>
             )}
           </Box>

@@ -8,6 +8,7 @@ import {
   FullscreenExit as FullscreenExitIcon,
   History as HistoryIcon,
   InfoOutlined as InfoIcon,
+  Launch as LaunchIcon,
   LinkOutlined as LinkOutlinedIcon,
   RecordVoiceOverOutlined,
   Send as SendIcon,
@@ -449,36 +450,60 @@ const Workshop: React.FC = () => {
       case 0:
         return (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <TextField
-              fullWidth
-              multiline
-              rows={4}
-              placeholder="Type your message here..."
-              variant="outlined"
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSubmit(e);
-                }
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: theme =>
-                    theme.palette.mode === 'dark' ? theme.palette.background.default : '#ffffff',
-                  '& fieldset': {
-                    borderColor: 'red',
+            <Box sx={{ position: 'relative' }}>
+              <TextField
+                fullWidth
+                multiline
+                rows={4}
+                placeholder="Type your message here..."
+                variant="outlined"
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSubmit(e);
+                  }
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: theme =>
+                      theme.palette.mode === 'dark' ? theme.palette.background.default : '#ffffff',
+                    '& fieldset': {
+                      borderColor: 'red',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: 'red',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: 'red',
+                    },
                   },
-                  '&:hover fieldset': {
-                    borderColor: 'red',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: 'red',
-                  },
-                },
-              }}
-            />
+                }}
+              />
+              <Tooltip title="Open AI Chat Popup">
+                <IconButton
+                  onClick={() => {
+                    setPopupUploadType('text');
+                    setPopupContent({ text: '' });
+                    setIsAnalysisPopupOpen(true);
+                  }}
+                  sx={{
+                    position: 'absolute',
+                    top: 8,
+                    right: 8,
+                    backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                    '&:hover': {
+                      backgroundColor: 'rgba(244, 67, 54, 0.2)',
+                    },
+                    zIndex: 1,
+                  }}
+                  size="small"
+                >
+                  <LaunchIcon sx={{ color: 'red', fontSize: '1.2rem' }} />
+                </IconButton>
+              </Tooltip>
+            </Box>
             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
               <Button
                 variant="contained"
