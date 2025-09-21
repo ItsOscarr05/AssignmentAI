@@ -94,13 +94,36 @@ const AITokens: React.FC = () => {
   const navigate = useNavigate();
   const [assignments, setAssignments] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [usageHistory, setUsageHistory] = useState<any[]>([]);
   const [tokenPurchaseDialogOpen, setTokenPurchaseDialogOpen] = useState(false);
   const [selectedTokenAmount, setSelectedTokenAmount] = useState(0);
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
   const [paymentIntentClientSecret, setPaymentIntentClientSecret] = useState<string | null>(null);
   const [creatingPaymentIntent, setCreatingPaymentIntent] = useState(false);
 
-  const { totalTokens, usedTokens, remainingTokens } = useTokenUsage(subscription);
+  const {
+    totalTokens,
+    usedTokens,
+    remainingTokens,
+    tokenUsageData,
+    loading: tokenLoading,
+  } = useTokenUsage(subscription);
+
+  // Fetch usage history from API
+  const fetchUsageHistory = async () => {
+    try {
+      const response = await api.get('/usage/history', {
+        params: {
+          start_date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // Last 30 days
+          end_date: new Date().toISOString(),
+        },
+      });
+      setUsageHistory(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch usage history:', error);
+      setUsageHistory([]);
+    }
+  };
 
   // Token purchase handlers
   const handleTokenAmountSelect = (amount: number) => {
@@ -187,12 +210,15 @@ const AITokens: React.FC = () => {
 
   useEffect(() => {
     fetchSubscriptionData();
+    fetchUsageHistory();
+
     const handler = () => {
       fetchSubscriptionData();
+      fetchUsageHistory();
     };
     window.addEventListener('subscription-updated', handler);
 
-    // Fetch assignments
+    // Fetch assignments (for compatibility with existing charts)
     api
       .get('/assignments')
       .then(res => {
@@ -268,6 +294,45 @@ const AITokens: React.FC = () => {
       window.removeEventListener('payment-success', handleSubscriptionUpdate);
     };
   }, []);
+
+  // Build chart data from real usage history
+  function buildUsageChartFromHistory(usageHistory: any[], total: number, days: number = 30) {
+    if (!usageHistory.length) return [];
+
+    const today = new Date();
+    const chartData = [];
+
+    // Group usage by date
+    const usageByDate: { [key: string]: { tokens: number; features: string[] } } = {};
+
+    usageHistory.forEach(usage => {
+      const date = new Date(usage.timestamp).toISOString().split('T')[0];
+      if (!usageByDate[date]) {
+        usageByDate[date] = { tokens: 0, features: [] };
+      }
+      usageByDate[date].tokens += usage.tokens_used || 0;
+      if (!usageByDate[date].features.includes(usage.feature)) {
+        usageByDate[date].features.push(usage.feature);
+      }
+    });
+
+    // Build chart data for the specified number of days
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      const usage = usageByDate[dateStr] || { tokens: 0, features: [] };
+
+      chartData.push({
+        date: format(date, 'MMM d'),
+        tokens: usage.tokens,
+        used: usage.tokens,
+        description: usage.tokens > 0 ? `Used for: ${usage.features.join(', ')}` : '',
+      });
+    }
+
+    return chartData;
+  }
 
   // For 30-day graph, show last 30 days, but only add usage from billing start onward
   function buildLast30DaysChart(
@@ -472,10 +537,9 @@ const AITokens: React.FC = () => {
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
   );
 
-  // For 30-day chart, use buildLast30DaysChart with all assignments
-  const usageData30 = buildLast30DaysChart(sortedAssignmentsAll, totalTokens);
-  // For 7-day chart, keep using buildUsageHistory for last 7 assignments (current cycle only)
-  const usageData7 = buildUsageHistory(assignments, totalTokens, 7);
+  // Use real usage history for charts
+  const usageData30 = buildUsageChartFromHistory(usageHistory, totalTokens, 30);
+  const usageData7 = buildUsageChartFromHistory(usageHistory, totalTokens, 7);
   const handleRangeChange = (_: any, newRange: '7' | '30') => {
     if (newRange) setRange(newRange);
   };

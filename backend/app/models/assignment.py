@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional, List
 from sqlalchemy import Column, Integer, String, Text, DateTime, Enum, Float, Index, Boolean
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base_class import Base
 import enum
 
@@ -47,4 +47,7 @@ class Assignment(Base):
         Index('idx_assignment_class', 'class_id'),
         Index('idx_assignment_due_date', 'due_date'),
         Index('idx_assignment_status', 'status'),
-    ) 
+    )
+
+    # Relationships
+    file_uploads = relationship("FileUpload", back_populates="assignment") 

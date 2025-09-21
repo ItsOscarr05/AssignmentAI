@@ -7,6 +7,7 @@ from app.models.assignment import Assignment
 from app.models.file import File
 from app.models.subscription import Subscription
 from app.models.activity import Activity
+from app.crud import file_upload as file_upload_crud
 from datetime import datetime, timedelta
 from app.core.config import settings
 
@@ -226,6 +227,36 @@ async def get_recent_files(
     # except Exception as e:
     #     raise HTTPException(status_code=500, detail=str(e))
     return []
+
+@router.get("/file-uploads/recent")
+async def get_recent_file_uploads(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    limit: int = 5
+):
+    """Get recent file uploads for the current user"""
+    try:
+        file_uploads = file_upload_crud.get_recent_file_uploads(db, current_user.id, limit)
+        
+        file_list = []
+        for file_upload in file_uploads:
+            file_data = {
+                "id": str(file_upload.id),
+                "filename": file_upload.filename,
+                "original_filename": file_upload.original_filename,
+                "file_size": file_upload.file_size,
+                "file_type": file_upload.file_type,
+                "is_link": file_upload.is_link,
+                "link_url": file_upload.link_url,
+                "link_title": file_upload.link_title,
+                "assignment_id": file_upload.assignment_id,
+                "created_at": file_upload.created_at.isoformat(),
+            }
+            file_list.append(file_data)
+        
+        return file_list
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/usage/analytics")
 async def get_usage_analytics(

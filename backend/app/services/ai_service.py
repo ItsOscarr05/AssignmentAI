@@ -22,6 +22,7 @@ import re
 import asyncio
 from fastapi import HTTPException
 from app.models.usage import Usage
+from app.services.usage_service import UsageService
 
 
 class AIService:
@@ -30,6 +31,28 @@ class AIService:
         self.model_version = settings.AI_MODEL_VERSION
         self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
         self.model = settings.OPENAI_MODEL
+        # Create usage service for tracking tokens
+        from sqlalchemy.orm import Session
+        sync_db = Session(bind=db.bind)
+        self.usage_service = UsageService(sync_db)
+
+    async def track_token_usage(self, user_id: int, feature: str, action: str, tokens_used: int, metadata: dict = None):
+        """Track token usage for a user"""
+        try:
+            from app.models.user import User
+            # Get user object
+            result = self.db.execute(select(User).filter(User.id == user_id))
+            user = result.scalar_one_or_none()
+            if user:
+                await self.usage_service.track_usage(
+                    user=user,
+                    feature=feature,
+                    action=action,
+                    tokens_used=tokens_used,
+                    metadata=metadata
+                )
+        except Exception as e:
+            logger.error(f"Failed to track token usage: {str(e)}")
 
     def get_user_model(self, user_id: int) -> str:
         """Get the AI model assigned to a user's subscription"""
@@ -180,6 +203,23 @@ class AIService:
                 logger.error("OpenAI returned None content for feedback")
                 return None
             
+            # Track token usage
+            if hasattr(response, 'usage'):
+                tokens_used = response.usage.total_tokens if response.usage else 0
+                await self.track_token_usage(
+                    user_id=user_id,
+                    feature='ai_feedback',
+                    action='generate',
+                    tokens_used=tokens_used,
+                    metadata={
+                        'model': model,
+                        'feedback_type': feedback_type,
+                        'submission_id': submission_id,
+                        'prompt_length': len(prompt),
+                        'response_length': len(feedback_content) if feedback_content else 0
+                    }
+                )
+            
             # Create feedback object
             feedback = FeedbackCreate(
                 submission_id=submission_id,
@@ -259,6 +299,22 @@ class AIService:
                 content = response.choices[0].message.content
                 if content is None:
                     raise ValueError("OpenAI returned None content")
+                
+                # Track token usage
+                if user_id and hasattr(response, 'usage'):
+                    tokens_used = response.usage.total_tokens if response.usage else 0
+                    await self.track_token_usage(
+                        user_id=user_id,
+                        feature='ai_generation',
+                        action='generate',
+                        tokens_used=tokens_used,
+                        metadata={
+                            'model': self.model,
+                            'prompt_length': len(prompt),
+                            'response_length': len(content) if content else 0
+                        }
+                    )
+                
                 return content
             except Exception as e:
                 if attempt == max_retries - 1:
@@ -601,6 +657,22 @@ class AIService:
                 prompt_preview = prompt[:100].replace('\n', ' ').replace('\r', ' ') if prompt else ""
                 logger.error(f"GPT returned None content for chat prompt: {prompt_preview}...")
                 raise ValueError("GPT returned None content")
+            
+            # Track token usage
+            if user_id and hasattr(response, 'usage'):
+                tokens_used = response.usage.total_tokens if response.usage else 0
+                await self.track_token_usage(
+                    user_id=user_id,
+                    feature='ai_chat',
+                    action='generate',
+                    tokens_used=tokens_used,
+                    metadata={
+                        'model': user_model,
+                        'prompt_length': len(prompt),
+                        'response_length': len(content) if content else 0,
+                        'conversation_length': len(messages)
+                    }
+                )
             
             logger.info(f"Successfully generated GPT chat response of length: {len(content)} characters")
             return content

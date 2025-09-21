@@ -12,7 +12,8 @@ router = APIRouter()
 class UsageCreate(BaseModel):
     feature: str
     action: str
-    metadata: Optional[Dict[str, Any]] = None
+    tokens_used: int = 0
+    usage_metadata: Optional[Dict[str, Any]] = None
 
 class UsageResponse(BaseModel):
     id: int
@@ -20,7 +21,9 @@ class UsageResponse(BaseModel):
     feature: str
     action: str
     timestamp: datetime
-    metadata: Optional[Dict[str, Any]]
+    tokens_used: int
+    requests_made: int
+    usage_metadata: Optional[Dict[str, Any]]
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -40,7 +43,8 @@ async def track_usage(
         user=current_user,
         feature=usage.feature,
         action=usage.action,
-        metadata=usage.metadata
+        tokens_used=usage.tokens_used,
+        metadata=usage.usage_metadata
     )
 
 @router.get("/history", response_model=List[UsageResponse])
@@ -72,6 +76,19 @@ async def get_usage_summary(
     return await usage_service.get_usage_summary(
         user=current_user,
         feature=feature,
+        period=period
+    )
+
+@router.get("/tokens", response_model=Dict[str, Any])
+async def get_token_usage_summary(
+    period: str = 'monthly',
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get token usage summary for the current user"""
+    usage_service = UsageService(db)
+    return await usage_service.get_token_usage_summary(
+        user=current_user,
         period=period
     )
 

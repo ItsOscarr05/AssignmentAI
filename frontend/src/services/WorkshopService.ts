@@ -275,17 +275,17 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
   },
 
   addFile: async (file: globalThis.File) => {
+    const fileId = Date.now().toString();
+    const newFile = {
+      id: fileId,
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      status: 'uploading' as const,
+    };
+
     set(state => ({
-      files: [
-        ...state.files,
-        {
-          id: Date.now().toString(),
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          status: 'uploading' as const,
-        },
-      ],
+      files: [...state.files, newFile],
       error: null,
       featureAccessError: null,
     }));
@@ -294,8 +294,25 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await api.post('/workshop/files', formData);
-      const fileData = response.data;
+      // Use fetch directly to avoid the default Content-Type header from axios
+      const token = localStorage.getItem('access_token');
+      const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+      const response = await fetch(`${baseURL}/api/v1/workshop/files`, {
+        method: 'POST',
+        headers: {
+          ...(token && { Authorization: `Bearer ${token}` }),
+          // Don't set Content-Type - let the browser set it automatically
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'File upload failed');
+      }
+
+      const fileData = await response.json();
 
       // Add to history
       const historyItem: HistoryItem = {
@@ -309,28 +326,39 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
         fileCategory: fileData.file_category,
       };
 
+      const completedFile = {
+        ...newFile,
+        status: 'completed' as const,
+        path: fileData.path,
+        content: fileData.content,
+        analysis: fileData.analysis,
+        uploaded_at: fileData.uploaded_at,
+      };
+
       set(state => ({
-        files: state.files.map(f =>
-          f.name === file.name ? { ...f, status: 'completed' as const } : f
-        ),
+        files: state.files.map(f => (f.id === fileId ? completedFile : f)),
         history: [...state.history, historyItem],
       }));
+
+      return completedFile;
     } catch (error: any) {
+      const errorFile = {
+        ...newFile,
+        status: 'error' as const,
+      };
+
       if (error.response?.status === 403 && error.response?.data?.error) {
         set(state => ({
-          files: state.files.map(f =>
-            f.name === file.name ? { ...f, status: 'error' as const } : f
-          ),
+          files: state.files.map(f => (f.id === fileId ? errorFile : f)),
           featureAccessError: error.response.data,
         }));
       } else {
         set(state => ({
-          files: state.files.map(f =>
-            f.name === file.name ? { ...f, status: 'error' as const } : f
-          ),
+          files: state.files.map(f => (f.id === fileId ? errorFile : f)),
           error: 'Failed to process file',
         }));
       }
+      return errorFile;
     }
   },
 

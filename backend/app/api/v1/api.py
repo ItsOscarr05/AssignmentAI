@@ -25,7 +25,9 @@ from app.api.v1.endpoints import (
     diagrams,
     image_analysis,
     contact,
-    smart_features
+    smart_features,
+    file_processing,
+    file_uploads
 )
 from app.crud import feedback as feedback_crud
 from app.schemas.feedback import Feedback
@@ -66,6 +68,8 @@ api_router.include_router(diagrams.router, prefix="/diagrams", tags=["diagrams"]
 api_router.include_router(image_analysis.router, prefix="/image-analysis", tags=["image-analysis"])
 api_router.include_router(contact.router, prefix="/contact", tags=["contact"])
 api_router.include_router(smart_features.router, prefix="/smart-features", tags=["smart-features"])
+api_router.include_router(file_processing.router, prefix="/file-processing", tags=["file-processing"])
+api_router.include_router(file_uploads.router, prefix="/file-uploads", tags=["file-uploads"])
 
 @api_router.get("/submissions/{submission_id}/feedback", tags=["Feedback"])
 def get_feedback_by_submission(submission_id: int, db=Depends(get_db)):

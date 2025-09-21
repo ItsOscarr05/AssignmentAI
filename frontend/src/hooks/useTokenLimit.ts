@@ -84,7 +84,7 @@ export const useTokenLimit = () => {
       return 100000;
     };
     try {
-      const response = await api.get('/usage/summary', {
+      const response = await api.get('/usage/tokens', {
         params: { period: 'monthly' },
       });
 
@@ -102,7 +102,7 @@ export const useTokenLimit = () => {
         percentUsed: Math.round((used / total) * 100),
         label: subscription
           ? `${subscription.plan_id} Plan (${total.toLocaleString()} tokens/month)`
-          : 'Free Plan (30,000 tokens/month)',
+          : 'Free Plan (100,000 tokens/month)',
       });
     } catch (err) {
       console.error('Failed to fetch token usage:', err);
@@ -118,7 +118,7 @@ export const useTokenLimit = () => {
         percentUsed: 0,
         label: subscription
           ? `${subscription.plan_id} Plan (${total.toLocaleString()} tokens/month)`
-          : 'Free Plan (30,000 tokens/month)',
+          : 'Free Plan (100,000 tokens/month)',
       });
     }
   }, [subscription]);

@@ -59,8 +59,8 @@ class SecurityService:
         # Check for path traversal attempts
         if '..' in filename or '/' in filename or '\\' in filename:
             return False
-        # Check for allowed characters
-        filename_pattern = r'^[a-zA-Z0-9._-]+$'
+        # Check for allowed characters (now includes spaces)
+        filename_pattern = r'^[a-zA-Z0-9._\s-]+$'
         return bool(re.match(filename_pattern, filename))
 
     def validate_file_type(self, filename: str, allowed_extensions: List[str]) -> bool:

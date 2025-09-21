@@ -9,6 +9,16 @@ export interface Assignment {
   wordCount: number;
   tokensUsed: number;
   subject?: string;
+  file_uploads?: Array<{
+    id: number;
+    filename: string;
+    original_filename: string;
+    file_type: string;
+    is_link: boolean;
+    link_url?: string;
+    link_title?: string;
+    created_at: string;
+  }>;
 }
 
 // Helper for random selection

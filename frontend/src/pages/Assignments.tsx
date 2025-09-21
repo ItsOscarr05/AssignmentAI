@@ -68,6 +68,16 @@ interface Assignment {
     type: string;
     size: string;
   }>;
+  file_uploads?: Array<{
+    id: number;
+    filename: string;
+    original_filename: string;
+    file_type: string;
+    is_link: boolean;
+    link_url?: string;
+    link_title?: string;
+    created_at: string;
+  }>;
 }
 
 const Assignments: React.FC = () => {
@@ -877,7 +887,7 @@ const Assignments: React.FC = () => {
                       theme.palette.mode === 'dark' ? theme.palette.background.default : '#ffffff',
                   }}
                 >
-                  <TableCell colSpan={5} align="center" sx={{ p: 0 }}>
+                  <TableCell colSpan={6} align="center" sx={{ p: 0 }}>
                     <Box
                       minHeight={530}
                       display="flex"

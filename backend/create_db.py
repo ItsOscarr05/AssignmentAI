@@ -9,8 +9,21 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from app.database import Base, engine
-# Import all models to ensure they're registered with Base
-from app.models import *
+# Import models in the correct order to ensure they're registered with Base
+from app.models.user import User
+from app.models.assignment import Assignment
+from app.models.file_upload import FileUpload
+from app.models.submission import Submission
+from app.models.feedback import Feedback
+from app.models.ai_assignment import AIAssignment
+from app.models.class_model import Class
+from app.models.security import SecurityAlert, AuditLog, TwoFactorSetup
+from app.models.log import SystemLog
+from app.models.subscription import Subscription
+from app.models.usage import Usage, UsageLimit
+from app.models.file import File
+from app.models.activity import Activity
+from app.models.transaction import Transaction
 
 def create_tables():
     """Create all database tables"""
@@ -45,6 +58,14 @@ def create_tables():
             print("All required columns are present!")
     else:
         print("WARNING: users table was not created!")
+    
+    # Check for file_uploads table
+    if 'file_uploads' in tables:
+        columns = inspector.get_columns('file_uploads')
+        column_names = [col['name'] for col in columns]
+        print(f"FileUpload table columns: {column_names}")
+    else:
+        print("WARNING: file_uploads table was not created!")
 
 if __name__ == "__main__":
     create_tables() 

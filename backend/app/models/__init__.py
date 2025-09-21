@@ -12,6 +12,7 @@ from .log import SystemLog
 from .subscription import Subscription
 from .usage import Usage, UsageLimit
 from .file import File
+from .file_upload import FileUpload
 from .activity import Activity
 from .transaction import Transaction
 
@@ -33,6 +34,7 @@ __all__ = [
     "Usage",
     "UsageLimit",
     "File",
+    "FileUpload",
     "Activity",
     "Transaction",
 ] 

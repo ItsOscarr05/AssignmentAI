@@ -67,7 +67,10 @@ def list_assignments(
     )
     
     # Convert SQLAlchemy models to Pydantic models
-    items = [AssignmentResponse.model_validate(assignment) for assignment in assignments]
+    items = []
+    for assignment in assignments:
+        assignment_dict = AssignmentResponse.model_validate(assignment).dict()
+        items.append(assignment_dict)
     
     return {
         "total": total, 
@@ -122,7 +125,10 @@ def list_assignments_test(
         )
         
         # Convert SQLAlchemy models to Pydantic models
-        items = [AssignmentResponse.model_validate(assignment) for assignment in assignments]
+        items = []
+        for assignment in assignments:
+            assignment_dict = AssignmentResponse.model_validate(assignment).dict()
+            items.append(assignment_dict)
         
         return {
             "total": total, 
@@ -152,7 +158,9 @@ def get_assignment(
     assignment = assignment_crud.get_assignment_sync(db, assignment_id)
     if not assignment:
         raise HTTPException(status_code=404, detail="Assignment not found")
-    return AssignmentResponse.model_validate(assignment)
+    
+    assignment_dict = AssignmentResponse.model_validate(assignment).dict()
+    return assignment_dict
 
 @router.put("/{assignment_id}", response_model=AssignmentResponse)
 def update_assignment(

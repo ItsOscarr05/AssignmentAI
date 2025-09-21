@@ -8,7 +8,9 @@ class Usage(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, nullable=False)
-    date = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    feature = Column(String(100), nullable=False)  # e.g., 'assignment_generation', 'ai_analysis'
+    action = Column(String(100), nullable=False)  # e.g., 'generate', 'analyze', 'feedback'
     tokens_used = Column(Integer, default=0)
     requests_made = Column(Integer, default=0)
     usage_metadata = Column(JSON, nullable=True)

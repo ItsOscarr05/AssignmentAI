@@ -4,8 +4,10 @@ import {
   Delete as DeleteIcon,
   DeleteOutline as DeleteOutlineIcon,
   Description as DescriptionIcon,
+  Download as DownloadIcon,
   Error as ErrorIcon,
   InsertDriveFile as FileIcon,
+  AutoFixHigh as FillIcon,
   PictureAsPdf as PdfIcon,
   HourglassEmpty as ProcessingIcon,
   VisibilityOutlined as VisibilityOutlinedIcon,
@@ -30,6 +32,7 @@ import {
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useWorkshopStore } from '../../services/WorkshopService';
+import { FileFillResult, fileProcessingService } from '../../services/fileProcessingService';
 
 interface WorkshopFileUploadProps {
   onFileUploaded?: (file: any) => void;
@@ -39,12 +42,18 @@ const WorkshopFileUpload: React.FC<WorkshopFileUploadProps> = ({ onFileUploaded 
   const { files, uploadProgress, addFile, deleteFile } = useWorkshopStore();
   const [previewFile, setPreviewFile] = useState<any>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [aiFillingFiles, setAiFillingFiles] = useState<Set<string>>(new Set());
+  const [filledFiles, setFilledFiles] = useState<Map<string, FileFillResult>>(new Map());
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
+      console.log('Files dropped:', acceptedFiles);
       for (const file of acceptedFiles) {
+        console.log('Processing file:', file.name);
         const uploadedFile = await addFile(file);
+        console.log('File upload result:', uploadedFile);
         if (uploadedFile && onFileUploaded) {
+          console.log('Calling onFileUploaded callback');
           onFileUploaded(uploadedFile);
         }
       }
@@ -124,6 +133,71 @@ const WorkshopFileUpload: React.FC<WorkshopFileUploadProps> = ({ onFileUploaded 
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const supportsAiFilling = (fileType: string) => {
+    const supportedTypes = [
+      // Document formats
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/msword',
+      'text/plain',
+      'application/rtf',
+      // Spreadsheet formats
+      'text/csv',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+      // Data formats
+      'application/json',
+      'application/xml',
+      // Code formats
+      'text/x-python',
+      'text/javascript',
+      'text/x-java-source',
+      'text/x-c++src',
+      'text/x-csrc',
+      'text/html',
+      'text/css',
+      // Image formats (for OCR and text extraction)
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/bmp',
+      'image/tiff',
+      'image/webp',
+    ];
+    return supportedTypes.includes(fileType);
+  };
+
+  const handleAiFill = async (file: any) => {
+    if (!supportsAiFilling(file.type)) return;
+
+    setAiFillingFiles(prev => new Set(prev).add(file.id));
+
+    try {
+      const result = await fileProcessingService.fillFile(file);
+      setFilledFiles(prev => new Map(prev).set(file.id, result));
+    } catch (error) {
+      console.error('AI filling failed:', error);
+    } finally {
+      setAiFillingFiles(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(file.id);
+        return newSet;
+      });
+    }
+  };
+
+  const handleDownloadFilled = async (file: any) => {
+    const filledFile = filledFiles.get(file.id);
+    if (!filledFile) return;
+
+    try {
+      const blob = await fileProcessingService.downloadFilledFile(filledFile.file_id);
+      fileProcessingService.downloadFile(blob, filledFile.filled_file_name);
+    } catch (error) {
+      console.error('Download failed:', error);
+    }
   };
 
   return (
@@ -530,9 +604,22 @@ const WorkshopFileUpload: React.FC<WorkshopFileUploadProps> = ({ onFileUploaded 
                           </Typography>
                         </Box>
                       )}
+                      {aiFillingFiles.has(file.id) && (
+                        <Box sx={{ mt: 1 }}>
+                          <LinearProgress sx={{ height: 4, borderRadius: 2 }} />
+                          <Typography variant="caption" color="text.secondary">
+                            AI is filling your file...
+                          </Typography>
+                        </Box>
+                      )}
                       {file.status === 'completed' && file.analysis && (
                         <Typography variant="body2" color="success.main" sx={{ mt: 1 }}>
                           ✓ Processed successfully
+                        </Typography>
+                      )}
+                      {filledFiles.has(file.id) && (
+                        <Typography variant="body2" color="primary.main" sx={{ mt: 1 }}>
+                          ✓ AI filled - Ready to download
                         </Typography>
                       )}
                     </Box>
@@ -548,6 +635,29 @@ const WorkshopFileUpload: React.FC<WorkshopFileUploadProps> = ({ onFileUploaded 
                         title="Preview file"
                       >
                         <VisibilityOutlinedIcon sx={{ color: 'grey.700' }} />
+                      </IconButton>
+                    )}
+                    {file.status === 'completed' &&
+                      supportsAiFilling(file.type) &&
+                      !filledFiles.has(file.id) && (
+                        <IconButton
+                          size="small"
+                          onClick={() => handleAiFill(file)}
+                          title="AI Fill - Let AI complete this file"
+                          disabled={aiFillingFiles.has(file.id)}
+                          sx={{ color: '#4caf50' }}
+                        >
+                          <FillIcon />
+                        </IconButton>
+                      )}
+                    {filledFiles.has(file.id) && (
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDownloadFilled(file)}
+                        title="Download AI-filled file"
+                        sx={{ color: '#2196f3' }}
+                      >
+                        <DownloadIcon />
                       </IconButton>
                     )}
                     <IconButton

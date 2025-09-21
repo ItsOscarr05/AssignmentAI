@@ -16,9 +16,10 @@ class UsageService:
         user: User,
         feature: str,
         action: str,
+        tokens_used: int = 0,
         metadata: Optional[Dict[str, Any]] = None
     ) -> Usage:
-        """Track a usage event"""
+        """Track a usage event with token consumption"""
         # Check if user has exceeded their limits
         await self._check_usage_limits(user, feature)
         
@@ -27,7 +28,9 @@ class UsageService:
             user_id=user.id,
             feature=feature,
             action=action,
-            metadata=metadata or {}
+            tokens_used=tokens_used,
+            requests_made=1,
+            usage_metadata=metadata or {}
         )
         self.db.add(usage)
         self.db.commit()
@@ -83,6 +86,53 @@ class UsageService:
         ).all()
         
         return {feature: count for feature, count in results}
+
+    async def get_token_usage_summary(
+        self,
+        user: User,
+        period: str = 'monthly'
+    ) -> Dict[str, Any]:
+        """Get token usage summary for a user"""
+        # Calculate date range based on period
+        end_date = datetime.utcnow()
+        if period == 'daily':
+            start_date = end_date - timedelta(days=1)
+        elif period == 'weekly':
+            start_date = end_date - timedelta(weeks=1)
+        else:  # monthly
+            start_date = end_date - timedelta(days=30)
+            
+        # Get total tokens used in the period
+        total_tokens_result = self.db.query(func.sum(Usage.tokens_used)).filter(
+            Usage.user_id == user.id,
+            Usage.timestamp >= start_date
+        ).scalar()
+        
+        total_tokens = int(total_tokens_result) if total_tokens_result else 0
+        
+        # Get usage by feature
+        feature_usage = self.db.query(
+            Usage.feature,
+            func.sum(Usage.tokens_used).label('tokens_used'),
+            func.count(Usage.id).label('requests_made')
+        ).filter(
+            Usage.user_id == user.id,
+            Usage.timestamp >= start_date
+        ).group_by(Usage.feature).all()
+        
+        return {
+            'total_tokens': total_tokens,
+            'period': period,
+            'start_date': start_date.isoformat(),
+            'end_date': end_date.isoformat(),
+            'feature_usage': {
+                feature: {
+                    'tokens_used': int(tokens_used),
+                    'requests_made': int(requests_made)
+                }
+                for feature, tokens_used, requests_made in feature_usage
+            }
+        }
 
     async def _check_usage_limits(self, user: User, feature: str) -> None:
         """Check if user has exceeded their usage limits"""

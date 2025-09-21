@@ -51,14 +51,15 @@ import {
 } from 'recharts';
 import AIResponsePopup from '../components/workshop/AIResponsePopup';
 import { FeatureAccessErrorComponent } from '../components/workshop/FeatureAccessError';
+import FileUploadModal from '../components/workshop/FileUploadModal';
 import RecentHistorySidebar from '../components/workshop/RecentHistorySidebar';
 import WorkshopFileUpload from '../components/workshop/WorkshopFileUpload';
 import WorkshopLiveModal from '../components/workshop/WorkshopLiveModal';
 
 import { useAspectRatio } from '../hooks/useAspectRatio';
+import { useTokenLimit } from '../hooks/useTokenLimit';
 import { useTokenUsage } from '../hooks/useTokenUsage';
-import { api } from '../services/api';
-import { useWorkshopStore } from '../services/WorkshopService';
+import { useWorkshopStore, WorkshopFile } from '../services/WorkshopService';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 
 interface HistoryItem {
@@ -144,6 +145,7 @@ const Workshop: React.FC = () => {
     files,
     addLink,
     processFile,
+    deleteFile,
     clearFeatureAccessError,
   } = useWorkshopStore();
   const [input, setInput] = useState('');
@@ -166,16 +168,6 @@ const Workshop: React.FC = () => {
     severity: 'success',
   });
 
-  const [realTokenUsage, setRealTokenUsage] = useState({
-    total: 100000,
-    used: 0,
-    remaining: 100000,
-    percentUsed: 0,
-  });
-
-  const [subscription, setSubscription] = useState<any>(null);
-  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
-
   // NEW AI Response Popup state - Enhanced analysis interface
   const [isAnalysisPopupOpen, setIsAnalysisPopupOpen] = useState(false);
   const [popupUploadType, setPopupUploadType] = useState<'text' | 'file' | 'link'>('text');
@@ -184,129 +176,45 @@ const Workshop: React.FC = () => {
   // Fullscreen message state
   const [fullscreenMessage, setFullscreenMessage] = useState<string | null>(null);
 
-  const { totalTokens } = useTokenUsage();
+  // Use token limit hook for subscription and token data
+  const {
+    subscription,
+    tokenUsage: tokenLimitData,
+    loading: subscriptionLoading,
+  } = useTokenLimit();
 
-  // Fetch subscription data
-  useEffect(() => {
-    const fetchSubscription = async () => {
-      try {
-        setSubscriptionLoading(true);
-        const response = await api.get('/payments/subscriptions/current');
-        console.log('Subscription response:', response.data);
-        setSubscription(response.data);
-      } catch (error) {
-        console.error('Failed to fetch subscription:', error);
-        // Default to free plan if subscription fetch fails
-        setSubscription(null);
-      } finally {
-        setSubscriptionLoading(false);
-      }
-    };
-
-    fetchSubscription();
-  }, []);
-
-  // Listen for subscription updates (e.g., after payment success)
-  useEffect(() => {
-    const handleSubscriptionUpdate = () => {
-      console.log('Workshop: subscription update event received, refreshing subscription data...');
-      const fetchSubscription = async () => {
-        try {
-          setSubscriptionLoading(true);
-          const response = await api.get('/payments/subscriptions/current');
-          console.log('Workshop: Updated subscription response:', response.data);
-          setSubscription(response.data);
-        } catch (error) {
-          console.error('Failed to fetch subscription:', error);
-          setSubscription(null);
-        } finally {
-          setSubscriptionLoading(false);
-        }
-      };
-      fetchSubscription();
-    };
-
-    window.addEventListener('subscription-updated', handleSubscriptionUpdate);
-    window.addEventListener('payment-success', handleSubscriptionUpdate);
-
-    return () => {
-      window.removeEventListener('subscription-updated', handleSubscriptionUpdate);
-      window.removeEventListener('payment-success', handleSubscriptionUpdate);
-    };
-  }, []);
-
-  // Fetch real token usage
-  useEffect(() => {
-    api.get('/assignments').then(res => {
-      const data = Array.isArray(res.data)
-        ? res.data
-        : Array.isArray(res.data.assignments)
-        ? res.data.assignments
-        : [];
-      const used = data.reduce((sum: number, a: any) => sum + (a.tokensUsed || 0), 0);
-
-      // Use subscription token limit if available, otherwise fall back to useTokenUsage hook
-      const total = subscription?.token_limit || totalTokens || 100000;
-
-      setRealTokenUsage({
-        total,
-        used,
-        remaining: total - used,
-        percentUsed: total > 0 ? Math.round((used / total) * 100) : 0,
-      });
-    });
-  }, [totalTokens, subscription]);
+  const { totalTokens, usedTokens, remainingTokens, percentUsed } = useTokenUsage(subscription);
 
   const uploadContentRef = useRef<HTMLDivElement>(null);
   const rewriteTabRef = useRef<HTMLDivElement>(null);
   // Modal state for live AI response
   const [liveModalOpen, setLiveModalOpen] = useState(false);
 
+  // File upload modal state
+  const [showFileUploadModal, setShowFileUploadModal] = useState(false);
+
+  // Debug: Log when modal state changes
+  React.useEffect(() => {
+    console.log('File upload modal state changed:', showFileUploadModal);
+  }, [showFileUploadModal]);
+
   // Use real token usage for the circular progress bar
   const getPlanLabel = () => {
-    console.log('getPlanLabel called with:', { subscription, subscriptionLoading });
-
     if (subscriptionLoading) return 'Loading...';
     if (!subscription) return 'Free Plan (100,000 tokens/month)';
 
-    const planId = subscription.plan_id;
-    const tokenLimit = subscription.token_limit || 100000;
-
-    console.log('Plan details:', { planId, tokenLimit });
-
-    // Map plan IDs to friendly names
-    const planNames: { [key: string]: string } = {
-      price_free: 'Free Plan',
-      price_plus: 'Plus Plan',
-      price_pro: 'Pro Plan',
-      price_max: 'Max Plan',
-      // Add Stripe price IDs (you may need to update these with your actual price IDs)
-      price_1Rss0zBXiGe9D9aVna3SwH62: 'Pro Plan', // 75,000 tokens
-      // Add more Stripe price IDs as needed
-    };
-
-    const planName = planNames[planId] || 'Free Plan';
-    console.log('Final plan name:', planName);
-
-    return `${planName} (${tokenLimit.toLocaleString()} tokens/month)`;
+    return tokenLimitData?.label || 'Free Plan (100,000 tokens/month)';
   };
 
   const tokenUsage = useMemo(
     () => ({
       label: getPlanLabel(),
-      total: realTokenUsage.total,
-      used: realTokenUsage.used,
-      remaining: realTokenUsage.remaining,
-      percentUsed: realTokenUsage.percentUsed,
+      total: totalTokens,
+      used: usedTokens,
+      remaining: remainingTokens,
+      percentUsed: percentUsed,
     }),
-    [
-      subscription,
-      subscriptionLoading,
-      realTokenUsage.total,
-      realTokenUsage.used,
-      realTokenUsage.remaining,
-      realTokenUsage.percentUsed,
-    ]
+    [subscription, subscriptionLoading, totalTokens, usedTokens, remainingTokens, percentUsed]
   );
 
   useEffect(() => {
@@ -333,7 +241,7 @@ const Workshop: React.FC = () => {
   }, [location]);
 
   useEffect(() => {
-    const animation = animate(0, tokenUsage.percentUsed, {
+    const animation = animate(0, percentUsed, {
       duration: 1.2,
       ease: 'circOut',
       onUpdate: latest => {
@@ -341,7 +249,7 @@ const Workshop: React.FC = () => {
       },
     });
     return () => animation.stop();
-  }, [tokenUsage.percentUsed]);
+  }, [percentUsed]);
 
   useEffect(() => {
     // Start with empty history for real users
@@ -420,6 +328,36 @@ const Workshop: React.FC = () => {
     setPopupUploadType(uploadType);
     setPopupContent(content);
     setIsAnalysisPopupOpen(true);
+  };
+
+  // File upload modal handlers
+  const handleFileUploaded = (file: any) => {
+    console.log('File uploaded:', file);
+    setShowFileUploadModal(true);
+  };
+
+  const handleFileProcessed = (fileId: string, result: any) => {
+    // Handle file processing result
+    console.log('File processed:', fileId, result);
+  };
+
+  const handleFileDeleted = (fileId: string) => {
+    deleteFile(fileId);
+  };
+
+  const handleAiFill = async (file: any) => {
+    // This will be handled by the modal
+    console.log('AI Fill requested for:', file);
+  };
+
+  const handleDownloadFilled = (file: any) => {
+    // This will be handled by the modal
+    console.log('Download filled file:', file);
+  };
+
+  const handlePreviewFile = (file: any) => {
+    // This will be handled by the modal
+    console.log('Preview file:', file);
   };
 
   const handleCloseAnalysisPopup = () => {
@@ -537,9 +475,7 @@ const Workshop: React.FC = () => {
           </Box>
         );
       case 1:
-        return (
-          <WorkshopFileUpload onFileUploaded={file => handleOpenAnalysisPopup('file', file)} />
-        );
+        return <WorkshopFileUpload onFileUploaded={handleFileUploaded} />;
       case 2:
         return (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -680,7 +616,7 @@ const Workshop: React.FC = () => {
   };
 
   const getProgressColor = (_percent: number) => '#D32F2F';
-  const progressColor = getProgressColor(tokenUsage.percentUsed);
+  const progressColor = getProgressColor(percentUsed);
 
   return (
     <Box
@@ -1479,7 +1415,7 @@ const Workshop: React.FC = () => {
                 </Typography>
 
                 {/* Show upgrade button if user is close to token limit */}
-                {subscription && realTokenUsage.percentUsed > 80 && (
+                {subscription && percentUsed > 80 && (
                   <Button
                     variant="outlined"
                     size="small"
@@ -1591,6 +1527,18 @@ const Workshop: React.FC = () => {
         onClose={handleCloseAnalysisPopup}
         uploadType={popupUploadType}
         content={popupContent}
+      />
+
+      {/* File Upload Modal */}
+      <FileUploadModal
+        open={showFileUploadModal}
+        onClose={() => setShowFileUploadModal(false)}
+        files={files as WorkshopFile[]}
+        onFileProcessed={handleFileProcessed}
+        onFileDeleted={handleFileDeleted}
+        onAiFill={handleAiFill}
+        onDownloadFilled={handleDownloadFilled}
+        onPreviewFile={handlePreviewFile}
       />
     </Box>
   );

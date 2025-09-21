@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Body
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Body, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from app.core.deps import get_current_user, get_db
@@ -10,6 +10,8 @@ from app.services.web_scraping import WebScrapingService
 from app.services.image_analysis_service import ImageAnalysisService
 from app.services.diagram_service import diagram_service
 from app.models.user import User
+from app.crud import file_upload as file_upload_crud
+from app.schemas.file_upload import FileUploadCreate
 import logging
 import uuid
 from datetime import datetime
@@ -109,6 +111,48 @@ async def check_openai_quota():
 
 # Initialize services
 image_analysis_service = ImageAnalysisService()
+
+def create_file_upload_record(
+    db: Session,
+    user_id: int,
+    file: UploadFile,
+    file_path: str,
+    file_type: str,
+    extracted_content: str = None,
+    ai_analysis: str = None,
+    processing_status: str = "completed"
+) -> dict:
+    """Create a file upload record in the database"""
+    try:
+        file_upload_data = FileUploadCreate(
+            filename=file.filename,
+            original_filename=file.filename,
+            file_path=file_path,
+            file_size=file.size,
+            mime_type=file.content_type or "application/octet-stream",
+            file_type=file_type,
+            extracted_content=extracted_content,
+            ai_analysis=ai_analysis,
+            processing_status=processing_status,
+            is_link=False,
+            upload_metadata={
+                "uploaded_via": "workshop",
+                "timestamp": datetime.utcnow().isoformat()
+            }
+        )
+        
+        db_file_upload = file_upload_crud.create_file_upload(db, file_upload_data, user_id)
+        return {
+            "file_upload_id": db_file_upload.id,
+            "success": True
+        }
+    except Exception as e:
+        logger.error(f"Failed to create file upload record: {str(e)}")
+        return {
+            "file_upload_id": None,
+            "success": False,
+            "error": str(e)
+        }
 
 def detect_file_type_and_service(content_type: str, filename: str) -> dict:
     """
@@ -367,9 +411,59 @@ async def generate_content(
         logger.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail="Internal server error during content generation")
 
+@router.post("/files/test")
+async def test_file_upload(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Simple test endpoint to debug 422 errors
+    """
+    logger.info(f"=== TEST FILE UPLOAD ENDPOINT CALLED ===")
+    logger.info(f"User ID: {current_user.id}")
+    logger.info(f"File name: {file.filename}")
+    logger.info(f"File size: {file.size}")
+    logger.info(f"File content type: {file.content_type}")
+    
+    return {
+        "message": "File upload test successful",
+        "filename": file.filename,
+        "size": file.size,
+        "content_type": file.content_type
+    }
+
+@router.post("/files/debug")
+async def debug_file_upload(
+    request: Request,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Debug endpoint to see raw request data
+    """
+    logger.info(f"=== DEBUG FILE UPLOAD ENDPOINT CALLED ===")
+    logger.info(f"User ID: {current_user.id}")
+    logger.info(f"Request method: {request.method}")
+    logger.info(f"Request headers: {dict(request.headers)}")
+    logger.info(f"Request content type: {request.headers.get('content-type')}")
+    
+    # Try to read the request body
+    try:
+        body = await request.body()
+        logger.info(f"Request body length: {len(body)}")
+        logger.info(f"Request body preview: {body[:200]}")
+    except Exception as e:
+        logger.error(f"Error reading request body: {e}")
+    
+    return {
+        "message": "Debug endpoint called",
+        "user_id": current_user.id,
+        "content_type": request.headers.get('content-type'),
+        "body_length": len(await request.body()) if hasattr(request, 'body') else 0
+    }
+
 @router.post("/files")
 async def upload_and_process_file(
-    file: UploadFile = File(...),
+    file: UploadFile = File(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -381,19 +475,37 @@ async def upload_and_process_file(
     logger.info(f"=== WORKSHOP FILES ENDPOINT CALLED ===")
     logger.info(f"User ID: {current_user.id}")
     logger.info(f"User email: {current_user.email}")
-    logger.info(f"File name: {file.filename}")
-    logger.info(f"File size: {file.size} bytes")
-    logger.info(f"File content type: {file.content_type}")
+    logger.info(f"File object: {file}")
+    logger.info(f"File name: {file.filename if file else 'None'}")
+    logger.info(f"File size: {file.size if file else 'None'} bytes")
+    logger.info(f"File content type: {file.content_type if file else 'None'}")
     logger.info(f"Request timestamp: {datetime.utcnow()}")
+    
+    # Validate file input
+    if not file or not file.filename:
+        logger.error("No file provided or no filename provided")
+        raise HTTPException(status_code=422, detail="No file provided")
+    
+    if not file.content_type:
+        logger.warning("No content type provided, will attempt to detect")
+    
+    logger.info(f"File validation passed - proceeding with processing")
     
     try:
         # Save the file
         logger.info("Saving uploaded file...")
-        file_path, _ = await file_service.save_file(file, current_user.id)
+        try:
+            file_path, _ = await file_service.save_file(file, current_user.id)
+            logger.info(f"File saved successfully to: {file_path}")
+        except Exception as e:
+            logger.error(f"Failed to save file: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
         
         # Detect file type and determine service
         content_type = file.content_type or "application/octet-stream"
+        logger.info(f"Detecting file type for content_type: {content_type}, filename: {file.filename}")
         file_info = detect_file_type_and_service(content_type, file.filename)
+        logger.info(f"File detection result: {file_info}")
         
         # Process based on file type
         if file_info['service'] == 'image_analysis':
@@ -430,8 +542,15 @@ async def upload_and_process_file(
                         context=None
                     )
                 
+                # Create file upload record
+                upload_record = create_file_upload_record(
+                    db, current_user.id, file, file_path, "image", 
+                    extracted_content=None, ai_analysis=analysis
+                )
+                
                 return {
                     "id": str(uuid.uuid4()),
+                    "file_upload_id": upload_record.get("file_upload_id"),
                     "name": file.filename,
                     "size": file.size,
                     "type": content_type,
@@ -448,8 +567,15 @@ async def upload_and_process_file(
                 # Fallback to general analysis
                 analysis = f"Image uploaded successfully. Analysis failed: {str(e)}"
                 
+                # Create file upload record
+                upload_record = create_file_upload_record(
+                    db, current_user.id, file, file_path, "image", 
+                    extracted_content=None, ai_analysis=analysis, processing_status="failed"
+                )
+                
                 return {
                     "id": str(uuid.uuid4()),
+                    "file_upload_id": upload_record.get("file_upload_id"),
                     "name": file.filename,
                     "size": file.size,
                     "type": content_type,
@@ -463,7 +589,17 @@ async def upload_and_process_file(
         
         elif file_info['service'] == 'ai_analysis':
             # Handle text-based files (documents, code, data)
-            content = await extract_file_content(file_path, content_type)
+            logger.info(f"Processing file with AI analysis - type: {file_info['type']}, analysis_type: {file_info['analysis_type']}")
+            try:
+                content = await extract_file_content(file_path, content_type)
+                logger.info(f"File content extracted successfully, length: {len(content)}")
+                logger.info(f"Content preview (first 200 chars): {content[:200]}...")
+            except Exception as e:
+                logger.error(f"Failed to extract file content: {str(e)}")
+                logger.error(f"Exception type: {type(e).__name__}")
+                import traceback
+                logger.error(f"Traceback: {traceback.format_exc()}")
+                content = f"Error extracting content from {file.filename}: {str(e)}"
             
             # Create specialized prompts based on file type
             if file_info['type'] == 'code':
@@ -501,10 +637,32 @@ async def upload_and_process_file(
             else:
                 analysis_prompt = f"Analyze the following document content and provide comprehensive insights:\n\n{content[:3000]}..."
             
-            analysis = await ai_service.generate_assignment_content_from_prompt(analysis_prompt)
+            logger.info(f"Generating AI analysis with prompt length: {len(analysis_prompt)}")
+            logger.info(f"Analysis prompt preview: {analysis_prompt[:200]}...")
+            try:
+                # Initialize AI service with existing db session
+                ai_service = AIService(db=db)
+                analysis = await ai_service.generate_assignment_content_from_prompt(analysis_prompt)
+                logger.info(f"AI analysis completed successfully, length: {len(analysis)}")
+                logger.info(f"Analysis preview (first 200 chars): {analysis[:200]}...")
+            except Exception as e:
+                logger.error(f"AI analysis failed: {str(e)}")
+                logger.error(f"Exception type: {type(e).__name__}")
+                import traceback
+                logger.error(f"Traceback: {traceback.format_exc()}")
+                analysis = f"Analysis failed: {str(e)}"
             
-            return {
+            logger.info("Preparing response for AI analysis...")
+            
+            # Create file upload record
+            upload_record = create_file_upload_record(
+                db, current_user.id, file, file_path, file_info['type'], 
+                extracted_content=content, ai_analysis=analysis
+            )
+            
+            response_data = {
                 "id": str(uuid.uuid4()),
+                "file_upload_id": upload_record.get("file_upload_id"),
                 "name": file.filename,
                 "size": file.size,
                 "type": content_type,
@@ -515,14 +673,24 @@ async def upload_and_process_file(
                 "file_category": file_info['type'],
                 "uploaded_at": datetime.utcnow().isoformat()
             }
+            logger.info(f"Response prepared successfully. Content length: {len(content)}, Analysis length: {len(analysis)}")
+            logger.info("=== WORKSHOP FILES ENDPOINT COMPLETED SUCCESSFULLY ===")
+            return response_data
         
         else:
             # Fallback for unknown file types
             content = f"File uploaded: {file.filename} (Type: {content_type})"
             analysis = "File uploaded successfully. Content analysis not available for this file type."
             
+            # Create file upload record
+            upload_record = create_file_upload_record(
+                db, current_user.id, file, file_path, "unknown", 
+                extracted_content=content, ai_analysis=analysis
+            )
+            
             return {
                 "id": str(uuid.uuid4()),
+                "file_upload_id": upload_record.get("file_upload_id"),
                 "name": file.filename,
                 "size": file.size,
                 "type": content_type,
@@ -534,11 +702,16 @@ async def upload_and_process_file(
                 "uploaded_at": datetime.utcnow().isoformat()
             }
             
-    except HTTPException:
+    except HTTPException as e:
         # Re-raise HTTPExceptions (like 403 errors) without wrapping them
+        logger.error(f"HTTPException in file processing: {e.status_code} - {e.detail}")
         raise
     except Exception as e:
-        logger.error(f"Error processing file: {str(e)}")
+        logger.error(f"Unexpected error processing file: {str(e)}")
+        logger.error(f"Exception type: {type(e).__name__}")
+        logger.error(f"File details - name: {file.filename}, size: {file.size}, type: {file.content_type}")
+        import traceback
+        logger.error(f"Full traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Failed to process file: {str(e)}")
 
 @router.post("/files/process")
@@ -620,9 +793,38 @@ async def process_link(
             analysis = await ai_service.generate_assignment_content_from_prompt(analysis_prompt)
             logger.info(f"AI analysis completed. Analysis length: {len(analysis)}")
             
+            # Create file upload record for link
+            try:
+                file_upload_data = FileUploadCreate(
+                    filename=result['title'] or url,
+                    original_filename=result['title'] or url,
+                    file_path=url,
+                    file_size=len(result['content']),
+                    mime_type="text/html",
+                    file_type="link",
+                    extracted_content=result['content'],
+                    ai_analysis=analysis,
+                    processing_status="completed",
+                    is_link=True,
+                    link_url=url,
+                    link_title=result['title'],
+                    link_description=result['content'][:500] + "..." if len(result['content']) > 500 else result['content'],
+                    upload_metadata={
+                        "uploaded_via": "workshop",
+                        "timestamp": datetime.utcnow().isoformat()
+                    }
+                )
+                
+                db_file_upload = file_upload_crud.create_file_upload(db, file_upload_data, current_user.id)
+                file_upload_id = db_file_upload.id
+            except Exception as e:
+                logger.error(f"Failed to create file upload record for link: {str(e)}")
+                file_upload_id = None
+            
             logger.info("=== WORKSHOP LINKS ENDPOINT COMPLETED SUCCESSFULLY ===")
             return {
                 "id": str(uuid.uuid4()),
+                "file_upload_id": file_upload_id,
                 "url": url,
                 "title": result['title'],
                 "content": result['content'],
@@ -697,6 +899,7 @@ async def extract_file_content(file_path: str, content_type: str) -> str:
     Extract text content from various file types using proper parsing libraries.
     Now supports code files, data files, and additional document formats.
     """
+    logger.info(f"Extracting content from file: {file_path}, content_type: {content_type}")
     try:
         # Text-based files
         if content_type == "text/plain":
@@ -714,11 +917,20 @@ async def extract_file_content(file_path: str, content_type: str) -> str:
         
         # Word documents
         elif content_type in ["application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]:
-            doc = Document(file_path)
-            text = ""
-            for paragraph in doc.paragraphs:
-                text += paragraph.text + "\n"
-            return text.strip()
+            logger.info(f"Processing DOCX/DOC file: {file_path}")
+            try:
+                doc = Document(file_path)
+                text = ""
+                for paragraph in doc.paragraphs:
+                    text += paragraph.text + "\n"
+                logger.info(f"DOCX content extracted successfully, length: {len(text)}")
+                return text.strip()
+            except Exception as e:
+                logger.error(f"Failed to extract DOCX content: {str(e)}")
+                logger.error(f"Exception type: {type(e).__name__}")
+                import traceback
+                logger.error(f"Traceback: {traceback.format_exc()}")
+                raise
         
         # RTF files
         elif content_type == "application/rtf":
@@ -759,4 +971,8 @@ async def extract_file_content(file_path: str, content_type: str) -> str:
                 
     except Exception as e:
         logger.error(f"Error extracting content from file: {str(e)}")
+        logger.error(f"Exception type: {type(e).__name__}")
+        logger.error(f"File path: {file_path}, Content type: {content_type}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
         return f"[Error extracting content: {str(e)}]" 

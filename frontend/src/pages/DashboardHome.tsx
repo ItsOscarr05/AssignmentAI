@@ -46,6 +46,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { type Assignment } from '../data/mockData';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { api } from '../services/api';
+import { fileUploadService } from '../services/fileUploadService';
 
 import { mapToCoreSubject } from '../services/subjectService';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
@@ -90,9 +91,11 @@ const DashboardHome: React.FC = () => {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
   const [viewAssignment, setViewAssignment] = useState<Assignment | null>(null);
+  const [recentFileUploads, setRecentFileUploads] = useState<any[]>([]);
 
-  // Fetch real assignments
+  // Fetch real assignments and file uploads
   useEffect(() => {
+    // Fetch assignments
     api
       .get('/assignments')
       .then(res => {
@@ -106,6 +109,16 @@ const DashboardHome: React.FC = () => {
       .catch(() => {
         setError('Failed to fetch assignments.');
         setAssignments([]);
+      });
+
+    // Fetch recent file uploads
+    fileUploadService
+      .getRecent(5)
+      .then(uploads => {
+        setRecentFileUploads(uploads);
+      })
+      .catch(() => {
+        setRecentFileUploads([]);
       });
   }, []);
 
@@ -484,7 +497,7 @@ const DashboardHome: React.FC = () => {
                       sx={{
                         color: '#D32F2F',
                         fontWeight: 700,
-                        width: { xs: '20%', md: 'auto' },
+                        width: { xs: '15%', md: 'auto' },
                         p: { xs: 1, md: 2 },
                       }}
                     >
@@ -506,7 +519,7 @@ const DashboardHome: React.FC = () => {
                 <TableBody>
                   {filteredAssignments.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} align="center" sx={{ p: 0 }}>
+                      <TableCell colSpan={5} align="center" sx={{ p: 0 }}>
                         <Box
                           minHeight={265}
                           display="flex"
