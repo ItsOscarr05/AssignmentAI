@@ -316,13 +316,6 @@ const Workshop: React.FC = () => {
     }
   };
 
-  const handleQuickActionClick = (tabIndex: number) => {
-    setActiveTab(tabIndex);
-    if (uploadContentRef.current) {
-      uploadContentRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  };
-
   // NEW AI Response Popup handlers - Enhanced analysis interface
   const handleOpenAnalysisPopup = (uploadType: 'text' | 'file' | 'link', content: any) => {
     setPopupUploadType(uploadType);
@@ -1065,83 +1058,6 @@ const Workshop: React.FC = () => {
           xl={breakpoint === 'standard' ? 12 : 5}
           sx={{ overflow: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
         >
-          <Box
-            sx={{
-              ...cardStyle,
-              p: { xs: 0.75, sm: 1, md: 3 },
-              mb: { xs: 2, sm: 3, md: 4 },
-              overflow: 'hidden',
-              width: { xs: '95%', sm: '100%' },
-              mx: { xs: 'auto', sm: 0 },
-              '@media (min-width: 960px)': {
-                width: '100%',
-                maxWidth: '100%',
-              },
-              '@media (max-width: 480px)': {
-                width: '98%',
-                mx: 'auto',
-              },
-            }}
-          >
-            <Typography
-              variant="h6"
-              gutterBottom
-              sx={{
-                fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' },
-                color: theme => (theme.palette.mode === 'dark' ? 'red' : 'black'),
-              }}
-            >
-              Quick Actions
-            </Typography>
-            <List>
-              <ListItem button onClick={() => handleQuickActionClick(0)}>
-                <ListItemIcon>
-                  <ChatOutlinedIcon
-                    sx={{ color: theme => (theme.palette.mode === 'dark' ? '#ff6b6b' : 'red') }}
-                  />
-                </ListItemIcon>
-                <ListItemText
-                  primary="Start New Chat"
-                  sx={{
-                    '& .MuiTypography-root': {
-                      color: theme => (theme.palette.mode === 'dark' ? 'white' : 'inherit'),
-                    },
-                  }}
-                />
-              </ListItem>
-              <ListItem button onClick={() => handleQuickActionClick(1)}>
-                <ListItemIcon>
-                  <UploadOutlinedIcon
-                    sx={{ color: theme => (theme.palette.mode === 'dark' ? '#8884d8' : '#8884d8') }}
-                  />
-                </ListItemIcon>
-                <ListItemText
-                  primary="Upload New Document"
-                  sx={{
-                    '& .MuiTypography-root': {
-                      color: theme => (theme.palette.mode === 'dark' ? 'white' : 'inherit'),
-                    },
-                  }}
-                />
-              </ListItem>
-              <ListItem button onClick={() => handleQuickActionClick(2)}>
-                <ListItemIcon>
-                  <LinkOutlinedIcon
-                    sx={{ color: theme => (theme.palette.mode === 'dark' ? '#82ca9d' : '#82ca9d') }}
-                  />
-                </ListItemIcon>
-                <ListItemText
-                  primary="Add External Link"
-                  sx={{
-                    '& .MuiTypography-root': {
-                      color: theme => (theme.palette.mode === 'dark' ? 'white' : 'inherit'),
-                    },
-                  }}
-                />
-              </ListItem>
-            </List>
-          </Box>
-
           {/* File Actions */}
           {files.length > 0 && (
             <Box

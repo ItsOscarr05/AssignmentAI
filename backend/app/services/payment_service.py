@@ -19,7 +19,7 @@ class PaymentService:
         try:
             customer = stripe.Customer.create(
                 email=user.email,
-                name=f"{user.first_name} {user.last_name}",
+                name=user.name or user.email,  # Use name if available, otherwise use email
                 metadata={"user_id": str(user.id)}
             )
             return customer.id
@@ -93,7 +93,8 @@ class PaymentService:
                 currency="USD",
                 description=f"Subscription - {plan_details['name']}",
                 stripe_subscription_id=subscription.id,
-                transaction_metadata=f'{{"plan_name": "{plan_details["name"]}", "plan_id": "{plan_details["plan_id"]}", "token_limit": {plan_details["token_limit"]}}}'
+                transaction_metadata=f'{{"plan_name": "{plan_details["name"]}", "plan_id": "{plan_details["plan_id"]}", "token_limit": {plan_details["token_limit"]}}}',
+                created_at=datetime.utcnow()
             )
             self.db.add(transaction)
             self.db.commit()
@@ -839,7 +840,8 @@ class PaymentService:
                     currency=payment_intent.currency.upper(),
                     description=f"Token Purchase - {token_amount:,} tokens",
                     stripe_payment_intent_id=payment_intent_id,
-                    transaction_metadata=f'{{"token_amount": {token_amount}, "price_per_token": {payment_intent.amount / 100 / token_amount}}}'
+                    transaction_metadata=f'{{"token_amount": {token_amount}, "price_per_token": {payment_intent.amount / 100 / token_amount}}}',
+                    created_at=datetime.utcnow()
                 )
                 self.db.add(transaction)
                 self.db.commit()
@@ -966,7 +968,8 @@ class PaymentService:
                 currency="USD",
                 description=f"Subscription - {plan_details['name']}",
                 stripe_payment_intent_id=payment_intent['id'],
-                transaction_metadata=f'{{"plan_name": "{plan_details["name"]}", "plan_id": "{plan_details["plan_id"]}", "token_limit": {plan_details["token_limit"]}}}'
+                transaction_metadata=f'{{"plan_name": "{plan_details["name"]}", "plan_id": "{plan_details["plan_id"]}", "token_limit": {plan_details["token_limit"]}}}',
+                created_at=datetime.utcnow()
             )
             self.db.add(transaction)
             
@@ -996,11 +999,18 @@ class PaymentService:
             # Get plan details
             plan_details = self._get_plan_details_from_price_id(price_id)
             
+            # Ensure user has a Stripe customer ID
+            if not user.stripe_customer_id:
+                user.stripe_customer_id = await self.create_customer(user)
+                self.db.add(user)
+                self.db.commit()
+                self.db.refresh(user)
+            
             # Create payment intent
             payment_intent = stripe.PaymentIntent.create(
                 amount=int(plan_details['price'] * 100),  # Convert to cents
                 currency='usd',
-                customer=user.stripe_customer_id or await self.create_customer(user),
+                customer=user.stripe_customer_id,
                 metadata={
                     'user_id': str(user.id),
                     'price_id': price_id,

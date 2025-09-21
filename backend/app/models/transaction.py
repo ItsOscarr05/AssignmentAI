@@ -23,7 +23,7 @@ class Transaction(Base):
     stripe_payment_intent_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     stripe_subscription_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     transaction_metadata: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)  # JSON string for additional data
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
     
     # Relationships
     user: Mapped["User"] = relationship("User", back_populates="transactions")
