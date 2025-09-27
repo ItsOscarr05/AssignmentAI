@@ -328,6 +328,7 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
 
       const completedFile = {
         ...newFile,
+        id: fileData.id, // Use the backend's file ID instead of frontend timestamp
         status: 'completed' as const,
         path: fileData.path,
         content: fileData.content,

@@ -192,6 +192,7 @@ const Workshop: React.FC = () => {
 
   // File upload modal state
   const [showFileUploadModal, setShowFileUploadModal] = useState(false);
+  const [lastUploadedFile, setLastUploadedFile] = useState<any>(null);
 
   // Debug: Log when modal state changes
   React.useEffect(() => {
@@ -326,6 +327,10 @@ const Workshop: React.FC = () => {
   // File upload modal handlers
   const handleFileUploaded = (file: any) => {
     console.log('File uploaded:', file);
+    setLastUploadedFile(file); // Store the last uploaded file
+
+    // Since we clear files when modal closes, we can open immediately
+    // The file will be the only one in the array, so no confusion
     setShowFileUploadModal(true);
   };
 
@@ -336,6 +341,11 @@ const Workshop: React.FC = () => {
 
   const handleFileDeleted = (fileId: string) => {
     deleteFile(fileId);
+    // Close the modal after deleting the file
+    setShowFileUploadModal(false);
+    setLastUploadedFile(null);
+    // Clear the files array since the file was deleted
+    useWorkshopStore.setState({ files: [] });
   };
 
   const handleAiFill = async (file: any) => {
@@ -1448,8 +1458,16 @@ const Workshop: React.FC = () => {
       {/* File Upload Modal */}
       <FileUploadModal
         open={showFileUploadModal}
-        onClose={() => setShowFileUploadModal(false)}
+        onClose={() => {
+          setShowFileUploadModal(false);
+          setLastUploadedFile(null); // Clear the last uploaded file when modal closes
+
+          // Clear only the files array to prevent confusion with future uploads
+          // Keep other workshop data (prompt, history, etc.) intact
+          useWorkshopStore.setState({ files: [] });
+        }}
         files={files as WorkshopFile[]}
+        lastUploadedFile={lastUploadedFile}
         onFileProcessed={handleFileProcessed}
         onFileDeleted={handleFileDeleted}
         onAiFill={handleAiFill}

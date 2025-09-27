@@ -1194,9 +1194,31 @@ const AITokens: React.FC = () => {
                               })
                             : '';
                           return (
-                            <Box sx={{ p: 2 }}>
-                              <Typography variant="subtitle2">{formattedDate}</Typography>
-                              <Typography variant="body2">
+                            <Box sx={{ 
+                              p: 2,
+                              backgroundColor: 'background.paper',
+                              border: '1px solid',
+                              borderColor: 'divider',
+                              borderRadius: 1,
+                              boxShadow: 2
+                            }}>
+                              <Typography 
+                                variant="subtitle2" 
+                                sx={{ 
+                                  color: 'text.primary',
+                                  fontWeight: 600,
+                                  mb: 0.5
+                                }}
+                              >
+                                {formattedDate}
+                              </Typography>
+                              <Typography 
+                                variant="body2" 
+                                sx={{ 
+                                  color: 'text.primary',
+                                  lineHeight: 1.4
+                                }}
+                              >
                                 +{point.used} tokens (used that day)
                                 <br />
                                 Cumulative: {point.tokens} tokens
@@ -1209,7 +1231,15 @@ const AITokens: React.FC = () => {
                                 {isRenewal && (
                                   <>
                                     <br />
-                                    <b style={{ color: 'red' }}>Subscription Renewal</b>
+                                    <Typography 
+                                      component="span" 
+                                      sx={{ 
+                                        color: 'error.main',
+                                        fontWeight: 600
+                                      }}
+                                    >
+                                      Subscription Renewal
+                                    </Typography>
                                   </>
                                 )}
                               </Typography>

@@ -1,6 +1,6 @@
 import {
   CheckCircleOutline as CheckCircleOutlineIcon,
-  CloudUpload as CloudUploadIcon,
+  CloudUploadOutlined as CloudUploadIcon,
   Delete as DeleteIcon,
   DeleteOutline as DeleteOutlineIcon,
   Description as DescriptionIcon,

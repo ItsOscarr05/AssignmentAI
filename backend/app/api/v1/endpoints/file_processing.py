@@ -81,8 +81,21 @@ async def fill_file_content(
             action="fill"
         )
         
-        # Generate the filled file
-        output_filename = f"filled_{file.filename}"
+        # Generate the filled file - prevent multiple "filled_" prefixes
+        original_filename = file.filename
+        if original_filename.startswith('filled_'):
+            # Remove existing "filled_" prefix to prevent duplication
+            original_filename = original_filename[7:]  # Remove "filled_" (7 characters)
+        
+        # Create a clean filename for download (just original_name_filled.extension)
+        clean_download_name = f"{original_filename.replace('.', '_filled.')}"
+        if not clean_download_name.endswith(f"_filled.{original_filename.split('.')[-1]}"):
+            # Fallback if the replacement didn't work
+            extension = original_filename.split('.')[-1] if '.' in original_filename else 'docx'
+            clean_download_name = f"{original_filename.split('.')[0]}_filled.{extension}"
+        
+        # Keep the filesystem filename for internal use
+        output_filename = f"filled_{original_filename}"
         output_path = os.path.join(
             os.path.dirname(file_path),
             output_filename
@@ -99,7 +112,7 @@ async def fill_file_content(
             "original_file_path": file_path,
             "filled_file_path": filled_file_path,
             "file_name": file.filename,
-            "filled_file_name": output_filename,
+            "filled_file_name": clean_download_name,
             "file_type": fill_result.get('file_type'),
             "sections_filled": fill_result.get('sections_filled', 0),
             "original_content": fill_result.get('original_content'),
@@ -140,8 +153,26 @@ async def process_existing_file(
         if not files:
             raise HTTPException(status_code=404, detail="File not found")
         
-        # For now, use the most recent file (in production, you'd match by file_id)
-        file_path = files[-1]
+        # Try to match by file_id first, then fall back to most recent
+        file_path = None
+        logger.info(f"Looking for file with ID: {file_id}")
+        logger.info(f"Available files: {[f.name for f in files]}")
+        
+        for file in files:
+            if file_id in str(file):
+                file_path = file
+                logger.info(f"Found exact match: {file.name}")
+                break
+        
+        # If no exact match, use the most recent file as fallback
+        if not file_path:
+            logger.warning(f"No exact file match found for ID {file_id}, using most recent file")
+            # Sort files by modification time and get the most recent
+            files.sort(key=lambda f: f.stat().st_mtime)
+            file_path = files[-1]
+            logger.info(f"Using most recent file: {file_path.name} (modified: {file_path.stat().st_mtime})")
+        
+        logger.info(f"Processing file: {file_path.name}")
         
         if not file_path.exists():
             raise HTTPException(status_code=404, detail="File not found")
@@ -157,8 +188,21 @@ async def process_existing_file(
         )
         
         if action == "fill":
-            # Generate the actual filled file
-            filled_file_name = f"filled_{file_path.name}"
+            # Generate the actual filled file - prevent multiple "filled_" prefixes
+            original_filename = file_path.name
+            if original_filename.startswith('filled_'):
+                # Remove existing "filled_" prefix to prevent duplication
+                original_filename = original_filename[7:]  # Remove "filled_" (7 characters)
+            
+            # Create a clean filename for download (just original_name_filled.extension)
+            clean_download_name = f"{original_filename.replace('.', '_filled.')}"
+            if not clean_download_name.endswith(f"_filled.{original_filename.split('.')[-1]}"):
+                # Fallback if the replacement didn't work
+                extension = original_filename.split('.')[-1] if '.' in original_filename else 'docx'
+                clean_download_name = f"{original_filename.split('.')[0]}_filled.{extension}"
+            
+            # Keep the filesystem filename for internal use
+            filled_file_name = f"filled_{original_filename}"
             filled_file_path = file_path.parent / filled_file_name
             
             # Generate the filled file
@@ -173,7 +217,7 @@ async def process_existing_file(
                 "original_file_path": str(file_path),
                 "filled_file_path": actual_filled_path,
                 "file_name": file_path.name,
-                "filled_file_name": filled_file_name,
+                "filled_file_name": clean_download_name,
                 "file_type": result.get('file_type'),
                 "sections_filled": result.get('sections_filled', 0),
                 "original_content": result.get('original_content'),
@@ -234,10 +278,32 @@ async def download_filled_file(
         if not filled_file_path.exists():
             raise HTTPException(status_code=404, detail="File not found")
         
+        # Generate a clean download filename: original_name_filled.extension
+        # Extract the original filename by removing timestamp and UUID from the path
+        original_filename = filled_file_path.name
+        
+        # Remove multiple "filled_" prefixes if they exist
+        while original_filename.startswith('filled_'):
+            original_filename = original_filename[7:]  # Remove "filled_" (7 characters)
+        
+        # Remove timestamp and UUID pattern (YYYYMMDD_HHMMSS_UUID)
+        import re
+        # Pattern: YYYYMMDD_HHMMSS_uuid-uuid-uuid-uuid-uuid
+        pattern = r'^\d{8}_\d{6}_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}_'
+        clean_filename = re.sub(pattern, '', original_filename)
+        
+        # If we couldn't clean it, use a simple approach
+        if clean_filename == original_filename:
+            # Fallback: just use the file extension and create a simple name
+            extension = filled_file_path.suffix
+            clean_filename = f"filled_document{extension}"
+        
+        logger.info(f"Download filename: {clean_filename}")
+        
         # Return the file as a download
         return FileResponse(
             path=str(filled_file_path),
-            filename=filled_file_path.name,
+            filename=clean_filename,
             media_type='application/octet-stream'
         )
         

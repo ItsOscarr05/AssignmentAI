@@ -891,6 +891,7 @@ class AIService:
                 raise ValueError("OpenAI returned None content")
             
             logger.info(f"Successfully generated content of length: {len(content)} characters")
+            logger.info(f"Generated content: '{content}'")
             return content
             
         except Exception as e:
