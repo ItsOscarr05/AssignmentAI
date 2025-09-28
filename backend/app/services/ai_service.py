@@ -65,7 +65,7 @@ class AIService:
         subscription = result.scalar_one_or_none()
         
         if not subscription:
-            return "gpt-5-nano"  # Default model for users without subscription (Free plan model)
+            return "gpt-4o-mini"  # Default model for users without subscription (Free plan model)
         
         return str(subscription.ai_model)
 
@@ -604,7 +604,7 @@ class AIService:
         """
         try:
             # Get user's subscription model
-            user_model = self.get_user_model(user_id) if user_id else "gpt-5-nano"
+            user_model = self.get_user_model(user_id) if user_id else "gpt-4o-mini"
             logger.info(f"Using user model for chat: {user_model}")
             
             # Prepare conversation messages
@@ -698,7 +698,7 @@ class AIService:
         """
         try:
             # Get user's subscription model
-            user_model = self.get_user_model(user_id) if user_id else "gpt-5-nano"
+            user_model = self.get_user_model(user_id) if user_id else "gpt-4o-mini"
             logger.info(f"Using streaming with user model: {user_model}")
             
             # Prepare conversation messages
@@ -776,7 +776,7 @@ class AIService:
         """
         try:
             # Get user's subscription model for fallback too
-            user_model = self.get_user_model(user_id) if user_id else "gpt-5-nano"
+            user_model = self.get_user_model(user_id) if user_id else "gpt-4o-mini"
             logger.info(f"Using fallback method with user model: {user_model}")
             
             # Construct a system prompt for general chat/conversation
@@ -891,9 +891,242 @@ class AIService:
                 raise ValueError("OpenAI returned None content")
             
             logger.info(f"Successfully generated content of length: {len(content)} characters")
-            logger.info(f"Generated content: '{content}'")
+            # Safely log content to avoid Unicode encoding issues
+            safe_content = content.encode('utf-8', errors='ignore').decode('utf-8')
+            logger.info(f"Generated content: '{safe_content}'")
             return content
             
         except Exception as e:
             logger.error(f"Error generating content from prompt: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"Failed to generate content: {str(e)}") 
+            raise HTTPException(status_code=500, detail=f"Failed to generate content: {str(e)}")
+
+    async def generate_fill_in_blank_batch(self, questions: List[Dict[str, str]], word_bank: List[str] = None) -> List[str]:
+        """
+        Generate answers for multiple fill-in-the-blank questions in a single API call.
+        This is much more efficient than individual calls.
+        
+        Args:
+            questions: List of dicts with 'text' and 'context' keys
+            
+        Returns:
+            List of generated answers
+        """
+        try:
+            if not questions:
+                return []
+            
+            # Construct a simple, direct system prompt
+            system_prompt = """You are answering fill-in-the-blank questions. For each question, provide the most appropriate single word or short phrase that completes the sentence correctly.
+
+Rules:
+- Answer with only the word/phrase, no explanations
+- Use proper capitalization
+- Return answers as a JSON array in the same order as questions"""
+            
+            # Add word bank instructions if available
+            if word_bank:
+                logger.info(f"Using word bank in AI prompt: {word_bank[:10]}...")
+                system_prompt += f"""
+
+Word Bank: {', '.join(word_bank)}
+Use words from this bank when they fit the question."""
+            else:
+                logger.info("No word bank provided to AI service")
+            
+            system_prompt += """
+
+Example: ["gravity", "Einstein", "oxygen"]"""
+            
+            # Create simple user prompt
+            user_prompt = "Questions:\n"
+            for i, q in enumerate(questions, 1):
+                user_prompt += f"{i}. {q['text']}\n"
+            
+            user_prompt += "\nAnswers (JSON array):"
+            
+            logger.info(f"User prompt: {user_prompt[:300]}...")
+            
+            # Prepare parameters for batch processing
+            params = {
+                "model": self.model,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                "max_completion_tokens": min(1000, len(questions) * 30)  # Increased token limit
+            }
+            
+            # GPT-5 models have limited parameter support
+            if "gpt-5" not in self.model.lower():
+                params.update({
+                    "temperature": 0.3,  # Only add temperature for non-GPT-5 models
+                    "top_p": 0.8,
+                    "frequency_penalty": 0.1,
+                    "presence_penalty": 0.1
+                })
+            else:
+                logger.info(f"Using minimal parameters for batch fill-in-blank generation with {self.model}")
+            
+            # Call OpenAI API
+            response = await self.client.chat.completions.create(**params)
+            
+            content = response.choices[0].message.content
+            if content is None:
+                logger.error(f"OpenAI returned None content for batch fill-in-blank questions")
+                raise ValueError("OpenAI returned None content")
+            
+            # Parse JSON response
+            import json
+            try:
+                logger.info(f"Raw AI response: {content[:500]}...")
+                answers = json.loads(content.strip())
+                if not isinstance(answers, list):
+                    raise ValueError("Response is not a list")
+                
+                logger.info(f"Parsed JSON answers: {answers}")
+                
+                # Ensure we have the right number of answers
+                if len(answers) != len(questions):
+                    logger.warning(f"Expected {len(questions)} answers, got {len(answers)}")
+                    # Pad with fallbacks if needed
+                    while len(answers) < len(questions):
+                        answers.append("[ANSWER]")
+                    answers = answers[:len(questions)]  # Truncate if too many
+                
+                # Clean up answers
+                cleaned_answers = []
+                for i, answer in enumerate(answers):
+                    if isinstance(answer, str):
+                        # Remove any trailing punctuation
+                        cleaned = answer.strip().rstrip('.,!?;:')
+                        if not cleaned:  # If empty after cleaning
+                            logger.warning(f"Answer {i} is empty after cleaning: '{answer}'")
+                            cleaned = "[ANSWER]"
+                        cleaned_answers.append(cleaned)
+                    else:
+                        logger.warning(f"Answer {i} is not a string: {answer}")
+                        cleaned_answers.append("[ANSWER]")
+                
+                logger.info(f"Successfully generated {len(cleaned_answers)} batch answers")
+                logger.info(f"Generated answers: {cleaned_answers[:10]}...")
+                return cleaned_answers
+                
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse JSON response: {content[:200]}...")
+                logger.error(f"Full response: {content}")
+                # Fallback: try to extract answers from text
+                extracted = self._extract_answers_from_text(content, len(questions))
+                logger.info(f"Extracted answers from text: {extracted}")
+                return extracted
+            
+        except Exception as e:
+            logger.error(f"Error generating batch fill-in-blank answers: {str(e)}")
+            logger.error(f"Exception type: {type(e).__name__}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            # Re-raise the exception instead of returning [ANSWER] placeholders
+            raise
+    
+    def _extract_answers_from_text(self, text: str, expected_count: int) -> List[str]:
+        """Extract answers from non-JSON text response as fallback"""
+        import re
+        
+        # Try to find quoted strings or simple answers
+        answers = re.findall(r'"([^"]+)"', text)
+        if not answers:
+            # Try to find numbered answers
+            answers = re.findall(r'\d+\.\s*([^\n]+)', text)
+        if not answers:
+            # Try to find simple word patterns
+            answers = re.findall(r'\b[A-Za-z][A-Za-z\s]{1,20}\b', text)
+        
+        # Clean and limit answers
+        cleaned = []
+        for answer in answers[:expected_count]:
+            cleaned.append(answer.strip().rstrip('.,!?;:')[:50])  # Limit length
+        
+        # Pad with fallbacks if needed
+        while len(cleaned) < expected_count:
+            cleaned.append("[ANSWER]")
+        
+        return cleaned[:expected_count]
+
+    async def generate_fill_in_blank_answer(self, question_text: str, context: str = "") -> str:
+        """
+        Generate a specific answer for fill-in-the-blank questions.
+        This method is optimized for short, precise answers.
+        
+        Args:
+            question_text: The fill-in-the-blank question text
+            context: Additional context about the question
+            
+        Returns:
+            Generated answer as string
+        """
+        try:
+            # Construct a focused system prompt for fill-in-the-blank
+            system_prompt = """You are an expert at answering fill-in-the-blank questions. 
+            Your task is to provide the most appropriate single word or short phrase (1-3 words) 
+            that completes the sentence correctly.
+            
+            Guidelines:
+            1. Provide ONLY the answer word/phrase, no explanations
+            2. Keep answers concise (1-3 words maximum)
+            3. Ensure grammatical correctness
+            4. Make sure the answer fits the context
+            5. Use proper capitalization and spelling
+            6. If unsure, provide the most common/obvious answer
+            
+            Examples:
+            - "carbon" for "The main element in diamonds is _____"
+            - "Venus" for "The planet closest to Earth is _____"
+            - "satellite" for "A man-made object orbiting Earth is called a _____"
+            """
+            
+            # Create a focused user prompt
+            user_prompt = f"Question: {question_text}"
+            if context:
+                user_prompt += f"\nContext: {context}"
+            user_prompt += "\n\nAnswer:"
+            
+            # Prepare parameters with lower token limit for short answers
+            params = {
+                "model": self.model,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                "max_completion_tokens": 20,  # Short answers only
+                "temperature": 0.3  # Lower temperature for more consistent answers
+            }
+            
+            # GPT-5 models have limited parameter support
+            if "gpt-5" not in self.model.lower():
+                params.update({
+                    "top_p": 0.8,
+                    "frequency_penalty": 0.1,
+                    "presence_penalty": 0.1
+                })
+            else:
+                logger.info(f"Using minimal parameters for fill-in-blank generation with {self.model}")
+            
+            # Call OpenAI API
+            response = await self.client.chat.completions.create(**params)
+            
+            content = response.choices[0].message.content
+            if content is None:
+                logger.error(f"OpenAI returned None content for fill-in-blank question: {question_text[:50]}...")
+                raise ValueError("OpenAI returned None content")
+            
+            # Clean up the response
+            answer = content.strip()
+            # Remove any trailing punctuation that might interfere
+            answer = answer.rstrip('.,!?;:')
+            
+            logger.info(f"Successfully generated fill-in-blank answer of length: {len(answer)} characters")
+            logger.info(f"Generated answer: '{answer}'")
+            return answer
+            
+        except Exception as e:
+            logger.error(f"Error generating fill-in-blank answer: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Failed to generate answer: {str(e)}") 

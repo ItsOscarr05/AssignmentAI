@@ -282,6 +282,10 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
     filledContent: string,
     callback: (chunk: string) => void
   ) => {
+    console.log('Starting streaming simulation');
+    console.log('Original content:', originalContent.substring(0, 100));
+    console.log('Filled content:', filledContent.substring(0, 100));
+
     // Start with the original content
     let currentContent = originalContent;
     callback(currentContent);
@@ -292,35 +296,67 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
 
     let lineIndex = 0;
     let currentLine = 0;
+    let changesCount = 0;
+    const maxChanges = 20; // Limit the number of changes to show
 
-    const fillInterval = setInterval(() => {
-      if (lineIndex < originalLines.length && currentLine < filledLines.length) {
+    let intervalId: NodeJS.Timeout;
+
+    const fillInterval = () => {
+      if (
+        lineIndex < originalLines.length &&
+        currentLine < filledLines.length &&
+        changesCount < maxChanges
+      ) {
         const originalLine = originalLines[lineIndex];
         const filledLine = filledLines[currentLine];
 
         // If this line has changes (blanks filled), update it
-        if (originalLine !== filledLine && filledLine.includes(originalLine.replace(/_+/g, ''))) {
+        const hasBlanks = originalLine.includes('_') || originalLine.includes('____');
+        const isDifferent = originalLine !== filledLine;
+
+        console.log(`Line ${lineIndex}: hasBlanks=${hasBlanks}, isDifferent=${isDifferent}`);
+        console.log(`Original: "${originalLine}"`);
+        console.log(`Filled: "${filledLine}"`);
+
+        if (isDifferent && (hasBlanks || filledLine.length > originalLine.length)) {
           // Replace the original line with the filled line
           const updatedLines = [...originalLines];
           updatedLines[lineIndex] = filledLine;
           currentContent = updatedLines.join('\n');
           callback(currentContent);
+          changesCount++;
+          console.log(`Updated line ${lineIndex}, changes count: ${changesCount}`);
 
           // Wait a bit before moving to next line
           setTimeout(() => {
             lineIndex++;
             currentLine++;
-          }, 800);
+          }, 300); // Reduced from 500ms to 300ms
         } else {
           lineIndex++;
           currentLine++;
         }
       } else {
-        clearInterval(fillInterval);
+        // Show final content immediately
+        callback(filledContent);
+        clearInterval(intervalId);
         setIsStreaming(false);
         setStreamingContent(''); // Clear streaming content when done
+        console.log('Streaming simulation completed');
       }
-    }, 1000); // Fill each blank every 1 second
+    };
+
+    // Start the interval
+    intervalId = setInterval(fillInterval, 200); // Reduced from 300ms to 200ms
+
+    // Safety timeout to ensure simulation stops
+    setTimeout(() => {
+      clearInterval(intervalId);
+      callback(filledContent);
+      setIsStreaming(false);
+      setStreamingContent('');
+      console.log('Streaming simulation force-stopped by timeout');
+    }, 5000); // 5 second maximum
   };
 
   const handleAiFill = async (file: any) => {
@@ -330,6 +366,12 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
     setSelectedFile(file);
     setIsStreaming(true);
     setFilledSections(new Map()); // Reset filled sections
+
+    // Ensure we have the original content before proceeding
+    if (!originalFileContent || originalFileContent === '') {
+      console.log('Loading original content before AI fill');
+      await loadFileContent(file);
+    }
 
     try {
       // Use processExistingFile with file ID instead of passing the file object
@@ -341,6 +383,12 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
       const filledContent =
         result.filled_content?.text || result.filled_content || 'Content filled successfully!';
       console.log('Using real AI-filled content:', filledContent);
+
+      // Debug logging for streaming
+      console.log('Original content length:', originalFileContent.length);
+      console.log('Filled content length:', filledContent.length);
+      console.log('Original content preview:', originalFileContent.substring(0, 200));
+      console.log('Filled content preview:', filledContent.substring(0, 200));
 
       // Simulate progressive filling of blanks for better UX
       simulateProgressiveFilling(originalFileContent, filledContent, chunk => {
@@ -355,6 +403,12 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
         message: 'File filled successfully!',
         severity: 'success',
       });
+
+      // Ensure streaming state is cleared after successful completion
+      setTimeout(() => {
+        setIsStreaming(false);
+        setStreamingContent('');
+      }, 1000); // Give simulation time to complete, then force stop
     } catch (error) {
       console.error('AI fill failed:', error);
       setIsStreaming(false);

@@ -17,44 +17,40 @@ class FileService:
         self.upload_dir = Path(settings.UPLOAD_DIR)
         self.upload_dir.mkdir(parents=True, exist_ok=True)
         
-        # Define allowed file types and their MIME types
+        # Define allowed file types and their MIME types - Updated per PRD requirements
         self.allowed_types = {
-            # Documents
+            # Document-based (PRD requirement)
             'pdf': ['application/pdf'],
             'doc': ['application/msword'],
             'docx': ['application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
             'txt': ['text/plain'],
             'rtf': ['application/rtf'],
             
-            # Spreadsheets
-            'xls': ['application/vnd.ms-excel'],
-            'xlsx': ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
-            'csv': ['text/csv'],
-            
-            # Presentations
-            'ppt': ['application/vnd.ms-powerpoint'],
-            'pptx': ['application/vnd.openxmlformats-officedocument.presentationml.presentation'],
-            
-            # Images
+            # Image-based (OCR required) (PRD requirement)
             'jpg': ['image/jpeg'],
             'jpeg': ['image/jpeg'],
             'png': ['image/png'],
             'gif': ['image/gif'],
             'bmp': ['image/bmp'],
+            'tiff': ['image/tiff'],
             
-            # Code files
+            # Code-based (PRD requirement)
             'py': ['text/x-python'],
+            'js': ['text/javascript'],
             'java': ['text/x-java-source'],
-            'cpp': ['text/x-c++'],
-            'c': ['text/x-c'],
-            'js': ['application/javascript'],
+            'cpp': ['text/x-c++src'],
+            'c': ['text/x-csrc'],
             'html': ['text/html'],
             'css': ['text/css'],
             
-            # Archives
-            'zip': ['application/zip'],
-            'rar': ['application/x-rar-compressed'],
-            '7z': ['application/x-7z-compressed'],
+            # Spreadsheet-based (PRD requirement)
+            'csv': ['text/csv'],
+            'xls': ['application/vnd.ms-excel'],
+            'xlsx': ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+            
+            # Data formats
+            'json': ['application/json'],
+            'xml': ['application/xml'],
             
             # Audio
             'mp3': ['audio/mpeg'],

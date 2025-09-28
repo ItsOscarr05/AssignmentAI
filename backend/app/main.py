@@ -62,6 +62,21 @@ async def lifespan(app: FastAPI):
         print("DEBUG: Rate limiter initialized successfully")
     except Exception as e:
         print(f"DEBUG: Rate limiter initialization failed: {e}")
+    
+    # Initialize job queue service
+    try:
+        from app.services.job_queue_service import job_queue_service
+        from app.services.assignment_job_processor import process_assignment_job
+        
+        # Register assignment processor
+        job_queue_service.register_processor('assignment_processing', process_assignment_job)
+        
+        # Start the job queue service
+        await job_queue_service.start(num_workers=3)
+        print("DEBUG: Job queue service initialized successfully")
+    except Exception as e:
+        print(f"DEBUG: Job queue service initialization failed: {e}")
+    
     print("DEBUG: Application startup complete!")
     # Add any additional startup initialization here
     
@@ -73,6 +88,15 @@ async def lifespan(app: FastAPI):
         await close_rate_limiter()
     except Exception as e:
         print(f"DEBUG: Rate limiter shutdown failed: {e}")
+    
+    # Shutdown job queue service
+    try:
+        from app.services.job_queue_service import job_queue_service
+        await job_queue_service.stop()
+        print("DEBUG: Job queue service shutdown successfully")
+    except Exception as e:
+        print(f"DEBUG: Job queue service shutdown failed: {e}")
+    
     # Add any cleanup code here
 
 app = FastAPI(

@@ -222,6 +222,8 @@ async def process_existing_file(
                 "sections_filled": result.get('sections_filled', 0),
                 "original_content": result.get('original_content'),
                 "filled_content": result.get('filled_content'),
+                "fillable_sections": result.get('fillable_sections', []),  # Add this for preview
+                "text": result.get('text', ''),  # Add this for preview
                 "processed_at": result.get('processed_at'),
                 "status": "completed",
                 "download_url": f"/api/v1/file-processing/download/{file_id}"
@@ -375,9 +377,12 @@ async def preview_filled_content(
             "file_id": file_id,
             "file_name": file.filename,
             "file_type": analysis_result.get('file_type'),
-            "fillable_sections": analysis_result.get('fillable_sections', []),
+            "fillable_sections": fill_result.get('fillable_sections', []),  # Use filled sections with answers
             "preview_content": fill_result.get('filled_content'),
+            "text": fill_result.get('text', ''),  # Add structured text
             "sections_to_fill": fill_result.get('sections_filled', 0),
+            "original_content": fill_result.get('original_content'),
+            "filled_content": fill_result.get('filled_content'),
             "processed_at": datetime.utcnow().isoformat(),
             "status": "preview_ready"
         }

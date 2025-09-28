@@ -263,13 +263,19 @@ class Settings(BaseSettings):
     DB_POOL_PRE_PING: bool = True
     SQL_DEBUG: bool = False
     
-    # File upload settings (duplicate removed)
+    # File upload settings - Updated per PRD requirements
+    MAX_UPLOAD_SIZE: int = 25 * 1024 * 1024  # 25MB per PRD
     ALLOWED_EXTENSIONS: set = {
-        "pdf", "doc", "docx", "txt", "rtf", "odt",
-        "jpg", "jpeg", "png", "gif",
-        "zip", "rar", "7z",
-        "mp3", "mp4", "wav", "avi",
-        "py", "java", "cpp", "c", "js", "html", "css"
+        # Document-based (PRD requirement)
+        "pdf", "doc", "docx", "txt", "rtf",
+        # Image-based (OCR required) (PRD requirement)
+        "jpg", "jpeg", "png", "gif", "bmp", "tiff",
+        # Code-based (PRD requirement)
+        "py", "js", "java", "cpp", "c", "html", "css",
+        # Spreadsheet-based (PRD requirement)
+        "csv", "xls", "xlsx",
+        # Data formats
+        "json", "xml"
     }
     
     # Redis settings
@@ -282,7 +288,7 @@ class Settings(BaseSettings):
     
     # OpenAI
     OPENAI_API_KEY: Optional[str] = None
-    OPENAI_MODEL: str = "gpt-5-nano"  # Default model (overridden by subscription)
+    OPENAI_MODEL: str = "gpt-4o-mini"  # Default model (overridden by subscription)
     OPENAI_TEMPERATURE: float = 0.7
     OPENAI_MAX_TOKENS: int = 2000
     

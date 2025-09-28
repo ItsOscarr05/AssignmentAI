@@ -56,18 +56,58 @@ export const GRADING_SCALE = {
   F: { min: 0, max: 59 },
 } as const;
 
-// File Types
+// File Types - Updated per PRD requirements
 export const ALLOWED_FILE_TYPES = {
-  DOCUMENTS: ['.pdf', '.doc', '.docx', '.txt'],
-  IMAGES: ['.jpg', '.jpeg', '.png', '.gif'],
-  CODE: ['.js', '.jsx', '.ts', '.tsx', '.py', '.java', '.cpp', '.c'],
+  DOCUMENTS: ['.pdf', '.doc', '.docx', '.txt', '.rtf'],
+  IMAGES: ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff'],
+  CODE: ['.py', '.js', '.java', '.cpp', '.c', '.html', '.css'],
+  SPREADSHEETS: ['.csv', '.xls', '.xlsx'],
+  DATA: ['.json', '.xml'],
 } as const;
 
-// File Size Limits (in bytes)
+// MIME Types mapping per PRD requirements
+export const MIME_TYPE_MAPPING = {
+  // Document-based
+  '.pdf': 'application/pdf',
+  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  '.doc': 'application/msword',
+  '.txt': 'text/plain',
+  '.rtf': 'application/rtf',
+
+  // Image-based (OCR required)
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.gif': 'image/gif',
+  '.bmp': 'image/bmp',
+  '.tiff': 'image/tiff',
+
+  // Code-based
+  '.py': 'text/x-python',
+  '.js': 'text/javascript',
+  '.java': 'text/x-java-source',
+  '.cpp': 'text/x-c++src',
+  '.c': 'text/x-csrc',
+  '.html': 'text/html',
+  '.css': 'text/css',
+
+  // Spreadsheet-based
+  '.csv': 'text/csv',
+  '.xls': 'application/vnd.ms-excel',
+  '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+
+  // Data formats
+  '.json': 'application/json',
+  '.xml': 'application/xml',
+} as const;
+
+// File Size Limits (in bytes) - Updated per PRD requirements (25MB max)
 export const FILE_SIZE_LIMITS = {
-  DOCUMENT: 5 * 1024 * 1024, // 5MB
-  IMAGE: 2 * 1024 * 1024, // 2MB
-  CODE: 1 * 1024 * 1024, // 1MB
+  DOCUMENT: 25 * 1024 * 1024, // 25MB (PRD requirement)
+  IMAGE: 25 * 1024 * 1024, // 25MB (PRD requirement)
+  CODE: 25 * 1024 * 1024, // 25MB (PRD requirement)
+  SPREADSHEET: 25 * 1024 * 1024, // 25MB (PRD requirement)
+  MAX_SIZE: 25 * 1024 * 1024, // 25MB global limit per PRD
 } as const;
 
 // Pagination

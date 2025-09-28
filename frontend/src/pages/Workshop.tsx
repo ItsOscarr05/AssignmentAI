@@ -1078,7 +1078,7 @@ const Workshop: React.FC = () => {
                 overflow: 'hidden',
                 width: { xs: '95%', sm: '100%' },
                 mx: { xs: 'auto', sm: 0 },
-                '@media (min-width: 960px)': {
+                '@media (minWidth: 960px)': {
                   width: '100%',
                   maxWidth: '100%',
                 },
@@ -1177,10 +1177,10 @@ const Workshop: React.FC = () => {
                     md: 'min(60vw, 300px)',
                     lg: 'min(45vw, 320px)',
                     xl: 'min(30vw, 350px)',
-                    '@media (min-width: 1920px)': {
+                    '@media (minWidth: 1920px)': {
                       width: 'min(25vw, 400px)',
                     },
-                    '@media (min-width: 2560px)': {
+                    '@media (minWidth: 2560px)': {
                       width: 'min(20vw, 450px)',
                     },
                   },
@@ -1190,10 +1190,10 @@ const Workshop: React.FC = () => {
                     md: 'min(60vw, 300px)',
                     lg: 'min(45vw, 320px)',
                     xl: 'min(30vw, 350px)',
-                    '@media (min-width: 1920px)': {
+                    '@media (minWidth: 1920px)': {
                       height: 'min(25vw, 400px)',
                     },
-                    '@media (min-width: 2560px)': {
+                    '@media (minWidth: 2560px)': {
                       height: 'min(20vw, 450px)',
                     },
                   },
@@ -1207,8 +1207,8 @@ const Workshop: React.FC = () => {
                     md: 300,
                     lg: 320,
                     xl: 350,
-                    '@media (min-width: 1920px)': 400,
-                    '@media (min-width: 2560px)': 450,
+                    '@media (minWidth: 1920px)': 400,
+                    '@media (minWidth: 2560px)': 450,
                   },
                   maxHeight: {
                     xs: 200,
@@ -1216,8 +1216,8 @@ const Workshop: React.FC = () => {
                     md: 300,
                     lg: 320,
                     xl: 350,
-                    '@media (min-width: 1920px)': 400,
-                    '@media (min-width: 2560px)': 450,
+                    '@media (minWidth: 1920px)': 400,
+                    '@media (minWidth: 2560px)': 450,
                   },
                 }}
                 onMouseEnter={() => setIsTokenChartHovered(true)}
