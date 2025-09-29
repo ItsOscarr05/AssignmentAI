@@ -45,8 +45,11 @@ import DashboardPieChart from '../components/dashboard/DashboardPieChart';
 import { useAuth } from '../contexts/AuthContext';
 import { type Assignment } from '../data/mockData';
 import { useAspectRatio } from '../hooks/useAspectRatio';
+import { useTokenLimit } from '../hooks/useTokenLimit';
+import { useTokenUsage } from '../hooks/useTokenUsage';
 import { api } from '../services/api';
 import { fileUploadService } from '../services/fileUploadService';
+import { useWorkshopStore } from '../services/WorkshopService';
 
 import { mapToCoreSubject } from '../services/subjectService';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
@@ -91,7 +94,12 @@ const DashboardHome: React.FC = () => {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
   const [viewAssignment, setViewAssignment] = useState<Assignment | null>(null);
-  const [recentFileUploads, setRecentFileUploads] = useState<any[]>([]);
+  const [fileUploads, setFileUploads] = useState<any[]>([]);
+  const { history: workshopHistory } = useWorkshopStore();
+
+  // Get token usage data
+  const { subscription } = useTokenLimit();
+  const { usedTokens: monthlyTokenUsage, tokenUsageData } = useTokenUsage(subscription);
 
   // Fetch real assignments and file uploads
   useEffect(() => {
@@ -111,50 +119,116 @@ const DashboardHome: React.FC = () => {
         setAssignments([]);
       });
 
-    // Fetch recent file uploads
+    // Fetch all file uploads for combined activities
     fileUploadService
-      .getRecent(5)
-      .then(uploads => {
-        setRecentFileUploads(uploads);
+      .getAll()
+      .then(response => {
+        setFileUploads(response.items);
       })
       .catch(() => {
-        setRecentFileUploads([]);
+        setFileUploads([]);
       });
   }, []);
 
-  // Calculate stats from assignments
-  const assignmentsGenerated = assignments.length;
+  // Create combined activities (same logic as Assignments page)
+  const combinedActivities = useMemo(() => {
+    const activities: any[] = [];
+
+    // Add assignments
+    assignments.forEach(assignment => {
+      activities.push({
+        id: `assignment-${assignment.id}`,
+        type: 'assignment',
+        title: assignment.title,
+        subject: assignment.subject,
+        status: assignment.status,
+        createdAt: assignment.createdAt,
+        tokensUsed: assignment.tokensUsed || 0,
+      });
+    });
+
+    // Add file uploads
+    fileUploads.forEach(upload => {
+      activities.push({
+        id: `file-${upload.id}`,
+        type: 'file_upload',
+        title: upload.is_link
+          ? `Link: ${upload.link_title || upload.link_url}`
+          : upload.original_filename,
+        subject: 'Technology',
+        status: 'Completed',
+        description: upload.is_link ? `URL: ${upload.link_url}` : `File: ${upload.file_type}`,
+        createdAt: upload.created_at,
+        tokensUsed: 0,
+      });
+    });
+
+    // Add workshop history
+    workshopHistory.forEach((item: any) => {
+      activities.push({
+        id: `workshop-${item.id}`,
+        type: 'workshop_activity',
+        title:
+          item.type === 'file'
+            ? 'File Processing'
+            : item.type === 'link'
+            ? 'Link Processing'
+            : 'Chat Session',
+        subject: 'Technology',
+        status: 'Completed',
+        description: item.prompt || item.content || '',
+        createdAt: item.timestamp,
+        tokensUsed: 0,
+      });
+    });
+
+    return activities.sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }, [assignments, fileUploads, workshopHistory]);
+
+  // Calculate stats from combined activities
+  const assignmentsGenerated = combinedActivities.length;
   const assignmentsCompletedCount = assignments.filter(a => a.status === 'Completed').length;
-  const monthlyTokenUsage = assignments
-    .filter(a => dayjs(a.createdAt).isSame(dayjs(), 'month'))
-    .reduce((sum, a) => sum + (a.tokensUsed || 0), 0);
-  const lifetimeTokenUsage = assignments.reduce((sum, a) => sum + (a.tokensUsed || 0), 0);
+
+  // Calculate lifetime token usage from all feature usage
+  const lifetimeTokenUsage = tokenUsageData
+    ? Object.values(tokenUsageData.feature_usage).reduce(
+        (sum: number, usage: any) => sum + (usage.tokens_used || 0),
+        0
+      )
+    : 0;
 
   const stats = [
     {
       title: 'Total Assignments',
-      value: '24',
+      value: assignmentsGenerated.toString(),
       icon: <AssignmentIcon />,
       color: 'linear-gradient(135deg, #4A90E2 0%, #357ABD 120%)',
     },
     {
       title: 'Completed',
-      value: '18',
+      value: assignmentsCompletedCount.toString(),
       icon: <CheckCircleIcon />,
       color: 'linear-gradient(135deg, #4CAF50 0%, #388E3C 120%)',
     },
     {
       title: 'In Progress',
-      value: '4',
+      value: assignments.filter(a => a.status === 'In Progress').length.toString(),
       icon: <PendingIcon />,
       color: 'linear-gradient(135deg, #FFC127 0%, #FFA000 120%)',
     },
   ];
 
-  // Use calculated stats for activity & insights
-  const mockActivity = {
-    assignmentsGenerated,
-  };
+  // Calculate activity insights for existing cards
+  const activityInsights = useMemo(() => {
+    const completedActivities = combinedActivities.filter(a => a.status === 'Completed').length;
+
+    return {
+      assignmentsGenerated,
+      completedActivities,
+    };
+  }, [assignmentsGenerated, combinedActivities]);
 
   // Rainbow order for pie chart (counterclockwise, starting with red)
   const rainbowOrder = [
@@ -172,22 +246,22 @@ const DashboardHome: React.FC = () => {
 
   const pieChartData = useMemo(() => {
     const now = dayjs();
-    const source = assignments;
-    const filteredAssignments =
+    const source = combinedActivities;
+    const filteredActivities =
       distributionFilter === 'total'
         ? source
         : source.filter(a => {
-            const assignmentDate = dayjs(a.createdAt);
-            if (distributionFilter === 'daily') return now.isSame(assignmentDate, 'day');
-            if (distributionFilter === 'weekly') return now.isSame(assignmentDate, 'week');
-            if (distributionFilter === 'monthly') return now.isSame(assignmentDate, 'month');
-            if (distributionFilter === 'yearly') return now.isSame(assignmentDate, 'year');
+            const activityDate = dayjs(a.createdAt);
+            if (distributionFilter === 'daily') return now.isSame(activityDate, 'day');
+            if (distributionFilter === 'weekly') return now.isSame(activityDate, 'week');
+            if (distributionFilter === 'monthly') return now.isSame(activityDate, 'month');
+            if (distributionFilter === 'yearly') return now.isSame(activityDate, 'year');
             return true;
           });
 
     const subjectCounts: Record<string, number> = {};
-    filteredAssignments.forEach(assignment => {
-      const core = assignment.subject || mapToCoreSubject(assignment.title);
+    filteredActivities.forEach(activity => {
+      const core = activity.subject || mapToCoreSubject(activity.title);
       if (rainbowOrder.includes(core)) {
         subjectCounts[core] = (subjectCounts[core] || 0) + 1;
       }
@@ -196,17 +270,14 @@ const DashboardHome: React.FC = () => {
     return rainbowOrder
       .filter(core => subjectCounts[core])
       .map(core => ({ name: core, value: subjectCounts[core] }));
-  }, [distributionFilter, assignments]);
+  }, [distributionFilter, combinedActivities]);
 
-  // Sort assignments newest to oldest
-  const sortedAssignments = [...assignments].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
-  const filteredAssignments = sortedAssignments.filter(assignment => {
+  // Filter combined activities for the Recent & Active section
+  const filteredActivities = combinedActivities.filter(activity => {
     if (filter === 'all') return true;
-    if (filter === 'in progress') return assignment.status.toLowerCase() === 'in progress';
-    if (filter === 'completed') return assignment.status.toLowerCase() === 'completed';
-    if (filter === 'not started') return assignment.status.toLowerCase() === 'not started';
+    if (filter === 'in progress') return activity.status.toLowerCase() === 'in progress';
+    if (filter === 'completed') return activity.status.toLowerCase() === 'completed';
+    if (filter === 'not started') return activity.status.toLowerCase() === 'not started';
     return true;
   });
 
@@ -517,7 +588,7 @@ const DashboardHome: React.FC = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {filteredAssignments.length === 0 ? (
+                  {filteredActivities.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} align="center" sx={{ p: 0 }}>
                         <Box
@@ -541,37 +612,41 @@ const DashboardHome: React.FC = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredAssignments.slice(page * 5, page * 5 + 5).map(assignment => (
-                      <TableRow key={assignment.id}>
+                    filteredActivities.slice(page * 5, page * 5 + 5).map(activity => (
+                      <TableRow key={activity.id}>
                         <TableCell sx={{ p: { xs: 1, md: 2 } }}>
                           <span
                             style={{ cursor: 'pointer', fontWeight: 500, textDecoration: 'none' }}
-                            onClick={() => setSelectedAssignment(assignment)}
+                            onClick={() =>
+                              activity.type === 'assignment'
+                                ? setSelectedAssignment(activity)
+                                : null
+                            }
                             onMouseOver={e => (e.currentTarget.style.textDecoration = 'underline')}
                             onMouseOut={e => (e.currentTarget.style.textDecoration = 'none')}
                           >
-                            {assignment.title}
+                            {activity.title}
                           </span>
                         </TableCell>
                         <TableCell sx={{ p: { xs: 1, md: 2 } }}>
                           <span
                             style={{
                               color:
-                                assignment.status === 'Completed'
+                                activity.status === 'Completed'
                                   ? '#388E3C'
-                                  : assignment.status === 'In Progress'
+                                  : activity.status === 'In Progress'
                                   ? '#1976D2'
-                                  : assignment.status === 'Not Started'
+                                  : activity.status === 'Not Started'
                                   ? '#FFA726'
                                   : '#8E24AA',
                               fontWeight: 600,
                             }}
                           >
-                            {assignment.status}
+                            {activity.status}
                           </span>
                         </TableCell>
                         <TableCell sx={{ p: { xs: 1, md: 2 } }}>
-                          {formatDateWithPreference(assignment.createdAt)}
+                          {formatDateWithPreference(activity.createdAt)}
                         </TableCell>
                         <TableCell sx={{ p: { xs: 1, md: 2 } }}>
                           <Box
@@ -584,70 +659,99 @@ const DashboardHome: React.FC = () => {
                               minWidth: { md: '180px' },
                             }}
                           >
-                            <Button
-                              size="small"
-                              sx={{
-                                color: '#009688',
-                                minWidth: 'auto',
-                                px: { xs: 1, md: 0.5 },
-                                py: { xs: 0.5, md: 0.25 },
-                              }}
-                              onClick={() => setViewAssignment(assignment)}
-                            >
-                              <VisibilityOutlinedIcon
-                                sx={{ fontSize: 16, mr: { xs: 0, md: 0.25 } }}
-                              />
-                              <Box
-                                sx={{
-                                  display: { xs: 'none', md: 'inline' },
-                                  fontSize: '0.75rem',
-                                }}
-                              >
-                                View
-                              </Box>
-                            </Button>
-                            {assignment.status === 'Completed' && (
-                              <Button
-                                size="small"
-                                sx={{
-                                  color: '#8E24AA',
-                                  minWidth: 'auto',
-                                  px: { xs: 1, md: 0.5 },
-                                  py: { xs: 0.5, md: 0.25 },
-                                }}
-                                onClick={() =>
-                                  navigate('/dashboard/workshop', {
-                                    state: { assignment, responseTab: 1 },
-                                  })
-                                }
-                              >
-                                <AutorenewOutlinedIcon
-                                  sx={{ fontSize: 16, mr: { xs: 0, md: 0.25 } }}
-                                />
-                                <Box
+                            {activity.type === 'assignment' && (
+                              <>
+                                <Button
+                                  size="small"
                                   sx={{
-                                    display: { xs: 'none', md: 'inline' },
-                                    fontSize: '0.75rem',
+                                    color: '#009688',
+                                    minWidth: 'auto',
+                                    px: { xs: 1, md: 0.5 },
+                                    py: { xs: 0.5, md: 0.25 },
                                   }}
+                                  onClick={() => setViewAssignment(activity)}
                                 >
-                                  Regenerate
-                                </Box>
-                              </Button>
+                                  <VisibilityOutlinedIcon
+                                    sx={{ fontSize: 16, mr: { xs: 0, md: 0.25 } }}
+                                  />
+                                  <Box
+                                    sx={{
+                                      display: { xs: 'none', md: 'inline' },
+                                      fontSize: '0.75rem',
+                                    }}
+                                  >
+                                    View
+                                  </Box>
+                                </Button>
+                                {activity.status === 'Completed' && (
+                                  <Button
+                                    size="small"
+                                    sx={{
+                                      color: '#8E24AA',
+                                      minWidth: 'auto',
+                                      px: { xs: 1, md: 0.5 },
+                                      py: { xs: 0.5, md: 0.25 },
+                                    }}
+                                    onClick={() =>
+                                      navigate('/dashboard/workshop', {
+                                        state: { assignment: activity, responseTab: 1 },
+                                      })
+                                    }
+                                  >
+                                    <AutorenewOutlinedIcon
+                                      sx={{ fontSize: 16, mr: { xs: 0, md: 0.25 } }}
+                                    />
+                                    <Box
+                                      sx={{
+                                        display: { xs: 'none', md: 'inline' },
+                                        fontSize: '0.75rem',
+                                      }}
+                                    >
+                                      Regenerate
+                                    </Box>
+                                  </Button>
+                                )}
+                                {activity.status === 'In Progress' && (
+                                  <Button
+                                    size="small"
+                                    sx={{
+                                      color: '#FFA726',
+                                      minWidth: 'auto',
+                                      px: { xs: 1, md: 0.5 },
+                                      py: { xs: 0.5, md: 0.25 },
+                                    }}
+                                    onClick={() =>
+                                      navigate('/dashboard/workshop', {
+                                        state: { assignment: activity, responseTab: 1 },
+                                      })
+                                    }
+                                  >
+                                    <PlayArrowOutlinedIcon
+                                      sx={{ fontSize: 16, mr: { xs: 0, md: 0.25 } }}
+                                    />
+                                    <Box
+                                      sx={{
+                                        display: { xs: 'none', md: 'inline' },
+                                        fontSize: '0.75rem',
+                                      }}
+                                    >
+                                      Resume
+                                    </Box>
+                                  </Button>
+                                )}
+                              </>
                             )}
-                            {assignment.status === 'In Progress' && (
+                            {(activity.type === 'file_upload' ||
+                              activity.type === 'workshop_activity') && (
                               <Button
                                 size="small"
                                 sx={{
-                                  color: '#FFA726',
+                                  color: '#009688',
                                   minWidth: 'auto',
                                   px: { xs: 1, md: 0.5 },
                                   py: { xs: 0.5, md: 0.25 },
                                 }}
-                                onClick={() =>
-                                  navigate('/dashboard/workshop', {
-                                    state: { assignment, responseTab: 1 },
-                                  })
-                                }
+                                onClick={() => navigate('/dashboard/workshop')}
                               >
                                 <PlayArrowOutlinedIcon
                                   sx={{ fontSize: 16, mr: { xs: 0, md: 0.25 } }}
@@ -658,32 +762,34 @@ const DashboardHome: React.FC = () => {
                                     fontSize: '0.75rem',
                                   }}
                                 >
-                                  Resume
+                                  Open in Workshop
                                 </Box>
                               </Button>
                             )}
-                            <Button
-                              size="small"
-                              sx={{
-                                color: '#D32F2F',
-                                minWidth: 'auto',
-                                px: { xs: 1, md: 0.5 },
-                                py: { xs: 0.5, md: 0.25 },
-                              }}
-                              onClick={() =>
-                                setAssignments(prev => prev.filter(a => a.id !== assignment.id))
-                              }
-                            >
-                              <DeleteOutlineIcon sx={{ fontSize: 16, mr: { xs: 0, md: 0.25 } }} />
-                              <Box
+                            {activity.type === 'assignment' && (
+                              <Button
+                                size="small"
                                 sx={{
-                                  display: { xs: 'none', md: 'inline' },
-                                  fontSize: '0.75rem',
+                                  color: '#D32F2F',
+                                  minWidth: 'auto',
+                                  px: { xs: 1, md: 0.5 },
+                                  py: { xs: 0.5, md: 0.25 },
                                 }}
+                                onClick={() =>
+                                  setAssignments(prev => prev.filter(a => a.id !== activity.id))
+                                }
                               >
-                                Delete
-                              </Box>
-                            </Button>
+                                <DeleteOutlineIcon sx={{ fontSize: 16, mr: { xs: 0, md: 0.25 } }} />
+                                <Box
+                                  sx={{
+                                    display: { xs: 'none', md: 'inline' },
+                                    fontSize: '0.75rem',
+                                  }}
+                                >
+                                  Delete
+                                </Box>
+                              </Button>
+                            )}
                           </Box>
                         </TableCell>
                       </TableRow>
@@ -695,7 +801,7 @@ const DashboardHome: React.FC = () => {
             <TablePagination
               component="div"
               rowsPerPageOptions={[]}
-              count={filteredAssignments.length}
+              count={filteredActivities.length}
               rowsPerPage={5}
               page={page}
               onPageChange={handleChangePage}
@@ -885,8 +991,8 @@ const DashboardHome: React.FC = () => {
             >
               AI Activity Insights
             </Typography>
-            {mockActivity.assignmentsGenerated === 0 &&
-            assignmentsCompletedCount === 0 &&
+            {activityInsights.assignmentsGenerated === 0 &&
+            activityInsights.completedActivities === 0 &&
             (monthlyTokenUsage ?? 0) === 0 &&
             (lifetimeTokenUsage ?? 0) === 0 ? (
               <Box
@@ -941,7 +1047,7 @@ const DashboardHome: React.FC = () => {
                         Assignments Generated
                       </Typography>
                       <Typography variant="h5" sx={{ color: '#1976D2', fontWeight: 700 }}>
-                        {mockActivity.assignmentsGenerated}
+                        {activityInsights.assignmentsGenerated}
                       </Typography>
                     </Box>
                   </Paper>
@@ -975,7 +1081,7 @@ const DashboardHome: React.FC = () => {
                         Assignments Completed
                       </Typography>
                       <Typography variant="h5" sx={{ color: '#388E3C', fontWeight: 700 }}>
-                        {assignmentsCompletedCount}
+                        {activityInsights.completedActivities}
                       </Typography>
                     </Box>
                   </Paper>

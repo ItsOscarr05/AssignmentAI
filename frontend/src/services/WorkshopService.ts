@@ -309,7 +309,15 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || 'File upload failed');
+        console.log('Upload failed with response:', response.status, errorData);
+        
+        // Create an error object that matches axios error structure
+        const error = new Error(errorData.detail || 'File upload failed') as any;
+        error.response = {
+          status: response.status,
+          data: errorData
+        };
+        throw error;
       }
 
       const fileData = await response.json();
@@ -348,12 +356,23 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
         status: 'error' as const,
       };
 
-      if (error.response?.status === 403 && error.response?.data?.error) {
+      console.log('File upload error:', error);
+      console.log('Error response:', error.response);
+      console.log('Error status:', error.response?.status);
+      console.log('Error data:', error.response?.data);
+      console.log('Error data type:', typeof error.response?.data);
+      console.log('Error data keys:', error.response?.data ? Object.keys(error.response.data) : 'no data');
+
+      if (error.response?.status === 403 && error.response?.data && typeof error.response.data === 'object') {
+        console.log('Setting feature access error:', error.response.data);
+        console.log('Error response data keys:', Object.keys(error.response.data));
+        console.log('Error response data values:', Object.values(error.response.data));
         set(state => ({
           files: state.files.map(f => (f.id === fileId ? errorFile : f)),
           featureAccessError: error.response.data,
         }));
       } else {
+        console.log('Setting generic error');
         set(state => ({
           files: state.files.map(f => (f.id === fileId ? errorFile : f)),
           error: 'Failed to process file',

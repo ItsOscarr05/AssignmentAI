@@ -572,7 +572,7 @@ const Landing: React.FC = () => {
             >
               AI-Powered Assignment Creation & Completion
             </Box>
-            <Typography variant="h6" sx={{ mb: 3, color: 'white', opacity: 0.92, fontWeight: 400 }}>
+            <Typography variant="body1" sx={{ mb: 3, color: 'white', opacity: 0.92, fontWeight: 400, fontSize: '1rem' }}>
               Get AI–powered assistance for your assignments
               <br />
               and optimize your academic time.

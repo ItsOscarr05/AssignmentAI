@@ -36,7 +36,7 @@ class FileService:
             
             # Code-based (PRD requirement)
             'py': ['text/x-python'],
-            'js': ['text/javascript'],
+            'js': ['text/javascript', 'application/javascript'],
             'java': ['text/x-java-source'],
             'cpp': ['text/x-c++src'],
             'c': ['text/x-csrc'],
@@ -44,13 +44,13 @@ class FileService:
             'css': ['text/css'],
             
             # Spreadsheet-based (PRD requirement)
-            'csv': ['text/csv'],
+            'csv': ['text/csv', 'application/vnd.ms-excel'],
             'xls': ['application/vnd.ms-excel'],
             'xlsx': ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
             
             # Data formats
             'json': ['application/json'],
-            'xml': ['application/xml'],
+            'xml': ['application/xml', 'text/xml'],
             
             # Audio
             'mp3': ['audio/mpeg'],
@@ -63,8 +63,6 @@ class FileService:
             'mov': ['video/quicktime'],
             
             # Other
-            'json': ['application/json'],
-            'xml': ['application/xml'],
             'yaml': ['text/yaml'],
             'yml': ['text/yaml']
         }
@@ -136,10 +134,10 @@ class FileService:
             return str(file_path), file_id
 
         except Exception as e:
-            logger.error(f"Error saving file: {str(e)}")
+            logger.error(f"Error saving file: {str(e)}", exc_info=True)
             raise HTTPException(
                 status_code=500,
-                detail="Error saving file"
+                detail=f"Error saving file: {str(e)}"
             )
 
     async def delete_file(self, file_path: str, user_id: int) -> bool:

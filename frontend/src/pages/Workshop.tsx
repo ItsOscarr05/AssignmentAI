@@ -50,9 +50,9 @@ import {
   YAxis,
 } from 'recharts';
 import AIResponsePopup from '../components/workshop/AIResponsePopup';
-import { FeatureAccessErrorComponent } from '../components/workshop/FeatureAccessError';
 import FileUploadModal from '../components/workshop/FileUploadModal';
 import RecentHistorySidebar from '../components/workshop/RecentHistorySidebar';
+import { SubscriptionUpgradeModal } from '../components/workshop/SubscriptionUpgradeModal';
 import WorkshopFileUpload from '../components/workshop/WorkshopFileUpload';
 import WorkshopLiveModal from '../components/workshop/WorkshopLiveModal';
 
@@ -148,13 +148,18 @@ const Workshop: React.FC = () => {
     deleteFile,
     clearFeatureAccessError,
   } = useWorkshopStore();
+
+  // Debug logging for feature access error
+  React.useEffect(() => {
+    console.log('Feature access error changed:', featureAccessError);
+  }, [featureAccessError]);
   const [input, setInput] = useState('');
   const [linkInput, setLinkInput] = useState('');
   const [activeTab, setActiveTab] = useState(0);
   const [responseTab, setResponseTab] = useState(0);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [activityData] = useState<any[]>([]);
+  const [activityData, setActivityData] = useState<any[]>([]);
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
   const [animatedPercent, setAnimatedPercent] = useState(0);
   const [isTokenChartHovered, setIsTokenChartHovered] = useState(false);
@@ -187,6 +192,77 @@ const Workshop: React.FC = () => {
 
   const uploadContentRef = useRef<HTMLDivElement>(null);
   const rewriteTabRef = useRef<HTMLDivElement>(null);
+
+  // Generate activity data from workshop history
+  const generateActivityData = useMemo(() => {
+    const now = new Date();
+
+    // Find the most recent Sunday (start of week)
+    const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    const daysSinceSunday = currentDay;
+    const lastSunday = new Date(now);
+    lastSunday.setDate(now.getDate() - daysSinceSunday);
+
+    // Generate 7 days starting from Sunday
+    const weekDays = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date(lastSunday);
+      date.setDate(lastSunday.getDate() + i);
+      return date;
+    });
+
+    return weekDays.map(date => {
+      const dateStr = date.toISOString().split('T')[0];
+      const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+
+      // Count activities for this day
+      const dayActivities = workshopHistory.filter(item => {
+        const itemDate = new Date(item.timestamp).toISOString().split('T')[0];
+        return itemDate === dateStr;
+      });
+
+      // Categorize activities
+      const chats = dayActivities.filter(item => item.type === 'chat').length;
+
+      const files = dayActivities.filter(item => item.type === 'file').length;
+
+      const links = dayActivities.filter(item => item.type === 'link').length;
+
+      // Count AI actions (summarize, extract, rewrite)
+      const summarize = dayActivities.filter(
+        item =>
+          item.serviceUsed === 'summarize' ||
+          (item.prompt && item.prompt.toLowerCase().includes('summarize'))
+      ).length;
+
+      const extract = dayActivities.filter(
+        item =>
+          item.serviceUsed === 'extract' ||
+          (item.prompt && item.prompt.toLowerCase().includes('extract'))
+      ).length;
+
+      const rewrite = dayActivities.filter(
+        item =>
+          item.serviceUsed === 'rewrite' ||
+          (item.prompt && item.prompt.toLowerCase().includes('rewrite'))
+      ).length;
+
+      return {
+        date: dayName,
+        chats,
+        files,
+        links,
+        summarize,
+        extract,
+        rewrite,
+      };
+    });
+  }, [workshopHistory]);
+
+  // Update activity data when workshop history changes
+  useEffect(() => {
+    setActivityData(generateActivityData);
+  }, [generateActivityData]);
+
   // Modal state for live AI response
   const [liveModalOpen, setLiveModalOpen] = useState(false);
 
@@ -327,11 +403,15 @@ const Workshop: React.FC = () => {
   // File upload modal handlers
   const handleFileUploaded = (file: any) => {
     console.log('File uploaded:', file);
-    setLastUploadedFile(file); // Store the last uploaded file
 
-    // Since we clear files when modal closes, we can open immediately
-    // The file will be the only one in the array, so no confusion
-    setShowFileUploadModal(true);
+    // Only open the modal if the file upload was successful (status is 'completed')
+    if (file && file.status === 'completed') {
+      setLastUploadedFile(file); // Store the last uploaded file
+      setShowFileUploadModal(true);
+    } else {
+      console.log('File upload failed or subscription error - not opening modal');
+      // Don't open the modal for failed uploads or subscription errors
+    }
   };
 
   const handleFileProcessed = (fileId: string, result: any) => {
@@ -667,12 +747,12 @@ const Workshop: React.FC = () => {
         },
       }}
     >
-      {/* Feature Access Error Display */}
+      {/* Subscription Upgrade Modal */}
       {featureAccessError && (
-        <FeatureAccessErrorComponent
+        <SubscriptionUpgradeModal
+          open={true}
+          onClose={clearFeatureAccessError}
           error={featureAccessError}
-          onUpgrade={() => window.open('/dashboard/price-plan', '_blank')}
-          onDismiss={clearFeatureAccessError}
         />
       )}
 
@@ -1069,7 +1149,7 @@ const Workshop: React.FC = () => {
           sx={{ overflow: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
         >
           {/* File Actions */}
-          {files.length > 0 && (
+          {files.length > 0 && !showFileUploadModal && !isAnalysisPopupOpen && (
             <Box
               sx={{
                 ...cardStyle,

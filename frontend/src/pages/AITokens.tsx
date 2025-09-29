@@ -316,18 +316,25 @@ const AITokens: React.FC = () => {
       }
     });
 
-    // Build chart data for the specified number of days
+    // Build chart data for the specified number of days with cumulative totals
+    let cumulativeTotal = 0;
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(today.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
       const usage = usageByDate[dateStr] || { tokens: 0, features: [] };
 
+      // Add today's usage to cumulative total
+      cumulativeTotal += usage.tokens;
+
       chartData.push({
         date: format(date, 'MMM d'),
-        tokens: usage.tokens,
-        used: usage.tokens,
-        description: usage.tokens > 0 ? `Used for: ${usage.features.join(', ')}` : '',
+        tokens: cumulativeTotal, // Show cumulative total instead of daily usage
+        used: usage.tokens, // Keep daily usage for tooltip/reference
+        description:
+          usage.tokens > 0
+            ? `Daily: ${usage.tokens} tokens (Total: ${cumulativeTotal})`
+            : `Total: ${cumulativeTotal} tokens`,
       });
     }
 
@@ -515,12 +522,14 @@ const AITokens: React.FC = () => {
   remainingTokensCalc = computedTotalTokens - usedTokensCalc;
   percentUsedCalc =
     computedTotalTokens > 0 ? Math.round((usedTokensCalc / computedTotalTokens) * 100) : 0;
+  // Use real token data from API instead of calculated values
+  const percentUsed = Math.round((usedTokens / totalTokens) * 100);
   const tokenUsage = {
-    label: `Plan (${computedTotalTokens.toLocaleString()} tokens/month)`,
-    total: computedTotalTokens,
-    used: usedTokensCalc,
-    remaining: remainingTokensCalc,
-    percentUsed: percentUsedCalc,
+    label: `Plan (${totalTokens.toLocaleString()} tokens/month)`,
+    total: totalTokens,
+    used: usedTokens,
+    remaining: remainingTokens,
+    percentUsed: percentUsed,
   };
   console.log('AITokens: computed token usage', tokenUsage, 'subscription', subscription);
 
@@ -1194,29 +1203,31 @@ const AITokens: React.FC = () => {
                               })
                             : '';
                           return (
-                            <Box sx={{ 
-                              p: 2,
-                              backgroundColor: 'background.paper',
-                              border: '1px solid',
-                              borderColor: 'divider',
-                              borderRadius: 1,
-                              boxShadow: 2
-                            }}>
-                              <Typography 
-                                variant="subtitle2" 
-                                sx={{ 
+                            <Box
+                              sx={{
+                                p: 2,
+                                backgroundColor: 'background.paper',
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: 1,
+                                boxShadow: 2,
+                              }}
+                            >
+                              <Typography
+                                variant="subtitle2"
+                                sx={{
                                   color: 'text.primary',
                                   fontWeight: 600,
-                                  mb: 0.5
+                                  mb: 0.5,
                                 }}
                               >
                                 {formattedDate}
                               </Typography>
-                              <Typography 
-                                variant="body2" 
-                                sx={{ 
+                              <Typography
+                                variant="body2"
+                                sx={{
                                   color: 'text.primary',
-                                  lineHeight: 1.4
+                                  lineHeight: 1.4,
                                 }}
                               >
                                 +{point.used} tokens (used that day)
@@ -1231,11 +1242,11 @@ const AITokens: React.FC = () => {
                                 {isRenewal && (
                                   <>
                                     <br />
-                                    <Typography 
-                                      component="span" 
-                                      sx={{ 
+                                    <Typography
+                                      component="span"
+                                      sx={{
                                         color: 'error.main',
-                                        fontWeight: 600
+                                        fontWeight: 600,
                                       }}
                                     >
                                       Subscription Renewal

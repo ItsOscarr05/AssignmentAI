@@ -7,6 +7,7 @@ import {
   Edit as EditIcon,
   HourglassEmpty as HourglassIcon,
   InfoOutlined as InfoIcon,
+  Launch as LaunchIcon,
   MoreVert as MoreVertIcon,
   Refresh as RefreshIcon,
   Search as SearchIcon,
@@ -51,7 +52,9 @@ import { toast } from 'sonner';
 import AssignmentEditDialog from '../components/assignments/AssignmentEdit';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { assignments } from '../services/api/assignments';
+import { fileUploadService } from '../services/fileUploadService';
 import { mapToCoreSubject } from '../services/subjectService';
+import { useWorkshopStore } from '../services/WorkshopService';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 import { DateFormat, getDefaultDateFormat } from '../utils/dateFormat';
 
@@ -127,6 +130,11 @@ const Assignments: React.FC = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editAssignmentId, setEditAssignmentId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // File uploads and workshop history state
+  const [fileUploads, setFileUploads] = useState<any[]>([]);
+  const [workshopHistory, setWorkshopHistory] = useState<any[]>([]);
+  const { history: workshopHistoryFromStore } = useWorkshopStore();
 
   useEffect(() => {
     if (filterTimeframe !== 'total') {
@@ -243,10 +251,107 @@ const Assignments: React.FC = () => {
     }
   };
 
+  // Fetch file uploads
+  const fetchFileUploads = async () => {
+    try {
+      const response = await fileUploadService.getAll(0, 100);
+      setFileUploads(response.items || []);
+    } catch (error) {
+      console.error('Failed to fetch file uploads:', error);
+    }
+  };
+
+  // Fetch workshop history (links and file processing)
+  const fetchWorkshopHistory = async () => {
+    try {
+      // Get workshop history from the store (this includes file uploads and link processing)
+      setWorkshopHistory(workshopHistoryFromStore);
+    } catch (error) {
+      console.error('Failed to fetch workshop history:', error);
+    }
+  };
+
   useEffect(() => {
     fetchAssignments();
+    fetchFileUploads();
+    fetchWorkshopHistory();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Update workshop history when store changes
+  useEffect(() => {
+    setWorkshopHistory(workshopHistoryFromStore);
+  }, [workshopHistoryFromStore]);
+
+  // Combine all activities (assignments, file uploads, workshop history)
+  const combinedActivities = React.useMemo(() => {
+    const activities: any[] = [];
+
+    // Add assignments
+    assignmentsList.forEach(assignment => {
+      activities.push({
+        id: `assignment-${assignment.id}`,
+        type: 'assignment',
+        title: assignment.title,
+        subject: assignment.subject,
+        status: assignment.status,
+        description: assignment.description,
+        createdAt: assignment.createdAt,
+        tokensUsed: 0,
+        activityType: 'Assignment',
+        icon: '📝',
+      });
+    });
+
+    // Add file uploads
+    fileUploads.forEach(upload => {
+      activities.push({
+        id: `file-${upload.id}`,
+        type: 'file_upload',
+        title: upload.is_link
+          ? `Link: ${upload.link_title || upload.link_url}`
+          : upload.original_filename,
+        subject: 'Technology',
+        status: 'Completed',
+        description: upload.is_link ? `URL: ${upload.link_url}` : `File: ${upload.file_type}`,
+        createdAt: upload.created_at,
+        tokensUsed: 0,
+        activityType: upload.is_link ? 'Link Upload' : 'File Upload',
+        icon: upload.is_link ? '🔗' : '📄',
+      });
+    });
+
+    // Add workshop history (file processing, link processing, chats)
+    workshopHistory.forEach(item => {
+      activities.push({
+        id: `workshop-${item.id}`,
+        type: 'workshop_activity',
+        title:
+          item.type === 'file'
+            ? 'File Processing'
+            : item.type === 'link'
+            ? 'Link Processing'
+            : 'Chat Session',
+        subject: 'Technology',
+        status: 'Completed',
+        description: item.prompt || item.content || '',
+        createdAt: item.timestamp,
+        tokensUsed: 0,
+        activityType:
+          item.type === 'file'
+            ? 'File Processing'
+            : item.type === 'link'
+            ? 'Link Processing'
+            : 'Chat',
+        icon: item.type === 'file' ? '⚙️' : item.type === 'link' ? '🔗' : '💬',
+      });
+    });
+
+    // Sort by creation date (newest first)
+    return activities.sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }, [assignmentsList, fileUploads, workshopHistory]);
 
   const handleDeleteConfirm = async () => {
     if (!assignmentToDelete) return;
@@ -369,31 +474,30 @@ const Assignments: React.FC = () => {
   };
 
   // Get unique subjects for dropdown
-  const uniqueSubjects = Array.from(new Set(assignmentsList.map(a => a.subject))).sort();
+  const uniqueSubjects = Array.from(new Set(combinedActivities.map(a => a.subject))).sort();
 
-  const filteredAssignments = assignmentsList
-    .filter(assignment => {
-      const matchesStatus = filterStatus === 'all' || assignment.status === filterStatus;
+  const filteredAssignments = combinedActivities
+    .filter(activity => {
+      const matchesStatus = filterStatus === 'all' || activity.status === filterStatus;
       const matchesName =
-        filterName.trim() === '' ||
-        assignment.title.toLowerCase().includes(filterName.toLowerCase());
-      const matchesSubject = filterSubject === 'all' || assignment.subject === filterSubject;
+        filterName.trim() === '' || activity.title.toLowerCase().includes(filterName.toLowerCase());
+      const matchesSubject = filterSubject === 'all' || activity.subject === filterSubject;
 
-      const assignmentDate = dayjs(assignment.createdAt);
+      const activityDate = dayjs(activity.createdAt);
       const matchesTimeframe = (() => {
         if (filterTimeframe === 'total') return true;
         const now = dayjs();
-        if (filterTimeframe === 'daily') return now.isSame(assignmentDate, 'day');
-        if (filterTimeframe === 'weekly') return now.isSame(assignmentDate, 'week');
-        if (filterTimeframe === 'monthly') return now.isSame(assignmentDate, 'month');
-        if (filterTimeframe === 'yearly') return now.isSame(assignmentDate, 'year');
+        if (filterTimeframe === 'daily') return now.isSame(activityDate, 'day');
+        if (filterTimeframe === 'weekly') return now.isSame(activityDate, 'week');
+        if (filterTimeframe === 'monthly') return now.isSame(activityDate, 'month');
+        if (filterTimeframe === 'yearly') return now.isSame(activityDate, 'year');
         return true;
       })();
 
       const matchesDate =
         !filterDate ||
-        (dateView === 'year' && assignmentDate.isSame(filterDate, 'year')) ||
-        (dateView === 'month' && assignmentDate.isSame(filterDate, 'month'));
+        (dateView === 'year' && activityDate.isSame(filterDate, 'year')) ||
+        (dateView === 'month' && activityDate.isSame(filterDate, 'month'));
 
       return matchesStatus && matchesName && matchesSubject && matchesDate && matchesTimeframe;
     })
@@ -488,7 +592,7 @@ const Assignments: React.FC = () => {
             >
               <Box>
                 <Typography
-                  variant={breakpoint === 'tall' ? 'h5' : breakpoint === 'square' ? 'h4' : 'h3'}
+                  variant={breakpoint === 'tall' ? 'h6' : breakpoint === 'square' ? 'h5' : 'h4'}
                   sx={{
                     color: theme.palette.primary.main,
                     fontWeight: 400,
@@ -496,16 +600,16 @@ const Assignments: React.FC = () => {
                     pb: 0,
                     display: 'inline-block',
                     fontSize: getAspectRatioStyle(
-                      aspectRatioStyles.typography.h1.fontSize,
+                      aspectRatioStyles.typography.h2.fontSize,
                       breakpoint,
-                      '1.5rem'
+                      '1.25rem'
                     ),
                   }}
                 >
                   Assignments
                 </Typography>
                 <Typography
-                  variant="subtitle1"
+                  variant="body2"
                   color="text.secondary"
                   sx={{
                     mt:
@@ -521,7 +625,7 @@ const Assignments: React.FC = () => {
                     fontSize: getAspectRatioStyle(
                       aspectRatioStyles.typography.body1.fontSize,
                       breakpoint,
-                      '0.875rem'
+                      '0.75rem'
                     ),
                   }}
                 >
@@ -973,21 +1077,45 @@ const Assignments: React.FC = () => {
                         open={Boolean(anchorEl) && selectedAssignment === assignment.id}
                         onClose={handleMenuClose}
                       >
-                        <MenuItem onClick={() => handleViewAssignment(assignment.id)}>
-                          <VisibilityIcon sx={{ mr: 1 }} /> View Assignment
-                        </MenuItem>
-                        <MenuItem onClick={() => handleReopenInWorkshop(assignment.id)}>
-                          <RefreshIcon sx={{ mr: 1 }} /> Reopen in Workshop
-                        </MenuItem>
-                        <MenuItem onClick={() => handleEditAssignment(assignment.id)}>
-                          <EditIcon sx={{ mr: 1 }} /> Edit Title/Metadata
-                        </MenuItem>
-                        <MenuItem
-                          onClick={() => handleDeleteClick(assignment.id)}
-                          sx={{ color: 'error.main' }}
-                        >
-                          <DeleteIcon sx={{ mr: 1 }} /> Delete
-                        </MenuItem>
+                        {assignment.type === 'assignment' && (
+                          <>
+                            <MenuItem onClick={() => handleViewAssignment(assignment.id)}>
+                              <VisibilityIcon sx={{ mr: 1 }} /> View Assignment
+                            </MenuItem>
+                            <MenuItem onClick={() => handleReopenInWorkshop(assignment.id)}>
+                              <RefreshIcon sx={{ mr: 1 }} /> Reopen in Workshop
+                            </MenuItem>
+                            <MenuItem onClick={() => handleEditAssignment(assignment.id)}>
+                              <EditIcon sx={{ mr: 1 }} /> Edit Title/Metadata
+                            </MenuItem>
+                            <MenuItem
+                              onClick={() => handleDeleteClick(assignment.id)}
+                              sx={{ color: 'error.main' }}
+                            >
+                              <DeleteIcon sx={{ mr: 1 }} /> Delete
+                            </MenuItem>
+                          </>
+                        )}
+                        {(assignment.type === 'file_upload' ||
+                          assignment.type === 'workshop_activity') && (
+                          <>
+                            <MenuItem onClick={() => navigate('/dashboard/workshop')}>
+                              <RefreshIcon sx={{ mr: 1 }} /> Open in Workshop
+                            </MenuItem>
+                            <MenuItem
+                              onClick={() =>
+                                window.open(
+                                  assignment.description.includes('http')
+                                    ? assignment.description.split('URL: ')[1]
+                                    : '#',
+                                  '_blank'
+                                )
+                              }
+                            >
+                              <LaunchIcon sx={{ mr: 1 }} /> View Original
+                            </MenuItem>
+                          </>
+                        )}
                       </Menu>
                     </TableCell>
                   </TableRow>
