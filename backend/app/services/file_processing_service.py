@@ -1,5 +1,6 @@
 import os
 import io
+import re
 import uuid
 from typing import Dict, Any, List, Optional, Tuple, Union
 from pathlib import Path
@@ -267,21 +268,28 @@ class FileProcessingService:
                 - analysis_notes: Your reasoning for identifying these sections
                 """
             elif file_type in ['csv', 'xlsx', 'xls']:
+                has_calculations = content.get('has_calculations', False)
+                calculation_note = "\nNOTE: This spreadsheet contains calculation instructions that have been processed." if has_calculations else ""
+                
                 prompt = f"""
                 Analyze this spreadsheet data and identify:
                 1. Empty cells that need to be filled
                 2. Incomplete rows or columns
                 3. Missing data patterns
                 4. Areas that need calculation or completion
+                5. Data that requires mathematical operations or formulas
                 
                 Data content:
-                {content.get('data', '')}
+                {content.get('sheets', content.get('data', ''))}
+                {calculation_note}
                 
                 Provide a JSON response with:
                 - empty_cells: List of cell references that are empty
                 - incomplete_rows: Rows that appear incomplete
                 - data_patterns: Patterns in the data that suggest what should be filled
+                - calculation_areas: Areas that need mathematical calculations
                 - suggestions: What type of data should go in each empty area
+                - formulas_needed: Any Excel formulas that should be applied
                 """
             else:
                 prompt = f"""
@@ -1407,48 +1415,93 @@ class FileProcessingService:
             raise
     
     async def _process_csv(self, file_path: str) -> Dict[str, Any]:
-        """Extract content from CSV files"""
+        """Extract content from CSV files with enhanced calculation detection"""
         try:
             df = pd.read_csv(file_path)
+            
+            # Convert to records for processing
+            sheet_records = df.to_dict('records')
+            
+            # Detect and process calculation instructions
+            processed_records = await self._process_calculation_instructions(sheet_records)
+            
             return {
-                'data': df.to_dict('records'),
+                'data': processed_records,
                 'columns': df.columns.tolist(),
                 'rows': len(df),
-                'empty_cells': df.isnull().sum().to_dict()
+                'empty_cells': df.isnull().sum().to_dict(),
+                'has_calculations': self._has_calculation_instructions(processed_records)
             }
         except Exception as e:
             logger.error(f"Error processing CSV {file_path}: {str(e)}")
             raise
     
     async def _process_xlsx(self, file_path: str) -> Dict[str, Any]:
-        """Extract content from XLSX files"""
+        """Extract content from XLSX files with enhanced calculation detection"""
         try:
             workbook = openpyxl.load_workbook(file_path)
             sheets = {}
             
             for sheet_name in workbook.sheetnames:
                 sheet = workbook[sheet_name]
+                # Convert to DataFrame for processing
                 data = []
+                headers = []
+                
+                # Get headers from first row
+                first_row = True
                 for row in sheet.iter_rows(values_only=True):
-                    data.append(list(row))
-                sheets[sheet_name] = data
+                    if first_row:
+                        headers = [str(cell) if cell is not None else f'Column_{i}' for i, cell in enumerate(row)]
+                        first_row = False
+                        continue
+                    
+                    # Create record dictionary
+                    record = {}
+                    for i, cell in enumerate(row):
+                        col_name = headers[i] if i < len(headers) else f'Column_{i}'
+                        record[col_name] = cell
+                    data.append(record)
+                
+                # Process calculation instructions
+                processed_data = await self._process_calculation_instructions(data)
+                
+                # Convert back to list format for compatibility
+                processed_list = []
+                for record in processed_data:
+                    processed_list.append(list(record.values()))
+                
+                sheets[sheet_name] = processed_list
             
             return {
                 'sheets': sheets,
                 'sheet_names': workbook.sheetnames,
-                'active_sheet': workbook.active.title
+                'active_sheet': workbook.active.title,
+                'has_calculations': any(self._has_calculation_instructions([{headers[i]: row[i] for i in range(min(len(headers), len(row)))} for row in data]) for data in sheets.values() if data)
             }
         except Exception as e:
             logger.error(f"Error processing XLSX {file_path}: {str(e)}")
             raise
     
     async def _process_xls(self, file_path: str) -> Dict[str, Any]:
-        """Extract content from XLS files"""
+        """Extract content from XLS files with enhanced calculation detection"""
         try:
             df = pd.read_excel(file_path, sheet_name=None)
+            
+            # Process each sheet to detect calculation instructions
+            processed_sheets = {}
+            for sheet_name, sheet_df in df.items():
+                # Convert to records for processing
+                sheet_records = sheet_df.to_dict('records')
+                
+                # Detect and process calculation instructions
+                processed_records = await self._process_calculation_instructions(sheet_records)
+                processed_sheets[sheet_name] = processed_records
+            
             return {
-                'sheets': {name: sheet.to_dict('records') for name, sheet in df.items()},
-                'sheet_names': list(df.keys())
+                'sheets': processed_sheets,
+                'sheet_names': list(df.keys()),
+                'has_calculations': any(self._has_calculation_instructions(sheet) for sheet in processed_sheets.values())
             }
         except Exception as e:
             logger.error(f"Error processing XLS {file_path}: {str(e)}")
@@ -1778,6 +1831,138 @@ class FileProcessingService:
                             worksheet.cell(row=row_idx, column=col_idx, value=cell_value)
         
         return filled_workbook
+    
+    async def _process_calculation_instructions(self, sheet_records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Process calculation instructions in Excel sheet data"""
+        try:
+            processed_records = []
+            
+            for record in sheet_records:
+                processed_record = record.copy()
+                
+                # Check each field for calculation instructions
+                for field_name, field_value in record.items():
+                    if isinstance(field_value, str) and self._is_calculation_instruction(field_value):
+                        # Extract calculation instruction
+                        calculation_result = await self._execute_calculation_instruction(
+                            field_value, record, sheet_records
+                        )
+                        if calculation_result is not None:
+                            # Replace instruction with calculated value
+                            processed_record[field_name] = calculation_result
+                            logger.info(f"Executed calculation: {field_value} = {calculation_result}")
+                
+                processed_records.append(processed_record)
+            
+            return processed_records
+            
+        except Exception as e:
+            logger.error(f"Error processing calculation instructions: {str(e)}")
+            return sheet_records
+    
+    def _has_calculation_instructions(self, sheet_records: List[Dict[str, Any]]) -> bool:
+        """Check if sheet contains calculation instructions"""
+        for record in sheet_records:
+            for field_value in record.values():
+                if isinstance(field_value, str) and self._is_calculation_instruction(field_value):
+                    return True
+        return False
+    
+    def _is_calculation_instruction(self, text: str) -> bool:
+        """Check if text contains a calculation instruction"""
+        if not isinstance(text, str):
+            return False
+        
+        # Look for calculation patterns
+        calculation_patterns = [
+            r'compute\s+\w+\s*=\s*[^=]+',  # "Compute Revenue = Units * UnitPrice"
+            r'calculate\s+\w+\s*=\s*[^=]+',  # "Calculate Total = Price * Quantity"
+            r'=\s*[A-Za-z]+\s*[*+\-/]\s*[A-Za-z]+',  # "= Units * UnitPrice"
+            r'solve\s+for\s+\w+',  # "Solve for Revenue"
+        ]
+        
+        text_lower = text.lower().strip()
+        for pattern in calculation_patterns:
+            if re.search(pattern, text_lower, re.IGNORECASE):
+                return True
+        
+        return False
+    
+    async def _execute_calculation_instruction(self, instruction: str, current_record: Dict[str, Any], all_records: List[Dict[str, Any]]) -> Any:
+        """Execute a calculation instruction and return the result"""
+        try:
+            # Parse common calculation patterns
+            instruction_lower = instruction.lower().strip()
+            
+            # Pattern 1: "Compute Revenue = Units * UnitPrice"
+            compute_match = re.search(r'compute\s+(\w+)\s*=\s*(.+)', instruction_lower)
+            if compute_match:
+                target_field = compute_match.group(1)
+                formula = compute_match.group(2)
+                return await self._evaluate_formula(formula, current_record)
+            
+            # Pattern 2: "Calculate Total = Price * Quantity"
+            calculate_match = re.search(r'calculate\s+(\w+)\s*=\s*(.+)', instruction_lower)
+            if calculate_match:
+                target_field = calculate_match.group(1)
+                formula = calculate_match.group(2)
+                return await self._evaluate_formula(formula, current_record)
+            
+            # Pattern 3: Direct formula "= Units * UnitPrice"
+            if instruction_lower.startswith('='):
+                formula = instruction[1:].strip()
+                return await self._evaluate_formula(formula, current_record)
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error executing calculation instruction '{instruction}': {str(e)}")
+            return None
+    
+    async def _evaluate_formula(self, formula: str, record: Dict[str, Any]) -> Any:
+        """Evaluate a mathematical formula using record data"""
+        try:
+            # Clean the formula
+            formula = formula.strip()
+            
+            # Replace field names with values from the record
+            evaluated_formula = formula
+            for field_name, field_value in record.items():
+                if isinstance(field_value, (int, float)) or (isinstance(field_value, str) and field_value.replace('.', '').replace('-', '').isdigit()):
+                    # Replace field name with its value
+                    pattern = rf'\b{re.escape(field_name)}\b'
+                    evaluated_formula = re.sub(pattern, str(field_value), evaluated_formula, flags=re.IGNORECASE)
+            
+            # Handle multiplication
+            evaluated_formula = evaluated_formula.replace('*', ' * ')
+            
+            # Try to evaluate the formula safely
+            try:
+                # Only allow basic mathematical operations
+                allowed_chars = set('0123456789.+-*/() ')
+                if all(c in allowed_chars for c in evaluated_formula):
+                    result = eval(evaluated_formula)
+                    # Round to 2 decimal places for currency-like calculations
+                    if isinstance(result, float):
+                        return round(result, 2)
+                    return result
+            except:
+                pass
+            
+            # Fallback: try to extract numbers and operations manually
+            numbers = re.findall(r'\d+\.?\d*', evaluated_formula)
+            if len(numbers) >= 2 and '*' in formula:
+                try:
+                    num1, num2 = float(numbers[0]), float(numbers[1])
+                    return round(num1 * num2, 2)
+                except:
+                    pass
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error evaluating formula '{formula}': {str(e)}")
+            return None
     
     def _merge_code_content(self, original_content: Dict[str, Any], filled_content: Dict[str, Any]) -> str:
         """

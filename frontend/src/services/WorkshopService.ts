@@ -9,6 +9,7 @@ export interface WorkshopFile {
   path?: string;
   content?: string;
   analysis?: string;
+  processed_data?: any; // Add processed structured data
   uploaded_at?: string;
   progress?: number;
   status?: 'uploading' | 'processing' | 'completed' | 'error';
@@ -310,12 +311,12 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
       if (!response.ok) {
         const errorData = await response.json();
         console.log('Upload failed with response:', response.status, errorData);
-        
+
         // Create an error object that matches axios error structure
         const error = new Error(errorData.detail || 'File upload failed') as any;
         error.response = {
           status: response.status,
-          data: errorData
+          data: errorData,
         };
         throw error;
       }
@@ -337,6 +338,8 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
       const completedFile = {
         ...newFile,
         id: fileData.id, // Use the backend's file ID instead of frontend timestamp
+        name: fileData.name, // Use the corrected filename from backend (e.g., .xls instead of .csv)
+        type: fileData.type, // Use the corrected MIME type from backend (e.g., application/vnd.ms-excel)
         status: 'completed' as const,
         path: fileData.path,
         content: fileData.content,
@@ -348,8 +351,6 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
         files: state.files.map(f => (f.id === fileId ? completedFile : f)),
         history: [...state.history, historyItem],
       }));
-
-      return completedFile;
     } catch (error: any) {
       const errorFile = {
         ...newFile,
@@ -361,9 +362,16 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
       console.log('Error status:', error.response?.status);
       console.log('Error data:', error.response?.data);
       console.log('Error data type:', typeof error.response?.data);
-      console.log('Error data keys:', error.response?.data ? Object.keys(error.response.data) : 'no data');
+      console.log(
+        'Error data keys:',
+        error.response?.data ? Object.keys(error.response.data) : 'no data'
+      );
 
-      if (error.response?.status === 403 && error.response?.data && typeof error.response.data === 'object') {
+      if (
+        error.response?.status === 403 &&
+        error.response?.data &&
+        typeof error.response.data === 'object'
+      ) {
         console.log('Setting feature access error:', error.response.data);
         console.log('Error response data keys:', Object.keys(error.response.data));
         console.log('Error response data values:', Object.values(error.response.data));
@@ -378,7 +386,6 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
           error: 'Failed to process file',
         }));
       }
-      return errorFile;
     }
   },
 

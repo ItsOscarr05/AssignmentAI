@@ -677,8 +677,10 @@ class AISolvingEngine:
         - Explain the methodology
         - Include data analysis where applicable
         - Show step-by-step calculations
+        - For calculation instructions like "Compute Revenue = Units * UnitPrice", provide the actual calculated result
+        - Use proper Excel formula syntax when applicable
         
-        Provide the complete solution with formulas.
+        Provide the complete solution with formulas and calculated results.
         """
     
     def _get_fill_in_blank_prompt(self) -> str:

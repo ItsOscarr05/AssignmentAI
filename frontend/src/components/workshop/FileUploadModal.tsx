@@ -12,6 +12,7 @@ import {
   RemoveOutlined as MinimizeIcon,
   PictureAsPdfOutlined as PdfIcon,
   VisibilityOutlined as PreviewIcon,
+  TableChartOutlined as TableIcon,
   CloudUploadOutlined as UploadIcon,
 } from '@mui/icons-material';
 import {
@@ -31,6 +32,8 @@ import {
   ListItemIcon,
   ListItemText,
   Snackbar,
+  Tab,
+  Tabs,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -68,6 +71,8 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
   const [isLoadingContent, setIsLoadingContent] = useState(false);
   const [documentStructure, setDocumentStructure] = useState<any>(null);
   const [filledSections, setFilledSections] = useState<Map<string, string>>(new Map());
+  const [structuredFileData, setStructuredFileData] = useState<any>(null);
+  const [activeSheetTab, setActiveSheetTab] = useState(0);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -106,15 +111,375 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
     }
   }, [open, files, selectedFile]);
 
+  // Format spreadsheet content to show as structured data for table rendering
+  const formatSpreadsheetContent = (processedData: any, fileExtension: string): any => {
+    try {
+      // Handle different spreadsheet formats
+      if (processedData.sheets) {
+        // Excel format (XLSX/XLS) - return structured data for table rendering
+        const sheetNames = Object.keys(processedData.sheets);
+        const structuredData: any = {
+          type: 'excel',
+          sheets: {},
+          hasCalculations: processedData.has_calculations || false,
+        };
+
+        for (const sheetName of sheetNames) {
+          const sheetData = processedData.sheets[sheetName];
+
+          if (Array.isArray(sheetData) && sheetData.length > 0) {
+            // Convert array of arrays to structured table data
+            const headers = sheetData[0] || [];
+            const rows = sheetData.slice(1).map((row: any) => {
+              if (Array.isArray(row)) {
+                const rowObj: any = {};
+                headers.forEach((header: any, index: number) => {
+                  rowObj[header] = row[index] || '';
+                });
+                return rowObj;
+              }
+              return row;
+            });
+
+            structuredData.sheets[sheetName] = {
+              headers,
+              rows,
+              data: sheetData,
+            };
+          } else if (Array.isArray(sheetData.data)) {
+            // Handle pandas DataFrame format
+            const headers = Object.keys(sheetData.data[0] || {});
+            structuredData.sheets[sheetName] = {
+              headers,
+              rows: sheetData.data,
+              data: sheetData.data,
+            };
+          }
+        }
+
+        return structuredData;
+      } else if (processedData.data) {
+        // CSV format - return structured data
+        if (Array.isArray(processedData.data)) {
+          const headers = Object.keys(processedData.data[0] || {});
+          return {
+            type: 'csv',
+            headers,
+            rows: processedData.data,
+            data: processedData.data,
+          };
+        }
+      }
+
+      // Fallback: return as string
+      return {
+        type: 'text',
+        content: JSON.stringify(processedData, null, 2),
+      };
+    } catch (error) {
+      console.error('Error formatting spreadsheet content:', error);
+      return {
+        type: 'error',
+        content: 'Error formatting spreadsheet content.',
+      };
+    }
+  };
+
+  // Render Excel/CSV data as formatted tables
+  const renderSpreadsheetTable = (structuredData: any) => {
+    console.log('renderSpreadsheetTable called with:', structuredData);
+    if (!structuredData) {
+      console.log('No structured data, returning null');
+      return null;
+    }
+
+    if (structuredData.type === 'excel' && structuredData.sheets) {
+      console.log('Rendering Excel format with sheets:', structuredData.sheets);
+      const sheetNames = Object.keys(structuredData.sheets);
+
+      if (sheetNames.length === 1) {
+        // Single sheet - render directly
+        const sheetName = sheetNames[0];
+        const sheetData = structuredData.sheets[sheetName];
+        return renderTable(sheetData, sheetName);
+      } else {
+        // Multiple sheets - render with tabs
+        return (
+          <Box>
+            <Tabs
+              value={activeSheetTab}
+              onChange={(_, newValue) => setActiveSheetTab(newValue)}
+              sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
+            >
+              {sheetNames.map((sheetName, index) => (
+                <Tab key={sheetName} label={sheetName} />
+              ))}
+            </Tabs>
+            {sheetNames.map(
+              (sheetName, index) =>
+                activeSheetTab === index && (
+                  <Box key={sheetName}>
+                    {renderTable(structuredData.sheets[sheetName], sheetName)}
+                  </Box>
+                )
+            )}
+          </Box>
+        );
+      }
+    } else if (structuredData.type === 'csv') {
+      console.log('Rendering CSV format with data:', structuredData);
+      // CSV data
+      return renderTable(structuredData, 'Data');
+    }
+
+    console.log('No matching format found, returning null');
+    return null;
+  };
+
+  // Render individual table with Excel-like styling
+  const renderTable = (sheetData: any, title: string) => {
+    if (!sheetData || !sheetData.headers || !sheetData.rows) {
+      return (
+        <Typography variant="body2" color="text.secondary">
+          No data available
+        </Typography>
+      );
+    }
+
+    const { headers, rows } = sheetData;
+
+    // Generate column letters (A, B, C, D, etc.)
+    const getColumnLetter = (index: number) => {
+      let result = '';
+      while (index >= 0) {
+        result = String.fromCharCode(65 + (index % 26)) + result;
+        index = Math.floor(index / 26) - 1;
+      }
+      return result;
+    };
+
+    return (
+      <Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+          <Typography variant="h6" sx={{ color: '#2196f3' }}>
+            {title}
+          </Typography>
+          <Chip label={`${rows.length} rows`} size="small" color="primary" variant="outlined" />
+        </Box>
+
+        <Box
+          sx={{
+            border: '1px solid #d0d7de',
+            borderRadius: '4px',
+            overflow: 'hidden',
+            backgroundColor: '#ffffff',
+            maxHeight: 400,
+            overflow: 'auto',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+          }}
+        >
+          {/* Column Headers Row */}
+          <Box sx={{ display: 'flex', borderBottom: '1px solid #d0d7de' }}>
+            {/* Empty cell for row numbers column */}
+            <Box
+              sx={{
+                width: 40,
+                height: 24,
+                backgroundColor: '#f6f8fa',
+                borderRight: '1px solid #d0d7de',
+                borderBottom: '1px solid #d0d7de',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '11px',
+                fontWeight: 'bold',
+                color: '#656d76',
+              }}
+            >
+              {/* Empty top-left corner */}
+            </Box>
+
+            {/* Column letters */}
+            {headers.map((header: string, index: number) => (
+              <Box
+                key={index}
+                sx={{
+                  width: 100,
+                  height: 24,
+                  backgroundColor: '#f6f8fa',
+                  borderRight: '1px solid #d0d7de',
+                  borderBottom: '1px solid #d0d7de',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                  color: '#656d76',
+                }}
+              >
+                {getColumnLetter(index)}
+              </Box>
+            ))}
+          </Box>
+
+          {/* Data Rows */}
+          {rows.map((row: any, rowIndex: number) => (
+            <Box key={rowIndex} sx={{ display: 'flex' }}>
+              {/* Row number */}
+              <Box
+                sx={{
+                  width: 40,
+                  height: 24,
+                  backgroundColor: '#f6f8fa',
+                  borderRight: '1px solid #d0d7de',
+                  borderBottom: '1px solid #d0d7de',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                  color: '#656d76',
+                }}
+              >
+                {rowIndex + 1}
+              </Box>
+
+              {/* Data cells */}
+              {headers.map((header: string, colIndex: number) => (
+                <Box
+                  key={colIndex}
+                  sx={{
+                    width: 100,
+                    height: 24,
+                    backgroundColor: '#ffffff',
+                    borderRight: '1px solid #d0d7de',
+                    borderBottom: '1px solid #d0d7de',
+                    display: 'flex',
+                    alignItems: 'center',
+                    paddingLeft: '6px',
+                    paddingRight: '6px',
+                    fontSize: '11px',
+                    color: '#24292f',
+                    fontFamily:
+                      'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    cursor: 'text',
+                    '&:hover': {
+                      backgroundColor: '#f6f8fa',
+                    },
+                    // Highlight calculated values
+                    ...(typeof row[header] === 'number' &&
+                    row[header] > 0 &&
+                    header.toLowerCase().includes('revenue')
+                      ? {
+                          backgroundColor: '#e8f5e8',
+                          fontWeight: 'bold',
+                          color: '#2e7d32',
+                        }
+                      : {}),
+                  }}
+                >
+                  {row[header] || ''}
+                </Box>
+              ))}
+            </Box>
+          ))}
+        </Box>
+      </Box>
+    );
+  };
+
   const loadFileContent = async (file: WorkshopFile) => {
     setIsLoadingContent(true);
+    setActiveSheetTab(0); // Reset sheet tab when loading new file
     try {
       console.log('Loading content for file:', file);
 
       // Use the content that was already returned from the upload
       if (file.content) {
         console.log('Using content from file object:', file.content);
-        setOriginalFileContent(file.content);
+
+        // Check if this is a CSV/Excel file that might have processed calculations
+        const fileExtension = file.name.split('.').pop()?.toLowerCase();
+        const isSpreadsheetFile = ['csv', 'xlsx', 'xls'].includes(fileExtension || '');
+
+        if (isSpreadsheetFile) {
+          console.log('Processing spreadsheet file:', file.name);
+          console.log('File has processed_data:', !!file.processed_data);
+          console.log('File has analysis:', !!file.analysis);
+          console.log('File content:', file.content?.substring(0, 200) + '...');
+
+          // Check if we have processed data directly from the backend
+          if (file.processed_data) {
+            console.log('Using processed data from backend:', file.processed_data);
+            const structuredData = formatSpreadsheetContent(file.processed_data, fileExtension);
+            console.log('Formatted structured data:', structuredData);
+            setStructuredFileData(structuredData);
+
+            // Also set text content for fallback
+            if (structuredData.type === 'excel' && structuredData.sheets) {
+              // Format as CSV for text display
+              const firstSheet = Object.values(structuredData.sheets)[0] as any;
+              if (firstSheet && firstSheet.headers && firstSheet.rows) {
+                const csvContent = [
+                  firstSheet.headers.join(','),
+                  ...firstSheet.rows.map((row: any) =>
+                    firstSheet.headers.map((h: string) => row[h] || '').join(',')
+                  ),
+                ].join('\n');
+                setOriginalFileContent(csvContent);
+              } else {
+                setOriginalFileContent(file.content || '');
+              }
+            } else if (structuredData.type === 'csv') {
+              // For CSV, format the data
+              if (structuredData.headers && structuredData.rows) {
+                const csvContent = [
+                  structuredData.headers.join(','),
+                  ...structuredData.rows.map((row: any) =>
+                    structuredData.headers.map((h: string) => row[h] || '').join(',')
+                  ),
+                ].join('\n');
+                setOriginalFileContent(csvContent);
+              } else {
+                setOriginalFileContent(file.content || '');
+              }
+            } else {
+              setOriginalFileContent(file.content || '');
+            }
+
+            console.log('Using structured spreadsheet data:', structuredData);
+          } else if (file.analysis) {
+            // Fallback: try to parse the analysis to see if it contains processed data
+            try {
+              const analysisData =
+                typeof file.analysis === 'string' ? JSON.parse(file.analysis) : file.analysis;
+
+              // Check if we have processed sheets data
+              if (analysisData && (analysisData.sheets || analysisData.data)) {
+                const structuredData = formatSpreadsheetContent(analysisData, fileExtension);
+                setStructuredFileData(structuredData);
+                setOriginalFileContent(file.content || '');
+                console.log('Using structured spreadsheet data from analysis:', structuredData);
+              } else {
+                setOriginalFileContent(file.content || '');
+                setStructuredFileData(null);
+              }
+            } catch (parseError) {
+              console.log('Could not parse analysis data, using raw content');
+              setOriginalFileContent(file.content || '');
+              setStructuredFileData(null);
+            }
+          } else {
+            setOriginalFileContent(file.content || '');
+            setStructuredFileData(null);
+          }
+        } else {
+          setOriginalFileContent(file.content || '');
+          setStructuredFileData(null);
+        }
 
         // Set empty document structure since we're showing raw content
         setDocumentStructure({
@@ -657,7 +1022,12 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
                 sx={{ color: '#2196f3', display: 'flex', alignItems: 'center', gap: 1 }}
               >
                 <FileIcon />
-                {documentStructure ? 'Document Structure' : 'Original File Content'}
+                {documentStructure
+                  ? 'Document Structure'
+                  : structuredFileData &&
+                    (structuredFileData.type === 'excel' || structuredFileData.type === 'csv')
+                  ? 'Spreadsheet Preview'
+                  : 'Original File Content'}
               </Typography>
 
               {/* Show table structure if available, otherwise show text content */}
@@ -665,6 +1035,13 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
               documentStructure.sections &&
               documentStructure.sections.length > 0 ? (
                 renderTableStructure()
+              ) : structuredFileData &&
+                (structuredFileData.type === 'excel' || structuredFileData.type === 'csv') ? (
+                // Show formatted table for Excel/CSV files
+                <Box sx={{ mb: 2 }}>
+                  {console.log('Rendering spreadsheet table with data:', structuredFileData)}
+                  {renderSpreadsheetTable(structuredFileData)}
+                </Box>
               ) : (
                 <Box
                   sx={{
@@ -981,6 +1358,11 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
           { label: 'FILL', icon: FillIcon, color: '#4caf50' },
           { label: 'PREVIEW', icon: PreviewIcon, color: '#ff9800' },
           { label: 'DOWNLOAD', icon: DownloadIcon, color: '#9c27b0' },
+          // Add Excel button for spreadsheet files
+          ...(selectedFile &&
+          ['csv', 'xlsx', 'xls'].includes(selectedFile.name.split('.').pop()?.toLowerCase() || '')
+            ? [{ label: 'OPEN IN EXCEL', icon: TableIcon, color: '#2e7d32' }]
+            : []),
         ].map(({ label, icon: Icon, color }) => (
           <Button
             key={label}
@@ -999,6 +1381,33 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
                   case 'DOWNLOAD':
                     if (filledFiles.has(selectedFile.id)) {
                       handleDownloadFilled(selectedFile);
+                    }
+                    break;
+                  case 'OPEN IN EXCEL':
+                    if (selectedFile.path) {
+                      try {
+                        // Try multiple methods to open Excel
+                        const filePath = selectedFile.path.replace(/\\/g, '/');
+
+                        // Method 1: Windows Excel protocol
+                        const excelUrl = `ms-excel:ofe|u|file:///${filePath}`;
+                        window.open(excelUrl, '_blank');
+
+                        // Method 2: Fallback - try to download and open
+                        setTimeout(() => {
+                          const link = document.createElement('a');
+                          link.href = `/api/v1/workshop/files/${selectedFile.id}/download`;
+                          link.download = selectedFile.name;
+                          link.click();
+                        }, 1000);
+                      } catch (error) {
+                        console.error('Error opening in Excel:', error);
+                        // Fallback: download the file
+                        const link = document.createElement('a');
+                        link.href = `/api/v1/workshop/files/${selectedFile.id}/download`;
+                        link.download = selectedFile.name;
+                        link.click();
+                      }
                     }
                     break;
                 }

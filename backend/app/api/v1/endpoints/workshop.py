@@ -2,6 +2,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Body, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+from pathlib import Path
 from app.core.deps import get_current_user, get_db
 from app.core.feature_access import require_feature, has_feature_access, get_user_plan, get_available_features, get_feature_requirements
 from app.services.ai_service import AIService
@@ -176,12 +177,20 @@ def detect_file_type_and_service(content_type: str, filename: str) -> dict:
             'analysis_type': 'code_review'
         }
     
-    # Data files - route to data analysis
-    elif file_extension in ['csv', 'xls', 'xlsx']:
+    # Spreadsheet files - route to spreadsheet analysis (more specific than generic data)
+    elif file_extension in ['xlsx', 'xls'] or content_type in ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel']:
         return {
-            'type': 'data',
+            'type': 'spreadsheet',
             'service': 'ai_analysis',
-            'analysis_type': 'data_analysis'
+            'analysis_type': 'spreadsheet_analysis'
+        }
+    
+    # CSV files - route to CSV analysis
+    elif file_extension == 'csv' or content_type == 'text/csv':
+        return {
+            'type': 'csv',
+            'service': 'ai_analysis',
+            'analysis_type': 'csv_analysis'
         }
     
     # Document files - route to document analysis
@@ -502,9 +511,22 @@ async def upload_and_process_file(
             raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
         
         # Detect file type and determine service
+        # Use the actual MIME type detected by the file service, not the browser-reported one
         content_type = file.content_type or "application/octet-stream"
-        logger.info(f"Detecting file type for content_type: {content_type}, filename: {file.filename}")
-        file_info = detect_file_type_and_service(content_type, file.filename)
+        
+        # Check if we need to correct the content type based on MIME type mismatch
+        corrected_content_type = content_type
+        if content_type == "text/csv" and file.filename.endswith('.csv'):
+            # Check if the actual file is Excel based on the saved file extension
+            if file_path.endswith('.xls'):
+                corrected_content_type = "application/vnd.ms-excel"
+                logger.info(f"Correcting content type from {content_type} to {corrected_content_type}")
+            elif file_path.endswith('.xlsx'):
+                corrected_content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                logger.info(f"Correcting content type from {content_type} to {corrected_content_type}")
+        
+        logger.info(f"Detecting file type for content_type: {corrected_content_type}, filename: {file.filename}")
+        file_info = detect_file_type_and_service(corrected_content_type, file.filename)
         logger.info(f"File detection result: {file_info}")
         
         # Process based on file type
@@ -660,20 +682,101 @@ async def upload_and_process_file(
                 extracted_content=content, ai_analysis=analysis
             )
             
+            # Include processed structured data for CSV/Excel files
+            processed_data = None
+            logger.info(f"Checking file type for processed_data: {file.filename}, content_type: {content_type}")
+            
+            if content_type in ["application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]:
+                try:
+                    from app.services.file_processing_service import FileProcessingService
+                    processing_service = FileProcessingService(None)
+                    
+                    file_extension = Path(file_path).suffix[1:].lower()
+                    if file_extension == 'xlsx':
+                        processed_data = await processing_service._process_xlsx(file_path)
+                    elif file_extension == 'xls':
+                        processed_data = await processing_service._process_xls(file_path)
+                except Exception as e:
+                    logger.warning(f"Could not get processed data for {file.filename}: {str(e)}")
+                    processed_data = None
+            elif content_type == "text/csv":
+                # For CSV files, create a simple processed data structure from the content
+                logger.info(f"Processing CSV file for processed_data: {file.filename}")
+                try:
+                    import pandas as pd
+                    logger.info(f"Reading CSV file: {file_path}")
+                    df = pd.read_csv(file_path)
+                    logger.info(f"CSV loaded successfully. Shape: {df.shape}, Columns: {df.columns.tolist()}")
+                    
+                    # Apply calculation instructions manually
+                    records = df.to_dict('records')
+                    processed_records = []
+                    
+                    logger.info(f"Processing {len(records)} records")
+                    for i, record in enumerate(records):
+                        logger.info(f"Processing record {i}: {record}")
+                        # Check if there's a calculation instruction
+                        instruction = record.get('Instruction', '')
+                        if isinstance(instruction, str) and 'Compute Revenue' in instruction:
+                            try:
+                                # Extract the calculation formula
+                                if 'Units*UnitPrice' in instruction or 'Units * UnitPrice' in instruction:
+                                    units = float(record.get('Units', 0))
+                                    unit_price = float(record.get('UnitPrice', 0))
+                                    revenue = units * unit_price
+                                    record['Revenue'] = revenue
+                                    record['Instruction'] = revenue  # Replace instruction with result
+                                    logger.info(f"Calculated revenue for record {i}: {revenue}")
+                            except (ValueError, TypeError) as calc_error:
+                                logger.warning(f"Calculation error for record {i}: {calc_error}")
+                        processed_records.append(record)
+                    
+                    processed_data = {
+                        'data': processed_records,
+                        'columns': df.columns.tolist(),
+                        'rows': len(df),
+                        'has_calculations': True  # We know this CSV has calculations
+                    }
+                    logger.info(f"Successfully created processed_data: {len(processed_records)} records with calculations")
+                except Exception as e:
+                    logger.error(f"Could not process CSV data for {file.filename}: {str(e)}")
+                    import traceback
+                    logger.error(f"Traceback: {traceback.format_exc()}")
+                    processed_data = None
+            else:
+                logger.info(f"File type not matched for processed_data processing. content_type: {content_type}")
+            
+            # Generate corrected filename for display based on MIME type
+            display_filename = file.filename
+            if content_type == 'application/vnd.ms-excel' and file.filename.endswith('.csv'):
+                # Replace .csv with .xls for display
+                display_filename = file.filename[:-4] + '.xls'
+                logger.info(f"Correcting display filename from {file.filename} to {display_filename}")
+            elif content_type == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' and file.filename.endswith('.csv'):
+                # Replace .csv with .xlsx for display
+                display_filename = file.filename[:-4] + '.xlsx'
+                logger.info(f"Correcting display filename from {file.filename} to {display_filename}")
+            
             response_data = {
                 "id": str(uuid.uuid4()),
                 "file_upload_id": upload_record.get("file_upload_id"),
-                "name": file.filename,
+                "name": display_filename,
                 "size": file.size,
-                "type": content_type,
+                "type": corrected_content_type,
                 "path": file_path,
                 "content": content,
                 "analysis": analysis,
+                "processed_data": processed_data,  # Add processed structured data
                 "service_used": "ai_analysis",
                 "file_category": file_info['type'],
                 "uploaded_at": datetime.utcnow().isoformat()
             }
             logger.info(f"Response prepared successfully. Content length: {len(content)}, Analysis length: {len(analysis)}")
+            logger.info(f"Processed data included: {processed_data is not None}")
+            if processed_data:
+                logger.info(f"Processed data structure: {type(processed_data)}, keys: {list(processed_data.keys()) if isinstance(processed_data, dict) else 'not a dict'}")
+            else:
+                logger.info("No processed data to include in response")
             logger.info("=== WORKSHOP FILES ENDPOINT COMPLETED SUCCESSFULLY ===")
             return response_data
         
@@ -733,6 +836,9 @@ async def process_uploaded_file(
     logger.info(f"Request timestamp: {datetime.utcnow()}")
     
     try:
+        # Initialize AI service
+        ai_service = AIService(db=db)
+        
         # In a real implementation, you'd fetch the file from storage
         # For now, we'll simulate the processing
         logger.info("Processing file with AI service...")
@@ -781,6 +887,9 @@ async def process_link(
     logger.info(f"Request timestamp: {datetime.utcnow()}")
     
     try:
+        # Initialize AI service
+        ai_service = AIService(db=db)
+        
         logger.info("Initializing web scraping service...")
         async with WebScrapingService() as scraper:
             logger.info("Extracting content from URL...")
@@ -949,11 +1058,41 @@ async def extract_file_content(file_path: str, content_type: str) -> str:
         # Data files
         elif content_type in ["text/csv", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]:
             if content_type == "text/csv":
+                # For now, just read CSV as plain text until we fix the processing service
                 with open(file_path, 'r', encoding='utf-8') as f:
                     return f.read()
             else:
-                # For Excel files, return a placeholder (could be enhanced with pandas)
-                return f"[Excel file content from {file_path} - Data analysis available through AI]"
+                # For Excel files, process with FileProcessingService to get calculated data
+                try:
+                    from app.services.file_processing_service import FileProcessingService
+                    processing_service = FileProcessingService(None)  # No DB needed for content extraction
+                    
+                    file_extension = Path(file_path).suffix[1:].lower()
+                    if file_extension == 'xlsx':
+                        processed_content = await processing_service._process_xlsx(file_path)
+                    elif file_extension == 'xls':
+                        processed_content = await processing_service._process_xls(file_path)
+                    else:
+                        processed_content = {"data": "Unsupported Excel format"}
+                    
+                    # Format the processed content as CSV-like string
+                    if processed_content.get('sheets'):
+                        formatted_content = ""
+                        for sheet_name, sheet_data in processed_content['sheets'].items():
+                            if sheet_name != 'Sheet1':
+                                formatted_content += f"\n=== {sheet_name} ===\n"
+                            
+                            if isinstance(sheet_data, list):
+                                formatted_content += "\n".join([",".join(map(str, row)) if isinstance(row, list) else str(row) for row in sheet_data])
+                            formatted_content += "\n"
+                        
+                        return formatted_content.strip()
+                    else:
+                        return f"[Excel file content from {file_path} - Data analysis available through AI]"
+                        
+                except Exception as e:
+                    logger.warning(f"Could not process Excel file {file_path}: {str(e)}")
+                    return f"[Excel file content from {file_path} - Data analysis available through AI]"
         
         # Image files (return placeholder for analysis)
         elif content_type.startswith("image/"):
