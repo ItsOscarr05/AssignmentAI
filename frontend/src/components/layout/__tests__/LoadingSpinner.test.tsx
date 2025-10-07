@@ -72,92 +72,76 @@ describe('LoadingSpinner', () => {
   it('renders the loading spinner with default props', () => {
     renderLoadingSpinner();
     const spinner = screen.getByRole('progressbar');
-    expect(spinner).toBeInTheDocument();
-    expect(spinner).toHaveAttribute('aria-busy', 'true');
+    expect(spinner).toBeTruthy();
+    expect(spinner.getAttribute('aria-busy')).toBe('true');
   });
 
   it('renders with custom size', () => {
     renderLoadingSpinner({ size: 60 });
     const spinner = screen.getByRole('progressbar');
-    expect(spinner).toHaveStyle({
-      width: '60px',
-      height: '60px',
-    });
+    expect(spinner.style.width).toBe('60px');
+    expect(spinner.style.height).toBe('60px');
   });
 
   it('renders with custom color', () => {
     renderLoadingSpinner({ color: 'secondary' });
     const spinner = screen.getByRole('progressbar');
-    expect(spinner).toHaveStyle({
-      color: 'rgb(244, 67, 54)',
-    });
+    expect(spinner.style.color).toBe('rgb(244, 67, 54)');
   });
 
   it('renders with custom thickness', () => {
     renderLoadingSpinner({ thickness: 4 });
     const spinner = screen.getByRole('progressbar');
-    expect(spinner).toBeInTheDocument();
+    expect(spinner).toBeTruthy();
   });
 
   it('renders with custom message', () => {
     renderLoadingSpinner({ message: 'Loading data...' });
-    expect(screen.getByText('Loading data...')).toBeInTheDocument();
+    expect(screen.getByText('Loading data...')).toBeTruthy();
   });
 
   it('renders with proper container styles', () => {
     renderLoadingSpinner();
     const container = screen.getByTestId('loading-spinner-container');
-    expect(container).toHaveStyle({
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '24px',
-      margin: '16px',
-    });
+    expect(container.style.display).toBe('flex');
+    expect(container.style.flexDirection).toBe('column');
+    expect(container.style.alignItems).toBe('center');
+    expect(container.style.justifyContent).toBe('center');
+    expect(container.style.padding).toBe('24px');
+    expect(container.style.margin).toBe('16px');
   });
 
   it('renders with proper message styles', () => {
     renderLoadingSpinner({ message: 'Loading data...' });
     const message = screen.getByText('Loading data...');
-    expect(message).toHaveStyle({
-      marginTop: '16px',
-      color: 'rgb(102, 102, 102)',
-      fontSize: '1rem',
-      fontWeight: 400,
-    });
+    expect(message.style.marginTop).toBe('16px');
+    expect(message.style.color).toBe('rgb(102, 102, 102)');
+    expect(message.style.fontSize).toBe('1rem');
+    expect(message.style.fontWeight).toBe('400');
   });
 
   it('renders with proper spinner styles', () => {
     renderLoadingSpinner();
     const spinner = screen.getByRole('progressbar');
-    expect(spinner).toHaveStyle({
-      color: 'rgb(211, 47, 47)',
-      animation: 'spin 1s linear infinite',
-    });
+    expect(spinner.style.color).toBe('rgb(211, 47, 47)');
+    expect(spinner.style.animation).toBe('spin 1s linear infinite');
   });
 
   it('renders with proper responsive design', () => {
     renderLoadingSpinner();
     const container = screen.getByTestId('loading-spinner-container');
-    expect(container).toHaveStyle({
-      padding: '24px',
-    });
+    expect(container.style.padding).toBe('24px');
   });
 
   it('renders with proper margin when no message is provided', () => {
     renderLoadingSpinner();
     const container = screen.getByTestId('loading-spinner-container');
-    expect(container).toHaveStyle({
-      margin: '16px',
-    });
+    expect(container.style.margin).toBe('16px');
   });
 
   it('renders with proper margin when message is provided', () => {
     renderLoadingSpinner({ message: 'Loading data...' });
     const container = screen.getByTestId('loading-spinner-container');
-    expect(container).toHaveStyle({
-      margin: '24px',
-    });
+    expect(container.style.margin).toBe('24px');
   });
 });

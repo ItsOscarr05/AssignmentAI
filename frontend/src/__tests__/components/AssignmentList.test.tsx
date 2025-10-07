@@ -2,8 +2,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import AssignmentList from '../../components/assignments/AssignmentList';
 import { ThemeProvider } from '../../contexts/ThemeContext';
-import AssignmentList from '../assignments/AssignmentList';
 
 // Mock data
 const mockAssignments = [
@@ -104,7 +104,7 @@ describe('AssignmentList', () => {
 
     // First verify we can find the table
     const table = screen.getByRole('table');
-    expect(table).toBeInTheDocument();
+    expect(table).toBeTruthy();
 
     // Then verify we can find the headers
     const tableHeaders = within(table).getAllByRole('columnheader');
@@ -120,8 +120,8 @@ describe('AssignmentList', () => {
     expect(headerTexts).toContain('status');
 
     // Verify the mock data is displayed
-    expect(screen.getByText('Test 1')).toBeInTheDocument();
-    expect(screen.getByText('Math')).toBeInTheDocument();
-    expect(screen.getByText('Active')).toBeInTheDocument();
+    expect(screen.getByText('Test 1')).toBeTruthy();
+    expect(screen.getByText('Math')).toBeTruthy();
+    expect(screen.getByText('Active')).toBeTruthy();
   });
 });

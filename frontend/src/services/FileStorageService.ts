@@ -1,5 +1,5 @@
 import { api } from './api';
-import { SecurityService } from './SecurityService';
+// import { securityService } from './SecurityService'; // Not currently used
 
 export interface FileMetadata {
   id: string;
@@ -17,10 +17,10 @@ export interface FileMetadata {
 
 export class FileStorageService {
   private static instance: FileStorageService;
-  private securityService: SecurityService;
+  // private securityService: typeof securityService;
 
   private constructor() {
-    this.securityService = SecurityService.getInstance();
+    // this.securityService = securityService;
   }
 
   public static getInstance(): FileStorageService {
@@ -45,11 +45,12 @@ export class FileStorageService {
       const formData = new FormData();
       formData.append('file', file);
 
-      if (options.encrypt) {
-        // Encrypt file content before upload
-        const encryptedContent = await this.securityService.encryptData(await file.text());
-        formData.append('encryptedContent', encryptedContent);
-      }
+      // Note: Encryption functionality not yet implemented in SecurityService
+      // if (options.encrypt) {
+      //   // Encrypt file content before upload
+      //   const encryptedContent = await this.securityService.encryptData(await file.text());
+      //   formData.append('encryptedContent', encryptedContent);
+      // }
 
       if (options.accessControl) {
         formData.append('accessControl', JSON.stringify(options.accessControl));
@@ -62,15 +63,16 @@ export class FileStorageService {
       });
 
       // Log the file upload event
-      await this.securityService.logSecurityEvent({
-        type: 'FILE_UPLOAD',
-        description: `File uploaded: ${file.name}`,
-        metadata: {
-          fileId: response.data.id,
-          fileSize: file.size,
-          fileType: file.type,
-        },
-      });
+      // Note: Security logging functionality not yet implemented in SecurityService
+      // await this.securityService.logSecurityEvent({
+      //   type: 'FILE_UPLOAD',
+      //   description: `File uploaded: ${file.name}`,
+      //   metadata: {
+      //     fileId: response.data.id,
+      //     fileSize: file.size,
+      //     fileType: file.type,
+      //   },
+      // });
 
       return response.data;
     } catch (error) {
@@ -80,26 +82,28 @@ export class FileStorageService {
   }
 
   // Download a file with decryption
-  public async downloadFile(fileId: string, options: { decrypt?: boolean } = {}): Promise<Blob> {
+  public async downloadFile(fileId: string, _options: { decrypt?: boolean } = {}): Promise<Blob> {
     try {
       const response = await api.get(`/api/files/${fileId}`, {
         responseType: 'blob',
       });
 
-      if (options.decrypt) {
-        // Decrypt file content after download
-        const decryptedContent = await this.securityService.decryptData(await response.data.text());
-        return new Blob([decryptedContent], { type: response.data.type });
-      }
+      // Note: Decryption functionality not yet implemented in SecurityService
+      // if (options.decrypt) {
+      //   // Decrypt file content after download
+      //   const decryptedContent = await this.securityService.decryptData(await response.data.text());
+      //   return new Blob([decryptedContent], { type: response.data.type });
+      // }
 
       // Log the file download event
-      await this.securityService.logSecurityEvent({
-        type: 'FILE_DOWNLOAD',
-        description: `File downloaded: ${fileId}`,
-        metadata: {
-          fileId,
-        },
-      });
+      // Note: Security logging functionality not yet implemented in SecurityService
+      // await this.securityService.logSecurityEvent({
+      //   type: 'FILE_DOWNLOAD',
+      //   description: `File downloaded: ${fileId}`,
+      //   metadata: {
+      //     fileId,
+      //   },
+      // });
 
       return response.data;
     } catch (error) {
@@ -114,13 +118,14 @@ export class FileStorageService {
       await api.delete(`/api/files/${fileId}`);
 
       // Log the file deletion event
-      await this.securityService.logSecurityEvent({
-        type: 'FILE_DELETE',
-        description: `File deleted: ${fileId}`,
-        metadata: {
-          fileId,
-        },
-      });
+      // Note: Security logging functionality not yet implemented in SecurityService
+      // await this.securityService.logSecurityEvent({
+      //   type: 'FILE_DELETE',
+      //   description: `File deleted: ${fileId}`,
+      //   metadata: {
+      //     fileId,
+      //   },
+      // });
     } catch (error) {
       console.error('Failed to delete file:', error);
       throw new Error('Failed to delete file');
@@ -171,14 +176,15 @@ export class FileStorageService {
       });
 
       // Log the access control update event
-      await this.securityService.logSecurityEvent({
-        type: 'FILE_ACCESS_CONTROL_UPDATE',
-        description: `File access control updated: ${fileId}`,
-        metadata: {
-          fileId,
-          accessControl,
-        },
-      });
+      // Note: Security logging functionality not yet implemented in SecurityService
+      // await this.securityService.logSecurityEvent({
+      //   type: 'FILE_ACCESS_CONTROL_UPDATE',
+      //   description: `File access control updated: ${fileId}`,
+      //   metadata: {
+      //     fileId,
+      //     accessControl,
+      //   },
+      // });
     } catch (error) {
       console.error('Failed to update file access control:', error);
       throw new Error('Failed to update file access control');

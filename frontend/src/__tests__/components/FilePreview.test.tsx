@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import FilePreview from '../files/FilePreview';
+import FilePreview from '../../components/files/FilePreview';
 
 // Mock Material-UI components
 vi.mock('@mui/material', () => ({
@@ -75,12 +75,12 @@ describe('FilePreview', () => {
 
   it('renders file name', () => {
     render(<FilePreview {...mockFile} onClose={() => {}} />);
-    expect(screen.getByText('test.pdf')).toBeInTheDocument();
+    expect(screen.getByText('test.pdf')).toBeTruthy();
   });
 
   it('renders file type icon', () => {
     render(<FilePreview {...mockFile} onClose={() => {}} />);
-    expect(screen.getByTestId('pdf-preview')).toBeInTheDocument();
+    expect(screen.getByTestId('pdf-preview')).toBeTruthy();
   });
 
   it('calls onClose when close button is clicked', () => {
@@ -118,7 +118,7 @@ describe('FilePreview', () => {
 
     // Check for loading state immediately
     const loadingSpinner = screen.getByTestId('loading-spinner');
-    expect(loadingSpinner).toBeInTheDocument();
+    expect(loadingSpinner).toBeTruthy();
   });
 
   it('renders file preview for image files', () => {
@@ -129,12 +129,12 @@ describe('FilePreview', () => {
     };
 
     render(<FilePreview {...imageFile} onClose={() => {}} />);
-    expect(screen.getByTestId('preview-image')).toHaveAttribute('src', imageFile.fileUrl);
+    expect(screen.getByTestId('preview-image').getAttribute('src')).toBe(imageFile.fileUrl);
   });
 
   it('renders file preview for PDF files', () => {
     render(<FilePreview {...mockFile} onClose={() => {}} />);
-    expect(screen.getByTestId('pdf-preview')).toBeInTheDocument();
+    expect(screen.getByTestId('pdf-preview')).toBeTruthy();
   });
 
   it('renders file preview for text files', async () => {
@@ -151,6 +151,6 @@ describe('FilePreview', () => {
 
     // Wait for loading to complete and content to appear
     const content = await screen.findByText('Sample text content');
-    expect(content).toBeInTheDocument();
+    expect(content).toBeTruthy();
   });
 });

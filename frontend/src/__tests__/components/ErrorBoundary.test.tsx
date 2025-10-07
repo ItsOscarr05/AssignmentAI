@@ -1,8 +1,8 @@
 import { ThemeProvider } from '@mui/material/styles';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { ErrorBoundary } from '../../components/ErrorBoundary';
 import { theme } from '../../theme';
-import { ErrorBoundary } from '../ErrorBoundary';
 
 // Component that throws an error
 const ThrowError = () => {
@@ -22,7 +22,7 @@ describe('ErrorBoundary', () => {
       </ThemeProvider>
     );
 
-    expect(screen.getByText('Normal content')).toBeInTheDocument();
+    expect(screen.getByText('Normal content')).toBeTruthy();
   });
 
   it('renders error UI when there is an error', () => {
@@ -37,11 +37,11 @@ describe('ErrorBoundary', () => {
       </ThemeProvider>
     );
 
-    expect(screen.getByText('Something went wrong')).toBeInTheDocument();
+    expect(screen.getByText('Something went wrong')).toBeTruthy();
     expect(
       screen.getByText('We apologize for the inconvenience. Please try refreshing the page.')
-    ).toBeInTheDocument();
-    expect(screen.getByText('Refresh Page')).toBeInTheDocument();
+    ).toBeTruthy();
+    expect(screen.getByText('Refresh Page')).toBeTruthy();
 
     consoleSpy.mockRestore();
   });

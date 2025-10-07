@@ -61,8 +61,8 @@ describe('SubmissionList', () => {
     renderSubmissionList();
 
     mockSubmissions.forEach(submission => {
-      expect(screen.getByText(`Content: ${submission.content}`)).toBeInTheDocument();
-      expect(screen.getByText(`Status: ${submission.status}`)).toBeInTheDocument();
+      expect(screen.getByText(`Content: ${submission.content}`)).toBeTruthy();
+      expect(screen.getByText(`Status: ${submission.status}`)).toBeTruthy();
     });
   });
 
@@ -71,20 +71,20 @@ describe('SubmissionList', () => {
 
     // The list should be empty
     const list = screen.getByRole('list');
-    expect(list).toBeEmptyDOMElement();
+    expect(list).toBeFalsy();
   });
 
   it('displays loading state when loading is true', () => {
     renderSubmissionList({ loading: true });
 
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toBeTruthy();
   });
 
   it('displays error state when error is provided', () => {
     const error = 'Failed to load submissions';
     renderSubmissionList({ error });
 
-    expect(screen.getByRole('alert')).toHaveTextContent(error);
+    expect(screen.getByRole('alert').textContent).toBe(error);
   });
 
   it('filters submissions by status', async () => {
@@ -114,12 +114,12 @@ describe('SubmissionList', () => {
 
         // Verify the correct submission is shown
         const visibleSubmission = screen.getByTestId('submission-1');
-        expect(visibleSubmission).toBeInTheDocument();
-        expect(visibleSubmission).toHaveTextContent(mockSubmissions[0].content);
-        expect(visibleSubmission).toHaveTextContent('submitted');
+        expect(visibleSubmission).toBeTruthy();
+        expect(visibleSubmission.textContent).toBe(mockSubmissions[0].content);
+        expect(visibleSubmission.textContent).toMatch(/submitted/i);
 
         // Verify the other submission is not shown
-        expect(screen.queryByTestId('submission-2')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('submission-2')).not.toBeTruthy();
       },
       { timeout: 3000 }
     );
@@ -134,8 +134,8 @@ describe('SubmissionList', () => {
 
     // Wait for the search to complete and check results
     await waitFor(() => {
-      expect(screen.getByText(`Content: ${mockSubmissions[1].content}`)).toBeInTheDocument();
-      expect(screen.queryByText(`Content: ${mockSubmissions[0].content}`)).not.toBeInTheDocument();
+      expect(screen.getByText(`Content: ${mockSubmissions[1].content}`)).toBeTruthy();
+      expect(screen.queryByText(`Content: ${mockSubmissions[0].content}`)).not.toBeTruthy();
     });
   });
 
@@ -171,7 +171,7 @@ describe('SubmissionList', () => {
 
     mockSubmissions.forEach(submission => {
       const date = new Date(submission.submittedAt).toLocaleDateString();
-      expect(screen.getByText(`Submitted: ${date}`)).toBeInTheDocument();
+      expect(screen.getByText(`Submitted: ${date}`)).toBeTruthy();
     });
   });
 
@@ -184,11 +184,11 @@ describe('SubmissionList', () => {
     const draftStatus = statusElements.find(el => el.textContent?.includes('draft'));
 
     // Check that both status elements exist
-    expect(submittedStatus).toBeInTheDocument();
-    expect(draftStatus).toBeInTheDocument();
+    expect(submittedStatus).toBeTruthy();
+    expect(draftStatus).toBeTruthy();
 
     // Check that the status text is displayed correctly
-    expect(submittedStatus).toHaveTextContent(/status: submitted/i);
-    expect(draftStatus).toHaveTextContent(/status: draft/i);
+    expect(submittedStatus?.textContent).toMatch(/status: submitted/i);
+    expect(draftStatus?.textContent).toMatch(/status: draft/i);
   });
 });

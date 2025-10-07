@@ -147,16 +147,16 @@ describe('Login Component', () => {
   it('renders login form', async () => {
     renderLogin();
     await waitFor(() => {
-      expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /login/i })).toBeInTheDocument();
+      expect(screen.getByLabelText(/email/i)).toBeTruthy();
+      expect(screen.getByLabelText(/password/i)).toBeTruthy();
+      expect(screen.getByRole('button', { name: /login/i })).toBeTruthy();
     });
   });
 
   it('shows validation errors for empty form submission', async () => {
     renderLogin();
     await waitFor(() => {
-      expect(screen.getByTestId('login-form')).toBeInTheDocument();
+      expect(screen.getByTestId('login-form')).toBeTruthy();
     });
 
     const form = screen.getByTestId('login-form');
@@ -165,15 +165,15 @@ describe('Login Component', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText(/email is required/i)).toBeInTheDocument();
-      expect(screen.getByText(/password is required/i)).toBeInTheDocument();
+      expect(screen.getByText(/email is required/i)).toBeTruthy();
+      expect(screen.getByText(/password is required/i)).toBeTruthy();
     });
   });
 
   it('shows validation error for invalid email', async () => {
     renderLogin();
     await waitFor(() => {
-      expect(screen.getByTestId('login-form')).toBeInTheDocument();
+      expect(screen.getByTestId('login-form')).toBeTruthy();
     });
 
     const emailInput = screen.getByLabelText(/email/i);
@@ -185,14 +185,14 @@ describe('Login Component', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText(/please enter a valid email address/i)).toBeInTheDocument();
+      expect(screen.getByText(/please enter a valid email address/i)).toBeTruthy();
     });
   });
 
   it('handles successful login', async () => {
     renderLogin();
     await waitFor(() => {
-      expect(screen.getByTestId('login-form')).toBeInTheDocument();
+      expect(screen.getByTestId('login-form')).toBeTruthy();
     });
 
     const emailInput = screen.getByLabelText(/email/i);
@@ -220,7 +220,7 @@ describe('Login Component', () => {
 
     renderLogin();
     await waitFor(() => {
-      expect(screen.getByTestId('login-form')).toBeInTheDocument();
+      expect(screen.getByTestId('login-form')).toBeTruthy();
     });
 
     const emailInput = screen.getByLabelText(/email/i);
@@ -234,7 +234,7 @@ describe('Login Component', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText(/invalid credentials/i)).toBeInTheDocument();
+      expect(screen.getByText(/invalid credentials/i)).toBeTruthy();
     });
   });
 });

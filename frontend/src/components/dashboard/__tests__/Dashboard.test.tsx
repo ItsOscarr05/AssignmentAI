@@ -99,7 +99,7 @@ describe('Dashboard', () => {
 
   it('renders loading state initially', () => {
     render(<Dashboard />);
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toBeTruthy();
   });
 
   it('renders dashboard data after loading', async () => {
@@ -145,10 +145,10 @@ describe('Dashboard', () => {
     // Wait for loading to complete
     await waitFor(() => {
       const performanceElement = screen.getByRole('region', { name: 'Performance summary' });
-      expect(performanceElement).toHaveTextContent('85');
+      expect(performanceElement.textContent).toContain('85');
 
       const assignmentsElement = screen.getByRole('region', { name: 'Recent assignments' });
-      expect(assignmentsElement).toHaveTextContent('Test Assignment');
+      expect(assignmentsElement.textContent).toContain('Test Assignment');
     });
   });
 
@@ -161,7 +161,7 @@ describe('Dashboard', () => {
     render(<Dashboard />);
 
     await waitFor(() => {
-      expect(screen.getByText('Failed to fetch dashboard data')).toBeInTheDocument();
+      expect(screen.getByText('Failed to fetch dashboard data')).toBeTruthy();
     });
   });
 
@@ -245,7 +245,7 @@ describe('Dashboard', () => {
     // Wait for initial data to load
     await waitFor(() => {
       const performanceElement = screen.getByRole('region', { name: 'Performance summary' });
-      expect(performanceElement).toHaveTextContent('85');
+      expect(performanceElement.textContent).toContain('85');
     });
 
     // Click refresh button
@@ -255,10 +255,10 @@ describe('Dashboard', () => {
     // Wait for updated data
     await waitFor(() => {
       const performanceElement = screen.getByRole('region', { name: 'Performance summary' });
-      expect(performanceElement).toHaveTextContent('90');
+      expect(performanceElement.textContent).toContain('90');
 
       const assignmentsElement = screen.getByRole('region', { name: 'Recent assignments' });
-      expect(assignmentsElement).toHaveTextContent('Updated Assignment');
+      expect(assignmentsElement.textContent).toContain('Updated Assignment');
     });
   });
 
@@ -305,7 +305,7 @@ describe('Dashboard', () => {
     // Wait for assignments to load
     await waitFor(() => {
       const assignmentsElement = screen.getByRole('region', { name: 'Recent assignments' });
-      expect(assignmentsElement).toHaveTextContent('Test Assignment');
+      expect(assignmentsElement.textContent).toContain('Test Assignment');
     });
 
     // Click the view details button for the assignment
@@ -333,8 +333,8 @@ describe('Dashboard', () => {
     // Wait for empty states to be displayed
     await waitFor(() => {
       const performanceElement = screen.getByRole('region', { name: 'Performance summary' });
-      expect(performanceElement).toHaveTextContent('0');
-      expect(screen.getByText('Recent Assignments')).toBeInTheDocument();
+      expect(performanceElement.textContent).toContain('0');
+      expect(screen.getByText('Recent Assignments')).toBeTruthy();
     });
   });
 });

@@ -1,4 +1,4 @@
-import { ChevronLeft, Menu } from '@mui/icons-material';
+import { Assignment, ChevronLeft, Home, Menu, Person, School, Settings } from '@mui/icons-material';
 import {
   AppBar,
   Box,

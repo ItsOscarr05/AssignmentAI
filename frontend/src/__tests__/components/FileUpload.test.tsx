@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import FileUpload from '../files/FileUpload';
+import FileUpload from '../../components/files/FileUpload';
 
 // Mock Material-UI components
 vi.mock('@mui/material', () => ({
@@ -168,7 +168,7 @@ describe('FileUpload', () => {
 
   it('renders upload button', () => {
     render(<FileUpload onUploadComplete={() => {}} onUploadError={() => {}} />);
-    expect(screen.getByRole('button', { name: /select files/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /select files/i })).toBeTruthy();
   });
 
   it('handles file selection', async () => {
@@ -266,7 +266,7 @@ describe('FileUpload', () => {
 
     await waitFor(
       () => {
-        expect(screen.getByTestId('linear-progress')).toBeInTheDocument();
+        expect(screen.getByTestId('linear-progress')).toBeTruthy();
       },
       { timeout: 3000 }
     );
@@ -292,7 +292,7 @@ describe('FileUpload', () => {
 
     await waitFor(
       () => {
-        expect(screen.getByTestId('alert')).toBeInTheDocument();
+        expect(screen.getByTestId('alert')).toBeTruthy();
       },
       { timeout: 3000 }
     );
@@ -336,7 +336,7 @@ describe('FileUpload', () => {
     render(
       <FileUpload onUploadComplete={() => {}} onUploadError={() => {}} maxSize={5 * 1024 * 1024} />
     );
-    expect(screen.getByText(/maximum file size/i)).toHaveTextContent('Maximum file size: 5MB');
+    expect(screen.getByText(/maximum file size/i).textContent).toBe('Maximum file size: 5MB');
   });
 
   it('shows accepted file types', () => {
@@ -347,7 +347,7 @@ describe('FileUpload', () => {
         acceptedFileTypes={['application/pdf', 'image/*']}
       />
     );
-    expect(screen.getByText(/accepted file types/i)).toHaveTextContent(
+    expect(screen.getByText(/accepted file types/i).textContent).toBe(
       'Accepted file types: application/pdf, image/*'
     );
   });

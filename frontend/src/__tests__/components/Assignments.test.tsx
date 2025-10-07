@@ -140,9 +140,9 @@ describe('Assignments Component', () => {
     renderWithClient(<Assignments />);
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 1, name: 'Assignments' })).toBeInTheDocument();
-      expect(screen.getByRole('link', { name: 'Create Assignment' })).toBeInTheDocument();
-      expect(screen.getByPlaceholderText('Search assignments...')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: 'Assignments' })).toBeTruthy();
+      expect(screen.getByRole('link', { name: 'Create Assignment' })).toBeTruthy();
+      expect(screen.getByPlaceholderText('Search assignments...')).toBeTruthy();
     });
   });
 
@@ -150,7 +150,7 @@ describe('Assignments Component', () => {
     (api.get as any).mockImplementation(() => new Promise(() => {}));
     renderWithClient(<Assignments />);
     await waitFor(() => {
-      expect(screen.getByText('Loading assignments...')).toBeInTheDocument();
+      expect(screen.getByText('Loading assignments...')).toBeTruthy();
     });
   });
 
@@ -160,9 +160,7 @@ describe('Assignments Component', () => {
 
     await waitFor(
       () => {
-        expect(
-          screen.getByText('Error loading assignments. Please try again later.')
-        ).toBeInTheDocument();
+        expect(screen.getByText('Error loading assignments. Please try again later.')).toBeTruthy();
       },
       { timeout: 10000 }
     );
@@ -174,8 +172,8 @@ describe('Assignments Component', () => {
     // Wait for the assignments to appear with a longer timeout
     await waitFor(
       () => {
-        expect(screen.getByText('Test Assignment 1')).toBeInTheDocument();
-        expect(screen.getByText('Test Assignment 2')).toBeInTheDocument();
+        expect(screen.getByText('Test Assignment 1')).toBeTruthy();
+        expect(screen.getByText('Test Assignment 2')).toBeTruthy();
       },
       { timeout: 10000 }
     );
@@ -190,11 +188,11 @@ describe('Assignments Component', () => {
 
     // Wait for the component to load first
     await waitFor(() => {
-      expect(screen.getByText('Test Assignment 1')).toBeInTheDocument();
+      expect(screen.getByText('Test Assignment 1')).toBeTruthy();
     });
 
     const createLink = screen.getByRole('link', { name: 'Create Assignment' });
-    expect(createLink).toHaveAttribute('href', '/new');
+    expect(createLink.getAttribute('href')).toBe('/new');
   });
 
   it('handles assignment filtering', async () => {
@@ -203,7 +201,7 @@ describe('Assignments Component', () => {
     await waitFor(() => {
       const searchInput = screen.getByPlaceholderText('Search assignments...');
       fireEvent.change(searchInput, { target: { value: 'test' } });
-      expect(searchInput).toHaveValue('test');
+      expect((searchInput as HTMLInputElement).value).toBe('test');
     });
   });
 
@@ -218,13 +216,13 @@ describe('Assignments Component', () => {
 
     // Wait for assignments to load first
     await waitFor(() => {
-      expect(screen.getByText('Test Assignment 1')).toBeInTheDocument();
+      expect(screen.getByText('Test Assignment 1')).toBeTruthy();
     });
 
     // Find the delete button in the first assignment's row
     const firstAssignmentRow = screen.getByText('Test Assignment 1').closest('tr');
     const deleteButton = firstAssignmentRow?.querySelector('button');
-    expect(deleteButton).toBeInTheDocument();
+    expect(deleteButton).toBeTruthy();
     fireEvent.click(deleteButton!);
 
     // Wait for the delete function to be called with just the ID

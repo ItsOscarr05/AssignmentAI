@@ -1,7 +1,7 @@
 // Note: Testing library not available, using basic DOM testing
+import { render } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render } from '../../test/test-utils';
-import LoginFormContent from '../auth/LoginFormContent';
+import LoginFormContent from '../../components/auth/LoginFormContent';
 
 // Simple screen utilities since testing library is not available
 const screen = {

@@ -77,10 +77,10 @@ describe('Login Component', () => {
   it('renders login form with all required elements', () => {
     renderLogin();
 
-    expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
-    expect(screen.getByTestId('password-input')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
-    expect(screen.getByText(/welcome back/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/email address/i)).toBeTruthy();
+    expect(screen.getByTestId('password-input')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /sign in/i })).toBeTruthy();
+    expect(screen.getByText(/welcome back/i)).toBeTruthy();
   });
 
   it('validates email format', async () => {
@@ -91,7 +91,7 @@ describe('Login Component', () => {
     fireEvent.blur(emailInput);
 
     await waitFor(() => {
-      expect(screen.getByText(/invalid email address/i)).toBeInTheDocument();
+      expect(screen.getByText(/invalid email address/i)).toBeTruthy();
     });
   });
 
@@ -103,7 +103,7 @@ describe('Login Component', () => {
     fireEvent.blur(passwordInput);
 
     await waitFor(() => {
-      expect(screen.getByText(/password must be at least 6 characters/i)).toBeInTheDocument();
+      expect(screen.getByText(/password must be at least 6 characters/i)).toBeTruthy();
     });
   });
 
@@ -139,7 +139,7 @@ describe('Login Component', () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText(errorMessage)).toBeInTheDocument();
+      expect(screen.getByText(errorMessage)).toBeTruthy();
     });
   });
 
@@ -149,13 +149,13 @@ describe('Login Component', () => {
     const passwordInput = screen.getByTestId('password-input');
     const toggleButton = screen.getByRole('button', { name: /toggle password visibility/i });
 
-    expect(passwordInput).toHaveAttribute('type', 'password');
+    expect(passwordInput.getAttribute('type')).toBe('password');
 
     fireEvent.click(toggleButton);
-    expect(passwordInput).toHaveAttribute('type', 'text');
+    expect(passwordInput.getAttribute('type')).toBe('text');
 
     fireEvent.click(toggleButton);
-    expect(passwordInput).toHaveAttribute('type', 'password');
+    expect(passwordInput.getAttribute('type')).toBe('password');
   });
 
   it('shows loading state during login', async () => {
@@ -170,11 +170,11 @@ describe('Login Component', () => {
     fireEvent.change(passwordInput, { target: { value: 'password123' } });
     fireEvent.click(submitButton);
 
-    expect(submitButton).toBeDisabled();
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(submitButton.hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('progressbar')).toBeTruthy();
 
     await waitFor(() => {
-      expect(submitButton).not.toBeDisabled();
+      expect(submitButton.hasAttribute('disabled')).toBe(false);
     });
   });
 });

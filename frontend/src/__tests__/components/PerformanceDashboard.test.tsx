@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import PerformanceDashboard from '../PerformanceDashboard';
+import PerformanceDashboard from '../../components/PerformanceDashboard';
 
 // Mock Material-UI components
 vi.mock('@mui/material', () => ({
@@ -156,24 +156,24 @@ describe('PerformanceDashboard', () => {
     render(<PerformanceDashboard />);
 
     await waitFor(() => {
-      expect(screen.getByText('Performance Dashboard')).toBeInTheDocument();
+      expect(screen.getByText('Performance Dashboard')).toBeTruthy();
     });
 
-    expect(screen.getByText('Total Submissions')).toBeInTheDocument();
-    expect(screen.getByText('150')).toBeInTheDocument();
-    expect(screen.getByText('Average Grade')).toBeInTheDocument();
-    expect(screen.getByText('85.0%')).toBeInTheDocument();
-    expect(screen.getByText('Completion Rate')).toBeInTheDocument();
-    expect(screen.getByText('92.0%')).toBeInTheDocument();
-    expect(screen.getByText('Plagiarism Rate')).toBeInTheDocument();
-    expect(screen.getByText('5.0%')).toBeInTheDocument();
+    expect(screen.getByText('Total Submissions')).toBeTruthy();
+    expect(screen.getByText('150')).toBeTruthy();
+    expect(screen.getByText('Average Grade')).toBeTruthy();
+    expect(screen.getByText('85.0%')).toBeTruthy();
+    expect(screen.getByText('Completion Rate')).toBeTruthy();
+    expect(screen.getByText('92.0%')).toBeTruthy();
+    expect(screen.getByText('Plagiarism Rate')).toBeTruthy();
+    expect(screen.getByText('5.0%')).toBeTruthy();
   });
 
   it('renders submission trends chart', async () => {
     render(<PerformanceDashboard />);
 
     await waitFor(() => {
-      expect(screen.getByText('Submission Trends')).toBeInTheDocument();
+      expect(screen.getByText('Submission Trends')).toBeTruthy();
     });
   });
 
@@ -181,7 +181,7 @@ describe('PerformanceDashboard', () => {
     render(<PerformanceDashboard />);
 
     await waitFor(() => {
-      expect(screen.getByText('Grade Distribution')).toBeInTheDocument();
+      expect(screen.getByText('Grade Distribution')).toBeTruthy();
     });
   });
 
@@ -189,9 +189,9 @@ describe('PerformanceDashboard', () => {
     render(<PerformanceDashboard />);
 
     await waitFor(() => {
-      expect(screen.getByText('Feedback Quality')).toBeInTheDocument();
+      expect(screen.getByText('Feedback Quality')).toBeTruthy();
     });
-    expect(screen.getByText('88.0%')).toBeInTheDocument();
+    expect(screen.getByText('88.0%')).toBeTruthy();
   });
 
   it('handles API errors gracefully', async () => {
@@ -204,7 +204,7 @@ describe('PerformanceDashboard', () => {
     render(<PerformanceDashboard />);
 
     await waitFor(() => {
-      expect(screen.getByText('Failed to fetch performance metrics')).toBeInTheDocument();
+      expect(screen.getByText('Failed to fetch performance metrics')).toBeTruthy();
     });
   });
 
@@ -218,7 +218,7 @@ describe('PerformanceDashboard', () => {
     render(<PerformanceDashboard />);
 
     await waitFor(() => {
-      expect(screen.getByText('Failed to fetch')).toBeInTheDocument();
+      expect(screen.getByText('Failed to fetch')).toBeTruthy();
     });
   });
 
@@ -232,7 +232,7 @@ describe('PerformanceDashboard', () => {
     render(<PerformanceDashboard />);
 
     await waitFor(() => {
-      expect(screen.getByText('Failed to fetch performance metrics')).toBeInTheDocument();
+      expect(screen.getByText('Failed to fetch performance metrics')).toBeTruthy();
     });
   });
 });

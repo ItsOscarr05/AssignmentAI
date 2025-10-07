@@ -43,14 +43,14 @@ describe('AIAssignmentGenerator', () => {
   it('renders the form with all required fields', () => {
     renderComponent();
 
-    expect(screen.getByTestId('assignment-form')).toBeInTheDocument();
-    expect(screen.getByLabelText(/title/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/subject/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/difficulty level/i)).toBeInTheDocument();
-    expect(screen.getByText(/learning objectives/i)).toBeInTheDocument();
-    expect(screen.getByText(/requirements/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /generate assignment/i })).toBeInTheDocument();
+    expect(screen.getByTestId('assignment-form')).toBeTruthy();
+    expect(screen.getByLabelText(/title/i)).toBeTruthy();
+    expect(screen.getByLabelText(/description/i)).toBeTruthy();
+    expect(screen.getByLabelText(/subject/i)).toBeTruthy();
+    expect(screen.getByLabelText(/difficulty level/i)).toBeTruthy();
+    expect(screen.getByText(/learning objectives/i)).toBeTruthy();
+    expect(screen.getByText(/requirements/i)).toBeTruthy();
+    expect(screen.getByRole('button', { name: /generate assignment/i })).toBeTruthy();
   });
 
   it('validates required fields before submission', async () => {
@@ -61,9 +61,9 @@ describe('AIAssignmentGenerator', () => {
 
     // Check for validation messages
     await waitFor(() => {
-      expect(screen.getByText(/title is required/i)).toBeInTheDocument();
-      expect(screen.getByText(/description is required/i)).toBeInTheDocument();
-      expect(screen.getByText(/subject is required/i)).toBeInTheDocument();
+      expect(screen.getByText(/title is required/i)).toBeTruthy();
+      expect(screen.getByText(/description is required/i)).toBeTruthy();
+      expect(screen.getByText(/subject is required/i)).toBeTruthy();
     });
   });
 
@@ -100,7 +100,7 @@ describe('AIAssignmentGenerator', () => {
     // Wait for the success message
     await waitFor(() => {
       const snackbar = screen.getByTestId('snackbar');
-      expect(snackbar).toHaveAttribute('data-severity', 'success');
+      expect(snackbar.getAttribute('data-severity')).toBe('success');
     });
 
     expect(mockGenerateAssignment).toHaveBeenCalledWith(
@@ -133,7 +133,7 @@ describe('AIAssignmentGenerator', () => {
     // Wait for error message
     await waitFor(() => {
       const snackbar = screen.getByTestId('snackbar');
-      expect(snackbar).toHaveAttribute('data-severity', 'error');
+      expect(snackbar.getAttribute('data-severity')).toBe('error');
     });
   });
 
@@ -198,12 +198,12 @@ describe('AIAssignmentGenerator', () => {
         field.getAttribute('label')?.includes('Learning Objective')
       );
 
-      expect(requirementField).toHaveAttribute(
-        'helpertext',
+      expect(requirementField).toBeTruthy();
+      expect(requirementField!.getAttribute('helpertext')).toBe(
         'At least one requirement is required'
       );
-      expect(objectiveField).toHaveAttribute(
-        'helpertext',
+      expect(objectiveField).toBeTruthy();
+      expect(objectiveField!.getAttribute('helpertext')).toBe(
         'At least one learning objective is required'
       );
     });
@@ -235,7 +235,7 @@ describe('AIAssignmentGenerator', () => {
 
     // Wait for the loading state to be set and button to be disabled
     await waitFor(() => {
-      expect(generateButton).toHaveAttribute('disabled');
+      expect(generateButton.hasAttribute('disabled')).toBe(true);
     });
 
     // Resolve the promise to clean up

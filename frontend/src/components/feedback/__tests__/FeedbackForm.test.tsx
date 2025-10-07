@@ -77,8 +77,8 @@ describe('FeedbackForm', () => {
   it('renders the form with all required fields', () => {
     renderComponent();
 
-    expect(screen.getByLabelText('Grade')).toBeInTheDocument();
-    expect(screen.getByTestId('main-comments')).toBeInTheDocument();
+    expect(screen.getByLabelText('Grade')).toBeTruthy();
+    expect(screen.getByTestId('main-comments')).toBeTruthy();
   });
 
   it('displays existing feedback data when editing', async () => {
@@ -87,17 +87,17 @@ describe('FeedbackForm', () => {
     // Wait for the form to be populated with existing data
     await waitFor(() => {
       const gradeInput = screen.getByLabelText('Grade');
-      expect(gradeInput).toHaveValue(mockFeedback.grade);
+      expect((gradeInput as HTMLInputElement).value).toBe(mockFeedback.grade);
     });
 
     const commentsInput = screen.getByTestId('main-comments');
-    expect(commentsInput).toHaveValue(mockFeedback.comments);
+    expect((commentsInput as HTMLInputElement).value).toBe(mockFeedback.comments);
 
     // Check rubric scores
     // mockFeedback.rubricScores.forEach(score => {
     //   const criterion = mockRubric.criteria.find(c => c.id === score.criterionId);
     //   if (criterion) {
-    //     expect(screen.getByText(criterion.name)).toBeInTheDocument();
+    //     expect(screen.getByText(criterion.name)).toBeTruthy();
     //     expect(screen.getByTestId(`rubric-comments-${criterion.id}`)).toHaveValue(score.comments);
     //   }
     // });
@@ -138,7 +138,7 @@ describe('FeedbackForm', () => {
     fireEvent.click(submitButton);
 
     // Check for loading state
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toBeTruthy();
 
     // Wait for success and navigation
     await waitFor(
@@ -178,7 +178,7 @@ describe('FeedbackForm', () => {
     fireEvent.click(submitButton);
 
     // Check for loading state
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toBeTruthy();
 
     // Wait for success and navigation
     await waitFor(
@@ -205,11 +205,11 @@ describe('FeedbackForm', () => {
         const gradeInput = screen.getByLabelText('Grade');
         const commentsInput = screen.getByTestId('main-comments');
 
-        expect(gradeInput).toHaveAttribute('aria-invalid', 'true');
-        expect(commentsInput).toHaveAttribute('aria-invalid', 'true');
+        expect(gradeInput.getAttribute('aria-invalid')).toBe('true');
+        expect(commentsInput.getAttribute('aria-invalid')).toBe('true');
         expect(
           screen.getByText('Comments are required', { selector: 'p.MuiFormHelperText-root' })
-        ).toBeInTheDocument();
+        ).toBeTruthy();
       },
       { timeout: 3000 }
     );
@@ -223,7 +223,7 @@ describe('FeedbackForm', () => {
 
     // Check for validation message
     await waitFor(() => {
-      expect(screen.getByText('Grade must be between 0 and 100')).toBeInTheDocument();
+      expect(screen.getByText('Grade must be between 0 and 100')).toBeTruthy();
     });
   });
 
@@ -237,10 +237,10 @@ describe('FeedbackForm', () => {
 
     // // The Select component only shows valid options, so we can't select an invalid score
     // // Instead, we'll verify that the max score is enforced
-    // expect(screen.getByRole('option', { name: criterion.maxScore.toString() })).toBeInTheDocument();
+    // expect(screen.getByRole('option', { name: criterion.maxScore.toString() })).toBeTruthy();
     // expect(
     //   screen.queryByRole('option', { name: (criterion.maxScore + 1).toString() })
-    // ).not.toBeInTheDocument();
+    // ).not.toBeTruthy();
   });
 
   it('calculates total grade from rubric scores', async () => {
@@ -291,15 +291,15 @@ describe('FeedbackForm', () => {
     fireEvent.click(submitButton);
 
     // Check if button is disabled and shows loading state
-    expect(submitButton).toBeDisabled();
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(submitButton.hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('progressbar')).toBeTruthy();
   });
 
   it('displays submission content for reference', () => {
     renderComponent();
 
     // The submission content should be displayed in a div with component="pre"
-    expect(screen.getByText(mockSubmission.content)).toBeInTheDocument();
+    expect(screen.getByText(mockSubmission.content)).toBeTruthy();
   });
 
   it('validates that all rubric criteria are scored', async () => {

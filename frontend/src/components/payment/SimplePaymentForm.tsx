@@ -76,7 +76,7 @@ const SimplePaymentForm: React.FC<SimplePaymentFormProps> = ({
 
         console.log('Fallback endpoint response:', response.data);
         console.log('Subscription created successfully via fallback endpoint');
-      } catch (fallbackError) {
+      } catch (fallbackError: any) {
         console.error('Fallback subscription creation failed:', fallbackError);
         console.error('Error details:', fallbackError.response?.data);
         console.warn('Relying on webhook for subscription creation');

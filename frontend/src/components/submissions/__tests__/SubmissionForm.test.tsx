@@ -89,19 +89,19 @@ describe('SubmissionForm', () => {
 
     const textFields = screen.getAllByTestId('text-field');
     expect(textFields).toHaveLength(2); // Title and Description
-    expect(screen.getByTestId('select')).toBeInTheDocument();
+    expect(screen.getByTestId('select')).toBeTruthy();
   });
 
   it('displays existing submission data when editing', async () => {
     renderComponent();
 
     const textFields = screen.getAllByTestId('text-field');
-    expect(textFields[0]).toHaveValue(mockSubmission.content);
-    expect(textFields[1]).toHaveValue(mockSubmission.comments);
+    expect((textFields[0] as HTMLInputElement).value).toBe(mockSubmission.content);
+    expect((textFields[1] as HTMLInputElement).value).toBe(mockSubmission.comments);
 
     // Wait for assignments to be loaded and check the selected value
     await waitFor(() => {
-      expect(screen.getByTestId('select')).toHaveTextContent(mockAssignment.title);
+      expect(screen.getByTestId('select').textContent).toBe(mockAssignment.title);
     });
   });
 
@@ -194,8 +194,8 @@ describe('SubmissionForm', () => {
         console.log('Error alert content:', errorAlert.textContent);
         console.log('Error alert visibility:', errorAlert.style.display);
 
-        expect(errorAlert).toBeVisible();
-        expect(errorAlert).toHaveTextContent('At least one file is required');
+        expect(errorAlert).toBeTruthy();
+        expect(errorAlert.textContent).toBe('At least one file is required');
       },
       { timeout: 3000 }
     );
@@ -212,7 +212,7 @@ describe('SubmissionForm', () => {
     // Wait for success message
     await waitFor(() => {
       const uploadAlert = screen.getByTestId('upload-status-alert');
-      expect(uploadAlert).toHaveTextContent(/file uploaded/i);
+      expect(uploadAlert.textContent).toMatch(/file uploaded/i);
     });
   });
 
@@ -245,8 +245,8 @@ describe('SubmissionForm', () => {
         console.log('Error alert content:', errorAlert.textContent);
         console.log('Error alert visibility:', errorAlert.style.display);
 
-        expect(errorAlert).toBeVisible();
-        expect(errorAlert).toHaveTextContent('File too large');
+        expect(errorAlert).toBeTruthy();
+        expect(errorAlert.textContent).toBe('File too large');
       },
       { timeout: 3000 }
     );
@@ -267,7 +267,7 @@ describe('SubmissionForm', () => {
     // Check for validation message
     await waitFor(() => {
       const errorAlert = screen.getByTestId('error-alert');
-      expect(errorAlert).toHaveTextContent(/invalid file type/i);
+      expect(errorAlert.textContent).toMatch(/invalid file type/i);
     });
   });
 
@@ -281,7 +281,7 @@ describe('SubmissionForm', () => {
 
     // Wait for file to be uploaded
     await waitFor(() => {
-      expect(screen.getByText('test.pdf')).toBeInTheDocument();
+      expect(screen.getByText('test.pdf')).toBeTruthy();
     });
 
     // Find and click remove button for the attachment
@@ -290,7 +290,7 @@ describe('SubmissionForm', () => {
 
     // Check that attachment is removed
     await waitFor(() => {
-      expect(screen.queryByText('test.pdf')).not.toBeInTheDocument();
+      expect(screen.queryByText('test.pdf')).not.toBeTruthy();
     });
   });
 
@@ -298,7 +298,7 @@ describe('SubmissionForm', () => {
     renderComponent({ loading: true });
 
     const submitButton = screen.getByRole('button', { name: /submit/i });
-    expect(submitButton).toBeDisabled();
+    expect(submitButton.hasAttribute('disabled')).toBe(true);
   });
 
   it('displays late submission warning when past due date', () => {
@@ -309,8 +309,8 @@ describe('SubmissionForm', () => {
     renderComponent({ assignment: pastDueAssignment });
 
     const lateAlert = screen.getByTestId('late-submission-alert');
-    expect(lateAlert).toHaveTextContent(/this assignment is past due/i);
-    expect(lateAlert).toHaveTextContent(/late submission penalty: 10%/i);
+    expect(lateAlert.textContent).toMatch(/this assignment is past due/i);
+    expect(lateAlert.textContent).toMatch(/late submission penalty: 10%/i);
   });
 
   it('displays submission count warning when approaching max submissions', () => {
@@ -328,7 +328,7 @@ describe('SubmissionForm', () => {
     });
 
     const countAlert = screen.getByTestId('submission-count-alert');
-    expect(countAlert).toHaveTextContent(/you have 1 submission remaining/i);
+    expect(countAlert.textContent).toMatch(/you have 1 submission remaining/i);
   });
 
   it('disables submission when max submissions reached', () => {
@@ -346,7 +346,7 @@ describe('SubmissionForm', () => {
     });
 
     const submitButton = screen.getByRole('button', { name: /submit/i });
-    expect(submitButton).toBeDisabled();
+    expect(submitButton.hasAttribute('disabled')).toBe(true);
   });
 
   it('calls onCancel when cancel button is clicked', () => {
@@ -359,7 +359,7 @@ describe('SubmissionForm', () => {
   it('displays loading state when submitting', () => {
     renderComponent({ loading: true });
 
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toBeTruthy();
   });
 
   it('displays error message when submission fails', () => {
@@ -371,6 +371,6 @@ describe('SubmissionForm', () => {
 
     // Check for error message
     const errorAlert = screen.getByTestId('error-alert');
-    expect(errorAlert).toHaveTextContent(/at least one file is required/i);
+    expect(errorAlert.textContent).toMatch(/at least one file is required/i);
   });
 });

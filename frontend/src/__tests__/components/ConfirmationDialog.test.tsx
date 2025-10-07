@@ -1,8 +1,8 @@
 import { ThemeProvider } from '@mui/material/styles';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { ConfirmationDialog } from '../../components/common/ConfirmationDialog';
 import { theme } from '../../theme';
-import { ConfirmationDialog } from '../common/ConfirmationDialog';
 
 // Mock Material-UI components
 vi.mock('@mui/material', async () => {
@@ -103,184 +103,184 @@ describe('ConfirmationDialog', () => {
   it('renders dialog with default props', () => {
     renderConfirmationDialog();
 
-    expect(screen.getByText('Test Dialog')).toBeInTheDocument();
-    expect(screen.getByText('Test Message')).toBeInTheDocument();
-    expect(screen.getByText(/cancel/i)).toBeInTheDocument();
-    expect(screen.getByText(/confirm/i)).toBeInTheDocument();
+    expect(screen.getByText('Test Dialog')).toBeTruthy();
+    expect(screen.getByText('Test Message')).toBeTruthy();
+    expect(screen.getByText(/cancel/i)).toBeTruthy();
+    expect(screen.getByText(/confirm/i)).toBeTruthy();
   });
 
   it('renders with custom title', () => {
     renderConfirmationDialog({ title: 'Custom Title' });
 
-    expect(screen.getByText('Custom Title')).toBeInTheDocument();
+    expect(screen.getByText('Custom Title')).toBeTruthy();
   });
 
   it('renders with custom message', () => {
     renderConfirmationDialog({ message: 'Custom message' });
 
-    expect(screen.getByText('Custom message')).toBeInTheDocument();
+    expect(screen.getByText('Custom message')).toBeTruthy();
   });
 
   it('renders with custom confirm text', () => {
     renderConfirmationDialog({ confirmText: 'Delete' });
 
-    expect(screen.getByText('Delete')).toBeInTheDocument();
+    expect(screen.getByText('Delete')).toBeTruthy();
   });
 
   it('renders with custom cancel text', () => {
     renderConfirmationDialog({ cancelText: 'Go Back' });
 
-    expect(screen.getByText('Go Back')).toBeInTheDocument();
+    expect(screen.getByText('Go Back')).toBeTruthy();
   });
 
   it('renders with custom confirm color', () => {
     renderConfirmationDialog({ confirmColor: 'error' });
 
-    expect(screen.getByText(/confirm/i)).toHaveClass('MuiButton-colorError');
+    expect(screen.getByText(/confirm/i).className).toContain('MuiButton-colorError');
   });
 
   it('renders with custom cancel color', () => {
     renderConfirmationDialog({ cancelColor: 'primary' });
 
-    expect(screen.getByText(/cancel/i)).toHaveClass('MuiButton-colorPrimary');
+    expect(screen.getByText(/cancel/i).className).toContain('MuiButton-colorPrimary');
   });
 
   it('renders with custom confirm variant', () => {
     renderConfirmationDialog({ confirmVariant: 'outlined' });
 
-    expect(screen.getByText(/confirm/i)).toHaveClass('MuiButton-outlined');
+    expect(screen.getByText(/confirm/i).className).toContain('MuiButton-outlined');
   });
 
   it('renders with custom cancel variant', () => {
     renderConfirmationDialog({ cancelVariant: 'contained' });
 
-    expect(screen.getByText(/cancel/i)).toHaveClass('MuiButton-contained');
+    expect(screen.getByText(/cancel/i).className).toContain('MuiButton-contained');
   });
 
   it('renders with custom confirm size', () => {
     renderConfirmationDialog({ confirmSize: 'large' });
 
-    expect(screen.getByText(/confirm/i)).toHaveClass('MuiButton-sizeLarge');
+    expect(screen.getByText(/confirm/i).className).toContain('MuiButton-sizeLarge');
   });
 
   it('renders with custom cancel size', () => {
     renderConfirmationDialog({ cancelSize: 'small' });
 
-    expect(screen.getByText(/cancel/i)).toHaveClass('MuiButton-sizeSmall');
+    expect(screen.getByText(/cancel/i).className).toContain('MuiButton-sizeSmall');
   });
 
   it('renders with custom confirm icon', () => {
     renderConfirmationDialog({ confirmIcon: 'delete' });
 
-    expect(screen.getByTestId('DeleteIcon')).toBeInTheDocument();
+    expect(screen.getByTestId('DeleteIcon')).toBeTruthy();
   });
 
   it('renders with custom cancel icon', () => {
     renderConfirmationDialog({ cancelIcon: 'arrow_back' });
 
-    expect(screen.getByTestId('ArrowBackIcon')).toBeInTheDocument();
+    expect(screen.getByTestId('ArrowBackIcon')).toBeTruthy();
   });
 
   it('renders with custom confirm className', () => {
     renderConfirmationDialog({ confirmClassName: 'custom-confirm' });
 
-    expect(screen.getByText(/confirm/i)).toHaveClass('custom-confirm');
+    expect(screen.getByText(/confirm/i).className).toContain('custom-confirm');
   });
 
   it('renders with custom cancel className', () => {
     renderConfirmationDialog({ cancelClassName: 'custom-cancel' });
 
-    expect(screen.getByText(/cancel/i)).toHaveClass('custom-cancel');
+    expect(screen.getByText(/cancel/i).className).toContain('custom-cancel');
   });
 
   it('renders with custom confirm style', () => {
     renderConfirmationDialog({ confirmStyle: { margin: '20px' } });
 
-    expect(screen.getByText(/confirm/i)).toHaveStyle({ margin: '20px' });
+    expect(screen.getByText(/confirm/i).style.margin).toBe('20px');
   });
 
   it('renders with custom cancel style', () => {
     renderConfirmationDialog({ cancelStyle: { margin: '20px' } });
 
-    expect(screen.getByText(/cancel/i)).toHaveStyle({ margin: '20px' });
+    expect(screen.getByText(/cancel/i).style.margin).toBe('20px');
   });
 
   it('renders with custom dialog className', () => {
     renderConfirmationDialog({ dialogClassName: 'custom-dialog' });
 
-    expect(screen.getByRole('dialog')).toHaveClass('custom-dialog');
+    expect(screen.getByRole('dialog').className).toContain('custom-dialog');
   });
 
   it('renders with custom dialog style', () => {
     renderConfirmationDialog({ dialogStyle: { padding: '20px' } });
 
-    expect(screen.getByRole('dialog')).toHaveStyle({ padding: '20px' });
+    expect(screen.getByRole('dialog').style.padding).toBe('20px');
   });
 
   it('renders with custom title className', () => {
     renderConfirmationDialog({ titleClassName: 'custom-title' });
 
-    expect(screen.getByText('Test Dialog')).toHaveClass('custom-title');
+    expect(screen.getByText('Test Dialog').className).toContain('custom-title');
   });
 
   it('renders with custom title style', () => {
     renderConfirmationDialog({ titleStyle: { color: 'red' } });
 
-    expect(screen.getByText('Test Dialog')).toHaveStyle({ color: 'rgb(255, 0, 0)' });
+    expect(screen.getByText('Test Dialog').style.color).toBe('rgb(255, 0, 0)');
   });
 
   it('renders with custom message className', () => {
     renderConfirmationDialog({ messageClassName: 'custom-message' });
 
-    expect(screen.getByText('Test Message')).toHaveClass('custom-message');
+    expect(screen.getByText('Test Message').className).toContain('custom-message');
   });
 
   it('renders with custom message style', () => {
     renderConfirmationDialog({ messageStyle: { color: 'red' } });
 
-    expect(screen.getByText('Test Message')).toHaveStyle({ color: 'rgb(255, 0, 0)' });
+    expect(screen.getByText('Test Message').style.color).toBe('rgb(255, 0, 0)');
   });
 
   it('renders with custom actions className', () => {
     renderConfirmationDialog({ actionsClassName: 'custom-actions' });
 
-    expect(screen.getByRole('group')).toHaveClass('custom-actions');
+    expect(screen.getByRole('group').className).toContain('custom-actions');
   });
 
   it('renders with custom actions style', () => {
     renderConfirmationDialog({ actionsStyle: { padding: '10px' } });
 
-    expect(screen.getByRole('group')).toHaveStyle({ padding: '10px' });
+    expect(screen.getByRole('group').style.padding).toBe('10px');
   });
 
   it('renders with custom aria-label', () => {
     renderConfirmationDialog({ 'aria-label': 'Custom dialog' });
 
-    expect(screen.getByRole('dialog')).toHaveAttribute('aria-label', 'Custom dialog');
+    expect(screen.getByRole('dialog').getAttribute('aria-label')).toBe('Custom dialog');
   });
 
   it('renders with custom aria-describedby', () => {
     renderConfirmationDialog({ 'aria-describedby': 'custom-description' });
 
-    expect(screen.getByRole('dialog')).toHaveAttribute('aria-describedby', 'custom-description');
+    expect(screen.getByRole('dialog').getAttribute('aria-describedby')).toBe('custom-description');
   });
 
   it('renders with custom role', () => {
     renderConfirmationDialog({ role: 'alertdialog' });
 
-    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+    expect(screen.getByRole('alertdialog')).toBeTruthy();
   });
 
   it('renders with custom tabIndex', () => {
     renderConfirmationDialog({ tabIndex: 0 });
 
-    expect(screen.getByRole('dialog')).toHaveAttribute('tabIndex', '0');
+    expect(screen.getByRole('dialog').getAttribute('tabIndex')).toBe('0');
   });
 
   it('renders with custom data-testid', () => {
     renderConfirmationDialog({ 'data-testid': 'custom-dialog' });
 
-    expect(screen.getByTestId('custom-dialog')).toBeInTheDocument();
+    expect(screen.getByTestId('custom-dialog')).toBeTruthy();
   });
 
   it('handles confirm button click', () => {
@@ -322,48 +322,48 @@ describe('ConfirmationDialog', () => {
   it('handles confirm button disabled state', () => {
     renderConfirmationDialog({ confirmDisabled: true });
 
-    expect(screen.getByText(/confirm/i)).toBeDisabled();
+    expect(screen.getByText(/confirm/i).hasAttribute('disabled')).toBe(true);
   });
 
   it('handles cancel button disabled state', () => {
     renderConfirmationDialog({ cancelDisabled: true });
 
-    expect(screen.getByText(/cancel/i)).toBeDisabled();
+    expect(screen.getByText(/cancel/i).hasAttribute('disabled')).toBe(true);
   });
 
   it('handles confirm button loading state', () => {
     renderConfirmationDialog({ confirmLoading: true });
 
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toBeTruthy();
   });
 
   it('handles cancel button loading state', () => {
     renderConfirmationDialog({ cancelLoading: true });
 
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toBeTruthy();
   });
 
   it('handles dialog with no title', () => {
     renderConfirmationDialog({ title: undefined });
 
-    expect(screen.queryByRole('heading')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading')).toBeFalsy();
   });
 
   it('handles dialog with no message', () => {
     renderConfirmationDialog({ message: undefined });
 
-    expect(screen.queryByText(/message/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/message/i)).toBeFalsy();
   });
 
   it('handles dialog with no confirm button', () => {
     renderConfirmationDialog({ showConfirm: false });
 
-    expect(screen.queryByText(/confirm/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/confirm/i)).toBeFalsy();
   });
 
   it('handles dialog with no cancel button', () => {
     renderConfirmationDialog({ showCancel: false });
 
-    expect(screen.queryByText(/cancel/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/cancel/i)).toBeFalsy();
   });
 });

@@ -1,7 +1,27 @@
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { SubmissionCard } from '../submissions/SubmissionCard';
-import { mockSubmission, renderComponent } from './testUtils';
+import { SubmissionCard } from '../../components/submissions/SubmissionCard';
+
+const mockSubmission = {
+  id: '1',
+  assignmentId: '1',
+  studentId: 'user1',
+  assignmentTitle: 'Test Assignment',
+  studentName: 'Test Student',
+  content: 'Test submission content',
+  comments: 'Test comments',
+  attachments: [],
+  grade: null,
+  feedback: null,
+  submittedAt: '2024-03-15T00:00:00Z',
+  createdAt: '2024-03-15T00:00:00Z',
+  updatedAt: '2024-03-15T00:00:00Z',
+  status: 'submitted' as const,
+};
+
+const renderComponent = (Component: any, props = {}) => {
+  return render(<Component {...props} />);
+};
 
 const renderSubmissionCard = (props = {}) => {
   return renderComponent(SubmissionCard, {
@@ -21,10 +41,10 @@ describe('SubmissionCard', () => {
   describe('Basic Rendering', () => {
     it('renders submission details', () => {
       renderSubmissionCard();
-      expect(screen.getByText(mockSubmission.assignmentTitle)).toBeInTheDocument();
-      expect(screen.getByText(mockSubmission.studentName)).toBeInTheDocument();
-      expect(screen.getByText(mockSubmission.status)).toBeInTheDocument();
-      expect(screen.getByText(`${mockSubmission.grade}%`)).toBeInTheDocument();
+      expect(screen.getByText(mockSubmission.assignmentTitle)).toBeTruthy();
+      expect(screen.getByText(mockSubmission.studentName)).toBeTruthy();
+      expect(screen.getByText(mockSubmission.status)).toBeTruthy();
+      expect(screen.getByText(`${mockSubmission.grade}%`)).toBeTruthy();
     });
 
     it('renders submission date', () => {
@@ -38,12 +58,12 @@ describe('SubmissionCard', () => {
           false
         );
       });
-      expect(dateParagraph).toBeInTheDocument();
+      expect(dateParagraph).toBeTruthy();
     });
 
     it('renders feedback when available', () => {
       renderSubmissionCard();
-      expect(screen.getByText(mockSubmission.feedback!)).toBeInTheDocument();
+      expect(screen.getByText(mockSubmission.feedback!)).toBeTruthy();
     });
   });
 
@@ -51,13 +71,15 @@ describe('SubmissionCard', () => {
     it('renders status badge with correct color', () => {
       renderSubmissionCard();
       const statusBadge = screen.getByText(mockSubmission.status);
-      expect(statusBadge).toHaveClass('bg-blue-100', 'text-blue-800');
+      expect(statusBadge.className).toContain('bg-blue-100');
+      expect(statusBadge.className).toContain('text-blue-800');
     });
 
     it('renders grade badge with correct color', () => {
       renderSubmissionCard();
       const gradeBadge = screen.getByText(`${mockSubmission.grade}%`);
-      expect(gradeBadge).toHaveClass('bg-yellow-100', 'text-yellow-800');
+      expect(gradeBadge.className).toContain('bg-yellow-100');
+      expect(gradeBadge.className).toContain('text-yellow-800');
     });
 
     it('renders with custom status component', () => {
@@ -65,16 +87,16 @@ describe('SubmissionCard', () => {
         <div data-testid="custom-status">{status}</div>
       );
       renderSubmissionCard({ statusComponent: CustomStatus });
-      expect(screen.getByTestId('custom-status')).toHaveTextContent(mockSubmission.status);
+      expect(screen.getByTestId('custom-status').textContent).toBe(mockSubmission.status);
     });
   });
 
   describe('Action Buttons', () => {
     it('renders action buttons', () => {
       renderSubmissionCard();
-      expect(screen.getByRole('button', { name: /view submission/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /grade submission/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /open delete confirmation/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /view submission/i })).toBeTruthy();
+      expect(screen.getByRole('button', { name: /grade submission/i })).toBeTruthy();
+      expect(screen.getByRole('button', { name: /open delete confirmation/i })).toBeTruthy();
     });
 
     it('handles view button click', () => {
@@ -104,10 +126,8 @@ describe('SubmissionCard', () => {
       const deleteButton = screen.getByRole('button', { name: /open delete confirmation/i });
       fireEvent.click(deleteButton);
 
-      expect(screen.getByRole('dialog')).toBeInTheDocument();
-      expect(
-        screen.getByText('Are you sure you want to delete this submission?')
-      ).toBeInTheDocument();
+      expect(screen.getByRole('dialog')).toBeTruthy();
+      expect(screen.getByText('Are you sure you want to delete this submission?')).toBeTruthy();
     });
 
     it('confirms delete action', () => {
@@ -134,7 +154,7 @@ describe('SubmissionCard', () => {
 
       expect(onDelete).not.toHaveBeenCalled();
       setTimeout(() => {
-        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(screen.queryByRole('dialog')).not.toBeTruthy();
       }, 0);
     });
 
@@ -145,15 +165,14 @@ describe('SubmissionCard', () => {
         </div>
       );
       renderSubmissionCard({ actionsComponent: CustomActions });
-      expect(screen.getByTestId('custom-actions')).toBeInTheDocument();
+      expect(screen.getByTestId('custom-actions')).toBeTruthy();
     });
   });
 
   describe('Accessibility', () => {
     it('has proper ARIA attributes', () => {
       renderSubmissionCard();
-      expect(screen.getByRole('article')).toHaveAttribute(
-        'aria-label',
+      expect(screen.getByRole('article').getAttribute('aria-label')).toBe(
         `Submission: ${mockSubmission.assignmentTitle} by ${mockSubmission.studentName}`
       );
     });
@@ -162,15 +181,15 @@ describe('SubmissionCard', () => {
       renderSubmissionCard();
       const buttons = screen.getAllByRole('button');
       buttons.forEach(button => {
-        expect(button).toHaveAttribute('tabindex', '0');
+        expect(button.getAttribute('tabindex')).toBe('0');
       });
     });
 
     it('has proper ARIA labels for buttons', () => {
       renderSubmissionCard();
-      expect(screen.getByRole('button', { name: /view submission/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /grade submission/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /open delete confirmation/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /view submission/i })).toBeTruthy();
+      expect(screen.getByRole('button', { name: /grade submission/i })).toBeTruthy();
+      expect(screen.getByRole('button', { name: /open delete confirmation/i })).toBeTruthy();
     });
   });
 
@@ -181,7 +200,7 @@ describe('SubmissionCard', () => {
         grade: undefined,
       };
       renderSubmissionCard({ submission: submissionWithoutGrade });
-      expect(screen.getByText(/not graded/i)).toBeInTheDocument();
+      expect(screen.getByText(/not graded/i)).toBeTruthy();
     });
 
     it('handles missing feedback', () => {
@@ -190,12 +209,12 @@ describe('SubmissionCard', () => {
         feedback: undefined,
       };
       renderSubmissionCard({ submission: submissionWithoutFeedback });
-      expect(screen.getByText(/no feedback/i)).toBeInTheDocument();
+      expect(screen.getByText(/no feedback/i)).toBeTruthy();
     });
 
     it('handles loading state', () => {
       renderSubmissionCard({ loading: true });
-      expect(screen.getByRole('progressbar')).toBeInTheDocument();
+      expect(screen.getByRole('progressbar')).toBeTruthy();
     });
 
     it('handles disabled state', () => {
@@ -211,7 +230,7 @@ describe('SubmissionCard', () => {
 
       // Check that all main buttons have the disabled attribute
       mainButtons.forEach(button => {
-        expect(button).toHaveAttribute('disabled', '');
+        expect(button.hasAttribute('disabled')).toBe(true);
       });
 
       // Try to interact with buttons

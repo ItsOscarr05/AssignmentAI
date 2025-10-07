@@ -102,20 +102,20 @@ describe('DashboardLayout', () => {
     renderDashboardLayout(<div>Test Content</div>);
 
     // Check for logo and app name
-    expect(screen.getByAltText('Logo')).toBeInTheDocument();
-    expect(screen.getByText('AssignmentAI')).toBeInTheDocument();
+    expect(screen.getByAltText('Logo')).toBeTruthy();
+    expect(screen.getByText('AssignmentAI')).toBeTruthy();
 
     // Check for navigation items
-    expect(screen.getByText('Overview')).toBeInTheDocument();
-    expect(screen.getByText('Assignments')).toBeInTheDocument();
-    expect(screen.getByText('Workshop')).toBeInTheDocument();
+    expect(screen.getByText('Overview')).toBeTruthy();
+    expect(screen.getByText('Assignments')).toBeTruthy();
+    expect(screen.getByText('Workshop')).toBeTruthy();
   });
 
   it('renders children content in the main area', () => {
     const testContent = <div data-testid="test-content">Test Content</div>;
     renderDashboardLayout(testContent);
 
-    expect(screen.getByTestId('test-content')).toBeInTheDocument();
+    expect(screen.getByTestId('test-content')).toBeTruthy();
   });
 
   it('applies correct theme based on dark mode setting', () => {
@@ -126,9 +126,9 @@ describe('DashboardLayout', () => {
     });
     const { unmount } = renderDashboardLayout(<div>Test Content</div>);
     const main = screen.getByTestId('main-content');
-    expect(main).toHaveStyle({
-      background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,240,240,0.95) 100%)',
-    });
+    expect(main.style.background).toBe(
+      'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,240,240,0.95) 100%)'
+    );
 
     // Clean up before next render
     unmount();
@@ -140,9 +140,9 @@ describe('DashboardLayout', () => {
     });
     renderDashboardLayout(<div>Test Content</div>);
     const mainDark = screen.getByTestId('main-content');
-    expect(mainDark).toHaveStyle({
-      background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,240,240,0.95) 100%)',
-    });
+    expect(mainDark.style.background).toBe(
+      'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,240,240,0.95) 100%)'
+    );
   });
 
   it('renders with proper drawer styles', () => {
@@ -150,9 +150,7 @@ describe('DashboardLayout', () => {
     const drawer = screen.getByRole('complementary');
 
     // Check drawer styles
-    expect(drawer).toHaveStyle({
-      width: '240px',
-    });
+    expect(drawer.style.width).toBe('240px');
   });
 
   it('renders with proper main content styles', () => {
@@ -160,23 +158,21 @@ describe('DashboardLayout', () => {
     const main = screen.getByTestId('main-content');
 
     // Check main content styles
-    expect(main).toHaveStyle({
-      flexGrow: 1,
-      padding: '24px',
-    });
+    expect(main.style.flexGrow).toBe('1');
+    expect(main.style.padding).toBe('24px');
   });
 
   it('handles drawer toggle', () => {
     renderDashboardLayout(<div>Test Content</div>);
     const toggleButton = screen.getByRole('button', { name: 'toggle drawer' });
-    expect(toggleButton).toBeInTheDocument();
+    expect(toggleButton).toBeTruthy();
 
     // Click the toggle button
     fireEvent.click(toggleButton);
 
     // Check if drawer is toggled
     const drawer = screen.getByRole('complementary');
-    expect(drawer).toBeInTheDocument();
+    expect(drawer).toBeTruthy();
   });
 
   it('renders with proper navigation item styles', () => {
@@ -185,9 +181,7 @@ describe('DashboardLayout', () => {
 
     // Check navigation item styles
     navItems.forEach(item => {
-      expect(item).toHaveStyle({
-        borderRadius: '4px',
-      });
+      expect(item.style.borderRadius).toBe('4px');
     });
   });
 });

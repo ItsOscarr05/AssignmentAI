@@ -2,8 +2,8 @@ import { ThemeProvider as EmotionThemeProvider } from '@emotion/react';
 import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import theme from '../../theme';
-import SkipLink from '../common/SkipLink';
+import SkipLink from '../../components/common/SkipLink';
+import { theme } from '../../theme';
 
 const renderSkipLink = (props = {}) => {
   return render(
@@ -19,28 +19,28 @@ describe('SkipLink', () => {
   describe('Basic Rendering', () => {
     it('renders with default props', () => {
       renderSkipLink();
-      expect(screen.getByRole('link')).toBeInTheDocument();
-      expect(screen.getByText('Skip to main content')).toBeInTheDocument();
+      expect(screen.getByRole('link')).toBeTruthy();
+      expect(screen.getByText('Skip to main content')).toBeTruthy();
     });
 
     it('renders with custom text', () => {
       renderSkipLink({ text: 'Skip to content' });
-      expect(screen.getByText('Skip to content')).toBeInTheDocument();
+      expect(screen.getByText('Skip to content')).toBeTruthy();
     });
 
     it('renders with custom target', () => {
       renderSkipLink({ target: 'main-content' });
-      expect(screen.getByRole('link')).toHaveAttribute('href', '#main-content');
+      expect(screen.getByRole('link').getAttribute('href')).toBe('#main-content');
     });
 
     it('renders with custom color', () => {
       renderSkipLink({ color: 'warning' });
-      expect(screen.getByRole('link')).toHaveClass('text-warning');
+      expect(screen.getByRole('link').className).toContain('text-warning');
     });
 
     it('renders with custom variant', () => {
       renderSkipLink({ variant: 'outlined' });
-      expect(screen.getByRole('link')).toHaveClass('border');
+      expect(screen.getByRole('link').className).toContain('border');
     });
   });
 
@@ -48,19 +48,19 @@ describe('SkipLink', () => {
     it('has proper ARIA attributes', () => {
       renderSkipLink();
       const link = screen.getByRole('link');
-      expect(link).toHaveAttribute('aria-label', 'Skip to main content');
+      expect(link.getAttribute('aria-label')).toBe('Skip to main content');
     });
 
     it('has proper focus styles', () => {
       renderSkipLink();
       const link = screen.getByRole('link');
-      expect(link).toHaveClass('focus:outline-none');
-      expect(link).toHaveClass('focus:ring-2');
+      expect(link.className).toContain('focus:outline-none');
+      expect(link.className).toContain('focus:ring-2');
     });
 
     it('has proper tabIndex', () => {
       renderSkipLink();
-      expect(screen.getByRole('link')).toHaveAttribute('tabindex', '0');
+      expect(screen.getByRole('link').getAttribute('tabindex')).toBe('0');
     });
   });
 
@@ -69,14 +69,14 @@ describe('SkipLink', () => {
       renderSkipLink({
         className: 'custom-class',
       });
-      expect(screen.getByRole('link')).toHaveClass('custom-class');
+      expect(screen.getByRole('link').className).toContain('custom-class');
     });
 
     it('applies custom style', () => {
       const customStyle = { backgroundColor: 'red' };
       renderSkipLink({ style: customStyle });
       const link = screen.getByRole('link');
-      expect(link).toHaveStyle('background-color: rgb(255, 0, 0)');
+      expect(link.style.backgroundColor).toBe('rgb(255, 0, 0)');
     });
 
     it('applies custom focus className when focused', () => {
@@ -85,7 +85,7 @@ describe('SkipLink', () => {
       });
       const link = screen.getByRole('link');
       fireEvent.focus(link);
-      expect(link).toHaveClass('custom-focus-class');
+      expect(link.className).toContain('custom-focus-class');
     });
 
     it('applies custom focus style when focused', () => {
@@ -93,7 +93,7 @@ describe('SkipLink', () => {
       renderSkipLink({ focusStyle });
       const link = screen.getByRole('link');
       fireEvent.focus(link);
-      expect(link).toHaveStyle('color: rgb(0, 0, 255)');
+      expect(link.style.color).toBe('rgb(0, 0, 255)');
     });
   });
 
@@ -126,28 +126,28 @@ describe('SkipLink', () => {
   describe('Edge Cases', () => {
     it('renders with empty text', () => {
       renderSkipLink({ text: '' });
-      expect(screen.getByRole('link')).toBeInTheDocument();
+      expect(screen.getByRole('link')).toBeTruthy();
     });
 
     it('renders with long text', () => {
       const longText = 'A'.repeat(1000);
       renderSkipLink({ text: longText });
-      expect(screen.getByText(longText)).toBeInTheDocument();
+      expect(screen.getByText(longText)).toBeTruthy();
     });
 
     it('renders with HTML in text', () => {
       renderSkipLink({ text: '<span>Skip to content</span>' });
-      expect(screen.getByText('Skip to content')).toBeInTheDocument();
+      expect(screen.getByText('Skip to content')).toBeTruthy();
     });
 
     it('renders with custom z-index', () => {
       renderSkipLink({ zIndex: 1000 });
-      expect(screen.getByRole('link')).toHaveStyle({ zIndex: 1000 });
+      expect(screen.getByRole('link').style.zIndex).toBe('1000');
     });
 
     it('renders with custom position', () => {
       renderSkipLink({ position: 'fixed' });
-      expect(screen.getByRole('link')).toHaveStyle({ position: 'fixed' });
+      expect(screen.getByRole('link').style.position).toBe('fixed');
     });
   });
 });

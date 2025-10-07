@@ -68,7 +68,7 @@ describe('FeedbackList', () => {
   it('renders loading state initially', () => {
     (api.get as any).mockImplementationOnce(() => new Promise(() => {}));
     renderFeedbackList();
-    expect(screen.getByText(/loading feedback/i)).toBeInTheDocument();
+    expect(screen.getByText(/loading feedback/i)).toBeTruthy();
   });
 
   it('renders feedback items successfully', async () => {
@@ -78,10 +78,10 @@ describe('FeedbackList', () => {
     renderFeedbackList();
 
     await waitFor(() => {
-      expect(screen.getByText('Assignment 1')).toBeInTheDocument();
-      expect(screen.getByText('Assignment 2')).toBeInTheDocument();
-      expect(screen.getByText('John Doe')).toBeInTheDocument();
-      expect(screen.getByText('Jane Smith')).toBeInTheDocument();
+      expect(screen.getByText('Assignment 1')).toBeTruthy();
+      expect(screen.getByText('Assignment 2')).toBeTruthy();
+      expect(screen.getByText('John Doe')).toBeTruthy();
+      expect(screen.getByText('Jane Smith')).toBeTruthy();
     });
   });
 
@@ -90,7 +90,7 @@ describe('FeedbackList', () => {
     renderFeedbackList();
 
     await waitFor(() => {
-      expect(screen.getByText(/error loading feedback/i)).toBeInTheDocument();
+      expect(screen.getByText(/error loading feedback/i)).toBeTruthy();
     });
   });
 
@@ -101,7 +101,7 @@ describe('FeedbackList', () => {
     renderFeedbackList();
 
     await waitFor(() => {
-      expect(screen.getByText('Assignment 1')).toBeInTheDocument();
+      expect(screen.getByText('Assignment 1')).toBeTruthy();
     });
 
     // Click on the "Grade" column header
@@ -122,7 +122,7 @@ describe('FeedbackList', () => {
     renderFeedbackList();
 
     await waitFor(() => {
-      expect(screen.getByText('Assignment 1')).toBeInTheDocument();
+      expect(screen.getByText('Assignment 1')).toBeTruthy();
     });
 
     // Go to next page
@@ -150,7 +150,7 @@ describe('FeedbackList', () => {
     renderFeedbackList();
 
     await waitFor(() => {
-      expect(screen.getByText('Assignment 1')).toBeInTheDocument();
+      expect(screen.getByText('Assignment 1')).toBeTruthy();
     });
 
     // Change rows per page to 25
@@ -173,7 +173,7 @@ describe('FeedbackList', () => {
     renderFeedbackList();
 
     await waitFor(() => {
-      expect(screen.getByText('Assignment 1')).toBeInTheDocument();
+      expect(screen.getByText('Assignment 1')).toBeTruthy();
     });
 
     const searchInput = screen.getByPlaceholderText(/search feedback/i);
@@ -195,8 +195,8 @@ describe('FeedbackList', () => {
     renderFeedbackList();
 
     await waitFor(() => {
-      expect(screen.getByText('completed')).toBeInTheDocument();
-      expect(screen.getByText('in_progress')).toBeInTheDocument();
+      expect(screen.getByText('completed')).toBeTruthy();
+      expect(screen.getByText('in_progress')).toBeTruthy();
     });
   });
 
@@ -207,8 +207,8 @@ describe('FeedbackList', () => {
     renderFeedbackList();
 
     await waitFor(() => {
-      expect(screen.getByText('Good work overall')).toBeInTheDocument();
-      expect(screen.getByText('Excellent submission')).toBeInTheDocument();
+      expect(screen.getByText('Good work overall')).toBeTruthy();
+      expect(screen.getByText('Excellent submission')).toBeTruthy();
     });
   });
 
@@ -222,8 +222,8 @@ describe('FeedbackList', () => {
       // Format dates to match the component's format (MMM d, yyyy)
       const date1 = format(new Date(mockFeedback[0].created_at), 'MMM d, yyyy');
       const date2 = format(new Date(mockFeedback[1].created_at), 'MMM d, yyyy');
-      expect(screen.getByText(date1)).toBeInTheDocument();
-      expect(screen.getByText(date2)).toBeInTheDocument();
+      expect(screen.getByText(date1)).toBeTruthy();
+      expect(screen.getByText(date2)).toBeTruthy();
     });
   });
 });

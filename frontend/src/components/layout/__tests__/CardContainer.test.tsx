@@ -30,29 +30,29 @@ describe('CardContainer', () => {
 
   it('renders children content', () => {
     renderCardContainer();
-    expect(screen.getByText('Test Content')).toBeInTheDocument();
+    expect(screen.getByText('Test Content')).toBeTruthy();
   });
 
   it('renders with custom title', () => {
     renderCardContainer({ title: 'Test Card' });
-    expect(screen.getByText('Test Card')).toBeInTheDocument();
+    expect(screen.getByText('Test Card')).toBeTruthy();
   });
 
   it('renders with custom subtitle', () => {
     renderCardContainer({ subtitle: 'Test Subtitle' });
-    expect(screen.getByText('Test Subtitle')).toBeInTheDocument();
+    expect(screen.getByText('Test Subtitle')).toBeTruthy();
   });
 
   it('renders with custom actions', () => {
     const actions = <button>Test Action</button>;
     renderCardContainer({ actions });
-    expect(screen.getByText('Test Action')).toBeInTheDocument();
+    expect(screen.getByText('Test Action')).toBeTruthy();
   });
 
   it('renders with custom elevation', () => {
     renderCardContainer({ elevation: 3 });
     const card = screen.getByTestId('card-container');
-    expect(card).toHaveClass('MuiPaper-elevation3');
+    expect(card.className).toContain('MuiPaper-elevation3');
   });
 
   it('renders with proper container styles', () => {
@@ -60,9 +60,9 @@ describe('CardContainer', () => {
     const card = screen.getByTestId('card-container');
 
     // Check for Material-UI classes
-    expect(card).toHaveClass('MuiPaper-root');
-    expect(card).toHaveClass('MuiPaper-elevation1');
-    expect(card).toHaveClass('MuiPaper-rounded');
+    expect(card.className).toContain('MuiPaper-root');
+    expect(card.className).toContain('MuiPaper-elevation1');
+    expect(card.className).toContain('MuiPaper-rounded');
   });
 
   it('renders with proper header styles', () => {
@@ -70,12 +70,10 @@ describe('CardContainer', () => {
     const header = screen.getByTestId('card-header');
 
     // Check for Material-UI classes and attributes
-    expect(header).toHaveClass('MuiBox-root');
-    expect(header).toHaveStyle({
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    });
+    expect(header.className).toContain('MuiBox-root');
+    expect(header.style.display).toBe('flex');
+    expect(header.style.justifyContent).toBe('space-between');
+    expect(header.style.alignItems).toBe('center');
   });
 
   it('renders with proper title styles', () => {
@@ -83,8 +81,8 @@ describe('CardContainer', () => {
     const title = screen.getByText('Test Card');
 
     // Check for Material-UI classes
-    expect(title).toHaveClass('MuiTypography-root');
-    expect(title).toHaveClass('MuiTypography-h6');
+    expect(title.className).toContain('MuiTypography-root');
+    expect(title.className).toContain('MuiTypography-h6');
   });
 
   it('renders with proper subtitle styles', () => {
@@ -92,8 +90,8 @@ describe('CardContainer', () => {
     const subtitle = screen.getByText('Test Subtitle');
 
     // Check for Material-UI classes
-    expect(subtitle).toHaveClass('MuiTypography-root');
-    expect(subtitle).toHaveClass('MuiTypography-body2');
+    expect(subtitle.className).toContain('MuiTypography-root');
+    expect(subtitle.className).toContain('MuiTypography-body2');
   });
 
   it('renders with proper content styles', () => {
@@ -101,7 +99,7 @@ describe('CardContainer', () => {
     const content = screen.getByTestId('card-content');
 
     // Check for Material-UI classes
-    expect(content).toHaveClass('MuiBox-root');
+    expect(content.className).toContain('MuiBox-root');
   });
 
   it('renders with proper responsive design', () => {
@@ -109,8 +107,8 @@ describe('CardContainer', () => {
     const card = screen.getByTestId('card-container');
 
     // Check for Material-UI classes
-    expect(card).toHaveClass('MuiPaper-root');
-    expect(card).toHaveClass('MuiPaper-rounded');
+    expect(card.className).toContain('MuiPaper-root');
+    expect(card.className).toContain('MuiPaper-rounded');
   });
 
   it('renders with proper typography styles', () => {
@@ -119,8 +117,8 @@ describe('CardContainer', () => {
     const subtitle = screen.getByText('Test Subtitle');
 
     // Check for Material-UI classes
-    expect(title).toHaveClass('MuiTypography-h6');
-    expect(subtitle).toHaveClass('MuiTypography-body2');
+    expect(title.className).toContain('MuiTypography-h6');
+    expect(subtitle.className).toContain('MuiTypography-body2');
   });
 
   it('renders with proper border radius', () => {
@@ -128,7 +126,7 @@ describe('CardContainer', () => {
     const card = screen.getByTestId('card-container');
 
     // Check for Material-UI classes
-    expect(card).toHaveClass('MuiPaper-rounded');
+    expect(card.className).toContain('MuiPaper-rounded');
   });
 
   it('renders with proper spacing between elements', () => {
@@ -137,8 +135,8 @@ describe('CardContainer', () => {
     const content = screen.getByTestId('card-content');
 
     // Check for Material-UI classes
-    expect(header).toHaveClass('MuiBox-root');
-    expect(content).toHaveClass('MuiBox-root');
+    expect(header.className).toContain('MuiBox-root');
+    expect(content.className).toContain('MuiBox-root');
   });
 
   it('renders with proper background colors', () => {
@@ -146,7 +144,7 @@ describe('CardContainer', () => {
     const card = screen.getByTestId('card-container');
 
     // Check for Material-UI classes
-    expect(card).toHaveClass('MuiPaper-root');
+    expect(card.className).toContain('MuiPaper-root');
   });
 
   it('renders with proper hover styles', () => {
@@ -154,11 +152,10 @@ describe('CardContainer', () => {
     const card = screen.getByTestId('card-container');
 
     // Check for Material-UI classes
-    expect(card).toHaveClass('MuiPaper-root');
-    expect(card).toHaveStyle({
-      transition:
-        'box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,transform 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms',
-    });
+    expect(card.className).toContain('MuiPaper-root');
+    expect(card.style.transition).toBe(
+      'box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,transform 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms'
+    );
   });
 
   it('renders with proper clickable styles', () => {
@@ -166,12 +163,11 @@ describe('CardContainer', () => {
     const card = screen.getByTestId('card-container');
 
     // Check for Material-UI classes and attributes
-    expect(card).toHaveClass('MuiPaper-root');
-    expect(card).toHaveStyle({
-      cursor: 'pointer',
-      transition:
-        'box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,transform 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms',
-    });
+    expect(card.className).toContain('MuiPaper-root');
+    expect(card.style.cursor).toBe('pointer');
+    expect(card.style.transition).toBe(
+      'box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,transform 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms'
+    );
   });
 
   it('renders with proper disabled styles', () => {
@@ -179,11 +175,9 @@ describe('CardContainer', () => {
     const card = screen.getByTestId('card-container');
 
     // Check for Material-UI classes and attributes
-    expect(card).toHaveClass('MuiPaper-root');
-    expect(card).toHaveStyle({
-      opacity: '0.5',
-      pointerEvents: 'none',
-    });
+    expect(card.className).toContain('MuiPaper-root');
+    expect(card.style.opacity).toBe('0.5');
+    expect(card.style.pointerEvents).toBe('none');
   });
 
   it('renders with proper selected styles', () => {
@@ -191,9 +185,7 @@ describe('CardContainer', () => {
     const card = screen.getByTestId('card-container');
 
     // Check for Material-UI classes and attributes
-    expect(card).toHaveClass('MuiPaper-root');
-    expect(card).toHaveStyle({
-      border: `2px solid ${theme.palette.primary.main}`,
-    });
+    expect(card.className).toContain('MuiPaper-root');
+    expect(card.style.border).toBe(`2px solid ${theme.palette.primary.main}`);
   });
 });

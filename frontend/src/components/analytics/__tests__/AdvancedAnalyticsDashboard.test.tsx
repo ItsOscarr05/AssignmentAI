@@ -68,19 +68,15 @@ describe('AdvancedAnalyticsDashboard', () => {
     it('should render component title and description', () => {
       renderWithProviders(<AdvancedAnalyticsDashboard />);
 
-      expect(screen.getByText('Advanced Analytics Dashboard')).toBeInTheDocument();
-      expect(
-        screen.getByText(/Comprehensive performance insights and analytics/)
-      ).toBeInTheDocument();
+      expect(screen.getByText('Advanced Analytics Dashboard')).toBeTruthy();
+      expect(screen.getByText(/Comprehensive performance insights and analytics/)).toBeTruthy();
     });
 
     it('should display Max Plan benefit alert', () => {
       renderWithProviders(<AdvancedAnalyticsDashboard />);
 
-      expect(screen.getByText(/Max Plan Benefit/)).toBeInTheDocument();
-      expect(
-        screen.getByText(/Advanced analytics are included with your Max plan/)
-      ).toBeInTheDocument();
+      expect(screen.getByText(/Max Plan Benefit/)).toBeTruthy();
+      expect(screen.getByText(/Advanced analytics are included with your Max plan/)).toBeTruthy();
     });
   });
 
@@ -95,7 +91,7 @@ describe('AdvancedAnalyticsDashboard', () => {
 
       renderWithProviders(<AdvancedAnalyticsDashboard />);
 
-      expect(screen.getByRole('progressbar')).toBeInTheDocument();
+      expect(screen.getByRole('progressbar')).toBeTruthy();
     });
   });
 
@@ -110,7 +106,7 @@ describe('AdvancedAnalyticsDashboard', () => {
 
       renderWithProviders(<AdvancedAnalyticsDashboard />);
 
-      expect(screen.getByText('Failed to load analytics data')).toBeInTheDocument();
+      expect(screen.getByText('Failed to load analytics data')).toBeTruthy();
     });
 
     it('should display error message when API fails', () => {
@@ -123,7 +119,7 @@ describe('AdvancedAnalyticsDashboard', () => {
 
       renderWithProviders(<AdvancedAnalyticsDashboard />);
 
-      expect(screen.getByText('Failed to load analytics data')).toBeInTheDocument();
+      expect(screen.getByText('Failed to load analytics data')).toBeTruthy();
     });
   });
 
@@ -131,25 +127,25 @@ describe('AdvancedAnalyticsDashboard', () => {
     it('should display performance insights', () => {
       renderWithProviders(<AdvancedAnalyticsDashboard />);
 
-      expect(screen.getByText('Performance Insights')).toBeInTheDocument();
-      expect(screen.getByText('Strong Performance in Mathematics')).toBeInTheDocument();
-      expect(screen.getByText('English Needs Attention')).toBeInTheDocument();
+      expect(screen.getByText('Performance Insights')).toBeTruthy();
+      expect(screen.getByText('Strong Performance in Mathematics')).toBeTruthy();
+      expect(screen.getByText('English Needs Attention')).toBeTruthy();
     });
 
     it('should display subject performance data', () => {
       renderWithProviders(<AdvancedAnalyticsDashboard />);
 
-      expect(screen.getByText('Subject Performance')).toBeInTheDocument();
-      expect(screen.getByText('Mathematics')).toBeInTheDocument();
-      expect(screen.getByText('English')).toBeInTheDocument();
-      expect(screen.getByText('Science')).toBeInTheDocument();
+      expect(screen.getByText('Subject Performance')).toBeTruthy();
+      expect(screen.getByText('Mathematics')).toBeTruthy();
+      expect(screen.getByText('English')).toBeTruthy();
+      expect(screen.getByText('Science')).toBeTruthy();
     });
 
     it('should display performance metrics', () => {
       renderWithProviders(<AdvancedAnalyticsDashboard />);
 
-      expect(screen.getByText('Performance Metrics')).toBeInTheDocument();
-      expect(screen.getByText('24')).toBeInTheDocument(); // assignmentsCompleted
+      expect(screen.getByText('Performance Metrics')).toBeTruthy();
+      expect(screen.getByText('24')).toBeTruthy(); // assignmentsCompleted
       expect(screen.getAllByText('85%')).toHaveLength(2); // appears in metrics and trends
     });
   });
@@ -165,7 +161,7 @@ describe('AdvancedAnalyticsDashboard', () => {
 
       renderWithProviders(<AdvancedAnalyticsDashboard />);
 
-      expect(screen.getByText('API Error')).toBeInTheDocument();
+      expect(screen.getByText('API Error')).toBeTruthy();
     });
   });
 
@@ -173,7 +169,7 @@ describe('AdvancedAnalyticsDashboard', () => {
     it('should show upward trend correctly', () => {
       renderWithProviders(<AdvancedAnalyticsDashboard />);
 
-      expect(screen.getByText('Performance Trends')).toBeInTheDocument();
+      expect(screen.getByText('Performance Trends')).toBeTruthy();
       expect(screen.getAllByText('85%')).toHaveLength(2); // appears in metrics and trends
     });
 
@@ -201,7 +197,7 @@ describe('AdvancedAnalyticsDashboard', () => {
 
       renderWithProviders(<AdvancedAnalyticsDashboard />);
 
-      expect(screen.getByText('Performance Trends')).toBeInTheDocument();
+      expect(screen.getByText('Performance Trends')).toBeTruthy();
       expect(screen.getAllByText('75%')).toHaveLength(2); // appears in metrics and trends
     });
   });

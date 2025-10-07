@@ -34,13 +34,13 @@ export class PopupApiService {
   static async analyzeFile(file: File): Promise<FileAnalysisResult> {
     const formData = new FormData();
     formData.append('file', file);
-    
+
     const response = await api.post('/workshop/files', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
-    
+
     return response.data;
   }
 
@@ -52,7 +52,7 @@ export class PopupApiService {
       file_id: fileId,
       action: action,
     });
-    
+
     return response.data;
   }
 
@@ -63,7 +63,7 @@ export class PopupApiService {
     const response = await api.post('/workshop/links', {
       url: url,
     });
-    
+
     return response.data;
   }
 
@@ -74,14 +74,14 @@ export class PopupApiService {
     const response = await api.post('/workshop/generate', {
       prompt: prompt,
     });
-    
+
     return response.data;
   }
 
   /**
    * Get file content for preview
    */
-  static async getFileContent(fileId: string): Promise<string> {
+  static async getFileContent(_fileId: string): Promise<string> {
     // This would need to be implemented in the backend
     // For now, return a placeholder
     return 'File content preview not yet implemented';
@@ -91,9 +91,9 @@ export class PopupApiService {
    * Export analysis results
    */
   static async exportResults(
-    type: 'pdf' | 'docx' | 'txt' | 'json',
+    _type: 'pdf' | 'docx' | 'txt' | 'json',
     content: any,
-    filename?: string
+    _filename?: string
   ): Promise<Blob> {
     // This would need to be implemented in the backend
     // For now, create a simple text export

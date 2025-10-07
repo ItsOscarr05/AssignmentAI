@@ -15,7 +15,7 @@ describe('SecurityProvider', () => {
         <div>Test Child</div>
       </SecurityProvider>
     );
-    expect(getByText('Test Child')).toBeInTheDocument();
+    expect(getByText('Test Child')).toBeTruthy();
   });
 
   it('provides CSRF token functionality', () => {

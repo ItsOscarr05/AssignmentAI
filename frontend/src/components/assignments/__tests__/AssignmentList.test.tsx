@@ -49,15 +49,15 @@ describe('AssignmentList Component', () => {
 
   it('renders loading state initially', () => {
     renderComponent();
-    expect(screen.getByText('Loading assignments...')).toBeInTheDocument();
+    expect(screen.getByText('Loading assignments...')).toBeTruthy();
   });
 
   it('renders assignments after loading', async () => {
     renderComponent();
     await waitFor(() => {
-      expect(screen.getByText('Mathematics Assignment')).toBeInTheDocument();
+      expect(screen.getByText('Mathematics Assignment')).toBeTruthy();
     });
-    expect(screen.getByText('Physics Lab Report')).toBeInTheDocument();
+    expect(screen.getByText('Physics Lab Report')).toBeTruthy();
   });
 
   it('handles search functionality', async () => {
@@ -70,8 +70,8 @@ describe('AssignmentList Component', () => {
 
     // Wait for initial data to load
     await waitFor(() => {
-      expect(screen.getByText('Mathematics Assignment')).toBeInTheDocument();
-      expect(screen.getByText('Physics Lab Report')).toBeInTheDocument();
+      expect(screen.getByText('Mathematics Assignment')).toBeTruthy();
+      expect(screen.getByText('Physics Lab Report')).toBeTruthy();
     });
 
     // Mock the search response before triggering the search
@@ -86,8 +86,8 @@ describe('AssignmentList Component', () => {
     // Wait for the search results to be loaded
     await waitFor(
       () => {
-        expect(screen.getByText('Mathematics Assignment')).toBeInTheDocument();
-        expect(screen.queryByText('Physics Lab Report')).not.toBeInTheDocument();
+        expect(screen.getByText('Mathematics Assignment')).toBeTruthy();
+        expect(screen.queryByText('Physics Lab Report')).not.toBeTruthy();
       },
       { timeout: 3000 }
     );
@@ -115,7 +115,7 @@ describe('AssignmentList Component', () => {
 
     renderComponent();
     await waitFor(() => {
-      expect(screen.getByText('Assignment 1')).toBeInTheDocument();
+      expect(screen.getByText('Assignment 1')).toBeTruthy();
     });
 
     // Mock the next page
@@ -127,7 +127,7 @@ describe('AssignmentList Component', () => {
     fireEvent.click(nextButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Assignment 11')).toBeInTheDocument();
+      expect(screen.getByText('Assignment 11')).toBeTruthy();
     });
   });
 
@@ -142,7 +142,7 @@ describe('AssignmentList Component', () => {
 
     renderComponent();
     await waitFor(() => {
-      expect(screen.getByText('Mathematics Assignment')).toBeInTheDocument();
+      expect(screen.getByText('Mathematics Assignment')).toBeTruthy();
     });
 
     // Mock the sorted response
@@ -163,7 +163,7 @@ describe('AssignmentList Component', () => {
       const rows = screen.getAllByRole('row');
       // Skip header row
       const firstDataRow = rows[1];
-      expect(firstDataRow).toHaveTextContent('Mathematics Assignment');
+      expect(firstDataRow.textContent).toBe('Mathematics Assignment');
     });
   });
 
@@ -171,7 +171,7 @@ describe('AssignmentList Component', () => {
     (api.get as Mock).mockRejectedValueOnce(new Error('Failed to fetch'));
     renderComponent();
     await waitFor(() => {
-      expect(screen.getByText(/error loading assignments/i)).toBeInTheDocument();
+      expect(screen.getByText(/error loading assignments/i)).toBeTruthy();
     });
   });
 
@@ -181,7 +181,7 @@ describe('AssignmentList Component', () => {
     await waitFor(() => {
       // Check for empty table body
       const tableBody = screen.getByTestId('table-body');
-      expect(tableBody).toBeInTheDocument();
+      expect(tableBody).toBeTruthy();
       // Optionally, check for no rows
       const rows = screen.getAllByRole('row');
       // There should only be the header row if no assignments
@@ -192,7 +192,7 @@ describe('AssignmentList Component', () => {
   it('handles assignment status changes', async () => {
     renderComponent();
     await waitFor(() => {
-      expect(screen.getByText('Mathematics Assignment')).toBeInTheDocument();
+      expect(screen.getByText('Mathematics Assignment')).toBeTruthy();
     });
     // Mock the status change response
     (api.put as Mock).mockResolvedValueOnce({
@@ -209,12 +209,12 @@ describe('AssignmentList Component', () => {
     const assignmentRow = screen.getByText('Mathematics Assignment').closest('tr') as HTMLElement;
     expect(assignmentRow).not.toBeNull();
     const statusChip = within(assignmentRow).getByTestId('chip');
-    expect(statusChip).toHaveAttribute('label', 'draft');
+    expect(statusChip.getAttribute('label')).toBe('draft');
     fireEvent.click(statusChip);
     // Ensure the mock is applied correctly
     await waitFor(() => {
       const updatedStatusChip = within(assignmentRow).getByTestId('chip');
-      expect(updatedStatusChip).toHaveAttribute('label', 'published');
+      expect(updatedStatusChip.getAttribute('label')).toBe('published');
     });
   });
 });

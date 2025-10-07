@@ -112,7 +112,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
   }, [open, files, selectedFile]);
 
   // Format spreadsheet content to show as structured data for table rendering
-  const formatSpreadsheetContent = (processedData: any, fileExtension: string): any => {
+  const formatSpreadsheetContent = (processedData: any): any => {
     try {
       // Handle different spreadsheet formats
       if (processedData.sheets) {
@@ -211,7 +211,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
               onChange={(_, newValue) => setActiveSheetTab(newValue)}
               sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
             >
-              {sheetNames.map((sheetName, index) => (
+              {sheetNames.map(sheetName => (
                 <Tab key={sheetName} label={sheetName} />
               ))}
             </Tabs>
@@ -271,10 +271,9 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
           sx={{
             border: '1px solid #d0d7de',
             borderRadius: '4px',
-            overflow: 'hidden',
+            overflow: 'auto',
             backgroundColor: '#ffffff',
             maxHeight: 400,
-            overflow: 'auto',
             boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
           }}
         >
@@ -300,7 +299,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
             </Box>
 
             {/* Column letters */}
-            {headers.map((header: string, index: number) => (
+            {headers.map((_: string, index: number) => (
               <Box
                 key={index}
                 sx={{
@@ -402,8 +401,8 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
         console.log('Using content from file object:', file.content);
 
         // Check if this is a CSV/Excel file that might have processed calculations
-        const fileExtension = file.name.split('.').pop()?.toLowerCase();
-        const isSpreadsheetFile = ['csv', 'xlsx', 'xls'].includes(fileExtension || '');
+        const fileExtension = file.name.split('.').pop()?.toLowerCase() || '';
+        const isSpreadsheetFile = ['csv', 'xlsx', 'xls'].includes(fileExtension);
 
         if (isSpreadsheetFile) {
           console.log('Processing spreadsheet file:', file.name);
@@ -414,7 +413,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
           // Check if we have processed data directly from the backend
           if (file.processed_data) {
             console.log('Using processed data from backend:', file.processed_data);
-            const structuredData = formatSpreadsheetContent(file.processed_data, fileExtension);
+            const structuredData = formatSpreadsheetContent(file.processed_data);
             console.log('Formatted structured data:', structuredData);
             setStructuredFileData(structuredData);
 
@@ -459,7 +458,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
 
               // Check if we have processed sheets data
               if (analysisData && (analysisData.sheets || analysisData.data)) {
-                const structuredData = formatSpreadsheetContent(analysisData, fileExtension);
+                const structuredData = formatSpreadsheetContent(analysisData);
                 setStructuredFileData(structuredData);
                 setOriginalFileContent(file.content || '');
                 console.log('Using structured spreadsheet data from analysis:', structuredData);
@@ -1038,10 +1037,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
               ) : structuredFileData &&
                 (structuredFileData.type === 'excel' || structuredFileData.type === 'csv') ? (
                 // Show formatted table for Excel/CSV files
-                <Box sx={{ mb: 2 }}>
-                  {console.log('Rendering spreadsheet table with data:', structuredFileData)}
-                  {renderSpreadsheetTable(structuredFileData)}
-                </Box>
+                <Box sx={{ mb: 2 }}>{renderSpreadsheetTable(structuredFileData)}</Box>
               ) : (
                 <Box
                   sx={{

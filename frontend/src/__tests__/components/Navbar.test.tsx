@@ -2,8 +2,8 @@ import { ThemeProvider } from '@mui/material/styles';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import Navbar from '../../components/Navbar';
 import { theme } from '../../theme';
-import Navbar from '../Navbar';
 
 // Mock Material-UI components
 vi.mock('@mui/material', async () => {
@@ -107,18 +107,18 @@ describe('Navbar', () => {
 
   it('renders navbar with all required elements', () => {
     renderNavbar();
-    expect(screen.getByText(/assignmentai/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /menu/i })).toBeInTheDocument();
+    expect(screen.getByText(/assignmentai/i)).toBeTruthy();
+    expect(screen.getByRole('button', { name: /menu/i })).toBeTruthy();
 
-    expect(screen.getByRole('button', { name: /^settings$/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /account settings/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^settings$/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /account settings/i })).toBeTruthy();
   });
 
   it('displays user information correctly', () => {
     renderNavbar();
-    expect(screen.getByText('John Doe')).toBeInTheDocument();
+    expect(screen.getByText('John Doe')).toBeTruthy();
     const avatar = screen.getByAltText('John Doe');
-    expect(avatar).toHaveAttribute('src', 'https://example.com/avatar.jpg');
+    expect(avatar.getAttribute('src')).toBe('https://example.com/avatar.jpg');
   });
 
   it('opens profile menu when account button is clicked', async () => {
@@ -127,10 +127,10 @@ describe('Navbar', () => {
     fireEvent.click(accountButton);
 
     await waitFor(() => {
-      expect(screen.getByRole('menu')).toBeInTheDocument();
-      expect(screen.getByRole('menuitem', { name: /profile/i })).toBeInTheDocument();
-      expect(screen.getByRole('menuitem', { name: /settings/i })).toBeInTheDocument();
-      expect(screen.getByRole('menuitem', { name: /logout/i })).toBeInTheDocument();
+      expect(screen.getByRole('menu')).toBeTruthy();
+      expect(screen.getByRole('menuitem', { name: /profile/i })).toBeTruthy();
+      expect(screen.getByRole('menuitem', { name: /settings/i })).toBeTruthy();
+      expect(screen.getByRole('menuitem', { name: /logout/i })).toBeTruthy();
     });
   });
 

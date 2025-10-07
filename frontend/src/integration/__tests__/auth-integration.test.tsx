@@ -187,7 +187,7 @@ describe('Authentication Integration Tests', () => {
 
       expect(
         screen.getByText(/Login functionality is temporarily disabled for maintenance/)
-      ).toBeInTheDocument();
+      ).toBeTruthy();
     });
 
     it('validates form inputs', async () => {
@@ -199,7 +199,7 @@ describe('Authentication Integration Tests', () => {
       await userEvent.tab(); // Trigger blur
 
       await waitFor(() => {
-        expect(screen.getByText('Invalid email address')).toBeInTheDocument();
+        expect(screen.getByText('Invalid email address')).toBeTruthy();
       });
 
       // Test password validation
@@ -208,7 +208,7 @@ describe('Authentication Integration Tests', () => {
       await userEvent.tab(); // Trigger blur
 
       await waitFor(() => {
-        expect(screen.getByText('Password must be at least 6 characters')).toBeInTheDocument();
+        expect(screen.getByText('Password must be at least 6 characters')).toBeTruthy();
       });
     });
   });
@@ -284,7 +284,7 @@ describe('Authentication Integration Tests', () => {
       await userEvent.click(screen.getByRole('button', { name: /verify/i }));
 
       await waitFor(() => {
-        expect(screen.getByText('Invalid 2FA code')).toBeInTheDocument();
+        expect(screen.getByText('Invalid 2FA code')).toBeTruthy();
       });
     });
 
@@ -292,19 +292,19 @@ describe('Authentication Integration Tests', () => {
       renderWithProviders(<Verify2FA />);
 
       // Initially should show TOTP input
-      expect(screen.getByLabelText(/2fa code/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/2fa code/i)).toBeTruthy();
 
       // Switch to backup code mode
       await userEvent.click(screen.getByText(/use backup code instead/i));
 
       // Should show backup code input
-      expect(screen.getByLabelText(/backup code/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/backup code/i)).toBeTruthy();
 
       // Switch back to TOTP mode
       await userEvent.click(screen.getByText(/use authenticator app instead/i));
 
       // Should show TOTP input again
-      expect(screen.getByLabelText(/2fa code/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/2fa code/i)).toBeTruthy();
     });
 
     it('navigates back to login', async () => {
@@ -430,7 +430,7 @@ describe('Authentication Integration Tests', () => {
 
       expect(
         screen.getByText(/Login functionality is temporarily disabled for maintenance/)
-      ).toBeInTheDocument();
+      ).toBeTruthy();
     });
   });
 

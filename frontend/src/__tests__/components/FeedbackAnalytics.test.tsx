@@ -5,7 +5,7 @@ import FeedbackAnalytics, {
   resetTestState,
   setShouldThrowError,
   setTestData,
-} from '../feedback/FeedbackAnalytics';
+} from '../../components/feedback/FeedbackAnalytics';
 
 // Mock the RefreshIcon
 vi.mock('@mui/icons-material/Refresh', () => ({
@@ -67,16 +67,16 @@ describe('FeedbackAnalytics', () => {
 
   it('renders loading state initially', () => {
     render(<FeedbackAnalytics />);
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toBeTruthy();
   });
 
   it('renders all metrics after loading', async () => {
     render(<FeedbackAnalytics />);
 
     await waitFor(() => {
-      expect(screen.getByText('Total Feedback')).toBeInTheDocument();
-      expect(screen.getByText('Average Rating')).toBeInTheDocument();
-      expect(screen.getByText('Response Rate')).toBeInTheDocument();
+      expect(screen.getByText('Total Feedback')).toBeTruthy();
+      expect(screen.getByText('Average Rating')).toBeTruthy();
+      expect(screen.getByText('Response Rate')).toBeTruthy();
     });
   });
 
@@ -84,8 +84,8 @@ describe('FeedbackAnalytics', () => {
     render(<FeedbackAnalytics />);
 
     await waitFor(() => {
-      expect(screen.getByText('Feedback Categories')).toBeInTheDocument();
-      expect(screen.getByTestId('bar-chart')).toBeInTheDocument();
+      expect(screen.getByText('Feedback Categories')).toBeTruthy();
+      expect(screen.getByTestId('bar-chart')).toBeTruthy();
     });
   });
 
@@ -93,8 +93,8 @@ describe('FeedbackAnalytics', () => {
     render(<FeedbackAnalytics />);
 
     await waitFor(() => {
-      expect(screen.getByText('Feedback Trends')).toBeInTheDocument();
-      expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+      expect(screen.getByText('Feedback Trends')).toBeTruthy();
+      expect(screen.getByTestId('line-chart')).toBeTruthy();
     });
   });
 
@@ -102,10 +102,10 @@ describe('FeedbackAnalytics', () => {
     render(<FeedbackAnalytics />);
 
     await waitFor(() => {
-      expect(screen.getByText('Sentiment Distribution')).toBeInTheDocument();
-      expect(screen.getByText('Positive')).toBeInTheDocument();
-      expect(screen.getByText('Neutral')).toBeInTheDocument();
-      expect(screen.getByText('Negative')).toBeInTheDocument();
+      expect(screen.getByText('Sentiment Distribution')).toBeTruthy();
+      expect(screen.getByText('Positive')).toBeTruthy();
+      expect(screen.getByText('Neutral')).toBeTruthy();
+      expect(screen.getByText('Negative')).toBeTruthy();
     });
   });
 
@@ -113,9 +113,9 @@ describe('FeedbackAnalytics', () => {
     render(<FeedbackAnalytics />);
 
     await waitFor(() => {
-      expect(screen.getByText('150')).toBeInTheDocument(); // Total Feedback
-      expect(screen.getByText('4.2')).toBeInTheDocument(); // Average Rating
-      expect(screen.getByText('85%')).toBeInTheDocument(); // Response Rate
+      expect(screen.getByText('150')).toBeTruthy(); // Total Feedback
+      expect(screen.getByText('4.2')).toBeTruthy(); // Average Rating
+      expect(screen.getByText('85%')).toBeTruthy(); // Response Rate
     });
   });
 
@@ -124,7 +124,7 @@ describe('FeedbackAnalytics', () => {
     render(<FeedbackAnalytics />);
 
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toHaveTextContent('Failed to load feedback analytics');
+      expect(screen.getByRole('alert').textContent).toBe('Failed to load feedback analytics');
     });
   });
 
@@ -141,7 +141,7 @@ describe('FeedbackAnalytics', () => {
     render(<FeedbackAnalytics />);
 
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toHaveTextContent('No feedback data available');
+      expect(screen.getByRole('alert').textContent).toBe('No feedback data available');
     });
   });
 
@@ -149,7 +149,7 @@ describe('FeedbackAnalytics', () => {
     render(<FeedbackAnalytics />);
 
     await waitFor(() => {
-      expect(screen.getByText('150')).toBeInTheDocument();
+      expect(screen.getByText('150')).toBeTruthy();
     });
 
     // Find and click the refresh button
@@ -157,9 +157,9 @@ describe('FeedbackAnalytics', () => {
     fireEvent.click(refreshButton);
 
     await waitFor(() => {
-      expect(screen.getByText('200')).toBeInTheDocument();
-      expect(screen.getByText('4.5')).toBeInTheDocument();
-      expect(screen.getByText('90%')).toBeInTheDocument();
+      expect(screen.getByText('200')).toBeTruthy();
+      expect(screen.getByText('4.5')).toBeTruthy();
+      expect(screen.getByText('90%')).toBeTruthy();
     });
   });
 });

@@ -115,13 +115,13 @@ describe('AISubmissionAnalyzer', () => {
 
     // Wait for loading to complete
     await waitFor(() => {
-      expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('loading-spinner')).toBeFalsy();
     });
 
     // Check for main elements
-    expect(screen.getByText(/AI Submission Analyzer/i)).toBeInTheDocument();
-    expect(screen.getByTestId('file-upload')).toBeInTheDocument();
-    expect(screen.getByText(/Upload Submission Files/i)).toBeInTheDocument();
+    expect(screen.getByText(/AI Submission Analyzer/i)).toBeTruthy();
+    expect(screen.getByTestId('file-upload')).toBeTruthy();
+    expect(screen.getByText(/Upload Submission Files/i)).toBeTruthy();
   });
 
   it('handles file upload and shows loading state', async () => {
@@ -130,7 +130,7 @@ describe('AISubmissionAnalyzer', () => {
 
     // Wait for initial loading to complete
     await waitFor(() => {
-      expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('loading-spinner')).toBeFalsy();
     });
 
     // Mock file upload
@@ -141,7 +141,7 @@ describe('AISubmissionAnalyzer', () => {
     }
 
     // Check loading state
-    expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
+    expect(screen.getByTestId('loading-spinner')).toBeTruthy();
   });
 
   it('handles API errors during analysis', async () => {
@@ -168,7 +168,7 @@ describe('AISubmissionAnalyzer', () => {
 
     // Wait for initial loading to complete
     await waitFor(() => {
-      expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('loading-spinner')).toBeFalsy();
     });
 
     // Mock file upload
@@ -179,17 +179,17 @@ describe('AISubmissionAnalyzer', () => {
     }
 
     // First check that loading spinner appears
-    expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
+    expect(screen.getByTestId('loading-spinner')).toBeTruthy();
 
     // Then wait for loading to complete and error message
     await waitFor(() => {
       const toast = screen.getByTestId('toast');
-      expect(toast).toHaveAttribute('data-severity', 'error');
-      expect(toast).toHaveTextContent('Failed to analyze submission');
+      expect(toast.getAttribute('data-severity')).toBe('error');
+      expect(toast.textContent).toBe('Failed to analyze submission');
     });
 
     // Finally verify loading spinner is gone
-    expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('loading-spinner')).toBeFalsy();
   });
 
   it('handles successful analysis and shows results', async () => {
@@ -229,7 +229,7 @@ describe('AISubmissionAnalyzer', () => {
 
     // Wait for initial loading to complete
     await waitFor(() => {
-      expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('loading-spinner')).toBeFalsy();
     });
 
     // Mock file upload
@@ -241,11 +241,11 @@ describe('AISubmissionAnalyzer', () => {
 
     // Wait for loading to complete and results
     await waitFor(() => {
-      expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument();
-      expect(screen.getByText('85%')).toBeInTheDocument();
-      expect(screen.getByText('Good work!')).toBeInTheDocument();
-      expect(screen.getByText('Content')).toBeInTheDocument();
-      expect(screen.getByText('Grammar')).toBeInTheDocument();
+      expect(screen.queryByTestId('loading-spinner')).toBeFalsy();
+      expect(screen.getByText('85%')).toBeTruthy();
+      expect(screen.getByText('Good work!')).toBeTruthy();
+      expect(screen.getByText('Content')).toBeTruthy();
+      expect(screen.getByText('Grammar')).toBeTruthy();
     });
   });
 
@@ -255,7 +255,7 @@ describe('AISubmissionAnalyzer', () => {
 
     // Wait for initial loading to complete
     await waitFor(() => {
-      expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('loading-spinner')).toBeFalsy();
     });
 
     // Try to upload an invalid file type
@@ -268,8 +268,8 @@ describe('AISubmissionAnalyzer', () => {
     // Wait for error message
     await waitFor(() => {
       const toast = screen.getByTestId('toast');
-      expect(toast).toHaveAttribute('data-severity', 'error');
-      expect(toast).toHaveTextContent('Please upload a PDF or Word document');
+      expect(toast.getAttribute('data-severity')).toBe('error');
+      expect(toast.textContent).toBe('Please upload a PDF or Word document');
     });
   });
 
@@ -279,7 +279,7 @@ describe('AISubmissionAnalyzer', () => {
 
     // Wait for initial loading to complete
     await waitFor(() => {
-      expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('loading-spinner')).toBeFalsy();
     });
 
     // Create a large file (11MB)
@@ -294,8 +294,8 @@ describe('AISubmissionAnalyzer', () => {
     // Wait for error message
     await waitFor(() => {
       const toast = screen.getByTestId('toast');
-      expect(toast).toHaveAttribute('data-severity', 'error');
-      expect(toast).toHaveTextContent('File size must be less than 10MB');
+      expect(toast.getAttribute('data-severity')).toBe('error');
+      expect(toast.textContent).toBe('File size must be less than 10MB');
     });
   });
 });

@@ -149,17 +149,17 @@ describe('SubmissionViewer', () => {
     renderComponent();
 
     // Check submission header
-    expect(screen.getByText(mockAssignment.title)).toBeInTheDocument();
-    expect(screen.getByText(/Submitted by:.*John Doe.*\(john@example.com\)/)).toBeInTheDocument();
+    expect(screen.getByText(mockAssignment.title)).toBeTruthy();
+    expect(screen.getByText(/Submitted by:.*John Doe.*\(john@example.com\)/)).toBeTruthy();
 
     // Check submission content
-    expect(screen.getByText(mockSubmission.content)).toBeInTheDocument();
-    expect(screen.getByText(mockSubmission.comments)).toBeInTheDocument();
+    expect(screen.getByText(mockSubmission.content)).toBeTruthy();
+    expect(screen.getByText(mockSubmission.comments)).toBeTruthy();
 
     // Check submission metadata
     const date = new Date(mockSubmission.submittedAt).toLocaleDateString();
-    expect(screen.getByText(`Submitted: ${date}`)).toBeInTheDocument();
-    expect(screen.getByText(`Submission #${mockSubmission.submissionCount}`)).toBeInTheDocument();
+    expect(screen.getByText(`Submitted: ${date}`)).toBeTruthy();
+    expect(screen.getByText(`Submission #${mockSubmission.submissionCount}`)).toBeTruthy();
   });
 
   it('displays assignment requirements', () => {
@@ -168,10 +168,10 @@ describe('SubmissionViewer', () => {
     const requirementsSection = screen
       .getByText('Requirements')
       .closest('[data-testid="mui-box"]') as HTMLElement;
-    expect(requirementsSection).toBeInTheDocument();
+    expect(requirementsSection).toBeTruthy();
     const requirementsList = within(requirementsSection).getByTestId('mui-list');
     mockAssignment.requirements.forEach(requirement => {
-      expect(within(requirementsList).getByText(requirement)).toBeInTheDocument();
+      expect(within(requirementsList).getByText(requirement)).toBeTruthy();
     });
   });
 
@@ -181,17 +181,17 @@ describe('SubmissionViewer', () => {
     const attachmentsSection = screen
       .getByText('Attachments')
       .closest('[data-testid="mui-box"]') as HTMLElement;
-    expect(attachmentsSection).toBeInTheDocument();
+    expect(attachmentsSection).toBeTruthy();
     const attachmentsList = within(attachmentsSection).getByTestId('mui-list');
     mockSubmission.attachments.forEach(attachment => {
       const attachmentElement = within(attachmentsList).getByText(attachment.name);
-      expect(attachmentElement).toBeInTheDocument();
+      expect(attachmentElement).toBeTruthy();
 
       const sizeText = `${(attachment.size / 1024).toFixed(2)} KB`;
       const sizeElement = within(attachmentElement.closest('li')!).getByText(content =>
         content.includes(sizeText)
       );
-      expect(sizeElement).toBeInTheDocument();
+      expect(sizeElement).toBeTruthy();
     });
   });
 
@@ -202,7 +202,7 @@ describe('SubmissionViewer', () => {
       .getByText('Attachments')
       .closest('[data-testid="mui-box"]') as HTMLElement;
     const imageAttachment = mockSubmission.attachments.find(a => a.type.startsWith('image/'));
-    expect(within(attachmentsSection).getByAltText(imageAttachment!.name)).toBeInTheDocument();
+    expect(within(attachmentsSection).getByAltText(imageAttachment!.name)).toBeTruthy();
   });
 
   it('displays file download options', () => {
@@ -213,8 +213,8 @@ describe('SubmissionViewer', () => {
       .closest('[data-testid="mui-box"]') as HTMLElement;
     const downloadLinks = within(attachmentsSection).getAllByTestId('mui-link');
     mockSubmission.attachments.forEach((attachment, index) => {
-      expect(downloadLinks[index]).toHaveAttribute('href', attachment.url);
-      expect(downloadLinks[index]).toHaveAttribute('download', attachment.name);
+      expect(downloadLinks[index].getAttribute('href')).toBe(attachment.url);
+      expect(downloadLinks[index].getAttribute('download')).toBe(attachment.name);
     });
   });
 
@@ -224,19 +224,19 @@ describe('SubmissionViewer', () => {
     const statsSection = screen
       .getByText('Class Statistics')
       .closest('[data-testid="mui-box"]') as HTMLElement;
-    expect(statsSection).toBeInTheDocument();
+    expect(statsSection).toBeTruthy();
     expect(
       within(statsSection).getByText(`Average Grade: ${mockClassStatistics.averageGrade}`)
-    ).toBeInTheDocument();
+    ).toBeTruthy();
     expect(
       within(statsSection).getByText(`Highest Grade: ${mockClassStatistics.highestGrade}`)
-    ).toBeInTheDocument();
+    ).toBeTruthy();
     expect(
       within(statsSection).getByText(`Lowest Grade: ${mockClassStatistics.lowestGrade}`)
-    ).toBeInTheDocument();
+    ).toBeTruthy();
     expect(
       within(statsSection).getByText(`Total Submissions: ${mockClassStatistics.totalSubmissions}`)
-    ).toBeInTheDocument();
+    ).toBeTruthy();
   });
 
   it('displays feedback information when available', () => {
@@ -245,20 +245,18 @@ describe('SubmissionViewer', () => {
     const feedbackSection = screen
       .getByText('Feedback')
       .closest('[data-testid="mui-box"]') as HTMLElement;
-    expect(feedbackSection).toBeInTheDocument();
+    expect(feedbackSection).toBeTruthy();
 
     // Check overall feedback
-    expect(within(feedbackSection).getByText(/grade: 85/i)).toBeInTheDocument();
-    expect(within(feedbackSection).getByText(mockFeedback.comments)).toBeInTheDocument();
+    expect(within(feedbackSection).getByText(/grade: 85/i)).toBeTruthy();
+    expect(within(feedbackSection).getByText(mockFeedback.comments)).toBeTruthy();
 
     // Check grader information
-    expect(within(feedbackSection).getByText(/graded by: jane smith/i)).toBeInTheDocument();
+    expect(within(feedbackSection).getByText(/graded by: jane smith/i)).toBeTruthy();
 
     // Check feedback date
     const feedbackDate = new Date(mockFeedback.submittedAt).toLocaleDateString();
-    expect(
-      within(feedbackSection).getByText(`Feedback provided: ${feedbackDate}`)
-    ).toBeInTheDocument();
+    expect(within(feedbackSection).getByText(`Feedback provided: ${feedbackDate}`)).toBeTruthy();
   });
 
   it('displays submission status correctly', () => {
@@ -268,8 +266,8 @@ describe('SubmissionViewer', () => {
       .getByText(mockAssignment.title)
       .closest('[data-testid="mui-box"]') as HTMLElement;
     const chip = within(headerSection).getByTestId('mui-chip');
-    expect(chip).toHaveTextContent('Submitted');
-    expect(chip).toHaveAttribute('data-color', 'success');
+    expect(chip.textContent).toBe('Submitted');
+    expect(chip.getAttribute('data-color')).toBe('success');
 
     // Test late submission
     const lateSubmission = {
@@ -284,7 +282,7 @@ describe('SubmissionViewer', () => {
       '[data-testid="mui-box"]'
     ) as HTMLElement;
     const lateChip = within(lateHeaderSection).getByTestId('mui-chip');
-    expect(lateChip).toHaveTextContent('Submitted Late');
-    expect(lateChip).toHaveAttribute('data-color', 'warning');
+    expect(lateChip.textContent).toBe('Submitted Late');
+    expect(lateChip.getAttribute('data-color')).toBe('warning');
   });
 });

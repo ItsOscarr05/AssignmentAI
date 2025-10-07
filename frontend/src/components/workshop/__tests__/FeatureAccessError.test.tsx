@@ -44,10 +44,10 @@ describe('FeatureAccessErrorComponent', () => {
     );
 
     // Check for main error title
-    expect(screen.getByText('Feature Not Available')).toBeInTheDocument();
+    expect(screen.getByText('Feature Not Available')).toBeTruthy();
 
     // Check for upgrade alert
-    expect(screen.getByText('Upgrade Required')).toBeInTheDocument();
+    expect(screen.getByText('Upgrade Required')).toBeTruthy();
     expect(
       screen.getByText(
         (_, element) => {
@@ -58,10 +58,8 @@ describe('FeatureAccessErrorComponent', () => {
         },
         { selector: 'p[variant="body2"]' }
       )
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('Upgrade to Pro plan to access diagram generation')
-    ).toBeInTheDocument();
+    ).toBeTruthy();
+    expect(screen.getByText('Upgrade to Pro plan to access diagram generation')).toBeTruthy();
 
     // Check for plan chips
     expect(
@@ -71,7 +69,7 @@ describe('FeatureAccessErrorComponent', () => {
         },
         { selector: '[data-testid="chip"]' }
       )
-    ).toBeInTheDocument();
+    ).toBeTruthy();
     expect(
       screen.getByText(
         (_, element) => {
@@ -79,7 +77,7 @@ describe('FeatureAccessErrorComponent', () => {
         },
         { selector: '[data-testid="chip"]' }
       )
-    ).toBeInTheDocument();
+    ).toBeTruthy();
   });
 
   it('displays correct feature name for different features', () => {
@@ -106,7 +104,7 @@ describe('FeatureAccessErrorComponent', () => {
         },
         { selector: 'p[variant="body2"]' }
       )
-    ).toBeInTheDocument();
+    ).toBeTruthy();
     expect(
       screen.getByText(
         (_, element) => {
@@ -114,7 +112,7 @@ describe('FeatureAccessErrorComponent', () => {
         },
         { selector: '[data-testid="chip"]' }
       )
-    ).toBeInTheDocument();
+    ).toBeTruthy();
   });
 
   it('displays correct plan names', () => {
@@ -138,7 +136,7 @@ describe('FeatureAccessErrorComponent', () => {
         },
         { selector: '[data-testid="chip"]' }
       )
-    ).toBeInTheDocument();
+    ).toBeTruthy();
   });
 
   it('shows correct upgrade button text for different plans', () => {
@@ -150,7 +148,7 @@ describe('FeatureAccessErrorComponent', () => {
         onDismiss={mockOnDismiss}
       />
     );
-    expect(screen.getByText('Upgrade to Plus')).toBeInTheDocument();
+    expect(screen.getByText('Upgrade to Plus')).toBeTruthy();
 
     // Test Plus plan
     const plusError: FeatureAccessError = { ...mockError, current_plan: 'plus' };
@@ -163,7 +161,7 @@ describe('FeatureAccessErrorComponent', () => {
         />
       </ThemeProvider>
     );
-    expect(screen.getByText('Upgrade to Pro')).toBeInTheDocument();
+    expect(screen.getByText('Upgrade to Pro')).toBeTruthy();
 
     // Test Pro plan
     const proError: FeatureAccessError = { ...mockError, current_plan: 'pro' };
@@ -176,7 +174,7 @@ describe('FeatureAccessErrorComponent', () => {
         />
       </ThemeProvider>
     );
-    expect(screen.getByText('Upgrade to Max')).toBeInTheDocument();
+    expect(screen.getByText('Upgrade to Max')).toBeTruthy();
 
     // Test Max plan
     const maxError: FeatureAccessError = { ...mockError, current_plan: 'max' };
@@ -189,7 +187,7 @@ describe('FeatureAccessErrorComponent', () => {
         />
       </ThemeProvider>
     );
-    expect(screen.getByText('Contact Support')).toBeInTheDocument();
+    expect(screen.getByText('Contact Support')).toBeTruthy();
   });
 
   it('calls onUpgrade when upgrade button is clicked', () => {
@@ -262,7 +260,7 @@ describe('FeatureAccessErrorComponent', () => {
         },
         { selector: 'p' }
       )
-    ).toBeInTheDocument();
+    ).toBeTruthy();
   });
 
   it('handles unknown features gracefully', () => {
@@ -289,7 +287,7 @@ describe('FeatureAccessErrorComponent', () => {
         },
         { selector: 'p' }
       )
-    ).toBeInTheDocument();
+    ).toBeTruthy();
     expect(
       screen.getByText(
         (_, element) => {
@@ -297,7 +295,7 @@ describe('FeatureAccessErrorComponent', () => {
         },
         { selector: '[data-testid="chip"]' }
       )
-    ).toBeInTheDocument();
+    ).toBeTruthy();
   });
 
   it('handles unknown plans gracefully', () => {
@@ -321,8 +319,8 @@ describe('FeatureAccessErrorComponent', () => {
         },
         { selector: '[data-testid="chip"]' }
       )
-    ).toBeInTheDocument();
-    expect(screen.getByText('Upgrade Plan')).toBeInTheDocument();
+    ).toBeTruthy();
+    expect(screen.getByText('Upgrade Plan')).toBeTruthy();
   });
 
   it('displays all required buttons', () => {
@@ -334,9 +332,9 @@ describe('FeatureAccessErrorComponent', () => {
       />
     );
 
-    expect(screen.getByText('Upgrade to Plus')).toBeInTheDocument();
-    expect(screen.getByText('View Plans')).toBeInTheDocument();
-    expect(screen.getByText('Dismiss')).toBeInTheDocument();
+    expect(screen.getByText('Upgrade to Plus')).toBeTruthy();
+    expect(screen.getByText('View Plans')).toBeTruthy();
+    expect(screen.getByText('Dismiss')).toBeTruthy();
   });
 
   it('has proper accessibility attributes', () => {
@@ -353,9 +351,9 @@ describe('FeatureAccessErrorComponent', () => {
     const viewPlansButton = screen.getByRole('button', { name: /view plans/i });
     const dismissButton = screen.getByRole('button', { name: /dismiss/i });
 
-    expect(upgradeButton).toBeInTheDocument();
-    expect(viewPlansButton).toBeInTheDocument();
-    expect(dismissButton).toBeInTheDocument();
+    expect(upgradeButton).toBeTruthy();
+    expect(viewPlansButton).toBeTruthy();
+    expect(dismissButton).toBeTruthy();
   });
 
   it('displays warning alert with correct severity', () => {
@@ -368,7 +366,7 @@ describe('FeatureAccessErrorComponent', () => {
     );
 
     const alert = screen.getByRole('alert');
-    expect(alert).toBeInTheDocument();
-    expect(alert).toHaveAttribute('data-severity', 'warning');
+    expect(alert).toBeTruthy();
+    expect(alert.getAttribute('data-severity')).toBe('warning');
   });
 });

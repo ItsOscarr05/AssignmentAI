@@ -59,9 +59,9 @@ describe('Profile Component', () => {
       </ThemeProvider>
     );
 
-    expect(screen.getByText(/Test User/)).toBeInTheDocument();
-    expect(screen.getByText(/test@example.com/)).toBeInTheDocument();
-    expect(screen.getByText(/Test University/)).toBeInTheDocument();
+    expect(screen.getByText(/Test User/)).toBeTruthy();
+    expect(screen.getByText(/test@example.com/)).toBeTruthy();
+    expect(screen.getByText(/Test University/)).toBeTruthy();
   });
 
   it('shows loading state', () => {
@@ -79,7 +79,7 @@ describe('Profile Component', () => {
       </ThemeProvider>
     );
 
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toBeTruthy();
   });
 
   it('shows error message', () => {
@@ -97,7 +97,7 @@ describe('Profile Component', () => {
       </ThemeProvider>
     );
 
-    expect(screen.getByText('Failed to load profile')).toBeInTheDocument();
+    expect(screen.getByText('Failed to load profile')).toBeTruthy();
   });
 
   it('handles profile update', async () => {
@@ -153,10 +153,10 @@ describe('Profile Component', () => {
       </ThemeProvider>
     );
 
-    expect(screen.getByText(/Total Assignments: 10/)).toBeInTheDocument();
-    expect(screen.getByText(/Completed: 5/)).toBeInTheDocument();
-    expect(screen.getByText(/Average Score: 85%/)).toBeInTheDocument();
-    expect(screen.getByText(/Active Days: 30/)).toBeInTheDocument();
+    expect(screen.getByText(/Total Assignments: 10/)).toBeTruthy();
+    expect(screen.getByText(/Completed: 5/)).toBeTruthy();
+    expect(screen.getByText(/Average Score: 85%/)).toBeTruthy();
+    expect(screen.getByText(/Active Days: 30/)).toBeTruthy();
   });
 
   it('handles verification status', () => {
@@ -166,6 +166,6 @@ describe('Profile Component', () => {
       </ThemeProvider>
     );
 
-    expect(screen.getByText(/Verification Status: Verified/)).toBeInTheDocument();
+    expect(screen.getByText(/Verification Status: Verified/)).toBeTruthy();
   });
 });

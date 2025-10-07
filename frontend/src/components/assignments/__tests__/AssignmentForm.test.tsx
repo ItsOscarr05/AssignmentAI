@@ -64,13 +64,13 @@ describe('AssignmentForm', () => {
 
     // Check for required form fields
     const textFields = screen.getAllByTestId('text-field');
-    expect(textFields[0]).toHaveAttribute('label', 'Title');
-    expect(textFields[1]).toHaveAttribute('label', 'Description');
-    expect(screen.getByLabelText('Due Date')).toBeInTheDocument();
+    expect(textFields[0].getAttribute('label')).toBe('Title');
+    expect(textFields[1].getAttribute('label')).toBe('Description');
+    expect(screen.getByLabelText('Due Date')).toBeTruthy();
     const selects = screen.getAllByTestId('select');
-    expect(selects[0]).toHaveAttribute('label', 'Subject');
-    expect(selects[1]).toHaveAttribute('label', 'Grade Level');
-    expect(textFields[2]).toHaveAttribute('label', 'Maximum Score');
+    expect(selects[0].getAttribute('label')).toBe('Subject');
+    expect(selects[1].getAttribute('label')).toBe('Grade Level');
+    expect(textFields[2].getAttribute('label')).toBe('Maximum Score');
   });
 
   it('renders form with initial values', () => {
@@ -87,13 +87,13 @@ describe('AssignmentForm', () => {
 
     // Check if initial values are displayed
     const textFields = screen.getAllByTestId('text-field');
-    expect(textFields[0]).toHaveValue('Test Assignment');
-    expect(textFields[1]).toHaveValue('Test Description');
-    expect(screen.getByLabelText('Due Date')).toHaveValue('12/29/2024');
+    expect((textFields[0] as HTMLInputElement).value).toBe('Test Assignment');
+    expect((textFields[1] as HTMLInputElement).value).toBe('Test Description');
+    expect((screen.getByLabelText('Due Date') as HTMLInputElement).value).toBe('12/29/2024');
     const selects = screen.getAllByTestId('select');
-    expect(selects[0]).toHaveValue('Mathematics');
-    expect(selects[1]).toHaveValue('10th Grade');
-    expect(textFields[2]).toHaveValue(100);
+    expect((selects[0] as HTMLSelectElement).value).toBe('Mathematics');
+    expect((selects[1] as HTMLSelectElement).value).toBe('10th Grade');
+    expect((textFields[2] as HTMLInputElement).value).toBe('100');
   });
 
   it('calls onSubmit with form data when submitted', async () => {
@@ -150,12 +150,12 @@ describe('AssignmentForm', () => {
     // Check for validation messages
     await waitFor(() => {
       const errorMessages = screen.getAllByTestId('undefined-error');
-      expect(errorMessages[0]).toHaveTextContent('Title is required');
-      expect(errorMessages[1]).toHaveTextContent('Description is required');
+      expect(errorMessages[0].textContent).toBe('Title is required');
+      expect(errorMessages[1].textContent).toBe('Description is required');
 
       const helperTexts = screen.getAllByTestId('form-helper-text');
-      expect(helperTexts[0]).toHaveTextContent('Subject is required');
-      expect(helperTexts[1]).toHaveTextContent('Grade level is required');
+      expect(helperTexts[0].textContent).toBe('Subject is required');
+      expect(helperTexts[1].textContent).toBe('Grade level is required');
     });
   });
 });

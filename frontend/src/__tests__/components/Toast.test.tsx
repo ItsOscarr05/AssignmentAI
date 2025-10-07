@@ -1,7 +1,6 @@
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render } from '../../test/test-utils';
-import Toast from '../ui/Toast';
+import Toast from '../../components/ui/Toast';
 
 const renderToast = (props = {}) => {
   return render(<Toast message="Test message" type="info" onClose={vi.fn()} {...props} />);
@@ -19,30 +18,30 @@ describe('Toast', () => {
   describe('Basic Rendering', () => {
     it('renders with default props', () => {
       renderToast();
-      expect(screen.getByText('Test message')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /close/i })).toBeInTheDocument();
+      expect(screen.getByText('Test message')).toBeTruthy();
+      expect(screen.getByRole('button', { name: /close/i })).toBeTruthy();
     });
 
     it('renders with custom message', () => {
       renderToast({ message: 'Custom message' });
-      expect(screen.getByText('Custom message')).toBeInTheDocument();
+      expect(screen.getByText('Custom message')).toBeTruthy();
     });
 
     it('renders with custom type', () => {
       renderToast({ type: 'success' });
-      expect(screen.getByRole('alert')).toHaveClass('bg-success');
+      expect(screen.getByRole('alert').className).toContain('bg-success');
     });
 
     it('renders with custom duration', () => {
       renderToast({ duration: 5000 });
-      expect(screen.getByRole('alert')).toBeInTheDocument();
+      expect(screen.getByRole('alert')).toBeTruthy();
     });
 
     it('renders with custom position', () => {
       renderToast({ position: 'top-right' });
       const alert = screen.getByRole('alert');
-      expect(alert).toHaveClass('top-4');
-      expect(alert).toHaveClass('right-4');
+      expect(alert.className).toContain('top-4');
+      expect(alert.className).toContain('right-4');
     });
   });
 
@@ -100,40 +99,40 @@ describe('Toast', () => {
       renderToast();
 
       const toast = screen.getByRole('alert');
-      expect(toast).toHaveAttribute('aria-live', 'polite');
-      expect(toast).toHaveAttribute('aria-atomic', 'true');
+      expect(toast.getAttribute('aria-live')).toBe('polite');
+      expect(toast.getAttribute('aria-atomic')).toBe('true');
     });
 
     it('has proper button attributes', () => {
       renderToast();
 
       const closeButton = screen.getByRole('button', { name: /close/i });
-      expect(closeButton).toHaveAttribute('aria-label', 'Close toast');
+      expect(closeButton.getAttribute('aria-label')).toBe('Close toast');
     });
 
     it('has proper focus management', () => {
       renderToast();
 
       const closeButton = screen.getByRole('button', { name: /close/i });
-      expect(closeButton).toHaveAttribute('tabindex', '0');
+      expect(closeButton.getAttribute('tabindex')).toBe('0');
     });
   });
 
   describe('Edge Cases', () => {
     it('renders without close button', () => {
       renderToast({ showCloseButton: false });
-      expect(screen.queryByRole('button', { name: /close/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /close/i })).not.toBeTruthy();
     });
 
     it('renders without icon', () => {
       renderToast({ showIcon: false });
-      expect(screen.queryByTestId('toast-icon')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('toast-icon')).not.toBeTruthy();
     });
 
     it('renders with long message', () => {
       const longMessage = 'A'.repeat(1000);
       renderToast({ message: longMessage });
-      expect(screen.getByText(longMessage)).toBeInTheDocument();
+      expect(screen.getByText(longMessage)).toBeTruthy();
     });
 
     it('handles zero duration', () => {

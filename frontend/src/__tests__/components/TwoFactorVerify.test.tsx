@@ -1,8 +1,8 @@
 import { ThemeProvider, createTheme } from '@mui/material';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { TwoFactorVerify } from '../../components/auth/TwoFactorVerify';
 import { auth } from '../../services/api';
-import { TwoFactorVerify } from '../auth/TwoFactorVerify';
 
 // Mock Material-UI components
 vi.mock('@mui/material', async () => {
@@ -136,10 +136,10 @@ describe('TwoFactorVerify', () => {
   describe('Basic Rendering', () => {
     it('renders verification form', () => {
       renderTwoFactorVerify();
-      expect(screen.getByText(/two-factor authentication/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/verification code/i)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /verify/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /use backup code/i })).toBeInTheDocument();
+      expect(screen.getByText(/two-factor authentication/i)).toBeTruthy();
+      expect(screen.getByLabelText(/verification code/i)).toBeTruthy();
+      expect(screen.getByRole('button', { name: /verify/i })).toBeTruthy();
+      expect(screen.getByRole('button', { name: /use backup code/i })).toBeTruthy();
     });
   });
 
@@ -148,7 +148,7 @@ describe('TwoFactorVerify', () => {
       renderTwoFactorVerify();
       const input = screen.getByLabelText(/verification code/i);
       fireEvent.change(input, { target: { value: '123456' } });
-      expect(input).toHaveValue('123456');
+      expect((input as HTMLInputElement).value).toBe('123456');
     });
 
     it('handles verify button click', async () => {
@@ -171,7 +171,7 @@ describe('TwoFactorVerify', () => {
       renderTwoFactorVerify();
       const toggleButton = screen.getByRole('button', { name: /use backup code/i });
       fireEvent.click(toggleButton);
-      expect(screen.getByLabelText(/backup code/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/backup code/i)).toBeTruthy();
     });
   });
 
@@ -180,7 +180,7 @@ describe('TwoFactorVerify', () => {
       renderTwoFactorVerify();
       const input = screen.getByLabelText(/verification code/i);
       fireEvent.change(input, { target: { value: '123' } });
-      expect(screen.getByRole('button', { name: /verify/i })).toBeDisabled();
+      expect(screen.getByRole('button', { name: /verify/i }).hasAttribute('disabled')).toBe(true);
     });
 
     it('shows error message on verification failure', async () => {
@@ -190,7 +190,7 @@ describe('TwoFactorVerify', () => {
       const input = screen.getByLabelText(/verification code/i);
       fireEvent.change(input, { target: { value: '123456' } });
       fireEvent.click(screen.getByRole('button', { name: /verify/i }));
-      expect(await screen.findByText(errorMessage)).toBeInTheDocument();
+      expect(await screen.findByText(errorMessage)).toBeTruthy();
     });
   });
 
@@ -198,8 +198,8 @@ describe('TwoFactorVerify', () => {
     it('has proper ARIA attributes', () => {
       renderTwoFactorVerify();
       const input = screen.getByLabelText(/verification code/i);
-      expect(input).toHaveAttribute('type', 'text');
-      expect(input).toHaveAttribute('aria-invalid', 'false');
+      expect(input.getAttribute('type')).toBe('text');
+      expect(input.getAttribute('aria-invalid')).toBe('false');
     });
 
     it('shows error state with ARIA attributes', async () => {
@@ -213,8 +213,8 @@ describe('TwoFactorVerify', () => {
       // Wait for error message to appear in Alert component
       await waitFor(() => {
         const errorAlert = screen.getByRole('alert');
-        expect(errorAlert).toHaveAttribute('data-severity', 'error');
-        expect(errorAlert).toHaveTextContent(errorMessage);
+        expect(errorAlert.getAttribute('data-severity')).toBe('error');
+        expect(errorAlert.textContent).toBe(errorMessage);
       });
     });
   });

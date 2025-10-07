@@ -1,8 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { TwoFactorSetup } from '../../components/auth/TwoFactorSetup';
 import { AuthService } from '../../services/auth/AuthService';
-import TwoFactorSetup from '../TwoFactorSetup';
 
 // Mock Material-UI icons
 vi.mock('@mui/icons-material', () => ({
@@ -44,14 +44,14 @@ describe('TwoFactorSetup', () => {
     // Wait for loading to complete and component to render
     await waitFor(
       () => {
-        expect(screen.getByText(/Two-Factor Authentication Setup/)).toBeInTheDocument();
+        expect(screen.getByText(/Two-Factor Authentication Setup/)).toBeTruthy();
       },
       { timeout: 5000 }
     );
 
-    expect(screen.getByText('Generate QR Code')).toBeInTheDocument();
-    expect(screen.getByText('Verify Setup')).toBeInTheDocument();
-    expect(screen.getByText('Save Backup Codes')).toBeInTheDocument();
+    expect(screen.getByText('Generate QR Code')).toBeTruthy();
+    expect(screen.getByText('Verify Setup')).toBeTruthy();
+    expect(screen.getByText('Save Backup Codes')).toBeTruthy();
   });
 
   it('initializes 2FA setup on mount', async () => {
@@ -67,11 +67,9 @@ describe('TwoFactorSetup', () => {
 
     await waitFor(
       () => {
-        expect(screen.getByText('Step 1: Scan QR Code')).toBeInTheDocument();
-        expect(
-          screen.getByText(/Scan this QR code with your authenticator app/)
-        ).toBeInTheDocument();
-        expect(screen.getByDisplayValue('JBSWY3DPEHPK3PXP')).toBeInTheDocument();
+        expect(screen.getByText('Step 1: Scan QR Code')).toBeTruthy();
+        expect(screen.getByText(/Scan this QR code with your authenticator app/)).toBeTruthy();
+        expect(screen.getByDisplayValue('JBSWY3DPEHPK3PXP')).toBeTruthy();
       },
       { timeout: 5000 }
     );
@@ -82,8 +80,8 @@ describe('TwoFactorSetup', () => {
 
     await waitFor(() => {
       const qrImage = screen.getByAltText('2FA QR Code');
-      expect(qrImage).toBeInTheDocument();
-      expect(qrImage).toHaveAttribute('src', 'data:image/png;base64,mock-qr-code');
+      expect(qrImage).toBeTruthy();
+      expect(qrImage.getAttribute('src')).toBe('data:image/png;base64,mock-qr-code');
     });
   });
 
@@ -91,16 +89,14 @@ describe('TwoFactorSetup', () => {
     render(<TwoFactorSetup />);
 
     await waitFor(() => {
-      expect(screen.getByText('Next')).toBeInTheDocument();
+      expect(screen.getByText('Next')).toBeTruthy();
     });
 
     await userEvent.click(screen.getByText('Next'));
 
     await waitFor(() => {
-      expect(screen.getByText('Step 2: Verify Setup')).toBeInTheDocument();
-      expect(
-        screen.getByText(/Enter the 6-digit code from your authenticator app/)
-      ).toBeInTheDocument();
+      expect(screen.getByText('Step 2: Verify Setup')).toBeTruthy();
+      expect(screen.getByText(/Enter the 6-digit code from your authenticator app/)).toBeTruthy();
     });
   });
 
@@ -111,7 +107,7 @@ describe('TwoFactorSetup', () => {
 
     // Go to step 2
     await waitFor(() => {
-      expect(screen.getByText('Next')).toBeInTheDocument();
+      expect(screen.getByText('Next')).toBeTruthy();
     });
     await userEvent.click(screen.getByText('Next'));
 
@@ -134,7 +130,7 @@ describe('TwoFactorSetup', () => {
 
     // Go to step 2
     await waitFor(() => {
-      expect(screen.getByText('Next')).toBeInTheDocument();
+      expect(screen.getByText('Next')).toBeTruthy();
     });
     await userEvent.click(screen.getByText('Next'));
 
@@ -144,8 +140,8 @@ describe('TwoFactorSetup', () => {
     await userEvent.click(screen.getByText('Next'));
 
     await waitFor(() => {
-      expect(screen.getByText('Step 3: Backup Codes')).toBeInTheDocument();
-      expect(screen.getByText(/Save these backup codes in a secure location/)).toBeInTheDocument();
+      expect(screen.getByText('Step 3: Backup Codes')).toBeTruthy();
+      expect(screen.getByText(/Save these backup codes in a secure location/)).toBeTruthy();
     });
   });
 
@@ -156,7 +152,7 @@ describe('TwoFactorSetup', () => {
 
     // Go through steps to reach step 3
     await waitFor(() => {
-      expect(screen.getByText('Next')).toBeInTheDocument();
+      expect(screen.getByText('Next')).toBeTruthy();
     });
     await userEvent.click(screen.getByText('Next'));
 
@@ -166,18 +162,18 @@ describe('TwoFactorSetup', () => {
 
     // Click to view backup codes
     await waitFor(() => {
-      expect(screen.getByText('View Backup Codes')).toBeInTheDocument();
+      expect(screen.getByText('View Backup Codes')).toBeTruthy();
     });
     await userEvent.click(screen.getByText('View Backup Codes'));
 
     // Dialog should appear
     await waitFor(() => {
-      expect(screen.getByText('Backup Codes')).toBeInTheDocument();
-      expect(screen.getByText('ABC12345')).toBeInTheDocument();
-      expect(screen.getByText('DEF67890')).toBeInTheDocument();
-      expect(screen.getByText('GHI11111')).toBeInTheDocument();
-      expect(screen.getByText('JKL22222')).toBeInTheDocument();
-      expect(screen.getByText('MNO33333')).toBeInTheDocument();
+      expect(screen.getByText('Backup Codes')).toBeTruthy();
+      expect(screen.getByText('ABC12345')).toBeTruthy();
+      expect(screen.getByText('DEF67890')).toBeTruthy();
+      expect(screen.getByText('GHI11111')).toBeTruthy();
+      expect(screen.getByText('JKL22222')).toBeTruthy();
+      expect(screen.getByText('MNO33333')).toBeTruthy();
     });
   });
 
@@ -185,11 +181,11 @@ describe('TwoFactorSetup', () => {
     const mockOnSetupComplete = vi.fn();
     (AuthService.verify2FASetup as any).mockResolvedValue({ backup_codes: mockBackupCodes });
 
-    render(<TwoFactorSetup onSetupComplete={mockOnSetupComplete} />);
+    render(<TwoFactorSetup onComplete={mockOnSetupComplete} />);
 
     // Go through steps to reach step 3
     await waitFor(() => {
-      expect(screen.getByText('Next')).toBeInTheDocument();
+      expect(screen.getByText('Next')).toBeTruthy();
     });
     await userEvent.click(screen.getByText('Next'));
 
@@ -199,12 +195,12 @@ describe('TwoFactorSetup', () => {
 
     // View and save backup codes
     await waitFor(() => {
-      expect(screen.getByText('View Backup Codes')).toBeInTheDocument();
+      expect(screen.getByText('View Backup Codes')).toBeTruthy();
     });
     await userEvent.click(screen.getByText('View Backup Codes'));
 
     await waitFor(() => {
-      expect(screen.getByText("I've Saved My Codes")).toBeInTheDocument();
+      expect(screen.getByText("I've Saved My Codes")).toBeTruthy();
     });
     await userEvent.click(screen.getByText("I've Saved My Codes"));
 
@@ -218,7 +214,7 @@ describe('TwoFactorSetup', () => {
 
     // Go to step 2
     await waitFor(() => {
-      expect(screen.getByText('Next')).toBeInTheDocument();
+      expect(screen.getByText('Next')).toBeTruthy();
     });
     await userEvent.click(screen.getByText('Next'));
 
@@ -228,7 +224,7 @@ describe('TwoFactorSetup', () => {
     await userEvent.click(screen.getByText('Next'));
 
     await waitFor(() => {
-      expect(screen.getByText('Invalid verification code')).toBeInTheDocument();
+      expect(screen.getByText('Invalid verification code')).toBeTruthy();
     });
   });
 
@@ -238,7 +234,7 @@ describe('TwoFactorSetup', () => {
     render(<TwoFactorSetup />);
 
     await waitFor(() => {
-      expect(screen.getByText('Failed to initialize 2FA setup')).toBeInTheDocument();
+      expect(screen.getByText('Failed to initialize 2FA setup')).toBeTruthy();
     });
   });
 
@@ -247,7 +243,7 @@ describe('TwoFactorSetup', () => {
 
     // Go to step 2
     await waitFor(() => {
-      expect(screen.getByText('Next')).toBeInTheDocument();
+      expect(screen.getByText('Next')).toBeTruthy();
     });
     await userEvent.click(screen.getByText('Next'));
 
@@ -255,7 +251,7 @@ describe('TwoFactorSetup', () => {
     await userEvent.click(screen.getByText('Back'));
 
     await waitFor(() => {
-      expect(screen.getByText('Step 1: Scan QR Code')).toBeInTheDocument();
+      expect(screen.getByText('Step 1: Scan QR Code')).toBeTruthy();
     });
   });
 
@@ -264,13 +260,13 @@ describe('TwoFactorSetup', () => {
 
     // Go to step 2
     await waitFor(() => {
-      expect(screen.getByText('Next')).toBeInTheDocument();
+      expect(screen.getByText('Next')).toBeTruthy();
     });
     await userEvent.click(screen.getByText('Next'));
 
     // Next button should be disabled
     const nextButton = screen.getByText('Next');
-    expect(nextButton).toBeDisabled();
+    expect(nextButton.hasAttribute('disabled')).toBe(true);
   });
 
   it('shows loading state during verification', async () => {
@@ -282,7 +278,7 @@ describe('TwoFactorSetup', () => {
 
     // Go to step 2
     await waitFor(() => {
-      expect(screen.getByText('Next')).toBeInTheDocument();
+      expect(screen.getByText('Next')).toBeTruthy();
     });
     await userEvent.click(screen.getByText('Next'));
 
@@ -292,7 +288,7 @@ describe('TwoFactorSetup', () => {
     await userEvent.click(screen.getByText('Next'));
 
     // Should show loading
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toBeTruthy();
   });
 
   it('shows loading state during initial setup', () => {
@@ -303,6 +299,6 @@ describe('TwoFactorSetup', () => {
     render(<TwoFactorSetup />);
 
     // Should show loading initially
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toBeTruthy();
   });
 });

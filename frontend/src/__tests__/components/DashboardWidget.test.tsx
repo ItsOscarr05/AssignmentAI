@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import DashboardWidget from '../dashboard/DashboardWidget';
+import DashboardWidget from '../../components/dashboard/DashboardWidget';
 
 // Mock Material-UI components
 vi.mock('@mui/material', () => ({
@@ -80,8 +80,8 @@ describe('DashboardWidget', () => {
       </DashboardWidget>
     );
 
-    expect(screen.getByText('Test Widget')).toBeInTheDocument();
-    expect(screen.getByText('Test Content')).toBeInTheDocument();
+    expect(screen.getByText('Test Widget')).toBeTruthy();
+    expect(screen.getByText('Test Content')).toBeTruthy();
   });
 
   it('handles refresh action', () => {
@@ -165,10 +165,8 @@ describe('DashboardWidget', () => {
     );
 
     const card = screen.getByTestId('card');
-    expect(card).toHaveStyle({
-      width: '450px',
-      height: '300px',
-    });
+    expect(card.style.width).toBe('450px');
+    expect(card.style.height).toBe('300px');
   });
 
   it('renders with large size', () => {
@@ -188,10 +186,8 @@ describe('DashboardWidget', () => {
     );
 
     const card = screen.getByTestId('card');
-    expect(card).toHaveStyle({
-      width: '600px',
-      height: '400px',
-    });
+    expect(card.style.width).toBe('600px');
+    expect(card.style.height).toBe('400px');
   });
 
   it('renders with small size', () => {
@@ -211,10 +207,8 @@ describe('DashboardWidget', () => {
     );
 
     const card = screen.getByTestId('card');
-    expect(card).toHaveStyle({
-      width: '300px',
-      height: '200px',
-    });
+    expect(card.style.width).toBe('300px');
+    expect(card.style.height).toBe('200px');
   });
 
   it('handles menu open and close', () => {
@@ -235,11 +229,11 @@ describe('DashboardWidget', () => {
 
     // Open menu
     fireEvent.click(screen.getByTestId('icon-button'));
-    expect(screen.getByTestId('menu')).toBeInTheDocument();
+    expect(screen.getByTestId('menu')).toBeTruthy();
 
     // Close menu
     fireEvent.click(screen.getByText('Configure'));
-    expect(screen.queryByTestId('menu')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('menu')).not.toBeTruthy();
   });
 
   it('renders without optional actions', () => {
@@ -258,8 +252,8 @@ describe('DashboardWidget', () => {
       </DashboardWidget>
     );
 
-    expect(screen.queryByTestId('tooltip')).not.toBeInTheDocument();
-    expect(screen.queryByText('Configure')).not.toBeInTheDocument();
-    expect(screen.queryByText('Remove Widget')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('tooltip')).not.toBeTruthy();
+    expect(screen.queryByText('Configure')).not.toBeTruthy();
+    expect(screen.queryByText('Remove Widget')).not.toBeTruthy();
   });
 });

@@ -152,10 +152,10 @@ describe('Assignment Integration Tests', () => {
       fireEvent.click(screen.getByRole('button', { name: /create/i }));
 
       // Verify validation messages
-      expect(screen.getByText(/title is required/i)).toBeInTheDocument();
-      expect(screen.getByText(/description is required/i)).toBeInTheDocument();
-      expect(screen.getByText(/due date is required/i)).toBeInTheDocument();
-      expect(screen.getByText(/points is required/i)).toBeInTheDocument();
+      expect(screen.getByText(/title is required/i)).toBeTruthy();
+      expect(screen.getByText(/description is required/i)).toBeTruthy();
+      expect(screen.getByText(/due date is required/i)).toBeTruthy();
+      expect(screen.getByText(/points is required/i)).toBeTruthy();
     });
   });
 
@@ -208,7 +208,7 @@ describe('Assignment Integration Tests', () => {
       fireEvent.change(input, { target: { files: [file] } });
 
       // Verify error message
-      expect(screen.getByText(/invalid file type/i)).toBeInTheDocument();
+      expect(screen.getByText(/invalid file type/i)).toBeTruthy();
     });
   });
 
@@ -288,7 +288,7 @@ describe('Assignment Integration Tests', () => {
       fireEvent.click(screen.getByRole('button', { name: /submit grade/i }));
 
       // Verify error message
-      expect(screen.getByText(/grade must be between 0 and 100/i)).toBeInTheDocument();
+      expect(screen.getByText(/grade must be between 0 and 100/i)).toBeTruthy();
     });
   });
 
@@ -326,7 +326,7 @@ describe('Assignment Integration Tests', () => {
 
       // Verify error message
       await waitFor(() => {
-        expect(screen.getByText(/network error/i)).toBeInTheDocument();
+        expect(screen.getByText(/network error/i)).toBeTruthy();
       });
     });
 
@@ -350,7 +350,7 @@ describe('Assignment Integration Tests', () => {
 
       // Verify error message
       await waitFor(() => {
-        expect(screen.getByText(/upload failed/i)).toBeInTheDocument();
+        expect(screen.getByText(/upload failed/i)).toBeTruthy();
       });
     });
   });

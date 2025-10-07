@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { PaginationComponent } from '../common/Pagination';
+import { PaginationComponent } from '../../components/common/Pagination';
 
 // Mock Material-UI components
 vi.mock('@mui/material', async () => {
@@ -129,24 +129,24 @@ describe('PaginationComponent', () => {
   describe('Basic Rendering', () => {
     it('renders with default props', () => {
       renderPagination();
-      expect(screen.getByText(/Showing 1-10 of 50 items/)).toBeInTheDocument();
-      expect(screen.getByLabelText('Items per page')).toBeInTheDocument();
-      expect(screen.getByRole('navigation', { name: 'pagination' })).toBeInTheDocument();
+      expect(screen.getByText(/Showing 1-10 of 50 items/)).toBeTruthy();
+      expect(screen.getByLabelText('Items per page')).toBeTruthy();
+      expect(screen.getByRole('navigation', { name: 'pagination' })).toBeTruthy();
     });
 
     it('renders page size selector', () => {
       renderPagination();
       const select = screen.getByLabelText('Items per page');
-      expect(select).toHaveValue('10');
-      expect(screen.getByText('10 per page')).toBeInTheDocument();
-      expect(screen.getByText('25 per page')).toBeInTheDocument();
-      expect(screen.getByText('50 per page')).toBeInTheDocument();
-      expect(screen.getByText('100 per page')).toBeInTheDocument();
+      expect((select as HTMLSelectElement).value).toBe('10');
+      expect(screen.getByText('10 per page')).toBeTruthy();
+      expect(screen.getByText('25 per page')).toBeTruthy();
+      expect(screen.getByText('50 per page')).toBeTruthy();
+      expect(screen.getByText('100 per page')).toBeTruthy();
     });
 
     it('displays current page and total items', () => {
       renderPagination({ page: 2 });
-      expect(screen.getByText(/Showing 11-20 of 50 items/)).toBeInTheDocument();
+      expect(screen.getByText(/Showing 11-20 of 50 items/)).toBeTruthy();
     });
   });
 
@@ -165,43 +165,43 @@ describe('PaginationComponent', () => {
 
     it('disables previous button on first page', () => {
       renderPagination({ page: 1 });
-      expect(screen.getByLabelText('Go to previous page')).toBeDisabled();
+      expect(screen.getByLabelText('Go to previous page').hasAttribute('disabled')).toBe(true);
     });
 
     it('disables next button on last page', () => {
       renderPagination({ page: 5 });
-      expect(screen.getByLabelText('Go to next page')).toBeDisabled();
+      expect(screen.getByLabelText('Go to next page').hasAttribute('disabled')).toBe(true);
     });
   });
 
   describe('Accessibility', () => {
     it('has proper ARIA attributes', () => {
       renderPagination();
-      expect(screen.getByRole('navigation', { name: 'pagination' })).toBeInTheDocument();
-      expect(screen.getByLabelText('Items per page')).toBeInTheDocument();
+      expect(screen.getByRole('navigation', { name: 'pagination' })).toBeTruthy();
+      expect(screen.getByLabelText('Items per page')).toBeTruthy();
     });
 
     it('indicates current page', () => {
       renderPagination({ page: 2 });
-      expect(screen.getByLabelText('Go to page 2')).toHaveAttribute('aria-current', 'page');
+      expect(screen.getByLabelText('Go to page 2').getAttribute('aria-current')).toBe('page');
     });
   });
 
   describe('Edge Cases', () => {
     it('handles single page', () => {
       renderPagination({ totalPages: 1, totalItems: 5 });
-      expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
+      expect(screen.queryByRole('navigation')).not.toBeTruthy();
     });
 
     it('handles no items', () => {
       renderPagination({ totalItems: 0 });
-      expect(screen.getByText('No items')).toBeInTheDocument();
-      expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
+      expect(screen.getByText('No items')).toBeTruthy();
+      expect(screen.queryByRole('navigation')).not.toBeTruthy();
     });
 
     it('handles invalid page number', () => {
       renderPagination({ page: 10 }); // Page 10 doesn't exist
-      expect(screen.getByText(/Showing 91-50 of 50 items/)).toBeInTheDocument();
+      expect(screen.getByText(/Showing 91-50 of 50 items/)).toBeTruthy();
     });
   });
 });

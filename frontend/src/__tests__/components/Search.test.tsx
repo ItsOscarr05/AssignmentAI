@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { Search } from '../common/Search';
+import { Search } from '../../components/common/Search';
 
 // Mock Material-UI components
 vi.mock('@mui/material', async () => {
@@ -127,13 +127,13 @@ describe('Search', () => {
   describe('Basic Rendering', () => {
     it('renders with default props', () => {
       renderSearch();
-      expect(screen.getByRole('searchbox')).toBeInTheDocument();
-      expect(screen.getByPlaceholderText('Search...')).toBeInTheDocument();
+      expect(screen.getByRole('searchbox')).toBeTruthy();
+      expect(screen.getByPlaceholderText('Search...')).toBeTruthy();
     });
 
     it('renders with custom placeholder', () => {
       renderSearch({ placeholder: 'Custom placeholder' });
-      expect(screen.getByPlaceholderText('Custom placeholder')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Custom placeholder')).toBeTruthy();
     });
 
     it('renders with custom size', () => {
@@ -225,21 +225,21 @@ describe('Search', () => {
     it('has proper ARIA attributes', () => {
       renderSearch();
       const input = screen.getByRole('searchbox');
-      expect(input).toHaveAttribute('type', 'search');
-      expect(input).toHaveAttribute('aria-invalid', 'false');
+      expect(input.getAttribute('type')).toBe('search');
+      expect(input.getAttribute('aria-invalid')).toBe('false');
     });
 
     it('has proper label', () => {
       renderSearch({ label: 'Custom Label' });
       const input = screen.getByLabelText('Custom Label');
-      expect(input).toBeInTheDocument();
+      expect(input).toBeTruthy();
       expect(input.tagName.toLowerCase()).toBe('input');
     });
 
     it('has proper error message', () => {
       renderSearch({ error: 'Invalid search' });
       const error = screen.getByText('Invalid search');
-      expect(error).toBeInTheDocument();
+      expect(error).toBeTruthy();
     });
   });
 
@@ -299,7 +299,7 @@ describe('Search', () => {
       expect(defaultProps.onSearch).not.toHaveBeenCalled();
 
       // Results should be cleared
-      expect(screen.queryByText('No results found')).not.toBeInTheDocument();
+      expect(screen.queryByText('No results found')).not.toBeTruthy();
     });
 
     it('handles special characters', async () => {
@@ -326,14 +326,14 @@ describe('Search', () => {
     it('handles disabled state', () => {
       renderSearch({ disabled: true });
       const input = screen.getByRole('searchbox');
-      expect(input).toHaveAttribute('disabled');
+      expect(input.hasAttribute('disabled')).toBe(true);
     });
 
     it('handles loading state', () => {
       renderSearch({ loading: true });
       const input = screen.getByRole('searchbox');
-      expect(input).toHaveAttribute('disabled');
-      expect(screen.getByRole('progressbar')).toBeInTheDocument();
+      expect(input.hasAttribute('disabled')).toBe(true);
+      expect(screen.getByRole('progressbar')).toBeTruthy();
     });
   });
 });

@@ -1,9 +1,9 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { SubmissionDetail } from '../../components/submissions/SubmissionDetail';
 import { ThemeProvider } from '../../contexts/ThemeContext';
 import { api } from '../../services/api';
-import { SubmissionDetail } from '../submissions/SubmissionDetail';
 
 // Mock the API module
 vi.mock('../../services/api', () => ({
@@ -34,7 +34,7 @@ describe('SubmissionDetail', () => {
   describe('Basic Rendering', () => {
     it('renders loading state initially', () => {
       renderSubmissionDetail();
-      expect(screen.getByRole('progressbar')).toBeInTheDocument();
+      expect(screen.getByRole('progressbar')).toBeTruthy();
     });
 
     it('renders submission details after loading', async () => {
@@ -60,50 +60,50 @@ describe('SubmissionDetail', () => {
       await waitFor(() => {
         // Check title
         const titleElement = screen.getByTestId('submission-title');
-        expect(titleElement).toBeInTheDocument();
-        expect(titleElement).toHaveTextContent(mockSubmission.title);
+        expect(titleElement).toBeTruthy();
+        expect(titleElement.textContent).toBe(mockSubmission.title);
 
         // Check status
         const statusChip = screen.getByTestId('chip');
-        expect(statusChip).toBeInTheDocument();
-        expect(statusChip).toHaveAttribute('label', mockSubmission.status);
+        expect(statusChip).toBeTruthy();
+        expect(statusChip.getAttribute('label')).toBe(mockSubmission.status);
 
         // Check submission date
         const dateText = new Date(mockSubmission.submitted_at).toLocaleDateString();
-        expect(screen.getByText(`Submitted on ${dateText}`)).toBeInTheDocument();
+        expect(screen.getByText(`Submitted on ${dateText}`)).toBeTruthy();
 
         // Check assignment details
-        expect(screen.getByText('Assignment Details')).toBeInTheDocument();
+        expect(screen.getByText('Assignment Details')).toBeTruthy();
         const assignmentParagraph = screen.getByText(/Assignment:/).closest('p');
-        expect(assignmentParagraph).toBeInTheDocument();
-        expect(assignmentParagraph).toHaveTextContent(mockSubmission.assignment_title);
-        expect(screen.getByText(/Subject:/)).toBeInTheDocument();
-        expect(screen.getByText(mockSubmission.assignment_subject)).toBeInTheDocument();
-        expect(screen.getByText(/Due Date:/)).toBeInTheDocument();
+        expect(assignmentParagraph).toBeTruthy();
+        expect(assignmentParagraph?.textContent).toBe(mockSubmission.assignment_title);
+        expect(screen.getByText(/Subject:/)).toBeTruthy();
+        expect(screen.getByText(mockSubmission.assignment_subject)).toBeTruthy();
+        expect(screen.getByText(/Due Date:/)).toBeTruthy();
         expect(
           screen.getByText(new Date(mockSubmission.assignment_due_date).toLocaleDateString())
-        ).toBeInTheDocument();
+        ).toBeTruthy();
 
         // Check submission details
-        expect(screen.getByText('Submission Details')).toBeInTheDocument();
-        expect(screen.getByText(/Score:/)).toBeInTheDocument();
+        expect(screen.getByText('Submission Details')).toBeTruthy();
+        expect(screen.getByText(/Score:/)).toBeTruthy();
         expect(
           screen.getByText(`${mockSubmission.score}/${mockSubmission.max_score}`)
-        ).toBeInTheDocument();
-        expect(screen.getByText(/Feedback:/)).toBeInTheDocument();
-        expect(screen.getByText(mockSubmission.feedback)).toBeInTheDocument();
-        expect(screen.getByText(/File:/)).toBeInTheDocument();
-        expect(screen.getByText('submission.txt')).toBeInTheDocument();
+        ).toBeTruthy();
+        expect(screen.getByText(/Feedback:/)).toBeTruthy();
+        expect(screen.getByText(mockSubmission.feedback)).toBeTruthy();
+        expect(screen.getByText(/File:/)).toBeTruthy();
+        expect(screen.getByText('submission.txt')).toBeTruthy();
 
         // Check description
-        expect(screen.getByText('Description')).toBeInTheDocument();
-        expect(screen.getByText(mockSubmission.description)).toBeInTheDocument();
+        expect(screen.getByText('Description')).toBeTruthy();
+        expect(screen.getByText(mockSubmission.description)).toBeTruthy();
 
         // Check action buttons
-        expect(screen.getByTestId('DownloadIcon')).toBeInTheDocument();
-        expect(screen.getByTestId('EditIcon')).toBeInTheDocument();
-        expect(screen.getByTestId('DeleteIcon')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /back to submissions/i })).toBeInTheDocument();
+        expect(screen.getByTestId('DownloadIcon')).toBeTruthy();
+        expect(screen.getByTestId('EditIcon')).toBeTruthy();
+        expect(screen.getByTestId('DeleteIcon')).toBeTruthy();
+        expect(screen.getByRole('button', { name: /back to submissions/i })).toBeTruthy();
       });
     });
   });
@@ -115,7 +115,7 @@ describe('SubmissionDetail', () => {
       renderSubmissionDetail();
 
       await waitFor(() => {
-        expect(screen.getByText('Failed to load submission')).toBeInTheDocument();
+        expect(screen.getByText('Failed to load submission')).toBeTruthy();
       });
     });
   });
@@ -133,7 +133,7 @@ describe('SubmissionDetail', () => {
 
       await waitFor(() => {
         const downloadButton = screen.getByTestId('DownloadIcon').closest('button');
-        expect(downloadButton).toBeInTheDocument();
+        expect(downloadButton).toBeTruthy();
         fireEvent.click(downloadButton!);
       });
 
@@ -158,9 +158,9 @@ describe('SubmissionDetail', () => {
       renderSubmissionDetail();
 
       await waitFor(() => {
-        expect(screen.getByTestId('DownloadIcon').closest('button')).toBeInTheDocument();
-        expect(screen.getByTestId('EditIcon').closest('button')).toBeInTheDocument();
-        expect(screen.getByTestId('DeleteIcon').closest('button')).toBeInTheDocument();
+        expect(screen.getByTestId('DownloadIcon').closest('button')).toBeTruthy();
+        expect(screen.getByTestId('EditIcon').closest('button')).toBeTruthy();
+        expect(screen.getByTestId('DeleteIcon').closest('button')).toBeTruthy();
       });
     });
 
@@ -170,8 +170,8 @@ describe('SubmissionDetail', () => {
       renderSubmissionDetail();
 
       await waitFor(() => {
-        expect(screen.getByRole('alert')).toBeInTheDocument();
-        expect(screen.getByText('Failed to load submission')).toBeInTheDocument();
+        expect(screen.getByRole('alert')).toBeTruthy();
+        expect(screen.getByText('Failed to load submission')).toBeTruthy();
       });
     });
   });

@@ -71,25 +71,21 @@ describe('PriorityCustomerSupport', () => {
     it('should render component title and description', () => {
       renderWithProviders(<PriorityCustomerSupport />);
 
-      expect(screen.getByText('Priority Customer Support')).toBeInTheDocument();
-      expect(
-        screen.getByText(/Get priority support with dedicated assistance/)
-      ).toBeInTheDocument();
+      expect(screen.getByText('Priority Customer Support')).toBeTruthy();
+      expect(screen.getByText(/Get priority support with dedicated assistance/)).toBeTruthy();
     });
 
     it('should display Max Plan benefit alert', () => {
       renderWithProviders(<PriorityCustomerSupport />);
 
-      expect(screen.getByText(/Max Plan Benefit/)).toBeInTheDocument();
-      expect(
-        screen.getByText(/Priority support is included with your Max plan/)
-      ).toBeInTheDocument();
+      expect(screen.getByText(/Max Plan Benefit/)).toBeTruthy();
+      expect(screen.getByText(/Priority support is included with your Max plan/)).toBeTruthy();
     });
 
     it('should display create support ticket button', () => {
       renderWithProviders(<PriorityCustomerSupport />);
 
-      expect(screen.getByText('Create Support Ticket')).toBeInTheDocument();
+      expect(screen.getByText('Create Support Ticket')).toBeTruthy();
     });
   });
 
@@ -97,10 +93,10 @@ describe('PriorityCustomerSupport', () => {
     it('should display all available support channels', () => {
       renderWithProviders(<PriorityCustomerSupport />);
 
-      expect(screen.getByText('Email Support')).toBeInTheDocument();
-      expect(screen.getByText('Live Chat')).toBeInTheDocument();
-      expect(screen.getByText('Phone Support')).toBeInTheDocument();
-      expect(screen.getByText('Priority Queue')).toBeInTheDocument();
+      expect(screen.getByText('Email Support')).toBeTruthy();
+      expect(screen.getByText('Live Chat')).toBeTruthy();
+      expect(screen.getByText('Phone Support')).toBeTruthy();
+      expect(screen.getByText('Priority Queue')).toBeTruthy();
     });
   });
 
@@ -113,10 +109,10 @@ describe('PriorityCustomerSupport', () => {
       expect(screen.getAllByText('Medium')).toHaveLength(2); // One in priority levels, one in ticket
       expect(screen.getAllByText('Low')).toHaveLength(1);
 
-      expect(screen.getByText('2 hours')).toBeInTheDocument();
-      expect(screen.getByText('4 hours')).toBeInTheDocument();
-      expect(screen.getByText('24 hours')).toBeInTheDocument();
-      expect(screen.getByText('48 hours')).toBeInTheDocument();
+      expect(screen.getByText('2 hours')).toBeTruthy();
+      expect(screen.getByText('4 hours')).toBeTruthy();
+      expect(screen.getByText('24 hours')).toBeTruthy();
+      expect(screen.getByText('48 hours')).toBeTruthy();
     });
   });
 
@@ -133,10 +129,8 @@ describe('PriorityCustomerSupport', () => {
 
       renderWithProviders(<PriorityCustomerSupport />);
 
-      expect(screen.getByText('No support tickets yet')).toBeInTheDocument();
-      expect(
-        screen.getByText('Create your first support ticket to get started')
-      ).toBeInTheDocument();
+      expect(screen.getByText('No support tickets yet')).toBeTruthy();
+      expect(screen.getByText('Create your first support ticket to get started')).toBeTruthy();
     });
   });
 
@@ -144,10 +138,10 @@ describe('PriorityCustomerSupport', () => {
     it('should display existing tickets correctly', () => {
       renderWithProviders(<PriorityCustomerSupport />);
 
-      expect(screen.getByText('Technical Issue')).toBeInTheDocument();
-      expect(screen.getByText('Billing Question')).toBeInTheDocument();
-      expect(screen.getByText('Having trouble with the platform')).toBeInTheDocument();
-      expect(screen.getByText('Need help with subscription')).toBeInTheDocument();
+      expect(screen.getByText('Technical Issue')).toBeTruthy();
+      expect(screen.getByText('Billing Question')).toBeTruthy();
+      expect(screen.getByText('Having trouble with the platform')).toBeTruthy();
+      expect(screen.getByText('Need help with subscription')).toBeTruthy();
     });
 
     it('should display priority and status chips', () => {
@@ -166,7 +160,7 @@ describe('PriorityCustomerSupport', () => {
       const createButton = createButtons[0]; // Use the first one
       fireEvent.click(createButton);
 
-      expect(screen.getByTestId('dialog')).toBeInTheDocument();
+      expect(screen.getByTestId('dialog')).toBeTruthy();
     });
 
     it('should create ticket successfully', async () => {
@@ -216,8 +210,8 @@ describe('PriorityCustomerSupport', () => {
       const submitButton = screen.getByText('Submit');
       fireEvent.click(submitButton);
 
-      expect(screen.getByText('Title is required')).toBeInTheDocument();
-      expect(screen.getByText('Description is required')).toBeInTheDocument();
+      expect(screen.getByText('Title is required')).toBeTruthy();
+      expect(screen.getByText('Description is required')).toBeTruthy();
     });
 
     it('should display priority level options correctly', () => {
@@ -266,7 +260,7 @@ describe('PriorityCustomerSupport', () => {
 
       renderWithProviders(<PriorityCustomerSupport />);
 
-      expect(screen.getByText('Failed to load support tickets')).toBeInTheDocument();
+      expect(screen.getByText('Failed to load support tickets')).toBeTruthy();
     });
   });
 
@@ -281,7 +275,7 @@ describe('PriorityCustomerSupport', () => {
       const cancelButton = screen.getByText('Cancel');
       fireEvent.click(cancelButton);
 
-      expect(screen.queryByTestId('dialog')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('dialog')).not.toBeTruthy();
     });
 
     it('should close dialog when submit is successful', async () => {
@@ -311,7 +305,7 @@ describe('PriorityCustomerSupport', () => {
       fireEvent.click(submitButton);
 
       await waitFor(() => {
-        expect(screen.queryByTestId('dialog')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('dialog')).not.toBeTruthy();
       });
     });
   });
@@ -324,7 +318,7 @@ describe('PriorityCustomerSupport', () => {
       const createButton = createButtons[0]; // Use the first one
       fireEvent.click(createButton);
 
-      expect(screen.getByText(/Please provide a detailed description/)).toBeInTheDocument();
+      expect(screen.getByText(/Please provide a detailed description/)).toBeTruthy();
     });
   });
 
@@ -343,8 +337,8 @@ describe('PriorityCustomerSupport', () => {
       renderWithProviders(<PriorityCustomerSupport />);
 
       // Check for ticket titles instead of dates since dates are not prominently displayed
-      expect(screen.getByText('Technical Issue')).toBeInTheDocument();
-      expect(screen.getByText('Billing Question')).toBeInTheDocument();
+      expect(screen.getByText('Technical Issue')).toBeTruthy();
+      expect(screen.getByText('Billing Question')).toBeTruthy();
     });
   });
 });

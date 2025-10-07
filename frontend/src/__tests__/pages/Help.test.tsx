@@ -1,6 +1,6 @@
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import Help from '../../pages/Help';
-import { fireEvent, render, screen, waitFor } from '../../test/test-utils';
 
 // Mock the help service
 vi.mock('../../services/helpService', () => ({
@@ -21,8 +21,8 @@ describe('Help Page', () => {
 
   it('renders help page with FAQ tab by default', () => {
     render(<Help />);
-    expect(screen.getByText('Help & Support')).toBeInTheDocument();
-    expect(screen.getByText('Frequently Asked Questions')).toBeInTheDocument();
+    expect(screen.getByText('Help & Support')).toBeTruthy();
+    expect(screen.getByText('Frequently Asked Questions')).toBeTruthy();
   });
 
   it.skip('switches to contact tab when clicked', () => {
@@ -48,7 +48,7 @@ describe('Help Page', () => {
     fireEvent.change(searchInput, { target: { value: 'nonexistent' } });
 
     await waitFor(() => {
-      expect(screen.getByText('No Results Found')).toBeInTheDocument();
+      expect(screen.getByText('No Results Found')).toBeTruthy();
     });
   });
 

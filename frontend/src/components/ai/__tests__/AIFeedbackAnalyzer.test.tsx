@@ -1,6 +1,5 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render as renderWithProviders, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render as renderWithProviders } from '../../../test/test-utils';
 import AIFeedbackAnalyzer from '../AIFeedbackAnalyzer';
 import { mockAnalysis, mockSubmission } from './testUtils';
 
@@ -38,12 +37,12 @@ describe('AIFeedbackAnalyzer', () => {
   it('renders the component with initial state', () => {
     renderComponent();
 
-    expect(screen.getByText(/analyze feedback/i)).toBeInTheDocument();
-    expect(screen.getByText(/submission details/i)).toBeInTheDocument();
-    expect(screen.getByText(mockSubmission.content)).toBeInTheDocument();
-    expect(screen.getByText(`Grade: ${mockSubmission.grade}`)).toBeInTheDocument();
-    expect(screen.getByText(mockSubmission.feedback)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /analyze/i })).toBeInTheDocument();
+    expect(screen.getByText(/analyze feedback/i)).toBeTruthy();
+    expect(screen.getByText(/submission details/i)).toBeTruthy();
+    expect(screen.getByText(mockSubmission.content)).toBeTruthy();
+    expect(screen.getByText(`Grade: ${mockSubmission.grade}`)).toBeTruthy();
+    expect(screen.getByText(mockSubmission.feedback)).toBeTruthy();
+    expect(screen.getByRole('button', { name: /analyze/i })).toBeTruthy();
   });
 
   it('handles successful analysis', async () => {
@@ -60,14 +59,14 @@ describe('AIFeedbackAnalyzer', () => {
     fireEvent.click(analyzeButton);
 
     // Check for loading state
-    expect(screen.getByTestId('circular-progress')).toBeInTheDocument();
+    expect(screen.getByTestId('circular-progress')).toBeTruthy();
 
     // Wait for analysis results
     await waitFor(() => {
-      expect(screen.getByText(/good code organization/i)).toBeInTheDocument();
-      expect(screen.getByText(/missing error handling/i)).toBeInTheDocument();
-      expect(screen.getByText(/add try-catch blocks/i)).toBeInTheDocument();
-      expect(screen.getByText(/implement input validation/i)).toBeInTheDocument();
+      expect(screen.getByText(/good code organization/i)).toBeTruthy();
+      expect(screen.getByText(/missing error handling/i)).toBeTruthy();
+      expect(screen.getByText(/add try-catch blocks/i)).toBeTruthy();
+      expect(screen.getByText(/implement input validation/i)).toBeTruthy();
     });
   });
 
@@ -86,16 +85,16 @@ describe('AIFeedbackAnalyzer', () => {
 
     // Wait for error message
     await waitFor(() => {
-      expect(screen.getByText(/failed to analyze feedback/i)).toBeInTheDocument();
+      expect(screen.getByText(/failed to analyze feedback/i)).toBeTruthy();
     });
   });
 
   it('displays submission details correctly', () => {
     renderComponent();
 
-    expect(screen.getByText(mockSubmission.content)).toBeInTheDocument();
-    expect(screen.getByText(`Grade: ${mockSubmission.grade}`)).toBeInTheDocument();
-    expect(screen.getByText(mockSubmission.feedback)).toBeInTheDocument();
+    expect(screen.getByText(mockSubmission.content)).toBeTruthy();
+    expect(screen.getByText(`Grade: ${mockSubmission.grade}`)).toBeTruthy();
+    expect(screen.getByText(mockSubmission.feedback)).toBeTruthy();
   });
 
   it('disables analyze button during API calls', async () => {
@@ -112,11 +111,11 @@ describe('AIFeedbackAnalyzer', () => {
     fireEvent.click(analyzeButton);
 
     // Check that button is disabled
-    expect(analyzeButton).toBeDisabled();
+    expect(analyzeButton.hasAttribute('disabled')).toBe(true);
 
     // Wait for API call to complete
     await waitFor(() => {
-      expect(analyzeButton).not.toBeDisabled();
+      expect(analyzeButton.hasAttribute('disabled')).toBe(false);
     });
   });
 
@@ -135,7 +134,7 @@ describe('AIFeedbackAnalyzer', () => {
 
     // Wait for first analysis results
     await waitFor(() => {
-      expect(screen.getByText(/good code organization/i)).toBeInTheDocument();
+      expect(screen.getByText(/good code organization/i)).toBeTruthy();
     });
 
     // Mock a different response for second analysis
@@ -151,8 +150,8 @@ describe('AIFeedbackAnalyzer', () => {
 
     // Wait for second analysis results
     await waitFor(() => {
-      expect(screen.getByText(/different strength/i)).toBeInTheDocument();
-      expect(screen.queryByText(/good code organization/i)).not.toBeInTheDocument();
+      expect(screen.getByText(/different strength/i)).toBeTruthy();
+      expect(screen.queryByText(/good code organization/i)).not.toBeTruthy();
     });
   });
 
@@ -164,7 +163,7 @@ describe('AIFeedbackAnalyzer', () => {
 
     renderWithProviders(<AIFeedbackAnalyzer submission={emptySubmission} />);
 
-    expect(screen.getByText(/no feedback provided/i)).toBeInTheDocument();
+    expect(screen.getByText(/no feedback provided/i)).toBeTruthy();
   });
 
   it('handles missing grade gracefully', () => {
@@ -175,6 +174,6 @@ describe('AIFeedbackAnalyzer', () => {
 
     renderWithProviders(<AIFeedbackAnalyzer submission={ungradedSubmission} />);
 
-    expect(screen.getByText(/not graded yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/not graded yet/i)).toBeTruthy();
   });
 });

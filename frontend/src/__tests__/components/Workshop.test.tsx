@@ -206,10 +206,10 @@ describe('Workshop Component', () => {
       </AuthProvider>
     );
 
-    expect(screen.getByText('AI Workshop')).toBeInTheDocument();
-    expect(screen.getByText('Chat')).toBeInTheDocument();
-    expect(screen.getByText('Files')).toBeInTheDocument();
-    expect(screen.getByText('Links')).toBeInTheDocument();
+    expect(screen.getByText('AI Workshop')).toBeTruthy();
+    expect(screen.getByText('Chat')).toBeTruthy();
+    expect(screen.getByText('Files')).toBeTruthy();
+    expect(screen.getByText('Links')).toBeTruthy();
   });
 
   it('shows loading state', () => {
@@ -231,7 +231,7 @@ describe('Workshop Component', () => {
       </AuthProvider>
     );
 
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toBeTruthy();
   });
 
   it('shows error message', () => {
@@ -254,7 +254,7 @@ describe('Workshop Component', () => {
       </AuthProvider>
     );
 
-    expect(screen.getByText(errorMessage)).toBeInTheDocument();
+    expect(screen.getByText(errorMessage)).toBeTruthy();
   });
 
   it('handles content generation', async () => {
@@ -343,10 +343,10 @@ describe('Workshop Component', () => {
       </AuthProvider>
     );
 
-    expect(screen.getByText('Recent History')).toBeInTheDocument();
-    expect(screen.getByText('Math Problem Solving')).toBeInTheDocument();
-    expect(screen.getByText('History Essay Outline')).toBeInTheDocument();
-    expect(screen.getByText('Science Project Research')).toBeInTheDocument();
+    expect(screen.getByText('Recent History')).toBeTruthy();
+    expect(screen.getByText('Math Problem Solving')).toBeTruthy();
+    expect(screen.getByText('History Essay Outline')).toBeTruthy();
+    expect(screen.getByText('Science Project Research')).toBeTruthy();
   });
 
   it('displays AI suggestions', () => {
@@ -358,9 +358,9 @@ describe('Workshop Component', () => {
       </AuthProvider>
     );
 
-    expect(screen.getByText('AI Suggestions')).toBeInTheDocument();
-    expect(screen.getByText('Start with an outline')).toBeInTheDocument();
-    expect(screen.getByText('Use examples')).toBeInTheDocument();
+    expect(screen.getByText('AI Suggestions')).toBeTruthy();
+    expect(screen.getByText('Start with an outline')).toBeTruthy();
+    expect(screen.getByText('Use examples')).toBeTruthy();
   });
 
   it('displays supported file types', () => {
@@ -372,11 +372,11 @@ describe('Workshop Component', () => {
       </AuthProvider>
     );
 
-    expect(screen.getByText('Supported File Types')).toBeInTheDocument();
-    expect(screen.getByText('PDF')).toBeInTheDocument();
-    expect(screen.getByText('DOCX')).toBeInTheDocument();
-    expect(screen.getByText('TXT')).toBeInTheDocument();
-    expect(screen.getByText('RTF')).toBeInTheDocument();
+    expect(screen.getByText('Supported File Types')).toBeTruthy();
+    expect(screen.getByText('PDF')).toBeTruthy();
+    expect(screen.getByText('DOCX')).toBeTruthy();
+    expect(screen.getByText('TXT')).toBeTruthy();
+    expect(screen.getByText('RTF')).toBeTruthy();
   });
 
   it('displays document stats', () => {
@@ -388,10 +388,10 @@ describe('Workshop Component', () => {
       </AuthProvider>
     );
 
-    expect(screen.getByText('Document Stats')).toBeInTheDocument();
-    expect(screen.getByText('Word Count')).toBeInTheDocument();
-    expect(screen.getByText('Reading Time')).toBeInTheDocument();
-    expect(screen.getByText('Complexity')).toBeInTheDocument();
+    expect(screen.getByText('Document Stats')).toBeTruthy();
+    expect(screen.getByText('Word Count')).toBeTruthy();
+    expect(screen.getByText('Reading Time')).toBeTruthy();
+    expect(screen.getByText('Complexity')).toBeTruthy();
   });
 
   it('displays AI analysis options', () => {
@@ -403,10 +403,10 @@ describe('Workshop Component', () => {
       </AuthProvider>
     );
 
-    expect(screen.getByText('AI Analysis Options')).toBeInTheDocument();
-    expect(screen.getByText('Grammar & Style')).toBeInTheDocument();
-    expect(screen.getByText('Content Analysis')).toBeInTheDocument();
-    expect(screen.getByText('Plagiarism Check')).toBeInTheDocument();
+    expect(screen.getByText('AI Analysis Options')).toBeTruthy();
+    expect(screen.getByText('Grammar & Style')).toBeTruthy();
+    expect(screen.getByText('Content Analysis')).toBeTruthy();
+    expect(screen.getByText('Plagiarism Check')).toBeTruthy();
   });
 
   it('displays quick actions', () => {
@@ -418,10 +418,10 @@ describe('Workshop Component', () => {
       </AuthProvider>
     );
 
-    expect(screen.getByText('Quick Actions')).toBeInTheDocument();
-    expect(screen.getByText('Summarize')).toBeInTheDocument();
-    expect(screen.getByText('Rewrite')).toBeInTheDocument();
-    expect(screen.getByText('Expand')).toBeInTheDocument();
-    expect(screen.getByText('Simplify')).toBeInTheDocument();
+    expect(screen.getByText('Quick Actions')).toBeTruthy();
+    expect(screen.getByText('Summarize')).toBeTruthy();
+    expect(screen.getByText('Rewrite')).toBeTruthy();
+    expect(screen.getByText('Expand')).toBeTruthy();
+    expect(screen.getByText('Simplify')).toBeTruthy();
   });
 });

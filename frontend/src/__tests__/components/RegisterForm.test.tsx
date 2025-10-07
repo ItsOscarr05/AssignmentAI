@@ -183,12 +183,12 @@ describe('RegisterForm', () => {
   it('renders registration form with all required fields', () => {
     renderRegisterForm();
 
-    expect(screen.getByLabelText(/first name/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/last name/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/confirm password/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /register/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/first name/i)).toBeTruthy();
+    expect(screen.getByLabelText(/last name/i)).toBeTruthy();
+    expect(screen.getByLabelText(/email/i)).toBeTruthy();
+    expect(screen.getByLabelText(/^password$/i)).toBeTruthy();
+    expect(screen.getByLabelText(/confirm password/i)).toBeTruthy();
+    expect(screen.getByRole('button', { name: /register/i })).toBeTruthy();
   });
 
   it('shows validation errors for empty fields', async () => {
@@ -198,11 +198,11 @@ describe('RegisterForm', () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText('First name is required')).toBeInTheDocument();
-      expect(screen.getByText('Last name is required')).toBeInTheDocument();
-      expect(screen.getByText('Email is required')).toBeInTheDocument();
-      expect(screen.getByText('Password is required')).toBeInTheDocument();
-      expect(screen.getByText('Please confirm your password')).toBeInTheDocument();
+      expect(screen.getByText('First name is required')).toBeTruthy();
+      expect(screen.getByText('Last name is required')).toBeTruthy();
+      expect(screen.getByText('Email is required')).toBeTruthy();
+      expect(screen.getByText('Password is required')).toBeTruthy();
+      expect(screen.getByText('Please confirm your password')).toBeTruthy();
     });
   });
 
@@ -230,7 +230,7 @@ describe('RegisterForm', () => {
     // Verify that register was not called and error message is shown
     await waitFor(() => {
       expect(mockRegister).not.toHaveBeenCalled();
-      expect(screen.getByText('Invalid email address')).toBeInTheDocument();
+      expect(screen.getByText('Invalid email address')).toBeTruthy();
     });
   });
 
@@ -243,7 +243,7 @@ describe('RegisterForm', () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Password must be at least 8 characters long')).toBeInTheDocument();
+      expect(screen.getByText('Password must be at least 8 characters long')).toBeTruthy();
     });
   });
 
@@ -258,7 +258,7 @@ describe('RegisterForm', () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Passwords do not match')).toBeInTheDocument();
+      expect(screen.getByText('Passwords do not match')).toBeTruthy();
     });
   });
 
@@ -322,7 +322,7 @@ describe('RegisterForm', () => {
     fireEvent.click(submitButton);
 
     expect(submitButton).toHaveProperty('disabled', true);
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toBeTruthy();
   });
 
   it('shows error message on failed registration', async () => {
@@ -358,7 +358,7 @@ describe('RegisterForm', () => {
     fireEvent.click(screen.getByRole('button', { name: /register/i }));
 
     await waitFor(() => {
-      expect(screen.getByText('Registration failed')).toBeInTheDocument();
+      expect(screen.getByText('Registration failed')).toBeTruthy();
     });
   });
 
@@ -369,17 +369,17 @@ describe('RegisterForm', () => {
     const toggleButtons = screen.getAllByRole('button', { name: /toggle password visibility/i });
 
     // Test the first password field (main password)
-    expect(passwordInput).toHaveAttribute('type', 'password');
+    expect(passwordInput.getAttribute('type')).toBe('password');
     fireEvent.click(toggleButtons[0]);
-    expect(passwordInput).toHaveAttribute('type', 'text');
+    expect(passwordInput.getAttribute('type')).toBe('text');
     fireEvent.click(toggleButtons[0]);
-    expect(passwordInput).toHaveAttribute('type', 'password');
+    expect(passwordInput.getAttribute('type')).toBe('password');
 
     // Test the second password field (confirm password)
-    expect(confirmPasswordInput).toHaveAttribute('type', 'password');
+    expect(confirmPasswordInput.getAttribute('type')).toBe('password');
     fireEvent.click(toggleButtons[1]);
-    expect(confirmPasswordInput).toHaveAttribute('type', 'text');
+    expect(confirmPasswordInput.getAttribute('type')).toBe('text');
     fireEvent.click(toggleButtons[1]);
-    expect(confirmPasswordInput).toHaveAttribute('type', 'password');
+    expect(confirmPasswordInput.getAttribute('type')).toBe('password');
   });
 });

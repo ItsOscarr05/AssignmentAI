@@ -260,22 +260,22 @@ describe('UserProfile', () => {
 
     // Wait for loading to complete
     await waitFor(() => {
-      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+      expect(screen.queryByRole('progressbar')).not.toBeTruthy();
     });
 
     // Wait for profile data to be loaded and displayed
     await waitFor(() => {
-      expect(screen.getByText(`${mockUser.firstName} ${mockUser.lastName}`)).toBeInTheDocument();
+      expect(screen.getByText(`${mockUser.firstName} ${mockUser.lastName}`)).toBeTruthy();
     });
 
     // Verify profile information is displayed
-    expect(screen.getByText(mockUser.email)).toBeInTheDocument();
-    expect(screen.getByText(mockUser.bio)).toBeInTheDocument();
+    expect(screen.getByText(mockUser.email)).toBeTruthy();
+    expect(screen.getByText(mockUser.bio)).toBeTruthy();
 
     // Check for institution and department
     const listItems = screen.getAllByTestId('list-item-text');
-    expect(listItems[0]).toHaveTextContent(mockUser.institution);
-    expect(listItems[1]).toHaveTextContent(mockUser.department);
+    expect(listItems[0].textContent).toBe(mockUser.institution);
+    expect(listItems[1].textContent).toBe(mockUser.department);
 
     // Verify fetch was called with correct URL
     expect(global.fetch).toHaveBeenCalledWith('/api/users/1');
@@ -298,7 +298,7 @@ describe('UserProfile', () => {
     });
 
     renderComponent();
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toBeTruthy();
   });
 
   it('displays error message when API call fails', async () => {
@@ -311,18 +311,18 @@ describe('UserProfile', () => {
 
     // Wait for loading to complete
     await waitFor(() => {
-      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+      expect(screen.queryByRole('progressbar')).not.toBeTruthy();
     });
 
     // Wait for error message to be displayed
     await waitFor(() => {
-      expect(screen.getByText('Profile not found')).toBeInTheDocument();
+      expect(screen.getByText('Profile not found')).toBeTruthy();
     });
 
     // Verify error toast is displayed
     await waitFor(() => {
       const errorToast = screen.getByTestId('snackbar');
-      expect(errorToast).toBeInTheDocument();
+      expect(errorToast).toBeTruthy();
     });
   });
 
@@ -331,11 +331,11 @@ describe('UserProfile', () => {
 
     // Wait for loading to complete and profile to be loaded
     await waitFor(() => {
-      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+      expect(screen.queryByRole('progressbar')).not.toBeTruthy();
     });
 
     await waitFor(() => {
-      expect(screen.getByText(`${mockUser.firstName} ${mockUser.lastName}`)).toBeInTheDocument();
+      expect(screen.getByText(`${mockUser.firstName} ${mockUser.lastName}`)).toBeTruthy();
     });
 
     // Click edit button
@@ -389,22 +389,22 @@ describe('UserProfile', () => {
 
     // Wait for loading to complete and profile to be loaded
     await waitFor(() => {
-      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+      expect(screen.queryByRole('progressbar')).not.toBeTruthy();
     });
 
     await waitFor(
       () => {
-        expect(screen.getByText('John Doe')).toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeTruthy();
       },
       { timeout: 500 }
     );
 
     // Verify statistics are displayed
-    expect(screen.getByText('Statistics')).toBeInTheDocument();
-    expect(screen.getByText('10')).toBeInTheDocument(); // totalAssignments
-    expect(screen.getByText('85%')).toBeInTheDocument(); // averageGrade
-    expect(screen.getByText('90%')).toBeInTheDocument(); // submissionRate
-    expect(screen.getByText('5')).toBeInTheDocument(); // feedbackReceived
+    expect(screen.getByText('Statistics')).toBeTruthy();
+    expect(screen.getByText('10')).toBeTruthy(); // totalAssignments
+    expect(screen.getByText('85%')).toBeTruthy(); // averageGrade
+    expect(screen.getByText('90%')).toBeTruthy(); // submissionRate
+    expect(screen.getByText('5')).toBeTruthy(); // feedbackReceived
   });
 
   it('displays recent activity correctly', async () => {
@@ -412,20 +412,20 @@ describe('UserProfile', () => {
 
     // Wait for loading to complete and profile to be loaded
     await waitFor(() => {
-      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+      expect(screen.queryByRole('progressbar')).not.toBeTruthy();
     });
 
     await waitFor(() => {
-      expect(screen.getByText(`${mockUser.firstName} ${mockUser.lastName}`)).toBeInTheDocument();
+      expect(screen.getByText(`${mockUser.firstName} ${mockUser.lastName}`)).toBeTruthy();
     });
 
     // Verify activity is displayed
-    expect(screen.getByText('Recent Activity')).toBeInTheDocument();
+    expect(screen.getByText('Recent Activity')).toBeTruthy();
 
     // Check for activity title and description
     const activityListItem = screen.getAllByTestId('list-item-text')[4];
-    expect(activityListItem).toHaveTextContent(mockUser.recentActivity[0].title);
-    expect(activityListItem).toHaveTextContent(mockUser.recentActivity[0].description);
+    expect(activityListItem.textContent).toBe(mockUser.recentActivity[0].title);
+    expect(activityListItem.textContent).toBe(mockUser.recentActivity[0].description);
   });
 
   it('handles successful profile updates', async () => {
@@ -433,11 +433,11 @@ describe('UserProfile', () => {
 
     // Wait for loading to complete and profile to be loaded
     await waitFor(() => {
-      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+      expect(screen.queryByRole('progressbar')).not.toBeTruthy();
     });
 
     await waitFor(() => {
-      expect(screen.getByText(`${mockUser.firstName} ${mockUser.lastName}`)).toBeInTheDocument();
+      expect(screen.getByText(`${mockUser.firstName} ${mockUser.lastName}`)).toBeTruthy();
     });
 
     // Click edit button
@@ -469,7 +469,7 @@ describe('UserProfile', () => {
 
     // Verify success message
     await waitFor(() => {
-      expect(screen.getByText('Profile updated successfully')).toBeInTheDocument();
+      expect(screen.getByText('Profile updated successfully')).toBeTruthy();
     });
   });
 
@@ -478,11 +478,11 @@ describe('UserProfile', () => {
 
     // Wait for loading to complete and profile to be loaded
     await waitFor(() => {
-      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+      expect(screen.queryByRole('progressbar')).not.toBeTruthy();
     });
 
     await waitFor(() => {
-      expect(screen.getByText(`${mockUser.firstName} ${mockUser.lastName}`)).toBeInTheDocument();
+      expect(screen.getByText(`${mockUser.firstName} ${mockUser.lastName}`)).toBeTruthy();
     });
 
     // Click edit button
@@ -507,7 +507,7 @@ describe('UserProfile', () => {
 
     // Verify error message
     await waitFor(() => {
-      expect(screen.getByText('Failed to update profile')).toBeInTheDocument();
+      expect(screen.getByText('Failed to update profile')).toBeTruthy();
     });
   });
 
@@ -516,11 +516,11 @@ describe('UserProfile', () => {
 
     // Wait for loading to complete and profile to be loaded
     await waitFor(() => {
-      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+      expect(screen.queryByRole('progressbar')).not.toBeTruthy();
     });
 
     await waitFor(() => {
-      expect(screen.getByText(`${mockUser.firstName} ${mockUser.lastName}`)).toBeInTheDocument();
+      expect(screen.getByText(`${mockUser.firstName} ${mockUser.lastName}`)).toBeTruthy();
     });
 
     // Click edit button to enable avatar upload
@@ -563,7 +563,7 @@ describe('UserProfile', () => {
 
     // Verify success message
     await waitFor(() => {
-      expect(screen.getByText('Profile updated successfully')).toBeInTheDocument();
+      expect(screen.getByText('Profile updated successfully')).toBeTruthy();
     });
   });
 
@@ -572,11 +572,11 @@ describe('UserProfile', () => {
 
     // Wait for loading to complete and profile to be loaded
     await waitFor(() => {
-      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+      expect(screen.queryByRole('progressbar')).not.toBeTruthy();
     });
 
     await waitFor(() => {
-      expect(screen.getByText(`${mockUser.firstName} ${mockUser.lastName}`)).toBeInTheDocument();
+      expect(screen.getByText(`${mockUser.firstName} ${mockUser.lastName}`)).toBeTruthy();
     });
 
     // Click edit button to enable avatar upload
@@ -593,7 +593,7 @@ describe('UserProfile', () => {
     // Verify error message
     await waitFor(() => {
       const errorMessage = screen.getByTestId('alert');
-      expect(errorMessage).toHaveTextContent('Invalid file type');
+      expect(errorMessage.textContent).toBe('Invalid file type');
     });
   });
 
@@ -602,11 +602,11 @@ describe('UserProfile', () => {
 
     // Wait for loading to complete and profile to be loaded
     await waitFor(() => {
-      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+      expect(screen.queryByRole('progressbar')).not.toBeTruthy();
     });
 
     await waitFor(() => {
-      expect(screen.getByText(`${mockUser.firstName} ${mockUser.lastName}`)).toBeInTheDocument();
+      expect(screen.getByText(`${mockUser.firstName} ${mockUser.lastName}`)).toBeTruthy();
     });
 
     // Click edit button to enable avatar upload
@@ -623,7 +623,7 @@ describe('UserProfile', () => {
     // Verify error message
     await waitFor(() => {
       const errorMessage = screen.getByTestId('alert');
-      expect(errorMessage).toHaveTextContent('File size exceeds limit');
+      expect(errorMessage.textContent).toBe('File size exceeds limit');
     });
   });
 
@@ -632,11 +632,11 @@ describe('UserProfile', () => {
 
     // Wait for loading to complete and profile to be loaded
     await waitFor(() => {
-      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+      expect(screen.queryByRole('progressbar')).not.toBeTruthy();
     });
 
     await waitFor(() => {
-      expect(screen.getByText(`${mockUser.firstName} ${mockUser.lastName}`)).toBeInTheDocument();
+      expect(screen.getByText(`${mockUser.firstName} ${mockUser.lastName}`)).toBeTruthy();
     });
 
     // Click edit button
@@ -669,14 +669,14 @@ describe('UserProfile', () => {
 
     // Get save button and verify it's enabled before clicking
     const saveButton = screen.getByRole('button', { name: /save changes/i });
-    expect(saveButton).not.toBeDisabled();
+    expect(saveButton.hasAttribute('disabled')).toBe(false);
 
     // Save changes
     fireEvent.click(saveButton);
 
     // Verify loading spinner appears
     await waitFor(() => {
-      expect(screen.getByRole('progressbar')).toBeInTheDocument();
+      expect(screen.getByRole('progressbar')).toBeTruthy();
     });
 
     // Resolve the promise to complete the API call
@@ -684,16 +684,16 @@ describe('UserProfile', () => {
 
     // Wait for loading state to be cleared
     await waitFor(() => {
-      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+      expect(screen.queryByRole('progressbar')).not.toBeTruthy();
     });
 
     // Wait for the edit button to reappear
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /edit profile/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /edit profile/i })).toBeTruthy();
     });
 
     // Verify the edit button is enabled
     const editButtonAfterSave = screen.getByRole('button', { name: /edit profile/i });
-    expect(editButtonAfterSave).not.toBeDisabled();
+    expect(editButtonAfterSave.hasAttribute('disabled')).toBe(false);
   });
 });

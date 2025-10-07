@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import AdvancedSearch from '../search/AdvancedSearch';
+import AdvancedSearch from '../../components/search/AdvancedSearch';
 
 // Mock Material-UI components
 vi.mock('@mui/material', () => ({
@@ -162,27 +162,27 @@ describe('AdvancedSearch', () => {
   it('renders search input and buttons', () => {
     render(<AdvancedSearch />);
 
-    expect(screen.getByTestId('search...')).toBeInTheDocument();
-    expect(screen.getByTestId('enabled-button')).toHaveTextContent('Search');
-    expect(screen.getByTestId('filter-list-icon')).toBeInTheDocument();
-    expect(screen.getByTestId('history-icon')).toBeInTheDocument();
+    expect(screen.getByTestId('search...')).toBeTruthy();
+    expect(screen.getByTestId('enabled-button').textContent).toBe('Search');
+    expect(screen.getByTestId('filter-list-icon')).toBeTruthy();
+    expect(screen.getByTestId('history-icon')).toBeTruthy();
   });
 
   it('shows filter panel when filter button is clicked', () => {
     render(<AdvancedSearch />);
 
     fireEvent.click(screen.getByTestId('filter-list-icon'));
-    expect(screen.getByLabelText('Field')).toBeInTheDocument();
-    expect(screen.getByLabelText('Operator')).toBeInTheDocument();
-    expect(screen.getByLabelText('Value')).toBeInTheDocument();
+    expect(screen.getByLabelText('Field')).toBeTruthy();
+    expect(screen.getByLabelText('Operator')).toBeTruthy();
+    expect(screen.getByLabelText('Value')).toBeTruthy();
   });
 
   it('shows history panel when history button is clicked', () => {
     render(<AdvancedSearch />);
 
     fireEvent.click(screen.getByTestId('history-icon'));
-    expect(screen.getByText('assignment submission')).toBeInTheDocument();
-    expect(screen.getByText('feedback analysis')).toBeInTheDocument();
+    expect(screen.getByText('assignment submission')).toBeTruthy();
+    expect(screen.getByText('feedback analysis')).toBeTruthy();
   });
 
   it('adds a new filter', async () => {
@@ -204,7 +204,7 @@ describe('AdvancedSearch', () => {
     fireEvent.click(screen.getByText('Add Filter'));
 
     // Check if filter was added
-    expect(screen.getByText('title contains test')).toBeInTheDocument();
+    expect(screen.getByText('title contains test')).toBeTruthy();
   });
 
   it('removes a filter', () => {
@@ -221,7 +221,7 @@ describe('AdvancedSearch', () => {
     fireEvent.click(screen.getByTestId('remove-filter'));
 
     // Check if filter was removed
-    expect(screen.queryByText('title contains test')).not.toBeInTheDocument();
+    expect(screen.queryByText('title contains test')).not.toBeTruthy();
   });
 
   it('clears all filters', () => {
@@ -246,8 +246,8 @@ describe('AdvancedSearch', () => {
     fireEvent.click(screen.getByText('Clear All'));
 
     // Check if all filters were removed
-    expect(screen.queryByText('title contains test')).not.toBeInTheDocument();
-    expect(screen.queryByText('status equals active')).not.toBeInTheDocument();
+    expect(screen.queryByText('title contains test')).not.toBeTruthy();
+    expect(screen.queryByText('status equals active')).not.toBeTruthy();
   });
 
   it('uses a history item', async () => {
@@ -259,16 +259,16 @@ describe('AdvancedSearch', () => {
     // Click the first history item
     const historyItems = screen.getAllByTestId('history-item');
     const firstHistoryItem = historyItems[0];
-    expect(firstHistoryItem).toBeInTheDocument();
+    expect(firstHistoryItem).toBeTruthy();
     fireEvent.click(firstHistoryItem);
 
     // Check if search query and filters were applied
     await waitFor(() => {
       const searchInput = screen.getByTestId('search...');
-      expect(searchInput).toHaveValue('assignment submission');
+      expect((searchInput as HTMLInputElement).value).toBe('assignment submission');
     });
-    expect(screen.getByText('status equals submitted')).toBeInTheDocument();
-    expect(screen.getByText('date after 2024-03-01')).toBeInTheDocument();
+    expect(screen.getByText('status equals submitted')).toBeTruthy();
+    expect(screen.getByText('date after 2024-03-01')).toBeTruthy();
   });
 
   it('removes a history item', async () => {
@@ -314,8 +314,8 @@ describe('AdvancedSearch', () => {
 
     // Check if search was performed with correct parameters
     await waitFor(() => {
-      expect(screen.getByTestId('search...')).toHaveValue('test query');
-      expect(screen.getByText('title contains test')).toBeInTheDocument();
+      expect((screen.getByTestId('search...') as HTMLInputElement).value).toBe('test query');
+      expect(screen.getByText('title contains test')).toBeTruthy();
     });
   });
 
@@ -326,24 +326,24 @@ describe('AdvancedSearch', () => {
     fireEvent.click(screen.getByTestId('filter-list-icon'));
 
     // Check if add filter button is disabled
-    expect(screen.getByTestId('disabled-button')).toBeInTheDocument();
+    expect(screen.getByTestId('disabled-button')).toBeTruthy();
 
     // Fill in only field
     fireEvent.change(screen.getByLabelText('Field'), { target: { value: 'title' } });
 
     // Button should still be disabled
-    expect(screen.getByTestId('disabled-button')).toBeInTheDocument();
+    expect(screen.getByTestId('disabled-button')).toBeTruthy();
 
     // Fill in operator
     fireEvent.change(screen.getByLabelText('Operator'), { target: { value: 'contains' } });
 
     // Button should still be disabled
-    expect(screen.getByTestId('disabled-button')).toBeInTheDocument();
+    expect(screen.getByTestId('disabled-button')).toBeTruthy();
 
     // Fill in value
     fireEvent.change(screen.getByLabelText('Value'), { target: { value: 'test' } });
 
     // Button should now be enabled
-    expect(screen.getByTestId('enabled-button')).toBeInTheDocument();
+    expect(screen.getByTestId('enabled-button')).toBeTruthy();
   });
 });

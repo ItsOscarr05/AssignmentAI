@@ -62,8 +62,6 @@ function Settings({ initialSettings, onUpdate }: SettingsProps) {
       setSettings({
         ...fetchedSettings,
         privacy: {
-          profileVisibility: 'public',
-          activityStatus: true,
           ...(fetchedSettings.privacy || {}),
         },
       });

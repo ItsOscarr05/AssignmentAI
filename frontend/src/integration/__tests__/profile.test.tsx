@@ -62,7 +62,7 @@ describe('Profile Management Flow Integration', () => {
 
       // Verify QR code is displayed
       await waitFor(() => {
-        expect(screen.getByAltText(/qr code/i)).toBeInTheDocument();
+        expect(screen.getByAltText(/qr code/i)).toBeTruthy();
       });
 
       // Enter verification code
@@ -97,7 +97,7 @@ describe('Profile Management Flow Integration', () => {
 
       // Verify error message
       await waitFor(() => {
-        expect(screen.getByText(/invalid code/i)).toBeInTheDocument();
+        expect(screen.getByText(/invalid code/i)).toBeTruthy();
       });
     });
   });

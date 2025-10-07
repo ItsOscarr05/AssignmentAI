@@ -97,36 +97,36 @@ describe('AIFeedbackViewer', () => {
     renderComponent();
 
     // Check for loading state
-    expect(screen.getByTestId('circular-progress')).toBeInTheDocument();
+    expect(screen.getByTestId('circular-progress')).toBeTruthy();
 
     // Wait for feedback content to load
     await waitFor(() => {
-      expect(screen.getByText('Your Score')).toBeInTheDocument();
+      expect(screen.getByText('Your Score')).toBeTruthy();
     });
 
     // Check for score
-    expect(screen.getByText('85%')).toBeInTheDocument();
-    expect(screen.getByText('Pass')).toBeInTheDocument();
+    expect(screen.getByText('85%')).toBeTruthy();
+    expect(screen.getByText('Pass')).toBeTruthy();
 
     // Check for strengths
-    expect(screen.getByText('Good code organization')).toBeInTheDocument();
-    expect(screen.getByText('Clear variable names')).toBeInTheDocument();
+    expect(screen.getByText('Good code organization')).toBeTruthy();
+    expect(screen.getByText('Clear variable names')).toBeTruthy();
 
     // Check for weaknesses
-    expect(screen.getByText('Missing error handling')).toBeInTheDocument();
-    expect(screen.getByText('Limited documentation')).toBeInTheDocument();
+    expect(screen.getByText('Missing error handling')).toBeTruthy();
+    expect(screen.getByText('Limited documentation')).toBeTruthy();
 
     // Check for feedback content
-    expect(screen.getByText('Test feedback content')).toBeInTheDocument();
+    expect(screen.getByText('Test feedback content')).toBeTruthy();
 
     // Check for suggestions
-    expect(screen.getByText('Suggestion 1')).toBeInTheDocument();
-    expect(screen.getByText('Suggestion 2')).toBeInTheDocument();
+    expect(screen.getByText('Suggestion 1')).toBeTruthy();
+    expect(screen.getByText('Suggestion 2')).toBeTruthy();
   });
 
   it('displays loading state while fetching data', () => {
     renderComponent();
-    expect(screen.getByTestId('circular-progress')).toBeInTheDocument();
+    expect(screen.getByTestId('circular-progress')).toBeTruthy();
   });
 
   it('displays error message when API call fails', async () => {
@@ -137,8 +137,8 @@ describe('AIFeedbackViewer', () => {
 
     await waitFor(() => {
       const alert = screen.getByRole('alert');
-      expect(alert).toHaveAttribute('data-severity', 'error');
-      expect(alert).toHaveTextContent('Failed to load feedback');
+      expect(alert.getAttribute('data-severity')).toBe('error');
+      expect(alert.textContent).toBe('Failed to load feedback');
     });
   });
 
@@ -154,7 +154,7 @@ describe('AIFeedbackViewer', () => {
     renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByText('No feedback available')).toBeInTheDocument();
+      expect(screen.getByText('No feedback available')).toBeTruthy();
     });
   });
 
@@ -163,7 +163,7 @@ describe('AIFeedbackViewer', () => {
 
     // Wait for feedback content to load
     await waitFor(() => {
-      expect(screen.getByText('Your Score')).toBeInTheDocument();
+      expect(screen.getByText('Your Score')).toBeTruthy();
     });
 
     const printButton = screen.getByTitle('Print Feedback');
@@ -176,7 +176,7 @@ describe('AIFeedbackViewer', () => {
 
     // Wait for feedback content to load
     await waitFor(() => {
-      expect(screen.getByText('Your Score')).toBeInTheDocument();
+      expect(screen.getByText('Your Score')).toBeTruthy();
     });
 
     const shareButton = screen.getByTitle('Share Feedback');
@@ -202,13 +202,13 @@ describe('AIFeedbackViewer', () => {
 
     // Wait for feedback content to load
     await waitFor(() => {
-      expect(screen.getByText('Your Score')).toBeInTheDocument();
+      expect(screen.getByText('Your Score')).toBeTruthy();
     });
 
     const shareButton = screen.getByTitle('Share Feedback');
     fireEvent.click(shareButton);
     expect(mockClipboard.writeText).toHaveBeenCalled();
-    expect(screen.getByText('Link copied to clipboard')).toBeInTheDocument();
+    expect(screen.getByText('Link copied to clipboard')).toBeTruthy();
   });
 
   it('handles download feedback', async () => {
@@ -216,7 +216,7 @@ describe('AIFeedbackViewer', () => {
 
     // Wait for feedback content to load
     await waitFor(() => {
-      expect(screen.getByText('Your Score')).toBeInTheDocument();
+      expect(screen.getByText('Your Score')).toBeTruthy();
     });
 
     const downloadButton = screen.getByTitle('Download Feedback');

@@ -38,29 +38,25 @@ describe('AuthLayout', () => {
     renderAuthLayout('Test Content');
 
     // Check for logo and title
-    expect(screen.getByTestId('auth-layout-header')).toHaveTextContent('AssignmentAI');
-    expect(screen.getByText('Test Content')).toBeInTheDocument();
+    expect(screen.getByTestId('auth-layout-header').textContent).toContain('AssignmentAI');
+    expect(screen.getByText('Test Content')).toBeTruthy();
   });
 
   it('renders children content in the main area', () => {
     renderAuthLayout('Test Content');
-    expect(screen.getByText('Test Content')).toBeInTheDocument();
+    expect(screen.getByText('Test Content')).toBeTruthy();
   });
 
   it('applies correct theme based on dark mode setting', () => {
     renderAuthLayout('Test Content');
     const container = screen.getByTestId('auth-layout-container');
-    expect(container).toHaveStyle({
-      backgroundColor: theme.palette.background.default,
-    });
+    expect(container.style.backgroundColor).toBe(theme.palette.background.default);
   });
 
   it('renders with custom background color', () => {
     renderAuthLayout('Test Content');
     const container = screen.getByTestId('auth-layout-container');
-    expect(container).toHaveStyle({
-      backgroundColor: theme.palette.background.default,
-    });
+    expect(container.style.backgroundColor).toBe(theme.palette.background.default);
   });
 
   it('renders with proper spacing and padding', () => {
@@ -69,17 +65,13 @@ describe('AuthLayout', () => {
     const content = screen.getByTestId('auth-layout-content');
 
     // Check container styles
-    expect(container).toHaveStyle({
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    });
+    expect(container.style.minHeight).toBe('100vh');
+    expect(container.style.display).toBe('flex');
+    expect(container.style.alignItems).toBe('center');
+    expect(container.style.justifyContent).toBe('center');
 
     // Check content styles
-    expect(content).toHaveStyle({
-      padding: theme.spacing(4),
-    });
+    expect(content.style.padding).toBe(theme.spacing(4));
   });
 
   it('renders with responsive design', () => {
@@ -87,7 +79,7 @@ describe('AuthLayout', () => {
     const content = screen.getByTestId('auth-layout-content');
 
     // Check that the content has the responsive class
-    expect(content).toHaveClass('MuiBox-root');
+    expect(content.className).toContain('MuiBox-root');
   });
 
   it('renders with proper typography styles', () => {
@@ -95,13 +87,11 @@ describe('AuthLayout', () => {
     const title = screen.getByTestId('auth-layout-header');
 
     // Check title typography
-    expect(title).toHaveStyle({
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: theme.spacing(2),
-      width: '100%',
-    });
+    expect(title.style.display).toBe('flex');
+    expect(title.style.flexDirection).toBe('column');
+    expect(title.style.alignItems).toBe('center');
+    expect(title.style.gap).toBe(theme.spacing(2));
+    expect(title.style.width).toBe('100%');
   });
 
   it('renders with proper elevation and border radius', () => {
@@ -109,7 +99,7 @@ describe('AuthLayout', () => {
     const content = screen.getByTestId('auth-layout-content');
 
     // Check that the content has the Material-UI Box class
-    expect(content).toHaveClass('MuiBox-root');
+    expect(content.className).toContain('MuiBox-root');
 
     // Check for the presence of styles using computed styles
     const computedStyle = window.getComputedStyle(content);

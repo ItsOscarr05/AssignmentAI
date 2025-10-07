@@ -3,10 +3,10 @@ import { ThemeProvider } from '@mui/material/styles';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AssignmentForm } from '../../components/assignments/AssignmentForm';
 import { AuthProvider } from '../../contexts/AuthContext';
 import { api } from '../../services/api';
 import { theme } from '../../theme';
-import { AssignmentForm } from '../assignments/AssignmentForm';
 
 // Mock the API module
 vi.mock('../../services/api', () => ({
@@ -111,20 +111,20 @@ describe('AssignmentForm', () => {
   describe('Basic Rendering', () => {
     it('renders with initial values', () => {
       renderAssignmentForm();
-      expect(screen.getByDisplayValue(mockAssignment.title)).toBeInTheDocument();
-      expect(screen.getByDisplayValue(mockAssignment.description)).toBeInTheDocument();
-      expect(screen.getByText(mockAssignment.subject)).toBeInTheDocument();
-      expect(screen.getByText(mockAssignment.grade_level)).toBeInTheDocument();
-      expect(screen.getByDisplayValue(mockAssignment.max_score)).toBeInTheDocument();
+      expect(screen.getByDisplayValue(mockAssignment.title)).toBeTruthy();
+      expect(screen.getByDisplayValue(mockAssignment.description)).toBeTruthy();
+      expect(screen.getByText(mockAssignment.subject)).toBeTruthy();
+      expect(screen.getByText(mockAssignment.grade_level)).toBeTruthy();
+      expect(screen.getByDisplayValue(mockAssignment.max_score)).toBeTruthy();
     });
 
     it('renders empty form when no initial values', () => {
       renderAssignmentForm({ initialData: undefined });
-      expect(screen.getByLabelText(/title/i)).toHaveValue('');
-      expect(screen.getByLabelText(/description/i)).toHaveValue('');
-      expect(screen.getByLabelText(/subject/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/grade level/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/maximum score/i)).toHaveValue(100);
+      expect((screen.getByLabelText(/title/i) as HTMLInputElement).value).toBe('');
+      expect((screen.getByLabelText(/description/i) as HTMLInputElement).value).toBe('');
+      expect(screen.getByLabelText(/subject/i)).toBeTruthy();
+      expect(screen.getByLabelText(/grade level/i)).toBeTruthy();
+      expect((screen.getByLabelText(/maximum score/i) as HTMLInputElement).value).toBe('100');
     });
   });
 
@@ -137,10 +137,10 @@ describe('AssignmentForm', () => {
       fireEvent.click(submitButton);
 
       await waitFor(() => {
-        expect(screen.getByTestId('title-error')).toBeInTheDocument();
-        expect(screen.getByTestId('description-error')).toBeInTheDocument();
-        expect(screen.getByText(/subject is required/i)).toBeInTheDocument();
-        expect(screen.getByText(/grade level is required/i)).toBeInTheDocument();
+        expect(screen.getByTestId('title-error')).toBeTruthy();
+        expect(screen.getByTestId('description-error')).toBeTruthy();
+        expect(screen.getByText(/subject is required/i)).toBeTruthy();
+        expect(screen.getByText(/grade level is required/i)).toBeTruthy();
       });
       expect(onSubmit).not.toHaveBeenCalled();
     });
@@ -177,7 +177,7 @@ describe('AssignmentForm', () => {
       // Wait for the error message to appear
       await waitFor(() => {
         const errorMessage = screen.getByText(/maximum score must be a positive number/i);
-        expect(errorMessage).toBeInTheDocument();
+        expect(errorMessage).toBeTruthy();
       });
 
       // Verify the form was not submitted
@@ -202,7 +202,7 @@ describe('AssignmentForm', () => {
       fireEvent.change(fileInput, { target: { files: [file] } });
 
       await waitFor(() => {
-        expect(screen.getByText('test.pdf')).toBeInTheDocument();
+        expect(screen.getByText('test.pdf')).toBeTruthy();
       });
 
       expect(api.post).toHaveBeenCalledWith(
@@ -226,14 +226,14 @@ describe('AssignmentForm', () => {
       fireEvent.change(fileInput, { target: { files: [file] } });
 
       await waitFor(() => {
-        expect(screen.getByText('test.pdf')).toBeInTheDocument();
+        expect(screen.getByText('test.pdf')).toBeTruthy();
       });
 
       const deleteButton = screen.getByTestId('delete-attachment-0');
       fireEvent.click(deleteButton);
 
       await waitFor(() => {
-        expect(screen.queryByText('test.pdf')).not.toBeInTheDocument();
+        expect(screen.queryByText('test.pdf')).not.toBeTruthy();
       });
     });
   });
@@ -294,7 +294,7 @@ describe('AssignmentForm', () => {
     it('disables submit button while submitting', () => {
       renderAssignmentForm({ isSubmitting: true });
       const submitButton = screen.getByRole('button', { name: /creating/i });
-      expect(submitButton).toBeDisabled();
+      expect(submitButton.getAttribute('disabled')).toBeTruthy();
     });
   });
 });

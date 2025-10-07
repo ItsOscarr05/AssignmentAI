@@ -75,73 +75,67 @@ describe('DialogContainer', () => {
 
   it('renders children content', () => {
     renderDialogContainer();
-    expect(screen.getByText('Test Content')).toBeInTheDocument();
+    expect(screen.getByText('Test Content')).toBeTruthy();
   });
 
   it('renders with custom title', () => {
     renderDialogContainer({ title: 'Test Title' });
-    expect(screen.getByText('Test Title')).toBeInTheDocument();
+    expect(screen.getByText('Test Title')).toBeTruthy();
   });
 
   it('renders with custom subtitle', () => {
     renderDialogContainer({ subtitle: 'Test Subtitle' });
-    expect(screen.getByText('Test Subtitle')).toBeInTheDocument();
+    expect(screen.getByText('Test Subtitle')).toBeTruthy();
   });
 
   it('renders with custom actions', () => {
     const actions = <button>Test Action</button>;
     renderDialogContainer({ actions });
-    expect(screen.getByText('Test Action')).toBeInTheDocument();
+    expect(screen.getByText('Test Action')).toBeTruthy();
   });
 
   it('renders with custom max width', () => {
     renderDialogContainer({ maxWidth: 'md' });
     const dialog = screen.getByTestId('dialog-container');
-    expect(dialog).toHaveAttribute('maxWidth', 'md');
+    expect(dialog.getAttribute('maxWidth')).toBe('md');
   });
 
   it('renders with proper container styles', () => {
     renderDialogContainer();
     const dialog = screen.getByTestId('dialog-container');
-    expect(dialog).toBeInTheDocument();
+    expect(dialog).toBeTruthy();
   });
 
   it('renders with proper header styles', () => {
     renderDialogContainer({ title: 'Test Title' });
     const header = screen.getByTestId('dialog-header');
-    expect(header).toBeInTheDocument();
+    expect(header).toBeTruthy();
   });
 
   it('renders with proper title styles', () => {
     renderDialogContainer({ title: 'Test Title' });
     const title = screen.getByText('Test Title');
-    expect(title).toHaveStyle({
-      margin: 0,
-      color: 'rgb(26, 26, 26)',
-      fontSize: '1.25rem',
-      fontWeight: 700,
-    });
+    expect(title.style.margin).toBe('0px');
+    expect(title.style.color).toBe('rgb(26, 26, 26)');
+    expect(title.style.fontSize).toBe('1.25rem');
+    expect(title.style.fontWeight).toBe('700');
   });
 
   it('renders with proper subtitle styles', () => {
     renderDialogContainer({ subtitle: 'Test Subtitle' });
     const subtitle = screen.getByText('Test Subtitle');
-    expect(subtitle).toHaveStyle({
-      marginTop: '8px',
-      color: 'rgb(102, 102, 102)',
-      fontSize: '1rem',
-      fontWeight: 400,
-    });
+    expect(subtitle.style.marginTop).toBe('8px');
+    expect(subtitle.style.color).toBe('rgb(102, 102, 102)');
+    expect(subtitle.style.fontSize).toBe('1rem');
+    expect(subtitle.style.fontWeight).toBe('400');
   });
 
   it('renders with proper content styles', () => {
     renderDialogContainer();
     const content = screen.getByTestId('dialog-content');
-    expect(content).toHaveStyle({
-      padding: '16px',
-      overflow: 'auto',
-      maxHeight: 'calc(100vh - 64px)',
-    });
+    expect(content.style.padding).toBe('16px');
+    expect(content.style.overflow).toBe('auto');
+    expect(content.style.maxHeight).toBe('calc(100vh - 64px)');
   });
 
   it('renders with proper typography styles', () => {
@@ -149,31 +143,23 @@ describe('DialogContainer', () => {
     const title = screen.getByText('Test Title');
     const subtitle = screen.getByText('Test Subtitle');
 
-    expect(title).toHaveStyle({
-      fontSize: '1.25rem',
-      fontWeight: 700,
-    });
-    expect(subtitle).toHaveStyle({
-      fontSize: '1rem',
-      fontWeight: 400,
-    });
+    expect(title.style.fontSize).toBe('1.25rem');
+    expect(title.style.fontWeight).toBe('700');
+    expect(subtitle.style.fontSize).toBe('1rem');
+    expect(subtitle.style.fontWeight).toBe('400');
   });
 
   it('renders with proper spacing between elements', () => {
     renderDialogContainer({ title: 'Test Title', subtitle: 'Test Subtitle' });
     const subtitle = screen.getByText('Test Subtitle');
-    expect(subtitle).toHaveStyle({
-      marginTop: '8px',
-    });
+    expect(subtitle.style.marginTop).toBe('8px');
   });
 
   it('renders with proper close button styles', () => {
     renderDialogContainer({ onClose: vi.fn(), title: 'Test Title' });
     const closeButton = screen.getByRole('button', { name: /close/i });
-    expect(closeButton).toHaveStyle({
-      color: 'rgb(158, 158, 158)',
-      padding: '8px',
-    });
+    expect(closeButton.style.color).toBe('rgb(158, 158, 158)');
+    expect(closeButton.style.padding).toBe('8px');
   });
 
   it('handles close button click', () => {

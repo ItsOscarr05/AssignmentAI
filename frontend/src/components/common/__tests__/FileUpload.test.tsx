@@ -15,8 +15,8 @@ describe('FileUpload', () => {
       />
     );
 
-    expect(screen.getByText('Drag and drop files here')).toBeInTheDocument();
-    expect(screen.getByText('or click to select files')).toBeInTheDocument();
+    expect(screen.getByText('Drag and drop files here')).toBeTruthy();
+    expect(screen.getByText('or click to select files')).toBeTruthy();
 
     // Check for file size text in the description element
     const description = screen.getByText((_, element) => {
@@ -29,7 +29,7 @@ describe('FileUpload', () => {
         text.includes('MB')
       );
     });
-    expect(description).toBeInTheDocument();
+    expect(description).toBeTruthy();
   });
 
   it('handles file selection', () => {
@@ -103,7 +103,7 @@ describe('FileUpload', () => {
       />
     );
 
-    expect(screen.getByTestId('file-name')).toHaveTextContent('test.pdf');
+    expect(screen.getByTestId('file-name').textContent).toBe('test.pdf');
   });
 
   it('validates file type', () => {
@@ -121,7 +121,7 @@ describe('FileUpload', () => {
     fireEvent.change(input, { target: { files: [file] } });
 
     // The component should show an error for invalid file type
-    expect(screen.getByText('Invalid file type')).toBeInTheDocument();
+    expect(screen.getByText('Invalid file type')).toBeTruthy();
     expect(mockOnFileSelect).not.toHaveBeenCalled();
   });
 });

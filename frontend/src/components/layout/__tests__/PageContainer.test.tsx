@@ -138,23 +138,23 @@ describe('PageContainer', () => {
 
   it('renders children content', () => {
     renderPageContainer();
-    expect(screen.getByTestId('test-content')).toBeInTheDocument();
+    expect(screen.getByTestId('test-content')).toBeTruthy();
   });
 
   it('renders with custom title', () => {
     renderPageContainer({ title: 'Test Page' });
-    expect(screen.getByTestId('page-title')).toHaveTextContent('Test Page');
+    expect(screen.getByTestId('page-title').textContent).toBe('Test Page');
   });
 
   it('renders with custom subtitle', () => {
     renderPageContainer({ subtitle: 'Test Subtitle' });
-    expect(screen.getByTestId('page-subtitle')).toHaveTextContent('Test Subtitle');
+    expect(screen.getByTestId('page-subtitle').textContent).toBe('Test Subtitle');
   });
 
   it('renders with custom actions', () => {
     const actions = <button data-testid="test-action">Test Action</button>;
     renderPageContainer({ actions });
-    expect(screen.getByTestId('test-action')).toBeInTheDocument();
+    expect(screen.getByTestId('test-action')).toBeTruthy();
   });
 
   it('renders with proper container styles', () => {
@@ -162,10 +162,8 @@ describe('PageContainer', () => {
     const container = screen.getByTestId('page-container');
 
     // Check container styles
-    expect(container).toHaveStyle({
-      padding: '24px',
-      margin: '0 auto',
-    });
+    expect(container.style.padding).toBe('24px');
+    expect(container.style.margin).toBe('0 auto');
   });
 
   it('renders with proper header styles', () => {
@@ -173,12 +171,10 @@ describe('PageContainer', () => {
     const header = screen.getByTestId('page-header');
 
     // Check header styles
-    expect(header).toHaveStyle({
-      marginBottom: theme.spacing(3),
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    });
+    expect(header.style.marginBottom).toBe(theme.spacing(3));
+    expect(header.style.display).toBe('flex');
+    expect(header.style.justifyContent).toBe('space-between');
+    expect(header.style.alignItems).toBe('center');
   });
 
   it('renders with proper title styles', () => {
@@ -186,10 +182,8 @@ describe('PageContainer', () => {
     const title = screen.getByTestId('page-title');
 
     // Check title styles
-    expect(title).toHaveStyle({
-      margin: '0px',
-      color: 'rgb(26, 26, 26)',
-    });
+    expect(title.style.margin).toBe('0px');
+    expect(title.style.color).toBe('rgb(26, 26, 26)');
   });
 
   it('renders with proper subtitle styles', () => {
@@ -202,10 +196,8 @@ describe('PageContainer', () => {
     console.log('Subtitle computed styles:', window.getComputedStyle(subtitle));
 
     // Check subtitle styles
-    expect(subtitle).toHaveStyle({
-      marginTop: '8px',
-      color: 'rgb(102, 102, 102)',
-    });
+    expect(subtitle.style.marginTop).toBe('8px');
+    expect(subtitle.style.color).toBe('rgb(102, 102, 102)');
   });
 
   it('renders with proper content styles', () => {
@@ -213,9 +205,7 @@ describe('PageContainer', () => {
     const content = screen.getByTestId('page-content');
 
     // Check content styles
-    expect(content).toHaveStyle({
-      padding: '24px',
-    });
+    expect(content.style.padding).toBe('24px');
   });
 
   it('renders with proper responsive design', () => {
@@ -224,9 +214,7 @@ describe('PageContainer', () => {
 
     // Check responsive styles - we can only check the default styles
     // Media queries can't be tested directly with toHaveStyle
-    expect(container).toHaveStyle({
-      padding: '24px',
-    });
+    expect(container.style.padding).toBe('24px');
   });
 
   it('renders with proper typography styles', () => {
@@ -235,14 +223,10 @@ describe('PageContainer', () => {
     const subtitle = screen.getByTestId('page-subtitle');
 
     // Check typography styles
-    expect(title).toHaveStyle({
-      fontSize: theme.typography.h4.fontSize,
-      fontWeight: theme.typography.fontWeightBold,
-    });
-    expect(subtitle).toHaveStyle({
-      fontSize: theme.typography.subtitle1.fontSize,
-      fontWeight: theme.typography.fontWeightRegular,
-    });
+    expect(title.style.fontSize).toBe(theme.typography.h4.fontSize);
+    expect(title.style.fontWeight).toBe(theme.typography.fontWeightBold);
+    expect(subtitle.style.fontSize).toBe(theme.typography.subtitle1.fontSize);
+    expect(subtitle.style.fontWeight).toBe(theme.typography.fontWeightRegular);
   });
 
   it('renders with proper elevation', () => {
@@ -250,9 +234,7 @@ describe('PageContainer', () => {
     const content = screen.getByTestId('page-content');
 
     // Check elevation
-    expect(content).toHaveStyle({
-      boxShadow: theme.shadows[1],
-    });
+    expect(content.style.boxShadow).toBe(theme.shadows[1]);
   });
 
   it('renders with proper border radius', () => {
@@ -260,9 +242,7 @@ describe('PageContainer', () => {
     const content = screen.getByTestId('page-content');
 
     // Check border radius
-    expect(content).toHaveStyle({
-      borderRadius: '4px',
-    });
+    expect(content.style.borderRadius).toBe('4px');
   });
 
   it('renders with proper spacing between elements', () => {
@@ -271,12 +251,8 @@ describe('PageContainer', () => {
     const content = screen.getByTestId('page-content');
 
     // Check spacing between elements
-    expect(header).toHaveStyle({
-      marginBottom: theme.spacing(3),
-    });
-    expect(content).toHaveStyle({
-      padding: theme.spacing(3),
-    });
+    expect(header.style.marginBottom).toBe(theme.spacing(3));
+    expect(content.style.padding).toBe(theme.spacing(3));
   });
 
   it('renders with proper background colors', () => {
@@ -285,11 +261,7 @@ describe('PageContainer', () => {
     const content = screen.getByTestId('page-content');
 
     // Check background colors
-    expect(container).toHaveStyle({
-      backgroundColor: theme.palette.background.default,
-    });
-    expect(content).toHaveStyle({
-      backgroundColor: theme.palette.background.paper,
-    });
+    expect(container.style.backgroundColor).toBe(theme.palette.background.default);
+    expect(content.style.backgroundColor).toBe(theme.palette.background.paper);
   });
 });

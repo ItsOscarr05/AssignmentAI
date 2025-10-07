@@ -95,13 +95,13 @@ describe('Authentication Flow', () => {
     it('renders registration form with all required fields', () => {
       renderWithAuth(<Register />);
 
-      expect(screen.getByText('Create Account')).toBeInTheDocument();
-      expect(screen.getByLabelText('First Name')).toBeInTheDocument();
-      expect(screen.getByLabelText('Last Name')).toBeInTheDocument();
-      expect(screen.getByLabelText('Email')).toBeInTheDocument();
-      expect(screen.getByLabelText('Password')).toBeInTheDocument();
-      expect(screen.getByLabelText('Confirm Password')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Register' })).toBeInTheDocument();
+      expect(screen.getByText('Create Account')).toBeTruthy();
+      expect(screen.getByLabelText('First Name')).toBeTruthy();
+      expect(screen.getByLabelText('Last Name')).toBeTruthy();
+      expect(screen.getByLabelText('Email')).toBeTruthy();
+      expect(screen.getByLabelText('Password')).toBeTruthy();
+      expect(screen.getByLabelText('Confirm Password')).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Register' })).toBeTruthy();
     });
 
     it('validates required fields', async () => {
@@ -111,7 +111,7 @@ describe('Authentication Flow', () => {
       fireEvent.click(submitButton);
 
       await waitFor(() => {
-        expect(screen.getByText('All fields are required')).toBeInTheDocument();
+        expect(screen.getByText('All fields are required')).toBeTruthy();
       });
     });
 
@@ -125,7 +125,7 @@ describe('Authentication Flow', () => {
       fireEvent.click(submitButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Invalid email format')).toBeInTheDocument();
+        expect(screen.getByText('Invalid email format')).toBeTruthy();
       });
     });
 
@@ -145,7 +145,7 @@ describe('Authentication Flow', () => {
       fireEvent.click(submitButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Passwords do not match')).toBeInTheDocument();
+        expect(screen.getByText('Passwords do not match')).toBeTruthy();
       });
     });
 
@@ -177,7 +177,7 @@ describe('Authentication Flow', () => {
       await waitFor(() => {
         expect(
           screen.getByText('Registration successful! Please log in with your credentials.')
-        ).toBeInTheDocument();
+        ).toBeTruthy();
       });
 
       // Should redirect to login after 2 seconds
@@ -208,7 +208,7 @@ describe('Authentication Flow', () => {
       fireEvent.click(submitButton);
 
       await waitFor(() => {
-        expect(screen.getByText(errorMessage)).toBeInTheDocument();
+        expect(screen.getByText(errorMessage)).toBeTruthy();
       });
     });
 
@@ -218,8 +218,8 @@ describe('Authentication Flow', () => {
       const googleButton = screen.getByRole('button', { name: 'Google' });
       const githubButton = screen.getByRole('button', { name: 'GitHub' });
 
-      expect(googleButton).toBeInTheDocument();
-      expect(githubButton).toBeInTheDocument();
+      expect(googleButton).toBeTruthy();
+      expect(githubButton).toBeTruthy();
 
       // Mock window.location.href
       const mockLocation = { href: '' };
@@ -240,9 +240,9 @@ describe('Authentication Flow', () => {
     it('renders login form with all required elements', () => {
       renderWithAuth(<Login />);
 
-      expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
+      expect(screen.getByLabelText(/email address/i)).toBeTruthy();
+      expect(screen.getByLabelText(/password/i)).toBeTruthy();
+      expect(screen.getByRole('button', { name: /sign in/i })).toBeTruthy();
     });
 
     it('validates email format', async () => {
@@ -253,7 +253,7 @@ describe('Authentication Flow', () => {
       fireEvent.blur(emailInput);
 
       await waitFor(() => {
-        expect(screen.getByText(/invalid email address/i)).toBeInTheDocument();
+        expect(screen.getByText(/invalid email address/i)).toBeTruthy();
       });
     });
 
@@ -265,7 +265,7 @@ describe('Authentication Flow', () => {
       fireEvent.blur(passwordInput);
 
       await waitFor(() => {
-        expect(screen.getByText(/password must be at least 6 characters/i)).toBeInTheDocument();
+        expect(screen.getByText(/password must be at least 6 characters/i)).toBeTruthy();
       });
     });
 
@@ -325,7 +325,7 @@ describe('Authentication Flow', () => {
       fireEvent.click(submitButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Invalid credentials')).toBeInTheDocument();
+        expect(screen.getByText('Invalid credentials')).toBeTruthy();
       });
     });
 
@@ -342,10 +342,10 @@ describe('Authentication Flow', () => {
       fireEvent.change(passwordInput, { target: { value: 'password123' } });
       fireEvent.click(submitButton);
 
-      expect(submitButton).toBeDisabled();
+      expect(submitButton.hasAttribute('disabled')).toBe(true);
 
       await waitFor(() => {
-        expect(submitButton).not.toBeDisabled();
+        expect(submitButton.hasAttribute('disabled')).toBe(false);
       });
     });
   });

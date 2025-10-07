@@ -1,8 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import AssignmentCard from '../../components/assignments/AssignmentCard';
 import { ThemeProvider } from '../../contexts/ThemeContext';
 import { Assignment } from '../../types';
-import AssignmentCard from '../assignments/AssignmentCard';
 
 const mockAssignment: Assignment = {
   id: '1',
@@ -34,13 +34,13 @@ const renderAssignmentCard = (props = {}) => {
 describe('AssignmentCard', () => {
   it('renders assignment details', () => {
     renderAssignmentCard();
-    expect(screen.getByText('Test Assignment')).toBeInTheDocument();
-    expect(screen.getByText('Math')).toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveAttribute('label', 'published');
+    expect(screen.getByText('Test Assignment')).toBeTruthy();
+    expect(screen.getByText('Math')).toBeTruthy();
+    expect(screen.getByRole('status').getAttribute('label')).toBe('published');
     const chips = screen.getAllByTestId('chip');
-    expect(chips[1]).toHaveAttribute('label', 'medium');
-    expect(screen.getByText(/Due: 5\/29\/2025/)).toBeInTheDocument();
-    expect(screen.getByText('5 submissions')).toBeInTheDocument();
+    expect(chips[1].getAttribute('label')).toBe('medium');
+    expect(screen.getByText(/Due: 5\/29\/2025/)).toBeTruthy();
+    expect(screen.getByText('5 submissions')).toBeTruthy();
   });
 
   it('renders with custom progress component', () => {
@@ -48,21 +48,21 @@ describe('AssignmentCard', () => {
       <div data-testid="custom-progress">{progress}%</div>
     );
     renderAssignmentCard({ progressComponent: CustomProgress });
-    expect(screen.getByTestId('custom-progress')).toHaveTextContent('0%');
+    expect(screen.getByTestId('custom-progress').textContent).toBe('0%');
   });
 
   describe('Action Buttons', () => {
     it('renders delete button', () => {
       renderAssignmentCard();
-      expect(screen.getByLabelText('Delete assignment')).toBeInTheDocument();
+      expect(screen.getByLabelText('Delete assignment')).toBeTruthy();
     });
 
     it('shows delete confirmation dialog', () => {
       renderAssignmentCard();
       const deleteButton = screen.getByLabelText('Delete assignment');
       fireEvent.click(deleteButton);
-      expect(screen.getByText('Delete Assignment')).toBeInTheDocument();
-      expect(screen.getByText(/Are you sure you want to delete/)).toBeInTheDocument();
+      expect(screen.getByText('Delete Assignment')).toBeTruthy();
+      expect(screen.getByText(/Are you sure you want to delete/)).toBeTruthy();
     });
 
     it('handles delete confirmation', () => {
@@ -80,13 +80,13 @@ describe('AssignmentCard', () => {
     it('has proper ARIA attributes', () => {
       renderAssignmentCard();
       const card = screen.getByRole('article');
-      expect(card).toHaveAttribute('aria-label', `Assignment: ${mockAssignment.title}`);
+      expect(card.getAttribute('aria-label')).toBe(`Assignment: ${mockAssignment.title}`);
     });
 
     it('announces status changes', () => {
       renderAssignmentCard();
       const statusBadge = screen.getByRole('status');
-      expect(statusBadge).toHaveAttribute('aria-live', 'polite');
+      expect(statusBadge.getAttribute('aria-live')).toBe('polite');
     });
   });
 
@@ -96,14 +96,14 @@ describe('AssignmentCard', () => {
       renderAssignmentCard({
         assignment: { ...mockAssignment, description: longDescription },
       });
-      expect(screen.getByText(longDescription)).toBeInTheDocument();
+      expect(screen.getByText(longDescription)).toBeTruthy();
     });
 
     it('handles zero submissions', () => {
       renderAssignmentCard({
         assignment: { ...mockAssignment, submissions: 0 },
       });
-      expect(screen.getByText('0 submissions')).toBeInTheDocument();
+      expect(screen.getByText('0 submissions')).toBeTruthy();
     });
   });
 });

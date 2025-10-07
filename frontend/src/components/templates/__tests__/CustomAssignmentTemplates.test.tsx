@@ -92,7 +92,7 @@ describe('CustomAssignmentTemplates', () => {
 
       renderWithProviders(<CustomAssignmentTemplates />);
 
-      expect(screen.getByText('Loading templates...')).toBeInTheDocument();
+      expect(screen.getByText('Loading templates...')).toBeTruthy();
     });
   });
 
@@ -110,8 +110,8 @@ describe('CustomAssignmentTemplates', () => {
 
       renderWithProviders(<CustomAssignmentTemplates />);
 
-      expect(screen.getByText('No templates found')).toBeInTheDocument();
-      expect(screen.getByText('Create your first template to get started')).toBeInTheDocument();
+      expect(screen.getByText('No templates found')).toBeTruthy();
+      expect(screen.getByText('Create your first template to get started')).toBeTruthy();
     });
   });
 
@@ -119,10 +119,10 @@ describe('CustomAssignmentTemplates', () => {
     it('should render template list correctly', () => {
       renderWithProviders(<CustomAssignmentTemplates />);
 
-      expect(screen.getByText('Essay Template')).toBeInTheDocument();
-      expect(screen.getByText('Math Problem Template')).toBeInTheDocument();
-      expect(screen.getByText('A comprehensive essay template')).toBeInTheDocument();
-      expect(screen.getByText('Template for solving math problems')).toBeInTheDocument();
+      expect(screen.getByText('Essay Template')).toBeTruthy();
+      expect(screen.getByText('Math Problem Template')).toBeTruthy();
+      expect(screen.getByText('A comprehensive essay template')).toBeTruthy();
+      expect(screen.getByText('Template for solving math problems')).toBeTruthy();
     });
 
     it('should display create template button', () => {
@@ -160,7 +160,7 @@ describe('CustomAssignmentTemplates', () => {
       const createButton = createButtons[0]; // Use the first one
       fireEvent.click(createButton);
 
-      expect(screen.getByText('Create New Template')).toBeInTheDocument();
+      expect(screen.getByText('Create New Template')).toBeTruthy();
     });
 
     it('should create template successfully', async () => {
@@ -223,9 +223,9 @@ describe('CustomAssignmentTemplates', () => {
       const submitButton = screen.getByText('Create');
       fireEvent.click(submitButton);
 
-      expect(screen.getByText('Name is required')).toBeInTheDocument();
-      expect(screen.getByText('Description is required')).toBeInTheDocument();
-      expect(screen.getByText('Content is required')).toBeInTheDocument();
+      expect(screen.getByText('Name is required')).toBeTruthy();
+      expect(screen.getByText('Description is required')).toBeTruthy();
+      expect(screen.getByText('Content is required')).toBeTruthy();
     });
   });
 
@@ -236,7 +236,7 @@ describe('CustomAssignmentTemplates', () => {
       const editButtons = screen.getAllByTestId('edit-template-button');
       fireEvent.click(editButtons[0]);
 
-      expect(screen.getByText('Edit Template')).toBeInTheDocument();
+      expect(screen.getByText('Edit Template')).toBeTruthy();
     });
 
     it('should update template successfully', async () => {
@@ -425,7 +425,7 @@ describe('CustomAssignmentTemplates', () => {
 
       renderWithProviders(<CustomAssignmentTemplates />);
 
-      expect(screen.getByText('Failed to load templates')).toBeInTheDocument();
+      expect(screen.getByText('Failed to load templates')).toBeTruthy();
     });
 
     it('should show error when create template fails', async () => {
@@ -458,7 +458,7 @@ describe('CustomAssignmentTemplates', () => {
       fireEvent.click(submitButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Failed to create template')).toBeInTheDocument();
+        expect(screen.getByText('Failed to create template')).toBeTruthy();
       });
     });
   });
@@ -484,11 +484,11 @@ describe('CustomAssignmentTemplates', () => {
       const categorySelect = screen.getByLabelText('Category');
       fireEvent.mouseDown(categorySelect);
 
-      expect(screen.getByText('General')).toBeInTheDocument();
-      expect(screen.getByText('Essay')).toBeInTheDocument();
-      expect(screen.getByText('Mathematics')).toBeInTheDocument();
-      expect(screen.getByText('Science')).toBeInTheDocument();
-      expect(screen.getByText('History')).toBeInTheDocument();
+      expect(screen.getByText('General')).toBeTruthy();
+      expect(screen.getByText('Essay')).toBeTruthy();
+      expect(screen.getByText('Mathematics')).toBeTruthy();
+      expect(screen.getByText('Science')).toBeTruthy();
+      expect(screen.getByText('History')).toBeTruthy();
     });
   });
 });

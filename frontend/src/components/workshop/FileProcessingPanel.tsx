@@ -53,7 +53,7 @@ const FileProcessingPanel: React.FC<FileProcessingPanelProps> = ({ onFileProcess
   const [previewResult, setPreviewResult] = useState<FilePreviewResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [supportedFormats, setSupportedFormats] = useState<SupportedFormat[]>([]);
+  const [_supportedFormats, setSupportedFormats] = useState<SupportedFormat[]>([]);
   const [showPreview, setShowPreview] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);

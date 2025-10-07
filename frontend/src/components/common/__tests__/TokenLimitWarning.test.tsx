@@ -38,15 +38,15 @@ describe('TokenLimitWarning', () => {
     renderWithProvider(<TokenLimitWarning tokensNeeded={1000} />);
 
     // Should not show warning for 1000 tokens when user has 5000 remaining
-    expect(screen.queryByText('Token Usage Warning')).not.toBeInTheDocument();
+    expect(screen.queryByText('Token Usage Warning')).not.toBeTruthy();
   });
 
   it('renders warning when user has insufficient tokens', () => {
     renderWithProvider(<TokenLimitWarning tokensNeeded={10000} />);
 
-    expect(screen.getByText('Low Token Balance')).toBeInTheDocument();
-    expect(screen.getByText(/This operation requires 10,000 tokens/)).toBeInTheDocument();
-    expect(screen.getByText(/You have 5,000 remaining/)).toBeInTheDocument();
+    expect(screen.getByText('Low Token Balance')).toBeTruthy();
+    expect(screen.getByText(/This operation requires 10,000 tokens/)).toBeTruthy();
+    expect(screen.getByText(/You have 5,000 remaining/)).toBeTruthy();
   });
 
   it('renders error when user has no tokens remaining', () => {
@@ -78,20 +78,20 @@ describe('TokenLimitWarning', () => {
 
     renderWithProvider(<TokenLimitWarning tokensNeeded={1000} />);
 
-    expect(screen.getByText('Token Limit Exceeded')).toBeInTheDocument();
-    expect(screen.getByText(/You have exceeded your monthly token limit/)).toBeInTheDocument();
+    expect(screen.getByText('Token Limit Exceeded')).toBeTruthy();
+    expect(screen.getByText(/You have exceeded your monthly token limit/)).toBeTruthy();
   });
 
   it('shows upgrade button when showUpgradeButton is true', () => {
     renderWithProvider(<TokenLimitWarning tokensNeeded={10000} showUpgradeButton={true} />);
 
-    expect(screen.getByText('Upgrade Plan')).toBeInTheDocument();
+    expect(screen.getByText('Upgrade Plan')).toBeTruthy();
   });
 
   it('hides upgrade button when showUpgradeButton is false', () => {
     renderWithProvider(<TokenLimitWarning tokensNeeded={10000} showUpgradeButton={false} />);
 
-    expect(screen.queryByText('Upgrade Plan')).not.toBeInTheDocument();
+    expect(screen.queryByText('Upgrade Plan')).not.toBeTruthy();
   });
 
   it('calls custom upgrade handler when provided', () => {
@@ -107,7 +107,7 @@ describe('TokenLimitWarning', () => {
   it('shows token usage progress bar', () => {
     renderWithProvider(<TokenLimitWarning tokensNeeded={10000} />);
 
-    expect(screen.getByText('Token Usage')).toBeInTheDocument();
-    expect(screen.getByText('5,000 / 30,000')).toBeInTheDocument();
+    expect(screen.getByText('Token Usage')).toBeTruthy();
+    expect(screen.getByText('5,000 / 30,000')).toBeTruthy();
   });
 });

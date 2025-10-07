@@ -200,7 +200,7 @@ describe('MainLayout', () => {
 
   it('renders the app title', () => {
     renderMainLayout();
-    expect(screen.getByText('AssignmentAI')).toBeInTheDocument();
+    expect(screen.getByText('AssignmentAI')).toBeTruthy();
   });
 
   it('handles mobile menu toggle', () => {
@@ -210,7 +210,7 @@ describe('MainLayout', () => {
     const menuButton = screen.getByRole('button', { name: /menu/i });
     fireEvent.click(menuButton);
 
-    expect(menuButton).toBeInTheDocument();
+    expect(menuButton).toBeTruthy();
   });
 
   it('handles logout', async () => {
@@ -221,7 +221,7 @@ describe('MainLayout', () => {
 
     await waitFor(() => {
       const logoutButton = screen.getByRole('menuitem', { name: 'Logout' });
-      expect(logoutButton).toBeInTheDocument();
+      expect(logoutButton).toBeTruthy();
       fireEvent.click(logoutButton);
     });
 
@@ -246,9 +246,9 @@ describe('MainLayout', () => {
     await waitFor(() => {
       const menuItems = screen.getAllByRole('menuitem');
       expect(menuItems).toHaveLength(3);
-      expect(menuItems[0]).toHaveTextContent('Profile');
-      expect(menuItems[1]).toHaveTextContent('Settings');
-      expect(menuItems[2]).toHaveTextContent('Logout');
+      expect(menuItems[0].textContent).toContain('Profile');
+      expect(menuItems[1].textContent).toContain('Settings');
+      expect(menuItems[2].textContent).toContain('Logout');
     });
   });
 
@@ -265,13 +265,13 @@ describe('MainLayout', () => {
     fireEvent.mouseDown(baseElement);
 
     await waitFor(() => {
-      expect(screen.queryByRole('menuitem')).not.toBeInTheDocument();
+      expect(screen.queryByRole('menuitem')).not.toBeTruthy();
     });
   });
 
   it('renders the Outlet component for nested routes', () => {
     renderMainLayout();
-    expect(screen.getByTestId('outlet')).toBeInTheDocument();
+    expect(screen.getByTestId('outlet')).toBeTruthy();
   });
 
   it('applies correct theme based on dark mode setting', () => {
@@ -281,7 +281,7 @@ describe('MainLayout', () => {
     });
 
     renderMainLayout();
-    expect(screen.getByTestId('light-mode-icon')).toBeInTheDocument();
+    expect(screen.getByTestId('light-mode-icon')).toBeTruthy();
 
     (useTheme as ReturnType<typeof vi.fn>).mockReturnValue({
       theme: 'light',
@@ -289,6 +289,6 @@ describe('MainLayout', () => {
     });
 
     renderMainLayout();
-    expect(screen.getByTestId('dark-mode-icon')).toBeInTheDocument();
+    expect(screen.getByTestId('dark-mode-icon')).toBeTruthy();
   });
 });

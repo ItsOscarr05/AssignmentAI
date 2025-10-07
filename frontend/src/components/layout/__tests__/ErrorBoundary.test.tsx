@@ -109,15 +109,15 @@ describe('ErrorBoundary', () => {
 
   it('renders children when there is no error', () => {
     renderErrorBoundary(<div>Test Content</div>);
-    expect(screen.getByText('Test Content')).toBeInTheDocument();
+    expect(screen.getByText('Test Content')).toBeTruthy();
   });
 
   it('renders error UI when there is an error', () => {
     renderErrorBoundary(<ErrorComponent />);
 
     // Check for error message
-    expect(screen.getByText(/Something went wrong/i)).toBeInTheDocument();
-    expect(screen.getByText(/Test error/i)).toBeInTheDocument();
+    expect(screen.getByText(/Something went wrong/i)).toBeTruthy();
+    expect(screen.getByText(/Test error/i)).toBeTruthy();
   });
 
   it('renders with proper error UI styles', () => {
@@ -125,14 +125,12 @@ describe('ErrorBoundary', () => {
     const errorContainer = screen.getByTestId('error-boundary-container');
 
     // Check container styles
-    expect(errorContainer).toHaveStyle({
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: '100vh',
-      padding: '24px',
-    });
+    expect(errorContainer.style.display).toBe('flex');
+    expect(errorContainer.style.flexDirection).toBe('column');
+    expect(errorContainer.style.alignItems).toBe('center');
+    expect(errorContainer.style.justifyContent).toBe('center');
+    expect(errorContainer.style.minHeight).toBe('100vh');
+    expect(errorContainer.style.padding).toBe('24px');
   });
 
   it('renders with proper error message styles', () => {
@@ -140,10 +138,8 @@ describe('ErrorBoundary', () => {
     const errorMessage = screen.getByText(/Something went wrong/i);
 
     // Check error message styles
-    expect(errorMessage).toHaveStyle({
-      color: 'rgb(211, 47, 47)',
-      marginBottom: '16px',
-    });
+    expect(errorMessage.style.color).toBe('rgb(211, 47, 47)');
+    expect(errorMessage.style.marginBottom).toBe('16px');
   });
 
   it('renders with proper error details styles', () => {
@@ -151,10 +147,8 @@ describe('ErrorBoundary', () => {
     const errorDetails = screen.getByText(/Test error/i);
 
     // Check error details styles
-    expect(errorDetails).toHaveStyle({
-      color: 'rgb(102, 102, 102)',
-      marginBottom: '24px',
-    });
+    expect(errorDetails.style.color).toBe('rgb(102, 102, 102)');
+    expect(errorDetails.style.marginBottom).toBe('24px');
   });
 
   it('renders with proper button styles', () => {
@@ -162,10 +156,8 @@ describe('ErrorBoundary', () => {
     const retryButton = screen.getByRole('button', { name: /try again/i });
 
     // Check button styles
-    expect(retryButton).toHaveStyle({
-      backgroundColor: 'rgb(211, 47, 47)',
-      color: 'rgb(255, 255, 255)',
-    });
+    expect(retryButton.style.backgroundColor).toBe('rgb(211, 47, 47)');
+    expect(retryButton.style.color).toBe('rgb(255, 255, 255)');
   });
 
   it('handles retry button click', () => {
@@ -176,7 +168,7 @@ describe('ErrorBoundary', () => {
     fireEvent.click(retryButton);
 
     // Check if error UI is still visible
-    expect(screen.getByText(/Something went wrong/i)).toBeInTheDocument();
+    expect(screen.getByText(/Something went wrong/i)).toBeTruthy();
   });
 
   it('renders with proper responsive design', () => {
@@ -184,9 +176,7 @@ describe('ErrorBoundary', () => {
     const errorContainer = screen.getByTestId('error-boundary-container');
 
     // Check that the container has padding
-    expect(errorContainer).toHaveStyle({
-      padding: '24px',
-    });
+    expect(errorContainer.style.padding).toBe('24px');
   });
 
   it('renders with proper typography styles', () => {
@@ -194,10 +184,8 @@ describe('ErrorBoundary', () => {
     const errorMessage = screen.getByText(/Something went wrong/i);
 
     // Check typography styles
-    expect(errorMessage).toHaveStyle({
-      fontSize: '2.125rem',
-      fontWeight: 700,
-    });
+    expect(errorMessage.style.fontSize).toBe('2.125rem');
+    expect(errorMessage.style.fontWeight).toBe('700');
   });
 
   it('renders with proper elevation', () => {
@@ -205,9 +193,7 @@ describe('ErrorBoundary', () => {
     const errorCard = screen.getByTestId('error-boundary-card');
 
     // Check elevation
-    expect(errorCard).toHaveStyle({
-      boxShadow: '0 3px 5px 2px rgba(0, 0, 0, 0.2)',
-    });
+    expect(errorCard.style.boxShadow).toBe('0 3px 5px 2px rgba(0, 0, 0, 0.2)');
   });
 
   it('renders with proper border radius', () => {
@@ -215,9 +201,7 @@ describe('ErrorBoundary', () => {
     const errorCard = screen.getByTestId('error-boundary-card');
 
     // Check border radius
-    expect(errorCard).toHaveStyle({
-      borderRadius: '4px',
-    });
+    expect(errorCard.style.borderRadius).toBe('4px');
   });
 
   it('renders with proper spacing between elements', () => {
@@ -227,14 +211,8 @@ describe('ErrorBoundary', () => {
     const retryButton = screen.getByRole('button', { name: /try again/i });
 
     // Check spacing between elements
-    expect(errorMessage).toHaveStyle({
-      marginBottom: '16px',
-    });
-    expect(errorDetails).toHaveStyle({
-      marginBottom: '24px',
-    });
-    expect(retryButton).toHaveStyle({
-      marginTop: '16px',
-    });
+    expect(errorMessage.style.marginBottom).toBe('16px');
+    expect(errorDetails.style.marginBottom).toBe('24px');
+    expect(retryButton.style.marginTop).toBe('16px');
   });
 });

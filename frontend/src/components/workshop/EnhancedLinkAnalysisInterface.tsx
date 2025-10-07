@@ -48,7 +48,7 @@ interface EnhancedLinkAnalysisInterfaceProps {
 const EnhancedLinkAnalysisInterface: React.FC<EnhancedLinkAnalysisInterfaceProps> = ({
   link,
   onAnalysisComplete,
-  onExport,
+  onExport: _onExport,
 }) => {
   const [analysisResults, setAnalysisResults] = useState<LinkAnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);

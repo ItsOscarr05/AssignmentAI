@@ -42,6 +42,7 @@ import {
 import { useSnackbar } from 'notistack';
 import React, { useState } from 'react';
 import { useFeatureAccess } from '../../hooks/useFeatureAccess';
+import { FeatureAccessErrorComponent } from '../workshop/FeatureAccessError';
 
 interface OptimizationResult {
   original_content: string;

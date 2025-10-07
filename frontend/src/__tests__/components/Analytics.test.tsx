@@ -68,7 +68,7 @@ describe('Analytics Component', () => {
       </ThemeProvider>
     );
 
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toBeTruthy();
   });
 
   it('renders error state', () => {
@@ -83,7 +83,7 @@ describe('Analytics Component', () => {
       </ThemeProvider>
     );
 
-    expect(screen.getByText('Test error')).toBeInTheDocument();
+    expect(screen.getByText('Test error')).toBeTruthy();
   });
 
   it('renders analytics data correctly', async () => {
@@ -94,7 +94,7 @@ describe('Analytics Component', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Analytics Dashboard')).toBeInTheDocument();
+      expect(screen.getByText('Analytics Dashboard')).toBeTruthy();
       // The other text elements will be in the lazy-loaded components
       // We can't test for them directly as they're not immediately rendered
     });

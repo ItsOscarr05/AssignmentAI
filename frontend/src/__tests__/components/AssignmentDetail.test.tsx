@@ -1,8 +1,8 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import AssignmentDetail from '../../components/assignments/AssignmentDetail';
 import { ThemeProvider } from '../../contexts/ThemeContext';
 import { Assignment } from '../../types/assignment';
-import AssignmentDetail from '../assignments/AssignmentDetail';
 
 // Mock Material-UI components
 vi.mock('@mui/material', async () => {
@@ -136,26 +136,26 @@ describe('AssignmentDetail', () => {
   describe('Basic Rendering', () => {
     it('renders with assignment data', () => {
       renderAssignmentDetail();
-      expect(screen.getByText(mockAssignment.title)).toBeInTheDocument();
-      expect(screen.getByText(mockAssignment.description)).toBeInTheDocument();
-      expect(screen.getByText(mockAssignment.subject)).toBeInTheDocument();
-      expect(screen.getByText(mockAssignment.grade_level)).toBeInTheDocument();
-      expect(screen.getByText(mockAssignment.status)).toBeInTheDocument();
+      expect(screen.getByText(mockAssignment.title)).toBeTruthy();
+      expect(screen.getByText(mockAssignment.description)).toBeTruthy();
+      expect(screen.getByText(mockAssignment.subject)).toBeTruthy();
+      expect(screen.getByText(mockAssignment.grade_level)).toBeTruthy();
+      expect(screen.getByText(mockAssignment.status)).toBeTruthy();
     });
 
     it('renders attachments section', () => {
       renderAssignmentDetail();
-      expect(screen.getByText('Attachments')).toBeInTheDocument();
+      expect(screen.getByText('Attachments')).toBeTruthy();
       mockAssignment.attachments.forEach(attachment => {
-        expect(screen.getByText(attachment.name)).toBeInTheDocument();
+        expect(screen.getByText(attachment.name)).toBeTruthy();
       });
     });
 
     it('renders submissions section', () => {
       renderAssignmentDetail();
-      expect(screen.getByText('Submission Status')).toBeInTheDocument();
-      expect(screen.getByText('Total Submissions')).toBeInTheDocument();
-      expect(screen.getByText(mockAssignment.submissions.length.toString())).toBeInTheDocument();
+      expect(screen.getByText('Submission Status')).toBeTruthy();
+      expect(screen.getByText('Total Submissions')).toBeTruthy();
+      expect(screen.getByText(mockAssignment.submissions.length.toString())).toBeTruthy();
     });
 
     it('renders dates correctly', () => {
@@ -184,13 +184,13 @@ describe('AssignmentDetail', () => {
 
     it('renders stats correctly', () => {
       renderAssignmentDetail();
-      expect(screen.getByText('Total Submissions')).toBeInTheDocument();
-      expect(screen.getByText('1')).toBeInTheDocument();
+      expect(screen.getByText('Total Submissions')).toBeTruthy();
+      expect(screen.getByText('1')).toBeTruthy();
     });
 
     it('handles loading state', () => {
       renderAssignmentDetail({ loading: true });
-      expect(screen.getByText('Loading assignment details...')).toBeInTheDocument();
+      expect(screen.getByText('Loading assignment details...')).toBeTruthy();
     });
   });
 
@@ -202,7 +202,7 @@ describe('AssignmentDetail', () => {
       const chipLabels = screen.getAllByTestId('chip-label');
       const statusChip = chipLabels.find(el => el.textContent === 'active');
       expect(statusChip).toBeDefined();
-      expect(statusChip!.parentElement).toHaveClass('MuiChip-colorSuccess');
+      expect(statusChip!.parentElement?.className).toContain('MuiChip-colorSuccess');
     });
 
     it('renders easy difficulty with success color', () => {
@@ -212,7 +212,7 @@ describe('AssignmentDetail', () => {
       const chipLabels = screen.getAllByTestId('chip-label');
       const difficultyChipEasy = chipLabels.find(el => el.textContent === 'Easy');
       expect(difficultyChipEasy).toBeDefined();
-      expect(difficultyChipEasy!.parentElement).toHaveClass('MuiChip-colorsuccess');
+      expect(difficultyChipEasy!.parentElement?.className).toContain('MuiChip-colorsuccess');
     });
 
     it('renders medium difficulty with warning color', () => {
@@ -222,7 +222,7 @@ describe('AssignmentDetail', () => {
       const chipLabels = screen.getAllByTestId('chip-label');
       const difficultyChipMedium = chipLabels.find(el => el.textContent === 'Medium');
       expect(difficultyChipMedium).toBeDefined();
-      expect(difficultyChipMedium!.parentElement).toHaveClass('MuiChip-colorwarning');
+      expect(difficultyChipMedium!.parentElement?.className).toContain('MuiChip-colorwarning');
     });
 
     it('renders hard difficulty with error color', () => {
@@ -232,7 +232,7 @@ describe('AssignmentDetail', () => {
       const chipLabels = screen.getAllByTestId('chip-label');
       const difficultyChipHard = chipLabels.find(el => el.textContent === 'Hard');
       expect(difficultyChipHard).toBeDefined();
-      expect(difficultyChipHard!.parentElement).toHaveClass('MuiChip-colorerror');
+      expect(difficultyChipHard!.parentElement?.className).toContain('MuiChip-colorerror');
     });
   });
 
@@ -259,7 +259,7 @@ describe('AssignmentDetail', () => {
         dialog => dialog.querySelector('h2')?.textContent === 'Delete Assignment'
       );
       expect(deleteDialog).toBeDefined();
-      expect(deleteDialog).toBeInTheDocument();
+      expect(deleteDialog).toBeTruthy();
     });
 
     it('handles submit button click', () => {
@@ -272,7 +272,7 @@ describe('AssignmentDetail', () => {
         dialog => dialog.querySelector('h2')?.textContent === 'Submit Assignment'
       );
       expect(submitDialog).toBeDefined();
-      expect(submitDialog).toBeInTheDocument();
+      expect(submitDialog).toBeTruthy();
     });
   });
 
@@ -320,7 +320,7 @@ describe('AssignmentDetail', () => {
 
       await waitFor(() => {
         const errorMessage = screen.getByText('Total file size exceeds limit');
-        expect(errorMessage).toBeInTheDocument();
+        expect(errorMessage).toBeTruthy();
       });
       expect(onSubmit).not.toHaveBeenCalled();
     });
@@ -348,8 +348,8 @@ describe('AssignmentDetail', () => {
 
       await waitFor(() => {
         const errorMessage = screen.getByText('Submission failed');
-        expect(errorMessage).toBeInTheDocument();
-        expect(errorMessage.closest('[data-severity="error"]')).toBeInTheDocument();
+        expect(errorMessage).toBeTruthy();
+        expect(errorMessage.closest('[data-severity="error"]')).toBeTruthy();
       });
     });
   });
@@ -358,13 +358,13 @@ describe('AssignmentDetail', () => {
     it('handles error state', () => {
       renderAssignmentDetail({ error: new Error('Failed to load assignment') });
       const errorToast = screen.getByText('Failed to load assignment');
-      expect(errorToast).toBeInTheDocument();
-      expect(errorToast.closest('[data-severity="error"]')).toBeInTheDocument();
+      expect(errorToast).toBeTruthy();
+      expect(errorToast.closest('[data-severity="error"]')).toBeTruthy();
     });
 
     it('handles missing assignment', () => {
       renderAssignmentDetail({ assignment: undefined });
-      expect(screen.getByText('Loading assignment details...')).toBeInTheDocument();
+      expect(screen.getByText('Loading assignment details...')).toBeTruthy();
     });
 
     it('handles long content', () => {
@@ -375,7 +375,7 @@ describe('AssignmentDetail', () => {
       };
       renderAssignmentDetail({ assignment: longAssignment });
       const descriptionElement = screen.getByText(longDescription);
-      expect(descriptionElement).toBeInTheDocument();
+      expect(descriptionElement).toBeTruthy();
     });
   });
 });

@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ProtectedRoute } from '../auth/ProtectedRoute';
+import { ProtectedRoute } from '../../components/auth/ProtectedRoute';
 
 // Mock the auth context
 const mockUseAuth = vi.fn();
@@ -84,7 +84,7 @@ describe('ProtectedRoute', () => {
 
     renderProtectedRoute();
 
-    expect(screen.getByText('Login Page')).toBeInTheDocument();
+    expect(screen.getByText('Login Page')).toBeTruthy();
   });
 
   it('shows loading state', () => {
@@ -96,7 +96,7 @@ describe('ProtectedRoute', () => {
 
     renderProtectedRoute();
 
-    expect(screen.getByText('Loading...')).toBeInTheDocument();
+    expect(screen.getByText('Loading...')).toBeTruthy();
   });
 
   it('renders children when authenticated', () => {
@@ -108,7 +108,7 @@ describe('ProtectedRoute', () => {
 
     renderProtectedRoute();
 
-    expect(screen.getByText('Protected Content')).toBeInTheDocument();
+    expect(screen.getByText('Protected Content')).toBeTruthy();
   });
 
   it('redirects to unauthorized when role does not match', () => {
@@ -120,7 +120,7 @@ describe('ProtectedRoute', () => {
 
     renderProtectedRoute({ requiredRole: 'teacher' });
 
-    expect(screen.getByText('Unauthorized Page')).toBeInTheDocument();
+    expect(screen.getByText('Unauthorized Page')).toBeTruthy();
   });
 
   it('preserves location state when redirecting', () => {
@@ -172,7 +172,7 @@ describe('ProtectedRoute', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText('Parent Content')).toBeInTheDocument();
-    expect(screen.getByText('Child Content')).toBeInTheDocument();
+    expect(screen.getByText('Parent Content')).toBeTruthy();
+    expect(screen.getByText('Child Content')).toBeTruthy();
   });
 });

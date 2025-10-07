@@ -976,7 +976,6 @@ ${data.transcript
             onAnalysisComplete={results => {
               console.log('File analysis complete:', results);
             }}
-            onExport={handleExport}
           />
         );
       case 'link':

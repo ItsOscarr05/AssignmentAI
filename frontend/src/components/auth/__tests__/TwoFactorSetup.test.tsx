@@ -26,11 +26,9 @@ describe('TwoFactorSetup', () => {
 
     // Wait for the initial setup to complete
     await waitFor(() => {
-      expect(screen.getByText('Setup Two-Factor Authentication')).toBeInTheDocument();
-      expect(
-        screen.getByText(/Scan this QR code with your authenticator app/i)
-      ).toBeInTheDocument();
-      expect(screen.getByText('Verify')).toBeInTheDocument();
+      expect(screen.getByText('Setup Two-Factor Authentication')).toBeTruthy();
+      expect(screen.getByText(/Scan this QR code with your authenticator app/i)).toBeTruthy();
+      expect(screen.getByText('Verify')).toBeTruthy();
     });
   });
 
@@ -41,7 +39,7 @@ describe('TwoFactorSetup', () => {
     render(<TwoFactorSetup />);
 
     await waitFor(() => {
-      expect(screen.getByText(/Failed to setup 2FA/i)).toBeInTheDocument();
+      expect(screen.getByText(/Failed to setup 2FA/i)).toBeTruthy();
     });
   });
 
@@ -55,7 +53,7 @@ describe('TwoFactorSetup', () => {
 
     // Wait for initial setup
     await waitFor(() => {
-      expect(screen.getByTestId('text-field')).toBeInTheDocument();
+      expect(screen.getByTestId('text-field')).toBeTruthy();
     });
 
     // Enter verification code
@@ -64,12 +62,12 @@ describe('TwoFactorSetup', () => {
     fireEvent.click(screen.getByText('Verify'));
 
     await waitFor(() => {
-      expect(screen.getByText('Backup Codes')).toBeInTheDocument();
-      expect(screen.getByText('code1')).toBeInTheDocument();
-      expect(screen.getByText('code2')).toBeInTheDocument();
-      expect(screen.getByText('code3')).toBeInTheDocument();
-      expect(screen.getByText('code4')).toBeInTheDocument();
-      expect(screen.getByText('code5')).toBeInTheDocument();
+      expect(screen.getByText('Backup Codes')).toBeTruthy();
+      expect(screen.getByText('code1')).toBeTruthy();
+      expect(screen.getByText('code2')).toBeTruthy();
+      expect(screen.getByText('code3')).toBeTruthy();
+      expect(screen.getByText('code4')).toBeTruthy();
+      expect(screen.getByText('code5')).toBeTruthy();
     });
   });
 
@@ -81,7 +79,7 @@ describe('TwoFactorSetup', () => {
 
     // Wait for initial setup
     await waitFor(() => {
-      expect(screen.getByTestId('text-field')).toBeInTheDocument();
+      expect(screen.getByTestId('text-field')).toBeTruthy();
     });
 
     // Enter invalid code
@@ -90,7 +88,7 @@ describe('TwoFactorSetup', () => {
     fireEvent.click(screen.getByText('Verify'));
 
     await waitFor(() => {
-      expect(screen.getByText(/Invalid verification code/i)).toBeInTheDocument();
+      expect(screen.getByText(/Invalid verification code/i)).toBeTruthy();
     });
   });
 
@@ -104,7 +102,7 @@ describe('TwoFactorSetup', () => {
 
     // Wait for initial setup
     await waitFor(() => {
-      expect(screen.getByTestId('text-field')).toBeInTheDocument();
+      expect(screen.getByTestId('text-field')).toBeTruthy();
     });
 
     // Enter verification code
@@ -113,7 +111,7 @@ describe('TwoFactorSetup', () => {
     fireEvent.click(screen.getByText('Verify'));
 
     await waitFor(() => {
-      expect(screen.getByText('Backup Codes')).toBeInTheDocument();
+      expect(screen.getByText('Backup Codes')).toBeTruthy();
     });
 
     // Complete setup
@@ -125,7 +123,7 @@ describe('TwoFactorSetup', () => {
 
     // Wait for initial setup
     await waitFor(() => {
-      expect(screen.getByTestId('text-field')).toBeInTheDocument();
+      expect(screen.getByTestId('text-field')).toBeTruthy();
     });
 
     // Enter invalid code format
@@ -133,6 +131,6 @@ describe('TwoFactorSetup', () => {
     fireEvent.change(codeInput, { target: { value: '123' } });
 
     // Verify button should be disabled
-    expect(screen.getByText('Verify')).toBeDisabled();
+    expect(screen.getByText('Verify').hasAttribute('disabled')).toBe(true);
   });
 });

@@ -1,8 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { SubmissionList } from '../../components/submissions/SubmissionList';
 import { api } from '../../services/api';
 import { Submission } from '../../types';
-import { SubmissionList } from '../submissions/SubmissionList';
 
 // Mock the API module
 vi.mock('../../services/api', () => ({
@@ -59,7 +59,7 @@ describe('SubmissionList', () => {
   describe('Basic Rendering', () => {
     it('renders loading state initially', () => {
       renderSubmissionList({ loading: true });
-      expect(screen.getByRole('progressbar')).toBeInTheDocument();
+      expect(screen.getByRole('progressbar')).toBeTruthy();
     });
 
     it('renders submissions after loading', async () => {
@@ -67,10 +67,10 @@ describe('SubmissionList', () => {
       renderSubmissionList();
 
       await waitFor(() => {
-        expect(screen.getByText(/Content: Test Assignment 1 submission/)).toBeInTheDocument();
-        expect(screen.getByText(/Content: Test Assignment 2 submission/)).toBeInTheDocument();
-        expect(screen.getByText(/Status: submitted/)).toBeInTheDocument();
-        expect(screen.getByText(/Status: graded/)).toBeInTheDocument();
+        expect(screen.getByText(/Content: Test Assignment 1 submission/)).toBeTruthy();
+        expect(screen.getByText(/Content: Test Assignment 2 submission/)).toBeTruthy();
+        expect(screen.getByText(/Status: submitted/)).toBeTruthy();
+        expect(screen.getByText(/Status: graded/)).toBeTruthy();
       });
     });
   });
@@ -88,8 +88,8 @@ describe('SubmissionList', () => {
       fireEvent.change(statusFilter, { target: { value: 'submitted' } });
 
       // Verify filtered results
-      expect(screen.getByText(/Content: Test Assignment 1 submission/)).toBeInTheDocument();
-      expect(screen.queryByText(/Content: Test Assignment 2 submission/)).not.toBeInTheDocument();
+      expect(screen.getByText(/Content: Test Assignment 1 submission/)).toBeTruthy();
+      expect(screen.queryByText(/Content: Test Assignment 2 submission/)).not.toBeTruthy();
     });
 
     it('filters submissions by search term', async () => {
@@ -97,14 +97,14 @@ describe('SubmissionList', () => {
       renderSubmissionList();
 
       await waitFor(() => {
-        expect(screen.getByText(/Content: Test Assignment 1 submission/)).toBeInTheDocument();
+        expect(screen.getByText(/Content: Test Assignment 1 submission/)).toBeTruthy();
       });
 
       const searchInput = screen.getByPlaceholderText(/search submissions/i);
       fireEvent.change(searchInput, { target: { value: 'Assignment 1' } });
 
-      expect(screen.getByText(/Content: Test Assignment 1 submission/)).toBeInTheDocument();
-      expect(screen.queryByText(/Content: Test Assignment 2 submission/)).not.toBeInTheDocument();
+      expect(screen.getByText(/Content: Test Assignment 1 submission/)).toBeTruthy();
+      expect(screen.queryByText(/Content: Test Assignment 2 submission/)).not.toBeTruthy();
     });
   });
 
@@ -112,14 +112,14 @@ describe('SubmissionList', () => {
     it('renders error message when API call fails', () => {
       const errorMessage = 'Failed to fetch submissions';
       renderSubmissionList({ error: errorMessage });
-      expect(screen.getByRole('alert')).toHaveTextContent(errorMessage);
+      expect(screen.getByRole('alert').textContent).toBe(errorMessage);
     });
   });
 
   describe('Accessibility', () => {
     it('has proper ARIA attributes in loading state', () => {
       renderSubmissionList({ loading: true });
-      expect(screen.getByRole('progressbar')).toBeInTheDocument();
+      expect(screen.getByRole('progressbar')).toBeTruthy();
     });
 
     it('has proper ARIA attributes in loaded state', () => {
@@ -130,15 +130,15 @@ describe('SubmissionList', () => {
 
       // Check for proper ARIA attributes on form controls
       const searchInput = screen.getByTestId('text-field');
-      expect(searchInput).toHaveAttribute('placeholder', 'Search submissions...');
+      expect(searchInput.getAttribute('placeholder')).toBe('Search submissions...');
 
       const statusFilter = screen.getByTestId('select');
-      expect(statusFilter).toHaveAttribute('labelid', 'status-filter-label');
-      expect(screen.getByTestId('input-label')).toHaveAttribute('id', 'status-filter-label');
+      expect(statusFilter.getAttribute('labelid')).toBe('status-filter-label');
+      expect(screen.getByTestId('input-label').getAttribute('id')).toBe('status-filter-label');
 
       // Check for proper ARIA attributes on the list
       const list = screen.getByRole('list');
-      expect(list).toHaveAttribute('aria-label', 'Submissions');
+      expect(list.getAttribute('aria-label')).toBe('Submissions');
     });
   });
 });

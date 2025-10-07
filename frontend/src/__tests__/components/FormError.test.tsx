@@ -1,7 +1,7 @@
 import { ThemeProvider } from '@emotion/react';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import FormError from '../common/FormError';
+import FormError from '../../components/common/FormError';
 
 const theme = {
   colors: {
@@ -65,7 +65,7 @@ describe('FormError', () => {
         <FormError message="Test error" />
       </ThemeProvider>
     );
-    expect(screen.getByText('Test error')).toBeInTheDocument();
+    expect(screen.getByText('Test error')).toBeTruthy();
   });
 
   it('renders with custom className', () => {
@@ -75,6 +75,6 @@ describe('FormError', () => {
       </ThemeProvider>
     );
     const errorContainer = screen.getByTestId('form-error');
-    expect(errorContainer).toHaveClass('custom-class');
+    expect(errorContainer.className).toContain('custom-class');
   });
 });

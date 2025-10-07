@@ -82,7 +82,7 @@ describe('Authentication Flow Integration', () => {
       fireEvent.click(screen.getByRole('button', { name: /revoke/i }));
 
       // Verify confirmation dialog
-      expect(screen.getByText(/are you sure/i)).toBeInTheDocument();
+      expect(screen.getByText(/are you sure/i)).toBeTruthy();
 
       // Confirm revocation
       fireEvent.click(screen.getByRole('button', { name: /confirm/i }));
@@ -108,7 +108,7 @@ describe('Authentication Flow Integration', () => {
       fireEvent.click(screen.getByRole('button', { name: /revoke all/i }));
 
       // Verify confirmation dialog
-      expect(screen.getByText(/are you sure/i)).toBeInTheDocument();
+      expect(screen.getByText(/are you sure/i)).toBeTruthy();
 
       // Confirm revocation
       fireEvent.click(screen.getByRole('button', { name: /confirm/i }));

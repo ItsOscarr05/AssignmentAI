@@ -1,55 +1,48 @@
 import {
   CheckCircleOutline as CheckCircleOutlineIcon,
   CloudUpload as CloudUploadIcon,
+  ContentCopy as CopyIcon,
   Description as DescriptionIcon,
+  Download as DownloadIcon,
   Error as ErrorIcon,
   InsertDriveFile as FileIcon,
   PictureAsPdf as PdfIcon,
   HourglassEmpty as ProcessingIcon,
-  Visibility as VisibilityIcon,
-  Download as DownloadIcon,
-  ContentCopy as CopyIcon,
-  Share as ShareIcon,
-  Compare as CompareIcon,
   Refresh as RefreshIcon,
+  Share as ShareIcon,
+  Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import {
+  Alert,
   Box,
   Button,
   Chip,
-  LinearProgress,
-  Typography,
-  IconButton,
-  Tooltip,
-  Snackbar,
-  Alert,
   Dialog,
-  DialogTitle,
-  DialogContent,
   DialogActions,
-  TextField,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  IconButton,
+  LinearProgress,
   List,
   ListItem,
-  ListItemIcon,
   ListItemText,
-  Divider,
+  Snackbar,
+  Tooltip,
+  Typography,
 } from '@mui/material';
-import React, { useEffect, useState, useCallback } from 'react';
-import { useWorkshopStore } from '../../services/WorkshopService';
+import React, { useCallback, useEffect, useState } from 'react';
 import PopupApiService, { FileAnalysisResult } from '../../services/popupApi';
 
 interface EnhancedFileAnalysisInterfaceProps {
   file: any;
   onAnalysisComplete?: (results: any) => void;
-  onExport?: (content: string, format: string) => void;
 }
 
 const EnhancedFileAnalysisInterface: React.FC<EnhancedFileAnalysisInterfaceProps> = ({
   file,
   onAnalysisComplete,
-  onExport,
 }) => {
-  const { processFile } = useWorkshopStore();
   const [analysisResults, setAnalysisResults] = useState<FileAnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState(0);
@@ -116,7 +109,7 @@ const EnhancedFileAnalysisInterface: React.FC<EnhancedFileAnalysisInterfaceProps
   // Load file content for preview
   const loadFileContent = useCallback(async () => {
     if (!file) return;
-    
+
     try {
       // In a real implementation, this would fetch the actual file content
       // For now, we'll simulate it
@@ -148,12 +141,12 @@ const EnhancedFileAnalysisInterface: React.FC<EnhancedFileAnalysisInterfaceProps
 
       // Use real API for analysis
       const result = await PopupApiService.analyzeFile(file);
-      
+
       clearInterval(progressInterval);
       setAnalysisProgress(100);
-      
+
       setAnalysisResults(result);
-      
+
       if (onAnalysisComplete) {
         onAnalysisComplete(result);
       }
@@ -180,12 +173,16 @@ const EnhancedFileAnalysisInterface: React.FC<EnhancedFileAnalysisInterfaceProps
 
     try {
       const result = await PopupApiService.processFileAction(file.id, action);
-      
+
       // Update analysis results with new content
-      setAnalysisResults(prev => prev ? {
-        ...prev,
-        analysis: result.result
-      } : null);
+      setAnalysisResults(prev =>
+        prev
+          ? {
+              ...prev,
+              analysis: result.result,
+            }
+          : null
+      );
 
       setSnackbar({
         open: true,
@@ -204,7 +201,7 @@ const EnhancedFileAnalysisInterface: React.FC<EnhancedFileAnalysisInterfaceProps
 
   const handleCopyAnalysis = async () => {
     if (!analysisResults) return;
-    
+
     try {
       await navigator.clipboard.writeText(analysisResults.analysis);
       setSnackbar({
@@ -226,7 +223,7 @@ const EnhancedFileAnalysisInterface: React.FC<EnhancedFileAnalysisInterfaceProps
 
     try {
       const blob = await PopupApiService.exportResults(exportFormat, analysisResults.analysis);
-      
+
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -311,7 +308,9 @@ const EnhancedFileAnalysisInterface: React.FC<EnhancedFileAnalysisInterfaceProps
             </Typography>
             {getFileStatusChip(file.status || 'ready')}
 
-            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', mt: 2, flexWrap: 'wrap' }}>
+            <Box
+              sx={{ display: 'flex', gap: 1, justifyContent: 'center', mt: 2, flexWrap: 'wrap' }}
+            >
               {!analysisResults && !isAnalyzing && (
                 <Button
                   variant="contained"
@@ -395,7 +394,9 @@ const EnhancedFileAnalysisInterface: React.FC<EnhancedFileAnalysisInterfaceProps
               theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fafafa',
           }}
         >
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Box
+            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
+          >
             <Typography variant="h6" sx={{ color: 'red' }}>
               AI Analysis Results
             </Typography>
@@ -435,18 +436,10 @@ const EnhancedFileAnalysisInterface: React.FC<EnhancedFileAnalysisInterfaceProps
             >
               Summarize
             </Button>
-            <Button
-              size="small"
-              variant="outlined"
-              onClick={() => handleProcessAction('extract')}
-            >
+            <Button size="small" variant="outlined" onClick={() => handleProcessAction('extract')}>
               Extract Key Points
             </Button>
-            <Button
-              size="small"
-              variant="outlined"
-              onClick={() => handleProcessAction('rewrite')}
-            >
+            <Button size="small" variant="outlined" onClick={() => handleProcessAction('rewrite')}>
               Rewrite
             </Button>
           </Box>
@@ -454,12 +447,7 @@ const EnhancedFileAnalysisInterface: React.FC<EnhancedFileAnalysisInterfaceProps
       )}
 
       {/* File Preview Dialog */}
-      <Dialog
-        open={showPreview}
-        onClose={() => setShowPreview(false)}
-        maxWidth="md"
-        fullWidth
-      >
+      <Dialog open={showPreview} onClose={() => setShowPreview(false)} maxWidth="md" fullWidth>
         <DialogTitle>File Preview - {file?.name}</DialogTitle>
         <DialogContent>
           <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
@@ -486,20 +474,25 @@ const EnhancedFileAnalysisInterface: React.FC<EnhancedFileAnalysisInterfaceProps
           <List>
             {[
               { value: 'txt', label: 'Text File (.txt)', description: 'Plain text format' },
-              { value: 'pdf', label: 'PDF Document (.pdf)', description: 'Portable document format' },
-              { value: 'docx', label: 'Word Document (.docx)', description: 'Microsoft Word format' },
+              {
+                value: 'pdf',
+                label: 'PDF Document (.pdf)',
+                description: 'Portable document format',
+              },
+              {
+                value: 'docx',
+                label: 'Word Document (.docx)',
+                description: 'Microsoft Word format',
+              },
               { value: 'json', label: 'JSON File (.json)', description: 'Structured data format' },
-            ].map((format) => (
+            ].map(format => (
               <ListItem
                 key={format.value}
                 button
                 onClick={() => setExportFormat(format.value as any)}
                 selected={exportFormat === format.value}
               >
-                <ListItemText
-                  primary={format.label}
-                  secondary={format.description}
-                />
+                <ListItemText primary={format.label} secondary={format.description} />
               </ListItem>
             ))}
           </List>
@@ -518,8 +511,8 @@ const EnhancedFileAnalysisInterface: React.FC<EnhancedFileAnalysisInterfaceProps
         autoHideDuration={3000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
       >
-        <Alert 
-          onClose={() => setSnackbar({ ...snackbar, open: false })} 
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
           severity={snackbar.severity}
         >
           {snackbar.message}

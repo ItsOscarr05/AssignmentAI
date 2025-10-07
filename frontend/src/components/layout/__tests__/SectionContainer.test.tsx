@@ -136,32 +136,30 @@ describe('SectionContainer', () => {
 
   it('renders children content', () => {
     renderSectionContainer();
-    expect(screen.getByText('Test Content')).toBeInTheDocument();
+    expect(screen.getByText('Test Content')).toBeTruthy();
   });
 
   it('renders with custom title', () => {
     renderSectionContainer({ title: 'Test Section' });
-    expect(screen.getByText('Test Section')).toBeInTheDocument();
+    expect(screen.getByText('Test Section')).toBeTruthy();
   });
 
   it('renders with custom subtitle', () => {
     renderSectionContainer({ subtitle: 'Test Subtitle' });
-    expect(screen.getByText('Test Subtitle')).toBeInTheDocument();
+    expect(screen.getByText('Test Subtitle')).toBeTruthy();
   });
 
   it('renders with custom actions', () => {
     const actions = <button>Test Action</button>;
     renderSectionContainer({ actions });
-    expect(screen.getByText('Test Action')).toBeInTheDocument();
+    expect(screen.getByText('Test Action')).toBeTruthy();
   });
 
   it('renders with custom variant', () => {
     renderSectionContainer({ variant: 'outlined' });
     const container = screen.getByTestId('section-container');
-    expect(container).toHaveStyle({
-      border: '1px solid',
-      borderColor: 'divider',
-    });
+    expect(container.style.border).toBe('1px solid');
+    expect(container.style.borderColor).toBe('divider');
   });
 
   it('renders with proper container styles', () => {
@@ -181,12 +179,10 @@ describe('SectionContainer', () => {
     const header = screen.getByTestId('section-header');
 
     // Check header styles
-    expect(header).toHaveStyle({
-      marginBottom: '16px',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    });
+    expect(header.style.marginBottom).toBe('16px');
+    expect(header.style.display).toBe('flex');
+    expect(header.style.justifyContent).toBe('space-between');
+    expect(header.style.alignItems).toBe('center');
   });
 
   it('renders with proper title styles', () => {
@@ -194,10 +190,8 @@ describe('SectionContainer', () => {
     const title = screen.getByText('Test Section');
 
     // Check title styles
-    expect(title).toHaveStyle({
-      margin: 0,
-      color: theme.palette.text.primary,
-    });
+    expect(title.style.margin).toBe('0');
+    expect(title.style.color).toBe(theme.palette.text.primary);
   });
 
   it('renders with proper subtitle styles', () => {
@@ -205,10 +199,8 @@ describe('SectionContainer', () => {
     const subtitle = screen.getByText('Test Subtitle');
 
     // Check subtitle styles
-    expect(subtitle).toHaveStyle({
-      marginTop: '8px',
-      color: theme.palette.text.secondary,
-    });
+    expect(subtitle.style.marginTop).toBe('8px');
+    expect(subtitle.style.color).toBe(theme.palette.text.secondary);
   });
 
   it('renders with proper content styles', () => {
@@ -216,7 +208,7 @@ describe('SectionContainer', () => {
     const content = screen.getByTestId('section-content');
 
     // Check content styles - content is just a Box wrapper, no styles
-    expect(content).toBeInTheDocument();
+    expect(content).toBeTruthy();
   });
 
   it('renders with proper responsive design', () => {
@@ -225,9 +217,7 @@ describe('SectionContainer', () => {
 
     // Check responsive styles - we can only check the default styles
     // Media queries can't be tested directly with toHaveStyle
-    expect(container).toHaveStyle({
-      padding: '24px',
-    });
+    expect(container.style.padding).toBe('24px');
   });
 
   it('renders with proper typography styles', () => {
@@ -239,14 +229,10 @@ describe('SectionContainer', () => {
     const subtitle = screen.getByText('Test Subtitle');
 
     // Check typography styles
-    expect(title).toHaveStyle({
-      fontSize: theme.typography.h5.fontSize,
-      fontWeight: theme.typography.fontWeightBold,
-    });
-    expect(subtitle).toHaveStyle({
-      fontSize: theme.typography.subtitle1.fontSize,
-      fontWeight: theme.typography.fontWeightRegular,
-    });
+    expect(title.style.fontSize).toBe(theme.typography.h5.fontSize);
+    expect(title.style.fontWeight).toBe(theme.typography.fontWeightBold);
+    expect(subtitle.style.fontSize).toBe(theme.typography.subtitle1.fontSize);
+    expect(subtitle.style.fontWeight).toBe(theme.typography.fontWeightRegular);
   });
 
   it('renders with proper elevation', () => {
@@ -254,9 +240,7 @@ describe('SectionContainer', () => {
     const container = screen.getByTestId('section-container');
 
     // Check elevation
-    expect(container).toHaveStyle({
-      boxShadow: theme.shadows[1],
-    });
+    expect(container.style.boxShadow).toBe(theme.shadows[1]);
   });
 
   it('renders with proper border radius', () => {
@@ -264,9 +248,7 @@ describe('SectionContainer', () => {
     const container = screen.getByTestId('section-container');
 
     // Check border radius
-    expect(container).toHaveStyle({
-      borderRadius: '4px',
-    });
+    expect(container.style.borderRadius).toBe('4px');
   });
 
   it('renders with proper spacing between elements', () => {
@@ -278,11 +260,9 @@ describe('SectionContainer', () => {
     const content = screen.getByTestId('section-content');
 
     // Check spacing between elements
-    expect(header).toHaveStyle({
-      marginBottom: '16px',
-    });
+    expect(header.style.marginBottom).toBe('16px');
     // Content is just a Box wrapper, no styles
-    expect(content).toBeInTheDocument();
+    expect(content).toBeTruthy();
   });
 
   it('renders with proper background colors', () => {
@@ -290,9 +270,7 @@ describe('SectionContainer', () => {
     const container = screen.getByTestId('section-container');
 
     // Check background colors
-    expect(container).toHaveStyle({
-      backgroundColor: 'rgb(255, 255, 255)',
-    });
+    expect(container.style.backgroundColor).toBe('rgb(255, 255, 255)');
   });
 
   it('renders with proper border styles for outlined variant', () => {
@@ -300,10 +278,8 @@ describe('SectionContainer', () => {
     const container = screen.getByTestId('section-container');
 
     // Check border styles
-    expect(container).toHaveStyle({
-      border: '1px solid',
-      borderColor: 'divider',
-    });
+    expect(container.style.border).toBe('1px solid');
+    expect(container.style.borderColor).toBe('divider');
   });
 
   it('renders with proper hover styles for interactive variant', () => {
@@ -311,9 +287,7 @@ describe('SectionContainer', () => {
     const container = screen.getByTestId('section-container');
 
     // Check hover styles
-    expect(container).toHaveStyle({
-      cursor: 'pointer',
-      transition: 'background-color 0.2s',
-    });
+    expect(container.style.cursor).toBe('pointer');
+    expect(container.style.transition).toBe('background-color 0.2s');
   });
 });

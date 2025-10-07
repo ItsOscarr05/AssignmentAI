@@ -92,7 +92,6 @@ const AITokens: React.FC = () => {
   const [modalOpen, setModalOpen] = React.useState(false);
   const [showFeaturesConfirmation, setShowFeaturesConfirmation] = React.useState(false);
   const navigate = useNavigate();
-  const [assignments, setAssignments] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [usageHistory, setUsageHistory] = useState<any[]>([]);
   const [tokenPurchaseDialogOpen, setTokenPurchaseDialogOpen] = useState(false);
@@ -101,13 +100,7 @@ const AITokens: React.FC = () => {
   const [paymentIntentClientSecret, setPaymentIntentClientSecret] = useState<string | null>(null);
   const [creatingPaymentIntent, setCreatingPaymentIntent] = useState(false);
 
-  const {
-    totalTokens,
-    usedTokens,
-    remainingTokens,
-    tokenUsageData,
-    loading: tokenLoading,
-  } = useTokenUsage(subscription);
+  const { totalTokens, usedTokens, remainingTokens } = useTokenUsage(subscription);
 
   // Fetch usage history from API
   const fetchUsageHistory = async () => {
@@ -218,19 +211,6 @@ const AITokens: React.FC = () => {
     };
     window.addEventListener('subscription-updated', handler);
 
-    // Fetch assignments (for compatibility with existing charts)
-    api
-      .get('/assignments')
-      .then(res => {
-        const data = Array.isArray(res.data)
-          ? res.data
-          : Array.isArray(res.data.assignments)
-          ? res.data.assignments
-          : [];
-        setAssignments(data);
-      })
-      .catch(() => setAssignments([]));
-
     // Fetch real transactions
     console.log('AITokens: fetching transactions from /payments/transactions');
     api
@@ -296,7 +276,7 @@ const AITokens: React.FC = () => {
   }, []);
 
   // Build chart data from real usage history
-  function buildUsageChartFromHistory(usageHistory: any[], total: number, days: number = 30) {
+  function buildUsageChartFromHistory(usageHistory: any[], days: number = 30) {
     if (!usageHistory.length) return [];
 
     const today = new Date();
@@ -342,186 +322,8 @@ const AITokens: React.FC = () => {
   }
 
   // For 30-day graph, show last 30 days, but only add usage from billing start onward
-  function buildLast30DaysChart(
-    assignments: { tokensUsed?: number; title: string; createdAt?: string }[],
-    total: number
-  ) {
-    if (!assignments.length) return [];
-    const today = new Date();
-    const endDate = new Date(today);
-    const startDate = new Date(endDate);
-    startDate.setDate(endDate.getDate() - 29);
-
-    const currentCycleStart = new Date(today.getFullYear(), today.getMonth(), 1);
-    const prevCycleStart = new Date(currentCycleStart);
-    prevCycleStart.setMonth(prevCycleStart.getMonth() - 1);
-
-    const initialTokens = assignments
-      .filter(a => {
-        const created = new Date(a.createdAt!);
-        return created >= prevCycleStart && created < startDate;
-      })
-      .reduce((sum, a) => sum + (a.tokensUsed || 500), 0);
-
-    const usageByDate: Record<string, { used: number; titles: string[] }> = {};
-    assignments.forEach(a => {
-      if (!a.createdAt) return;
-      const dateStr = format(new Date(a.createdAt), 'yyyy-MM-dd');
-      if (!usageByDate[dateStr]) usageByDate[dateStr] = { used: 0, titles: [] };
-      usageByDate[dateStr].used += a.tokensUsed || 500;
-      usageByDate[dateStr].titles.push(a.title);
-    });
-
-    let runningTotalPrev = initialTokens;
-    let runningTotalCurrent = 0;
-    const points: {
-      date: string;
-      tokens: number;
-      used: number;
-      description: string;
-      isRenewal: boolean;
-    }[] = [];
-    const tokenLimit = total;
-    let capped = false;
-
-    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-      const key = format(d, 'yyyy-MM-dd');
-      let used = usageByDate[key]?.used || 0;
-      let description = used > 0 ? `Used for: ${usageByDate[key].titles.join(', ')}` : '';
-      const isRenewal = d.getTime() === currentCycleStart.getTime();
-
-      if (d < currentCycleStart) {
-        runningTotalPrev += used;
-        points.push({
-          date: format(d, 'MMM d'),
-          tokens: runningTotalPrev,
-          used,
-          description,
-          isRenewal: false,
-        });
-      } else if (isRenewal) {
-        runningTotalCurrent = 0;
-        points.push({
-          date: format(d, 'MMM d'),
-          tokens: 0,
-          used: 0,
-          description,
-          isRenewal: true,
-        });
-        runningTotalCurrent += used;
-        if (used > 0) {
-          points[points.length - 1].used = 0;
-          points.push({
-            date: format(d, 'MMM d'),
-            tokens: used > tokenLimit ? tokenLimit : used,
-            used: used > tokenLimit ? 0 : used,
-            description,
-            isRenewal: false,
-          });
-          runningTotalCurrent = used > tokenLimit ? tokenLimit : used;
-          capped = used > tokenLimit;
-        }
-      } else {
-        if (!capped && runningTotalCurrent + used > tokenLimit) {
-          used = 0;
-          runningTotalCurrent = tokenLimit;
-          capped = true;
-        } else if (!capped) {
-          runningTotalCurrent += used;
-          if (runningTotalCurrent > tokenLimit) {
-            runningTotalCurrent = tokenLimit;
-            capped = true;
-          }
-        }
-        points.push({
-          date: format(d, 'MMM d'),
-          tokens: runningTotalCurrent,
-          used,
-          description,
-          isRenewal: false,
-        });
-      }
-    }
-
-    const initialDate = new Date(startDate);
-    initialDate.setDate(initialDate.getDate() - 1);
-    points.unshift({
-      date: format(initialDate, 'MMM d'),
-      tokens: initialTokens,
-      used: 0,
-      description: 'Starting balance',
-      isRenewal: false,
-    });
-
-    return points;
-  }
-
-  // For 7-day chart: show last 7 days ending with today, with usage per day
-  function buildUsageHistory(
-    assignments: { tokensUsed?: number; title: string; createdAt?: string }[],
-    total: number,
-    range: number
-  ) {
-    const today = new Date();
-    const days: string[] = [];
-    for (let i = range - 1; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(today.getDate() - i);
-      days.push(format(d, 'yyyy-MM-dd'));
-    }
-    // Map date to assignments
-    const usageByDate: Record<string, { used: number; titles: string[] }> = {};
-    assignments.forEach(a => {
-      if (!a.createdAt) return;
-      const dateStr = format(new Date(a.createdAt), 'yyyy-MM-dd');
-      if (!usageByDate[dateStr]) usageByDate[dateStr] = { used: 0, titles: [] };
-      usageByDate[dateStr].used += a.tokensUsed || 500;
-      usageByDate[dateStr].titles.push(a.title);
-    });
-    let runningTotal = 0;
-    const points: { date: string; tokens: number; used: number; description: string }[] = [];
-    const tokenLimit = total;
-    let capped = false;
-    const initialDate = new Date(today);
-    initialDate.setDate(today.getDate() - range);
-    points.push({
-      date: format(initialDate, 'MMM d'),
-      tokens: 0,
-      used: 0,
-      description: 'Starting balance',
-    });
-    days.forEach(dateStr => {
-      let used = usageByDate[dateStr]?.used || 0;
-      let description = used > 0 ? `Used for: ${usageByDate[dateStr]?.titles.join(', ')}` : '';
-      if (!capped && runningTotal + used > tokenLimit) {
-        used = 0;
-        runningTotal = tokenLimit;
-        capped = true;
-      } else if (!capped) {
-        runningTotal += used;
-        if (runningTotal > tokenLimit) {
-          runningTotal = tokenLimit;
-          capped = true;
-        }
-      }
-      points.push({
-        date: format(parseISO(dateStr), 'MMM d'),
-        tokens: runningTotal,
-        used,
-        description,
-      });
-    });
-    return points;
-  }
 
   // Calculate token usage based on user type
-  let usedTokensCalc = usedTokens;
-  let remainingTokensCalc = remainingTokens + (computedTotalTokens - totalTokens);
-  let percentUsedCalc = Math.round((usedTokensCalc / computedTotalTokens) * 100);
-  usedTokensCalc = assignments.reduce((sum, a) => sum + (a.tokensUsed || 0), 0);
-  remainingTokensCalc = computedTotalTokens - usedTokensCalc;
-  percentUsedCalc =
-    computedTotalTokens > 0 ? Math.round((usedTokensCalc / computedTotalTokens) * 100) : 0;
   // Use real token data from API instead of calculated values
   const percentUsed = Math.round((usedTokens / totalTokens) * 100);
   const tokenUsage = {
@@ -542,13 +344,10 @@ const AITokens: React.FC = () => {
   }
 
   // Build accurate usage history for the graph
-  const sortedAssignmentsAll = [...assignments].sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  );
 
   // Use real usage history for charts
-  const usageData30 = buildUsageChartFromHistory(usageHistory, totalTokens, 30);
-  const usageData7 = buildUsageChartFromHistory(usageHistory, totalTokens, 7);
+  const usageData30 = buildUsageChartFromHistory(usageHistory, 30);
+  const usageData7 = buildUsageChartFromHistory(usageHistory, 7);
   const handleRangeChange = (_: any, newRange: '7' | '30') => {
     if (newRange) setRange(newRange);
   };

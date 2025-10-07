@@ -1,6 +1,5 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render } from '../../../test/test-utils';
 import { TwoFactorSetup } from '../TwoFactorSetup';
 import { TwoFactorVerify } from '../TwoFactorVerify';
 
@@ -35,9 +34,9 @@ describe('2FA Browser Security', () => {
 
       // Verify initial state
       await waitFor(() => {
-        expect(screen.getByText('Setup Two-Factor Authentication')).toBeInTheDocument();
-        expect(screen.getByAltText('2FA QR Code')).toHaveAttribute('src', 'test-qr-code');
-        expect(screen.getByText('test-secret')).toBeInTheDocument();
+        expect(screen.getByText('Setup Two-Factor Authentication')).toBeTruthy();
+        expect(screen.getByAltText('2FA QR Code').getAttribute('src')).toBe('test-qr-code');
+        expect(screen.getByText('test-secret')).toBeTruthy();
       });
 
       // Mock verification
@@ -52,9 +51,9 @@ describe('2FA Browser Security', () => {
 
       // Verify backup codes are shown
       await waitFor(() => {
-        expect(screen.getByText('Backup Codes')).toBeInTheDocument();
-        expect(screen.getByText('code1')).toBeInTheDocument();
-        expect(screen.getByText('code2')).toBeInTheDocument();
+        expect(screen.getByText('Backup Codes')).toBeTruthy();
+        expect(screen.getByText('code1')).toBeTruthy();
+        expect(screen.getByText('code2')).toBeTruthy();
       });
     });
 
@@ -73,7 +72,7 @@ describe('2FA Browser Security', () => {
 
       // Verify error is shown
       await waitFor(() => {
-        expect(screen.getByText('Setup failed')).toBeInTheDocument();
+        expect(screen.getByText('Setup failed')).toBeTruthy();
       });
     });
   });
@@ -99,7 +98,7 @@ describe('2FA Browser Security', () => {
 
       // Verify error is shown
       await waitFor(() => {
-        expect(screen.getByText('Invalid code')).toBeInTheDocument();
+        expect(screen.getByText('Invalid code')).toBeTruthy();
       });
     });
 

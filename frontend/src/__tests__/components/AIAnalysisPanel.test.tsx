@@ -2,8 +2,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import AIAnalysisPanel from '../../components/AIAnalysisPanel';
 import { TokenLimitProvider } from '../../contexts/TokenLimitContext';
-import AIAnalysisPanel from '../AIAnalysisPanel';
 
 // Mock the TokenLimitContext
 vi.mock('../../contexts/TokenLimitContext', () => ({
@@ -188,11 +188,11 @@ describe('AIAnalysisPanel', () => {
       onFeedbackComplete: mockOnFeedbackComplete,
     });
 
-    expect(screen.getByText('AI Analysis Tools')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /analyze submission/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /check plagiarism/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /grade submission/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /generate feedback/i })).toBeInTheDocument();
+    expect(screen.getByText('AI Analysis Tools')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /analyze submission/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /check plagiarism/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /grade submission/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /generate feedback/i })).toBeTruthy();
   });
 
   it('handles analyze submission successfully', async () => {
@@ -252,7 +252,7 @@ describe('AIAnalysisPanel', () => {
     fireEvent.click(analyzeButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Failed to analyze submission')).toBeInTheDocument();
+      expect(screen.getByText('Failed to analyze submission')).toBeTruthy();
     });
   });
 
@@ -263,26 +263,23 @@ describe('AIAnalysisPanel', () => {
     fireEvent.click(analyzeButton);
 
     // Check if the analyze button is disabled and shows loading state
-    expect(analyzeButton).toHaveAttribute('data-disabled', 'true');
-    expect(analyzeButton).toHaveAttribute('data-loading', 'true');
+    expect(analyzeButton.getAttribute('data-disabled')).toBe('true');
+    expect(analyzeButton.getAttribute('data-loading')).toBe('true');
 
     // Other buttons should not be disabled
-    expect(screen.getByRole('button', { name: /check plagiarism/i })).toHaveAttribute(
-      'data-disabled',
-      'false'
-    );
-    expect(screen.getByRole('button', { name: /grade submission/i })).toHaveAttribute(
-      'data-disabled',
-      'false'
-    );
-    expect(screen.getByRole('button', { name: /generate feedback/i })).toHaveAttribute(
-      'data-disabled',
-      'false'
-    );
+    expect(
+      screen.getByRole('button', { name: /check plagiarism/i }).getAttribute('data-disabled')
+    ).toBe('false');
+    expect(
+      screen.getByRole('button', { name: /grade submission/i }).getAttribute('data-disabled')
+    ).toBe('false');
+    expect(
+      screen.getByRole('button', { name: /generate feedback/i }).getAttribute('data-disabled')
+    ).toBe('false');
 
     await waitFor(() => {
-      expect(analyzeButton).toHaveAttribute('data-disabled', 'false');
-      expect(analyzeButton).toHaveAttribute('data-loading', 'false');
+      expect(analyzeButton.getAttribute('data-disabled')).toBe('false');
+      expect(analyzeButton.getAttribute('data-loading')).toBe('false');
     });
   });
 });

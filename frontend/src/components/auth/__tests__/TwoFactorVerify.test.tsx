@@ -28,8 +28,8 @@ describe('TwoFactorVerify', () => {
 
   it('renders verification form', () => {
     renderWithProviders(<TwoFactorVerify onSuccess={() => {}} />);
-    expect(screen.getByTestId('text-field')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /verify/i })).toBeInTheDocument();
+    expect(screen.getByTestId('text-field')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /verify/i })).toBeTruthy();
   });
 
   it('handles successful verification', async () => {
@@ -67,7 +67,7 @@ describe('TwoFactorVerify', () => {
     fireEvent.click(verifyButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Invalid verification code')).toBeInTheDocument();
+      expect(screen.getByText('Invalid verification code')).toBeTruthy();
     });
   });
 
@@ -83,7 +83,7 @@ describe('TwoFactorVerify', () => {
     fireEvent.click(verifyButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Invalid verification code')).toBeInTheDocument();
+      expect(screen.getByText('Invalid verification code')).toBeTruthy();
     });
   });
 
@@ -105,7 +105,7 @@ describe('TwoFactorVerify', () => {
     fireEvent.click(verifyButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Verification code expired')).toBeInTheDocument();
+      expect(screen.getByText('Verification code expired')).toBeTruthy();
     });
   });
 
@@ -114,8 +114,8 @@ describe('TwoFactorVerify', () => {
 
     // Initially shows verification code input
     const initialInput = screen.getByTestId('text-field');
-    expect(initialInput).toBeInTheDocument();
-    expect(initialInput).toHaveAttribute('label', 'Verification Code');
+    expect(initialInput).toBeTruthy();
+    expect(initialInput.getAttribute('label')).toBe('Verification Code');
 
     // Click to switch to backup code
     const switchButton = screen.getByRole('button', { name: /use backup code instead/i });
@@ -123,10 +123,8 @@ describe('TwoFactorVerify', () => {
 
     // Should now show backup code input
     const backupInput = screen.getByTestId('text-field');
-    expect(backupInput).toBeInTheDocument();
-    expect(backupInput).toHaveAttribute('label', 'Backup Code');
-    expect(
-      screen.getByRole('button', { name: /use authenticator app instead/i })
-    ).toBeInTheDocument();
+    expect(backupInput).toBeTruthy();
+    expect(backupInput.getAttribute('label')).toBe('Backup Code');
+    expect(screen.getByRole('button', { name: /use authenticator app instead/i })).toBeTruthy();
   });
 });
