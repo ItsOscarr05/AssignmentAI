@@ -142,12 +142,23 @@ class FileProcessingService {
   /**
    * Download a filled file
    */
-  async downloadFilledFile(fileId: string): Promise<Blob> {
+  async downloadFilledFile(fileId: string): Promise<{ blob: Blob; filename: string }> {
     const response = await api.get(`/file-processing/download/${fileId}`, {
       responseType: 'blob',
     });
 
-    return response.data;
+    // Extract filename from Content-Disposition header
+    const contentDisposition = response.headers['content-disposition'];
+    let filename = 'filled_document';
+
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+      if (filenameMatch) {
+        filename = filenameMatch[1];
+      }
+    }
+
+    return { blob: response.data, filename };
   }
 
   /**
@@ -170,6 +181,41 @@ class FileProcessingService {
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
+  }
+
+  /**
+   * Download and open Excel file directly
+   */
+  async downloadAndOpenExcel(fileId: string): Promise<void> {
+    try {
+      const { blob, filename: backendFilename } = await this.downloadFilledFile(fileId);
+
+      // Create a blob URL
+      const url = window.URL.createObjectURL(blob);
+
+      // For Excel files, try to open them directly in the browser
+      // This will trigger the default application (Excel) if available
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = backendFilename; // Use the filename from backend
+      link.style.display = 'none';
+
+      // Set the target to _blank to ensure it opens in a new tab/window
+      link.target = '_blank';
+
+      // Add to DOM, click, and remove
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Clean up the URL after a short delay
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+      }, 1000);
+    } catch (error) {
+      console.error('Error downloading Excel file:', error);
+      throw error;
+    }
   }
 
   /**
@@ -210,6 +256,66 @@ class FileProcessingService {
       return {
         valid: false,
         error: 'File is empty',
+      };
+    }
+
+    // Validate file extension
+    const fileName = file.name.toLowerCase();
+    const extension = fileName.substring(fileName.lastIndexOf('.'));
+
+    // Define allowed extensions with helpful messages
+    const allowedExtensions: { [key: string]: string } = {
+      // Documents - Word documents only
+      '.pdf': 'PDF Document',
+      '.doc': 'Word Document (Legacy)',
+      '.docx': 'Word Document',
+      '.txt': 'Text File',
+      '.rtf': 'Rich Text Format',
+
+      // Spreadsheets - Excel files only, NOT CSV
+      '.xls': 'Excel Spreadsheet (Legacy)',
+      '.xlsx': 'Excel Spreadsheet',
+
+      // Data formats
+      '.csv': 'CSV File (Note: For Excel files, use .xlsx)',
+      '.json': 'JSON Data',
+      '.xml': 'XML Data',
+
+      // Code files
+      '.py': 'Python Code',
+      '.js': 'JavaScript Code',
+      '.java': 'Java Code',
+      '.cpp': 'C++ Code',
+      '.c': 'C Code',
+      '.html': 'HTML File',
+      '.css': 'CSS File',
+
+      // Images
+      '.png': 'PNG Image',
+      '.jpg': 'JPEG Image',
+      '.jpeg': 'JPEG Image',
+      '.gif': 'GIF Image',
+      '.bmp': 'Bitmap Image',
+      '.tiff': 'TIFF Image',
+    };
+
+    if (!allowedExtensions[extension]) {
+      return {
+        valid: false,
+        error:
+          `File type '${extension}' is not supported. Please upload:\n` +
+          `• Word Documents (.doc, .docx)\n` +
+          `• Excel Spreadsheets (.xls, .xlsx)\n` +
+          `• PDFs, Text files, Code files, or Images`,
+      };
+    }
+
+    // Special validation for Excel vs CSV
+    if (extension === '.csv' && file.type.includes('excel')) {
+      return {
+        valid: false,
+        error:
+          'This appears to be an Excel file with .csv extension. Please save as .xlsx format for better support.',
       };
     }
 

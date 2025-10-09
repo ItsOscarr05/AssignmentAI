@@ -88,13 +88,37 @@ const FileProcessingPanel: React.FC<FileProcessingPanelProps> = ({ onFileProcess
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
+      // Document formats - Word documents only (.doc, .docx)
       'application/pdf': ['.pdf'],
+      'application/msword': ['.doc'],
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
       'text/plain': ['.txt'],
-      'text/csv': ['.csv'],
+      'application/rtf': ['.rtf'],
+
+      // Spreadsheet formats - Excel files only (.xls, .xlsx), NOT CSV
+      'application/vnd.ms-excel': ['.xls'],
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+
+      // Data formats
+      'text/csv': ['.csv'],
       'application/json': ['.json'],
       'application/xml': ['.xml'],
+
+      // Code formats
+      'text/x-python': ['.py'],
+      'text/javascript': ['.js'],
+      'text/x-java-source': ['.java'],
+      'text/x-c++src': ['.cpp'],
+      'text/x-csrc': ['.c'],
+      'text/html': ['.html'],
+      'text/css': ['.css'],
+
+      // Image formats
+      'image/png': ['.png'],
+      'image/jpeg': ['.jpg', '.jpeg'],
+      'image/gif': ['.gif'],
+      'image/bmp': ['.bmp'],
+      'image/tiff': ['.tiff'],
     },
     multiple: false,
     maxSize: 100 * 1024 * 1024, // 100MB
@@ -156,8 +180,18 @@ const FileProcessingPanel: React.FC<FileProcessingPanelProps> = ({ onFileProcess
     if (!fillResult) return;
 
     try {
-      const blob = await fileProcessingService.downloadFilledFile(fillResult.file_id);
-      fileProcessingService.downloadFile(blob, fillResult.filled_file_name);
+      const filename = fillResult.filled_file_name;
+      const fileExtension = filename?.split('.').pop()?.toLowerCase();
+
+      // Check if it's an Excel file
+      if (fileExtension === 'xlsx' || fileExtension === 'xls') {
+        // Use the special Excel download method
+        await fileProcessingService.downloadAndOpenExcel(fillResult.file_id, filename);
+      } else {
+        // Use the regular download method for other file types
+        const blob = await fileProcessingService.downloadFilledFile(fillResult.file_id);
+        fileProcessingService.downloadFile(blob, filename);
+      }
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to download file');
     }
@@ -170,6 +204,211 @@ const FileProcessingPanel: React.FC<FileProcessingPanelProps> = ({ onFileProcess
     setFillResult(null);
     setPreviewResult(null);
     setError(null);
+  };
+
+  // Render Excel-style preview (similar to FileUploadModal)
+  const renderExcelPreview = (previewContent: any) => {
+    // Generate column letters (A, B, C, D, etc.)
+    const getColumnLetter = (index: number) => {
+      let result = '';
+      while (index >= 0) {
+        result = String.fromCharCode(65 + (index % 26)) + result;
+        index = Math.floor(index / 26) - 1;
+      }
+      return result;
+    };
+
+    // Create a full Excel-like grid: 26 columns (A-Z) and 100 rows (1-100)
+    const COLUMNS = 26;
+    const ROWS = 100;
+
+    // Extract actual data if available
+    let actualHeaders: string[] = [];
+    let actualRows: any[] = [];
+
+    if (previewContent.sheets) {
+      // Excel format with sheets
+      const firstSheetName = Object.keys(previewContent.sheets)[0];
+      const sheetData = previewContent.sheets[firstSheetName];
+      actualHeaders = sheetData.headers || [];
+      actualRows = sheetData.rows || [];
+    } else if (previewContent.headers) {
+      // CSV format
+      actualHeaders = previewContent.headers;
+      actualRows = previewContent.rows || [];
+    }
+
+    // Create a data map for quick lookup of actual values
+    const dataMap = new Map();
+    actualRows.forEach((row: any, rowIndex: number) => {
+      actualHeaders.forEach((header: string, colIndex: number) => {
+        const cellValue = row[header];
+        if (cellValue !== undefined && cellValue !== null && cellValue !== '') {
+          dataMap.set(`${rowIndex}_${colIndex}`, cellValue);
+        }
+      });
+    });
+
+    return (
+      <Box>
+        <Box
+          sx={{
+            border: '2px solid #d0d7de',
+            borderRadius: '4px',
+            overflow: 'auto',
+            backgroundColor: '#ffffff',
+            maxHeight: 380,
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+            '&::-webkit-scrollbar': {
+              width: '12px',
+              height: '12px',
+            },
+            '&::-webkit-scrollbar-track': {
+              background: '#f1f1f1',
+              borderRadius: '6px',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: '#c1c1c1',
+              borderRadius: '6px',
+              '&:hover': {
+                background: '#a8a8a8',
+              },
+            },
+          }}
+        >
+          {/* Column Headers Row */}
+          <Box sx={{ display: 'flex', borderBottom: '2px solid #d0d7de' }}>
+            {/* Empty cell for row numbers column */}
+            <Box
+              sx={{
+                width: 45,
+                height: 28,
+                backgroundColor: '#f1f3f4',
+                borderRight: '2px solid #d0d7de',
+                borderBottom: '2px solid #d0d7de',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                color: '#5f6368',
+                position: 'sticky',
+                left: 0,
+                zIndex: 2,
+                minWidth: 45,
+                flexShrink: 0,
+              }}
+            >
+              {/* Empty top-left corner */}
+            </Box>
+
+            {/* Column letters A-Z */}
+            {Array.from({ length: COLUMNS }, (_, index) => (
+              <Box
+                key={index}
+                sx={{
+                  minWidth: 120,
+                  width: 120,
+                  height: 28,
+                  backgroundColor: '#f1f3f4',
+                  borderRight: '1px solid #d0d7de',
+                  borderBottom: '2px solid #d0d7de',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  color: '#5f6368',
+                  position: 'sticky',
+                  top: 0,
+                  zIndex: 1,
+                  flexShrink: 0,
+                }}
+              >
+                {getColumnLetter(index)}
+              </Box>
+            ))}
+          </Box>
+
+          {/* Data Rows 1-100 */}
+          {Array.from({ length: ROWS }, (_, rowIndex) => (
+            <Box key={rowIndex} sx={{ display: 'flex' }}>
+              {/* Row number */}
+              <Box
+                sx={{
+                  width: 45,
+                  height: 24,
+                  backgroundColor: '#f8f9fa',
+                  borderRight: '2px solid #d0d7de',
+                  borderBottom: '1px solid #d0d7de',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                  color: '#5f6368',
+                  position: 'sticky',
+                  left: 0,
+                  zIndex: 1,
+                  minWidth: 45,
+                  flexShrink: 0,
+                }}
+              >
+                {String(rowIndex + 1).padStart(2, ' ')}
+              </Box>
+
+              {/* Data cells A-Z */}
+              {Array.from({ length: COLUMNS }, (_, colIndex) => {
+                // Check if this cell has actual data
+                const hasData = dataMap.has(`${rowIndex}_${colIndex}`);
+                const cellValue = hasData ? dataMap.get(`${rowIndex}_${colIndex}`) : '';
+
+                return (
+                  <Box
+                    key={colIndex}
+                    sx={{
+                      minWidth: 120,
+                      width: 120,
+                      height: 24,
+                      backgroundColor: hasData ? '#ffffff' : '#fafbfc',
+                      borderRight: '1px solid #e1e4e8',
+                      borderBottom: '1px solid #e1e4e8',
+                      display: 'flex',
+                      alignItems: 'center',
+                      paddingLeft: '6px',
+                      paddingRight: '6px',
+                      fontSize: '11px',
+                      color: hasData ? '#24292f' : '#8b949e',
+                      fontFamily:
+                        'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      cursor: 'text',
+                      flexShrink: 0,
+                      // Right-align numbers, left-align text
+                      justifyContent: typeof cellValue === 'number' ? 'flex-end' : 'flex-start',
+                      '&:hover': {
+                        backgroundColor: hasData ? '#f6f8fa' : '#f1f3f4',
+                      },
+                      // Highlight cells with data
+                      ...(hasData
+                        ? {
+                            border: '1px solid #d0d7de',
+                            backgroundColor: '#ffffff',
+                          }
+                        : {}),
+                    }}
+                  >
+                    {cellValue || ''}
+                  </Box>
+                );
+              })}
+            </Box>
+          ))}
+        </Box>
+      </Box>
+    );
   };
 
   const steps = [
@@ -386,7 +625,7 @@ const FileProcessingPanel: React.FC<FileProcessingPanelProps> = ({ onFileProcess
       </Card>
 
       {/* Preview Dialog */}
-      <Dialog open={showPreview} onClose={() => setShowPreview(false)} maxWidth="md" fullWidth>
+      <Dialog open={showPreview} onClose={() => setShowPreview(false)} maxWidth="lg" fullWidth>
         <DialogTitle>File Preview</DialogTitle>
         <DialogContent>
           {previewResult && (
@@ -398,13 +637,35 @@ const FileProcessingPanel: React.FC<FileProcessingPanelProps> = ({ onFileProcess
                 {previewResult.sections_to_fill} sections will be filled
               </Typography>
               <Divider sx={{ my: 2 }} />
-              <Typography
-                variant="body2"
-                component="pre"
-                sx={{ whiteSpace: 'pre-wrap', maxHeight: 400, overflow: 'auto' }}
-              >
-                {JSON.stringify(previewResult.preview_content, null, 2)}
-              </Typography>
+
+              {/* Check if this is an Excel/CSV file and render accordingly */}
+              {previewResult.preview_content &&
+              (previewResult.file_name?.toLowerCase().includes('.xlsx') ||
+                previewResult.file_name?.toLowerCase().includes('.csv') ||
+                previewResult.file_name?.toLowerCase().includes('.xls')) ? (
+                <Box>
+                  {/* Render Excel-style grid if available */}
+                  {previewResult.preview_content.sheets || previewResult.preview_content.headers ? (
+                    renderExcelPreview(previewResult.preview_content)
+                  ) : (
+                    <Typography
+                      variant="body2"
+                      component="pre"
+                      sx={{ whiteSpace: 'pre-wrap', maxHeight: 400, overflow: 'auto' }}
+                    >
+                      {JSON.stringify(previewResult.preview_content, null, 2)}
+                    </Typography>
+                  )}
+                </Box>
+              ) : (
+                <Typography
+                  variant="body2"
+                  component="pre"
+                  sx={{ whiteSpace: 'pre-wrap', maxHeight: 400, overflow: 'auto' }}
+                >
+                  {JSON.stringify(previewResult.preview_content, null, 2)}
+                </Typography>
+              )}
             </Box>
           )}
         </DialogContent>

@@ -344,6 +344,7 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
         path: fileData.path,
         content: fileData.content,
         analysis: fileData.analysis,
+        processed_data: fileData.processed_data, // Include processed structured data for Excel/CSV files
         uploaded_at: fileData.uploaded_at,
       };
 

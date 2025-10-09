@@ -687,23 +687,94 @@ async def upload_and_process_file(
             logger.info(f"Checking file type for processed_data: {file.filename}, content_type: {content_type}")
             
             if content_type in ["application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]:
+                logger.info(f"Starting Excel file processing for {file.filename}")
                 try:
-                    from app.services.file_processing_service import FileProcessingService
-                    processing_service = FileProcessingService(None)
+                    import openpyxl
+                    import pandas as pd
                     
                     file_extension = Path(file_path).suffix[1:].lower()
+                    logger.info(f"Processing Excel file extension: {file_extension}")
                     if file_extension == 'xlsx':
-                        processed_data = await processing_service._process_xlsx(file_path)
+                        # Process .xlsx files with openpyxl
+                        workbook = openpyxl.load_workbook(file_path, data_only=True)
+                        sheets = {}
+                        has_calculations = False
+                        calculation_instructions = []
+                        
+                        for sheet_name in workbook.sheetnames:
+                            sheet = workbook[sheet_name]
+                            data = []
+                            for row_idx, row in enumerate(sheet.iter_rows(values_only=True)):
+                                # Sanitize row data for JSON
+                                sanitized_row = []
+                                for col_idx, cell in enumerate(row):
+                                    if cell is None:
+                                        sanitized_row.append(None)
+                                    elif isinstance(cell, float):
+                                        import math
+                                        if math.isinf(cell) or math.isnan(cell):
+                                            sanitized_row.append(None)
+                                        else:
+                                            sanitized_row.append(cell)
+                                    elif isinstance(cell, str):
+                                        # Detect calculation instructions
+                                        if 'compute' in cell.lower() or 'calculate' in cell.lower():
+                                            has_calculations = True
+                                            calculation_instructions.append({
+                                                'sheet': sheet_name,
+                                                'row': row_idx,
+                                                'col': col_idx,
+                                                'instruction': cell
+                                            })
+                                        sanitized_row.append(cell)
+                                    else:
+                                        sanitized_row.append(cell)
+                                data.append(sanitized_row)
+                            sheets[sheet_name] = data
+                        
+                        processed_data = {
+                            'sheets': sheets,
+                            'sheet_names': workbook.sheetnames,
+                            'file_type': 'xlsx',
+                            'has_calculations': has_calculations,
+                            'calculation_instructions': calculation_instructions if has_calculations else None
+                        }
+                        logger.info(f"Successfully processed XLSX file with {len(sheets)} sheet(s), has_calculations: {has_calculations}")
                     elif file_extension == 'xls':
-                        processed_data = await processing_service._process_xls(file_path)
+                        # Process .xls files with pandas
+                        df_dict = pd.read_excel(file_path, sheet_name=None, engine='xlrd')
+                        sheets = {}
+                        for sheet_name, sheet_df in df_dict.items():
+                            data = [sheet_df.columns.tolist()] + sheet_df.values.tolist()
+                            # Sanitize data
+                            sanitized_data = []
+                            for row in data:
+                                sanitized_row = []
+                                for cell in row:
+                                    if pd.isna(cell):
+                                        sanitized_row.append(None)
+                                    else:
+                                        sanitized_row.append(cell)
+                                sanitized_data.append(sanitized_row)
+                            sheets[sheet_name] = sanitized_data
+                        processed_data = {
+                            'sheets': sheets,
+                            'sheet_names': list(df_dict.keys()),
+                            'file_type': 'xls'
+                        }
+                        logger.info(f"Successfully processed XLS file with {len(sheets)} sheet(s)")
                 except Exception as e:
                     logger.warning(f"Could not get processed data for {file.filename}: {str(e)}")
+                    import traceback
+                    logger.warning(f"Traceback: {traceback.format_exc()}")
                     processed_data = None
             elif content_type == "text/csv":
                 # For CSV files, create a simple processed data structure from the content
                 logger.info(f"Processing CSV file for processed_data: {file.filename}")
                 try:
                     import pandas as pd
+                    import numpy as np
+                    import math
                     logger.info(f"Reading CSV file: {file_path}")
                     df = pd.read_csv(file_path)
                     logger.info(f"CSV loaded successfully. Shape: {df.shape}, Columns: {df.columns.tolist()}")
@@ -729,7 +800,24 @@ async def upload_and_process_file(
                                     logger.info(f"Calculated revenue for record {i}: {revenue}")
                             except (ValueError, TypeError) as calc_error:
                                 logger.warning(f"Calculation error for record {i}: {calc_error}")
-                        processed_records.append(record)
+                        
+                        # Sanitize all values to ensure JSON compatibility
+                        sanitized_record = {}
+                        for key, value in record.items():
+                            # Handle NaN, Infinity, and other non-JSON-compliant values
+                            if pd.isna(value):
+                                sanitized_record[key] = None
+                            elif isinstance(value, (float, np.floating)):
+                                if math.isinf(value) or math.isnan(value):
+                                    sanitized_record[key] = None
+                                else:
+                                    sanitized_record[key] = float(value)
+                            elif isinstance(value, (int, np.integer)):
+                                sanitized_record[key] = int(value)
+                            else:
+                                sanitized_record[key] = value
+                        
+                        processed_records.append(sanitized_record)
                     
                     processed_data = {
                         'data': processed_records,
@@ -1025,17 +1113,46 @@ async def extract_file_content(file_path: str, content_type: str) -> str:
                 return text.strip()
         
         # Word documents
-        elif content_type in ["application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]:
-            logger.info(f"Processing DOCX/DOC file: {file_path}")
+        elif content_type in ["application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/x-ole-storage"]:
+            logger.info(f"Processing Word document: {file_path}")
             try:
-                doc = Document(file_path)
-                text = ""
-                for paragraph in doc.paragraphs:
-                    text += paragraph.text + "\n"
-                logger.info(f"DOCX content extracted successfully, length: {len(text)}")
-                return text.strip()
+                file_extension = Path(file_path).suffix[1:].lower()
+                
+                if file_extension == 'docx':
+                    # Handle .docx files
+                    doc = Document(file_path)
+                    text = ""
+                    for paragraph in doc.paragraphs:
+                        text += paragraph.text + "\n"
+                    # Also extract text from tables
+                    for table in doc.tables:
+                        for row in table.rows:
+                            for cell in row.cells:
+                                text += cell.text + "\t"
+                            text += "\n"
+                    logger.info(f"DOCX content extracted successfully, length: {len(text)}")
+                    return text.strip()
+                elif file_extension == 'doc':
+                    # Handle legacy .doc files using FileProcessingService
+                    from app.services.file_processing_service import FileProcessingService
+                    processing_service = FileProcessingService(None)
+                    processed_content = await processing_service._process_doc(file_path)
+                    text = processed_content.get('text', '')
+                    logger.info(f"DOC content extracted successfully, length: {len(text)}")
+                    return text.strip()
+                else:
+                    # Try docx first, then doc
+                    try:
+                        doc = Document(file_path)
+                        text = "\n".join([paragraph.text for paragraph in doc.paragraphs])
+                        return text.strip()
+                    except:
+                        from app.services.file_processing_service import FileProcessingService
+                        processing_service = FileProcessingService(None)
+                        processed_content = await processing_service._process_doc(file_path)
+                        return processed_content.get('text', '').strip()
             except Exception as e:
-                logger.error(f"Failed to extract DOCX content: {str(e)}")
+                logger.error(f"Failed to extract Word document content: {str(e)}")
                 logger.error(f"Exception type: {type(e).__name__}")
                 import traceback
                 logger.error(f"Traceback: {traceback.format_exc()}")
@@ -1055,44 +1172,84 @@ async def extract_file_content(file_path: str, content_type: str) -> str:
             with open(file_path, 'r', encoding='utf-8') as f:
                 return f.read()
         
-        # Data files
+        # Data files (Excel and CSV)
         elif content_type in ["text/csv", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]:
-            if content_type == "text/csv":
-                # For now, just read CSV as plain text until we fix the processing service
+            file_extension = Path(file_path).suffix[1:].lower()
+            
+            if content_type == "text/csv" or file_extension == 'csv':
+                # Read CSV as plain text
+                logger.info(f"Processing CSV file: {file_path}")
                 with open(file_path, 'r', encoding='utf-8') as f:
                     return f.read()
             else:
-                # For Excel files, process with FileProcessingService to get calculated data
+                # For Excel files (.xls, .xlsx), process directly with openpyxl/pandas
+                logger.info(f"Processing Excel file: {file_path}, extension: {file_extension}")
                 try:
-                    from app.services.file_processing_service import FileProcessingService
-                    processing_service = FileProcessingService(None)  # No DB needed for content extraction
-                    
-                    file_extension = Path(file_path).suffix[1:].lower()
                     if file_extension == 'xlsx':
-                        processed_content = await processing_service._process_xlsx(file_path)
+                        # Process .xlsx files with openpyxl
+                        import openpyxl
+                        workbook = openpyxl.load_workbook(file_path, data_only=True)
+                        sheets = {}
+                        
+                        for sheet_name in workbook.sheetnames:
+                            sheet = workbook[sheet_name]
+                            data = []
+                            for row in sheet.iter_rows(values_only=True):
+                                data.append(list(row))
+                            sheets[sheet_name] = data
+                        
+                        processed_content = {'sheets': sheets}
                     elif file_extension == 'xls':
-                        processed_content = await processing_service._process_xls(file_path)
+                        # Process .xls files with pandas
+                        import pandas as pd
+                        df_dict = pd.read_excel(file_path, sheet_name=None, engine='xlrd')
+                        sheets = {}
+                        for sheet_name, sheet_df in df_dict.items():
+                            data = [sheet_df.columns.tolist()] + sheet_df.values.tolist()
+                            sheets[sheet_name] = data
+                        processed_content = {'sheets': sheets}
                     else:
-                        processed_content = {"data": "Unsupported Excel format"}
+                        logger.error(f"Unsupported Excel format: {file_extension}")
+                        return f"[Unsupported Excel format: {file_extension}]"
                     
-                    # Format the processed content as CSV-like string
+                    # Format the processed content as readable string
                     if processed_content.get('sheets'):
                         formatted_content = ""
-                        for sheet_name, sheet_data in processed_content['sheets'].items():
-                            if sheet_name != 'Sheet1':
-                                formatted_content += f"\n=== {sheet_name} ===\n"
-                            
-                            if isinstance(sheet_data, list):
-                                formatted_content += "\n".join([",".join(map(str, row)) if isinstance(row, list) else str(row) for row in sheet_data])
+                        sheets = processed_content['sheets']
+                        
+                        # Include formula information if available
+                        if processed_content.get('formulas'):
+                            formatted_content += "=== FORMULAS DETECTED ===\n"
+                            for sheet_name, formulas in processed_content['formulas'].items():
+                                formatted_content += f"\n{sheet_name}:\n"
+                                for formula_info in formulas:
+                                    formatted_content += f"  {formula_info['cell']}: {formula_info['formula']} = {formula_info['value']}\n"
                             formatted_content += "\n"
                         
+                        # Add sheet data
+                        for sheet_name, sheet_data in sheets.items():
+                            if len(sheets) > 1:  # Only show sheet names if multiple sheets
+                                formatted_content += f"\n=== Sheet: {sheet_name} ===\n"
+                            
+                            if isinstance(sheet_data, list):
+                                # Format as CSV-like with proper alignment
+                                for row in sheet_data:
+                                    if isinstance(row, list):
+                                        formatted_content += ",".join([str(cell) if cell is not None else '' for cell in row]) + "\n"
+                                    else:
+                                        formatted_content += str(row) + "\n"
+                        
+                        logger.info(f"Excel content formatted successfully, length: {len(formatted_content)}")
                         return formatted_content.strip()
                     else:
-                        return f"[Excel file content from {file_path} - Data analysis available through AI]"
+                        logger.warning("No sheets found in processed Excel content")
+                        return f"[Excel file processed but no data found: {file_path}]"
                         
                 except Exception as e:
-                    logger.warning(f"Could not process Excel file {file_path}: {str(e)}")
-                    return f"[Excel file content from {file_path} - Data analysis available through AI]"
+                    logger.error(f"Could not process Excel file {file_path}: {str(e)}")
+                    import traceback
+                    logger.error(f"Traceback: {traceback.format_exc()}")
+                    return f"[Error processing Excel file: {str(e)}]"
         
         # Image files (return placeholder for analysis)
         elif content_type.startswith("image/"):

@@ -41,9 +41,5 @@ export const mapToCoreSubject = (subject: string): string => {
   }
 
   // Fallback for subjects that do not match any keywords
-  const firstWord = subject.split(' ')[0];
-  if (firstWord) {
-    return firstWord.charAt(0).toUpperCase() + firstWord.slice(1);
-  }
-  return 'General';
+  return 'Technology';
 };

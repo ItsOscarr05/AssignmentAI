@@ -12,7 +12,6 @@ import {
   RemoveOutlined as MinimizeIcon,
   PictureAsPdfOutlined as PdfIcon,
   VisibilityOutlined as PreviewIcon,
-  TableChartOutlined as TableIcon,
   CloudUploadOutlined as UploadIcon,
 } from '@mui/icons-material';
 import {
@@ -27,10 +26,6 @@ import {
   Divider,
   IconButton,
   LinearProgress,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
   Snackbar,
   Tab,
   Tabs,
@@ -201,7 +196,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
         // Single sheet - render directly
         const sheetName = sheetNames[0];
         const sheetData = structuredData.sheets[sheetName];
-        return renderTable(sheetData, sheetName);
+        return renderTable(sheetData);
       } else {
         // Multiple sheets - render with tabs
         return (
@@ -218,9 +213,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
             {sheetNames.map(
               (sheetName, index) =>
                 activeSheetTab === index && (
-                  <Box key={sheetName}>
-                    {renderTable(structuredData.sheets[sheetName], sheetName)}
-                  </Box>
+                  <Box key={sheetName}>{renderTable(structuredData.sheets[sheetName])}</Box>
                 )
             )}
           </Box>
@@ -229,7 +222,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
     } else if (structuredData.type === 'csv') {
       console.log('Rendering CSV format with data:', structuredData);
       // CSV data
-      return renderTable(structuredData, 'Data');
+      return renderTable(structuredData);
     }
 
     console.log('No matching format found, returning null');
@@ -237,16 +230,14 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
   };
 
   // Render individual table with Excel-like styling
-  const renderTable = (sheetData: any, title: string) => {
-    if (!sheetData || !sheetData.headers || !sheetData.rows) {
+  const renderTable = (sheetData: any) => {
+    if (!sheetData) {
       return (
         <Typography variant="body2" color="text.secondary">
           No data available
         </Typography>
       );
     }
-
-    const { headers, rows } = sheetData;
 
     // Generate column letters (A, B, C, D, etc.)
     const getColumnLetter = (index: number) => {
@@ -258,62 +249,99 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
       return result;
     };
 
+    // Create a full Excel-like grid: 26 columns (A-Z) and 100 rows (1-100)
+    const COLUMNS = 26;
+    const ROWS = 100;
+
+    // Extract actual data if available
+    const actualHeaders = sheetData.headers || [];
+    const actualRows = sheetData.rows || [];
+
+    // Create a data map for quick lookup of actual values
+    const dataMap = new Map();
+    actualRows.forEach((row: any, rowIndex: number) => {
+      actualHeaders.forEach((header: string, colIndex: number) => {
+        const cellValue = row[header];
+        if (cellValue !== undefined && cellValue !== null && cellValue !== '') {
+          dataMap.set(`${rowIndex}_${colIndex}`, cellValue);
+        }
+      });
+    });
+
     return (
       <Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-          <Typography variant="h6" sx={{ color: '#2196f3' }}>
-            {title}
-          </Typography>
-          <Chip label={`${rows.length} rows`} size="small" color="primary" variant="outlined" />
-        </Box>
-
         <Box
           sx={{
-            border: '1px solid #d0d7de',
+            border: '2px solid #d0d7de',
             borderRadius: '4px',
             overflow: 'auto',
             backgroundColor: '#ffffff',
-            maxHeight: 400,
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+            maxHeight: 380,
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+            '&::-webkit-scrollbar': {
+              width: '12px',
+              height: '12px',
+            },
+            '&::-webkit-scrollbar-track': {
+              background: '#f1f1f1',
+              borderRadius: '6px',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: '#c1c1c1',
+              borderRadius: '6px',
+              '&:hover': {
+                background: '#a8a8a8',
+              },
+            },
           }}
         >
           {/* Column Headers Row */}
-          <Box sx={{ display: 'flex', borderBottom: '1px solid #d0d7de' }}>
+          <Box sx={{ display: 'flex', borderBottom: '2px solid #d0d7de' }}>
             {/* Empty cell for row numbers column */}
             <Box
               sx={{
-                width: 40,
-                height: 24,
-                backgroundColor: '#f6f8fa',
-                borderRight: '1px solid #d0d7de',
-                borderBottom: '1px solid #d0d7de',
+                width: 45,
+                height: 28,
+                backgroundColor: '#f1f3f4',
+                borderRight: '2px solid #d0d7de',
+                borderBottom: '2px solid #d0d7de',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '11px',
+                fontSize: '12px',
                 fontWeight: 'bold',
-                color: '#656d76',
+                color: '#5f6368',
+                position: 'sticky',
+                left: 0,
+                zIndex: 2,
+                minWidth: 45,
+                flexShrink: 0,
               }}
             >
               {/* Empty top-left corner */}
             </Box>
 
-            {/* Column letters */}
-            {headers.map((_: string, index: number) => (
+            {/* Column letters A-Z */}
+            {Array.from({ length: COLUMNS }, (_, index) => (
               <Box
                 key={index}
                 sx={{
-                  width: 100,
-                  height: 24,
-                  backgroundColor: '#f6f8fa',
+                  minWidth: 120,
+                  width: 120,
+                  height: 28,
+                  backgroundColor: '#f1f3f4',
                   borderRight: '1px solid #d0d7de',
-                  borderBottom: '1px solid #d0d7de',
+                  borderBottom: '2px solid #d0d7de',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '11px',
+                  fontSize: '12px',
                   fontWeight: 'bold',
-                  color: '#656d76',
+                  color: '#5f6368',
+                  position: 'sticky',
+                  top: 0,
+                  zIndex: 1,
+                  flexShrink: 0,
                 }}
               >
                 {getColumnLetter(index)}
@@ -321,70 +349,99 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
             ))}
           </Box>
 
-          {/* Data Rows */}
-          {rows.map((row: any, rowIndex: number) => (
+          {/* Data Rows 1-100 */}
+          {Array.from({ length: ROWS }, (_, rowIndex) => (
             <Box key={rowIndex} sx={{ display: 'flex' }}>
               {/* Row number */}
               <Box
                 sx={{
-                  width: 40,
+                  width: 45,
                   height: 24,
-                  backgroundColor: '#f6f8fa',
-                  borderRight: '1px solid #d0d7de',
+                  backgroundColor: '#f8f9fa',
+                  borderRight: '2px solid #d0d7de',
                   borderBottom: '1px solid #d0d7de',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontSize: '11px',
                   fontWeight: 'bold',
-                  color: '#656d76',
+                  color: '#5f6368',
+                  position: 'sticky',
+                  left: 0,
+                  zIndex: 1,
+                  minWidth: 45,
+                  flexShrink: 0,
                 }}
               >
-                {rowIndex + 1}
+                {String(rowIndex + 1).padStart(2, ' ')}
               </Box>
 
-              {/* Data cells */}
-              {headers.map((header: string, colIndex: number) => (
-                <Box
-                  key={colIndex}
-                  sx={{
-                    width: 100,
-                    height: 24,
-                    backgroundColor: '#ffffff',
-                    borderRight: '1px solid #d0d7de',
-                    borderBottom: '1px solid #d0d7de',
-                    display: 'flex',
-                    alignItems: 'center',
-                    paddingLeft: '6px',
-                    paddingRight: '6px',
-                    fontSize: '11px',
-                    color: '#24292f',
-                    fontFamily:
-                      'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    cursor: 'text',
-                    '&:hover': {
-                      backgroundColor: '#f6f8fa',
-                    },
-                    // Highlight calculated values
-                    ...(typeof row[header] === 'number' &&
-                    row[header] > 0 &&
-                    header.toLowerCase().includes('revenue')
-                      ? {
-                          backgroundColor: '#e8f5e8',
-                          fontWeight: 'bold',
-                          color: '#2e7d32',
-                        }
-                      : {}),
-                  }}
-                >
-                  {row[header] || ''}
-                </Box>
-              ))}
+              {/* Data cells A-Z */}
+              {Array.from({ length: COLUMNS }, (_, colIndex) => {
+                // Check if this cell has actual data
+                const hasData = dataMap.has(`${rowIndex}_${colIndex}`);
+                const cellValue = hasData ? dataMap.get(`${rowIndex}_${colIndex}`) : '';
+
+                return (
+                  <Box
+                    key={colIndex}
+                    sx={{
+                      minWidth: 120,
+                      width: 120,
+                      height: 24,
+                      backgroundColor: hasData ? '#ffffff' : '#fafbfc',
+                      borderRight: '1px solid #e1e4e8',
+                      borderBottom: '1px solid #e1e4e8',
+                      display: 'flex',
+                      alignItems: 'center',
+                      paddingLeft: '6px',
+                      paddingRight: '6px',
+                      fontSize: '11px',
+                      color: hasData ? '#24292f' : '#8b949e',
+                      fontFamily:
+                        'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      cursor: 'text',
+                      flexShrink: 0,
+                      // Right-align numbers, left-align text
+                      justifyContent: typeof cellValue === 'number' ? 'flex-end' : 'flex-start',
+                      '&:hover': {
+                        backgroundColor: hasData ? '#f6f8fa' : '#f1f3f4',
+                      },
+                      // Highlight calculated values
+                      ...(typeof cellValue === 'number' &&
+                      cellValue > 0 &&
+                      actualHeaders[colIndex]?.toLowerCase().includes('revenue')
+                        ? {
+                            backgroundColor: '#e8f5e8',
+                            fontWeight: 'bold',
+                            color: '#2e7d32',
+                          }
+                        : {}),
+                      // Highlight cells with data
+                      ...(hasData
+                        ? {
+                            border: '1px solid #d0d7de',
+                            backgroundColor: '#ffffff',
+                          }
+                        : {}),
+                    }}
+                  >
+                    {cellValue || ''}
+                  </Box>
+                );
+              })}
             </Box>
           ))}
+        </Box>
+
+        {/* Grid info */}
+        <Box sx={{ mt: 1, display: 'flex', gap: 1, alignItems: 'center' }}>
+          <Typography variant="caption" color="text.secondary">
+            Excel-style grid view: {ROWS} rows × {COLUMNS} columns (A-Z)
+          </Typography>
         </Box>
       </Box>
     );
@@ -480,11 +537,15 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
           setStructuredFileData(null);
         }
 
-        // Set empty document structure since we're showing raw content
-        setDocumentStructure({
-          sections: [],
-          originalContent: file.content,
-        });
+        // Don't set document structure for spreadsheet files - use structuredFileData instead
+        if (!isSpreadsheetFile) {
+          setDocumentStructure({
+            sections: [],
+            originalContent: file.content,
+          });
+        } else {
+          setDocumentStructure(null);
+        }
       } else {
         console.log('No content found in file object');
         setOriginalFileContent('No file content found.');
@@ -745,19 +806,34 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
 
       // Use the actual AI-filled content from the backend
       const filledContent =
-        result.filled_content?.text || result.filled_content || 'Content filled successfully!';
+        result.filled_content?.text ||
+        (typeof result.filled_content === 'string' ? result.filled_content : null) ||
+        'Content filled successfully!';
       console.log('Using real AI-filled content:', filledContent);
 
       // Debug logging for streaming
       console.log('Original content length:', originalFileContent.length);
-      console.log('Filled content length:', filledContent.length);
-      console.log('Original content preview:', originalFileContent.substring(0, 200));
-      console.log('Filled content preview:', filledContent.substring(0, 200));
+      console.log('Filled content type:', typeof filledContent);
 
-      // Simulate progressive filling of blanks for better UX
-      simulateProgressiveFilling(originalFileContent, filledContent, chunk => {
-        setStreamingContent(chunk);
-      });
+      // Handle Excel/CSV files differently (they have object structure, not text)
+      const fileExtension = file.name.split('.').pop()?.toLowerCase();
+      const isSpreadsheet = ['xlsx', 'xls', 'csv'].includes(fileExtension || '');
+
+      if (isSpreadsheet && result.filled_content?.sheets) {
+        console.log('Excel file filled successfully with calculations');
+        // For spreadsheets, don't simulate streaming - just mark as complete
+        setIsStreaming(false);
+      } else {
+        // For text-based files, show streaming simulation
+        console.log('Filled content length:', filledContent.length);
+        console.log('Original content preview:', originalFileContent.substring(0, 200));
+        console.log('Filled content preview:', filledContent.substring(0, 200));
+
+        // Simulate progressive filling of blanks for better UX
+        simulateProgressiveFilling(originalFileContent, filledContent, chunk => {
+          setStreamingContent(chunk);
+        });
+      }
 
       setFilledFiles(prev => new Map(prev).set(file.id, result));
       onFileProcessed?.(file.id, result);
@@ -798,48 +874,28 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
 
       console.log('Filled file data:', filledFileData);
 
-      // Use the download URL from the filled file data
-      const downloadUrl =
-        filledFileData.download_url || `/api/v1/file-processing/download/${file.id}`;
-      console.log('Download URL:', downloadUrl);
+      // Let the backend handle the clean filename generation
+      const filename = `filled_document.${file.name.split('.').pop()}`;
+      const fileExtension = filename.split('.').pop()?.toLowerCase();
 
-      // Create a temporary link to trigger download
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = filledFileData.filled_file_name || `filled_${file.name}`;
-
-      // Add authorization header if needed
-      const token = localStorage.getItem('access_token');
-      if (token) {
-        // For API calls, we need to use fetch with headers
-        const response = await fetch(downloadUrl, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Download failed: ${response.statusText}`);
-        }
-
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        link.href = url;
-        link.click();
-        window.URL.revokeObjectURL(url);
+      // Check if it's an Excel file
+      if (fileExtension === 'xlsx' || fileExtension === 'xls') {
+        // Use the special Excel download method
+        await fileProcessingService.downloadAndOpenExcel(file.id);
       } else {
-        // Fallback to direct link
-        link.click();
+        // Use the regular download method for other file types
+        const { blob, filename: backendFilename } = await fileProcessingService.downloadFilledFile(
+          file.id
+        );
+        fileProcessingService.downloadFile(blob, backendFilename);
       }
+
+      console.log('Download completed successfully');
     } catch (error) {
       console.error('Download failed:', error);
-      // Fallback: try to download using the fileProcessingService
-      try {
-        const blob = await fileProcessingService.downloadFilledFile(file.id);
-        fileProcessingService.downloadFile(blob, `filled_${file.name}`);
-      } catch (fallbackError) {
-        console.error('Fallback download also failed:', fallbackError);
-      }
+
+      // Show user-friendly error message
+      alert(`Download failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -877,11 +933,11 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
     return (
       <Box>
         {/* File Header */}
-        <Box sx={{ mb: 2, pb: 1.5, borderBottom: '1px solid #e0e0e0' }}>
+        <Box sx={{ mb: 1.5, pb: 1, borderBottom: '1px solid #e0e0e0' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             {getFileIcon(selectedFile.type)}
             <Box sx={{ flex: 1 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.2, mb: 0.5 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.1, mb: 0.25 }}>
                 {selectedFile.name}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.2 }}>
@@ -909,7 +965,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
         <Box
           sx={{
             minHeight: '400px',
-            maxHeight: '60vh',
+            maxHeight: '50vh',
             overflow: 'auto',
             p: 2,
             bgcolor: '#fff',
@@ -935,36 +991,52 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
                 AI is filling your file...
               </Typography>
 
-              {/* Show the original content with streaming updates */}
-              <Box
-                sx={{
-                  bgcolor: '#fff',
-                  p: 2,
-                  borderRadius: 1,
-                  border: '1px solid #f44336',
-                  mb: 2,
-                }}
-              >
-                <Typography
-                  variant="body1"
-                  sx={{
-                    whiteSpace: 'pre-wrap',
-                    fontFamily: 'monospace',
-                    lineHeight: 1.6,
-                    color: '#333',
-                  }}
-                >
-                  {streamingContent || originalFileContent}
-                  {isStreaming && <span style={{ animation: 'blink 1s infinite' }}>|</span>}
-                </Typography>
-              </Box>
+              {/* Keep showing table view for Excel files during streaming */}
+              {structuredFileData &&
+              (structuredFileData.type === 'excel' || structuredFileData.type === 'csv') ? (
+                <Box>
+                  {renderSpreadsheetTable(structuredFileData)}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2 }}>
+                    <LinearProgress sx={{ flex: 1, height: 4, borderRadius: 2 }} />
+                    <Typography variant="caption" color="text.secondary">
+                      AI is processing your spreadsheet...
+                    </Typography>
+                  </Box>
+                </Box>
+              ) : (
+                <Box>
+                  {/* Show the original content with streaming updates */}
+                  <Box
+                    sx={{
+                      bgcolor: '#fff',
+                      p: 2,
+                      borderRadius: 1,
+                      border: '1px solid #f44336',
+                      mb: 2,
+                    }}
+                  >
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        whiteSpace: 'pre-wrap',
+                        fontFamily: 'monospace',
+                        lineHeight: 1.6,
+                        color: '#333',
+                      }}
+                    >
+                      {streamingContent || originalFileContent}
+                      {isStreaming && <span style={{ animation: 'blink 1s infinite' }}>|</span>}
+                    </Typography>
+                  </Box>
 
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <LinearProgress sx={{ flex: 1, height: 4, borderRadius: 2 }} />
-                <Typography variant="caption" color="text.secondary">
-                  AI is filling your file...
-                </Typography>
-              </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <LinearProgress sx={{ flex: 1, height: 4, borderRadius: 2 }} />
+                    <Typography variant="caption" color="text.secondary">
+                      AI is filling your file...
+                    </Typography>
+                  </Box>
+                </Box>
+              )}
             </Box>
           ) : filledFiles.has(selectedFile.id) ? (
             <Box>
@@ -981,11 +1053,25 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
               {(() => {
                 const filledFileData = filledFiles.get(selectedFile.id);
                 const filledContent = filledFileData?.filled_content;
+                const fileExtension = selectedFile.name.split('.').pop()?.toLowerCase();
+                const isSpreadsheet = ['xlsx', 'xls', 'csv'].includes(fileExtension || '');
 
                 console.log('Filled file data:', filledFileData);
                 console.log('Filled content:', filledContent);
                 console.log('Filled content text:', filledContent?.text);
+                console.log('Is spreadsheet:', isSpreadsheet);
 
+                // For spreadsheets, show table view with updated calculations
+                if (isSpreadsheet && filledContent?.sheets && structuredFileData) {
+                  // Update the structured data with filled values
+                  if (filledContent.sheets) {
+                    // Update the sheets with filled values
+                    const formattedData = formatSpreadsheetContent(filledContent);
+                    return <Box>{renderSpreadsheetTable(formattedData || structuredFileData)}</Box>;
+                  }
+                }
+
+                // For text-based files, show text content
                 return (
                   <Box
                     sx={{
@@ -1006,7 +1092,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
                     >
                       {streamingContent ||
                         filledContent?.text ||
-                        filledContent ||
+                        (typeof filledContent === 'string' ? filledContent : null) ||
                         'Content has been filled by AI. Download the file to see the complete result.'}
                     </Typography>
                   </Box>
@@ -1159,12 +1245,11 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
     >
       {/* File Processing Analytics */}
       <Typography
-        variant="h6"
+        variant="subtitle1"
         gutterBottom
         sx={{
-          fontSize: '1.25rem',
           color: 'black',
-          mb: 2,
+          mb: 1.5,
           textAlign: 'center',
           fontWeight: 600,
         }}
@@ -1354,11 +1439,6 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
           { label: 'FILL', icon: FillIcon, color: '#4caf50' },
           { label: 'PREVIEW', icon: PreviewIcon, color: '#ff9800' },
           { label: 'DOWNLOAD', icon: DownloadIcon, color: '#9c27b0' },
-          // Add Excel button for spreadsheet files
-          ...(selectedFile &&
-          ['csv', 'xlsx', 'xls'].includes(selectedFile.name.split('.').pop()?.toLowerCase() || '')
-            ? [{ label: 'OPEN IN EXCEL', icon: TableIcon, color: '#2e7d32' }]
-            : []),
         ].map(({ label, icon: Icon, color }) => (
           <Button
             key={label}
@@ -1377,33 +1457,6 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
                   case 'DOWNLOAD':
                     if (filledFiles.has(selectedFile.id)) {
                       handleDownloadFilled(selectedFile);
-                    }
-                    break;
-                  case 'OPEN IN EXCEL':
-                    if (selectedFile.path) {
-                      try {
-                        // Try multiple methods to open Excel
-                        const filePath = selectedFile.path.replace(/\\/g, '/');
-
-                        // Method 1: Windows Excel protocol
-                        const excelUrl = `ms-excel:ofe|u|file:///${filePath}`;
-                        window.open(excelUrl, '_blank');
-
-                        // Method 2: Fallback - try to download and open
-                        setTimeout(() => {
-                          const link = document.createElement('a');
-                          link.href = `/api/v1/workshop/files/${selectedFile.id}/download`;
-                          link.download = selectedFile.name;
-                          link.click();
-                        }, 1000);
-                      } catch (error) {
-                        console.error('Error opening in Excel:', error);
-                        // Fallback: download the file
-                        const link = document.createElement('a');
-                        link.href = `/api/v1/workshop/files/${selectedFile.id}/download`;
-                        link.download = selectedFile.name;
-                        link.click();
-                      }
                     }
                     break;
                 }
@@ -1433,95 +1486,6 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
           </Button>
         ))}
       </Box>
-
-      <Divider sx={{ my: 2, borderColor: '#f44336' }} />
-
-      {/* File List */}
-      <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
-        Uploaded Files ({files.length})
-      </Typography>
-
-      <Box sx={{ mb: 3 }}>
-        <List sx={{ p: 0 }}>
-          {files.map(file => (
-            <ListItem
-              key={file.id}
-              sx={{
-                p: 1,
-                mb: 1,
-                borderRadius: 1,
-                cursor: 'pointer',
-                bgcolor: selectedFile?.id === file.id ? '#fff' : 'transparent',
-                '&:hover': { bgcolor: 'action.hover' },
-                border: selectedFile?.id === file.id ? '2px solid' : '1px solid',
-                borderColor: selectedFile?.id === file.id ? 'primary.main' : 'divider',
-              }}
-              onClick={() => setSelectedFile(file)}
-            >
-              <ListItemIcon sx={{ minWidth: 40 }}>{getFileIcon(file.type)}</ListItemIcon>
-              <ListItemText
-                primary={
-                  <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.875rem' }}>
-                    {file.name}
-                  </Typography>
-                }
-                secondary={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                    <Typography variant="caption" color="text.secondary">
-                      {formatFileSize(file.size)}
-                    </Typography>
-                    <Chip
-                      label={file.status}
-                      size="small"
-                      sx={{
-                        height: 16,
-                        fontSize: '0.7rem',
-                        bgcolor: file.status === 'completed' ? '#4caf50' : '#ff9800',
-                        color: 'white',
-                      }}
-                    />
-                  </Box>
-                }
-              />
-            </ListItem>
-          ))}
-        </List>
-      </Box>
-
-      {/* Download Action */}
-      {selectedFile && filledFiles.has(selectedFile.id) && (
-        <Box>
-          <Typography
-            variant="subtitle2"
-            gutterBottom
-            sx={{ fontWeight: 600, color: 'text.secondary', mb: 1 }}
-          >
-            Actions
-          </Typography>
-          <Button
-            variant="outlined"
-            startIcon={<DownloadIcon />}
-            onClick={() => handleDownloadFilled(selectedFile)}
-            sx={{
-              color: '#f44336',
-              borderColor: '#f44336',
-              '&:hover': {
-                borderColor: '#d32f2f',
-                bgcolor: '#f44336',
-                color: 'white',
-                '& .MuiSvgIcon-root': {
-                  color: 'white',
-                },
-              },
-              justifyContent: 'flex-start',
-              textTransform: 'none',
-              width: '100%',
-            }}
-          >
-            Download Filled File
-          </Button>
-        </Box>
-      )}
     </Box>
   );
 

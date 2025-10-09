@@ -8,14 +8,15 @@ import {
   TrendingUp as TrendingUpIcon,
 } from '@mui/icons-material';
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
-import AutorenewOutlinedIcon from '@mui/icons-material/AutorenewOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 
 import PlayArrowOutlinedIcon from '@mui/icons-material/PlayArrowOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import {
   Box,
   Button,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -41,6 +42,8 @@ import dayjs from 'dayjs';
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
 
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import ViewOriginalPopup from '../components/assignments/ViewOriginalPopup';
 import DashboardPieChart from '../components/dashboard/DashboardPieChart';
 import { useAuth } from '../contexts/AuthContext';
 import { type Assignment } from '../data/mockData';
@@ -48,6 +51,7 @@ import { useAspectRatio } from '../hooks/useAspectRatio';
 import { useTokenLimit } from '../hooks/useTokenLimit';
 import { useTokenUsage } from '../hooks/useTokenUsage';
 import { api } from '../services/api';
+import { assignments as assignmentsService } from '../services/api/assignments';
 import { fileUploadService } from '../services/fileUploadService';
 import { useWorkshopStore } from '../services/WorkshopService';
 
@@ -96,6 +100,19 @@ const DashboardHome: React.FC = () => {
   const [viewAssignment, setViewAssignment] = useState<Assignment | null>(null);
   const [fileUploads, setFileUploads] = useState<any[]>([]);
   const { history: workshopHistory } = useWorkshopStore();
+
+  // Delete functionality state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [assignmentToDelete, setAssignmentToDelete] = useState<Assignment | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // View Original popup state
+  const [filePreviewOpen, setFilePreviewOpen] = useState(false);
+  const [originalFileContent, setOriginalFileContent] = useState<string | null>(null);
+  const [previewFileName, setPreviewFileName] = useState<string>('');
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewItemType, setPreviewItemType] = useState<string>('');
+  const [previewItemData, setPreviewItemData] = useState<any>(null);
 
   // Get token usage data
   const { subscription } = useTokenLimit();
@@ -155,7 +172,9 @@ const DashboardHome: React.FC = () => {
         title: upload.is_link
           ? `Link: ${upload.link_title || upload.link_url}`
           : upload.original_filename,
-        subject: 'Technology',
+        subject: upload.is_link
+          ? 'Technology'
+          : mapToCoreSubject(upload.original_filename || upload.filename || 'Unknown'),
         status: 'Completed',
         description: upload.is_link ? `URL: ${upload.link_url}` : `File: ${upload.file_type}`,
         createdAt: upload.created_at,
@@ -165,6 +184,14 @@ const DashboardHome: React.FC = () => {
 
     // Add workshop history
     workshopHistory.forEach((item: any) => {
+      // Determine subject based on content for workshop activities
+      let subject = 'Technology'; // Default for links and chats
+      if (item.type === 'file' && item.content) {
+        // Try to extract filename from content or use content itself for mapping
+        const contentToMap = item.content.toLowerCase();
+        subject = mapToCoreSubject(contentToMap);
+      }
+
       activities.push({
         id: `workshop-${item.id}`,
         type: 'workshop_activity',
@@ -174,7 +201,7 @@ const DashboardHome: React.FC = () => {
             : item.type === 'link'
             ? 'Link Processing'
             : 'Chat Session',
-        subject: 'Technology',
+        subject: subject,
         status: 'Completed',
         description: item.prompt || item.content || '',
         createdAt: item.timestamp,
@@ -283,6 +310,92 @@ const DashboardHome: React.FC = () => {
 
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
+  };
+
+  const fetchAssignments = async () => {
+    try {
+      const response = await api.get('/assignments');
+      setAssignments(response.data);
+    } catch (error) {
+      console.error('Error fetching assignments:', error);
+    }
+  };
+
+  const handleDeleteClick = (assignmentId: string) => {
+    const assignment = filteredActivities.find(a => a.id === assignmentId);
+    if (assignment) {
+      setAssignmentToDelete(assignment);
+      setDeleteDialogOpen(true);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!assignmentToDelete) return;
+    setDeleteLoading(true);
+    try {
+      console.log('🗑️ Deleting assignment:', assignmentToDelete);
+      await assignmentsService.delete(assignmentToDelete.id);
+      toast.success(`Assignment "${assignmentToDelete.title}" deleted successfully`);
+      await fetchAssignments();
+      setDeleteDialogOpen(false);
+      setAssignmentToDelete(null);
+    } catch (error) {
+      console.error('❌ Error deleting assignment:', error);
+      toast.error('Failed to delete assignment. Please try again.');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleViewOriginal = async (assignmentId: string) => {
+    setPreviewLoading(true);
+    setFilePreviewOpen(true);
+
+    try {
+      const item = filteredActivities.find(a => a.id === assignmentId);
+      setPreviewItemType(item?.type || '');
+      setPreviewItemData(item);
+
+      if (item?.type === 'file_upload') {
+        const fileId = assignmentId.replace('file-', '');
+        const fileUpload = fileUploads.find(f => f.id.toString() === fileId);
+
+        if (fileUpload) {
+          setPreviewFileName(fileUpload.original_filename || fileUpload.filename);
+          if (fileUpload.extracted_content) {
+            setOriginalFileContent(fileUpload.extracted_content);
+          } else {
+            setOriginalFileContent(
+              'Original file content not available. The file may not have been processed yet.'
+            );
+          }
+        }
+      } else if (item?.type === 'workshop_activity') {
+        setPreviewFileName(item?.title || 'File Processing');
+        setOriginalFileContent(null);
+      } else {
+        setPreviewFileName(item?.title || 'Unknown File');
+        setOriginalFileContent('Original content not available for this item type.');
+      }
+    } catch (error) {
+      console.error('Error fetching original file:', error);
+      setOriginalFileContent('Error loading original file content.');
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const handleFilePreviewClose = () => {
+    setFilePreviewOpen(false);
+    setOriginalFileContent(null);
+    setPreviewFileName('');
+    setPreviewItemType('');
+    setPreviewItemData(null);
+  };
+
+  const handleDeleteDialogClose = () => {
+    setDeleteDialogOpen(false);
+    setAssignmentToDelete(null);
   };
 
   if (error) {
@@ -684,32 +797,52 @@ const DashboardHome: React.FC = () => {
                                   </Box>
                                 </Button>
                                 {activity.status === 'Completed' && (
-                                  <Button
-                                    size="small"
-                                    sx={{
-                                      color: '#8E24AA',
-                                      minWidth: 'auto',
-                                      px: { xs: 1, md: 0.5 },
-                                      py: { xs: 0.5, md: 0.25 },
-                                    }}
-                                    onClick={() =>
-                                      navigate('/dashboard/workshop', {
-                                        state: { assignment: activity, responseTab: 1 },
-                                      })
-                                    }
-                                  >
-                                    <AutorenewOutlinedIcon
-                                      sx={{ fontSize: 16, mr: { xs: 0, md: 0.25 } }}
-                                    />
-                                    <Box
+                                  <>
+                                    <Button
+                                      size="small"
                                       sx={{
-                                        display: { xs: 'none', md: 'inline' },
-                                        fontSize: '0.75rem',
+                                        color: '#2196F3',
+                                        minWidth: 'auto',
+                                        px: { xs: 1, md: 0.5 },
+                                        py: { xs: 0.5, md: 0.25 },
                                       }}
+                                      onClick={() => handleViewOriginal(activity.id)}
                                     >
-                                      Regenerate
-                                    </Box>
-                                  </Button>
+                                      <VisibilityOutlinedIcon
+                                        sx={{ fontSize: 16, mr: { xs: 0, md: 0.25 } }}
+                                      />
+                                      <Box
+                                        sx={{
+                                          display: { xs: 'none', md: 'inline' },
+                                          fontSize: '0.75rem',
+                                        }}
+                                      >
+                                        View Original
+                                      </Box>
+                                    </Button>
+                                    <Button
+                                      size="small"
+                                      sx={{
+                                        color: '#f44336',
+                                        minWidth: 'auto',
+                                        px: { xs: 1, md: 0.5 },
+                                        py: { xs: 0.5, md: 0.25 },
+                                      }}
+                                      onClick={() => handleDeleteClick(activity.id)}
+                                    >
+                                      <DeleteOutlinedIcon
+                                        sx={{ fontSize: 16, mr: { xs: 0, md: 0.25 } }}
+                                      />
+                                      <Box
+                                        sx={{
+                                          display: { xs: 'none', md: 'inline' },
+                                          fontSize: '0.75rem',
+                                        }}
+                                      >
+                                        Delete
+                                      </Box>
+                                    </Button>
+                                  </>
                                 )}
                                 {activity.status === 'In Progress' && (
                                   <Button
@@ -1210,6 +1343,54 @@ const DashboardHome: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleDeleteDialogClose}
+        PaperProps={{
+          sx: {
+            border: '2px solid #f44336',
+            borderRadius: 3,
+          },
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <DeleteOutlinedIcon sx={{ color: '#f44336' }} />
+          Delete Item
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete "{assignmentToDelete?.title}"? This action cannot be
+            undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteDialogClose} variant="outlined">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
+            variant="contained"
+            disabled={deleteLoading}
+            startIcon={deleteLoading ? <CircularProgress size={20} /> : <DeleteOutlinedIcon />}
+          >
+            {deleteLoading ? 'Deleting...' : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* View Original Popup */}
+      <ViewOriginalPopup
+        open={filePreviewOpen}
+        onClose={handleFilePreviewClose}
+        fileContent={originalFileContent}
+        fileName={previewFileName}
+        loading={previewLoading}
+        itemType={previewItemType}
+        itemData={previewItemData}
+      />
     </Box>
   );
 };

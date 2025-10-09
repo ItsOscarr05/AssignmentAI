@@ -8,6 +8,7 @@ from datetime import datetime
 
 from app.core.deps import get_db, get_current_user
 from app.models.user import User
+from app.models.file_upload import FileUpload
 from app.services.file_processing_service import FileProcessingService
 from app.services.file_service import file_service
 from app.core.logger import logger
@@ -87,15 +88,26 @@ async def fill_file_content(
             # Remove existing "filled_" prefix to prevent duplication
             original_filename = original_filename[7:]  # Remove "filled_" (7 characters)
         
-        # Create a clean filename for download (just original_name_filled.extension)
-        clean_download_name = f"{original_filename.replace('.', '_filled.')}"
-        if not clean_download_name.endswith(f"_filled.{original_filename.split('.')[-1]}"):
-            # Fallback if the replacement didn't work
-            extension = original_filename.split('.')[-1] if '.' in original_filename else 'docx'
-            clean_download_name = f"{original_filename.split('.')[0]}_filled.{extension}"
+        # Create a clean filename for download
+        # Since the original filename is already corrupted with timestamps/UUIDs,
+        # let's generate a more user-friendly name based on file type
+        extension = original_filename.split('.')[-1] if '.' in original_filename else 'docx'
         
-        # Keep the filesystem filename for internal use
-        output_filename = f"filled_{original_filename}"
+        # Generate a clean name based on file type and current timestamp
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+        
+        if extension.lower() in ['xlsx', 'xls']:
+            clean_download_name = f"spreadsheet_filled_{timestamp}.{extension}"
+        elif extension.lower() in ['docx', 'doc']:
+            clean_download_name = f"document_filled_{timestamp}.{extension}"
+        elif extension.lower() == 'pdf':
+            clean_download_name = f"document_filled_{timestamp}.{extension}"
+        else:
+            clean_download_name = f"file_filled_{timestamp}.{extension}"
+        
+        # Keep the filesystem filename for internal use with file_id for easier lookup
+        output_filename = f"filled_{file_id}_{original_filename}"
         output_path = os.path.join(
             os.path.dirname(file_path),
             output_filename
@@ -107,6 +119,13 @@ async def fill_file_content(
             output_path=output_path
         )
         
+        # Store the original filename and clean download name for future downloads
+        # We'll store this in a simple text file for now, but ideally this should be in the database
+        metadata_file = Path(file_path).parent / f"{file_id}_metadata.txt"
+        with open(metadata_file, 'w') as f:
+            f.write(f"original_filename:{file.filename}\n")
+            f.write(f"clean_download_name:{clean_download_name}\n")
+
         return {
             "file_id": file_id,
             "original_file_path": file_path,
@@ -194,15 +213,26 @@ async def process_existing_file(
                 # Remove existing "filled_" prefix to prevent duplication
                 original_filename = original_filename[7:]  # Remove "filled_" (7 characters)
             
-            # Create a clean filename for download (just original_name_filled.extension)
-            clean_download_name = f"{original_filename.replace('.', '_filled.')}"
-            if not clean_download_name.endswith(f"_filled.{original_filename.split('.')[-1]}"):
-                # Fallback if the replacement didn't work
-                extension = original_filename.split('.')[-1] if '.' in original_filename else 'docx'
-                clean_download_name = f"{original_filename.split('.')[0]}_filled.{extension}"
+            # Create a clean filename for download
+            # Since the original filename is already corrupted with timestamps/UUIDs,
+            # let's generate a more user-friendly name based on file type
+            extension = original_filename.split('.')[-1] if '.' in original_filename else 'docx'
             
-            # Keep the filesystem filename for internal use
-            filled_file_name = f"filled_{original_filename}"
+            # Generate a clean name based on file type and current timestamp
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+            
+            if extension.lower() in ['xlsx', 'xls']:
+                clean_download_name = f"spreadsheet_filled_{timestamp}.{extension}"
+            elif extension.lower() in ['docx', 'doc']:
+                clean_download_name = f"document_filled_{timestamp}.{extension}"
+            elif extension.lower() == 'pdf':
+                clean_download_name = f"document_filled_{timestamp}.{extension}"
+            else:
+                clean_download_name = f"file_filled_{timestamp}.{extension}"
+            
+            # Keep the filesystem filename for internal use with file_id for easier lookup
+            filled_file_name = f"filled_{file_id}_{original_filename}"
             filled_file_path = file_path.parent / filled_file_name
             
             # Generate the filled file
@@ -211,6 +241,12 @@ async def process_existing_file(
                 filled_content=result.get('filled_content', {}),
                 output_path=str(filled_file_path)
             )
+            
+            # Store the original filename and clean download name for future downloads
+            metadata_file = file_path.parent / f"{file_id}_metadata.txt"
+            with open(metadata_file, 'w') as f:
+                f.write(f"original_filename:{file_path.name}\n")
+                f.write(f"clean_download_name:{clean_download_name}\n")
             
             return {
                 "file_id": file_id,
@@ -253,7 +289,7 @@ async def download_filled_file(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Download a filled file.
+    Download a filled file by file ID.
     """
     try:
         logger.info(f"Download request for file {file_id} from user {current_user.id}")
@@ -262,51 +298,107 @@ async def download_filled_file(
         import os
         from pathlib import Path
         
-        # In a real implementation, you'd fetch the file path from a database
-        # For now, we'll construct the path based on the file_id
+        # Look for the filled file in the user's directory
         user_dir = Path(f"uploads/{current_user.id}")
         
-        # Find the filled file (look for files starting with "filled_")
-        filled_files = list(user_dir.glob(f"filled_*"))
+        # Try to read the original filename from metadata file
+        metadata_file = user_dir / f"{file_id}_metadata.txt"
+        original_filename = None
+        clean_download_name = None
+        
+        if metadata_file.exists():
+            try:
+                with open(metadata_file, 'r') as f:
+                    for line in f:
+                        if line.startswith('original_filename:'):
+                            original_filename = line.split(':', 1)[1].strip()
+                        elif line.startswith('clean_download_name:'):
+                            clean_download_name = line.split(':', 1)[1].strip()
+                logger.info(f"Found metadata - original: {original_filename}, clean: {clean_download_name}")
+            except Exception as e:
+                logger.warning(f"Could not read metadata file: {e}")
+        
+        # If we have the clean download name from metadata, use it
+        if clean_download_name:
+            logger.info(f"Using stored clean download name: {clean_download_name}")
+            final_clean_filename = clean_download_name
+        else:
+            # Fallback to generic name
+            logger.info("No metadata found, using generic filename")
+            final_clean_filename = "filled_document"
+        
+        if not user_dir.exists():
+            raise HTTPException(status_code=404, detail="User directory not found")
+        
+        # Find the filled file - look for files that contain the exact file_id
+        filled_files = []
+        
+        # First, try to find a file with the exact file_id in the name (new format)
+        exact_match = list(user_dir.glob(f"filled_{file_id}_*"))
+        if exact_match:
+            filled_files = exact_match
+        
+        # If no exact match, try the old format
+        if not filled_files:
+            exact_match = list(user_dir.glob(f"*{file_id}*"))
+            if exact_match:
+                filled_files = [f for f in exact_match if f.name.startswith('filled_')]
+        
+        # If still no match, look for any filled files (fallback)
+        if not filled_files:
+            filled_files = list(user_dir.glob(f"filled_*"))
         
         if not filled_files:
             raise HTTPException(status_code=404, detail="Filled file not found")
         
-        # Get the most recent filled file (in a real app, you'd use the file_id to find the exact file)
-        filled_file_path = filled_files[-1]
+        # Get the most recent filled file or the one with the exact file_id
+        if len(filled_files) == 1:
+            filled_file_path = filled_files[0]
+        else:
+            # Prefer files with the exact file_id, otherwise get the most recent
+            exact_id_files = [f for f in filled_files if f"filled_{file_id}_" in f.name]
+            if exact_id_files:
+                filled_file_path = exact_id_files[0]
+            else:
+                filled_file_path = max(filled_files, key=lambda f: f.stat().st_mtime)
         
         logger.info(f"Found filled file: {filled_file_path}")
         
         if not filled_file_path.exists():
             raise HTTPException(status_code=404, detail="File not found")
         
-        # Generate a clean download filename: original_name_filled.extension
-        # Extract the original filename by removing timestamp and UUID from the path
-        original_filename = filled_file_path.name
-        
-        # Remove multiple "filled_" prefixes if they exist
-        while original_filename.startswith('filled_'):
-            original_filename = original_filename[7:]  # Remove "filled_" (7 characters)
-        
-        # Remove timestamp and UUID pattern (YYYYMMDD_HHMMSS_UUID)
-        import re
-        # Pattern: YYYYMMDD_HHMMSS_uuid-uuid-uuid-uuid-uuid
-        pattern = r'^\d{8}_\d{6}_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}_'
-        clean_filename = re.sub(pattern, '', original_filename)
-        
-        # If we couldn't clean it, use a simple approach
-        if clean_filename == original_filename:
-            # Fallback: just use the file extension and create a simple name
+        # Use the clean filename we determined earlier
+        # If it already has an extension, use it as-is; otherwise add the extension
+        if final_clean_filename.endswith(('.xlsx', '.xls', '.csv', '.docx', '.doc', '.pdf', '.txt')):
+            clean_filename = final_clean_filename
+        else:
             extension = filled_file_path.suffix
-            clean_filename = f"filled_document{extension}"
+            clean_filename = f"{final_clean_filename}{extension}"
+        logger.info(f"Final download filename: {clean_filename}")
         
-        logger.info(f"Download filename: {clean_filename}")
         
-        # Return the file as a download
+        # Determine the correct MIME type based on file extension
+        media_type = 'application/octet-stream'
+        if filled_file_path.suffix.lower() in ['.xlsx', '.xls']:
+            media_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        elif filled_file_path.suffix.lower() == '.xls':
+            media_type = 'application/vnd.ms-excel'
+        elif filled_file_path.suffix.lower() == '.csv':
+            media_type = 'text/csv'
+        elif filled_file_path.suffix.lower() in ['.docx', '.doc']:
+            media_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        
+        logger.info(f"Download filename: {clean_filename}, MIME type: {media_type}")
+        
+        # Return the file as a download with proper headers
         return FileResponse(
             path=str(filled_file_path),
             filename=clean_filename,
-            media_type='application/octet-stream'
+            media_type=media_type,
+            headers={
+                "Content-Disposition": f"attachment; filename=\"{clean_filename}\"",
+                "Access-Control-Expose-Headers": "Content-Disposition"
+            }
         )
         
     except HTTPException:

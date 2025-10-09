@@ -6,6 +6,7 @@ from typing import Dict, Any, List, Optional, Tuple, Union
 from pathlib import Path
 import logging
 from datetime import datetime
+from fastapi import HTTPException
 
 # Document processing libraries
 import PyPDF2
@@ -19,6 +20,8 @@ import openpyxl
 from openpyxl import Workbook
 import json
 import xml.etree.ElementTree as ET
+import olefile  # For legacy .doc file format support
+import docx2txt  # For text extraction from Word documents
 
 # Image processing
 from PIL import Image, ImageDraw, ImageFont
@@ -323,11 +326,25 @@ class FileProcessingService:
             # Check if we already found fillable blanks during content extraction
             pre_detected_blanks = content.get('fillable_blanks', [])
             
+            # Also check for calculation instructions in Excel/CSV files
+            calculation_instructions = content.get('calculation_instructions', [])
+            if calculation_instructions:
+                logger.info(f"Found {len(calculation_instructions)} calculation instructions in spreadsheet")
+                # Convert calculation instructions to fillable sections
+                for calc_instr in calculation_instructions:
+                    pre_detected_blanks.append({
+                        'text': calc_instr.get('instruction', ''),
+                        'type': 'calculation',
+                        'context': f"Sheet: {calc_instr.get('sheet', 'N/A')}, Row: {calc_instr.get('row', 'N/A')}, Col: {calc_instr.get('col', 'N/A')}",
+                        'confidence': 1.0,
+                        'metadata': calc_instr
+                    })
+            
             if pre_detected_blanks:
-                logger.info(f"Found {len(pre_detected_blanks)} fillable blanks during content extraction")
+                logger.info(f"Found {len(pre_detected_blanks)} fillable sections during content extraction")
                 # Use the pre-detected blanks instead of AI analysis
                 fillable_sections = pre_detected_blanks
-                analysis = f"Detected {len(pre_detected_blanks)} fillable blanks with underscores during content extraction."
+                analysis = f"Detected {len(pre_detected_blanks)} fillable sections (blanks and calculation instructions) during content extraction."
             else:
                 # Get AI analysis only if no blanks were pre-detected
                 analysis = await self.ai_service.generate_assignment_content_from_prompt(prompt)
@@ -404,7 +421,7 @@ class FileProcessingService:
             for i, section in enumerate(fillable_sections):
                 # Handle both 'type' and 'section_type' field names
                 section_type = section.get('type', section.get('section_type', 'unknown'))
-                if section_type in ['underline_blank', 'table_blank', 'complex_placeholder', 'table_complex_placeholder', 'question']:
+                if section_type in ['underline_blank', 'table_blank', 'complex_placeholder', 'table_complex_placeholder', 'question', 'calculation']:
                     fill_in_blank_sections.append((i, section))
                 else:
                     other_sections.append((i, section))
@@ -414,12 +431,78 @@ class FileProcessingService:
             if fill_in_blank_sections:
                 logger.info(f"Processing {len(fill_in_blank_sections)} fill-in-blank questions in batch")
                 logger.info(f"Fill-in-blank sections: {[(i, section.get('type', 'unknown'), section.get('text', '')[:50]) for i, section in fill_in_blank_sections]}")
-            else:
-                logger.warning("No fill-in-blank sections found for batch processing")
                 
-                # Prepare questions for batch processing
-                batch_questions = []
+                # Separate calculation sections from regular questions
+                calculation_sections = []
+                question_sections = []
+                
                 for i, section in fill_in_blank_sections:
+                    section_type = section.get('type', section.get('section_type', 'unknown'))
+                    if section_type == 'calculation':
+                        calculation_sections.append((i, section))
+                    else:
+                        question_sections.append((i, section))
+                
+                fill_in_blank_answers = []
+                
+                # First, process calculation sections directly
+                if calculation_sections:
+                    logger.info(f"Processing {len(calculation_sections)} calculation sections")
+                    for i, section in calculation_sections:
+                        instruction = section.get('text', '').strip()
+                        metadata = section.get('metadata', {})
+                        
+                        # Execute the calculation directly
+                        try:
+                            # Extract row data from the sheets structure if available
+                            if 'sheets' in content and metadata.get('sheet') and metadata.get('row') is not None:
+                                sheet_name = metadata.get('sheet')
+                                row_idx = metadata.get('row')
+                                sheet_data = content['sheets'].get(sheet_name, [])
+                                
+                                if row_idx < len(sheet_data) and len(sheet_data) > 0:
+                                    row_data = sheet_data[row_idx]
+                                    headers = sheet_data[0]
+                                    
+                                    # Create record dict from row, ensuring all values are proper types
+                                    record = {}
+                                    for j in range(len(headers)):
+                                        # Ensure header is a string
+                                        header = str(headers[j]) if headers[j] is not None else f'Column_{j}'
+                                        # Get the value
+                                        value = row_data[j] if j < len(row_data) else None
+                                        # Ensure numeric values are numbers, not strings
+                                        if isinstance(value, str):
+                                            try:
+                                                # Try to convert to float if it looks like a number
+                                                if '.' in value:
+                                                    value = float(value)
+                                                else:
+                                                    value = int(value)
+                                            except (ValueError, AttributeError):
+                                                pass  # Keep as string
+                                        record[header] = value
+                                    
+                                    logger.info(f"Record for calculation: {record}")
+                                    
+                                    # Execute the calculation
+                                    result = await self._execute_calculation_instruction(instruction, record, [])
+                                    if result is not None:
+                                        fill_in_blank_answers.append(str(result))
+                                        logger.info(f"Calculated result for '{instruction}': {result}")
+                                    else:
+                                        fill_in_blank_answers.append('[CALCULATED_VALUE]')
+                                else:
+                                    fill_in_blank_answers.append('[CALCULATED_VALUE]')
+                        except Exception as e:
+                            logger.error(f"Failed to execute calculation: {str(e)}")
+                            import traceback
+                            logger.error(f"Traceback: {traceback.format_exc()}")
+                            fill_in_blank_answers.append('[CALCULATED_VALUE]')
+                
+                # Prepare questions for batch processing (non-calculation sections)
+                batch_questions = []
+                for i, section in question_sections:
                     section_text = section.get('text', '').strip()
                     # Skip sections with empty or invalid text
                     if not section_text or section_text == '...' or len(section_text) < 3:
@@ -431,8 +514,7 @@ class FileProcessingService:
                     })
                 
                 try:
-                    # Generate answers using the specialized AI solving engine
-                    fill_in_blank_answers = []
+                    # Generate answers using the specialized AI solving engine for questions
                     for question_data in batch_questions:
                         result = await self.ai_solving_engine.solve_assignment(
                             content_type='short_answer',
@@ -469,6 +551,8 @@ class FileProcessingService:
                         word_bank_answer = self._get_enhanced_fallback_answer(section[1], word_bank)
                         fill_in_blank_answers.append(word_bank_answer)
                         logger.info(f"Using word bank answer for section {i}: {word_bank_answer}")
+            else:
+                logger.warning("No fill-in-blank sections found for batch processing")
             
             # Process other sections in parallel for better performance
             other_section_answers = []
@@ -571,15 +655,15 @@ class FileProcessingService:
                 
                 # Handle both 'type' and 'section_type' field names
                 section_type = section.get('type', section.get('section_type', 'unknown'))
-                if section_type in ['underline_blank', 'table_blank', 'complex_placeholder', 'table_complex_placeholder', 'question']:
-                    # Use batch-generated answer
+                if section_type in ['underline_blank', 'table_blank', 'complex_placeholder', 'table_complex_placeholder', 'question', 'calculation']:
+                    # Use batch-generated answer (includes calculated values for calculations)
                     if fill_in_blank_index < len(fill_in_blank_answers):
                         filled_text = fill_in_blank_answers[fill_in_blank_index]
-                        logger.info(f"Using AI answer for section {i}: '{filled_text}'")
+                        logger.info(f"Using calculated/AI answer for section {i}: '{filled_text}'")
                         fill_in_blank_index += 1
                     else:
                         filled_text = None
-                        logger.warning(f"No AI answer available for section {i}")
+                        logger.warning(f"No answer available for section {i}")
                 else:
                     # Use parallel-generated answer
                     if other_section_index < len(other_section_answers):
@@ -589,7 +673,8 @@ class FileProcessingService:
                         filled_text = None
                 
                 # Handle empty AI responses or [ANSWER] placeholders with fallback answers
-                if (not filled_text or filled_text.strip() == '' or filled_text == '[ANSWER]'):
+                # BUT don't override valid calculated values for 'calculation' type
+                if (not filled_text or filled_text.strip() == '' or filled_text == '[ANSWER]' or filled_text == '[CALCULATED_VALUE]'):
                     logger.info(f"Triggering fallback for section {i} with text: '{filled_text}'")
                     logger.info(f"Section text: '{section.get('text', '')}'")
                     logger.info(f"Section context: '{section.get('context', '')}'")
@@ -603,6 +688,10 @@ class FileProcessingService:
                         # Enhanced fallback answers for common fill-in-the-blank questions
                         filled_text = self._get_enhanced_fallback_answer(section, word_bank)
                         logger.info(f"Using enhanced fallback answer: '{filled_text}'")
+                    elif section_type == 'calculation':
+                        # For calculations that failed, keep the calculated value placeholder
+                        filled_text = '[CALCULATED_VALUE]'
+                        logger.warning(f"Calculation failed, using placeholder")
                     else:
                         filled_text = '[CONTENT]'  # Generic fallback for other types
                         logger.info(f"Using generic fallback: '{filled_text}'")
@@ -674,6 +763,37 @@ class FileProcessingService:
                     'confidence': section.get('confidence', 1.0),
                     'metadata': section.get('metadata', {})
                 })
+            
+            # For Excel/CSV files with calculations, update the sheets structure with calculated values
+            if file_type in ['xlsx', 'xls', 'csv'] and content.get('sheets') and calculation_sections:
+                logger.info(f"Updating Excel/CSV sheets with {len(fill_in_blank_answers)} calculated values")
+                
+                # Create a copy of the sheets structure
+                filled_sheets = {}
+                for sheet_name, sheet_data in content['sheets'].items():
+                    filled_sheet = [row[:] if isinstance(row, list) else row for row in sheet_data]
+                    filled_sheets[sheet_name] = filled_sheet
+                
+                # Update cells with calculated values
+                calc_index = 0
+                for i, section in enumerate(fillable_sections):
+                    if section.get('type') == 'calculation' and calc_index < len(fill_in_blank_answers):
+                        metadata = section.get('metadata', {})
+                        sheet_name = metadata.get('sheet')
+                        row_idx = metadata.get('row')
+                        col_idx = metadata.get('col')
+                        
+                        if sheet_name and row_idx is not None and col_idx is not None:
+                            if sheet_name in filled_sheets and row_idx < len(filled_sheets[sheet_name]):
+                                row = filled_sheets[sheet_name][row_idx]
+                                if col_idx < len(row):
+                                    filled_sheets[sheet_name][row_idx][col_idx] = fill_in_blank_answers[calc_index]
+                                    logger.info(f"Updated cell [{sheet_name}][{row_idx}][{col_idx}] with value: {fill_in_blank_answers[calc_index]}")
+                        calc_index += 1
+                
+                # Update filled_content with the new sheets structure
+                filled_content['sheets'] = filled_sheets
+                logger.info(f"Updated filled_content with calculated Excel values")
             
             return {
                 'file_type': file_type,
@@ -1308,9 +1428,113 @@ class FileProcessingService:
             raise
     
     async def _process_doc(self, file_path: str) -> Dict[str, Any]:
-        """Extract content from DOC files (requires python-docx2txt or similar)"""
-        # For now, treat as text file
-        return await self._process_txt(file_path)
+        """Extract content from legacy .doc files using multiple approaches"""
+        try:
+            text = ""
+            fillable_blanks = []
+            
+            # Try method 1: Use olefile to check if it's a valid OLE file
+            try:
+                if olefile.isOleFile(file_path):
+                    logger.info(f"Processing legacy .doc file with olefile: {file_path}")
+                    # Try to extract text using docx2txt (works for some .doc files)
+                    try:
+                        text = docx2txt.process(file_path)
+                        if text and len(text.strip()) > 0:
+                            logger.info(f"Successfully extracted text from .doc using docx2txt")
+                        else:
+                            raise ValueError("No text extracted from docx2txt")
+                    except Exception as e:
+                        logger.warning(f"docx2txt failed for .doc file: {str(e)}")
+                        # Try reading as binary and extracting text
+                        ole = olefile.OleFileIO(file_path)
+                        try:
+                            # Get WordDocument stream
+                            if ole.exists('WordDocument'):
+                                word_stream = ole.openstream('WordDocument')
+                                raw_data = word_stream.read()
+                                # Try to extract readable text (this is a simplified approach)
+                                # Note: This won't preserve formatting but will get text content
+                                text = raw_data.decode('latin-1', errors='ignore')
+                                # Clean up the extracted text (remove control characters)
+                                text = ''.join(char for char in text if char.isprintable() or char in ['\n', '\r', '\t'])
+                                logger.info(f"Extracted text from .doc using olefile binary extraction")
+                        finally:
+                            ole.close()
+                else:
+                    # Not an OLE file, might be a .docx misnamed as .doc
+                    logger.info(f"File is not OLE format, trying as .docx: {file_path}")
+                    try:
+                        doc = Document(file_path)
+                        text = '\n'.join([paragraph.text for paragraph in doc.paragraphs])
+                        logger.info(f"Successfully read as .docx format")
+                    except Exception as e:
+                        logger.error(f"Failed to read as .docx: {str(e)}")
+                        raise
+            except Exception as e:
+                logger.error(f"Error processing .doc file: {str(e)}")
+                # Last resort: read as plain text
+                try:
+                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                        text = f.read()
+                    logger.warning(f"Fell back to plain text reading for .doc file")
+                except Exception as e2:
+                    logger.error(f"All methods failed for .doc file: {str(e2)}")
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Unable to read .doc file. Please save as .docx format for better compatibility."
+                    )
+            
+            # Detect fillable blanks in the extracted text
+            import re
+            
+            # Look for underscore patterns (_____)
+            underscore_matches = re.finditer(r'_{3,}', text)
+            for match in underscore_matches:
+                context_start = max(0, match.start() - 50)
+                context_end = min(len(text), match.end() + 50)
+                fillable_blanks.append({
+                    'text': match.group(),
+                    'type': 'underline_blank',
+                    'context': f"Found in doc: {text[context_start:context_end]}...",
+                    'confidence': 0.9
+                })
+            
+            # Look for complex placeholder patterns like <<<ANSWER[ANSWER]n>>>
+            complex_matches = re.finditer(r'<<<ANSWER\[ANSWER\]\d+>>>', text)
+            for match in complex_matches:
+                context_start = max(0, match.start() - 50)
+                context_end = min(len(text), match.end() + 50)
+                fillable_blanks.append({
+                    'text': match.group(),
+                    'type': 'complex_placeholder',
+                    'context': f"Found in doc: {text[context_start:context_end]}...",
+                    'confidence': 0.95
+                })
+            
+            # Look for [BLANK] or similar markers
+            blank_markers = re.finditer(r'\[BLANK\]|\[___\]|\[FILL\]', text, re.IGNORECASE)
+            for match in blank_markers:
+                context_start = max(0, match.start() - 50)
+                context_end = min(len(text), match.end() + 50)
+                fillable_blanks.append({
+                    'text': match.group(),
+                    'type': 'bracket_blank',
+                    'context': f"Found in doc: {text[context_start:context_end]}...",
+                    'confidence': 0.85
+                })
+            
+            return {
+                'text': text,
+                'fillable_blanks': fillable_blanks,
+                'paragraphs': text.split('\n')
+            }
+            
+        except Exception as e:
+            logger.error(f"Error processing DOC {file_path}: {str(e)}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            raise
     
     async def _process_rtf(self, file_path: str) -> Dict[str, Any]:
         """Extract content from RTF files"""
@@ -1437,75 +1661,144 @@ class FileProcessingService:
             raise
     
     async def _process_xlsx(self, file_path: str) -> Dict[str, Any]:
-        """Extract content from XLSX files with enhanced calculation detection"""
+        """Extract content from XLSX files with enhanced formula and formatting support"""
         try:
-            workbook = openpyxl.load_workbook(file_path)
+            # Load workbook with data_only=False to preserve formulas
+            workbook = openpyxl.load_workbook(file_path, data_only=False)
+            # Also load with data_only=True to get calculated values
+            workbook_values = openpyxl.load_workbook(file_path, data_only=True)
+            
             sheets = {}
+            formulas = {}
+            calculation_instructions = []
             
             for sheet_name in workbook.sheetnames:
                 sheet = workbook[sheet_name]
-                # Convert to DataFrame for processing
+                sheet_values = workbook_values[sheet_name]
+                
+                # Convert to list format preserving both formulas and values
                 data = []
+                formula_data = []
                 headers = []
                 
                 # Get headers from first row
-                first_row = True
-                for row in sheet.iter_rows(values_only=True):
-                    if first_row:
-                        headers = [str(cell) if cell is not None else f'Column_{i}' for i, cell in enumerate(row)]
-                        first_row = False
+                first_row = None
+                for idx, row in enumerate(sheet.iter_rows()):
+                    if idx == 0:
+                        headers = [str(cell.value) if cell.value is not None else f'Column_{i}' 
+                                 for i, cell in enumerate(row)]
+                        first_row = [cell.value for cell in row]
+                        # Add headers as first row in data for consistency
+                        data.append(headers)
                         continue
                     
-                    # Create record dictionary
-                    record = {}
+                    # Extract cell values and formulas
+                    row_data = []
+                    row_formulas = []
                     for i, cell in enumerate(row):
-                        col_name = headers[i] if i < len(headers) else f'Column_{i}'
-                        record[col_name] = cell
-                    data.append(record)
+                        # Get the value
+                        if cell.value is not None:
+                            row_data.append(cell.value)
+                            
+                            # Check for calculation instructions in cell text
+                            if isinstance(cell.value, str):
+                                if 'compute' in cell.value.lower() or 'calculate' in cell.value.lower():
+                                    calculation_instructions.append({
+                                        'sheet': sheet_name,
+                                        'row': idx,
+                                        'col': i,
+                                        'instruction': cell.value
+                                    })
+                        else:
+                            # Try to get calculated value from data_only workbook
+                            value_cell = sheet_values.cell(row=cell.row, column=cell.column)
+                            row_data.append(value_cell.value if value_cell.value is not None else '')
+                        
+                        # Check for Excel formulas (starting with =)
+                        if isinstance(cell.value, str) and cell.value.startswith('='):
+                            row_formulas.append({
+                                'cell': f'{cell.column_letter}{cell.row}',
+                                'formula': cell.value,
+                                'value': sheet_values.cell(row=cell.row, column=cell.column).value
+                            })
+                    
+                    data.append(row_data)
+                    if row_formulas:
+                        formula_data.extend(row_formulas)
                 
-                # Process calculation instructions
-                processed_data = await self._process_calculation_instructions(data)
+                sheets[sheet_name] = data
+                if formula_data:
+                    formulas[sheet_name] = formula_data
                 
-                # Convert back to list format for compatibility
-                processed_list = []
-                for record in processed_data:
-                    processed_list.append(list(record.values()))
-                
-                sheets[sheet_name] = processed_list
+                calc_count = sum(1 for ci in calculation_instructions if ci['sheet'] == sheet_name)
+                logger.info(f"Processed sheet '{sheet_name}': {len(data)} rows, {len(formula_data)} formulas, {calc_count} calculation instructions")
             
-            return {
+            result = {
                 'sheets': sheets,
                 'sheet_names': workbook.sheetnames,
                 'active_sheet': workbook.active.title,
-                'has_calculations': any(self._has_calculation_instructions([{headers[i]: row[i] for i in range(min(len(headers), len(row)))} for row in data]) for data in sheets.values() if data)
+                'formulas': formulas if formulas else None,
+                'has_formulas': len(formulas) > 0,
+                'calculation_instructions': calculation_instructions if calculation_instructions else None,
+                'has_calculations': len(calculation_instructions) > 0,
+                'file_type': 'xlsx'
             }
+            logger.info(f"XLSX processing complete: {len(sheets)} sheet(s), {len(formulas)} formulas, {len(calculation_instructions)} calculation instructions")
+            return result
         except Exception as e:
             logger.error(f"Error processing XLSX {file_path}: {str(e)}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
             raise
     
     async def _process_xls(self, file_path: str) -> Dict[str, Any]:
-        """Extract content from XLS files with enhanced calculation detection"""
+        """Extract content from XLS files (legacy Excel format) with enhanced support"""
         try:
-            df = pd.read_excel(file_path, sheet_name=None)
+            # Read all sheets from the XLS file
+            df_dict = pd.read_excel(file_path, sheet_name=None, engine='xlrd')
             
-            # Process each sheet to detect calculation instructions
-            processed_sheets = {}
-            for sheet_name, sheet_df in df.items():
-                # Convert to records for processing
-                sheet_records = sheet_df.to_dict('records')
+            sheets = {}
+            for sheet_name, sheet_df in df_dict.items():
+                # Convert DataFrame to list of lists for consistency
+                data = []
+                # Add headers as first row
+                data.append(sheet_df.columns.tolist())
+                # Add all data rows
+                for _, row in sheet_df.iterrows():
+                    data.append(row.tolist())
                 
-                # Detect and process calculation instructions
-                processed_records = await self._process_calculation_instructions(sheet_records)
-                processed_sheets[sheet_name] = processed_records
+                sheets[sheet_name] = data
+                logger.info(f"Processed XLS sheet '{sheet_name}': {len(data)} rows")
             
             return {
-                'sheets': processed_sheets,
-                'sheet_names': list(df.keys()),
-                'has_calculations': any(self._has_calculation_instructions(sheet) for sheet in processed_sheets.values())
+                'sheets': sheets,
+                'sheet_names': list(df_dict.keys()),
+                'file_type': 'xls',
+                'note': 'Legacy .xls format - formulas are evaluated to their values. For formula preservation, please use .xlsx format.'
             }
         except Exception as e:
             logger.error(f"Error processing XLS {file_path}: {str(e)}")
-            raise
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            # Try alternative approach if xlrd fails
+            try:
+                logger.warning("Trying alternative pandas engine for XLS file")
+                df_dict = pd.read_excel(file_path, sheet_name=None, engine='openpyxl')
+                sheets = {}
+                for sheet_name, sheet_df in df_dict.items():
+                    data = [sheet_df.columns.tolist()] + sheet_df.values.tolist()
+                    sheets[sheet_name] = data
+                return {
+                    'sheets': sheets,
+                    'sheet_names': list(df_dict.keys()),
+                    'file_type': 'xls'
+                }
+            except Exception as e2:
+                logger.error(f"All XLS reading methods failed: {str(e2)}")
+                raise HTTPException(
+                    status_code=400,
+                    detail="Unable to read .xls file. Please save as .xlsx format for better compatibility."
+                )
     
     async def _process_json(self, file_path: str) -> Dict[str, Any]:
         """Extract content from JSON files"""

@@ -3,7 +3,7 @@ import {
   AutorenewOutlined as AutorenewIcon,
   CheckCircleOutline as CheckCircleIcon,
   Clear as ClearIcon,
-  Delete as DeleteIcon,
+  DeleteOutlined as DeleteIcon,
   Edit as EditIcon,
   HourglassEmpty as HourglassIcon,
   InfoOutlined as InfoIcon,
@@ -50,6 +50,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import AssignmentEditDialog from '../components/assignments/AssignmentEdit';
+import ViewOriginalPopup from '../components/assignments/ViewOriginalPopup';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { assignments } from '../services/api/assignments';
 import { fileUploadService } from '../services/fileUploadService';
@@ -130,6 +131,12 @@ const Assignments: React.FC = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editAssignmentId, setEditAssignmentId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [filePreviewOpen, setFilePreviewOpen] = useState(false);
+  const [originalFileContent, setOriginalFileContent] = useState<string | null>(null);
+  const [previewFileName, setPreviewFileName] = useState<string>('');
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewItemType, setPreviewItemType] = useState<string>('');
+  const [previewItemData, setPreviewItemData] = useState<any>(null);
 
   // File uploads and workshop history state
   const [fileUploads, setFileUploads] = useState<any[]>([]);
@@ -227,7 +234,8 @@ const Assignments: React.FC = () => {
 
   const handleDeleteClick = (assignmentId: string) => {
     handleMenuClose();
-    const assignment = assignmentsList.find(a => a.id === assignmentId);
+    // Look in combinedActivities since that's what's displayed in the table
+    const assignment = combinedActivities.find(a => a.id === assignmentId);
     if (assignment) {
       setAssignmentToDelete(assignment);
       setDeleteDialogOpen(true);
@@ -311,7 +319,9 @@ const Assignments: React.FC = () => {
         title: upload.is_link
           ? `Link: ${upload.link_title || upload.link_url}`
           : upload.original_filename,
-        subject: 'Technology',
+        subject: upload.is_link 
+          ? 'Technology' 
+          : mapToCoreSubject(upload.original_filename || upload.filename || 'Unknown'),
         status: 'Completed',
         description: upload.is_link ? `URL: ${upload.link_url}` : `File: ${upload.file_type}`,
         createdAt: upload.created_at,
@@ -323,6 +333,14 @@ const Assignments: React.FC = () => {
 
     // Add workshop history (file processing, link processing, chats)
     workshopHistory.forEach(item => {
+      // Determine subject based on content for workshop activities
+      let subject = 'Technology'; // Default for links and chats
+      if (item.type === 'file' && item.content) {
+        // Try to extract filename from content or use content itself for mapping
+        const contentToMap = item.content.toLowerCase();
+        subject = mapToCoreSubject(contentToMap);
+      }
+      
       activities.push({
         id: `workshop-${item.id}`,
         type: 'workshop_activity',
@@ -332,7 +350,7 @@ const Assignments: React.FC = () => {
             : item.type === 'link'
             ? 'Link Processing'
             : 'Chat Session',
-        subject: 'Technology',
+        subject: subject,
         status: 'Completed',
         description: item.prompt || item.content || '',
         createdAt: item.timestamp,
@@ -357,14 +375,44 @@ const Assignments: React.FC = () => {
     if (!assignmentToDelete) return;
     setDeleteLoading(true);
     try {
-      await assignments.delete(assignmentToDelete.id);
+      // Find the item in combinedActivities to get its type
+      const item = combinedActivities.find(a => a.id === assignmentToDelete.id);
+      console.log('🗑️ Deleting item:', assignmentToDelete);
+      console.log('🗑️ Item type:', item?.type);
+      console.log('🗑️ Item ID:', assignmentToDelete.id);
+
+      if (item?.type === 'assignment') {
+        // Delete actual assignment
+        console.log('🗑️ Deleting assignment via API...');
+        await assignments.delete(assignmentToDelete.id);
+        toast.success(`Assignment "${assignmentToDelete.title}" deleted successfully`);
+        await fetchAssignments();
+        console.log('🗑️ Assignment deleted and list refreshed');
+      } else if (item?.type === 'file_upload') {
+        // Delete file upload - extract the actual file ID from the combined ID
+        const fileId = assignmentToDelete.id.replace('file-', '');
+        console.log('🗑️ Deleting file upload with ID:', fileId);
+        await fileUploadService.delete(parseInt(fileId));
+        toast.success(`File "${assignmentToDelete.title}" deleted successfully`);
+        await fetchFileUploads();
+        console.log('🗑️ File upload deleted and list refreshed');
+      } else if (item?.type === 'workshop_activity') {
+        // Delete workshop activity from store
+        const { deleteHistoryItem } = useWorkshopStore.getState();
+        const workshopId = assignmentToDelete.id.replace('workshop-', '');
+        console.log('🗑️ Deleting workshop activity with ID:', workshopId);
+        await deleteHistoryItem(workshopId);
+        toast.success(`Activity "${assignmentToDelete.title}" deleted successfully`);
+        // Refresh workshop history
+        setWorkshopHistory(useWorkshopStore.getState().history);
+        console.log('🗑️ Workshop activity deleted and list refreshed');
+      }
+
       setDeleteDialogOpen(false);
       setAssignmentToDelete(null);
-      toast.success(`Assignment "${assignmentToDelete.title}" deleted successfully`);
-      await fetchAssignments();
     } catch (error) {
-      console.error('Error deleting assignment:', error);
-      toast.error('Failed to delete assignment. Please try again.');
+      console.error('❌ Error deleting item:', error);
+      toast.error('Failed to delete item. Please try again.');
     } finally {
       setDeleteLoading(false);
     }
@@ -378,6 +426,60 @@ const Assignments: React.FC = () => {
   const handleEditDialogClose = () => {
     setEditDialogOpen(false);
     setEditAssignmentId(null);
+  };
+
+  const handleViewOriginal = async (assignmentId: string) => {
+    handleMenuClose();
+    setPreviewLoading(true);
+    setFilePreviewOpen(true);
+
+    try {
+      // Find the item in combinedActivities to get its type
+      const item = combinedActivities.find(a => a.id === assignmentId);
+
+      // Set item type and data for the popup
+      setPreviewItemType(item?.type || '');
+      setPreviewItemData(item);
+
+      if (item?.type === 'file_upload') {
+        // Extract the actual file ID from the combined ID
+        const fileId = assignmentId.replace('file-', '');
+        const fileUpload = fileUploads.find(f => f.id.toString() === fileId);
+
+        if (fileUpload) {
+          setPreviewFileName(fileUpload.original_filename || fileUpload.filename);
+
+          // Use the extracted_content from the file upload data
+          if (fileUpload.extracted_content) {
+            setOriginalFileContent(fileUpload.extracted_content);
+          } else {
+            setOriginalFileContent(
+              'Original file content not available. The file may not have been processed yet.'
+            );
+          }
+        }
+      } else if (item?.type === 'workshop_activity') {
+        setPreviewFileName(item?.title || 'File Processing');
+        // For workshop activities, we don't have access to original file content
+        setOriginalFileContent(null);
+      } else {
+        setPreviewFileName(item?.title || 'Unknown File');
+        setOriginalFileContent('Original content not available for this item type.');
+      }
+    } catch (error) {
+      console.error('Error fetching original file:', error);
+      setOriginalFileContent('Error loading original file content.');
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const handleFilePreviewClose = () => {
+    setFilePreviewOpen(false);
+    setOriginalFileContent(null);
+    setPreviewFileName('');
+    setPreviewItemType('');
+    setPreviewItemData(null);
   };
 
   const getStatusIcon = (status: Assignment['status']) => {
@@ -1102,17 +1204,14 @@ const Assignments: React.FC = () => {
                             <MenuItem onClick={() => navigate('/dashboard/workshop')}>
                               <RefreshIcon sx={{ mr: 1 }} /> Open in Workshop
                             </MenuItem>
-                            <MenuItem
-                              onClick={() =>
-                                window.open(
-                                  assignment.description.includes('http')
-                                    ? assignment.description.split('URL: ')[1]
-                                    : '#',
-                                  '_blank'
-                                )
-                              }
-                            >
+                            <MenuItem onClick={() => handleViewOriginal(assignment.id)}>
                               <LaunchIcon sx={{ mr: 1 }} /> View Original
+                            </MenuItem>
+                            <MenuItem
+                              onClick={() => handleDeleteClick(assignment.id)}
+                              sx={{ color: 'error.main' }}
+                            >
+                              <DeleteIcon sx={{ mr: 1 }} /> Delete
                             </MenuItem>
                           </>
                         )}
@@ -1144,8 +1243,20 @@ const Assignments: React.FC = () => {
           onClose={handleDeleteCancel}
           aria-labelledby="delete-dialog-title"
           aria-describedby="delete-dialog-description"
+          PaperProps={{
+            sx: {
+              border: '2px solid',
+              borderColor: 'error.main',
+              borderRadius: 3,
+            },
+          }}
         >
-          <DialogTitle id="delete-dialog-title">Delete Assignment</DialogTitle>
+          <DialogTitle id="delete-dialog-title">
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <DeleteIcon />
+              Delete Item
+            </Box>
+          </DialogTitle>
           <DialogContent>
             <DialogContentText id="delete-dialog-description">
               Are you sure you want to delete "{assignmentToDelete?.title}"? This action cannot be
@@ -1153,7 +1264,12 @@ const Assignments: React.FC = () => {
             </DialogContentText>
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleDeleteCancel} color="primary" disabled={deleteLoading}>
+            <Button
+              onClick={handleDeleteCancel}
+              color="primary"
+              variant="outlined"
+              disabled={deleteLoading}
+            >
               Cancel
             </Button>
             <Button
@@ -1171,6 +1287,17 @@ const Assignments: React.FC = () => {
           open={editDialogOpen}
           onClose={handleEditDialogClose}
           assignmentId={editAssignmentId || ''}
+        />
+
+        {/* File Preview Modal */}
+        <ViewOriginalPopup
+          open={filePreviewOpen}
+          onClose={handleFilePreviewClose}
+          fileName={previewFileName}
+          fileContent={originalFileContent}
+          loading={previewLoading}
+          itemType={previewItemType}
+          itemData={previewItemData}
         />
       </Box>
     </LocalizationProvider>
