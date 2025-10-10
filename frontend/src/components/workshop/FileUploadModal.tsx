@@ -1059,6 +1059,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
                 console.log('Filled file data:', filledFileData);
                 console.log('Filled content:', filledContent);
                 console.log('Filled content text:', filledContent?.text);
+                console.log('File data text:', filledFileData?.text);
                 console.log('Is spreadsheet:', isSpreadsheet);
 
                 // For spreadsheets, show table view with updated calculations
@@ -1072,6 +1073,14 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
                 }
 
                 // For text-based files, show text content
+                // Try multiple sources for the filled text content
+                const displayText =
+                  streamingContent ||
+                  filledFileData?.text ||
+                  filledContent?.text ||
+                  (typeof filledContent === 'string' ? filledContent : null) ||
+                  'Content has been filled by AI. Download the file to see the complete result.';
+
                 return (
                   <Box
                     sx={{
@@ -1090,10 +1099,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
                         color: '#333',
                       }}
                     >
-                      {streamingContent ||
-                        filledContent?.text ||
-                        (typeof filledContent === 'string' ? filledContent : null) ||
-                        'Content has been filled by AI. Download the file to see the complete result.'}
+                      {displayText}
                     </Typography>
                   </Box>
                 );

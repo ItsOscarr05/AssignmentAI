@@ -1,0 +1,13 @@
+Physics I - Kinematics Quiz
+
+1. A car accelerates from rest at 2 m/s^2 for 5 s. What is its final velocity?
+
+Answer: Using v = at: 2 × 5 = 10 m/s.
+
+2. Drop a ball from 20 m (no air resistance). Approximate time to hit the ground?
+
+Answer: Using t = sqrt(2h/g): sqrt(2 × 20 ÷ 9.8) = 2.0 s.
+
+3. 60-80 words: Explain difference between velocity and speed with an example.
+
+Answer: Speed is how fast an object moves, while velocity includes both speed and direction. For example, a car traveling 60 km/h has a speed of 60 km/h. If it's moving north at 60 km/h, that's its velocity - same speed but with direction. An athlete running 5 m/s north has the same speed as one running 5 m/s south, but different velocities due to opposite directions.

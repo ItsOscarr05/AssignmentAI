@@ -1,0 +1,9 @@
+Physics I – Kinematics Quiz
+Physics I – Kinematics Quiz
+Q1) A car accelerates from rest at 2 m/s^2 for 5 s. What is its final velocity?
+Q2) Drop a ball from 20 m (no air resistance). Approximate time to hit the ground?
+Q3) 60–80 words: Explain difference between velocity and speed with an example.
+
+10 m/s
+The approximate time for a ball dropped from 20 meters to hit the ground is 2.0 seconds.
+Velocity is a vector quantity that indicates the rate of change of position in a specific direction, while speed is a scalar quantity that measures how fast an object is moving, regardless of direction. For example, if a car travels 60 km north in 1 hour, its velocity is 60 km/h north, while its speed is simply 60 km/h.

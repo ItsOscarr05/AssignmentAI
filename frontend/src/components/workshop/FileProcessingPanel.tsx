@@ -186,11 +186,13 @@ const FileProcessingPanel: React.FC<FileProcessingPanelProps> = ({ onFileProcess
       // Check if it's an Excel file
       if (fileExtension === 'xlsx' || fileExtension === 'xls') {
         // Use the special Excel download method
-        await fileProcessingService.downloadAndOpenExcel(fillResult.file_id, filename);
+        await fileProcessingService.downloadAndOpenExcel(fillResult.file_id);
       } else {
         // Use the regular download method for other file types
-        const blob = await fileProcessingService.downloadFilledFile(fillResult.file_id);
-        fileProcessingService.downloadFile(blob, filename);
+        const { blob, filename: backendFilename } = await fileProcessingService.downloadFilledFile(
+          fillResult.file_id
+        );
+        fileProcessingService.downloadFile(blob, backendFilename);
       }
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to download file');
@@ -586,6 +588,34 @@ const FileProcessingPanel: React.FC<FileProcessingPanelProps> = ({ onFileProcess
                           </Typography>
                         </CardContent>
                       </Card>
+
+                      {/* Show filled content preview */}
+                      {fillResult.text && (
+                        <Card variant="outlined" sx={{ mb: 2 }}>
+                          <CardContent>
+                            <Typography variant="h6" gutterBottom>
+                              Filled Content Preview
+                            </Typography>
+                            <Typography
+                              variant="body2"
+                              component="pre"
+                              sx={{
+                                whiteSpace: 'pre-wrap',
+                                fontFamily: 'monospace',
+                                lineHeight: 1.6,
+                                color: '#333',
+                                maxHeight: '300px',
+                                overflow: 'auto',
+                                backgroundColor: '#f5f5f5',
+                                p: 2,
+                                borderRadius: 1,
+                              }}
+                            >
+                              {fillResult.text}
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      )}
 
                       <Box>
                         <Button

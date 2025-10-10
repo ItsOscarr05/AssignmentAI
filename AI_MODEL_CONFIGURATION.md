@@ -6,12 +6,12 @@ AssignmentAI uses different OpenAI models based on user subscription tiers to op
 
 ## Model Mapping
 
-| Subscription Plan | AI Model        | Token Limit | Description                                         |
-| ----------------- | --------------- | ----------- | --------------------------------------------------- |
-| **Free**          | `gpt-5-nano`    | 30,000      | Fast, efficient model for basic assignments         |
-| **Plus**          | `gpt-4.1-mini`  | 50,000      | Balanced performance and cost for enhanced features |
-| **Pro**           | `gpt-4-turbo`   | 75,000      | Advanced model for professional-grade assignments   |
-| **Max**           | `gpt-5`         | 100,000     | Premium model for maximum quality and complexity    |
+| Subscription Plan | AI Model       | Token Limit | Description                                         |
+| ----------------- | -------------- | ----------- | --------------------------------------------------- |
+| **Free**          | `gpt-5-nano`   | 100,000     | Fast, efficient model for basic assignments         |
+| **Plus**          | `gpt-4.1-mini` | 200,000     | Balanced performance and cost for enhanced features |
+| **Pro**           | `gpt-4-turbo`  | 400,000     | Advanced model for professional-grade assignments   |
+| **Max**           | `gpt-5`        | 800,000     | Premium model for maximum quality and complexity    |
 
 ## Implementation Details
 
@@ -23,19 +23,19 @@ The model selection is handled in `backend/app/services/payment_service.py`:
 model_mapping = {
     'price_free': {
         'model': 'gpt-5-nano',
-        'token_limit': 30000
+        'token_limit': 100000
     },
     'price_plus': {
         'model': 'gpt-4.1-mini',
-        'token_limit': 50000
+        'token_limit': 200000
     },
     'price_pro': {
         'model': 'gpt-4-turbo',
-        'token_limit': 75000
+        'token_limit': 400000
     },
     'price_max': {
         'model': 'gpt-5',
-        'token_limit': 100000
+        'token_limit': 800000
     }
 }
 ```
@@ -48,22 +48,22 @@ The frontend displays the appropriate model in `frontend/src/pages/Settings.tsx`
 const subscriptionConfig: Record<SubscriptionPlan, SubscriptionConfig> = {
   free: {
     model: 'gpt-5-nano',
-    tokenLimit: 30000,
+    tokenLimit: 100000,
     label: 'GPT-5 Nano',
   },
   plus: {
     model: 'gpt-4.1-mini',
-    tokenLimit: 50000,
+    tokenLimit: 200000,
     label: 'GPT-4.1 Mini',
   },
   pro: {
     model: 'gpt-4-turbo',
-    tokenLimit: 75000,
+    tokenLimit: 400000,
     label: 'GPT-4 Turbo',
   },
   max: {
     model: 'gpt-5',
-    tokenLimit: 100000,
+    tokenLimit: 800000,
     label: 'GPT-5',
   },
 };
@@ -112,10 +112,10 @@ OPENAI_MODEL=gpt-4.1-nano  # Default model (overridden by subscription)
 
 Each subscription tier has a monthly token limit:
 
-- **Free**: 30,000 tokens/month
-- **Plus**: 50,000 tokens/month
-- **Pro**: 75,000 tokens/month
-- **Max**: 100,000 tokens/month
+- **Free**: 100,000 tokens/month
+- **Plus**: 200,000 tokens/month
+- **Pro**: 400,000 tokens/month
+- **Max**: 800,000 tokens/month
 
 Token usage is tracked per user and resets monthly.
 

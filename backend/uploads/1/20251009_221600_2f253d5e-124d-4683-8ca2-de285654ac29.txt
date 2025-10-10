@@ -1,0 +1,5 @@
+Physics I – Kinematics Quiz
+
+Q1) A car accelerates from rest at 2 m/s^2 for 5 s. What is its final velocity?
+Q2) Drop a ball from 20 m (no air resistance). Approximate time to hit the ground?
+Q3) 60–80 words: Explain difference between velocity and speed with an example.

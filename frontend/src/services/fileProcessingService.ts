@@ -28,6 +28,7 @@ export interface FileFillResult {
   sections_filled: number;
   original_content: any;
   filled_content: any;
+  text?: string; // Add the text field for merged content
   processed_at: string;
   status: string;
   download_url: string;

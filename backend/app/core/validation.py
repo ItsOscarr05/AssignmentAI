@@ -4,12 +4,12 @@ from app.core.config import settings
 def get_subscription_token_limit(subscription_plan: str) -> int:
     """Get maximum token limit for a subscription plan"""
     limits = {
-        'free': 30000,
-        'plus': 50000,
-        'pro': 75000,
-        'max': 100000
+        'free': 100000,
+        'plus': 200000,
+        'pro': 400000,
+        'max': 800000
     }
-    return limits.get(subscription_plan, 30000)
+    return limits.get(subscription_plan, 100000)
 
 def validate_ai_settings(ai_settings: Dict[str, Any], subscription_plan: str = 'free') -> List[str]:
     """Validate AI settings and return list of errors"""
