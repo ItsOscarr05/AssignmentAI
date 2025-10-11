@@ -1,4 +1,13 @@
-import { Assignment, ChevronLeft, Home, Menu, Person, School, Settings } from '@mui/icons-material';
+import {
+  Assignment,
+  ChevronLeft,
+  Home,
+  Link as LinkIcon,
+  Menu,
+  Person,
+  School,
+  Settings,
+} from '@mui/icons-material';
 import {
   AppBar,
   Box,
@@ -70,6 +79,7 @@ const menuItems = [
   { text: 'Dashboard', icon: <Home />, path: '/dashboard' },
   { text: 'Assignments', icon: <Assignment />, path: '/assignments' },
   { text: 'Workshop', icon: <School />, path: '/workshop' },
+  { text: 'Link Processing Demo', icon: <LinkIcon />, path: '/link-processing-demo' },
   { text: 'Profile', icon: <Person />, path: '/profile' },
   { text: 'Settings', icon: <Settings />, path: '/settings' },
 ];

@@ -29,7 +29,8 @@ from app.api.v1.endpoints import (
     file_processing,
     file_uploads,
     assignment_processing,
-    file_completion_chat
+    file_completion_chat,
+    link_processing
 )
 from app.crud import feedback as feedback_crud
 from app.schemas.feedback import Feedback
@@ -74,6 +75,7 @@ api_router.include_router(file_processing.router, prefix="/file-processing", tag
 api_router.include_router(file_uploads.router, prefix="/file-uploads", tags=["file-uploads"])
 api_router.include_router(assignment_processing.router, prefix="/assignment-processing", tags=["assignment-processing"])
 api_router.include_router(file_completion_chat.router, prefix="/file-completion", tags=["file-completion"])
+api_router.include_router(link_processing.router, prefix="/workshop", tags=["link-processing"])
 
 @api_router.get("/submissions/{submission_id}/feedback", tags=["Feedback"])
 def get_feedback_by_submission(submission_id: int, db=Depends(get_db)):

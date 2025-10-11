@@ -26,6 +26,7 @@ const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Terms = lazy(() => import('./pages/Terms'));
 const Workshop = lazy(() => import('./pages/Workshop'));
+const LinkProcessingDemo = lazy(() => import('./pages/LinkProcessingDemo'));
 const AssignmentDetail = lazy(() => import('./components/assignments/AssignmentDetail'));
 const OAuthCallback = lazy(() =>
   import('./components/auth/OAuthCallback').then(module => ({ default: module.OAuthCallback }))
@@ -259,6 +260,16 @@ export const AppRouter = () => (
                     <Suspense fallback={suspenseFallback}>
                       <PageTransition>
                         <AITokens />
+                      </PageTransition>
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="link-processing-demo"
+                  element={
+                    <Suspense fallback={suspenseFallback}>
+                      <PageTransition>
+                        <LinkProcessingDemo />
                       </PageTransition>
                     </Suspense>
                   }

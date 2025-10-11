@@ -328,10 +328,38 @@ const Workshop: React.FC = () => {
     return () => animation.stop();
   }, [percentUsed]);
 
+  // Populate history from workshopHistory
   useEffect(() => {
-    // Start with empty history for real users
-    setHistory([]);
-  }, []);
+    // Load pinned state from localStorage
+    const pinnedIdsJson = localStorage.getItem('workshop-pinned-history');
+    const pinnedIds: string[] = pinnedIdsJson ? JSON.parse(pinnedIdsJson) : [];
+    
+    const historyItems: HistoryItem[] = workshopHistory.map(item => {
+      let title = 'Unknown';
+      
+      if (item.type === 'chat') {
+        title = (item.prompt || 'Chat message').substring(0, 50);
+        if (title.length === 50) title += '...';
+      } else if (item.type === 'file') {
+        // Try to find the file name from the prompt or content
+        const fileNameMatch = item.prompt?.match(/File(?:: | - | )([^\\n]+)/i);
+        title = fileNameMatch ? `File: ${fileNameMatch[1]}` : 'File Upload';
+      } else if (item.type === 'link') {
+        // Try to extract URL or title from the prompt
+        const urlMatch = item.prompt?.match(/(https?:\/\/[^\\s]+)/);
+        title = urlMatch ? `Link: ${urlMatch[1].substring(0, 40)}...` : 'Link';
+      }
+      
+      return {
+        id: item.id,
+        title,
+        date: new Date(item.timestamp),
+        type: item.type as 'file' | 'link' | 'chat',
+        isPinned: pinnedIds.includes(item.id), // Restore pinned state from localStorage
+      };
+    });
+    setHistory(historyItems);
+  }, [workshopHistory]);
 
   useEffect(() => {
     if (responseTab === 1 && rewriteTabRef.current) {
@@ -461,9 +489,19 @@ const Workshop: React.FC = () => {
   };
 
   const handlePinHistory = (id: string) => {
-    setHistory(prev =>
-      prev.map(item => (item.id === id ? { ...item, isPinned: !item.isPinned } : item))
-    );
+    setHistory(prev => {
+      const updatedHistory = prev.map(item => 
+        item.id === id ? { ...item, isPinned: !item.isPinned } : item
+      );
+      
+      // Persist pinned state to localStorage
+      const pinnedIds = updatedHistory
+        .filter(item => item.isPinned)
+        .map(item => item.id);
+      localStorage.setItem('workshop-pinned-history', JSON.stringify(pinnedIds));
+      
+      return updatedHistory;
+    });
   };
 
   const renderInputSection = () => {
