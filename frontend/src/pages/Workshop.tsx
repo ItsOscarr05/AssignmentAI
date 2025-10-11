@@ -51,6 +51,7 @@ import {
 } from 'recharts';
 import AIResponsePopup from '../components/workshop/AIResponsePopup';
 import FileUploadModal from '../components/workshop/FileUploadModal';
+import LinkChatModal from '../components/workshop/LinkChatModal';
 import RecentHistorySidebar from '../components/workshop/RecentHistorySidebar';
 import { SubscriptionUpgradeModal } from '../components/workshop/SubscriptionUpgradeModal';
 import WorkshopFileUpload from '../components/workshop/WorkshopFileUpload';
@@ -180,6 +181,10 @@ const Workshop: React.FC = () => {
 
   // Fullscreen message state
   const [fullscreenMessage, setFullscreenMessage] = useState<string | null>(null);
+
+  // Link chat modal state
+  const [showLinkChatModal, setShowLinkChatModal] = useState(false);
+  const [lastProcessedLink, setLastProcessedLink] = useState<any>(null);
 
   // Use token limit hook for subscription and token data
   const {
@@ -333,10 +338,10 @@ const Workshop: React.FC = () => {
     // Load pinned state from localStorage
     const pinnedIdsJson = localStorage.getItem('workshop-pinned-history');
     const pinnedIds: string[] = pinnedIdsJson ? JSON.parse(pinnedIdsJson) : [];
-    
+
     const historyItems: HistoryItem[] = workshopHistory.map(item => {
       let title = 'Unknown';
-      
+
       if (item.type === 'chat') {
         title = (item.prompt || 'Chat message').substring(0, 50);
         if (title.length === 50) title += '...';
@@ -349,7 +354,7 @@ const Workshop: React.FC = () => {
         const urlMatch = item.prompt?.match(/(https?:\/\/[^\\s]+)/);
         title = urlMatch ? `Link: ${urlMatch[1].substring(0, 40)}...` : 'Link';
       }
-      
+
       return {
         id: item.id,
         title,
@@ -409,15 +414,16 @@ const Workshop: React.FC = () => {
   const handleLinkSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (linkInput.trim()) {
-      // Open popup immediately before adding link
-      handleOpenAnalysisPopup('link', { url: linkInput, title: linkInput });
-      await addLink({ url: linkInput, title: linkInput });
-      setLinkInput('');
-      setSnackbar({
-        open: true,
-        message: 'Link processed successfully!',
-        severity: 'success',
-      });
+      try {
+        const linkResult = await addLink({ url: linkInput, title: linkInput });
+        if (linkResult) {
+          setLastProcessedLink(linkResult);
+          setShowLinkChatModal(true);
+        }
+        setLinkInput('');
+      } catch (error) {
+        console.error('Error processing link:', error);
+      }
     }
   };
 
@@ -490,16 +496,14 @@ const Workshop: React.FC = () => {
 
   const handlePinHistory = (id: string) => {
     setHistory(prev => {
-      const updatedHistory = prev.map(item => 
+      const updatedHistory = prev.map(item =>
         item.id === id ? { ...item, isPinned: !item.isPinned } : item
       );
-      
+
       // Persist pinned state to localStorage
-      const pinnedIds = updatedHistory
-        .filter(item => item.isPinned)
-        .map(item => item.id);
+      const pinnedIds = updatedHistory.filter(item => item.isPinned).map(item => item.id);
       localStorage.setItem('workshop-pinned-history', JSON.stringify(pinnedIds));
-      
+
       return updatedHistory;
     });
   };
@@ -1591,6 +1595,20 @@ const Workshop: React.FC = () => {
         onAiFill={handleAiFill}
         onDownloadFilled={handleDownloadFilled}
         onPreviewFile={handlePreviewFile}
+      />
+
+      {/* Link Chat Modal */}
+      <LinkChatModal
+        open={showLinkChatModal}
+        onClose={() => {
+          setShowLinkChatModal(false);
+          setLastProcessedLink(null);
+        }}
+        linkData={lastProcessedLink}
+        onLinkDeleted={linkId => {
+          // Handle link deletion if needed
+          console.log('Link deleted:', linkId);
+        }}
       />
     </Box>
   );

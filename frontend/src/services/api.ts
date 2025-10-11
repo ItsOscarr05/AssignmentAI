@@ -617,3 +617,104 @@ export const aiSettings = {
     return response.data;
   },
 };
+
+// Streaming chat with link functionality
+export const streamChatWithLink = async (
+  data: {
+    link_id: string;
+    message: string;
+    content: string;
+    analysis: any;
+  },
+  onChunk: (chunk: string) => void,
+  onComplete: (fullResponse: string, updatedAnalysis?: any) => void,
+  onError: (error: string) => void
+): Promise<void> => {
+  const token = localStorage.getItem('access_token');
+  if (!token) {
+    onError('No authentication token found');
+    return;
+  }
+
+  try {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    const fullUrl = `${apiUrl}/api/v1/workshop/chat-with-link`;
+    console.log('Starting streaming request to:', fullUrl);
+    console.log('Request data:', data);
+    console.log('Token exists:', !!token);
+    console.log('Token preview:', token ? token.substring(0, 20) + '...' : 'null');
+    
+    const response = await fetch(fullUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    console.log('Response status:', response.status);
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error('No response body reader available');
+    }
+
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    console.log('Starting to read streaming response...');
+
+    while (true) {
+      const { done, value } = await reader.read();
+      console.log('Read chunk:', { done, valueLength: value?.length });
+      
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      console.log('Decoded chunk:', chunk);
+      
+      buffer += chunk;
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      console.log('Processing lines:', lines);
+
+      for (const line of lines) {
+        console.log('Processing line:', line);
+        
+        if (line.startsWith('data: ')) {
+          try {
+            const jsonStr = line.slice(6);
+            console.log('JSON string:', jsonStr);
+            
+            const jsonData = JSON.parse(jsonStr);
+            console.log('Parsed JSON:', jsonData);
+
+            if (jsonData.done) {
+              console.log('Stream completed');
+              if (jsonData.error) {
+                onError(jsonData.error);
+              } else {
+                onComplete(jsonData.full_response, jsonData.updated_analysis);
+              }
+              return;
+            } else if (jsonData.chunk) {
+              console.log('Received chunk:', jsonData.chunk);
+              onChunk(jsonData.chunk);
+            }
+          } catch (e) {
+            console.error('Error parsing streaming data:', e, 'Line:', line);
+          }
+        }
+      }
+    }
+  } catch (error) {
+    onError(error instanceof Error ? error.message : 'Unknown error occurred');
+  }
+};

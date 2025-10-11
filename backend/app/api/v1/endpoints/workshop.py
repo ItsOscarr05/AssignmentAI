@@ -1,6 +1,7 @@
-from typing import List, Optional
+from typing import List, Optional, Dict, Any, Union
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Body, Request
 from fastapi.responses import StreamingResponse
+import json
 from sqlalchemy.orm import Session
 from pathlib import Path
 from app.core.deps import get_current_user, get_db
@@ -10,9 +11,11 @@ from app.services.file_service import file_service
 from app.services.web_scraping import WebScrapingService
 from app.services.image_analysis_service import ImageAnalysisService
 from app.services.diagram_service import diagram_service
+from app.services.link_analysis_service import LinkAnalysisService
 from app.models.user import User
 from app.crud import file_upload as file_upload_crud
 from app.schemas.file_upload import FileUploadCreate
+from pydantic import BaseModel
 import logging
 import uuid
 from datetime import datetime
@@ -24,6 +27,17 @@ import json
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+# Schema definitions for chat-with-link endpoint
+class ChatWithLinkRequest(BaseModel):
+    link_id: str
+    message: str
+    content: str
+    analysis: Dict[str, Any] = None
+
+class ChatWithLinkResponse(BaseModel):
+    response: str
+    updated_analysis: Optional[Dict[str, Any]] = None
 
 # Note: AIService will be instantiated per request with db session
 
@@ -990,6 +1004,21 @@ async def process_link(
             analysis = await ai_service.generate_assignment_content_from_prompt(analysis_prompt)
             logger.info(f"AI analysis completed. Analysis length: {len(analysis)}")
             
+            # Track token usage for link processing
+            estimated_tokens = len(analysis_prompt.split()) + len(analysis.split())
+            await ai_service.track_token_usage(
+                user_id=current_user.id,
+                feature='link_analysis',
+                action='process',
+                tokens_used=estimated_tokens,
+                metadata={
+                    'url': url,
+                    'content_length': len(result['content']),
+                    'title': result['title']
+                }
+            )
+            logger.info(f"Token usage tracked: {estimated_tokens} tokens for link processing")
+            
             # Create file upload record for link
             try:
                 file_upload_data = FileUploadCreate(
@@ -1065,6 +1094,117 @@ async def delete_link(
     except Exception as e:
         logger.error(f"Error deleting link: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to delete link: {str(e)}")
+
+@router.post("/chat-with-link")
+async def chat_with_link(
+    request: ChatWithLinkRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Interactive streaming chat with AI about a specific link.
+    Allows users to ask questions, request enhancements, and get insights.
+    """
+    try:
+        logger.info(f"Processing streaming chat message for link {request.link_id} from user {current_user.id}")
+        
+        ai_service = AIService(db=db)
+        
+        # Create context-aware prompt
+        context_prompt = f"""
+        You are a friendly AI assistant. Answer questions about web content in a brief, conversational way.
+
+        Web Content: {request.content[:2000]}...
+        
+        Current Analysis: {request.analysis if request.analysis else 'No analysis available'}
+        
+        User Question: {request.message}
+        
+        Keep your response:
+        - Brief (2-4 sentences max unless specifically asked for more detail)
+        - Conversational and natural (like texting a knowledgeable friend)
+        - Direct and to the point
+        - Avoid bullet points or formal structure unless necessary
+        - No assignments or documents - just helpful chat
+        """
+        
+        async def generate_stream():
+            try:
+                # Check if the response suggests updating the analysis
+                updated_analysis = None
+                if any(keyword in request.message.lower() for keyword in ['reanalyze', 'update analysis', 'new insights']):
+                    analysis_service = LinkAnalysisService()
+                    updated_analysis = await analysis_service.analyze_content_comprehensive(
+                        content=request.content,
+                        url='',  # URL not available in this context
+                        ai_service=ai_service
+                    )
+                
+                # Stream the AI response
+                full_response = ""
+                chunk_count = 0
+                async for chunk in ai_service.generate_chat_response_stream(context_prompt, user_id=current_user.id):
+                    chunk_count += 1
+                    if chunk:
+                        full_response += chunk
+                        # Send chunk as JSON
+                        chunk_data = {'chunk': chunk, 'done': False}
+                        logger.info(f"Sending chunk {chunk_count}: {len(chunk)} characters")
+                        yield f"data: {json.dumps(chunk_data)}\n\n"
+                
+                # Track token usage for chat
+                estimated_tokens = len(context_prompt.split()) + len(full_response.split())
+                await ai_service.track_token_usage(
+                    user_id=current_user.id,
+                    feature='link_chat',
+                    action='chat_message',
+                    tokens_used=estimated_tokens,
+                    metadata={
+                        'link_id': request.link_id,
+                        'message': request.message[:100],  # First 100 chars of user message
+                        'response_length': len(full_response)
+                    }
+                )
+                logger.info(f"Token usage tracked: {estimated_tokens} tokens for link chat")
+                
+                # Send final response with updated analysis
+                final_response = {
+                    'chunk': '',
+                    'done': True,
+                    'full_response': full_response,
+                    'updated_analysis': updated_analysis
+                }
+                logger.info(f"Streaming completed. Total chunks sent: {chunk_count}, Final response length: {len(full_response)}")
+                yield f"data: {json.dumps(final_response)}\n\n"
+                
+                logger.info(f"Streaming chat response completed for user {current_user.id}")
+                
+            except Exception as e:
+                logger.error(f"Error in streaming chat: {str(e)}", exc_info=True)
+                error_response = {
+                    'chunk': '',
+                    'done': True,
+                    'error': f"Failed to process chat message: {str(e)}"
+                }
+                yield f"data: {json.dumps(error_response)}\n\n"
+        
+        return StreamingResponse(
+            generate_stream(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "Cache-Control"
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in chat with link: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to process chat message: {str(e)}"
+        )
 
 @router.get("/features")
 async def get_user_features(

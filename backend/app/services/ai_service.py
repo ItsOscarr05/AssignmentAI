@@ -625,9 +625,22 @@ class AIService:
             
             # Get user's plan for token limits
             user_plan = self.get_user_plan(user_id) if user_id else "free"
-            max_tokens = settings.AI_RESPONSE_LIMITS.get(user_plan, settings.AI_MAX_TOKENS)
+            plan_max_tokens = settings.AI_RESPONSE_LIMITS.get(user_plan, settings.AI_MAX_TOKENS)
             
-            logger.info(f"Using plan '{user_plan}' with max_tokens: {max_tokens}")
+            # Respect model-specific token limits
+            model_max_tokens = {
+                "gpt-4-turbo": 4096,
+                "gpt-4": 4096,
+                "gpt-3.5-turbo": 4096,
+                "gpt-4o": 4096,
+                "gpt-4o-mini": 16384,
+                "gpt-5": 4096
+            }
+            
+            # Use the smaller of plan limit or model limit
+            max_tokens = min(plan_max_tokens, model_max_tokens.get(user_model, 4096))
+            
+            logger.info(f"Using plan '{user_plan}' with plan_max_tokens: {plan_max_tokens}, model_max_tokens: {model_max_tokens.get(user_model, 4096)}, final max_tokens: {max_tokens}")
             
             # Configure parameters based on model capabilities
             params = {
@@ -717,9 +730,22 @@ class AIService:
             
             # Get user's plan for token limits
             user_plan = self.get_user_plan(user_id) if user_id else "free"
-            max_tokens = settings.AI_RESPONSE_LIMITS.get(user_plan, settings.AI_MAX_TOKENS)
+            plan_max_tokens = settings.AI_RESPONSE_LIMITS.get(user_plan, settings.AI_MAX_TOKENS)
             
-            logger.info(f"Using plan '{user_plan}' with max_tokens: {max_tokens}")
+            # Respect model-specific token limits
+            model_max_tokens = {
+                "gpt-4-turbo": 4096,
+                "gpt-4": 4096,
+                "gpt-3.5-turbo": 4096,
+                "gpt-4o": 4096,
+                "gpt-4o-mini": 16384,
+                "gpt-5": 4096
+            }
+            
+            # Use the smaller of plan limit or model limit
+            max_tokens = min(plan_max_tokens, model_max_tokens.get(user_model, 4096))
+            
+            logger.info(f"Using plan '{user_plan}' with plan_max_tokens: {plan_max_tokens}, model_max_tokens: {model_max_tokens.get(user_model, 4096)}, final max_tokens: {max_tokens}")
             
             # Configure parameters based on model capabilities
             params = {
