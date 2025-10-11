@@ -47,6 +47,7 @@ class User(Base):
 
     # Relationships - minimal for basic authentication
     transactions: Mapped[List["Transaction"]] = relationship("Transaction", back_populates="user")
+    file_completion_sessions: Mapped[List["FileCompletionSession"]] = relationship("FileCompletionSession", back_populates="user", lazy="dynamic")
 
 
     def __init__(self, **kwargs):

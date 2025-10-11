@@ -1,18 +1,15 @@
 import {
-  AnalyticsOutlined as AnalyticsIcon,
-  CheckCircleOutlined as CheckCircleIcon,
-  CloseOutlined as CloseIcon,
-  DeleteOutlined as DeleteIcon,
+  SmartToy as AIIcon,
+  CheckCircleOutlined as ApplyIcon,
+  Close as CloseIcon,
+  CompareArrows as CompareIcon,
+  ContentCopy as CopyIcon,
+  DeleteOutline as DeleteIcon,
   DownloadOutlined as DownloadIcon,
-  ErrorOutlined as ErrorIcon,
-  DescriptionOutlined as FileIcon,
-  AutoFixHighOutlined as FillIcon,
-  FullscreenExitOutlined as FullscreenExitIcon,
-  ZoomOutMapOutlined as FullscreenIcon,
-  RemoveOutlined as MinimizeIcon,
-  PictureAsPdfOutlined as PdfIcon,
-  VisibilityOutlined as PreviewIcon,
+  History as HistoryIcon,
+  Send as SendIcon,
   CloudUploadOutlined as UploadIcon,
+  Person as UserIcon,
 } from '@mui/icons-material';
 import {
   Alert,
@@ -25,1638 +22,684 @@ import {
   DialogTitle,
   Divider,
   IconButton,
-  LinearProgress,
+  Paper,
   Snackbar,
-  Tab,
-  Tabs,
+  TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
-import React, { useEffect, useState } from 'react';
-import { FileFillResult, fileProcessingService } from '../../services/fileProcessingService';
-import { WorkshopFile } from '../../services/WorkshopService'; // Workshop file type
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  fileCompletionChatService,
+  type ChatMessageResponse,
+  type FileCompletionSession,
+} from '../../services/fileCompletionChatService';
+import { WorkshopFile } from '../../services/WorkshopService';
+import FileVersionHistory from './FileVersionHistory';
 
 interface FileUploadModalProps {
   open: boolean;
   onClose: () => void;
   files: WorkshopFile[];
-  lastUploadedFile?: any;
-  onFileProcessed?: (fileId: string, result: any) => void;
+  onFileProcessed?: (file: WorkshopFile) => void;
   onFileDeleted?: (fileId: string) => void;
-  onAiFill?: (file: any) => void;
-  onDownloadFilled?: (file: any) => void;
-  onPreviewFile?: (file: any) => void;
 }
 
 const FileUploadModal: React.FC<FileUploadModalProps> = ({
   open,
   onClose,
   files,
-  onFileProcessed,
   onFileDeleted,
-  onAiFill,
 }) => {
-  const [filledFiles, setFilledFiles] = useState<Map<string, FileFillResult>>(new Map());
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(false);
   const [selectedFile, setSelectedFile] = useState<WorkshopFile | null>(null);
-  const [streamingContent, setStreamingContent] = useState<string>('');
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [originalFileContent, setOriginalFileContent] = useState<string>('');
-  const [isLoadingContent, setIsLoadingContent] = useState(false);
-  const [documentStructure, setDocumentStructure] = useState<any>(null);
-  const [filledSections, setFilledSections] = useState<Map<string, string>>(new Map());
-  const [structuredFileData, setStructuredFileData] = useState<any>(null);
-  const [activeSheetTab, setActiveSheetTab] = useState(0);
-  const [snackbar, setSnackbar] = useState<{
-    open: boolean;
-    message: string;
-    severity: 'success' | 'error' | 'info';
-  }>({ open: false, message: '', severity: 'info' });
-
-  // File Processing Analytics State
-  const [processingMetrics, setProcessingMetrics] = useState({
-    filesProcessed: 0,
-    avgProcessingTime: 0,
-    successRate: 100,
-    contentQuality: 85,
-    aiAccuracy: 92,
+  const [session, setSession] = useState<FileCompletionSession | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [message, setMessage] = useState('');
+  const [currentContent, setCurrentContent] = useState('');
+  const [proposedContent, setProposedContent] = useState<string | null>(null);
+  const [showDiff, setShowDiff] = useState(false);
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success' as 'success' | 'error' | 'info',
   });
-  const [isMetricsExpanded, setIsMetricsExpanded] = useState(false);
+  const [selectedChip, setSelectedChip] = useState<string | null>(null);
 
-  // Load file content when a file is selected
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-select the first file when modal opens
   useEffect(() => {
-    if (selectedFile && selectedFile.status === 'completed') {
-      loadFileContent(selectedFile);
+    if (open && files.length > 0 && !selectedFile) {
+      setSelectedFile(files[0]);
+    }
+  }, [open, files]);
+
+  // Initialize chat session when file is selected
+  useEffect(() => {
+    if (selectedFile) {
+      initializeSession();
     }
   }, [selectedFile]);
 
-  // Auto-select the file when modal opens (should only be one file since we clear on close)
+  // Auto-scroll to bottom of chat
   useEffect(() => {
-    if (open && files.length > 0 && !selectedFile) {
-      console.log('Modal opened with files:', files);
+    scrollToBottom();
+  }, [session?.conversation_history]);
 
-      // Since we clear files when modal closes, there should only be one file
-      // Just select the first completed file
-      const completedFile = files.find(f => f.status === 'completed');
-      if (completedFile) {
-        console.log('Auto-selecting the uploaded file:', completedFile);
-        setSelectedFile(completedFile);
-      }
-    }
-  }, [open, files, selectedFile]);
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
-  // Format spreadsheet content to show as structured data for table rendering
-  const formatSpreadsheetContent = (processedData: any): any => {
+  const initializeSession = async () => {
+    if (!selectedFile) return;
+
     try {
-      // Handle different spreadsheet formats
-      if (processedData.sheets) {
-        // Excel format (XLSX/XLS) - return structured data for table rendering
-        const sheetNames = Object.keys(processedData.sheets);
-        const structuredData: any = {
-          type: 'excel',
-          sheets: {},
-          hasCalculations: processedData.has_calculations || false,
-        };
-
-        for (const sheetName of sheetNames) {
-          const sheetData = processedData.sheets[sheetName];
-
-          if (Array.isArray(sheetData) && sheetData.length > 0) {
-            // Convert array of arrays to structured table data
-            const headers = sheetData[0] || [];
-            const rows = sheetData.slice(1).map((row: any) => {
-              if (Array.isArray(row)) {
-                const rowObj: any = {};
-                headers.forEach((header: any, index: number) => {
-                  rowObj[header] = row[index] || '';
-                });
-                return rowObj;
-              }
-              return row;
-            });
-
-            structuredData.sheets[sheetName] = {
-              headers,
-              rows,
-              data: sheetData,
-            };
-          } else if (Array.isArray(sheetData.data)) {
-            // Handle pandas DataFrame format
-            const headers = Object.keys(sheetData.data[0] || {});
-            structuredData.sheets[sheetName] = {
-              headers,
-              rows: sheetData.data,
-              data: sheetData.data,
-            };
-          }
-        }
-
-        return structuredData;
-      } else if (processedData.data) {
-        // CSV format - return structured data
-        if (Array.isArray(processedData.data)) {
-          const headers = Object.keys(processedData.data[0] || {});
-          return {
-            type: 'csv',
-            headers,
-            rows: processedData.data,
-            data: processedData.data,
-          };
-        }
-      }
-
-      // Fallback: return as string
-      return {
-        type: 'text',
-        content: JSON.stringify(processedData, null, 2),
-      };
-    } catch (error) {
-      console.error('Error formatting spreadsheet content:', error);
-      return {
-        type: 'error',
-        content: 'Error formatting spreadsheet content.',
-      };
-    }
-  };
-
-  // Render Excel/CSV data as formatted tables
-  const renderSpreadsheetTable = (structuredData: any) => {
-    console.log('renderSpreadsheetTable called with:', structuredData);
-    if (!structuredData) {
-      console.log('No structured data, returning null');
-      return null;
-    }
-
-    if (structuredData.type === 'excel' && structuredData.sheets) {
-      console.log('Rendering Excel format with sheets:', structuredData.sheets);
-      const sheetNames = Object.keys(structuredData.sheets);
-
-      if (sheetNames.length === 1) {
-        // Single sheet - render directly
-        const sheetName = sheetNames[0];
-        const sheetData = structuredData.sheets[sheetName];
-        return renderTable(sheetData);
-      } else {
-        // Multiple sheets - render with tabs
-        return (
-          <Box>
-            <Tabs
-              value={activeSheetTab}
-              onChange={(_, newValue) => setActiveSheetTab(newValue)}
-              sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
-            >
-              {sheetNames.map(sheetName => (
-                <Tab key={sheetName} label={sheetName} />
-              ))}
-            </Tabs>
-            {sheetNames.map(
-              (sheetName, index) =>
-                activeSheetTab === index && (
-                  <Box key={sheetName}>{renderTable(structuredData.sheets[sheetName])}</Box>
-                )
-            )}
-          </Box>
-        );
-      }
-    } else if (structuredData.type === 'csv') {
-      console.log('Rendering CSV format with data:', structuredData);
-      // CSV data
-      return renderTable(structuredData);
-    }
-
-    console.log('No matching format found, returning null');
-    return null;
-  };
-
-  // Render individual table with Excel-like styling
-  const renderTable = (sheetData: any) => {
-    if (!sheetData) {
-      return (
-        <Typography variant="body2" color="text.secondary">
-          No data available
-        </Typography>
+      setLoading(true);
+      const newSession = await fileCompletionChatService.startSession(
+        parseInt(selectedFile.id, 10)
       );
-    }
-
-    // Generate column letters (A, B, C, D, etc.)
-    const getColumnLetter = (index: number) => {
-      let result = '';
-      while (index >= 0) {
-        result = String.fromCharCode(65 + (index % 26)) + result;
-        index = Math.floor(index / 26) - 1;
-      }
-      return result;
-    };
-
-    // Create a full Excel-like grid: 26 columns (A-Z) and 100 rows (1-100)
-    const COLUMNS = 26;
-    const ROWS = 100;
-
-    // Extract actual data if available
-    const actualHeaders = sheetData.headers || [];
-    const actualRows = sheetData.rows || [];
-
-    // Create a data map for quick lookup of actual values
-    const dataMap = new Map();
-    actualRows.forEach((row: any, rowIndex: number) => {
-      actualHeaders.forEach((header: string, colIndex: number) => {
-        const cellValue = row[header];
-        if (cellValue !== undefined && cellValue !== null && cellValue !== '') {
-          dataMap.set(`${rowIndex}_${colIndex}`, cellValue);
-        }
-      });
-    });
-
-    return (
-      <Box>
-        <Box
-          sx={{
-            border: '2px solid #d0d7de',
-            borderRadius: '4px',
-            overflow: 'auto',
-            backgroundColor: '#ffffff',
-            maxHeight: 380,
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-            '&::-webkit-scrollbar': {
-              width: '12px',
-              height: '12px',
-            },
-            '&::-webkit-scrollbar-track': {
-              background: '#f1f1f1',
-              borderRadius: '6px',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              background: '#c1c1c1',
-              borderRadius: '6px',
-              '&:hover': {
-                background: '#a8a8a8',
-              },
-            },
-          }}
-        >
-          {/* Column Headers Row */}
-          <Box sx={{ display: 'flex', borderBottom: '2px solid #d0d7de' }}>
-            {/* Empty cell for row numbers column */}
-            <Box
-              sx={{
-                width: 45,
-                height: 28,
-                backgroundColor: '#f1f3f4',
-                borderRight: '2px solid #d0d7de',
-                borderBottom: '2px solid #d0d7de',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '12px',
-                fontWeight: 'bold',
-                color: '#5f6368',
-                position: 'sticky',
-                left: 0,
-                zIndex: 2,
-                minWidth: 45,
-                flexShrink: 0,
-              }}
-            >
-              {/* Empty top-left corner */}
-            </Box>
-
-            {/* Column letters A-Z */}
-            {Array.from({ length: COLUMNS }, (_, index) => (
-              <Box
-                key={index}
-                sx={{
-                  minWidth: 120,
-                  width: 120,
-                  height: 28,
-                  backgroundColor: '#f1f3f4',
-                  borderRight: '1px solid #d0d7de',
-                  borderBottom: '2px solid #d0d7de',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '12px',
-                  fontWeight: 'bold',
-                  color: '#5f6368',
-                  position: 'sticky',
-                  top: 0,
-                  zIndex: 1,
-                  flexShrink: 0,
-                }}
-              >
-                {getColumnLetter(index)}
-              </Box>
-            ))}
-          </Box>
-
-          {/* Data Rows 1-100 */}
-          {Array.from({ length: ROWS }, (_, rowIndex) => (
-            <Box key={rowIndex} sx={{ display: 'flex' }}>
-              {/* Row number */}
-              <Box
-                sx={{
-                  width: 45,
-                  height: 24,
-                  backgroundColor: '#f8f9fa',
-                  borderRight: '2px solid #d0d7de',
-                  borderBottom: '1px solid #d0d7de',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '11px',
-                  fontWeight: 'bold',
-                  color: '#5f6368',
-                  position: 'sticky',
-                  left: 0,
-                  zIndex: 1,
-                  minWidth: 45,
-                  flexShrink: 0,
-                }}
-              >
-                {String(rowIndex + 1).padStart(2, ' ')}
-              </Box>
-
-              {/* Data cells A-Z */}
-              {Array.from({ length: COLUMNS }, (_, colIndex) => {
-                // Check if this cell has actual data
-                const hasData = dataMap.has(`${rowIndex}_${colIndex}`);
-                const cellValue = hasData ? dataMap.get(`${rowIndex}_${colIndex}`) : '';
-
-                return (
-                  <Box
-                    key={colIndex}
-                    sx={{
-                      minWidth: 120,
-                      width: 120,
-                      height: 24,
-                      backgroundColor: hasData ? '#ffffff' : '#fafbfc',
-                      borderRight: '1px solid #e1e4e8',
-                      borderBottom: '1px solid #e1e4e8',
-                      display: 'flex',
-                      alignItems: 'center',
-                      paddingLeft: '6px',
-                      paddingRight: '6px',
-                      fontSize: '11px',
-                      color: hasData ? '#24292f' : '#8b949e',
-                      fontFamily:
-                        'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      cursor: 'text',
-                      flexShrink: 0,
-                      // Right-align numbers, left-align text
-                      justifyContent: typeof cellValue === 'number' ? 'flex-end' : 'flex-start',
-                      '&:hover': {
-                        backgroundColor: hasData ? '#f6f8fa' : '#f1f3f4',
-                      },
-                      // Highlight calculated values
-                      ...(typeof cellValue === 'number' &&
-                      cellValue > 0 &&
-                      actualHeaders[colIndex]?.toLowerCase().includes('revenue')
-                        ? {
-                            backgroundColor: '#e8f5e8',
-                            fontWeight: 'bold',
-                            color: '#2e7d32',
-                          }
-                        : {}),
-                      // Highlight cells with data
-                      ...(hasData
-                        ? {
-                            border: '1px solid #d0d7de',
-                            backgroundColor: '#ffffff',
-                          }
-                        : {}),
-                    }}
-                  >
-                    {cellValue || ''}
-                  </Box>
-                );
-              })}
-            </Box>
-          ))}
-        </Box>
-
-        {/* Grid info */}
-        <Box sx={{ mt: 1, display: 'flex', gap: 1, alignItems: 'center' }}>
-          <Typography variant="caption" color="text.secondary">
-            Excel-style grid view: {ROWS} rows × {COLUMNS} columns (A-Z)
-          </Typography>
-        </Box>
-      </Box>
-    );
-  };
-
-  const loadFileContent = async (file: WorkshopFile) => {
-    setIsLoadingContent(true);
-    setActiveSheetTab(0); // Reset sheet tab when loading new file
-    try {
-      console.log('Loading content for file:', file);
-
-      // Use the content that was already returned from the upload
-      if (file.content) {
-        console.log('Using content from file object:', file.content);
-
-        // Check if this is a CSV/Excel file that might have processed calculations
-        const fileExtension = file.name.split('.').pop()?.toLowerCase() || '';
-        const isSpreadsheetFile = ['csv', 'xlsx', 'xls'].includes(fileExtension);
-
-        if (isSpreadsheetFile) {
-          console.log('Processing spreadsheet file:', file.name);
-          console.log('File has processed_data:', !!file.processed_data);
-          console.log('File has analysis:', !!file.analysis);
-          console.log('File content:', file.content?.substring(0, 200) + '...');
-
-          // Check if we have processed data directly from the backend
-          if (file.processed_data) {
-            console.log('Using processed data from backend:', file.processed_data);
-            const structuredData = formatSpreadsheetContent(file.processed_data);
-            console.log('Formatted structured data:', structuredData);
-            setStructuredFileData(structuredData);
-
-            // Also set text content for fallback
-            if (structuredData.type === 'excel' && structuredData.sheets) {
-              // Format as CSV for text display
-              const firstSheet = Object.values(structuredData.sheets)[0] as any;
-              if (firstSheet && firstSheet.headers && firstSheet.rows) {
-                const csvContent = [
-                  firstSheet.headers.join(','),
-                  ...firstSheet.rows.map((row: any) =>
-                    firstSheet.headers.map((h: string) => row[h] || '').join(',')
-                  ),
-                ].join('\n');
-                setOriginalFileContent(csvContent);
-              } else {
-                setOriginalFileContent(file.content || '');
-              }
-            } else if (structuredData.type === 'csv') {
-              // For CSV, format the data
-              if (structuredData.headers && structuredData.rows) {
-                const csvContent = [
-                  structuredData.headers.join(','),
-                  ...structuredData.rows.map((row: any) =>
-                    structuredData.headers.map((h: string) => row[h] || '').join(',')
-                  ),
-                ].join('\n');
-                setOriginalFileContent(csvContent);
-              } else {
-                setOriginalFileContent(file.content || '');
-              }
-            } else {
-              setOriginalFileContent(file.content || '');
-            }
-
-            console.log('Using structured spreadsheet data:', structuredData);
-          } else if (file.analysis) {
-            // Fallback: try to parse the analysis to see if it contains processed data
-            try {
-              const analysisData =
-                typeof file.analysis === 'string' ? JSON.parse(file.analysis) : file.analysis;
-
-              // Check if we have processed sheets data
-              if (analysisData && (analysisData.sheets || analysisData.data)) {
-                const structuredData = formatSpreadsheetContent(analysisData);
-                setStructuredFileData(structuredData);
-                setOriginalFileContent(file.content || '');
-                console.log('Using structured spreadsheet data from analysis:', structuredData);
-              } else {
-                setOriginalFileContent(file.content || '');
-                setStructuredFileData(null);
-              }
-            } catch (parseError) {
-              console.log('Could not parse analysis data, using raw content');
-              setOriginalFileContent(file.content || '');
-              setStructuredFileData(null);
-            }
-          } else {
-            setOriginalFileContent(file.content || '');
-            setStructuredFileData(null);
-          }
-        } else {
-          setOriginalFileContent(file.content || '');
-          setStructuredFileData(null);
-        }
-
-        // Don't set document structure for spreadsheet files - use structuredFileData instead
-        if (!isSpreadsheetFile) {
-          setDocumentStructure({
-            sections: [],
-            originalContent: file.content,
-          });
-        } else {
-          setDocumentStructure(null);
-        }
-      } else {
-        console.log('No content found in file object');
-        setOriginalFileContent('No file content found.');
-        setDocumentStructure({
-          sections: [],
-          originalContent: 'No file content found.',
-        });
-      }
-    } catch (error) {
-      console.error('Error loading file content:', error);
-      setOriginalFileContent('Unable to load file content. Please try again.');
+      setSession(newSession);
+      setCurrentContent(newSession.current_content || '');
+      setError(null);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to start session');
+      console.error('Error starting session:', err);
     } finally {
-      setIsLoadingContent(false);
+      setLoading(false);
     }
   };
 
-  const renderTableStructure = () => {
-    if (!documentStructure) return null;
+  const handleSendMessage = async () => {
+    if (!message.trim() || !session || sending) return;
 
-    return (
-      <Box
-        sx={{
-          bgcolor: '#fff',
-          p: 2,
-          borderRadius: 1,
-          border: '1px solid #e0e0e0',
-          mb: 2,
-        }}
-      >
-        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
-          RHETORICAL ANALYSIS
-        </Typography>
+    const userMessage = message;
 
-        <Typography variant="body2" sx={{ mb: 3, lineHeight: 1.6 }}>
-          Instructions: This quiz is meant to measure your knowledge at the beginning of this
-          course. I don't expect you to be an expert at this task, only that you give it your best
-          effort. Your task is to read the assigned article and complete this table.
-        </Typography>
-
-        <Box
-          sx={{
-            border: '2px solid #9c27b0',
-            borderRadius: 1,
-            overflow: 'hidden',
-            mb: 2,
-          }}
-        >
-          {/* Table Header */}
-          <Box
-            sx={{
-              display: 'flex',
-              bgcolor: '#9c27b0',
-              color: 'white',
-              fontWeight: 600,
-            }}
-          >
-            <Box
-              sx={{
-                flex: 1,
-                p: 2,
-                borderRight: '1px solid #fff',
-                textAlign: 'center',
-              }}
-            >
-              Description
-              <Typography variant="caption" display="block" sx={{ opacity: 0.8 }}>
-                Describe the element.
-              </Typography>
-            </Box>
-            <Box
-              sx={{
-                flex: 1,
-                p: 2,
-                textAlign: 'center',
-              }}
-            >
-              Clues & Indicators
-              <Typography variant="caption" display="block" sx={{ opacity: 0.8 }}>
-                Explain how you know.
-              </Typography>
-            </Box>
-          </Box>
-
-          {/* Table Rows */}
-          {documentStructure.sections?.map((section: any, index: number) => (
-            <Box
-              key={index}
-              sx={{
-                display: 'flex',
-                borderBottom:
-                  index < documentStructure.sections.length - 1 ? '1px solid #e0e0e0' : 'none',
-              }}
-            >
-              <Box
-                sx={{
-                  flex: 1,
-                  p: 2,
-                  borderRight: '1px solid #e0e0e0',
-                  bgcolor: '#fff',
-                }}
-              >
-                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
-                  {section.text || section.prompt || 'Section ' + (index + 1)}
-                </Typography>
-                {section.subQuestions?.map((subQ: string, subIndex: number) => (
-                  <Typography key={subIndex} variant="body2" sx={{ ml: 2, mb: 0.5 }}>
-                    • {subQ}
-                  </Typography>
-                ))}
-              </Box>
-              <Box
-                sx={{
-                  flex: 1,
-                  p: 2,
-                  minHeight: '80px',
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-              >
-                {filledSections.has(section.id || index.toString()) ? (
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: '#4caf50',
-                      fontStyle: 'italic',
-                      lineHeight: 1.4,
-                    }}
-                  >
-                    {filledSections.get(section.id || index.toString())}
-                    {isStreaming && <span style={{ animation: 'blink 1s infinite' }}>|</span>}
-                  </Typography>
-                ) : (
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: '#999',
-                      fontStyle: 'italic',
-                    }}
-                  >
-                    {isStreaming
-                      ? 'AI is filling this section...'
-                      : 'Click AI Fill to complete this section'}
-                  </Typography>
-                )}
-              </Box>
-            </Box>
-          ))}
-        </Box>
-
-        <Typography variant="body2" sx={{ fontSize: '0.875rem', color: '#666' }}>
-          James Madison University First-Year Writing Assessment (revised 1-12-22)
-        </Typography>
-      </Box>
-    );
-  };
-
-  const simulateProgressiveFilling = (
-    originalContent: string,
-    filledContent: string,
-    callback: (chunk: string) => void
-  ) => {
-    console.log('Starting streaming simulation');
-    console.log('Original content:', originalContent.substring(0, 100));
-    console.log('Filled content:', filledContent.substring(0, 100));
-
-    // Start with the original content
-    let currentContent = originalContent;
-    callback(currentContent);
-
-    // Find the differences between original and filled content
-    const originalLines = originalContent.split('\n');
-    const filledLines = filledContent.split('\n');
-
-    let lineIndex = 0;
-    let currentLine = 0;
-    let changesCount = 0;
-    const maxChanges = 20; // Limit the number of changes to show
-
-    let intervalId: NodeJS.Timeout;
-
-    const fillInterval = () => {
-      if (
-        lineIndex < originalLines.length &&
-        currentLine < filledLines.length &&
-        changesCount < maxChanges
-      ) {
-        const originalLine = originalLines[lineIndex];
-        const filledLine = filledLines[currentLine];
-
-        // If this line has changes (blanks filled), update it
-        const hasBlanks = originalLine.includes('_') || originalLine.includes('____');
-        const isDifferent = originalLine !== filledLine;
-
-        console.log(`Line ${lineIndex}: hasBlanks=${hasBlanks}, isDifferent=${isDifferent}`);
-        console.log(`Original: "${originalLine}"`);
-        console.log(`Filled: "${filledLine}"`);
-
-        if (isDifferent && (hasBlanks || filledLine.length > originalLine.length)) {
-          // Replace the original line with the filled line
-          const updatedLines = [...originalLines];
-          updatedLines[lineIndex] = filledLine;
-          currentContent = updatedLines.join('\n');
-          callback(currentContent);
-          changesCount++;
-          console.log(`Updated line ${lineIndex}, changes count: ${changesCount}`);
-
-          // Wait a bit before moving to next line
-          setTimeout(() => {
-            lineIndex++;
-            currentLine++;
-          }, 300); // Reduced from 500ms to 300ms
-        } else {
-          lineIndex++;
-          currentLine++;
-        }
-      } else {
-        // Show final content immediately
-        callback(filledContent);
-        clearInterval(intervalId);
-        setIsStreaming(false);
-        setStreamingContent(''); // Clear streaming content when done
-        console.log('Streaming simulation completed');
-      }
-    };
-
-    // Start the interval
-    intervalId = setInterval(fillInterval, 200); // Reduced from 300ms to 200ms
-
-    // Safety timeout to ensure simulation stops
-    setTimeout(() => {
-      clearInterval(intervalId);
-      callback(filledContent);
-      setIsStreaming(false);
-      setStreamingContent('');
-      console.log('Streaming simulation force-stopped by timeout');
-    }, 5000); // 5 second maximum
-  };
-
-  const handleAiFill = async (file: any) => {
-    if (!onAiFill) return;
-
-    console.log('Starting AI fill for file:', file);
-    setSelectedFile(file);
-    setIsStreaming(true);
-    setFilledSections(new Map()); // Reset filled sections
-
-    // Ensure we have the original content before proceeding
-    if (!originalFileContent || originalFileContent === '') {
-      console.log('Loading original content before AI fill');
-      await loadFileContent(file);
+    // Immediately add user message to conversation history for instant feedback
+    if (session) {
+      const tempSession = {
+        ...session,
+        conversation_history: [
+          ...(session.conversation_history || []),
+          {
+            role: 'user',
+            content: userMessage,
+            timestamp: new Date().toISOString(),
+            metadata: {},
+          },
+        ],
+      };
+      setSession(tempSession);
     }
+
+    setMessage('');
+    setSending(true);
+    setError(null);
 
     try {
-      // Use processExistingFile with file ID instead of passing the file object
-      console.log('Calling processExistingFile with file ID:', file.id);
-      const result = await fileProcessingService.processExistingFile(file.id, 'fill');
-      console.log('AI fill result:', result);
+      const response: ChatMessageResponse = await fileCompletionChatService.sendMessage(
+        session.id,
+        userMessage,
+        false
+      );
 
-      // Use the actual AI-filled content from the backend
-      const filledContent =
-        result.filled_content?.text ||
-        (typeof result.filled_content === 'string' ? result.filled_content : null) ||
-        'Content filled successfully!';
-      console.log('Using real AI-filled content:', filledContent);
+      // Update session with new message
+      const updatedSession = await fileCompletionChatService.getSession(session.id);
+      setSession(updatedSession);
 
-      // Debug logging for streaming
-      console.log('Original content length:', originalFileContent.length);
-      console.log('Filled content type:', typeof filledContent);
-
-      // Handle Excel/CSV files differently (they have object structure, not text)
-      const fileExtension = file.name.split('.').pop()?.toLowerCase();
-      const isSpreadsheet = ['xlsx', 'xls', 'csv'].includes(fileExtension || '');
-
-      if (isSpreadsheet && result.filled_content?.sheets) {
-        console.log('Excel file filled successfully with calculations');
-        // For spreadsheets, don't simulate streaming - just mark as complete
-        setIsStreaming(false);
-      } else {
-        // For text-based files, show streaming simulation
-        console.log('Filled content length:', filledContent.length);
-        console.log('Original content preview:', originalFileContent.substring(0, 200));
-        console.log('Filled content preview:', filledContent.substring(0, 200));
-
-        // Simulate progressive filling of blanks for better UX
-        simulateProgressiveFilling(originalFileContent, filledContent, chunk => {
-          setStreamingContent(chunk);
+      // If AI proposed changes, show them
+      if (response.proposed_changes.preview_available && response.proposed_changes.new_content) {
+        setProposedContent(response.proposed_changes.new_content);
+        setSnackbar({
+          open: true,
+          message: 'AI has proposed changes. Review and apply them!',
+          severity: 'info',
         });
       }
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to send message');
+      console.error('Error sending message:', err);
+    } finally {
+      setSending(false);
+    }
+  };
 
-      setFilledFiles(prev => new Map(prev).set(file.id, result));
-      onFileProcessed?.(file.id, result);
+  const handleApplyChanges = async () => {
+    if (!proposedContent || !session) return;
+
+    try {
+      await fileCompletionChatService.applyChanges(session.id, proposedContent);
+
+      // Refresh session to get updated content
+      const updatedSession = await fileCompletionChatService.getSession(session.id);
+      setSession(updatedSession);
+      setCurrentContent(updatedSession.current_content || '');
+      setProposedContent(null);
+      setShowDiff(false);
 
       setSnackbar({
         open: true,
-        message: 'File filled successfully!',
+        message: 'Changes applied successfully!',
         severity: 'success',
       });
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to apply changes');
+      console.error('Error applying changes:', err);
+    }
+  };
 
-      // Ensure streaming state is cleared after successful completion
-      setTimeout(() => {
-        setIsStreaming(false);
-        setStreamingContent('');
-      }, 1000); // Give simulation time to complete, then force stop
-    } catch (error) {
-      console.error('AI fill failed:', error);
-      setIsStreaming(false);
+  const handleDownload = () => {
+    if (!currentContent || !selectedFile) return;
+
+    const blob = new Blob([currentContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = selectedFile.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    setSnackbar({
+      open: true,
+      message: 'File downloaded successfully!',
+      severity: 'success',
+    });
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
       setSnackbar({
         open: true,
-        message: 'AI fill failed. Please try again.',
+        message: 'Copied to clipboard!',
+        severity: 'success',
+      });
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: 'Failed to copy to clipboard',
         severity: 'error',
       });
     }
-    // Note: setIsStreaming(false) is handled by simulateProgressiveFilling
   };
-
-  const handleDownloadFilled = async (file: any) => {
-    try {
-      console.log('Downloading filled file:', file);
-
-      // Get the filled file data from our state
-      const filledFileData = filledFiles.get(file.id);
-      if (!filledFileData) {
-        console.error('No filled file data found for file:', file.id);
-        return;
-      }
-
-      console.log('Filled file data:', filledFileData);
-
-      // Let the backend handle the clean filename generation
-      const filename = `filled_document.${file.name.split('.').pop()}`;
-      const fileExtension = filename.split('.').pop()?.toLowerCase();
-
-      // Check if it's an Excel file
-      if (fileExtension === 'xlsx' || fileExtension === 'xls') {
-        // Use the special Excel download method
-        await fileProcessingService.downloadAndOpenExcel(file.id);
-      } else {
-        // Use the regular download method for other file types
-        const { blob, filename: backendFilename } = await fileProcessingService.downloadFilledFile(
-          file.id
-        );
-        fileProcessingService.downloadFile(blob, backendFilename);
-      }
-
-      console.log('Download completed successfully');
-    } catch (error) {
-      console.error('Download failed:', error);
-
-      // Show user-friendly error message
-      alert(`Download failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  };
-
-  const getFileIcon = (fileType: string) => {
-    if (fileType.includes('pdf')) return <PdfIcon sx={{ color: '#f44336', fontSize: 32 }} />;
-    if (fileType.includes('word') || fileType.includes('document'))
-      return <FileIcon sx={{ color: '#2196f3', fontSize: 32 }} />;
-    if (fileType.includes('image')) return <FileIcon sx={{ color: '#4caf50', fontSize: 32 }} />;
-    return <FileIcon sx={{ color: '#757575', fontSize: 32 }} />;
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  const renderMainContent = () => {
-    if (!selectedFile) {
-      return (
-        <Box sx={{ textAlign: 'center', py: 8 }}>
-          <UploadIcon sx={{ fontSize: 64, color: 'grey.400', mb: 2 }} />
-          <Typography variant="h5" color="text.secondary" gutterBottom>
-            Select a file to view content
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Choose a file from the sidebar to see its content and start AI processing
-          </Typography>
-        </Box>
-      );
-    }
-
-    return (
-      <Box>
-        {/* File Header */}
-        <Box sx={{ mb: 1.5, pb: 1, borderBottom: '1px solid #e0e0e0' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            {getFileIcon(selectedFile.type)}
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.1, mb: 0.25 }}>
-                {selectedFile.name}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.2 }}>
-                {formatFileSize(selectedFile.size)}
-              </Typography>
-            </Box>
-            <Chip
-              label={selectedFile.status?.toUpperCase() || 'UNKNOWN'}
-              size="small"
-              sx={{
-                bgcolor: selectedFile.status === 'completed' ? '#4caf50' : '#ff9800',
-                color: 'white',
-                fontWeight: 600,
-                height: 24,
-                fontSize: '0.75rem',
-                '& .MuiChip-label': {
-                  px: 1,
-                },
-              }}
-            />
-          </Box>
-        </Box>
-
-        {/* Content Area */}
-        <Box
-          sx={{
-            minHeight: '400px',
-            maxHeight: '50vh',
-            overflow: 'auto',
-            p: 2,
-            bgcolor: '#fff',
-            borderRadius: 1,
-            border: '1px solid #f44336',
-          }}
-        >
-          {isLoadingContent ? (
-            <Box sx={{ textAlign: 'center', py: 4 }}>
-              <LinearProgress sx={{ mb: 2 }} />
-              <Typography variant="body2" color="text.secondary">
-                Loading file content...
-              </Typography>
-            </Box>
-          ) : isStreaming ? (
-            <Box>
-              <Typography
-                variant="h6"
-                gutterBottom
-                sx={{ color: '#2196f3', display: 'flex', alignItems: 'center', gap: 1 }}
-              >
-                <FillIcon />
-                AI is filling your file...
-              </Typography>
-
-              {/* Keep showing table view for Excel files during streaming */}
-              {structuredFileData &&
-              (structuredFileData.type === 'excel' || structuredFileData.type === 'csv') ? (
-                <Box>
-                  {renderSpreadsheetTable(structuredFileData)}
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2 }}>
-                    <LinearProgress sx={{ flex: 1, height: 4, borderRadius: 2 }} />
-                    <Typography variant="caption" color="text.secondary">
-                      AI is processing your spreadsheet...
-                    </Typography>
-                  </Box>
-                </Box>
-              ) : (
-                <Box>
-                  {/* Show the original content with streaming updates */}
-                  <Box
-                    sx={{
-                      bgcolor: '#fff',
-                      p: 2,
-                      borderRadius: 1,
-                      border: '1px solid #f44336',
-                      mb: 2,
-                    }}
-                  >
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        whiteSpace: 'pre-wrap',
-                        fontFamily: 'monospace',
-                        lineHeight: 1.6,
-                        color: '#333',
-                      }}
-                    >
-                      {streamingContent || originalFileContent}
-                      {isStreaming && <span style={{ animation: 'blink 1s infinite' }}>|</span>}
-                    </Typography>
-                  </Box>
-
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <LinearProgress sx={{ flex: 1, height: 4, borderRadius: 2 }} />
-                    <Typography variant="caption" color="text.secondary">
-                      AI is filling your file...
-                    </Typography>
-                  </Box>
-                </Box>
-              )}
-            </Box>
-          ) : filledFiles.has(selectedFile.id) ? (
-            <Box>
-              <Typography
-                variant="h6"
-                gutterBottom
-                sx={{ color: '#4caf50', display: 'flex', alignItems: 'center', gap: 1 }}
-              >
-                <CheckCircleIcon />
-                Assignment Completed
-              </Typography>
-
-              {/* Show filled content */}
-              {(() => {
-                const filledFileData = filledFiles.get(selectedFile.id);
-                const filledContent = filledFileData?.filled_content;
-                const fileExtension = selectedFile.name.split('.').pop()?.toLowerCase();
-                const isSpreadsheet = ['xlsx', 'xls', 'csv'].includes(fileExtension || '');
-
-                console.log('Filled file data:', filledFileData);
-                console.log('Filled content:', filledContent);
-                console.log('Filled content text:', filledContent?.text);
-                console.log('File data text:', filledFileData?.text);
-                console.log('Is spreadsheet:', isSpreadsheet);
-
-                // For spreadsheets, show table view with updated calculations
-                if (isSpreadsheet && filledContent?.sheets && structuredFileData) {
-                  // Update the structured data with filled values
-                  if (filledContent.sheets) {
-                    // Update the sheets with filled values
-                    const formattedData = formatSpreadsheetContent(filledContent);
-                    return <Box>{renderSpreadsheetTable(formattedData || structuredFileData)}</Box>;
-                  }
-                }
-
-                // For text-based files, show text content
-                // Try multiple sources for the filled text content
-                const displayText =
-                  streamingContent ||
-                  filledFileData?.text ||
-                  filledContent?.text ||
-                  (typeof filledContent === 'string' ? filledContent : null) ||
-                  'Content has been filled by AI. Download the file to see the complete result.';
-
-                return (
-                  <Box
-                    sx={{
-                      bgcolor: '#fff',
-                      p: 2,
-                      borderRadius: 1,
-                      border: '1px solid #f44336',
-                    }}
-                  >
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        whiteSpace: 'pre-wrap',
-                        fontFamily: 'monospace',
-                        lineHeight: 1.6,
-                        color: '#333',
-                      }}
-                    >
-                      {displayText}
-                    </Typography>
-                  </Box>
-                );
-              })()}
-            </Box>
-          ) : originalFileContent && originalFileContent !== 'No file content found.' ? (
-            <Box>
-              <Typography
-                variant="h6"
-                gutterBottom
-                sx={{ color: '#2196f3', display: 'flex', alignItems: 'center', gap: 1 }}
-              >
-                <FileIcon />
-                {documentStructure
-                  ? 'Document Structure'
-                  : structuredFileData &&
-                    (structuredFileData.type === 'excel' || structuredFileData.type === 'csv')
-                  ? 'Spreadsheet Preview'
-                  : 'Original File Content'}
-              </Typography>
-
-              {/* Show table structure if available, otherwise show text content */}
-              {documentStructure &&
-              documentStructure.sections &&
-              documentStructure.sections.length > 0 ? (
-                renderTableStructure()
-              ) : structuredFileData &&
-                (structuredFileData.type === 'excel' || structuredFileData.type === 'csv') ? (
-                // Show formatted table for Excel/CSV files
-                <Box sx={{ mb: 2 }}>{renderSpreadsheetTable(structuredFileData)}</Box>
-              ) : (
-                <Box
-                  sx={{
-                    bgcolor: '#fff',
-                    p: 2,
-                    borderRadius: 1,
-                    border: '1px solid #f44336',
-                    mb: 2,
-                  }}
-                >
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      whiteSpace: 'pre-wrap',
-                      fontFamily: 'monospace',
-                      lineHeight: 1.6,
-                      color: '#333',
-                    }}
-                  >
-                    {originalFileContent}
-                  </Typography>
-                </Box>
-              )}
-
-              <Box sx={{ textAlign: 'center', py: 2 }}></Box>
-            </Box>
-          ) : originalFileContent === 'No file content found.' ? (
-            <Box>
-              <Typography
-                variant="h6"
-                gutterBottom
-                sx={{ color: '#f44336', display: 'flex', alignItems: 'center', gap: 1 }}
-              >
-                <ErrorIcon />
-                No File Content Found
-              </Typography>
-
-              <Box
-                sx={{
-                  bgcolor: '#fff',
-                  p: 3,
-                  borderRadius: 1,
-                  border: '1px solid #f44336',
-                  textAlign: 'center',
-                }}
-              >
-                <Typography variant="body1" color="text.secondary" gutterBottom>
-                  The file was uploaded successfully, but no content could be extracted.
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  This might be due to file format issues or processing errors.
-                </Typography>
-              </Box>
-            </Box>
-          ) : (
-            <Box sx={{ textAlign: 'center', py: 4 }}>
-              <FillIcon sx={{ fontSize: 48, color: 'grey.400', mb: 2 }} />
-              <Typography variant="h6" color="text.secondary" gutterBottom>
-                Ready for AI Fill
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                Click the AI Fill button in the sidebar to let AI complete this file
-              </Typography>
-            </Box>
-          )}
-        </Box>
-      </Box>
-    );
-  };
-
-  // Calculate file processing metrics
-  const calculateProcessingMetrics = () => {
-    const totalFiles = files.length;
-    const completedFiles = files.filter(f => f.status === 'completed').length;
-    const filledFilesCount = filledFiles.size;
-    const processingErrors = files.filter(f => f.status === 'error').length;
-
-    // Calculate overall processing score based on completion rate and AI fill success
-    const completionRate = totalFiles > 0 ? (completedFiles / totalFiles) * 100 : 100;
-    const aiFillSuccessRate = completedFiles > 0 ? (filledFilesCount / completedFiles) * 100 : 100;
-    const errorRate = totalFiles > 0 ? (processingErrors / totalFiles) * 100 : 0;
-
-    // Overall score combines completion rate, AI fill success, and error penalty
-    const overallScore = Math.max(
-      0,
-      Math.min(100, completionRate * 0.4 + aiFillSuccessRate * 0.4 + (100 - errorRate) * 0.2)
-    );
-
-    return {
-      filesProcessed: totalFiles,
-      avgProcessingTime: totalFiles > 0 ? Math.round(Math.random() * 5 + 2) : 0, // Mock realistic processing time
-      successRate: Math.round(overallScore),
-      contentQuality: filledFilesCount > 0 ? Math.min(95, 75 + filledFilesCount * 5) : 85,
-      aiAccuracy: filledFilesCount > 0 ? Math.min(98, 85 + filledFilesCount * 3) : 92,
-    };
-  };
-
-  // Update metrics when files change
-  useEffect(() => {
-    setProcessingMetrics(calculateProcessingMetrics());
-  }, [files, filledFiles]);
-
-  const getScoreColor = (score: number) => {
-    if (score >= 90) return '#4caf50';
-    if (score >= 75) return '#ff9800';
-    return '#f44336';
-  };
-
-  const QuickActionsSidebar = () => (
-    <Box
-      sx={{
-        width: 300,
-        borderLeft: '1px solid #f44336',
-        backgroundColor: '#fff',
-        p: 2,
-        overflow: 'auto',
-        height: '100%',
-      }}
-    >
-      {/* File Processing Analytics */}
-      <Typography
-        variant="subtitle1"
-        gutterBottom
-        sx={{
-          color: 'black',
-          mb: 1.5,
-          textAlign: 'center',
-          fontWeight: 600,
-        }}
-      >
-        File Processing Analytics
-      </Typography>
-
-      {/* Overall Score */}
-      <Box sx={{ mb: 3, textAlign: 'center' }}>
-        <Box
-          sx={{
-            position: 'relative',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            mb: 1,
-          }}
-        >
-          <CircularProgress
-            variant="determinate"
-            value={processingMetrics.successRate}
-            size={80}
-            thickness={4}
-            sx={{
-              color: getScoreColor(processingMetrics.successRate),
-              '& .MuiCircularProgress-circle': {
-                strokeLinecap: 'round',
-              },
-            }}
-          />
-          <Box
-            sx={{
-              top: 0,
-              left: 0,
-              bottom: 0,
-              right: 0,
-              position: 'absolute',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Typography
-              variant="h4"
-              component="div"
-              sx={{
-                fontWeight: 'bold',
-                color: getScoreColor(processingMetrics.successRate),
-              }}
-            >
-              {processingMetrics.successRate}
-            </Typography>
-          </Box>
-        </Box>
-        <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
-          Overall Processing Score
-        </Typography>
-        <Button
-          variant="outlined"
-          size="small"
-          onClick={() => setIsMetricsExpanded(!isMetricsExpanded)}
-          sx={{
-            borderColor: '#f44336',
-            color: '#f44336',
-            fontSize: '0.75rem',
-            px: 2,
-            py: 0.5,
-            '&:hover': {
-              borderColor: '#f44336',
-              backgroundColor: 'rgba(244, 67, 54, 0.04)',
-            },
-          }}
-        >
-          {isMetricsExpanded ? 'Hide Details' : 'View Score Details'}
-        </Button>
-      </Box>
-
-      {/* Detailed Metrics - Expandable */}
-      {isMetricsExpanded && (
-        <Box sx={{ mb: 3 }}>
-          {[
-            {
-              label: 'Files Processed',
-              score: processingMetrics.filesProcessed,
-              color: '#2196f3',
-              isCount: true,
-            },
-            {
-              label: 'Content Quality',
-              score: processingMetrics.contentQuality,
-              color: getScoreColor(processingMetrics.contentQuality),
-              isCount: false,
-            },
-            {
-              label: 'AI Accuracy',
-              score: processingMetrics.aiAccuracy,
-              color: getScoreColor(processingMetrics.aiAccuracy),
-              isCount: false,
-            },
-            {
-              label: 'Avg Processing Time',
-              score: processingMetrics.avgProcessingTime,
-              color: '#ff9800',
-              suffix: 's',
-              isCount: true,
-            },
-          ].map(({ label, score, color, suffix = '', isCount = false }, index) => (
-            <Box
-              key={index}
-              sx={{
-                mb: 1.5,
-                transform: isMetricsExpanded ? 'translateY(0)' : 'translateY(20px)',
-                opacity: isMetricsExpanded ? 1 : 0,
-                transition: `transform 0.4s cubic-bezier(0.4, 0, 0.2, 1) ${
-                  index * 0.1
-                }s, opacity 0.4s ease ${index * 0.1}s`,
-              }}
-            >
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  mb: 0.5,
-                }}
-              >
-                <Typography variant="body2" sx={{ fontSize: '0.875rem', fontWeight: 500 }}>
-                  {label}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{ fontSize: '0.875rem', fontWeight: 'bold', color }}
-                >
-                  {score}
-                  {suffix}
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  width: '100%',
-                  height: 4,
-                  backgroundColor: 'rgba(0,0,0,0.1)',
-                  borderRadius: 2,
-                  overflow: 'hidden',
-                }}
-              >
-                <Box
-                  sx={{
-                    width: isCount ? '100%' : `${Math.min(score, 100)}%`,
-                    height: '100%',
-                    backgroundColor: color,
-                    borderRadius: 2,
-                    transition: 'width 0.6s ease 0.2s',
-                  }}
-                />
-              </Box>
-            </Box>
-          ))}
-        </Box>
-      )}
-
-      <Divider sx={{ my: 2, borderColor: '#f44336' }} />
-
-      {/* Quick Actions */}
-      <Typography
-        variant="h6"
-        gutterBottom
-        sx={{
-          fontSize: '1.25rem',
-          color: 'black',
-          mb: 2,
-          fontWeight: 600,
-        }}
-      >
-        Quick Actions
-      </Typography>
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: 1,
-          mb: 3,
-        }}
-      >
-        {[
-          { label: 'ANALYZE', icon: AnalyticsIcon, color: '#2196f3' },
-          { label: 'FILL', icon: FillIcon, color: '#4caf50' },
-          { label: 'PREVIEW', icon: PreviewIcon, color: '#ff9800' },
-          { label: 'DOWNLOAD', icon: DownloadIcon, color: '#9c27b0' },
-        ].map(({ label, icon: Icon, color }) => (
-          <Button
-            key={label}
-            onClick={() => {
-              if (selectedFile) {
-                switch (label) {
-                  case 'ANALYZE':
-                    // Trigger file analysis
-                    break;
-                  case 'FILL':
-                    handleAiFill(selectedFile);
-                    break;
-                  case 'PREVIEW':
-                    // Trigger file preview
-                    break;
-                  case 'DOWNLOAD':
-                    if (filledFiles.has(selectedFile.id)) {
-                      handleDownloadFilled(selectedFile);
-                    }
-                    break;
-                }
-              }
-            }}
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 0.5,
-              color: color,
-              backgroundColor: 'transparent',
-              textTransform: 'none',
-              fontWeight: 'normal',
-              minWidth: '100%',
-              justifyContent: 'center',
-              fontSize: '0.75rem',
-              padding: 1,
-              '&:hover': {
-                backgroundColor: 'transparent',
-                color: color,
-              },
-            }}
-          >
-            <Icon sx={{ color: color, fontSize: '1.5rem' }} />
-            {label}
-          </Button>
-        ))}
-      </Box>
-    </Box>
-  );
 
   const handleClose = () => {
+    setSession(null);
     setSelectedFile(null);
-    setStreamingContent('');
-    setIsStreaming(false);
-    setOriginalFileContent('');
-    setIsLoadingContent(false);
-    setDocumentStructure(null);
-    setFilledSections(new Map());
+    setCurrentContent('');
+    setProposedContent(null);
+    setMessage('');
+    setError(null);
     onClose();
   };
+
+  if (!open) return null;
 
   return (
     <>
       <Dialog
         open={open}
         onClose={handleClose}
-        maxWidth={isFullscreen ? false : 'lg'}
+        maxWidth="xl"
         fullWidth
-        fullScreen={isFullscreen}
         PaperProps={{
           sx: {
-            borderRadius: isFullscreen ? 0 : 3,
-            minHeight: isFullscreen ? '100vh' : '75vh',
-            maxHeight: isFullscreen ? '100vh' : '90vh',
-            backgroundColor: '#ffffff',
+            height: '90vh',
             border: '3px solid #f44336',
-            boxShadow: '0 12px 48px rgba(244, 67, 54, 0.25)',
+            borderRadius: 4,
           },
         }}
       >
         <DialogTitle
           sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            pb: 1,
-            borderBottom: '1px solid #f44336',
-            backgroundColor: '#ffffff',
-            px: 3,
-            py: 2,
+            borderBottom: '3px solid #f44336',
+            p: 2,
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <UploadIcon sx={{ color: '#f44336', fontSize: '1.5rem' }} />
-            <Typography variant="h6" component="div" sx={{ color: '#f44336', fontWeight: 600 }}>
-              AI File Processing
-            </Typography>
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            {onFileDeleted && selectedFile && (
-              <Tooltip title="Delete File">
-                <IconButton
-                  onClick={() => onFileDeleted(selectedFile.id)}
-                  size="small"
-                  sx={{
-                    width: 32,
-                    height: 32,
-                    color: '#ffffff',
-                    '&:hover': {
-                      bgcolor: 'rgba(255, 255, 255, 0.2)',
-                    },
-                  }}
-                >
-                  <DeleteIcon />
-                </IconButton>
-              </Tooltip>
-            )}
-            <Tooltip title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}>
-              <IconButton
-                onClick={() => setIsFullscreen(!isFullscreen)}
-                size="small"
-                sx={{ width: 32, height: 32, color: '#ffffff' }}
-              >
-                {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Minimize">
-              <IconButton
-                onClick={() => setIsMinimized(!isMinimized)}
-                size="small"
-                sx={{ width: 32, height: 32, color: '#ffffff' }}
-              >
-                <MinimizeIcon />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Close">
-              <IconButton
-                onClick={handleClose}
-                size="small"
-                sx={{ width: 32, height: 32, color: '#ffffff' }}
-              >
+          <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Box display="flex" alignItems="center" gap={1}>
+              <UploadIcon sx={{ color: '#f44336', fontSize: '1.5rem' }} />
+              <Typography variant="h6">Interactive File Completion</Typography>
+            </Box>
+            <Box display="flex" gap={1} alignItems="center">
+              {session && (
+                <>
+                  <Chip
+                    label={`${session.version_history?.length || 0} versions`}
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                  />
+                  <Chip
+                    label={`${session.total_tokens_used || 0} tokens`}
+                    size="small"
+                    variant="outlined"
+                  />
+                  <Tooltip title="Version History">
+                    <IconButton onClick={() => setShowVersionHistory(true)} size="small">
+                      <HistoryIcon />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Complete and Download">
+                    <IconButton onClick={handleDownload} color="success" size="small">
+                      <DownloadIcon />
+                    </IconButton>
+                  </Tooltip>
+                </>
+              )}
+              {onFileDeleted && selectedFile && (
+                <Tooltip title="Delete File">
+                  <IconButton
+                    onClick={() => onFileDeleted(selectedFile.id)}
+                    size="small"
+                    color="error"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Tooltip>
+              )}
+              <IconButton onClick={handleClose} size="small">
                 <CloseIcon />
               </IconButton>
-            </Tooltip>
+            </Box>
           </Box>
         </DialogTitle>
 
-        {!isMinimized ? (
-          <DialogContent
-            sx={{
-              p: 0,
-              display: 'flex',
-              height: isFullscreen ? 'calc(100vh - 120px)' : '65vh',
-              backgroundColor: '#ffffff',
-            }}
-          >
-            {/* Main Content Area */}
+        <DialogContent sx={{ p: 0, height: '100%' }}>
+          {loading ? (
             <Box
               sx={{
-                flex: 1,
-                p: 3,
-                overflow: 'auto',
-                backgroundColor: '#ffffff',
-                borderRight: '1px solid #f44336',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100%',
               }}
             >
-              {renderMainContent()}
+              <CircularProgress />
             </Box>
+          ) : error ? (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100%',
+                p: 4,
+              }}
+            >
+              <Alert severity="error">{error}</Alert>
+            </Box>
+          ) : (
+            <Box
+              sx={{
+                height: '100%',
+                display: 'flex',
+                gap: 2,
+                p: 2,
+              }}
+            >
+              {/* Preview Panel - NOW ON LEFT (60% width) */}
+              <Paper
+                elevation={3}
+                sx={{
+                  flex: 3,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'hidden',
+                  border: '2px solid #f44336',
+                  borderRadius: 3,
+                }}
+              >
+                <Box
+                  sx={{
+                    p: 2,
+                    bgcolor: 'background.default',
+                    borderBottom: '3px solid #f44336',
+                  }}
+                >
+                  <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <Typography variant="subtitle1" fontWeight="bold">
+                      {proposedContent ? 'Proposed Changes' : selectedFile?.name || 'Content'}
+                    </Typography>
+                    <Box display="flex" gap={1}>
+                      {proposedContent && (
+                        <>
+                          <Tooltip title="Compare Changes">
+                            <IconButton size="small" onClick={() => setShowDiff(!showDiff)}>
+                              <CompareIcon />
+                            </IconButton>
+                          </Tooltip>
+                          <Button
+                            variant="outlined"
+                            color="success"
+                            size="small"
+                            startIcon={<ApplyIcon />}
+                            onClick={handleApplyChanges}
+                          >
+                            Apply Changes
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={() => setProposedContent(null)}
+                          >
+                            Discard
+                          </Button>
+                        </>
+                      )}
+                      <Tooltip title="Copy Content">
+                        <IconButton
+                          size="small"
+                          onClick={() => copyToClipboard(proposedContent || currentContent)}
+                        >
+                          <CopyIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </Box>
+                </Box>
+                <Box sx={{ flex: 1, overflowY: 'auto', p: 2, bgcolor: 'grey.50' }}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      bgcolor: 'white',
+                      fontFamily: 'monospace',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                    }}
+                  >
+                    {proposedContent || currentContent || 'No content yet...'}
+                  </Paper>
+                </Box>
+              </Paper>
 
-            {/* Quick Actions & File List Sidebar */}
-            <QuickActionsSidebar />
-          </DialogContent>
-        ) : (
-          <DialogContent
-            sx={{
-              p: 2,
-              textAlign: 'center',
-              backgroundColor: '#ffffff',
-            }}
-          >
-            <Typography variant="body2" color="text.secondary">
-              File processing minimized - Click to expand
-            </Typography>
-          </DialogContent>
-        )}
+              {/* Chat Panel - NOW ON RIGHT (40% width) */}
+              <Paper
+                elevation={3}
+                sx={{
+                  flex: 2,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'hidden',
+                  border: '2px solid #f44336',
+                  borderRadius: 3,
+                }}
+              >
+                {/* Chat Messages */}
+                <Box
+                  ref={chatContainerRef}
+                  sx={{
+                    flex: 1,
+                    overflowY: 'auto',
+                    p: 2,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 2,
+                  }}
+                >
+                  {session?.conversation_history?.map((msg, index) => (
+                    <Box
+                      key={index}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: 1,
+                        flexDirection: msg.role === 'user' ? 'row-reverse' : 'row',
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          bgcolor: msg.role === 'user' ? 'primary.main' : 'secondary.main',
+                          color: 'white',
+                        }}
+                      >
+                        {msg.role === 'user' ? (
+                          <UserIcon fontSize="small" />
+                        ) : (
+                          <AIIcon fontSize="small" />
+                        )}
+                      </Box>
+                      <Paper
+                        elevation={1}
+                        sx={{
+                          p: 2,
+                          maxWidth: '75%',
+                          bgcolor: msg.role === 'user' ? 'primary.light' : 'background.paper',
+                          color: msg.role === 'user' ? 'primary.contrastText' : 'text.primary',
+                        }}
+                      >
+                        <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                          {msg.content}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{ mt: 1, display: 'block', opacity: 0.7 }}
+                        >
+                          {new Date(msg.timestamp).toLocaleTimeString()}
+                        </Typography>
+                      </Paper>
+                      {msg.role === 'assistant' && (
+                        <Tooltip title="Copy">
+                          <IconButton size="small" onClick={() => copyToClipboard(msg.content)}>
+                            <CopyIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </Box>
+                  ))}
+                  {sending && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <CircularProgress size={20} />
+                      <Typography variant="body2" color="text.secondary">
+                        AI is thinking...
+                      </Typography>
+                    </Box>
+                  )}
+                  <div ref={messagesEndRef} />
+                </Box>
+
+                {/* Input Area */}
+                <Divider />
+                <Box sx={{ p: 2 }}>
+                  <Box display="flex" gap={1} mb={1}>
+                    <TextField
+                      fullWidth
+                      multiline
+                      maxRows={4}
+                      value={message}
+                      onChange={e => setMessage(e.target.value)}
+                      onKeyPress={e => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      placeholder="Ask AI to complete, modify, or improve your file..."
+                      disabled={sending}
+                      variant="outlined"
+                      size="small"
+                    />
+                    <Button
+                      variant="contained"
+                      endIcon={<SendIcon sx={{ fontSize: '2rem' }} />}
+                      onClick={handleSendMessage}
+                      disabled={!message.trim() || sending}
+                      sx={{
+                        minWidth: '100px',
+                        fontSize: '1.5rem',
+                        fontWeight: 700,
+                      }}
+                    >
+                      Send
+                    </Button>
+                  </Box>
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    <Chip
+                      label="Make it more formal"
+                      size="small"
+                      onClick={() => {
+                        if (selectedChip === 'formal') {
+                          setSelectedChip(null);
+                          setMessage('');
+                        } else {
+                          setMessage('Make this more formal and professional');
+                          setSelectedChip('formal');
+                        }
+                      }}
+                      clickable
+                      sx={{
+                        backgroundColor: selectedChip === 'formal' ? '#f44336' : 'default',
+                        color: selectedChip === 'formal' ? 'white' : 'default',
+                        '&:hover': {
+                          backgroundColor: '#f44336',
+                          color: 'white',
+                        },
+                      }}
+                    />
+                    <Chip
+                      label="Fill in blanks"
+                      size="small"
+                      onClick={() => {
+                        if (selectedChip === 'blanks') {
+                          setSelectedChip(null);
+                          setMessage('');
+                        } else {
+                          setMessage('Complete all blank sections and answer all questions');
+                          setSelectedChip('blanks');
+                        }
+                      }}
+                      clickable
+                      sx={{
+                        backgroundColor: selectedChip === 'blanks' ? '#f44336' : 'default',
+                        color: selectedChip === 'blanks' ? 'white' : 'default',
+                        '&:hover': {
+                          backgroundColor: '#f44336',
+                          color: 'white',
+                        },
+                      }}
+                    />
+                    <Chip
+                      label="Improve clarity"
+                      size="small"
+                      onClick={() => {
+                        if (selectedChip === 'clarity') {
+                          setSelectedChip(null);
+                          setMessage('');
+                        } else {
+                          setMessage('Improve the clarity and readability');
+                          setSelectedChip('clarity');
+                        }
+                      }}
+                      clickable
+                      sx={{
+                        backgroundColor: selectedChip === 'clarity' ? '#f44336' : 'default',
+                        color: selectedChip === 'clarity' ? 'white' : 'default',
+                        '&:hover': {
+                          backgroundColor: '#f44336',
+                          color: 'white',
+                        },
+                      }}
+                    />
+                    <Chip
+                      label="Add more detail"
+                      size="small"
+                      onClick={() => {
+                        if (selectedChip === 'detail') {
+                          setSelectedChip(null);
+                          setMessage('');
+                        } else {
+                          setMessage('Add more detail and examples');
+                          setSelectedChip('detail');
+                        }
+                      }}
+                      clickable
+                      sx={{
+                        backgroundColor: selectedChip === 'detail' ? '#f44336' : 'default',
+                        color: selectedChip === 'detail' ? 'white' : 'default',
+                        '&:hover': {
+                          backgroundColor: '#f44336',
+                          color: 'white',
+                        },
+                      }}
+                    />
+                    <Chip
+                      label="Answer the Question(s)"
+                      size="small"
+                      onClick={() => {
+                        if (selectedChip === 'questions') {
+                          setSelectedChip(null);
+                          setMessage('');
+                        } else {
+                          setMessage('Answer all questions in the document');
+                          setSelectedChip('questions');
+                        }
+                      }}
+                      clickable
+                      sx={{
+                        backgroundColor: selectedChip === 'questions' ? '#f44336' : 'default',
+                        color: selectedChip === 'questions' ? 'white' : 'default',
+                        '&:hover': {
+                          backgroundColor: '#f44336',
+                          color: 'white',
+                        },
+                      }}
+                    />
+                  </Box>
+                </Box>
+              </Paper>
+            </Box>
+          )}
+        </DialogContent>
       </Dialog>
+
+      {/* Version History Modal */}
+      {session && (
+        <FileVersionHistory
+          open={showVersionHistory}
+          onClose={() => setShowVersionHistory(false)}
+          sessionId={session.id}
+          onRevert={() => {
+            // Refresh session after revert
+            fileCompletionChatService.getSession(session.id).then(updatedSession => {
+              setSession(updatedSession);
+              setCurrentContent(updatedSession.current_content || '');
+              setShowVersionHistory(false);
+              setSnackbar({
+                open: true,
+                message: 'Reverted to previous version successfully!',
+                severity: 'success',
+              });
+            });
+          }}
+        />
+      )}
 
       {/* Snackbar for notifications */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
         <Alert
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
           severity={snackbar.severity}
-          sx={{ width: '100%' }}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
         >
           {snackbar.message}
         </Alert>
       </Snackbar>
-
-      {/* CSS for blinking cursor animation */}
-      <style>
-        {`
-          @keyframes blink {
-            0%, 50% { opacity: 1; }
-            51%, 100% { opacity: 0; }
-          }
-        `}
-      </style>
     </>
   );
 };

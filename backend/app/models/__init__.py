@@ -1,4 +1,7 @@
-from .base import Base
+# Import Base from the same location all models use
+from app.db.base_class import Base
+# Import FileCompletionSession BEFORE User to avoid circular dependency
+from .file_completion_session import FileCompletionSession, SessionStatus
 from .user import User
 # from .token import Token
 from .assignment import Assignment
@@ -35,6 +38,8 @@ __all__ = [
     "UsageLimit",
     "File",
     "FileUpload",
+    "FileCompletionSession",
+    "SessionStatus",
     "Activity",
     "Transaction",
 ] 

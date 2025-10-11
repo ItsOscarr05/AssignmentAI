@@ -337,7 +337,7 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
 
       const completedFile = {
         ...newFile,
-        id: fileData.id, // Use the backend's file ID instead of frontend timestamp
+        id: fileData.file_upload_id || fileData.id, // Use the database file_upload_id, fallback to UUID
         name: fileData.name, // Use the corrected filename from backend (e.g., .xls instead of .csv)
         type: fileData.type, // Use the corrected MIME type from backend (e.g., application/vnd.ms-excel)
         status: 'completed' as const,

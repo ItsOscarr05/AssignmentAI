@@ -36,3 +36,4 @@ class FileUpload(Base):
     
     # Relationships
     assignment = relationship("Assignment", back_populates="file_uploads")
+    completion_sessions = relationship("FileCompletionSession", back_populates="file_upload", lazy="dynamic")

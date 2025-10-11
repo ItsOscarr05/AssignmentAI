@@ -24,6 +24,8 @@ from app.models.preference import Preference
 from app.models.template import Template
 from app.models.citation import Citation
 from app.models.file import File
+from app.models.file_upload import FileUpload
+from app.models.file_completion_session import FileCompletionSession
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
