@@ -71,6 +71,53 @@ async def create_file_completion_session(
         )
 
 
+@router.get("/sessions", response_model=List[SessionResponse])
+async def get_file_completion_sessions(
+    file_id: int = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get file completion sessions for the current user
+    Optionally filter by file_id
+    """
+    try:
+        from app.models.file_completion_session import FileCompletionSession
+        
+        query = db.query(FileCompletionSession).filter(
+            FileCompletionSession.user_id == current_user.id
+        )
+        
+        if file_id:
+            query = query.filter(FileCompletionSession.file_id == file_id)
+        
+        sessions = query.order_by(FileCompletionSession.created_at.desc()).all()
+        
+        return [
+            SessionResponse(
+                id=session.id,
+                session_token=session.session_token,
+                status=session.status.value,
+                original_filename=session.original_filename,
+                file_type=session.file_type,
+                current_content=session.current_content,
+                model_used=session.model_used,
+                conversation_history=session.conversation_history or [],
+                version_history=session.version_history or [],
+                total_tokens_used=session.total_tokens_used,
+                created_at=session.created_at,
+                updated_at=session.updated_at
+            )
+            for session in sessions
+        ]
+    
+    except Exception as e:
+        logger.error(f"Error retrieving sessions: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve sessions"
+        )
+
 @router.get("/sessions/{session_id}", response_model=SessionResponse)
 async def get_file_completion_session(
     session_id: int,

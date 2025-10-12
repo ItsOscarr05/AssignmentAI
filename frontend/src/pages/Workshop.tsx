@@ -156,11 +156,60 @@ const Workshop: React.FC = () => {
   }, [featureAccessError]);
   const [input, setInput] = useState('');
   const [linkInput, setLinkInput] = useState('');
+  const [isLinkProcessing, setIsLinkProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [responseTab, setResponseTab] = useState(0);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [activityData, setActivityData] = useState<any[]>([]);
+  const [activityData, setActivityData] = useState<any[]>(() => {
+    // Get the current week's start date (Sunday)
+    const now = new Date();
+    const lastSunday = new Date(now);
+    lastSunday.setDate(now.getDate() - now.getDay());
+    lastSunday.setHours(0, 0, 0, 0);
+    const currentWeekStart = lastSunday.toISOString().split('T')[0];
+    
+    // Load persisted activity data from localStorage
+    const saved = localStorage.getItem('weeklyActivityData');
+    const savedWeekStart = localStorage.getItem('weeklyActivityWeekStart');
+    
+    if (saved && savedWeekStart === currentWeekStart) {
+      // Same week, load the saved data
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse saved activity data:', e);
+      }
+    } else if (savedWeekStart && savedWeekStart !== currentWeekStart) {
+      // New week detected, clear old data
+      console.log('New week detected, resetting activity data');
+      localStorage.removeItem('weeklyActivityData');
+      localStorage.setItem('weeklyActivityWeekStart', currentWeekStart);
+    } else {
+      // First time, set the week start
+      localStorage.setItem('weeklyActivityWeekStart', currentWeekStart);
+    }
+    
+    // Return empty data for the current week
+    const weekDays = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date(lastSunday);
+      date.setDate(lastSunday.getDate() + i);
+      return date;
+    });
+    
+    return weekDays.map(date => {
+      const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+      return {
+        date: dayName,
+        chats: 0,
+        files: 0,
+        links: 0,
+        summarize: 0,
+        extract: 0,
+        rewrite: 0,
+      };
+    });
+  });
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
   const [animatedPercent, setAnimatedPercent] = useState(0);
   const [isTokenChartHovered, setIsTokenChartHovered] = useState(false);
@@ -263,9 +312,49 @@ const Workshop: React.FC = () => {
     });
   }, [workshopHistory]);
 
-  // Update activity data when workshop history changes
+  // Update activity data when workshop history changes - merge with existing data
   useEffect(() => {
-    setActivityData(generateActivityData);
+    const newData = generateActivityData;
+    
+    // Check if we're still in the same week
+    const now = new Date();
+    const lastSunday = new Date(now);
+    lastSunday.setDate(now.getDate() - now.getDay());
+    lastSunday.setHours(0, 0, 0, 0);
+    const currentWeekStart = lastSunday.toISOString().split('T')[0];
+    const savedWeekStart = localStorage.getItem('weeklyActivityWeekStart');
+    
+    // If it's a new week, reset the data
+    if (savedWeekStart && savedWeekStart !== currentWeekStart) {
+      console.log('New week detected in useEffect, resetting activity data');
+      localStorage.setItem('weeklyActivityWeekStart', currentWeekStart);
+      localStorage.setItem('weeklyActivityData', JSON.stringify(newData));
+      setActivityData(newData);
+      return;
+    }
+    
+    setActivityData(prevData => {
+      // Merge new data with existing data by adding counts
+      const merged = prevData.map((prevDay, index) => {
+        const newDay = newData[index];
+        if (!newDay) return prevDay;
+        
+        return {
+          date: prevDay.date,
+          chats: Math.max(prevDay.chats, newDay.chats),
+          files: Math.max(prevDay.files, newDay.files),
+          links: Math.max(prevDay.links, newDay.links),
+          summarize: Math.max(prevDay.summarize, newDay.summarize),
+          extract: Math.max(prevDay.extract, newDay.extract),
+          rewrite: Math.max(prevDay.rewrite, newDay.rewrite),
+        };
+      });
+      
+      // Save to localStorage
+      localStorage.setItem('weeklyActivityData', JSON.stringify(merged));
+      
+      return merged;
+    });
   }, [generateActivityData]);
 
   // Modal state for live AI response
@@ -281,22 +370,15 @@ const Workshop: React.FC = () => {
   }, [showFileUploadModal]);
 
   // Use real token usage for the circular progress bar
-  const getPlanLabel = () => {
-    if (subscriptionLoading) return 'Loading...';
-    if (!subscription) return 'Free Plan (100,000 tokens/month)';
-
-    return tokenLimitData?.label || 'Free Plan (100,000 tokens/month)';
-  };
-
   const tokenUsage = useMemo(
     () => ({
-      label: getPlanLabel(),
+      label: subscriptionLoading ? 'Loading...' : (tokenLimitData?.label || 'Free Plan (100,000 tokens/month)'),
       total: totalTokens,
       used: usedTokens,
       remaining: remainingTokens,
       percentUsed: percentUsed,
     }),
-    [subscription, subscriptionLoading, totalTokens, usedTokens, remainingTokens, percentUsed]
+    [subscriptionLoading, tokenLimitData?.label, totalTokens, usedTokens, remainingTokens, percentUsed]
   );
 
   useEffect(() => {
@@ -414,6 +496,7 @@ const Workshop: React.FC = () => {
   const handleLinkSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (linkInput.trim()) {
+      setIsLinkProcessing(true);
       try {
         const linkResult = await addLink({ url: linkInput, title: linkInput });
         if (linkResult) {
@@ -423,6 +506,8 @@ const Workshop: React.FC = () => {
         setLinkInput('');
       } catch (error) {
         console.error('Error processing link:', error);
+      } finally {
+        setIsLinkProcessing(false);
       }
     }
   };
@@ -634,16 +719,17 @@ const Workshop: React.FC = () => {
               <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 2 }}>
                 <Button
                   variant="contained"
-                  startIcon={<AddIcon />}
+                  startIcon={isLinkProcessing ? <CircularProgress size={20} color="inherit" /> : <AddIcon />}
                   type="submit"
+                  disabled={isLinkProcessing}
                   sx={{
-                    backgroundColor: '#82ca9d',
+                    backgroundColor: isLinkProcessing ? '#9e9e9e' : '#82ca9d',
                     '&:hover': {
-                      backgroundColor: '#6a9c7a',
+                      backgroundColor: isLinkProcessing ? '#9e9e9e' : '#6a9c7a',
                     },
                   }}
                 >
-                  Process Link
+                  {isLinkProcessing ? 'Link Processing' : 'Process Link'}
                 </Button>
                 <Button
                   variant="outlined"

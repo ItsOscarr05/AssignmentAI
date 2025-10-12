@@ -27,13 +27,15 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import EditProfileDialog from '../components/profile/EditProfileDialog';
 import { useAuth } from '../contexts/AuthContext';
 import { useAssignments } from '../hooks/useApiQuery';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { useProfileStore } from '../services/ProfileService';
+import { fileUploadService } from '../services/fileUploadService';
 import { paymentService, Subscription } from '../services/paymentService';
+import { mapToCoreSubject } from '../services/subjectService';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 
 interface TabPanelProps {
@@ -274,6 +276,27 @@ const Profile: React.FC = () => {
     error: assignmentsError,
   } = useAssignments();
 
+  // Fetch file uploads to include in total count
+  const [fileUploads, setFileUploads] = useState<any[]>([]);
+  const [fileUploadsLoading, setFileUploadsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFileUploads = async () => {
+      try {
+        setFileUploadsLoading(true);
+        const uploads = await fileUploadService.getAll();
+        setFileUploads(uploads.items || []);
+      } catch (error) {
+        console.error('Failed to fetch file uploads:', error);
+        setFileUploads([]);
+      } finally {
+        setFileUploadsLoading(false);
+      }
+    };
+
+    fetchFileUploads();
+  }, []);
+
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
@@ -352,8 +375,60 @@ const Profile: React.FC = () => {
     setSnackbar(prev => ({ ...prev, open: false }));
   };
 
-  // Calculate stats from real data
-  const totalAssignments = assignments.length;
+  // Calculate stats from real data - combine assignments and file uploads (excluding links)
+  const combinedActivities = useMemo(() => {
+    const activities: any[] = [];
+
+    // Debug: Log the assignments data structure
+    console.log('Profile: assignments data:', assignments);
+    console.log('Profile: assignments type:', typeof assignments);
+    console.log('Profile: assignments isArray:', Array.isArray(assignments));
+
+    // Add traditional assignments (ensure assignments is an array)
+    if (Array.isArray(assignments)) {
+      assignments.forEach(assignment => {
+        activities.push({
+          id: `assignment-${assignment.id}`,
+          type: 'assignment',
+          title: assignment.title,
+          subject: assignment.subject,
+          status: assignment.status,
+          description: assignment.description,
+          createdAt: assignment.createdAt,
+          tokensUsed: 0,
+        });
+      });
+    }
+
+    // Add file uploads (excluding links to match Assignments page)
+    if (Array.isArray(fileUploads)) {
+      fileUploads.forEach(upload => {
+        // Skip links - they're not shown in the Assignments page
+        if (upload.is_link) return;
+
+        // Check for custom subject in metadata, otherwise derive from filename
+        const customSubject = upload.upload_metadata?.custom_subject;
+        const derivedSubject = mapToCoreSubject(
+          upload.original_filename || upload.filename || 'Unknown'
+        );
+
+        activities.push({
+          id: `file-${upload.id}`,
+          type: 'file_upload',
+          title: upload.original_filename,
+          subject: customSubject || derivedSubject,
+          status: 'Completed',
+          description: `File: ${upload.file_type}`,
+          createdAt: upload.created_at,
+          tokensUsed: 0,
+        });
+      });
+    }
+
+    return activities;
+  }, [assignments, fileUploads]);
+
+  const totalAssignments = combinedActivities.length;
 
   // Helper function to map plan_id to readable plan name
   const getPlanDisplayName = (planId?: string): string => {
@@ -740,7 +815,7 @@ const Profile: React.FC = () => {
                     icon={<AssignmentOutlined />}
                     title="Total Assignments"
                     value={
-                      assignmentsLoading ? (
+                      assignmentsLoading || fileUploadsLoading ? (
                         <CircularProgress size={28} />
                       ) : assignmentsError ? (
                         'Error'

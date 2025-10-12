@@ -2,21 +2,18 @@ import {
   AssignmentOutlined as AssignmentIcon,
   AutoAwesomeOutlined,
   CheckCircleOutline as CheckCircleIcon,
+  Edit as EditIcon,
   InfoOutlined as InfoOutlinedIcon,
   LightbulbOutlined,
   Pending as PendingIcon,
   TrendingUp as TrendingUpIcon,
 } from '@mui/icons-material';
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
-
-import PlayArrowOutlinedIcon from '@mui/icons-material/PlayArrowOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import {
   Box,
   Button,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -42,7 +39,8 @@ import dayjs from 'dayjs';
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
 
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
+import SubjectSelector from '../components/assignments/SubjectSelector';
 import ViewOriginalPopup from '../components/assignments/ViewOriginalPopup';
 import DashboardPieChart from '../components/dashboard/DashboardPieChart';
 import { useAuth } from '../contexts/AuthContext';
@@ -53,8 +51,6 @@ import { useTokenUsage } from '../hooks/useTokenUsage';
 import { api } from '../services/api';
 import { assignments as assignmentsService } from '../services/api/assignments';
 import { fileUploadService } from '../services/fileUploadService';
-import { useWorkshopStore } from '../services/WorkshopService';
-
 import { mapToCoreSubject } from '../services/subjectService';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 
@@ -99,14 +95,18 @@ const DashboardHome: React.FC = () => {
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
   const [viewAssignment, setViewAssignment] = useState<Assignment | null>(null);
   const [fileUploads, setFileUploads] = useState<any[]>([]);
-  const { history: workshopHistory } = useWorkshopStore();
+
+  // Edit Subject state
+  const [subjectEditDialogOpen, setSubjectEditDialogOpen] = useState(false);
+  const [itemToEditSubject, setItemToEditSubject] = useState<any>(null);
+  const [newSubject, setNewSubject] = useState('');
 
   // Delete functionality state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [assignmentToDelete, setAssignmentToDelete] = useState<Assignment | null>(null);
+  const [assignmentToDelete, setAssignmentToDelete] = useState<any>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // View Original popup state
+  // View File popup state
   const [filePreviewOpen, setFilePreviewOpen] = useState(false);
   const [originalFileContent, setOriginalFileContent] = useState<string | null>(null);
   const [previewFileName, setPreviewFileName] = useState<string>('');
@@ -164,55 +164,35 @@ const DashboardHome: React.FC = () => {
       });
     });
 
-    // Add file uploads
+    // Add file uploads (excluding links to match Assignments page)
     fileUploads.forEach(upload => {
+      // Skip links - they're not shown in the Assignments page
+      if (upload.is_link) return;
+
+      // Check for custom subject in metadata, otherwise derive from filename
+      const customSubject = upload.upload_metadata?.custom_subject;
+      const derivedSubject = mapToCoreSubject(
+        upload.original_filename || upload.filename || 'Unknown'
+      );
+
       activities.push({
         id: `file-${upload.id}`,
         type: 'file_upload',
-        title: upload.is_link
-          ? `Link: ${upload.link_title || upload.link_url}`
-          : upload.original_filename,
-        subject: upload.is_link
-          ? 'Technology'
-          : mapToCoreSubject(upload.original_filename || upload.filename || 'Unknown'),
+        title: upload.original_filename,
+        subject: customSubject || derivedSubject,
         status: 'Completed',
-        description: upload.is_link ? `URL: ${upload.link_url}` : `File: ${upload.file_type}`,
+        description: `File: ${upload.file_type}`,
         createdAt: upload.created_at,
         tokensUsed: 0,
       });
     });
 
-    // Add workshop history
-    workshopHistory.forEach((item: any) => {
-      // Determine subject based on content for workshop activities
-      let subject = 'Technology'; // Default for links and chats
-      if (item.type === 'file' && item.content) {
-        // Try to extract filename from content or use content itself for mapping
-        const contentToMap = item.content.toLowerCase();
-        subject = mapToCoreSubject(contentToMap);
-      }
-
-      activities.push({
-        id: `workshop-${item.id}`,
-        type: 'workshop_activity',
-        title:
-          item.type === 'file'
-            ? 'File Processing'
-            : item.type === 'link'
-            ? 'Link Processing'
-            : 'Chat Session',
-        subject: subject,
-        status: 'Completed',
-        description: item.prompt || item.content || '',
-        createdAt: item.timestamp,
-        tokensUsed: 0,
-      });
-    });
+    // Skip workshop history to match Assignments page behavior
 
     return activities.sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
-  }, [assignments, fileUploads, workshopHistory]);
+  }, [assignments, fileUploads]);
 
   // Calculate stats from combined activities
   const assignmentsGenerated = combinedActivities.length;
@@ -315,14 +295,75 @@ const DashboardHome: React.FC = () => {
   const fetchAssignments = async () => {
     try {
       const response = await api.get('/assignments');
-      setAssignments(response.data);
+      const data = Array.isArray(response.data)
+        ? response.data
+        : Array.isArray(response.data.assignments)
+        ? response.data.assignments
+        : [];
+      setAssignments(data);
     } catch (error) {
       console.error('Error fetching assignments:', error);
     }
   };
 
+  const fetchFileUploads = async () => {
+    try {
+      const response = await fileUploadService.getAll();
+      setFileUploads(response.items);
+    } catch (error) {
+      console.error('Error fetching file uploads:', error);
+    }
+  };
+
+  // Edit Subject handlers
+  const handleEditSubject = (assignmentId: string) => {
+    const item = combinedActivities.find(a => a.id === assignmentId);
+    if (item) {
+      setItemToEditSubject(item);
+      setNewSubject(item.subject || '');
+      setSubjectEditDialogOpen(true);
+    }
+  };
+
+  const handleSubjectEditSave = async () => {
+    if (!itemToEditSubject || !newSubject.trim()) {
+      toast.error('Please select a valid subject');
+      return;
+    }
+
+    try {
+      if (itemToEditSubject.type === 'assignment') {
+        const assignmentId = itemToEditSubject.id.replace('assignment-', '');
+        await assignmentsService.update(assignmentId, { subject: newSubject });
+        toast.success('Subject updated successfully');
+        await fetchAssignments();
+      } else if (itemToEditSubject.type === 'file_upload') {
+        const fileId = itemToEditSubject.id.replace('file-', '');
+        const fileUpload = fileUploads.find(f => f.id.toString() === fileId);
+        if (fileUpload) {
+          const updatedMetadata = {
+            ...fileUpload.upload_metadata,
+            custom_subject: newSubject,
+          };
+          await fileUploadService.update(parseInt(fileId), {
+            upload_metadata: updatedMetadata,
+          });
+          toast.success('Subject updated successfully');
+          await fetchFileUploads();
+        }
+      }
+      setSubjectEditDialogOpen(false);
+      setItemToEditSubject(null);
+      setNewSubject('');
+    } catch (error) {
+      console.error('Error updating subject:', error);
+      toast.error('Failed to update subject');
+    }
+  };
+
+  // Delete handlers
   const handleDeleteClick = (assignmentId: string) => {
-    const assignment = filteredActivities.find(a => a.id === assignmentId);
+    const assignment = combinedActivities.find(a => a.id === assignmentId);
     if (assignment) {
       setAssignmentToDelete(assignment);
       setDeleteDialogOpen(true);
@@ -333,26 +374,39 @@ const DashboardHome: React.FC = () => {
     if (!assignmentToDelete) return;
     setDeleteLoading(true);
     try {
-      console.log('🗑️ Deleting assignment:', assignmentToDelete);
-      await assignmentsService.delete(assignmentToDelete.id);
-      toast.success(`Assignment "${assignmentToDelete.title}" deleted successfully`);
-      await fetchAssignments();
+      if (assignmentToDelete.type === 'assignment') {
+        const assignmentId = assignmentToDelete.id.replace('assignment-', '');
+        await assignmentsService.delete(assignmentId);
+        toast.success(`Assignment "${assignmentToDelete.title}" deleted successfully`);
+        await fetchAssignments();
+      } else if (assignmentToDelete.type === 'file_upload') {
+        const fileId = assignmentToDelete.id.replace('file-', '');
+        await fileUploadService.delete(parseInt(fileId));
+        toast.success(`File "${assignmentToDelete.title}" deleted successfully`);
+        await fetchFileUploads();
+      }
       setDeleteDialogOpen(false);
       setAssignmentToDelete(null);
     } catch (error) {
-      console.error('❌ Error deleting assignment:', error);
-      toast.error('Failed to delete assignment. Please try again.');
+      console.error('Error deleting item:', error);
+      toast.error('Failed to delete item. Please try again.');
     } finally {
       setDeleteLoading(false);
     }
   };
 
-  const handleViewOriginal = async (assignmentId: string) => {
+  const handleDeleteDialogClose = () => {
+    setDeleteDialogOpen(false);
+    setAssignmentToDelete(null);
+  };
+
+  // View File handler
+  const handleViewCompletedFile = async (assignmentId: string) => {
     setPreviewLoading(true);
     setFilePreviewOpen(true);
 
     try {
-      const item = filteredActivities.find(a => a.id === assignmentId);
+      const item = combinedActivities.find(a => a.id === assignmentId);
       setPreviewItemType(item?.type || '');
       setPreviewItemData(item);
 
@@ -361,25 +415,86 @@ const DashboardHome: React.FC = () => {
         const fileUpload = fileUploads.find(f => f.id.toString() === fileId);
 
         if (fileUpload) {
-          setPreviewFileName(fileUpload.original_filename || fileUpload.filename);
-          if (fileUpload.extracted_content) {
-            setOriginalFileContent(fileUpload.extracted_content);
-          } else {
-            setOriginalFileContent(
-              'Original file content not available. The file may not have been processed yet.'
-            );
+          // Try to get the filled content from the file processing system
+          try {
+            const filePathParts = fileUpload.file_path.split('/');
+            const fileName = filePathParts[filePathParts.length - 1];
+            const nameWithoutExt = fileName.split('.')[0];
+            const parts = nameWithoutExt.split('_');
+            const extractedFileId = parts[parts.length - 1];
+
+            const response = await api.post('/file-processing/process-existing', {
+              file_id: extractedFileId,
+              action: 'fill',
+            });
+
+            if (response.data.filled_content && response.data.filled_content.text) {
+              const completedFileName = `[COMPLETED] ${
+                fileUpload.original_filename || fileUpload.filename
+              }`;
+              setPreviewFileName(completedFileName);
+              setOriginalFileContent(response.data.filled_content.text);
+              setPreviewItemType('completed_file');
+              setPreviewItemData(item);
+              setPreviewLoading(false);
+              return;
+            }
+          } catch (fillError) {
+            console.log('File processing failed, trying completion session...', fillError);
           }
+
+          // Try to get completion session for this file
+          try {
+            const response = await api.get(`/file-completion-chat/sessions?file_id=${fileId}`);
+            const sessions = response.data;
+
+            if (sessions && sessions.length > 0) {
+              const completedSession =
+                sessions.find((s: any) => s.status === 'completed') ||
+                sessions[sessions.length - 1];
+
+              if (completedSession.current_content) {
+                const completedFileName = `[COMPLETED] ${
+                  fileUpload.original_filename || fileUpload.filename
+                }`;
+                setPreviewFileName(completedFileName);
+                setOriginalFileContent(completedSession.current_content);
+                setPreviewItemType('completed_file');
+                setPreviewItemData(item);
+                setPreviewLoading(false);
+                return;
+              }
+            }
+          } catch (sessionError) {
+            console.log('No completion session found, falling back to extracted content');
+          }
+
+          // Fallback to extracted content if no filled content or completion session
+          if (fileUpload.extracted_content) {
+            const completedFileName = `[ORIGINAL] ${
+              fileUpload.original_filename || fileUpload.filename
+            }`;
+            setPreviewFileName(completedFileName);
+            setOriginalFileContent(
+              fileUpload.extracted_content +
+                '\n\n--- NOTE ---\nThis is the original file content. To view the completed version, please use the Workshop or File Completion features to process this file.'
+            );
+            setPreviewItemType('completed_file');
+            setPreviewItemData(item);
+          } else {
+            toast.error('No content available for this file');
+          }
+        } else {
+          toast.error('File upload not found');
         }
-      } else if (item?.type === 'workshop_activity') {
-        setPreviewFileName(item?.title || 'File Processing');
-        setOriginalFileContent(null);
-      } else {
-        setPreviewFileName(item?.title || 'Unknown File');
-        setOriginalFileContent('Original content not available for this item type.');
+      } else if (item?.type === 'assignment') {
+        // For assignments, show assignment details or navigate
+        toast.info('Opening assignment details...');
+        navigate(`/dashboard/assignments/${assignmentId.replace('assignment-', '')}`);
       }
     } catch (error) {
-      console.error('Error fetching original file:', error);
-      setOriginalFileContent('Error loading original file content.');
+      console.error('Error viewing completed file:', error);
+      toast.error('Failed to load completed file');
     } finally {
       setPreviewLoading(false);
     }
@@ -391,11 +506,6 @@ const DashboardHome: React.FC = () => {
     setPreviewFileName('');
     setPreviewItemType('');
     setPreviewItemData(null);
-  };
-
-  const handleDeleteDialogClose = () => {
-    setDeleteDialogOpen(false);
-    setAssignmentToDelete(null);
   };
 
   if (error) {
@@ -661,42 +771,45 @@ const DashboardHome: React.FC = () => {
                       sx={{
                         color: '#D32F2F',
                         fontWeight: 700,
-                        width: { xs: '40%', md: 'auto' },
+                        width: { xs: '25%', md: '30%' },
+                        maxWidth: { xs: '150px', md: '250px' },
                         p: { xs: 1, md: 2 },
                       }}
                     >
-                      Assignment
+                      Assignment Name
                     </TableCell>
                     <TableCell
                       sx={{
                         color: '#D32F2F',
                         fontWeight: 700,
-                        width: { xs: '20%', md: 'auto' },
+                        width: { xs: '15%', md: '15%' },
                         p: { xs: 1, md: 2 },
+                        whiteSpace: 'nowrap',
+                        fontSize: { xs: '0.75rem', md: '0.875rem' },
                       }}
                     >
-                      Status
+                      File Status
                     </TableCell>
                     <TableCell
                       sx={{
                         color: '#D32F2F',
                         fontWeight: 700,
-                        width: { xs: '15%', md: 'auto' },
+                        width: { xs: '15%', md: '15%' },
                         p: { xs: 1, md: 2 },
                       }}
                     >
-                      Last Used
+                      Last Updated
                     </TableCell>
                     <TableCell
                       sx={{
                         color: '#D32F2F',
                         fontWeight: 700,
-                        width: { xs: '20%', md: 'auto' },
-                        minWidth: { xs: '120px', md: '200px' },
+                        width: { xs: '45%', md: '40%' },
                         p: { xs: 1, md: 2 },
+                        pl: { xs: 2, md: 3 },
                       }}
                     >
-                      Actions
+                      File Actions
                     </TableCell>
                   </TableRow>
                 </TableHead>
@@ -727,19 +840,31 @@ const DashboardHome: React.FC = () => {
                   ) : (
                     filteredActivities.slice(page * 5, page * 5 + 5).map(activity => (
                       <TableRow key={activity.id}>
-                        <TableCell sx={{ p: { xs: 1, md: 2 } }}>
-                          <span
-                            style={{ cursor: 'pointer', fontWeight: 500, textDecoration: 'none' }}
-                            onClick={() =>
-                              activity.type === 'assignment'
-                                ? setSelectedAssignment(activity)
-                                : null
-                            }
-                            onMouseOver={e => (e.currentTarget.style.textDecoration = 'underline')}
-                            onMouseOut={e => (e.currentTarget.style.textDecoration = 'none')}
-                          >
-                            {activity.title}
-                          </span>
+                        <TableCell
+                          sx={{
+                            p: { xs: 1, md: 2 },
+                            maxWidth: { xs: '150px', md: '250px' },
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          <Tooltip title={activity.title} arrow placement="top">
+                            <span
+                              style={{ cursor: 'pointer', fontWeight: 500, textDecoration: 'none' }}
+                              onClick={() =>
+                                navigate('/dashboard/assignments', {
+                                  state: { searchFilter: activity.title },
+                                })
+                              }
+                              onMouseOver={e =>
+                                (e.currentTarget.style.textDecoration = 'underline')
+                              }
+                              onMouseOut={e => (e.currentTarget.style.textDecoration = 'none')}
+                            >
+                              {activity.title}
+                            </span>
+                          </Tooltip>
                         </TableCell>
                         <TableCell sx={{ p: { xs: 1, md: 2 } }}>
                           <span
@@ -765,163 +890,63 @@ const DashboardHome: React.FC = () => {
                           <Box
                             sx={{
                               display: 'flex',
-                              flexDirection: { xs: 'column', md: 'row' },
-                              gap: { xs: 0.5, md: 0.5 },
+                              flexDirection: 'row',
+                              gap: 0.5,
                               flexWrap: 'nowrap',
-                              alignItems: { xs: 'flex-start', md: 'center' },
-                              minWidth: { md: '180px' },
+                              alignItems: 'center',
+                              justifyContent: 'flex-start',
                             }}
                           >
-                            {activity.type === 'assignment' && (
+                            {/* Consistent actions for all items - matches Assignments page */}
+                            {(activity.type === 'assignment' ||
+                              activity.type === 'file_upload') && (
                               <>
+                                <Button
+                                  size="small"
+                                  sx={{
+                                    color: '#1976D2',
+                                    minWidth: 'auto',
+                                    px: 0.5,
+                                    py: 0.25,
+                                    fontSize: '0.75rem',
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                  onClick={() => handleEditSubject(activity.id)}
+                                >
+                                  <EditIcon sx={{ fontSize: 16, mr: 0.25 }} />
+                                  Edit Subject
+                                </Button>
                                 <Button
                                   size="small"
                                   sx={{
                                     color: '#009688',
                                     minWidth: 'auto',
-                                    px: { xs: 1, md: 0.5 },
-                                    py: { xs: 0.5, md: 0.25 },
+                                    px: 0.5,
+                                    py: 0.25,
+                                    fontSize: '0.75rem',
+                                    whiteSpace: 'nowrap',
                                   }}
-                                  onClick={() => setViewAssignment(activity)}
+                                  onClick={() => handleViewCompletedFile(activity.id)}
                                 >
-                                  <VisibilityOutlinedIcon
-                                    sx={{ fontSize: 16, mr: { xs: 0, md: 0.25 } }}
-                                  />
-                                  <Box
-                                    sx={{
-                                      display: { xs: 'none', md: 'inline' },
-                                      fontSize: '0.75rem',
-                                    }}
-                                  >
-                                    View
-                                  </Box>
+                                  <VisibilityOutlinedIcon sx={{ fontSize: 16, mr: 0.25 }} />
+                                  View File
                                 </Button>
-                                {activity.status === 'Completed' && (
-                                  <>
-                                    <Button
-                                      size="small"
-                                      sx={{
-                                        color: '#2196F3',
-                                        minWidth: 'auto',
-                                        px: { xs: 1, md: 0.5 },
-                                        py: { xs: 0.5, md: 0.25 },
-                                      }}
-                                      onClick={() => handleViewOriginal(activity.id)}
-                                    >
-                                      <VisibilityOutlinedIcon
-                                        sx={{ fontSize: 16, mr: { xs: 0, md: 0.25 } }}
-                                      />
-                                      <Box
-                                        sx={{
-                                          display: { xs: 'none', md: 'inline' },
-                                          fontSize: '0.75rem',
-                                        }}
-                                      >
-                                        View Original
-                                      </Box>
-                                    </Button>
-                                    <Button
-                                      size="small"
-                                      sx={{
-                                        color: '#f44336',
-                                        minWidth: 'auto',
-                                        px: { xs: 1, md: 0.5 },
-                                        py: { xs: 0.5, md: 0.25 },
-                                      }}
-                                      onClick={() => handleDeleteClick(activity.id)}
-                                    >
-                                      <DeleteOutlinedIcon
-                                        sx={{ fontSize: 16, mr: { xs: 0, md: 0.25 } }}
-                                      />
-                                      <Box
-                                        sx={{
-                                          display: { xs: 'none', md: 'inline' },
-                                          fontSize: '0.75rem',
-                                        }}
-                                      >
-                                        Delete
-                                      </Box>
-                                    </Button>
-                                  </>
-                                )}
-                                {activity.status === 'In Progress' && (
-                                  <Button
-                                    size="small"
-                                    sx={{
-                                      color: '#FFA726',
-                                      minWidth: 'auto',
-                                      px: { xs: 1, md: 0.5 },
-                                      py: { xs: 0.5, md: 0.25 },
-                                    }}
-                                    onClick={() =>
-                                      navigate('/dashboard/workshop', {
-                                        state: { assignment: activity, responseTab: 1 },
-                                      })
-                                    }
-                                  >
-                                    <PlayArrowOutlinedIcon
-                                      sx={{ fontSize: 16, mr: { xs: 0, md: 0.25 } }}
-                                    />
-                                    <Box
-                                      sx={{
-                                        display: { xs: 'none', md: 'inline' },
-                                        fontSize: '0.75rem',
-                                      }}
-                                    >
-                                      Resume
-                                    </Box>
-                                  </Button>
-                                )}
-                              </>
-                            )}
-                            {(activity.type === 'file_upload' ||
-                              activity.type === 'workshop_activity') && (
-                              <Button
-                                size="small"
-                                sx={{
-                                  color: '#009688',
-                                  minWidth: 'auto',
-                                  px: { xs: 1, md: 0.5 },
-                                  py: { xs: 0.5, md: 0.25 },
-                                }}
-                                onClick={() => navigate('/dashboard/workshop')}
-                              >
-                                <PlayArrowOutlinedIcon
-                                  sx={{ fontSize: 16, mr: { xs: 0, md: 0.25 } }}
-                                />
-                                <Box
+                                <Button
+                                  size="small"
                                   sx={{
-                                    display: { xs: 'none', md: 'inline' },
+                                    color: '#f44336',
+                                    minWidth: 'auto',
+                                    px: 0.5,
+                                    py: 0.25,
                                     fontSize: '0.75rem',
+                                    whiteSpace: 'nowrap',
                                   }}
+                                  onClick={() => handleDeleteClick(activity.id)}
                                 >
-                                  Open in Workshop
-                                </Box>
-                              </Button>
-                            )}
-                            {activity.type === 'assignment' && (
-                              <Button
-                                size="small"
-                                sx={{
-                                  color: '#D32F2F',
-                                  minWidth: 'auto',
-                                  px: { xs: 1, md: 0.5 },
-                                  py: { xs: 0.5, md: 0.25 },
-                                }}
-                                onClick={() =>
-                                  setAssignments(prev => prev.filter(a => a.id !== activity.id))
-                                }
-                              >
-                                <DeleteOutlineIcon sx={{ fontSize: 16, mr: { xs: 0, md: 0.25 } }} />
-                                <Box
-                                  sx={{
-                                    display: { xs: 'none', md: 'inline' },
-                                    fontSize: '0.75rem',
-                                  }}
-                                >
+                                  <DeleteOutlinedIcon sx={{ fontSize: 16, mr: 0.25 }} />
                                   Delete
-                                </Box>
-                              </Button>
+                                </Button>
+                              </>
                             )}
                           </Box>
                         </TableCell>
@@ -931,14 +956,27 @@ const DashboardHome: React.FC = () => {
                 </TableBody>
               </Table>
             </Box>
-            <TablePagination
-              component="div"
-              rowsPerPageOptions={[]}
-              count={filteredActivities.length}
-              rowsPerPage={5}
-              page={page}
-              onPageChange={handleChangePage}
-            />
+            <Box
+              sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}
+            >
+              <TablePagination
+                component="div"
+                rowsPerPageOptions={[]}
+                count={filteredActivities.length}
+                rowsPerPage={5}
+                page={page}
+                onPageChange={handleChangePage}
+                sx={{ flex: 1 }}
+              />
+              <Button
+                variant="contained"
+                color="error"
+                onClick={() => navigate('/dashboard/assignments')}
+                sx={{ ml: 2, minWidth: 140 }}
+              >
+                View All Assignments
+              </Button>
+            </Box>
           </Paper>
         </Grid>
         <Grid item xs={11.5} md={breakpoint === 'standard' ? 12 : 4}>
@@ -981,7 +1019,7 @@ const DashboardHome: React.FC = () => {
                   color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
                 }}
               >
-                Assignment Distribution
+                Assignment Subject Distribution
               </Typography>
               <Tooltip title="Select a section to navigate to assignments" arrow>
                 <InfoOutlinedIcon
@@ -1344,6 +1382,34 @@ const DashboardHome: React.FC = () => {
         </DialogActions>
       </Dialog>
 
+      {/* Subject Edit Dialog */}
+      <Dialog
+        open={subjectEditDialogOpen}
+        onClose={() => setSubjectEditDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            border: '2px solid #D32F2F',
+            borderRadius: 2,
+          },
+        }}
+      >
+        <DialogTitle>Edit Subject</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            Update the subject for "{itemToEditSubject?.title}"
+          </DialogContentText>
+          <SubjectSelector value={newSubject} onChange={setNewSubject} label="Subject" />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSubjectEditDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleSubjectEditSave} variant="contained" color="error">
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Delete Confirmation Dialog */}
       <Dialog
         open={deleteDialogOpen}
@@ -1374,14 +1440,13 @@ const DashboardHome: React.FC = () => {
             color="error"
             variant="contained"
             disabled={deleteLoading}
-            startIcon={deleteLoading ? <CircularProgress size={20} /> : <DeleteOutlinedIcon />}
           >
             {deleteLoading ? 'Deleting...' : 'Delete'}
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* View Original Popup */}
+      {/* View File Popup */}
       <ViewOriginalPopup
         open={filePreviewOpen}
         onClose={handleFilePreviewClose}

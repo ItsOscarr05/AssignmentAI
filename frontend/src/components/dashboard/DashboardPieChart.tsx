@@ -129,6 +129,8 @@ const DashboardPieChart: React.FC<DashboardPieChartProps> = ({ data, distributio
               key={`cell-${index}`}
               fill={hasData ? getSubjectColor(entry.name) : '#BDBDBD'}
               cursor={hasData ? 'pointer' : 'default'}
+              stroke="#000000"
+              strokeWidth={1}
             />
           ))}
         </Pie>

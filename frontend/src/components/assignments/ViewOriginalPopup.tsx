@@ -185,7 +185,7 @@ const ViewOriginalPopup: React.FC<ViewOriginalPopupProps> = ({
           {/* File type indicator */}
           <Box sx={{ mb: 2, pb: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
             <Typography variant="caption" color="text.secondary">
-              File Type: {extension.toUpperCase()} | Format: Excel Spreadsheet
+              {itemType === 'completed_file' ? 'AI Completed Analysis' : `File Type: ${extension.toUpperCase()}`} | Format: Excel Spreadsheet
             </Typography>
           </Box>
 
@@ -276,12 +276,12 @@ const ViewOriginalPopup: React.FC<ViewOriginalPopupProps> = ({
           p: 2,
         }}
       >
-        {/* File type indicator */}
-        <Box sx={{ mb: 2, pb: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="caption" color="text.secondary">
-            File Type: {extension.toUpperCase()} | Format: {extension.toUpperCase()}
-          </Typography>
-        </Box>
+          {/* File type indicator */}
+          <Box sx={{ mb: 2, pb: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
+            <Typography variant="caption" color="text.secondary">
+              {itemType === 'completed_file' ? 'AI Completed Analysis' : `File Type: ${extension.toUpperCase()}`} | Format: {extension.toUpperCase()}
+            </Typography>
+          </Box>
 
         {/* Content display */}
         <Typography
@@ -318,7 +318,7 @@ const ViewOriginalPopup: React.FC<ViewOriginalPopupProps> = ({
       <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <LaunchIcon />
-          Original File: {fileName}
+          {itemType === 'completed_file' ? 'Completed File:' : 'Original File:'} {fileName}
         </Box>
       </DialogTitle>
       <DialogContent>{getContentDisplay()}</DialogContent>

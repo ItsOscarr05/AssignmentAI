@@ -232,6 +232,10 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
   // Fetch account creation date
   useEffect(() => {
     const fetchAccountCreationDate = async () => {
+      // Debug: Log all available fields in profileData
+      console.log('EditProfileDialog: profileData:', profileData);
+      console.log('EditProfileDialog: profileData keys:', Object.keys(profileData || {}));
+      
       // First check if profileData already has the creation date
       if (profileData?.created_at || profileData?.createdAt || profileData?.registrationDate) {
         const creationDate =
@@ -241,14 +245,17 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
         return;
       }
 
-      // Also check if we can get the date from the user object in localStorage
+      // Check localStorage user data for creation date
       try {
         const userData = JSON.parse(localStorage.getItem('user') || '{}');
-        if (userData.created_at || userData.createdAt || userData.registrationDate) {
-          const creationDate =
-            userData.created_at || userData.createdAt || userData.registrationDate;
-          console.log('Using date from localStorage user:', creationDate);
-          setAccountCreationDate(creationDate);
+        console.log('EditProfileDialog: localStorage userData:', userData);
+        console.log('EditProfileDialog: localStorage userData keys:', Object.keys(userData));
+        
+        if (userData.createdAt) {
+          console.log('Found createdAt in localStorage user:', userData.createdAt);
+          console.log('CreatedAt type:', typeof userData.createdAt);
+          console.log('CreatedAt parsed date:', new Date(userData.createdAt));
+          setAccountCreationDate(userData.createdAt);
           return;
         }
       } catch (e) {

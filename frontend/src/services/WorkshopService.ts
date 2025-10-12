@@ -77,13 +77,35 @@ export interface WorkshopState {
   setFileStatus: (fileId: string, status: WorkshopFile['status']) => void;
 }
 
+// Load persisted history from localStorage
+const loadPersistedHistory = (): HistoryItem[] => {
+  try {
+    const saved = localStorage.getItem('workshopHistory');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (e) {
+    console.error('Failed to load persisted workshop history:', e);
+  }
+  return [];
+};
+
+// Save history to localStorage
+const saveHistoryToStorage = (history: HistoryItem[]) => {
+  try {
+    localStorage.setItem('workshopHistory', JSON.stringify(history));
+  } catch (e) {
+    console.error('Failed to save workshop history:', e);
+  }
+};
+
 export const useWorkshopStore = create<WorkshopState>(set => ({
   prompt: '',
   generatedContent: '',
   isLoading: false,
   error: null,
   featureAccessError: null,
-  history: [],
+  history: loadPersistedHistory(),
   files: [],
   links: [],
   uploadProgress: {},
@@ -208,11 +230,15 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
           hasDiagram: false,
         };
 
-        set(state => ({
-          generatedContent: fullContent,
-          history: [...state.history, historyItem],
-          isLoading: false,
-        }));
+        set(state => {
+          const newHistory = [...state.history, historyItem];
+          saveHistoryToStorage(newHistory);
+          return {
+            generatedContent: fullContent,
+            history: newHistory,
+            isLoading: false,
+          };
+        });
       } else {
         // Fallback to non-streaming
         const response = await api.post('/workshop/generate', {
@@ -230,11 +256,15 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
           serviceUsed: response.data.service_used,
           hasDiagram: response.data.has_diagram || false,
         };
-        set(state => ({
-          generatedContent: content,
-          history: [...state.history, historyItem],
-          isLoading: false,
-        }));
+        set(state => {
+          const newHistory = [...state.history, historyItem];
+          saveHistoryToStorage(newHistory);
+          return {
+            generatedContent: content,
+            history: newHistory,
+            isLoading: false,
+          };
+        });
       }
     } catch (error: any) {
       if (error.response?.status === 403 && error.response?.data?.error) {
@@ -348,10 +378,14 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
         uploaded_at: fileData.uploaded_at,
       };
 
-      set(state => ({
-        files: state.files.map(f => (f.id === fileId ? completedFile : f)),
-        history: [...state.history, historyItem],
-      }));
+      set(state => {
+        const newHistory = [...state.history, historyItem];
+        saveHistoryToStorage(newHistory);
+        return {
+          files: state.files.map(f => (f.id === fileId ? completedFile : f)),
+          history: newHistory,
+        };
+      });
     } catch (error: any) {
       const errorFile = {
         ...newFile,
@@ -432,9 +466,13 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
         type: 'link',
       };
 
-      set(state => ({
-        history: [...state.history, historyItem],
-      }));
+      set(state => {
+        const newHistory = [...state.history, historyItem];
+        saveHistoryToStorage(newHistory);
+        return {
+          history: newHistory,
+        };
+      });
 
       return response.data;
     } catch (error: any) {
@@ -494,10 +532,14 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
         fileId: fileId,
       };
 
-      set(state => ({
-        history: [...state.history, historyItem],
-        isLoading: false,
-      }));
+      set(state => {
+        const newHistory = [...state.history, historyItem];
+        saveHistoryToStorage(newHistory);
+        return {
+          history: newHistory,
+          isLoading: false,
+        };
+      });
     } catch (error: any) {
       if (error.response?.status === 403 && error.response?.data?.error) {
         set({
@@ -514,17 +556,23 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
   },
 
   deleteHistoryItem: async (id: string) => {
-    set(state => ({
-      history: state.history.filter(item => item.id !== id),
-    }));
+    set(state => {
+      const newHistory = state.history.filter(item => item.id !== id);
+      saveHistoryToStorage(newHistory);
+      return {
+        history: newHistory,
+      };
+    });
   },
 
   clearHistory: () => {
     console.log('Clearing workshop history from store');
+    localStorage.removeItem('workshopHistory');
     set({ history: [] });
   },
 
   clearWorkshop: () => {
+    localStorage.removeItem('workshopHistory');
     set({
       prompt: '',
       generatedContent: '',

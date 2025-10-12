@@ -7,9 +7,7 @@ import {
   Edit as EditIcon,
   HourglassEmpty as HourglassIcon,
   InfoOutlined as InfoIcon,
-  Launch as LaunchIcon,
   MoreVert as MoreVertIcon,
-  Refresh as RefreshIcon,
   Search as SearchIcon,
   Visibility as VisibilityIcon,
 } from '@mui/icons-material';
@@ -50,12 +48,13 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import AssignmentEditDialog from '../components/assignments/AssignmentEdit';
+import SubjectSelector from '../components/assignments/SubjectSelector';
 import ViewOriginalPopup from '../components/assignments/ViewOriginalPopup';
 import { useAspectRatio } from '../hooks/useAspectRatio';
+import { api } from '../services/api';
 import { assignments } from '../services/api/assignments';
 import { fileUploadService } from '../services/fileUploadService';
 import { mapToCoreSubject } from '../services/subjectService';
-import { useWorkshopStore } from '../services/WorkshopService';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 import { DateFormat, getDefaultDateFormat } from '../utils/dateFormat';
 
@@ -121,7 +120,9 @@ const Assignments: React.FC = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedAssignment, setSelectedAssignment] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>(location.state?.status || 'all');
-  const [filterName, setFilterName] = useState(location.state?.name || '');
+  const [filterName, setFilterName] = useState(
+    location.state?.name || location.state?.searchFilter || ''
+  );
   const [filterSubject, setFilterSubject] = useState(location.state?.subject || 'all');
   const [filterTimeframe, setFilterTimeframe] = useState(location.state?.timeframe || 'total');
   const [filterDate, setFilterDate] = useState<Dayjs | null>(null);
@@ -130,18 +131,18 @@ const Assignments: React.FC = () => {
   const [assignmentToDelete, setAssignmentToDelete] = useState<Assignment | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editAssignmentId, setEditAssignmentId] = useState<string | null>(null);
+  const [subjectEditDialogOpen, setSubjectEditDialogOpen] = useState(false);
+  const [itemToEditSubject, setItemToEditSubject] = useState<any>(null);
+  const [newSubject, setNewSubject] = useState<string>('');
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [filePreviewOpen, setFilePreviewOpen] = useState(false);
   const [originalFileContent, setOriginalFileContent] = useState<string | null>(null);
   const [previewFileName, setPreviewFileName] = useState<string>('');
-  const [previewLoading, setPreviewLoading] = useState(false);
   const [previewItemType, setPreviewItemType] = useState<string>('');
   const [previewItemData, setPreviewItemData] = useState<any>(null);
 
-  // File uploads and workshop history state
+  // File uploads state
   const [fileUploads, setFileUploads] = useState<any[]>([]);
-  const [workshopHistory, setWorkshopHistory] = useState<any[]>([]);
-  const { history: workshopHistoryFromStore } = useWorkshopStore();
 
   useEffect(() => {
     if (filterTimeframe !== 'total') {
@@ -205,33 +206,6 @@ const Assignments: React.FC = () => {
     setSelectedAssignment(null);
   };
 
-  const handleViewAssignment = (assignmentId: string) => {
-    handleMenuClose();
-    navigate(`/dashboard/assignments/${assignmentId}`);
-    toast.success('Opening assignment details...');
-  };
-
-  const handleReopenInWorkshop = (assignmentId: string) => {
-    handleMenuClose();
-    const assignment = assignmentsList.find(a => a.id === assignmentId);
-    if (assignment) {
-      navigate('/dashboard/workshop', {
-        state: {
-          assignment: assignment,
-          reopen: true,
-        },
-      });
-      toast.success(`Reopening "${assignment.title}" in Workshop...`);
-    }
-  };
-
-  const handleEditAssignment = (assignmentId: string) => {
-    handleMenuClose();
-    setEditAssignmentId(assignmentId);
-    setEditDialogOpen(true);
-    toast.success('Opening assignment editor...');
-  };
-
   const handleDeleteClick = (assignmentId: string) => {
     handleMenuClose();
     // Look in combinedActivities since that's what's displayed in the table
@@ -239,6 +213,185 @@ const Assignments: React.FC = () => {
     if (assignment) {
       setAssignmentToDelete(assignment);
       setDeleteDialogOpen(true);
+    }
+  };
+
+  const handleEditSubject = (assignmentId: string) => {
+    handleMenuClose();
+    const item = combinedActivities.find(a => a.id === assignmentId);
+    if (item) {
+      setItemToEditSubject(item);
+      setNewSubject(item.subject || '');
+      setSubjectEditDialogOpen(true);
+    }
+  };
+
+  const handleSubjectEditSave = async () => {
+    if (!itemToEditSubject || !newSubject.trim()) {
+      toast.error('Please select a valid subject');
+      return;
+    }
+
+    try {
+      // Update the subject based on item type
+      if (itemToEditSubject.type === 'assignment') {
+        const assignmentId = itemToEditSubject.id.replace('assignment-', '');
+        await assignments.update(assignmentId, { subject: newSubject });
+        toast.success('Subject updated successfully');
+        await fetchAssignments();
+      } else if (itemToEditSubject.type === 'file_upload') {
+        // For file uploads, store the custom subject in upload_metadata
+        const fileId = itemToEditSubject.id.replace('file-', '');
+        const fileUpload = fileUploads.find(f => f.id.toString() === fileId);
+
+        if (fileUpload) {
+          const updatedMetadata = {
+            ...fileUpload.upload_metadata,
+            custom_subject: newSubject,
+          };
+
+          await fileUploadService.update(parseInt(fileId), {
+            upload_metadata: updatedMetadata,
+          });
+
+          toast.success('Subject updated successfully');
+          await fetchFileUploads();
+        }
+      }
+
+      setSubjectEditDialogOpen(false);
+      setItemToEditSubject(null);
+      setNewSubject('');
+    } catch (error) {
+      console.error('Error updating subject:', error);
+      toast.error('Failed to update subject');
+    }
+  };
+
+  const handleViewCompletedFile = async (assignmentId: string) => {
+    handleMenuClose();
+
+    try {
+      const item = combinedActivities.find(a => a.id === assignmentId);
+
+      if (item?.type === 'file_upload') {
+        // Extract the actual file ID from the combined ID
+        const fileId = assignmentId.replace('file-', '');
+        const fileUpload = fileUploads.find(f => f.id.toString() === fileId);
+
+        if (fileUpload) {
+          // Try to get the filled content from the file processing system
+          try {
+            // Extract the correct file ID from the file path
+            // The file path format is: uploads/user_id/filename_with_timestamp_uuid
+            const filePathParts = fileUpload.file_path.split('/');
+            const fileName = filePathParts[filePathParts.length - 1];
+
+            // The filename format is: timestamp_uuid.ext, we need the UUID part
+            const nameWithoutExt = fileName.split('.')[0];
+            const parts = nameWithoutExt.split('_');
+            // Get the UUID part (usually the last part after the timestamp)
+            const extractedFileId = parts[parts.length - 1];
+
+            console.log(
+              'Trying to process file with ID:',
+              extractedFileId,
+              'from filename:',
+              fileName
+            );
+
+            const response = await api.post('/file-processing/process-existing', {
+              file_id: extractedFileId,
+              action: 'fill',
+            });
+
+            if (response.data.filled_content && response.data.filled_content.text) {
+              // Show the filled content
+              const completedFileName = `[COMPLETED] ${
+                fileUpload.original_filename || fileUpload.filename
+              }`;
+              setPreviewFileName(completedFileName);
+              setOriginalFileContent(response.data.filled_content.text);
+              setPreviewItemType('completed_file');
+              setPreviewItemData(item);
+              setFilePreviewOpen(true);
+              return;
+            }
+          } catch (fillError) {
+            console.log('File processing failed, trying completion session...', fillError);
+          }
+
+          // Try to get completion session for this file
+          try {
+            const response = await api.get(`/file-completion-chat/sessions?file_id=${fileId}`);
+            const sessions = response.data;
+
+            if (sessions && sessions.length > 0) {
+              // Get the most recent completed session
+              const completedSession =
+                sessions.find((s: any) => s.status === 'completed') ||
+                sessions[sessions.length - 1];
+
+              if (completedSession.current_content) {
+                // Show the completed content from the completion session
+                const completedFileName = `[COMPLETED] ${
+                  fileUpload.original_filename || fileUpload.filename
+                }`;
+                setPreviewFileName(completedFileName);
+                setOriginalFileContent(completedSession.current_content);
+                setPreviewItemType('completed_file');
+                setPreviewItemData(item);
+                setFilePreviewOpen(true);
+                return;
+              }
+            }
+          } catch (sessionError) {
+            console.log('No completion session found, falling back to extracted content');
+          }
+
+          // Also check if file upload already has completion sessions loaded
+          if (fileUpload.completion_sessions && fileUpload.completion_sessions.length > 0) {
+            const latestSession =
+              fileUpload.completion_sessions[fileUpload.completion_sessions.length - 1];
+            if (latestSession.current_content) {
+              const completedFileName = `[COMPLETED] ${
+                fileUpload.original_filename || fileUpload.filename
+              }`;
+              setPreviewFileName(completedFileName);
+              setOriginalFileContent(latestSession.current_content);
+              setPreviewItemType('completed_file');
+              setPreviewItemData(item);
+              setFilePreviewOpen(true);
+              return;
+            }
+          }
+
+          // Fallback to extracted content if no filled content or completion session
+          if (fileUpload.extracted_content) {
+            const completedFileName = `[ORIGINAL] ${
+              fileUpload.original_filename || fileUpload.filename
+            }`;
+            setPreviewFileName(completedFileName);
+            setOriginalFileContent(
+              fileUpload.extracted_content +
+                '\n\n--- NOTE ---\nThis is the original file content. To view the completed version, please use the Workshop or File Completion features to process this file.'
+            );
+            setPreviewItemType('completed_file');
+            setPreviewItemData(item);
+            setFilePreviewOpen(true);
+          } else {
+            toast.error('No content available for this file');
+          }
+        } else {
+          toast.error('File upload not found');
+        }
+      } else if (item?.type === 'assignment') {
+        // For assignments, navigate to the assignment detail page
+        navigate(`/dashboard/assignments/${assignmentId.replace('assignment-', '')}`);
+      }
+    } catch (error) {
+      console.error('Error viewing completed file:', error);
+      toast.error('Failed to load completed file');
     }
   };
 
@@ -255,6 +408,7 @@ const Assignments: React.FC = () => {
         }))
       );
     } catch (error) {
+      console.error('Failed to fetch assignments:', error);
       toast.error('Failed to fetch assignments.');
     }
   };
@@ -269,29 +423,14 @@ const Assignments: React.FC = () => {
     }
   };
 
-  // Fetch workshop history (links and file processing)
-  const fetchWorkshopHistory = async () => {
-    try {
-      // Get workshop history from the store (this includes file uploads and link processing)
-      setWorkshopHistory(workshopHistoryFromStore);
-    } catch (error) {
-      console.error('Failed to fetch workshop history:', error);
-    }
-  };
-
   useEffect(() => {
     fetchAssignments();
     fetchFileUploads();
-    fetchWorkshopHistory();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Update workshop history when store changes
-  useEffect(() => {
-    setWorkshopHistory(workshopHistoryFromStore);
-  }, [workshopHistoryFromStore]);
-
   // Combine all activities (assignments, file uploads, workshop history)
+  // ONLY show: regular assignments + file uploads (excluding links and chats)
   const combinedActivities = React.useMemo(() => {
     const activities: any[] = [];
 
@@ -311,65 +450,39 @@ const Assignments: React.FC = () => {
       });
     });
 
-    // Add file uploads
+    // Add file uploads (EXCLUDE links - only show regular file uploads)
     fileUploads.forEach(upload => {
+      // Skip links - only show regular file uploads
+      if (upload.is_link) return;
+
+      // Check for custom subject in metadata, otherwise derive from filename
+      const customSubject = upload.upload_metadata?.custom_subject;
+      const derivedSubject = mapToCoreSubject(
+        upload.original_filename || upload.filename || 'Unknown'
+      );
+
       activities.push({
         id: `file-${upload.id}`,
         type: 'file_upload',
-        title: upload.is_link
-          ? `Link: ${upload.link_title || upload.link_url}`
-          : upload.original_filename,
-        subject: upload.is_link 
-          ? 'Technology' 
-          : mapToCoreSubject(upload.original_filename || upload.filename || 'Unknown'),
+        title: upload.original_filename,
+        subject: customSubject || derivedSubject,
         status: 'Completed',
-        description: upload.is_link ? `URL: ${upload.link_url}` : `File: ${upload.file_type}`,
+        description: `File: ${upload.file_type}`,
         createdAt: upload.created_at,
         tokensUsed: 0,
-        activityType: upload.is_link ? 'Link Upload' : 'File Upload',
-        icon: upload.is_link ? '🔗' : '📄',
+        activityType: 'File Upload',
+        icon: '📄',
       });
     });
 
-    // Add workshop history (file processing, link processing, chats)
-    workshopHistory.forEach(item => {
-      // Determine subject based on content for workshop activities
-      let subject = 'Technology'; // Default for links and chats
-      if (item.type === 'file' && item.content) {
-        // Try to extract filename from content or use content itself for mapping
-        const contentToMap = item.content.toLowerCase();
-        subject = mapToCoreSubject(contentToMap);
-      }
-      
-      activities.push({
-        id: `workshop-${item.id}`,
-        type: 'workshop_activity',
-        title:
-          item.type === 'file'
-            ? 'File Processing'
-            : item.type === 'link'
-            ? 'Link Processing'
-            : 'Chat Session',
-        subject: subject,
-        status: 'Completed',
-        description: item.prompt || item.content || '',
-        createdAt: item.timestamp,
-        tokensUsed: 0,
-        activityType:
-          item.type === 'file'
-            ? 'File Processing'
-            : item.type === 'link'
-            ? 'Link Processing'
-            : 'Chat',
-        icon: item.type === 'file' ? '⚙️' : item.type === 'link' ? '🔗' : '💬',
-      });
-    });
+    // SKIP workshop history entirely (no file processing, link processing, or chat sessions)
+    // This ensures only real assignments and file uploads are shown
 
     // Sort by creation date (newest first)
     return activities.sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
-  }, [assignmentsList, fileUploads, workshopHistory]);
+  }, [assignmentsList, fileUploads]);
 
   const handleDeleteConfirm = async () => {
     if (!assignmentToDelete) return;
@@ -396,16 +509,6 @@ const Assignments: React.FC = () => {
         toast.success(`File "${assignmentToDelete.title}" deleted successfully`);
         await fetchFileUploads();
         console.log('🗑️ File upload deleted and list refreshed');
-      } else if (item?.type === 'workshop_activity') {
-        // Delete workshop activity from store
-        const { deleteHistoryItem } = useWorkshopStore.getState();
-        const workshopId = assignmentToDelete.id.replace('workshop-', '');
-        console.log('🗑️ Deleting workshop activity with ID:', workshopId);
-        await deleteHistoryItem(workshopId);
-        toast.success(`Activity "${assignmentToDelete.title}" deleted successfully`);
-        // Refresh workshop history
-        setWorkshopHistory(useWorkshopStore.getState().history);
-        console.log('🗑️ Workshop activity deleted and list refreshed');
       }
 
       setDeleteDialogOpen(false);
@@ -426,52 +529,6 @@ const Assignments: React.FC = () => {
   const handleEditDialogClose = () => {
     setEditDialogOpen(false);
     setEditAssignmentId(null);
-  };
-
-  const handleViewOriginal = async (assignmentId: string) => {
-    handleMenuClose();
-    setPreviewLoading(true);
-    setFilePreviewOpen(true);
-
-    try {
-      // Find the item in combinedActivities to get its type
-      const item = combinedActivities.find(a => a.id === assignmentId);
-
-      // Set item type and data for the popup
-      setPreviewItemType(item?.type || '');
-      setPreviewItemData(item);
-
-      if (item?.type === 'file_upload') {
-        // Extract the actual file ID from the combined ID
-        const fileId = assignmentId.replace('file-', '');
-        const fileUpload = fileUploads.find(f => f.id.toString() === fileId);
-
-        if (fileUpload) {
-          setPreviewFileName(fileUpload.original_filename || fileUpload.filename);
-
-          // Use the extracted_content from the file upload data
-          if (fileUpload.extracted_content) {
-            setOriginalFileContent(fileUpload.extracted_content);
-          } else {
-            setOriginalFileContent(
-              'Original file content not available. The file may not have been processed yet.'
-            );
-          }
-        }
-      } else if (item?.type === 'workshop_activity') {
-        setPreviewFileName(item?.title || 'File Processing');
-        // For workshop activities, we don't have access to original file content
-        setOriginalFileContent(null);
-      } else {
-        setPreviewFileName(item?.title || 'Unknown File');
-        setOriginalFileContent('Original content not available for this item type.');
-      }
-    } catch (error) {
-      console.error('Error fetching original file:', error);
-      setOriginalFileContent('Error loading original file content.');
-    } finally {
-      setPreviewLoading(false);
-    }
   };
 
   const handleFilePreviewClose = () => {
@@ -628,9 +685,10 @@ const Assignments: React.FC = () => {
     });
 
   const getAssignmentStats = () => {
-    const total = assignmentsList.length;
-    const completed = assignmentsList.filter(a => a.status === 'Completed').length;
-    const subjectDistribution = assignmentsList.reduce((acc, curr) => {
+    // Count from combinedActivities (assignments + file uploads) instead of just assignmentsList
+    const total = combinedActivities.length;
+    const completed = combinedActivities.filter(a => a.status === 'Completed').length;
+    const subjectDistribution = combinedActivities.reduce((acc, curr) => {
       acc[curr.subject] = (acc[curr.subject] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
@@ -1179,33 +1237,14 @@ const Assignments: React.FC = () => {
                         open={Boolean(anchorEl) && selectedAssignment === assignment.id}
                         onClose={handleMenuClose}
                       >
-                        {assignment.type === 'assignment' && (
+                        {(assignment.type === 'assignment' ||
+                          assignment.type === 'file_upload') && (
                           <>
-                            <MenuItem onClick={() => handleViewAssignment(assignment.id)}>
-                              <VisibilityIcon sx={{ mr: 1 }} /> View Assignment
+                            <MenuItem onClick={() => handleEditSubject(assignment.id)}>
+                              <EditIcon sx={{ mr: 1 }} /> Edit Subject
                             </MenuItem>
-                            <MenuItem onClick={() => handleReopenInWorkshop(assignment.id)}>
-                              <RefreshIcon sx={{ mr: 1 }} /> Reopen in Workshop
-                            </MenuItem>
-                            <MenuItem onClick={() => handleEditAssignment(assignment.id)}>
-                              <EditIcon sx={{ mr: 1 }} /> Edit Title/Metadata
-                            </MenuItem>
-                            <MenuItem
-                              onClick={() => handleDeleteClick(assignment.id)}
-                              sx={{ color: 'error.main' }}
-                            >
-                              <DeleteIcon sx={{ mr: 1 }} /> Delete
-                            </MenuItem>
-                          </>
-                        )}
-                        {(assignment.type === 'file_upload' ||
-                          assignment.type === 'workshop_activity') && (
-                          <>
-                            <MenuItem onClick={() => navigate('/dashboard/workshop')}>
-                              <RefreshIcon sx={{ mr: 1 }} /> Open in Workshop
-                            </MenuItem>
-                            <MenuItem onClick={() => handleViewOriginal(assignment.id)}>
-                              <LaunchIcon sx={{ mr: 1 }} /> View Original
+                            <MenuItem onClick={() => handleViewCompletedFile(assignment.id)}>
+                              <VisibilityIcon sx={{ mr: 1 }} /> View File
                             </MenuItem>
                             <MenuItem
                               onClick={() => handleDeleteClick(assignment.id)}
@@ -1283,6 +1322,34 @@ const Assignments: React.FC = () => {
           </DialogActions>
         </Dialog>
 
+        {/* Subject Edit Dialog */}
+        <Dialog
+          open={subjectEditDialogOpen}
+          onClose={() => setSubjectEditDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
+              border: '2px solid #D32F2F',
+              borderRadius: 2,
+            },
+          }}
+        >
+          <DialogTitle>Edit Subject</DialogTitle>
+          <DialogContent>
+            <DialogContentText sx={{ mb: 2 }}>
+              Update the subject for "{itemToEditSubject?.title}"
+            </DialogContentText>
+            <SubjectSelector value={newSubject} onChange={setNewSubject} label="Subject" />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setSubjectEditDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleSubjectEditSave} variant="contained">
+              Save
+            </Button>
+          </DialogActions>
+        </Dialog>
+
         <AssignmentEditDialog
           open={editDialogOpen}
           onClose={handleEditDialogClose}
@@ -1295,7 +1362,7 @@ const Assignments: React.FC = () => {
           onClose={handleFilePreviewClose}
           fileName={previewFileName}
           fileContent={originalFileContent}
-          loading={previewLoading}
+          loading={false}
           itemType={previewItemType}
           itemData={previewItemData}
         />

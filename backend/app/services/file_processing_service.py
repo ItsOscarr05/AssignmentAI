@@ -2401,6 +2401,11 @@ Task: Add "A1) [answer]" after "Q1)" and "A2) [answer]" after "Q2)". Do not add 
             file_extension = Path(original_path).suffix[1:].lower()
             logger.info(f"Generating filled file for {file_extension} format, preserving original structure")
             
+            # Ensure the output directory exists
+            output_dir = Path(output_path).parent
+            output_dir.mkdir(parents=True, exist_ok=True)
+            logger.info(f"Created output directory: {output_dir}")
+            
             # First, read the original file content to preserve structure
             original_content = self._read_original_file(original_path)
             
