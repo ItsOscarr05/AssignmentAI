@@ -129,7 +129,7 @@ Return your response as a structured JSON with:
             response = await self.client.chat.completions.create(
                 model=model,
                 messages=messages,
-                max_tokens=4000
+                max_completion_tokens=4000
             )
             
             completion_text = response.choices[0].message.content
@@ -216,7 +216,7 @@ COMPLETED DOCUMENT (return the full document with all blanks filled):"""
                         "content": prompt
                     }
                 ],
-                max_tokens=max_tokens,
+                max_completion_tokens=max_tokens,
                 temperature=0.7
             )
             
@@ -301,7 +301,7 @@ COMPLETED SPREADSHEET (provide filled data, calculated values, and any analyses)
                         "content": prompt
                     }
                 ],
-                max_tokens=max_tokens,
+                max_completion_tokens=max_tokens,
                 temperature=0.5  # Lower temperature for more accurate calculations
             )
             
@@ -394,7 +394,7 @@ COMPLETED CODE (return only the code, no explanations):"""
                         "content": prompt
                     }
                 ],
-                max_tokens=max_tokens,
+                max_completion_tokens=max_tokens,
                 temperature=0.3  # Lower temperature for more precise code
             )
             
@@ -480,7 +480,7 @@ COMPLETED DATA (return valid {file_type.upper()}):"""
                         "content": prompt
                     }
                 ],
-                max_tokens=max_tokens,
+                max_completion_tokens=max_tokens,
                 temperature=0.4
             )
             

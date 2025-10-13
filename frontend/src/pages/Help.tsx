@@ -140,7 +140,7 @@ const Help: React.FC = () => {
         {
           question: 'How do I get started with AssignmentAI?',
           answer:
-            'Getting started with AssignmentAI is simple! Create your account using your email or Google account, then navigate to the Assignments page and click "Upload Content" to add your first assignment. Our AI will immediately begin analyzing your work and providing detailed feedback.',
+            'Getting started with AssignmentAI is simple! Create your account using your email or Google account, then navigate to the Workshop page and click "Upload Content" to add your first assignment. Our AI will immediately begin analyzing your work and providing detailed feedback.',
         },
         {
           question: 'What types of assignments are supported?',
@@ -150,7 +150,7 @@ const Help: React.FC = () => {
         {
           question: 'How do I create my first assignment?',
           answer:
-            'Creating your first assignment is straightforward! Navigate to the Assignments page and click "Upload Content" to either type directly, paste content, or upload files in formats like .docx, .pdf, .txt, or .rtf.',
+            'Creating your first assignment is straightforward! Navigate to the Workshop page and click "Upload Content" to either type directly, paste content, or upload files in formats like .docx, .pdf, .txt, or .rtf.',
         },
         {
           question: 'What makes AssignmentAI different from other writing tools?',
@@ -412,11 +412,6 @@ const Help: React.FC = () => {
           pt: 2,
           pb: 2,
           px: { xs: 1, md: 0 },
-          background:
-            theme.palette.mode === 'dark'
-              ? `linear-gradient(180deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.paper} 100%)`
-              : 'linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.95) 100%)',
-          backdropFilter: 'blur(10px)',
         }}
       >
         <Typography
@@ -493,7 +488,9 @@ const Help: React.FC = () => {
                   <Chip
                     label={cat}
                     color={selectedCategory === cat ? 'primary' : 'default'}
-                    onClick={() => setSelectedCategory(cat)}
+                    onClick={() =>
+                      setSelectedCategory(selectedCategory === cat ? 'All Questions' : cat)
+                    }
                     size="small"
                     sx={{
                       fontWeight: 500,
@@ -546,7 +543,9 @@ const Help: React.FC = () => {
                   key={cat}
                   label={cat}
                   color={selectedCategory === cat ? 'primary' : 'default'}
-                  onClick={() => setSelectedCategory(cat)}
+                  onClick={() =>
+                    setSelectedCategory(selectedCategory === cat ? 'All Questions' : cat)
+                  }
                   size="small"
                   sx={{
                     fontWeight: 500,

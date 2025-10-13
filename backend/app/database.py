@@ -12,24 +12,25 @@ engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Async engine and session
-# async_database_url = SQLALCHEMY_DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
-# async_engine = create_async_engine(
-#     async_database_url,
-#     echo=False,
-#     future=True,
-#     pool_pre_ping=True,
-#     pool_recycle=300,
-#     pool_size=10,
-#     max_overflow=20
-# )
+# Convert SQLite URL to async format
+if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
+    async_database_url = SQLALCHEMY_DATABASE_URL.replace("sqlite:///", "sqlite+aiosqlite:///")
+else:
+    async_database_url = SQLALCHEMY_DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
 
-# AsyncSessionLocal = async_sessionmaker(
-#     async_engine,
-#     class_=AsyncSession,
-#     expire_on_commit=False,
-#     autocommit=False,
-#     autoflush=False
-# )
+async_engine = create_async_engine(
+    async_database_url,
+    echo=False,
+    future=True
+)
+
+AsyncSessionLocal = async_sessionmaker(
+    async_engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+    autocommit=False,
+    autoflush=False
+)
 
 # Base = declarative_base()  # Removed to unify Base usage
 
@@ -43,9 +44,9 @@ def get_db():
     finally:
         db.close()
 
-# async def get_async_db():
-#     async with AsyncSessionLocal() as session:
-#         try:
-#             yield session
-#         finally:
-#             await session.close() 
+async def get_async_db():
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+        finally:
+            await session.close() 

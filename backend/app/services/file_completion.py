@@ -68,7 +68,7 @@ class FileCompletionService:
                     }
                 ],
                 temperature=0.2,
-                max_tokens=self.max_tokens,
+                max_completion_tokens=self.max_tokens,
                 top_p=0.95,
                 frequency_penalty=0.0,
                 presence_penalty=0.0,

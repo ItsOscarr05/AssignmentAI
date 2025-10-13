@@ -66,7 +66,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <Divider />
       <List>
         {navigationItems.map(item => (
-          <ListItem key={item.name} disablePadding>
+          <ListItem key={item.name} disablePadding sx={{ mb: 1 }}>
             <ListItemButton
               selected={location.pathname === item.href}
               onClick={() => {

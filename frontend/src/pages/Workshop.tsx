@@ -1,6 +1,5 @@
 import {
   Add as AddIcon,
-  BarChart as BarChartIcon,
   ChatOutlined as ChatOutlinedIcon,
   DeleteOutlined,
   EditOutlined as EditOutlinedIcon,
@@ -57,6 +56,7 @@ import { SubscriptionUpgradeModal } from '../components/workshop/SubscriptionUpg
 import WorkshopFileUpload from '../components/workshop/WorkshopFileUpload';
 import WorkshopLiveModal from '../components/workshop/WorkshopLiveModal';
 
+import TokenLimitExceededPopup from '../components/subscription/TokenLimitExceededPopup';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { useTokenLimit } from '../hooks/useTokenLimit';
 import { useTokenUsage } from '../hooks/useTokenUsage';
@@ -154,6 +154,18 @@ const Workshop: React.FC = () => {
   React.useEffect(() => {
     console.log('Feature access error changed:', featureAccessError);
   }, [featureAccessError]);
+
+  // Monitor for token limit errors and show popup
+  React.useEffect(() => {
+    if (
+      error &&
+      (error.includes('Token limit exceeded') ||
+        error.includes('token limit') ||
+        error.includes('Unable to verify token limits'))
+    ) {
+      setShowTokenLimitPopup(true);
+    }
+  }, [error]);
   const [input, setInput] = useState('');
   const [linkInput, setLinkInput] = useState('');
   const [isLinkProcessing, setIsLinkProcessing] = useState(false);
@@ -168,11 +180,11 @@ const Workshop: React.FC = () => {
     lastSunday.setDate(now.getDate() - now.getDay());
     lastSunday.setHours(0, 0, 0, 0);
     const currentWeekStart = lastSunday.toISOString().split('T')[0];
-    
+
     // Load persisted activity data from localStorage
     const saved = localStorage.getItem('weeklyActivityData');
     const savedWeekStart = localStorage.getItem('weeklyActivityWeekStart');
-    
+
     if (saved && savedWeekStart === currentWeekStart) {
       // Same week, load the saved data
       try {
@@ -189,14 +201,14 @@ const Workshop: React.FC = () => {
       // First time, set the week start
       localStorage.setItem('weeklyActivityWeekStart', currentWeekStart);
     }
-    
+
     // Return empty data for the current week
     const weekDays = Array.from({ length: 7 }, (_, i) => {
       const date = new Date(lastSunday);
       date.setDate(lastSunday.getDate() + i);
       return date;
     });
-    
+
     return weekDays.map(date => {
       const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
       return {
@@ -234,6 +246,9 @@ const Workshop: React.FC = () => {
   // Link chat modal state
   const [showLinkChatModal, setShowLinkChatModal] = useState(false);
   const [lastProcessedLink, setLastProcessedLink] = useState<any>(null);
+
+  // Token limit exceeded popup state
+  const [showTokenLimitPopup, setShowTokenLimitPopup] = useState(false);
 
   // Use token limit hook for subscription and token data
   const {
@@ -315,7 +330,7 @@ const Workshop: React.FC = () => {
   // Update activity data when workshop history changes - merge with existing data
   useEffect(() => {
     const newData = generateActivityData;
-    
+
     // Check if we're still in the same week
     const now = new Date();
     const lastSunday = new Date(now);
@@ -323,7 +338,7 @@ const Workshop: React.FC = () => {
     lastSunday.setHours(0, 0, 0, 0);
     const currentWeekStart = lastSunday.toISOString().split('T')[0];
     const savedWeekStart = localStorage.getItem('weeklyActivityWeekStart');
-    
+
     // If it's a new week, reset the data
     if (savedWeekStart && savedWeekStart !== currentWeekStart) {
       console.log('New week detected in useEffect, resetting activity data');
@@ -332,13 +347,13 @@ const Workshop: React.FC = () => {
       setActivityData(newData);
       return;
     }
-    
+
     setActivityData(prevData => {
       // Merge new data with existing data by adding counts
       const merged = prevData.map((prevDay, index) => {
         const newDay = newData[index];
         if (!newDay) return prevDay;
-        
+
         return {
           date: prevDay.date,
           chats: Math.max(prevDay.chats, newDay.chats),
@@ -349,10 +364,10 @@ const Workshop: React.FC = () => {
           rewrite: Math.max(prevDay.rewrite, newDay.rewrite),
         };
       });
-      
+
       // Save to localStorage
       localStorage.setItem('weeklyActivityData', JSON.stringify(merged));
-      
+
       return merged;
     });
   }, [generateActivityData]);
@@ -362,7 +377,6 @@ const Workshop: React.FC = () => {
 
   // File upload modal state
   const [showFileUploadModal, setShowFileUploadModal] = useState(false);
-  const [lastUploadedFile, setLastUploadedFile] = useState<any>(null);
 
   // Debug: Log when modal state changes
   React.useEffect(() => {
@@ -372,13 +386,22 @@ const Workshop: React.FC = () => {
   // Use real token usage for the circular progress bar
   const tokenUsage = useMemo(
     () => ({
-      label: subscriptionLoading ? 'Loading...' : (tokenLimitData?.label || 'Free Plan (100,000 tokens/month)'),
+      label: subscriptionLoading
+        ? 'Loading...'
+        : tokenLimitData?.label || 'Free Plan (100,000 tokens/month)',
       total: totalTokens,
       used: usedTokens,
       remaining: remainingTokens,
       percentUsed: percentUsed,
     }),
-    [subscriptionLoading, tokenLimitData?.label, totalTokens, usedTokens, remainingTokens, percentUsed]
+    [
+      subscriptionLoading,
+      tokenLimitData?.label,
+      totalTokens,
+      usedTokens,
+      remainingTokens,
+      percentUsed,
+    ]
   );
 
   useEffect(() => {
@@ -498,11 +521,9 @@ const Workshop: React.FC = () => {
     if (linkInput.trim()) {
       setIsLinkProcessing(true);
       try {
-        const linkResult = await addLink({ url: linkInput, title: linkInput });
-        if (linkResult) {
-          setLastProcessedLink(linkResult);
-          setShowLinkChatModal(true);
-        }
+        await addLink({ url: linkInput, title: linkInput });
+        // The addLink function will handle the result internally
+        setShowLinkChatModal(true);
         setLinkInput('');
       } catch (error) {
         console.error('Error processing link:', error);
@@ -525,7 +546,6 @@ const Workshop: React.FC = () => {
 
     // Only open the modal if the file upload was successful (status is 'completed')
     if (file && file.status === 'completed') {
-      setLastUploadedFile(file); // Store the last uploaded file
       setShowFileUploadModal(true);
     } else {
       console.log('File upload failed or subscription error - not opening modal');
@@ -533,33 +553,17 @@ const Workshop: React.FC = () => {
     }
   };
 
-  const handleFileProcessed = (fileId: string, result: any) => {
+  const handleFileProcessed = (file: WorkshopFile) => {
     // Handle file processing result
-    console.log('File processed:', fileId, result);
+    console.log('File processed:', file);
   };
 
   const handleFileDeleted = (fileId: string) => {
     deleteFile(fileId);
     // Close the modal after deleting the file
     setShowFileUploadModal(false);
-    setLastUploadedFile(null);
     // Clear the files array since the file was deleted
     useWorkshopStore.setState({ files: [] });
-  };
-
-  const handleAiFill = async (file: any) => {
-    // This will be handled by the modal
-    console.log('AI Fill requested for:', file);
-  };
-
-  const handleDownloadFilled = (file: any) => {
-    // This will be handled by the modal
-    console.log('Download filled file:', file);
-  };
-
-  const handlePreviewFile = (file: any) => {
-    // This will be handled by the modal
-    console.log('Preview file:', file);
   };
 
   const handleCloseAnalysisPopup = () => {
@@ -719,7 +723,9 @@ const Workshop: React.FC = () => {
               <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 2 }}>
                 <Button
                   variant="contained"
-                  startIcon={isLinkProcessing ? <CircularProgress size={20} color="inherit" /> : <AddIcon />}
+                  startIcon={
+                    isLinkProcessing ? <CircularProgress size={20} color="inherit" /> : <AddIcon />
+                  }
                   type="submit"
                   disabled={isLinkProcessing}
                   sx={{
@@ -833,8 +839,6 @@ const Workshop: React.FC = () => {
     <Box
       sx={{
         p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2),
-        backgroundColor: theme =>
-          theme.palette.mode === 'dark' ? theme.palette.background.default : 'white',
         minHeight: '100vh',
         overflow: 'hidden',
         width: '100%',
@@ -883,6 +887,14 @@ const Workshop: React.FC = () => {
           error={featureAccessError}
         />
       )}
+
+      {/* Token Limit Exceeded Popup */}
+      <TokenLimitExceededPopup
+        open={showTokenLimitPopup}
+        onClose={() => setShowTokenLimitPopup(false)}
+        currentUsage={usedTokens}
+        limit={totalTokens}
+      />
 
       <Grid
         container
@@ -1006,148 +1018,125 @@ const Workshop: React.FC = () => {
                 />
               </Tooltip>
             </Box>
-            {activityData.length === 0 ||
-            activityData.every(d =>
-              Object.values(d)
-                .slice(1)
-                .every(v => v === 0)
-            ) ? (
-              <Box
-                display="flex"
-                flexDirection="column"
-                alignItems="center"
-                justifyContent="center"
-                sx={{ minHeight: 300 }}
-              >
-                <BarChartIcon sx={{ fontSize: 64, color: '#ff6b6b', mb: 2, opacity: 0.5 }} />
-                <Typography variant="h5" color="text.secondary" gutterBottom>
-                  No Activity Yet
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Start using the workshop to see your activity here
-                </Typography>
-              </Box>
-            ) : (
-              <Box
-                sx={{
-                  height: { xs: 280, sm: 320, md: 400 },
-                  overflow: 'hidden',
-                  width: '100%',
-                  '@media (max-width: 360px)': {
-                    width: '98%',
-                    mx: 'auto',
-                  },
-                }}
-              >
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={activityData}
-                    margin={{
-                      top: 20,
-                      right: 30,
-                      left: 20,
-                      bottom: 20,
+            <Box
+              sx={{
+                height: { xs: 280, sm: 320, md: 400 },
+                overflow: 'hidden',
+                width: '100%',
+                '@media (max-width: 360px)': {
+                  width: '98%',
+                  mx: 'auto',
+                },
+              }}
+            >
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={activityData}
+                  margin={{
+                    top: 20,
+                    right: 30,
+                    left: 20,
+                    bottom: 20,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis
+                    dataKey="date"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12, fontWeight: 500 }}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12, fontWeight: 500 }}
+                  />
+                  <RechartsTooltip
+                    content={CustomActivityTooltip}
+                    cursor={{ fill: 'rgba(0,0,0,0.05)' }}
+                  />
+                  <Legend
+                    onClick={e => {
+                      if (e.dataKey) {
+                        const keyAsString = String(e.dataKey);
+                        setSelectedArea(prev => (prev === keyAsString ? null : keyAsString));
+                      }
                     }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis
-                      dataKey="date"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 12, fontWeight: 500 }}
-                    />
-                    <YAxis
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 12, fontWeight: 500 }}
-                    />
-                    <RechartsTooltip
-                      content={CustomActivityTooltip}
-                      cursor={{ fill: 'rgba(0,0,0,0.05)' }}
-                    />
-                    <Legend
-                      onClick={e => {
-                        if (e.dataKey) {
-                          const keyAsString = String(e.dataKey);
-                          setSelectedArea(prev => (prev === keyAsString ? null : keyAsString));
-                        }
-                      }}
-                      wrapperStyle={{
-                        paddingTop: 5,
-                        fontSize: '0.75rem',
-                      }}
-                      formatter={renderLegendText}
-                      iconSize={8}
-                      iconType="circle"
-                      layout="horizontal"
-                      verticalAlign="bottom"
-                      align="center"
-                    />
-                    <Customized component={VerticalDividers} />
-                    <Bar
-                      dataKey="chats"
-                      stroke="#E53935"
-                      strokeWidth={2}
-                      fill="#E53935"
-                      fillOpacity={selectedArea ? (selectedArea === 'chats' ? 0.8 : 0.15) : 0.4}
-                      strokeOpacity={selectedArea ? (selectedArea === 'chats' ? 1 : 0.3) : 1}
-                      name="Chats"
-                      radius={[4, 4, 0, 0]}
-                    />
-                    <Bar
-                      dataKey="summarize"
-                      stroke="#FB8C00"
-                      strokeWidth={2}
-                      fill="#FB8C00"
-                      fillOpacity={selectedArea ? (selectedArea === 'summarize' ? 0.8 : 0.15) : 0.4}
-                      strokeOpacity={selectedArea ? (selectedArea === 'summarize' ? 1 : 0.3) : 1}
-                      name="Summarize"
-                      radius={[4, 4, 0, 0]}
-                    />
-                    <Bar
-                      dataKey="extract"
-                      stroke="#FDD835"
-                      strokeWidth={2}
-                      fill="#FDD835"
-                      fillOpacity={selectedArea ? (selectedArea === 'extract' ? 0.8 : 0.15) : 0.4}
-                      strokeOpacity={selectedArea ? (selectedArea === 'extract' ? 1 : 0.3) : 1}
-                      name="Extract"
-                      radius={[4, 4, 0, 0]}
-                    />
-                    <Bar
-                      dataKey="links"
-                      stroke="#43A047"
-                      strokeWidth={2}
-                      fill="#43A047"
-                      fillOpacity={selectedArea ? (selectedArea === 'links' ? 0.8 : 0.15) : 0.4}
-                      strokeOpacity={selectedArea ? (selectedArea === 'links' ? 1 : 0.3) : 1}
-                      name="Links"
-                      radius={[4, 4, 0, 0]}
-                    />
-                    <Bar
-                      dataKey="rewrite"
-                      stroke="#1E88E5"
-                      strokeWidth={2}
-                      fill="#1E88E5"
-                      fillOpacity={selectedArea ? (selectedArea === 'rewrite' ? 0.8 : 0.15) : 0.4}
-                      strokeOpacity={selectedArea ? (selectedArea === 'rewrite' ? 1 : 0.3) : 1}
-                      name="Rewrite"
-                      radius={[4, 4, 0, 0]}
-                    />
-                    <Bar
-                      dataKey="files"
-                      stroke="#8E24AA"
-                      strokeWidth={2}
-                      fill="#8E24AA"
-                      fillOpacity={selectedArea ? (selectedArea === 'files' ? 0.8 : 0.15) : 0.4}
-                      strokeOpacity={selectedArea ? (selectedArea === 'files' ? 1 : 0.3) : 1}
-                      name="Files"
-                      radius={[4, 4, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </Box>
-            )}
+                    wrapperStyle={{
+                      paddingTop: 5,
+                      fontSize: '0.75rem',
+                    }}
+                    formatter={renderLegendText}
+                    iconSize={8}
+                    iconType="circle"
+                    layout="horizontal"
+                    verticalAlign="bottom"
+                    align="center"
+                  />
+                  <Customized component={VerticalDividers} />
+                  <Bar
+                    dataKey="chats"
+                    stroke="#E53935"
+                    strokeWidth={2}
+                    fill="#E53935"
+                    fillOpacity={selectedArea ? (selectedArea === 'chats' ? 0.8 : 0.15) : 0.4}
+                    strokeOpacity={selectedArea ? (selectedArea === 'chats' ? 1 : 0.3) : 1}
+                    name="Chats"
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="summarize"
+                    stroke="#FB8C00"
+                    strokeWidth={2}
+                    fill="#FB8C00"
+                    fillOpacity={selectedArea ? (selectedArea === 'summarize' ? 0.8 : 0.15) : 0.4}
+                    strokeOpacity={selectedArea ? (selectedArea === 'summarize' ? 1 : 0.3) : 1}
+                    name="Summarize"
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="extract"
+                    stroke="#FDD835"
+                    strokeWidth={2}
+                    fill="#FDD835"
+                    fillOpacity={selectedArea ? (selectedArea === 'extract' ? 0.8 : 0.15) : 0.4}
+                    strokeOpacity={selectedArea ? (selectedArea === 'extract' ? 1 : 0.3) : 1}
+                    name="Extract"
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="links"
+                    stroke="#43A047"
+                    strokeWidth={2}
+                    fill="#43A047"
+                    fillOpacity={selectedArea ? (selectedArea === 'links' ? 0.8 : 0.15) : 0.4}
+                    strokeOpacity={selectedArea ? (selectedArea === 'links' ? 1 : 0.3) : 1}
+                    name="Links"
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="rewrite"
+                    stroke="#1E88E5"
+                    strokeWidth={2}
+                    fill="#1E88E5"
+                    fillOpacity={selectedArea ? (selectedArea === 'rewrite' ? 0.8 : 0.15) : 0.4}
+                    strokeOpacity={selectedArea ? (selectedArea === 'rewrite' ? 1 : 0.3) : 1}
+                    name="Rewrite"
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="files"
+                    stroke="#8E24AA"
+                    strokeWidth={2}
+                    fill="#8E24AA"
+                    fillOpacity={selectedArea ? (selectedArea === 'files' ? 0.8 : 0.15) : 0.4}
+                    strokeOpacity={selectedArea ? (selectedArea === 'files' ? 1 : 0.3) : 1}
+                    name="Files"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </Box>
           </Box>
 
           {/* Upload Content and Input Section */}
@@ -1668,19 +1657,14 @@ const Workshop: React.FC = () => {
         open={showFileUploadModal}
         onClose={() => {
           setShowFileUploadModal(false);
-          setLastUploadedFile(null); // Clear the last uploaded file when modal closes
 
           // Clear only the files array to prevent confusion with future uploads
           // Keep other workshop data (prompt, history, etc.) intact
           useWorkshopStore.setState({ files: [] });
         }}
         files={files as WorkshopFile[]}
-        lastUploadedFile={lastUploadedFile}
         onFileProcessed={handleFileProcessed}
         onFileDeleted={handleFileDeleted}
-        onAiFill={handleAiFill}
-        onDownloadFilled={handleDownloadFilled}
-        onPreviewFile={handlePreviewFile}
       />
 
       {/* Link Chat Modal */}

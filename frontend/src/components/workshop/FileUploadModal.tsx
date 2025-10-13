@@ -35,6 +35,7 @@ import {
   type FileCompletionSession,
 } from '../../services/fileCompletionChatService';
 import { WorkshopFile } from '../../services/WorkshopService';
+import { formatUTCToTime } from '../../utils/timezone';
 import FileVersionHistory from './FileVersionHistory';
 
 interface FileUploadModalProps {
@@ -487,7 +488,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
                           variant="caption"
                           sx={{ mt: 1, display: 'block', opacity: 0.7 }}
                         >
-                          {new Date(msg.timestamp).toLocaleTimeString()}
+                          {formatUTCToTime(msg.timestamp)}
                         </Typography>
                       </Paper>
                       {msg.role === 'assistant' && (

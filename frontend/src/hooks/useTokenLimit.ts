@@ -85,9 +85,9 @@ export const useTokenLimit = () => {
   const fetchTokenUsage = useCallback(
     async (currentSubscription?: Subscription | null) => {
       const mapPlanToLimit = (planId?: string): number => {
-        if (planId === 'price_test_plus') return 200000;
-        if (planId === 'price_test_pro') return 400000;
-        if (planId === 'price_test_max') return 800000;
+        if (planId === 'price_test_plus') return 250000;
+        if (planId === 'price_test_pro') return 500000;
+        if (planId === 'price_test_max') return 1000000;
         if (planId === 'price_test_free') return 100000;
 
         const envPlus = (import.meta as any).env?.VITE_STRIPE_PRICE_PLUS;
@@ -99,9 +99,9 @@ export const useTokenLimit = () => {
           ids.filter(Boolean).includes(planId as string);
 
         if (is([envFree])) return 100000;
-        if (is([envPlus])) return 200000;
-        if (is([envPro])) return 400000;
-        if (is([envMax])) return 800000;
+        if (is([envPlus])) return 250000;
+        if (is([envPro])) return 500000;
+        if (is([envMax])) return 1000000;
 
         return 100000;
       };
@@ -133,9 +133,9 @@ export const useTokenLimit = () => {
         // Use the passed tokenLimit parameter instead of subscription from outer scope
         if (tokenLimit) {
           console.log('Using token limit to determine plan:', tokenLimit);
-          if (tokenLimit >= 800000) return 'Max';
-          if (tokenLimit >= 400000) return 'Pro';
-          if (tokenLimit >= 200000) return 'Plus';
+          if (tokenLimit >= 1000000) return 'Max';
+          if (tokenLimit >= 500000) return 'Pro';
+          if (tokenLimit >= 250000) return 'Plus';
           if (tokenLimit >= 100000) return 'Free';
         }
 

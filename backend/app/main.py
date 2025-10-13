@@ -35,6 +35,7 @@ from app.middleware.logging import LoggingMiddleware
 from app.middleware.performance import PerformanceMiddleware, QueryOptimizationMiddleware
 from app.api.middleware import file_size_limit_middleware
 from app.core.rate_limit import init_rate_limiter, close_rate_limiter
+from app.core.token_middleware import TokenTrackingMiddleware
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -268,6 +269,9 @@ app.add_middleware(
 
 # Add compression middleware
 # app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+# Add token tracking middleware
+app.add_middleware(TokenTrackingMiddleware)
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")

@@ -4,10 +4,11 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.security import verify_token
-from app.database import SessionLocal, get_db
+from app.database import SessionLocal, get_db, get_async_db
 from app.models.user import User
 from app.schemas.token import TokenPayload
 

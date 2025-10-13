@@ -23,6 +23,7 @@ import React, { useEffect, useState } from 'react';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import HeroParticles from '../components/HeroParticles';
 import { useAuth } from '../contexts/AuthContext';
+import TermsPrivacyModal from '../components/auth/TermsPrivacyModal';
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -39,6 +40,7 @@ const Register: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const { register, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -207,12 +209,10 @@ const Register: React.FC = () => {
           confirm_password: formData.confirmPassword,
         });
 
-        setSuccess('Registration successful! Redirecting to login...');
-
-        // Redirect to login page after a short delay
-        setTimeout(() => {
-          navigate('/login');
-        }, 2000);
+        setSuccess('Registration successful!');
+        
+        // Show terms and privacy modal instead of auto-redirect
+        setShowTermsModal(true);
       } catch (error: any) {
         console.error('Registration error:', error);
         setError(error.message || 'Registration failed. Please try again.');
@@ -232,6 +232,16 @@ const Register: React.FC = () => {
     } else {
       navigate('/');
     }
+  };
+
+  const handleAcceptTerms = () => {
+    setShowTermsModal(false);
+    navigate('/login');
+  };
+
+  const handleDeclineTerms = () => {
+    setShowTermsModal(false);
+    navigate('/');
   };
 
   return (
@@ -921,6 +931,13 @@ const Register: React.FC = () => {
           </Grid>
         </Grid>
       </Container>
+      
+      {/* Terms and Privacy Modal */}
+      <TermsPrivacyModal
+        open={showTermsModal}
+        onAccept={handleAcceptTerms}
+        onDecline={handleDeclineTerms}
+      />
     </Box>
   );
 };

@@ -5,9 +5,9 @@ def get_subscription_token_limit(subscription_plan: str) -> int:
     """Get maximum token limit for a subscription plan"""
     limits = {
         'free': 100000,
-        'plus': 200000,
-        'pro': 400000,
-        'max': 800000
+        'plus': 250000,
+        'pro': 500000,
+        'max': 1000000
     }
     return limits.get(subscription_plan, 100000)
 

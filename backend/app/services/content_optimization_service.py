@@ -104,7 +104,7 @@ class ContentOptimizationService:
                     {"role": "system", "content": "You are an expert content analyst specializing in content optimization and improvement."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=800,
+                max_completion_tokens=800,
                 temperature=0.3
             )
             
@@ -228,7 +228,7 @@ class ContentOptimizationService:
                     {"role": "system", "content": "You are an expert content strategist specializing in content optimization and improvement."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=1000,
+                max_completion_tokens=1000,
                 temperature=0.4
             )
             
@@ -332,7 +332,7 @@ class ContentOptimizationService:
                     {"role": "system", "content": "You are an expert content optimizer who creates improved versions while maintaining original intent."},
                     {"role": "user", "content": optimization_prompt}
                 ],
-                max_tokens=len(original_content) * 2,  # Allow for expansion
+                max_completion_tokens=len(original_content) * 2,  # Allow for expansion
                 temperature=0.4
             )
             
@@ -486,7 +486,7 @@ class ContentOptimizationService:
                     {"role": "system", "content": "You are an expert content strategist who creates comprehensive improvement reports."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=600,
+                max_completion_tokens=600,
                 temperature=0.3
             )
             
@@ -570,7 +570,7 @@ class ContentOptimizationService:
                     {"role": "system", "content": "You are an expert SEO analyst specializing in content optimization for search engines."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=600,
+                max_completion_tokens=600,
                 temperature=0.3
             )
             
@@ -608,7 +608,7 @@ class ContentOptimizationService:
                     {"role": "system", "content": "You are an expert SEO strategist who provides actionable optimization recommendations."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=500,
+                max_completion_tokens=500,
                 temperature=0.4
             )
             
@@ -645,7 +645,7 @@ class ContentOptimizationService:
                     {"role": "system", "content": "You are an expert SEO content optimizer who creates search-engine-friendly content."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=len(content) * 2,
+                max_completion_tokens=len(content) * 2,
                 temperature=0.4
             )
             

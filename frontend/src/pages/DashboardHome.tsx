@@ -55,6 +55,7 @@ import { mapToCoreSubject } from '../services/subjectService';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 
 import { DateFormat, getDefaultDateFormat } from '../utils/dateFormat';
+import { parseUTCTimestamp } from '../utils/timezone';
 
 const DashboardHome: React.FC = () => {
   const { user } = useAuth();
@@ -68,7 +69,7 @@ const DashboardHome: React.FC = () => {
 
   // Simple date formatting function based on user preference
   const formatDateWithPreference = (date: Date | string) => {
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    const dateObj = typeof date === 'string' ? parseUTCTimestamp(date) : date;
     const year = dateObj.getFullYear();
     const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
     const day = dateObj.getDate().toString().padStart(2, '0');

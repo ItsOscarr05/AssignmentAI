@@ -190,9 +190,31 @@ async def send_message(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:
         logger.error(f"Error sending message in session {session_id}: {str(e)}")
+        
+        # Provide more detailed error messages based on the error type
+        error_message = "Failed to process message"
+        error_detail = str(e)
+        
+        # Check for specific OpenAI API errors
+        if "temperature" in error_detail and "unsupported" in error_detail.lower():
+            error_message = "The AI model configuration is incompatible. Please try again or contact support if the issue persists."
+        elif "max_completion_tokens" in error_detail or "max_tokens" in error_detail:
+            error_message = "Token limit exceeded. Please try a shorter message or contact support."
+        elif "rate limit" in error_detail.lower():
+            error_message = "AI service is temporarily busy. Please wait a moment and try again."
+        elif "authentication" in error_detail.lower() or "unauthorized" in error_detail.lower():
+            error_message = "AI service authentication failed. Please contact support."
+        elif "network" in error_detail.lower() or "connection" in error_detail.lower():
+            error_message = "Network connection issue. Please check your internet connection and try again."
+        elif "timeout" in error_detail.lower():
+            error_message = "Request timed out. The AI service is taking longer than expected. Please try again."
+        else:
+            # For other errors, provide a more helpful generic message
+            error_message = "An unexpected error occurred while processing your message. Please try again or contact support if the issue persists."
+        
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to process message"
+            detail=error_message
         )
 
 

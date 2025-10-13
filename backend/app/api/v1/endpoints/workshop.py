@@ -3,8 +3,9 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, B
 from fastapi.responses import StreamingResponse
 import json
 from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from pathlib import Path
-from app.core.deps import get_current_user, get_db
+from app.core.deps import get_current_user, get_db, get_async_db
 from app.core.feature_access import require_feature, has_feature_access, get_user_plan, get_available_features, get_feature_requirements
 from app.services.ai_service import AIService
 from app.services.file_service import file_service
@@ -228,7 +229,7 @@ async def generate_content(
     prompt: str = Body(..., embed=True),
     conversation_history: List[dict] = Body(default=[]),
     stream: bool = Body(default=False, embed=True),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
     current_user: User = Depends(get_current_user)
 ):
     """
@@ -250,6 +251,22 @@ async def generate_content(
 
     # Initialize AI service with database session
     ai_service = AIService(db=db)
+    
+    # Enforce token limits before making AI calls
+    try:
+        estimated_tokens = len(prompt.split()) * 2  # Rough estimate
+        await ai_service.enforce_token_limit(current_user.id, estimated_tokens)
+        logger.info(f"Token limit check passed for user {current_user.id}")
+    except HTTPException as e:
+        logger.warning(f"Token limit exceeded for user {current_user.id}: {e.detail}")
+        raise e
+    except Exception as e:
+        logger.error(f"Token enforcement failed for user {current_user.id}: {str(e)}")
+        # Return a proper error response instead of continuing
+        raise HTTPException(
+            status_code=403,
+            detail="Unable to verify token limits. Please contact support."
+        )
 
     try:
         prompt_lower = prompt.lower()
@@ -487,7 +504,7 @@ async def debug_file_upload(
 @router.post("/files")
 async def upload_and_process_file(
     file: UploadFile = File(None),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
     current_user: User = Depends(get_current_user)
 ):
     """
@@ -678,7 +695,20 @@ async def upload_and_process_file(
             try:
                 # Initialize AI service with existing db session
                 ai_service = AIService(db=db)
-                analysis = await ai_service.generate_assignment_content_from_prompt(analysis_prompt)
+                
+                # Enforce token limits before making AI calls
+                try:
+                    estimated_tokens = len(analysis_prompt.split()) * 2  # Rough estimate
+                    await ai_service.enforce_token_limit(current_user.id, estimated_tokens)
+                    logger.info(f"Token limit check passed for user {current_user.id}")
+                except HTTPException as e:
+                    logger.warning(f"Token limit exceeded for user {current_user.id}: {e.detail}")
+                    analysis = f"Token limit exceeded. {e.detail}"
+                except Exception as e:
+                    logger.error(f"Token enforcement failed for user {current_user.id}: {str(e)}")
+                    analysis = f"Unable to verify token limits. Please contact support."
+                else:
+                    analysis = await ai_service.generate_assignment_content_from_prompt(analysis_prompt)
                 logger.info(f"AI analysis completed successfully, length: {len(analysis)}")
                 logger.info(f"Analysis preview (first 200 chars): {analysis[:200]}...")
             except Exception as e:
@@ -923,7 +953,7 @@ async def upload_and_process_file(
 async def process_uploaded_file(
     file_id: str = Body(..., embed=True),
     action: str = Body(..., embed=True),  # "summarize", "extract", "rewrite", "analyze"
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
     current_user: User = Depends(get_current_user)
 ):
     """
@@ -957,7 +987,20 @@ async def process_uploaded_file(
             raise HTTPException(status_code=400, detail="Invalid action specified")
         
         logger.info(f"Generated prompt: {prompt}")
-        result = await ai_service.generate_assignment_content_from_prompt(prompt)
+        
+        # Enforce token limits before making AI calls
+        try:
+            estimated_tokens = len(prompt.split()) * 2  # Rough estimate
+            await ai_service.enforce_token_limit(current_user.id, estimated_tokens)
+            logger.info(f"Token limit check passed for user {current_user.id}")
+        except HTTPException as e:
+            logger.warning(f"Token limit exceeded for user {current_user.id}: {e.detail}")
+            result = f"Token limit exceeded. {e.detail}"
+        except Exception as e:
+            logger.error(f"Token enforcement failed for user {current_user.id}: {str(e)}")
+            result = f"Unable to verify token limits. Please contact support."
+        else:
+            result = await ai_service.generate_assignment_content_from_prompt(prompt)
         logger.info(f"AI processing completed. Result length: {len(result)}")
         logger.info("=== WORKSHOP FILES/PROCESS ENDPOINT COMPLETED SUCCESSFULLY ===")
         
@@ -975,7 +1018,7 @@ async def process_uploaded_file(
 @router.post("/links")
 async def process_link(
     url: str = Body(..., embed=True),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
     current_user: User = Depends(get_current_user)
 ):
     """
@@ -1001,7 +1044,19 @@ async def process_link(
             # Generate AI analysis of the extracted content
             logger.info("Generating AI analysis of extracted content...")
             analysis_prompt = f"Analyze the following web content and provide insights:\n\n{result['content'][:2000]}..."
-            analysis = await ai_service.generate_assignment_content_from_prompt(analysis_prompt)
+            
+            # Enforce token limits before making AI calls
+            try:
+                estimated_tokens = len(analysis_prompt.split()) * 2  # Rough estimate
+                await ai_service.enforce_token_limit(current_user.id, estimated_tokens)
+                logger.info(f"Token limit check passed for user {current_user.id}")
+                analysis = await ai_service.generate_assignment_content_from_prompt(analysis_prompt)
+            except HTTPException as e:
+                logger.warning(f"Token limit exceeded for user {current_user.id}: {e.detail}")
+                analysis = f"Token limit exceeded. {e.detail}"
+            except Exception as e:
+                logger.error(f"Token enforcement failed for user {current_user.id}: {str(e)}")
+                analysis = f"Unable to verify token limits. Please contact support."
             logger.info(f"AI analysis completed. Analysis length: {len(analysis)}")
             
             # Track token usage for link processing

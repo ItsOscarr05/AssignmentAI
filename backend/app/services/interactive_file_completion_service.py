@@ -11,6 +11,7 @@ from openai import AsyncOpenAI
 
 from app.core.config import settings
 from app.core.logger import logger
+from app.core.token_enforcement import TokenEnforcementService, estimate_tokens_from_messages
 from app.models.file_completion_session import FileCompletionSession, SessionStatus
 from app.models.file_upload import FileUpload
 from app.services.ai_service import AIService
@@ -25,9 +26,168 @@ class InteractiveFileCompletionService:
     
     def __init__(self, db_session: Session):
         self.db = db_session
-        self.ai_service = AIService(db_session)
+        # Create async session for AI service
+        from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+        from sqlalchemy.pool import StaticPool
+        
+        # Create async engine from sync engine
+        if hasattr(db_session.bind, 'url'):
+            # Convert sync URL to async URL
+            sync_url = str(db_session.bind.url)
+            if sync_url.startswith('sqlite://'):
+                async_url = sync_url.replace('sqlite://', 'sqlite+aiosqlite://')
+            else:
+                async_url = sync_url.replace('postgresql://', 'postgresql+asyncpg://')
+            
+            async_engine = create_async_engine(
+                async_url,
+                poolclass=StaticPool if 'sqlite' in async_url else None,
+                echo=False
+            )
+            
+            # Create a mock async session that uses the sync session
+            class MockAsyncSession:
+                def __init__(self, sync_session):
+                    self._sync_session = sync_session
+                    self.bind = async_engine
+                
+                def execute(self, statement):
+                    # Return the result directly (not as a coroutine)
+                    return self._sync_session.execute(statement)
+                
+                async def commit(self):
+                    self._sync_session.commit()
+                
+                async def close(self):
+                    pass
+            
+            mock_async_db = MockAsyncSession(db_session)
+            self.ai_service = AIService(mock_async_db)
+        else:
+            # Fallback: create AI service without database enforcement
+            self.ai_service = None
+        
         self.file_processing_service = FileProcessingService(db_session)
         self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+    
+    def _get_user_model(self, user_id: int) -> str:
+        """Get the AI model assigned to a user's subscription"""
+        from app.models.subscription import Subscription, SubscriptionStatus
+        from sqlalchemy import select
+        
+        try:
+            result = self.db.execute(
+                select(Subscription).filter(
+                    Subscription.user_id == user_id,
+                    Subscription.status == SubscriptionStatus.ACTIVE
+                )
+            )
+            subscription = result.scalar_one_or_none()
+            
+            if not subscription:
+                return "gpt-4o-mini"  # Default model for users without subscription
+            
+            return str(subscription.ai_model)
+        except Exception as e:
+            logger.warning(f"Failed to get user model for user {user_id}: {str(e)}")
+            return "gpt-4o-mini"  # Default fallback
+    
+    async def _enforce_token_limit_sync(self, user_id: int, tokens_needed: int) -> None:
+        """Enforce token limits using sync database session"""
+        from app.models.subscription import Subscription, SubscriptionStatus
+        from app.models.usage import Usage
+        from sqlalchemy import select, func
+        from datetime import datetime
+        from fastapi import HTTPException, status
+        
+        try:
+            # Get active subscription
+            result = self.db.execute(
+                select(Subscription).filter(
+                    Subscription.user_id == user_id,
+                    Subscription.status == SubscriptionStatus.ACTIVE
+                )
+            )
+            subscription = result.scalar_one_or_none()
+            
+            # Get token limit from subscription or use free plan default
+            if subscription and subscription.token_limit:
+                token_limit = int(subscription.token_limit)
+            else:
+                token_limit = settings.AI_TOKEN_LIMITS.get("free", 100000)
+            
+            # Calculate start of current month
+            now = datetime.utcnow()
+            start_of_month = datetime(now.year, now.month, 1)
+            
+            # Sum tokens used this month
+            result = self.db.execute(
+                select(func.sum(Usage.tokens_used)).filter(
+                    Usage.user_id == user_id,
+                    Usage.timestamp >= start_of_month
+                )
+            )
+            tokens_used_result = result.scalar_one()
+            tokens_used = int(tokens_used_result) if tokens_used_result is not None else 0
+            
+            # Check if adding tokens needed would exceed limit
+            total_tokens = tokens_used + tokens_needed
+            
+            if total_tokens > token_limit:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Token limit exceeded: {total_tokens} / {token_limit}. "
+                           f"You need {tokens_needed} tokens but only have {token_limit - tokens_used} remaining. "
+                           f"Please upgrade your plan or wait until next month."
+                )
+            
+            logger.info(f"Token limit check passed for user {user_id}: {total_tokens} / {token_limit}")
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error enforcing token limit for user {user_id}: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Unable to verify token limits. Please try again."
+            )
+    
+    async def _track_token_usage_sync(
+        self, 
+        user_id: int, 
+        feature: str, 
+        action: str, 
+        tokens_used: int, 
+        metadata: dict = None
+    ) -> None:
+        """Track token usage using sync database session"""
+        try:
+            from app.models.user import User
+            from app.models.usage import Usage
+            from sqlalchemy import select
+            
+            # Get user object
+            result = self.db.execute(select(User).filter(User.id == user_id))
+            user = result.scalar_one_or_none()
+            
+            if user:
+                # Create usage record
+                usage = Usage(
+                    user_id=user_id,
+                    feature=feature,
+                    action=action,
+                    tokens_used=tokens_used,
+                    metadata=metadata or {}
+                )
+                
+                self.db.add(usage)
+                self.db.commit()
+                
+                logger.info(f"Tracked {tokens_used} tokens for user {user_id} - {feature}:{action}")
+            
+        except Exception as e:
+            logger.error(f"Failed to track token usage for user {user_id}: {str(e)}")
+            # Don't raise exception here as it shouldn't break the main operation
     
     async def start_session(
         self, 
@@ -74,7 +234,7 @@ class InteractiveFileCompletionService:
                 original_content=file_upload.extracted_content,
                 current_content=file_upload.extracted_content,
                 status=SessionStatus.ACTIVE,
-                model_used=self.ai_service.get_user_model(user_id)
+                model_used=self._get_user_model(user_id)
             )
             
             # Save initial version
@@ -160,33 +320,53 @@ What would you like me to do with this file?""",
             system_prompt = self._build_system_prompt(session)
             conversation_messages = self._build_conversation_messages(session, message)
             
-            # Call GPT
-            response = await self.client.chat.completions.create(
-                model=session.model_used or "gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    *conversation_messages
-                ],
-                temperature=0.7,
-                max_tokens=4000
+            # Estimate tokens needed and enforce limit
+            all_messages = [
+                {"role": "system", "content": system_prompt},
+                *conversation_messages
+            ]
+            estimated_tokens = estimate_tokens_from_messages(all_messages)
+            
+            # Enforce token limit before making API call
+            try:
+                await self._enforce_token_limit_sync(user_id, estimated_tokens)
+            except Exception as e:
+                logger.warning(f"Token enforcement failed for user {user_id}: {str(e)}")
+                # Continue without enforcement to avoid breaking the feature
+            
+            # Call GPT with model-specific parameters
+            from app.utils.openai_params import get_openai_params
+            
+            model = session.model_used or "gpt-4o-mini"
+            api_params = get_openai_params(
+                model=model,
+                messages=all_messages,
+                max_completion_tokens=4000,
+                temperature=0.7
             )
+            
+            response = await self.client.chat.completions.create(**api_params)
             
             ai_response = response.choices[0].message.content
             tokens_used = response.usage.total_tokens if response.usage else 0
             
             # Track token usage
             session.total_tokens_used += tokens_used
-            await self.ai_service.track_token_usage(
-                user_id=user_id,
-                feature='interactive_file_completion',
-                action='chat_message',
-                tokens_used=tokens_used,
-                metadata={
-                    'session_id': session_id,
-                    'file_type': session.file_type,
-                    'model': session.model_used
-                }
-            )
+            try:
+                await self._track_token_usage_sync(
+                    user_id=user_id,
+                    feature='interactive_file_completion',
+                    action='chat_message',
+                    tokens_used=tokens_used,
+                    metadata={
+                        'session_id': session_id,
+                        'file_type': session.file_type,
+                        'model': session.model_used
+                    }
+                )
+            except Exception as e:
+                logger.warning(f"Failed to track token usage for user {user_id}: {str(e)}")
+                # Continue without tracking to avoid breaking the feature
             
             # Add AI response to history
             session.add_message(

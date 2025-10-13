@@ -294,7 +294,7 @@ const plans: Plan[] = [
     popular: true,
     priceId: import.meta.env.VITE_STRIPE_PRICE_PLUS || '', // Use environment variable as fallback
     bestFor: 'Enhanced features for more serious students',
-    tokenBoost: 200000,
+    tokenBoost: 250000,
     isCurrentPlan: false,
   },
   {
@@ -313,7 +313,7 @@ const plans: Plan[] = [
     ],
     priceId: import.meta.env.VITE_STRIPE_PRICE_PRO || '', // Use environment variable as fallback
     bestFor: 'Advanced features for professional students',
-    tokenBoost: 400000,
+    tokenBoost: 500000,
     isCurrentPlan: false,
   },
   {
@@ -321,7 +321,7 @@ const plans: Plan[] = [
     price: 14.99,
     description: 'Ultimate package for power users',
     icon: <EmojiEventsOutlined sx={{ fontSize: 48 }} />,
-    color: '#ff9800',
+    color: '#FF8C00',
     features: [
       'Advanced Analytics Dashboard',
       'Custom Assignment Templates',
@@ -332,7 +332,7 @@ const plans: Plan[] = [
     ],
     priceId: import.meta.env.VITE_STRIPE_PRICE_MAX || '', // Use environment variable as fallback
     bestFor: 'Ultimate package for power users',
-    tokenBoost: 800000,
+    tokenBoost: 1000000,
     isCurrentPlan: false,
   },
 ];
@@ -347,7 +347,7 @@ const getPlanColor = (planName: string, backendColor?: string) => {
     case 'Pro':
       return '#9c27b0'; // Always purple
     case 'Max':
-      return '#ff9800'; // Always gold
+      return '#FF8C00'; // Always orange
     default:
       return backendColor || '#2196f3';
   }
@@ -1022,7 +1022,7 @@ const PricePlan: React.FC = () => {
                                   mb: 0,
                                 }}
                               >
-                                200,000 tokens/month
+                                250,000 tokens/month
                               </Typography>
                             )}
                             {plan.name === 'Pro' && (
@@ -1034,7 +1034,7 @@ const PricePlan: React.FC = () => {
                                   mb: 0,
                                 }}
                               >
-                                400,000 tokens/month
+                                500,000 tokens/month
                               </Typography>
                             )}
                             {plan.name === 'Max' && (
@@ -1046,7 +1046,7 @@ const PricePlan: React.FC = () => {
                                   mb: 0,
                                 }}
                               >
-                                800,000 tokens/month
+                                1,000,000 tokens/month
                               </Typography>
                             )}
                             <Divider />
@@ -1295,6 +1295,9 @@ const PricePlan: React.FC = () => {
           sx: {
             backgroundColor: theme =>
               theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+            border: '2px solid',
+            borderColor: 'error.main',
+            borderRadius: 3,
           },
         }}
       >

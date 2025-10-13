@@ -57,6 +57,7 @@ import { fileUploadService } from '../services/fileUploadService';
 import { mapToCoreSubject } from '../services/subjectService';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 import { DateFormat, getDefaultDateFormat } from '../utils/dateFormat';
+import { parseUTCTimestamp } from '../utils/timezone';
 
 interface Assignment {
   id: string;
@@ -723,8 +724,6 @@ const Assignments: React.FC = () => {
       <Box
         sx={{
           p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2),
-          backgroundColor: theme =>
-            theme.palette.mode === 'dark' ? theme.palette.background.default : '#fafafa',
           minHeight: '100vh',
           overflow: 'hidden',
           width: '100%',
@@ -1225,7 +1224,7 @@ const Assignments: React.FC = () => {
                     </TableCell>
                     <TableCell sx={{ p: { xs: 1, md: 2 } }}>
                       <Typography sx={{ fontSize: { xs: '0.75rem', md: '1rem' } }}>
-                        {formatDateWithPreference(new Date(assignment.createdAt))}
+                        {formatDateWithPreference(parseUTCTimestamp(assignment.createdAt))}
                       </Typography>
                     </TableCell>
                     <TableCell sx={{ p: { xs: 1, md: 2 } }}>

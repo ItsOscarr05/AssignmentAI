@@ -43,7 +43,7 @@ import {
 } from '@mui/material';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
-import { format, formatDistanceToNow, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -61,6 +61,7 @@ import { useAspectRatio } from '../hooks/useAspectRatio';
 import { useTokenUsage } from '../hooks/useTokenUsage';
 import { api } from '../services/api';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
+import { formatUTCDistanceToNow, getUserTimezone } from '../utils/timezone';
 
 const stripePromise = loadStripe(
   import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ||
@@ -94,6 +95,7 @@ const AITokens: React.FC = () => {
   const navigate = useNavigate();
   const [transactions, setTransactions] = useState<any[]>([]);
   const [usageHistory, setUsageHistory] = useState<any[]>([]);
+  const [timezoneKey, setTimezoneKey] = useState<string>(getUserTimezone());
   const [tokenPurchaseDialogOpen, setTokenPurchaseDialogOpen] = useState(false);
   const [selectedTokenAmount, setSelectedTokenAmount] = useState(0);
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
@@ -170,9 +172,9 @@ const AITokens: React.FC = () => {
   const mapPlanToLimit = (planId?: string): number | undefined => {
     if (!planId) return undefined;
     if (planId === 'price_test_free') return 100000;
-    if (planId === 'price_test_plus') return 200000;
-    if (planId === 'price_test_pro') return 400000;
-    if (planId === 'price_test_max') return 800000;
+    if (planId === 'price_test_plus') return 250000;
+    if (planId === 'price_test_pro') return 500000;
+    if (planId === 'price_test_max') return 1000000;
 
     const envPlus = (import.meta as any).env?.VITE_STRIPE_PRICE_PLUS;
     const envPro = (import.meta as any).env?.VITE_STRIPE_PRICE_PRO;
@@ -182,9 +184,9 @@ const AITokens: React.FC = () => {
     const is = (ids: Array<string | undefined>) => ids.filter(Boolean).includes(planId);
 
     if (is([envFree])) return 100000;
-    if (is([envPlus])) return 200000;
-    if (is([envPro])) return 400000;
-    if (is([envMax])) return 800000;
+    if (is([envPlus])) return 250000;
+    if (is([envPro])) return 500000;
+    if (is([envMax])) return 1000000;
 
     return undefined;
   };
@@ -226,6 +228,31 @@ const AITokens: React.FC = () => {
 
     return () => window.removeEventListener('subscription-updated', handler);
   }, []);
+
+  // Listen for timezone changes and force re-render
+  useEffect(() => {
+    const handleTimezoneChange = () => {
+      const newTimezone = getUserTimezone();
+      if (newTimezone !== timezoneKey) {
+        setTimezoneKey(newTimezone);
+      }
+    };
+
+    // Check for timezone changes every 5 seconds
+    const interval = setInterval(handleTimezoneChange, 5000);
+
+    // Also listen for storage changes
+    window.addEventListener('storage', e => {
+      if (e.key === 'timezone') {
+        handleTimezoneChange();
+      }
+    });
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('storage', handleTimezoneChange);
+    };
+  }, [timezoneKey]);
 
   const fetchSubscriptionData = async () => {
     try {
@@ -980,9 +1007,21 @@ const AITokens: React.FC = () => {
                 </Typography>
               </Box>
             ) : (
-              <Box sx={{ height: 300, width: '100%' }}>
+              <Box
+                sx={{
+                  height: 300,
+                  width: '100%',
+                  paddingTop: 0,
+                  paddingBottom: 0,
+                  paddingLeft: 0,
+                  paddingRight: 0,
+                }}
+              >
                 <ResponsiveContainer>
-                  <LineChart data={displayedUsageData}>
+                  <LineChart
+                    data={displayedUsageData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                     <XAxis dataKey="date" stroke="#d32f2f" />
                     <YAxis stroke="#d32f2f" domain={[0, tokenUsage.total]} />
@@ -1419,7 +1458,7 @@ const AITokens: React.FC = () => {
                                     fontSize: '0.875rem',
                                   }}
                                 >
-                                  {formatDistanceToNow(parseISO(transaction.created_at), {
+                                  {formatUTCDistanceToNow(transaction.created_at, {
                                     addSuffix: true,
                                   })}
                                 </Typography>

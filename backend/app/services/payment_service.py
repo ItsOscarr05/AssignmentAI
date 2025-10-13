@@ -217,21 +217,21 @@ class PaymentService:
                 "price": 4.99,
                 "plan_id": settings.STRIPE_PRICE_PLUS,  # Store actual Stripe price ID
                 "ai_model": "gpt-4.1-mini",
-                "token_limit": 200000
+                "token_limit": 250000
             },
             settings.STRIPE_PRICE_PRO: {
                 "name": "Pro", 
                 "price": 9.99,
                 "plan_id": settings.STRIPE_PRICE_PRO,  # Store actual Stripe price ID
                 "ai_model": "gpt-4-turbo",
-                "token_limit": 400000
+                "token_limit": 500000
             },
             settings.STRIPE_PRICE_MAX: {
                 "name": "Max", 
                 "price": 14.99,
                 "plan_id": settings.STRIPE_PRICE_MAX,  # Store actual Stripe price ID
                 "ai_model": "gpt-5",
-                "token_limit": 800000
+                "token_limit": 1000000
             },
         }
         
@@ -244,7 +244,7 @@ class PaymentService:
                 "price": 9.99,
                 "plan_id": settings.STRIPE_PRICE_PRO,  # Store actual Stripe price ID
                 "ai_model": "gpt-4",
-                "token_limit": 400000
+                "token_limit": 500000
             }
 
 

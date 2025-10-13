@@ -162,6 +162,14 @@ const Settings: React.FC = () => {
     const browserLocale = navigator.language || 'en-US';
     return getDefaultDateFormat(browserLocale);
   });
+  const [timezone, setTimezone] = useState<string>(() => {
+    // Get browser timezone or default to UTC
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    } catch {
+      return 'UTC';
+    }
+  });
 
   // AI Settings
   const [tokenContextLimit, setTokenContextLimit] = useState<number>(1000);
@@ -292,17 +300,17 @@ const Settings: React.FC = () => {
     },
     plus: {
       model: 'gpt-4.1-mini',
-      tokenLimit: 200000,
+      tokenLimit: 250000,
       label: 'GPT-4.1 Mini',
     },
     pro: {
       model: 'gpt-4-turbo',
-      tokenLimit: 400000,
+      tokenLimit: 500000,
       label: 'GPT-4 Turbo',
     },
     max: {
       model: 'gpt-5',
-      tokenLimit: 800000,
+      tokenLimit: 1000000,
       label: 'GPT-5',
     },
   };
@@ -1310,6 +1318,13 @@ const Settings: React.FC = () => {
     console.log('Date format changed to:', dateFormat);
   }, [dateFormat]);
 
+  // Apply timezone setting
+  useEffect(() => {
+    // Store timezone preference in localStorage for future use
+    localStorage.setItem('timezone', timezone);
+    console.log('Timezone changed to:', timezone);
+  }, [timezone]);
+
   // Load saved settings from localStorage on component mount
   useEffect(() => {
     const loadSavedSettings = () => {
@@ -1325,6 +1340,12 @@ const Settings: React.FC = () => {
         // Use locale-based default if no saved preference
         const browserLocale = navigator.language || 'en-US';
         setDateFormat(getDefaultDateFormat(browserLocale));
+      }
+
+      // Load timezone
+      const savedTimezone = localStorage.getItem('timezone');
+      if (savedTimezone) {
+        setTimezone(savedTimezone);
       }
     };
 
@@ -1427,7 +1448,7 @@ const Settings: React.FC = () => {
 
           if (
             subscriptionData.ai_model === 'gpt-4-turbo' &&
-            subscriptionData.token_limit === 400000
+            subscriptionData.token_limit === 500000
           ) {
             plan = 'pro';
           } else if (
@@ -1437,7 +1458,7 @@ const Settings: React.FC = () => {
             plan = 'max';
           } else if (
             subscriptionData.ai_model === 'gpt-4.1-mini' &&
-            subscriptionData.token_limit === 200000
+            subscriptionData.token_limit === 250000
           ) {
             plan = 'plus';
           } else if (
@@ -1481,6 +1502,9 @@ const Settings: React.FC = () => {
         if (['MM/DD/YYYY', 'DD/MM/YYYY', 'YYYY-MM-DD', 'DD.MM.YYYY'].includes(format)) {
           setDateFormat(format as DateFormat);
         }
+      }
+      if (userPreferences.custom_preferences?.timezone) {
+        setTimezone(userPreferences.custom_preferences.timezone as string);
       }
       if (userPreferences.language) {
         setLanguage(userPreferences.language);
@@ -1689,6 +1713,7 @@ const Settings: React.FC = () => {
         compact_mode: compactMode,
         custom_preferences: {
           dateFormat,
+          timezone,
           autoComplete,
           codeSnippets,
           aiSuggestions,
@@ -2185,6 +2210,51 @@ const Settings: React.FC = () => {
                       </Typography>
                     )}
                   </Box>
+
+                  <Box sx={{ mb: 2 }}>
+                    <FormControl fullWidth size="medium">
+                      <InputLabel>Time Zone</InputLabel>
+                      <Select
+                        value={timezone}
+                        onChange={e => setTimezone(e.target.value)}
+                        label="Time Zone"
+                      >
+                        <MenuItem value="UTC">UTC (Coordinated Universal Time)</MenuItem>
+                        <MenuItem value="America/New_York">Eastern Time (US & Canada)</MenuItem>
+                        <MenuItem value="America/Chicago">Central Time (US & Canada)</MenuItem>
+                        <MenuItem value="America/Denver">Mountain Time (US & Canada)</MenuItem>
+                        <MenuItem value="America/Los_Angeles">Pacific Time (US & Canada)</MenuItem>
+                        <MenuItem value="America/Anchorage">Alaska</MenuItem>
+                        <MenuItem value="Pacific/Honolulu">Hawaii</MenuItem>
+                        <MenuItem value="Europe/London">London (GMT/BST)</MenuItem>
+                        <MenuItem value="Europe/Paris">Paris (CET/CEST)</MenuItem>
+                        <MenuItem value="Europe/Berlin">Berlin (CET/CEST)</MenuItem>
+                        <MenuItem value="Europe/Rome">Rome (CET/CEST)</MenuItem>
+                        <MenuItem value="Europe/Madrid">Madrid (CET/CEST)</MenuItem>
+                        <MenuItem value="Europe/Moscow">Moscow (MSK)</MenuItem>
+                        <MenuItem value="Asia/Dubai">Dubai (GST)</MenuItem>
+                        <MenuItem value="Asia/Kolkata">India (IST)</MenuItem>
+                        <MenuItem value="Asia/Bangkok">Bangkok (ICT)</MenuItem>
+                        <MenuItem value="Asia/Singapore">Singapore (SGT)</MenuItem>
+                        <MenuItem value="Asia/Hong_Kong">Hong Kong (HKT)</MenuItem>
+                        <MenuItem value="Asia/Shanghai">China (CST)</MenuItem>
+                        <MenuItem value="Asia/Tokyo">Tokyo (JST)</MenuItem>
+                        <MenuItem value="Asia/Seoul">Seoul (KST)</MenuItem>
+                        <MenuItem value="Australia/Sydney">Sydney (AEDT/AEST)</MenuItem>
+                        <MenuItem value="Australia/Melbourne">Melbourne (AEDT/AEST)</MenuItem>
+                        <MenuItem value="Australia/Brisbane">Brisbane (AEST)</MenuItem>
+                        <MenuItem value="Australia/Perth">Perth (AWST)</MenuItem>
+                        <MenuItem value="Pacific/Auckland">Auckland (NZDT/NZST)</MenuItem>
+                      </Select>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ mt: 1, display: 'block' }}
+                      >
+                        Current Time Zone: {timezone}
+                      </Typography>
+                    </FormControl>
+                  </Box>
                 </Grid>
 
                 <Grid item xs={12} md={6}>
@@ -2237,6 +2307,11 @@ const Settings: React.FC = () => {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <EventOutlined fontSize="small" color="action" />
                         <Typography variant="body2">{dateFormat}</Typography>
+                      </Box>
+
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+                        <Language fontSize="small" color="action" />
+                        <Typography variant="body2">{timezone}</Typography>
                       </Box>
                     </Box>
 

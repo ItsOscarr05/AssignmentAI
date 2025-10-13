@@ -12,6 +12,7 @@ class Preference(Base):
     # UI Preferences
     theme = Column(String(20), default="light")
     language = Column(String(10), default="en")
+    timezone = Column(String(50), default="UTC")
     font_size = Column(String(20), default="medium")
     compact_mode = Column(Boolean, default=False)
     

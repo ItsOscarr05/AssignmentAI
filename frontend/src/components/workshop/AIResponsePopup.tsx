@@ -9,12 +9,14 @@ import {
   KeyboardArrowDown as KeyboardArrowDownIcon,
   Remove as MinimizeIcon,
   RecordVoiceOverOutlined,
+  Token as TokenIcon,
 } from '@mui/icons-material';
 import {
   Alert,
   Backdrop,
   Box,
   Button,
+  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -71,6 +73,21 @@ interface EngagementMetrics {
   interactionQuality: number;
   totalScore: number;
 }
+
+// Function to estimate tokens from text content
+const estimateTokens = (text: string): number => {
+  if (!text) return 0;
+  // Rough estimation: ~4 characters per token for English text
+  // This is a simplified approximation - actual tokenization varies by model
+  return Math.ceil(text.length / 4);
+};
+
+// Calculate total tokens used in conversation
+const calculateConversationTokens = (messages: ChatMessage[]): number => {
+  return messages.reduce((total, message) => {
+    return total + estimateTokens(message.content || '');
+  }, 0);
+};
 
 // Memoized engagement calculation for better performance
 const calculateEngagement = (messages: ChatMessage[]): EngagementMetrics => {
@@ -326,6 +343,11 @@ const AIResponsePopup: React.FC<AIResponsePopupProps> = ({
 
     return { metrics, scoreColor, circumference, strokeDasharray };
   }, [chatMessages, animatedScore]);
+
+  // Memoized token calculation for performance
+  const conversationTokens = useMemo(() => {
+    return calculateConversationTokens(chatMessages);
+  }, [chatMessages]);
 
   // Smooth animation effect for engagement score
   useEffect(() => {
@@ -1472,6 +1494,17 @@ ${data.transcript
               {getTitle()}
             </Typography>
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+              {conversationTokens > 0 && (
+                <Chip
+                  label={`${conversationTokens.toLocaleString()} tokens`}
+                  size="small"
+                  variant="outlined"
+                  sx={{
+                    borderColor: 'error.main',
+                    color: 'error.main',
+                  }}
+                />
+              )}
               <Tooltip title={isMinimized ? 'Restore' : 'Minimize'}>
                 <IconButton
                   size="small"

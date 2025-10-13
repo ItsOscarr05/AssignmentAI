@@ -29,6 +29,7 @@ import {
   fileCompletionChatService,
   type VersionInfo,
 } from '../../services/fileCompletionChatService';
+import { formatUTCToTimezone } from '../../utils/timezone';
 
 interface FileVersionHistoryProps {
   open: boolean;
@@ -86,8 +87,7 @@ const FileVersionHistory: React.FC<FileVersionHistoryProps> = ({
   };
 
   const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleString();
+    return formatUTCToTimezone(timestamp);
   };
 
   const getVersionColor = (index: number) => {

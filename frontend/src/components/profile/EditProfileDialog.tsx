@@ -165,9 +165,9 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
         // For real Stripe price IDs, we need to determine the plan based on token limits
         if (currentSubscription?.token_limit) {
           const tokenLimit = currentSubscription.token_limit;
-          if (tokenLimit >= 800000) return 'Max';
-          if (tokenLimit >= 400000) return 'Pro';
-          if (tokenLimit >= 200000) return 'Plus';
+          if (tokenLimit >= 1000000) return 'Max';
+          if (tokenLimit >= 500000) return 'Pro';
+          if (tokenLimit >= 250000) return 'Plus';
           if (tokenLimit >= 100000) return 'Free';
         }
 
@@ -235,7 +235,7 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
       // Debug: Log all available fields in profileData
       console.log('EditProfileDialog: profileData:', profileData);
       console.log('EditProfileDialog: profileData keys:', Object.keys(profileData || {}));
-      
+
       // First check if profileData already has the creation date
       if (profileData?.created_at || profileData?.createdAt || profileData?.registrationDate) {
         const creationDate =
@@ -250,7 +250,7 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
         const userData = JSON.parse(localStorage.getItem('user') || '{}');
         console.log('EditProfileDialog: localStorage userData:', userData);
         console.log('EditProfileDialog: localStorage userData keys:', Object.keys(userData));
-        
+
         if (userData.createdAt) {
           console.log('Found createdAt in localStorage user:', userData.createdAt);
           console.log('CreatedAt type:', typeof userData.createdAt);

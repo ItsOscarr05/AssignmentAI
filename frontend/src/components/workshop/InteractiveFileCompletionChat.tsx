@@ -29,6 +29,7 @@ import {
   type ChatMessageResponse,
   type FileCompletionSession,
 } from '../../services/fileCompletionChatService';
+import { formatUTCToTime } from '../../utils/timezone';
 import FileVersionHistory from './FileVersionHistory';
 
 interface InteractiveFileCompletionChatProps {
@@ -364,7 +365,7 @@ const InteractiveFileCompletionChat: React.FC<InteractiveFileCompletionChatProps
                     {msg.content}
                   </Typography>
                   <Typography variant="caption" sx={{ mt: 1, display: 'block', opacity: 0.7 }}>
-                    {new Date(msg.timestamp).toLocaleTimeString()}
+                    {formatUTCToTime(msg.timestamp)}
                   </Typography>
                 </Paper>
                 {msg.role === 'assistant' && (

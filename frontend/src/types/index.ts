@@ -426,6 +426,7 @@ export interface UserSettings {
   userId: string;
   theme: 'light' | 'dark';
   language: string;
+  timezone: string;
   privacy: {
     profileVisibility: 'public' | 'private' | 'connections';
     activityStatus: boolean;

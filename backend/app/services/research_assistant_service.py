@@ -97,7 +97,7 @@ class ResearchAssistantService:
                     {"role": "system", "content": "You are an expert research strategist specializing in academic and professional research planning."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=600,
+                max_completion_tokens=600,
                 temperature=0.3
             )
             
@@ -179,7 +179,7 @@ class ResearchAssistantService:
                         {"role": "system", "content": "You are an expert researcher with deep knowledge across multiple disciplines."},
                         {"role": "user", "content": prompt}
                     ],
-                    max_tokens=800,
+                    max_completion_tokens=800,
                     temperature=0.4
                 )
                 
@@ -232,7 +232,7 @@ class ResearchAssistantService:
                             {"role": "system", "content": "You are an expert fact-checker with experience in academic and professional research verification."},
                             {"role": "user", "content": prompt}
                         ],
-                        max_tokens=500,
+                        max_completion_tokens=500,
                         temperature=0.2
                     )
                     
@@ -304,7 +304,7 @@ class ResearchAssistantService:
                     {"role": "system", "content": "You are an expert librarian and research consultant specializing in source evaluation and recommendation."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=600,
+                max_completion_tokens=600,
                 temperature=0.3
             )
             
@@ -382,7 +382,7 @@ class ResearchAssistantService:
                     {"role": "system", "content": "You are an expert executive communication specialist who creates clear, actionable summaries."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=500,
+                max_completion_tokens=500,
                 temperature=0.3
             )
             
@@ -438,7 +438,7 @@ class ResearchAssistantService:
                         {"role": "system", "content": "You are an expert research analyst specializing in source evaluation and comparison."},
                         {"role": "user", "content": prompt}
                     ],
-                    max_tokens=400,
+                    max_completion_tokens=400,
                     temperature=0.3
                 )
                 
@@ -482,7 +482,7 @@ class ResearchAssistantService:
                     {"role": "system", "content": "You are an expert research analyst specializing in comparative source analysis."},
                     {"role": "user", "content": comparison_prompt}
                 ],
-                max_tokens=600,
+                max_completion_tokens=600,
                 temperature=0.4
             )
             

@@ -28,11 +28,9 @@ import {
   BlockOutlined,
   BoltOutlined,
   BuildOutlined,
-  CalculateOutlined,
   CancelOutlined,
   CheckCircle,
   CheckCircleOutlineOutlined,
-  CodeOutlined,
   DescriptionOutlined,
   DesignServicesOutlined,
   DiamondOutlined,
@@ -40,7 +38,6 @@ import {
   FormatQuoteOutlined,
   GppGoodOutlined,
   Group,
-  InsertChartOutlined,
   LanguageOutlined,
   LibraryBooksOutlined,
   PaletteOutlined,
@@ -54,7 +51,6 @@ import {
   Spellcheck,
   TextSnippetOutlined,
   ThumbDownOutlined,
-  ThumbUpOutlined,
   TrendingUpOutlined,
 } from '@mui/icons-material';
 import { Grid } from '@mui/material';
@@ -414,9 +410,9 @@ const Landing: React.FC = () => {
               flexWrap: 'wrap',
               justifyContent: 'center',
               width: 'fit-content',
-              mx: { xs: 'auto', sm: 0, md: 0 },
-              ml: { xs: 'auto', sm: 'auto', md: 'auto' },
-              mr: { xs: '75px', sm: 0, md: 0 },
+              mx: { xs: 0, sm: 0, md: 0 },
+              ml: { xs: 16.5, sm: 'auto', md: 'auto' },
+              mr: { xs: 'auto', sm: 0, md: 0 },
             }}
           >
             <MuiLink
@@ -572,7 +568,10 @@ const Landing: React.FC = () => {
             >
               AI-Powered Assignment Creation & Completion
             </Box>
-            <Typography variant="body1" sx={{ mb: 3, color: 'white', opacity: 0.92, fontWeight: 400, fontSize: '1rem' }}>
+            <Typography
+              variant="body1"
+              sx={{ mb: 3, color: 'white', opacity: 0.92, fontWeight: 400, fontSize: '1rem' }}
+            >
               Get AI–powered assistance for your assignments
               <br />
               and optimize your academic time.
@@ -696,38 +695,38 @@ const Landing: React.FC = () => {
                     color: '#D32F2F',
                   },
                   {
-                    title: 'Grammar Guru',
+                    title: 'File Completion Assistant',
                     description:
-                      'Improve your writing with instant grammar, style, and punctuation suggestions. Ideal for crafting flawless essays and emails.',
-                    icon: <Spellcheck sx={{ fontSize: 48 }} />,
+                      'Upload any document and let AI complete missing sections, fill in blanks, and enhance your content with intelligent suggestions.',
+                    icon: <DescriptionOutlined sx={{ fontSize: 48 }} />,
                     color: '#FFC107',
                   },
                   {
-                    title: 'Diagram Maker',
+                    title: 'Interactive Workshop',
                     description:
-                      'Easily generate diagrams and charts to visually represent data and concepts, making complex information clear and engaging.',
-                    icon: <InsertChartOutlined sx={{ fontSize: 48 }} />,
+                      'Collaborate with AI in real-time through our interactive workshop interface for brainstorming, editing, and refining your assignments.',
+                    icon: <BuildOutlined sx={{ fontSize: 48 }} />,
                     color: '#388E3C',
                   },
                   {
-                    title: 'Image to Answer',
+                    title: 'Image Analysis & OCR',
                     description:
-                      'Take a photo of your problem and get the answer instantly – a revolutionary tool for homework and studies.',
+                      'Upload images of problems, documents, or diagrams and get instant text extraction, analysis, and solutions powered by AI.',
                     icon: <PhotoCameraOutlined sx={{ fontSize: 48 }} />,
                     color: '#F57C00',
                   },
                   {
-                    title: 'AI Detector & Humanizer',
+                    title: 'Smart Content Optimization',
                     description:
-                      'AssignmentWriter adds a human touch to AI text, making engaging and relatable content for your audience.',
-                    icon: <SmartToyOutlined sx={{ fontSize: 48 }} />,
+                      'Enhance your writing with AI-powered content optimization, style improvements, and academic tone adjustments.',
+                    icon: <AutoAwesomeOutlined sx={{ fontSize: 48 }} />,
                     color: '#7B1FA2',
                   },
                   {
-                    title: 'Creative Code Generator',
+                    title: 'Research Assistant',
                     description:
-                      'Need help with code? Generate unique codes for your projects and seamlessly integrate them into your products.',
-                    icon: <CodeOutlined sx={{ fontSize: 48 }} />,
+                      'Get comprehensive research support with fact-checking, source verification, and intelligent content summarization.',
+                    icon: <LibraryBooksOutlined sx={{ fontSize: 48 }} />,
                     color: '#0288D1',
                   },
                 ].map((feature, index) => (
@@ -865,9 +864,23 @@ const Landing: React.FC = () => {
                         fontWeight: 600,
                         fontSize: { xs: '1.4rem', md: '1.6rem' },
                         color: '#000000',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
                       }}
                     >
                       AssignmentAI
+                      <Box
+                        component="img"
+                        src="/scroll_transparent.png"
+                        alt="AssignmentAI Logo"
+                        sx={{
+                          height: '2rem',
+                          width: 'auto',
+                          filter: 'brightness(0)',
+                          transform: 'translateY(-3px) translateX(-7px)',
+                        }}
+                      />
                     </Typography>
                     <List>
                       <ListItem>
@@ -875,7 +888,7 @@ const Landing: React.FC = () => {
                           <SchoolOutlined sx={{ fontSize: '1.75rem', color: '#D32F2F' }} />
                         </ListItemIcon>
                         <ListItemText
-                          primary="Designed for Students & Academia"
+                          primary="Academic-Focused AI Training"
                           primaryTypographyProps={{
                             fontSize: { xs: '1.0rem', md: '1.15rem' },
                             color: '#000000',
@@ -884,10 +897,10 @@ const Landing: React.FC = () => {
                       </ListItem>
                       <ListItem>
                         <ListItemIcon sx={{ minWidth: 40 }}>
-                          <PsychologyOutlined sx={{ fontSize: '1.75rem', color: '#FFC107' }} />
+                          <Spellcheck sx={{ fontSize: '1.75rem', color: '#FFC107' }} />
                         </ListItemIcon>
                         <ListItemText
-                          primary="Superior AI Model Built for Students & Academia"
+                          primary="Advanced Grammar & Style Analysis"
                           primaryTypographyProps={{
                             fontSize: { xs: '1.0rem', md: '1.15rem' },
                             color: '#000000',
@@ -896,10 +909,10 @@ const Landing: React.FC = () => {
                       </ListItem>
                       <ListItem>
                         <ListItemIcon sx={{ minWidth: 40 }}>
-                          <LibraryBooksOutlined sx={{ fontSize: '1.75rem', color: '#388E3C' }} />
+                          <SecurityOutlined sx={{ fontSize: '1.75rem', color: '#388E3C' }} />
                         </ListItemIcon>
                         <ListItemText
-                          primary="Enriched with 20+ Academia Use Cases"
+                          primary="Secure Document Processing"
                           primaryTypographyProps={{
                             fontSize: { xs: '1.0rem', md: '1.15rem' },
                             color: '#000000',
@@ -908,10 +921,10 @@ const Landing: React.FC = () => {
                       </ListItem>
                       <ListItem>
                         <ListItemIcon sx={{ minWidth: 40 }}>
-                          <BuildOutlined sx={{ fontSize: '1.75rem', color: '#1976D2' }} />
+                          <PsychologyOutlined sx={{ fontSize: '1.75rem', color: '#1976D2' }} />
                         </ListItemIcon>
                         <ListItemText
-                          primary="Specialized Tools: AI Diagram Maker, Code Generation/Programming, Math Solver"
+                          primary="Multi-Model AI Architecture"
                           primaryTypographyProps={{
                             fontSize: { xs: '1.0rem', md: '1.15rem' },
                             color: '#000000',
@@ -920,10 +933,10 @@ const Landing: React.FC = () => {
                       </ListItem>
                       <ListItem>
                         <ListItemIcon sx={{ minWidth: 40 }}>
-                          <ThumbUpOutlined sx={{ fontSize: '1.75rem', color: '#7B1FA2' }} />
+                          <AccessTimeOutlined sx={{ fontSize: '1.75rem', color: '#7B1FA2' }} />
                         </ListItemIcon>
                         <ListItemText
-                          primary="Real-Time Reference: Answers with Real-Time References"
+                          primary="Instant Feedback & Iteration"
                           primaryTypographyProps={{
                             fontSize: { xs: '1.0rem', md: '1.15rem' },
                             color: '#000000',
@@ -961,9 +974,25 @@ const Landing: React.FC = () => {
                         fontWeight: 600,
                         fontSize: { xs: '1.4rem', md: '1.6rem' },
                         color: '#000000',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
                       }}
                     >
                       ChatGPT
+                      <Box
+                        component="img"
+                        src="/ChatGPT-Logo.png"
+                        alt="ChatGPT Logo"
+                        sx={{
+                          height: '1.5rem',
+                          width: 'auto',
+                          backgroundColor: 'white',
+                          borderRadius: '4px',
+                          padding: '2px',
+                          transform: 'translateY(-3px) translateX(-5px)',
+                        }}
+                      />
                     </Typography>
                     <List>
                       <ListItem>
@@ -1075,24 +1104,24 @@ const Landing: React.FC = () => {
               <Grid container spacing={4} mt={4}>
                 {[
                   {
-                    title: 'Quick Photo Answers',
+                    title: 'Interactive File Completion',
                     description:
-                      'Snap a photo of your homework and get the answer right away. No more scratching your head over tough questions!',
-                    icon: <PhotoCameraOutlined sx={{ fontSize: 48 }} />,
+                      'Upload any document and collaborate with AI in real-time to complete missing sections, fill blanks, and enhance your content.',
+                    icon: <BuildOutlined sx={{ fontSize: 48 }} />,
                     color: '#F57C00',
                   },
                   {
-                    title: 'Easy Diagram Maker',
+                    title: 'Smart Research Assistant',
                     description:
-                      'Create diagrams for your assignments with just a few clicks. No need for drawing or fancy software.',
-                    icon: <BarChartOutlined sx={{ fontSize: 48 }} />,
+                      'Get comprehensive research support with fact-checking, source verification, and intelligent content summarization for your assignments.',
+                    icon: <PsychologyOutlined sx={{ fontSize: 48 }} />,
                     color: '#388E3C',
                   },
                   {
-                    title: 'Math Problem Solver',
+                    title: 'Advanced Content Optimization',
                     description:
-                      'Stuck on a math problem? AssignmentAI can solve it for free! Simply upload your problem and receive high-quality, precise answers within seconds.',
-                    icon: <CalculateOutlined sx={{ fontSize: 48 }} />,
+                      'Enhance your writing with AI-powered content optimization, style improvements, and academic tone adjustments.',
+                    icon: <Spellcheck sx={{ fontSize: 48 }} />,
                     color: '#1976D2',
                   },
                 ].map((feature, index) => (
@@ -1341,7 +1370,7 @@ const Landing: React.FC = () => {
                 },
                 {
                   number: '10',
-                  label: 'Subject Areas',
+                  label: 'Core Subject Areas',
                   icon: <LibraryBooksOutlined sx={{ fontSize: 48 }} />,
                   color: '#2196F3',
                 },
@@ -1648,7 +1677,7 @@ const Landing: React.FC = () => {
                               mb: 0,
                             }}
                           >
-                            200,000 tokens/month
+                            250,000 tokens/month
                           </Typography>
                         )}
                         {plan.name === 'Pro' && (
@@ -1662,7 +1691,7 @@ const Landing: React.FC = () => {
                               mb: 0,
                             }}
                           >
-                            400,000 tokens/month
+                            500,000 tokens/month
                           </Typography>
                         )}
                         {plan.name === 'Max' && (
@@ -1676,7 +1705,7 @@ const Landing: React.FC = () => {
                               mb: 0,
                             }}
                           >
-                            800,000 tokens/month
+                            1,000,000 tokens/month
                           </Typography>
                         )}
                         <Divider />
@@ -1691,6 +1720,42 @@ const Landing: React.FC = () => {
                               }}
                             >
                               Free Features
+                            </Typography>
+                          )}
+                          {plan.name === 'Plus' && (
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: '#000000',
+                                fontSize: { xs: '0.95rem', md: '1.05rem' },
+                                pl: 0.5,
+                              }}
+                            >
+                              + Everything in Free
+                            </Typography>
+                          )}
+                          {plan.name === 'Pro' && (
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: '#000000',
+                                fontSize: { xs: '0.95rem', md: '1.05rem' },
+                                pl: 0.5,
+                              }}
+                            >
+                              + Everything in Plus
+                            </Typography>
+                          )}
+                          {plan.name === 'Max' && (
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: '#000000',
+                                fontSize: { xs: '0.95rem', md: '1.05rem' },
+                                pl: 0.5,
+                              }}
+                            >
+                              + Everything in Pro
                             </Typography>
                           )}
                           {plan.features.map(feature =>
@@ -2023,10 +2088,10 @@ const Landing: React.FC = () => {
               <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
                 <EmailOutlined sx={{ color: '#D32F2F' }} />
                 <Typography
-                  variant="h6"
+                  component="span"
                   sx={{
                     color: '#000000',
-                    fontSize: { xs: '1rem', md: '1.25rem' },
+                    fontSize: '1rem',
                   }}
                 >
                   support@assignmentai.app
@@ -2035,10 +2100,10 @@ const Landing: React.FC = () => {
               <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
                 <AccessTimeOutlined sx={{ color: '#D32F2F' }} />
                 <Typography
-                  variant="h6"
+                  component="span"
                   sx={{
                     color: '#000000',
-                    fontSize: { xs: '1rem', md: '1.25rem' },
+                    fontSize: '1rem',
                   }}
                 >
                   24/7 Support

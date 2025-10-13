@@ -549,44 +549,11 @@ class AIService:
     async def enforce_token_limit(self, user_id: int, tokens_needed: int) -> None:
         """
         Enforce the user's monthly token limit. Raise HTTPException if exceeded.
-        Also notify user if they cross a token threshold (75%, 50%, 25%, 10% remaining).
+        Delegates to the centralized TokenEnforcementService.
         """
-        # Get active subscription
-        result = await self.db.execute(
-            select(Subscription).filter(
-                Subscription.user_id == user_id,
-                Subscription.status == SubscriptionStatus.ACTIVE
-            )
-        )
-        subscription = result.scalar_one_or_none()
-        token_limit = int(subscription.token_limit) if subscription is not None and subscription.token_limit is not None else 100000  # type: ignore # Default to free plan
-
-        # Calculate start of current month
-        now = datetime.utcnow()
-        start_of_month = datetime(now.year, now.month, 1)
-
-        # Sum tokens used this month
-        result = await self.db.execute(
-            select(func.sum(Usage.tokens_used)).filter(
-                Usage.user_id == user_id,
-                Usage.timestamp >= start_of_month
-            )
-        )
-        tokens_used_result = result.scalar_one()
-        tokens_used = int(tokens_used_result) if tokens_used_result is not None else 0
-
-        # Ensure all values are integers for comparison
-        tokens_used_int = int(tokens_used)
-        tokens_needed_int = int(tokens_needed)
-        token_limit_int = int(token_limit)
-
-
-
-        if tokens_used_int + tokens_needed_int > token_limit_int:
-            raise HTTPException(
-                status_code=403,
-                detail=f"Token limit exceeded: {tokens_used_int + tokens_needed_int} / {token_limit_int}"
-            )
+        from app.core.token_enforcement import TokenEnforcementService
+        enforcement_service = TokenEnforcementService(self.db)
+        await enforcement_service.enforce_token_limit(user_id, tokens_needed)
 
     async def generate_chat_response(self, prompt: str, conversation_history: list = None, user_id: int = None) -> str:
         """

@@ -37,6 +37,7 @@ import {
 } from '@mui/material';
 import React, { useEffect, useRef, useState } from 'react';
 import { api } from '../../services/api/api';
+import { formatUTCToTime } from '../../utils/timezone';
 
 interface LinkData {
   id: string;
@@ -566,7 +567,7 @@ const EnhancedLinkProcessingInterface: React.FC<LinkProcessingInterfaceProps> = 
                           variant="caption"
                           sx={{ mt: 1, display: 'block', opacity: 0.7 }}
                         >
-                          {new Date(msg.timestamp).toLocaleTimeString()}
+                          {formatUTCToTime(msg.timestamp)}
                         </Typography>
                       </Paper>
                     </Box>

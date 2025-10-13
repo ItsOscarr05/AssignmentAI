@@ -8,6 +8,7 @@ class PreferenceBase(BaseModel):
     # UI Preferences
     theme: str = "light"
     language: str = "en"
+    timezone: str = "UTC"
     font_size: str = "medium"
     compact_mode: bool = False
     
@@ -34,6 +35,7 @@ class PreferenceUpdate(BaseModel):
     # UI Preferences
     theme: Optional[str] = None
     language: Optional[str] = None
+    timezone: Optional[str] = None
     font_size: Optional[str] = None
     compact_mode: Optional[bool] = None
     

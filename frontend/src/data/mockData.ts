@@ -241,7 +241,7 @@ export const recentAssignmentsWithSubject = recentAssignments.map(a => ({
 }));
 
 // Mock token usage data
-export const tokenLimits = [50000, 100000, 150000, 200000, 250000, 400000, 800000];
+export const tokenLimits = [50000, 100000, 150000, 250000, 300000, 500000, 1000000];
 export const tokenThresholds = [
   { percent: 75, remaining: 22500 },
   { percent: 50, remaining: 15000 },

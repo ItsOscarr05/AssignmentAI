@@ -184,6 +184,43 @@ function Settings({ initialSettings, onUpdate }: SettingsProps) {
                     </Select>
                   </FormControl>
                 </Grid>
+                <Grid item xs={12}>
+                  <FormControl fullWidth>
+                    <InputLabel>Time Zone</InputLabel>
+                    <Select
+                      value={settings.timezone || 'UTC'}
+                      onChange={e => handleSettingChange('timezone', e.target.value)}
+                      label="Time Zone"
+                    >
+                      <MenuItem value="UTC">UTC (Coordinated Universal Time)</MenuItem>
+                      <MenuItem value="America/New_York">Eastern Time (US & Canada)</MenuItem>
+                      <MenuItem value="America/Chicago">Central Time (US & Canada)</MenuItem>
+                      <MenuItem value="America/Denver">Mountain Time (US & Canada)</MenuItem>
+                      <MenuItem value="America/Los_Angeles">Pacific Time (US & Canada)</MenuItem>
+                      <MenuItem value="America/Anchorage">Alaska</MenuItem>
+                      <MenuItem value="Pacific/Honolulu">Hawaii</MenuItem>
+                      <MenuItem value="Europe/London">London (GMT/BST)</MenuItem>
+                      <MenuItem value="Europe/Paris">Paris (CET/CEST)</MenuItem>
+                      <MenuItem value="Europe/Berlin">Berlin (CET/CEST)</MenuItem>
+                      <MenuItem value="Europe/Rome">Rome (CET/CEST)</MenuItem>
+                      <MenuItem value="Europe/Madrid">Madrid (CET/CEST)</MenuItem>
+                      <MenuItem value="Europe/Moscow">Moscow (MSK)</MenuItem>
+                      <MenuItem value="Asia/Dubai">Dubai (GST)</MenuItem>
+                      <MenuItem value="Asia/Kolkata">India (IST)</MenuItem>
+                      <MenuItem value="Asia/Bangkok">Bangkok (ICT)</MenuItem>
+                      <MenuItem value="Asia/Singapore">Singapore (SGT)</MenuItem>
+                      <MenuItem value="Asia/Hong_Kong">Hong Kong (HKT)</MenuItem>
+                      <MenuItem value="Asia/Shanghai">China (CST)</MenuItem>
+                      <MenuItem value="Asia/Tokyo">Tokyo (JST)</MenuItem>
+                      <MenuItem value="Asia/Seoul">Seoul (KST)</MenuItem>
+                      <MenuItem value="Australia/Sydney">Sydney (AEDT/AEST)</MenuItem>
+                      <MenuItem value="Australia/Melbourne">Melbourne (AEDT/AEST)</MenuItem>
+                      <MenuItem value="Australia/Brisbane">Brisbane (AEST)</MenuItem>
+                      <MenuItem value="Australia/Perth">Perth (AWST)</MenuItem>
+                      <MenuItem value="Pacific/Auckland">Auckland (NZDT/NZST)</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
               </Grid>
             </CardContent>
           </Card>

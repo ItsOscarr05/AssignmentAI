@@ -37,6 +37,7 @@ import { fileUploadService } from '../services/fileUploadService';
 import { paymentService, Subscription } from '../services/paymentService';
 import { mapToCoreSubject } from '../services/subjectService';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
+import { parseUTCTimestamp } from '../utils/timezone';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -449,9 +450,9 @@ const Profile: React.FC = () => {
         // Since we have access to token_limit in the subscription data, we can use that
         if (currentSubscription?.token_limit) {
           const tokenLimit = currentSubscription.token_limit;
-          if (tokenLimit >= 800000) return 'Max';
-          if (tokenLimit >= 400000) return 'Pro';
-          if (tokenLimit >= 200000) return 'Plus';
+          if (tokenLimit >= 1000000) return 'Max';
+          if (tokenLimit >= 500000) return 'Pro';
+          if (tokenLimit >= 250000) return 'Plus';
           if (tokenLimit >= 100000) return 'Free';
         }
 
@@ -503,7 +504,7 @@ const Profile: React.FC = () => {
     // Try to get from subscription data first (most reliable)
     if (currentSubscription?.current_period_end) {
       try {
-        const periodEnd = new Date(currentSubscription.current_period_end);
+        const periodEnd = parseUTCTimestamp(currentSubscription.current_period_end);
         // Calculate approximate start date (subtract 1 month from period end)
         const startDate = new Date(periodEnd);
         startDate.setMonth(startDate.getMonth() - 1);
@@ -519,7 +520,7 @@ const Profile: React.FC = () => {
     // Try to get from profile data
     if (profileData && 'createdAt' in profileData && profileData.createdAt) {
       try {
-        return new Date((profileData as any).createdAt).toLocaleDateString(undefined, {
+        return parseUTCTimestamp((profileData as any).createdAt).toLocaleDateString(undefined, {
           year: 'numeric',
           month: '2-digit',
         });
@@ -531,7 +532,7 @@ const Profile: React.FC = () => {
     // Try to get from user data
     if (user && 'createdAt' in user && (user as any).createdAt) {
       try {
-        return new Date((user as any).createdAt).toLocaleDateString(undefined, {
+        return parseUTCTimestamp((user as any).createdAt).toLocaleDateString(undefined, {
           year: 'numeric',
           month: '2-digit',
         });
@@ -559,8 +560,6 @@ const Profile: React.FC = () => {
         px: 2,
         pb: 4,
         minHeight: '100vh',
-        background: theme.palette.background.default,
-        transition: 'background 0.3s',
       }}
     >
       <Box

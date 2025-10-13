@@ -108,7 +108,7 @@ class ImageAnalysisService:
                             ]
                         }
                     ],
-                    max_tokens=1000,
+                    max_completion_tokens=1000,
                     temperature=0.1
                 )
                 
@@ -268,7 +268,7 @@ class ImageAnalysisService:
                         ]
                     }
                 ],
-                max_tokens=1000,
+                max_completion_tokens=1000,
                 temperature=0.3
             )
             
@@ -343,7 +343,7 @@ class ImageAnalysisService:
                         "content": prompt
                     }
                 ],
-                max_tokens=800,
+                max_completion_tokens=800,
                 temperature=0.4
             )
             
@@ -423,7 +423,7 @@ class ImageAnalysisService:
                         ]
                     }
                 ],
-                max_tokens=50,
+                max_completion_tokens=50,
                 temperature=0.1
             )
             
@@ -481,7 +481,7 @@ class ImageAnalysisService:
                         ]
                     }
                 ],
-                max_tokens=800,
+                max_completion_tokens=800,
                 temperature=0.2
             )
             
@@ -553,7 +553,7 @@ class ImageAnalysisService:
                         "content": analysis_prompt
                     }
                 ],
-                max_tokens=600,
+                max_completion_tokens=600,
                 temperature=0.3
             )
             

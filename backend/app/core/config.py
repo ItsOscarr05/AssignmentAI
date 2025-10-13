@@ -227,9 +227,9 @@ class Settings(BaseSettings):
     # Subscription-based token limits (per month)
     AI_TOKEN_LIMITS: dict[str, int] = {
         "free": 100000,      # 100K tokens/month (GPT-5 Nano)
-        "plus": 200000,      # 200K tokens/month (GPT-4.1 Mini)
-        "pro": 400000,       # 400K tokens/month (GPT-4 Turbo)
-        "max": 800000        # 800K tokens/month (GPT-5)
+        "plus": 250000,      # 250K tokens/month (GPT-4.1 Mini)
+        "pro": 500000,       # 500K tokens/month (GPT-4 Turbo)
+        "max": 1000000       # 1M tokens/month (GPT-5)
     }
     
     # Per-response token limits by plan

@@ -97,7 +97,14 @@ async def generate_assignment_old(
         
         mock_async_db = MockAsyncSession(db)
         ai_service = AIService(mock_async_db)  # type: ignore
-        tokens_needed = 1000
+        
+        # Estimate tokens needed based on assignment complexity
+        tokens_needed = 1000  # Base estimate
+        if assignment_request.difficulty == "hard":
+            tokens_needed = 1500
+        elif assignment_request.difficulty == "easy":
+            tokens_needed = 800
+        
         await ai_service.enforce_token_limit(current_user.id, tokens_needed)
         response = await ai_service.generate_assignment(assignment_request)
         
@@ -157,7 +164,14 @@ async def generate_feedback(
         
         mock_async_db = MockAsyncSession(db)
         ai_service = AIService(mock_async_db)  # type: ignore
-        tokens_needed = 500
+        
+        # Estimate tokens needed based on submission length
+        tokens_needed = 500  # Base estimate
+        if len(submission.content) > 2000:
+            tokens_needed = 800
+        elif len(submission.content) < 500:
+            tokens_needed = 300
+        
         await ai_service.enforce_token_limit(current_user.id, tokens_needed)
         feedback = await ai_service.generate_feedback(
             user_id=current_user.id,
@@ -278,7 +292,14 @@ async def analyze_submission(
         
         mock_async_db = MockAsyncSession(db)
         ai_service = AIService(mock_async_db)  # type: ignore
-        tokens_needed = 1000
+        
+        # Estimate tokens needed based on submission length and analysis complexity
+        tokens_needed = 1000  # Base estimate
+        if len(submission.content) > 3000:
+            tokens_needed = 1500
+        elif len(submission.content) < 1000:
+            tokens_needed = 700
+        
         await ai_service.enforce_token_limit(current_user.id, tokens_needed)
         analysis = await ai_service.analyze_submission(
             submission_content=submission.content,

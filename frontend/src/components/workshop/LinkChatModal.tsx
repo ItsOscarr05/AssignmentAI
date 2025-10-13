@@ -39,6 +39,7 @@ import {
 } from '@mui/material';
 import React, { useEffect, useRef, useState } from 'react';
 import { streamChatWithLink } from '../../services/api';
+import { formatUTCToTime } from '../../utils/timezone';
 
 interface LinkChatModalProps {
   open: boolean;
@@ -1300,7 +1301,7 @@ const LinkChatModal: React.FC<LinkChatModalProps> = ({
                           {message.role === 'user' ? 'You' : 'AI'}
                         </Typography>
                         <Typography variant="caption" sx={{ ml: 'auto' }}>
-                          {new Date(message.timestamp).toLocaleTimeString()}
+                          {formatUTCToTime(message.timestamp)}
                         </Typography>
                       </Box>
                       <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>

@@ -140,6 +140,7 @@ const About = () => {
                     textAlign: 'center',
                     backgroundColor: 'white',
                     borderRadius: 4,
+                    border: '2.5px solid #D32F2F',
                     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
                     transition: 'transform 0.2s, box-shadow 0.2s',
                     '&:hover': {

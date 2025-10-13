@@ -6,6 +6,7 @@ import {
 import { Avatar, Box, Button, CircularProgress, Paper, TextField, Typography } from '@mui/material';
 import React, { useEffect, useRef, useState } from 'react';
 import { useWorkshopStore } from '../../services/WorkshopService';
+import { formatUTCToTime } from '../../utils/timezone';
 
 interface ChatMessage {
   id: string;
@@ -178,7 +179,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialText, onMessageSen
                         textAlign: message.isUser ? 'right' : 'left',
                       }}
                     >
-                      {new Date(message.timestamp).toLocaleTimeString()}
+                      {formatUTCToTime(message.timestamp)}
                     </Typography>
                   </Paper>
                 </Box>

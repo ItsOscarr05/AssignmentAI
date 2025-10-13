@@ -64,7 +64,7 @@ class SmartSummarizationService:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                max_tokens=max_length * 2,  # Allow for some flexibility
+                max_completion_tokens=max_length * 2,  # Allow for some flexibility
                 temperature=0.3,
                 top_p=0.9
             )
@@ -133,7 +133,7 @@ class SmartSummarizationService:
                     {"role": "system", "content": "You are an expert at extracting key insights from content."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=300,
+                max_completion_tokens=300,
                 temperature=0.4
             )
             
@@ -284,7 +284,7 @@ class SmartSummarizationService:
                     {"role": "system", "content": "You are an expert analyst specializing in comparative document analysis."},
                     {"role": "user", "content": comparison_prompt}
                 ],
-                max_tokens=500,
+                max_completion_tokens=500,
                 temperature=0.4
             )
             
