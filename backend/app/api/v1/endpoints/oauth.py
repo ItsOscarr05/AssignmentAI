@@ -77,6 +77,10 @@ async def google_authorize():
             state=state
         )
         
+        # Debug logging to see what URL is being generated
+        logger.info(f"Generated authorization URL: {authorization_url}")
+        logger.info(f"OAuth config: client_id={config.get('client_id', 'NOT_SET')[:20]}..., redirect_uri={config.get('redirect_uri')}")
+        
         return {
             "url": authorization_url,
             "state": state
@@ -85,41 +89,6 @@ async def google_authorize():
         logger.error(f"Failed to generate Google authorization URL: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to generate authorization URL: {str(e)}")
 
-@router.get("/github/authorize")
-async def github_authorize():
-    """Generate GitHub OAuth authorization URL"""
-    try:
-        # Generate a secure state parameter
-        state = secrets.token_urlsafe(32)
-        logger.info(f"Generated OAuth state: {state} for provider: github")
-        
-        # Store state in Redis
-        if not _store_oauth_state(state, "github"):
-            raise HTTPException(status_code=500, detail="Failed to store OAuth state")
-        
-        # Get GitHub OAuth configuration
-        config = oauth_config.get_provider_config("github")
-        
-        # Create authorization URL
-        from authlib.integrations.requests_client import OAuth2Session
-        client = OAuth2Session(
-            client_id=config["client_id"],
-            scope=config["scope"],
-            redirect_uri=config["redirect_uri"]
-        )
-        
-        authorization_url, _ = client.create_authorization_url(
-            config["authorize_url"],
-            state=state
-        )
-        
-        return {
-            "url": authorization_url,
-            "state": state
-        }
-    except Exception as e:
-        logger.error(f"Failed to generate GitHub authorization URL: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to generate authorization URL: {str(e)}")
 
 @router.post("/google/callback")
 async def google_callback(
@@ -209,88 +178,6 @@ async def google_callback(
             "error": f"OAuth callback failed: {str(e)}"
         }
 
-@router.post("/github/callback")
-async def github_callback(
-    request: OAuthCallbackRequest,
-    db: Session = Depends(get_db)
-):
-    """Handle GitHub OAuth callback"""
-    try:
-        # Validate state parameter using Redis
-        provider = _get_oauth_state(request.state)
-        if not provider:
-            raise HTTPException(status_code=400, detail="Invalid state parameter")
-        
-        # Get GitHub OAuth configuration
-        config = oauth_config.get_provider_config("github")
-        
-        # Exchange code for tokens
-        from authlib.integrations.requests_client import OAuth2Session
-        client = OAuth2Session(
-            client_id=config["client_id"],
-            client_secret=config["client_secret"],
-            redirect_uri=config["redirect_uri"]
-        )
-        
-        token = client.fetch_token(
-            config["token_url"],
-            authorization_response=f"?code={request.code}&state={request.state}"
-        )
-        
-        # Get user info
-        user_info = client.get(config["userinfo_url"]).json()
-        
-        # Find or create user
-        user = db.query(User).filter(User.email == user_info["email"]).first()
-        
-        if not user:
-            # Create new user
-            user = User(
-                email=user_info["email"],
-                name=user_info.get("name", ""),
-                hashed_password="oauth_user_no_password",  # Dummy password for OAuth users
-                oauth_provider="github",
-                oauth_access_token=token["access_token"],
-                oauth_refresh_token=token.get("refresh_token"),
-                oauth_token_expires_at=datetime.utcnow() + timedelta(seconds=token.get("expires_in", 3600)),
-                is_verified=True,  # OAuth users are pre-verified
-                updated_at=datetime.utcnow()
-            )
-            db.add(user)
-        else:
-            # Update existing user's OAuth info
-            user.oauth_provider = "github"
-            user.oauth_access_token = token["access_token"]
-            user.oauth_refresh_token = token.get("refresh_token")
-            user.oauth_token_expires_at = datetime.utcnow() + timedelta(seconds=token.get("expires_in", 3600))
-            user.is_verified = True
-            user.updated_at = datetime.utcnow()
-        
-        db.commit()
-        db.refresh(user)
-        
-        # Create access token
-        access_token = create_access_token(subject=user.id)
-        
-        return {
-            "access_token": access_token,
-            "refresh_token": token.get("refresh_token"),
-            "token_type": "bearer",
-            "expires_in": token.get("expires_in", 3600),
-            "user": {
-                "id": user.id,
-                "email": user.email,
-                "name": user.name
-            }
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"OAuth callback failed: {e}")
-        return {
-            "error": f"OAuth callback failed: {str(e)}"
-        }
 
 
 
@@ -300,6 +187,30 @@ async def test_route():
     print("=== TEST ROUTE CALLED (PRINT) ===")
     logger.info("=== TEST ROUTE CALLED (LOGGER) ===")
     return {"message": "Test route working"}
+
+@router.get("/debug/google-config")
+async def debug_google_config():
+    """Debug endpoint to check Google OAuth configuration"""
+    try:
+        config = oauth_config.get_provider_config("google")
+        
+        # Check if credentials are set
+        client_id_set = bool(config.get("client_id"))
+        client_secret_set = bool(config.get("client_secret"))
+        
+        return {
+            "client_id_set": client_id_set,
+            "client_id_preview": config.get("client_id", "").split('.')[0] + "..." if config.get("client_id") else "NOT SET",
+            "client_secret_set": client_secret_set,
+            "authorize_url": config.get("authorize_url"),
+            "redirect_uri": config.get("redirect_uri"),
+            "scope": config.get("scope"),
+            "backend_url": settings.BACKEND_URL,
+            "frontend_url": settings.FRONTEND_URL
+        }
+    except Exception as e:
+        logger.error(f"Debug config failed: {e}")
+        return {"error": str(e)}
 
 @router.get("/google/callback")
 async def google_callback_get(request: Request, db: Session = Depends(get_db)):
@@ -329,12 +240,27 @@ async def google_callback_get(request: Request, db: Session = Depends(get_db)):
         logger.info(f"POST callback result type: {type(result)}")
         logger.info(f"POST callback result: {result}")
         
-        # Extract the access token from the result
+        # Extract the access token and user info from the result
         if isinstance(result, dict) and "access_token" in result:
             access_token = result["access_token"]
+            user_info = result.get("user", {})
             logger.info(f"Access token extracted: {access_token[:20]}...")
-            # Redirect to frontend with the token
+            
+            # Build frontend URL with token and user info
             frontend_url = f"{settings.FRONTEND_URL}/auth/callback?provider=google&token={access_token}"
+            
+            # Add user info to URL parameters if available
+            if user_info:
+                if user_info.get("id"):
+                    frontend_url += f"&user_id={user_info['id']}"
+                if user_info.get("email"):
+                    frontend_url += f"&user_email={user_info['email']}"
+                if user_info.get("name"):
+                    # URL encode the name to handle spaces and special characters
+                    import urllib.parse
+                    encoded_name = urllib.parse.quote(user_info['name'])
+                    frontend_url += f"&user_name={encoded_name}"
+            
             logger.info(f"Redirecting to: {frontend_url}")
             return RedirectResponse(url=frontend_url)
         else:
@@ -350,39 +276,6 @@ async def google_callback_get(request: Request, db: Session = Depends(get_db)):
         frontend_url = f"{settings.FRONTEND_URL}/auth/callback?error=oauth_failed&provider=google"
         return RedirectResponse(url=frontend_url)
 
-@router.get("/github/callback")
-async def github_callback_get(request: Request, db: Session = Depends(get_db)):
-    """Handle GitHub OAuth callback via GET (for browser redirects)"""
-    try:
-        code = request.query_params.get("code")
-        state = request.query_params.get("state")
-        if not code or not state:
-            raise HTTPException(status_code=400, detail="Missing code or state in callback")
-        
-        # Call the POST callback logic
-        from pydantic import BaseModel
-        class DummyCallbackRequest(BaseModel):
-            code: str
-            state: str
-        dummy_request = DummyCallbackRequest(code=code, state=state)
-        result = await github_callback(dummy_request, db)
-        
-        # Extract the access token from the result
-        if isinstance(result, dict) and "access_token" in result:
-            access_token = result["access_token"]
-            # Redirect to frontend with the token
-            frontend_url = f"{settings.FRONTEND_URL}/auth/callback?provider=github&token={access_token}"
-            return RedirectResponse(url=frontend_url)
-        else:
-            # Something went wrong, redirect with error
-            frontend_url = f"{settings.FRONTEND_URL}/auth/callback?error=oauth_failed&provider=github"
-            return RedirectResponse(url=frontend_url)
-    except HTTPException:
-        raise
-    except Exception as e:
-        # Redirect to frontend with error
-        frontend_url = f"{settings.FRONTEND_URL}/auth/callback?error=oauth_failed&provider=github"
-        return RedirectResponse(url=frontend_url)
 
 
 
@@ -436,53 +329,3 @@ async def google_refresh(
     except Exception as e:
         logger.error(f"Token refresh error: {e}")
         raise HTTPException(status_code=401, detail=f"Token refresh failed: {str(e)}")
-
-@router.post("/github/refresh")
-async def github_refresh(
-    request: OAuthRefreshRequest,
-    db: Session = Depends(get_db)
-):
-    """Refresh GitHub OAuth token"""
-    try:
-        # Find user with this refresh token
-        user = db.query(User).filter(
-            User.oauth_provider == "github",
-            User.oauth_refresh_token == request.refresh_token
-        ).first()
-        
-        if not user:
-            raise HTTPException(status_code=401, detail="Invalid refresh token")
-        
-        # Get GitHub OAuth configuration
-        config = oauth_config.get_provider_config("github")
-        
-        # Refresh token
-        from authlib.integrations.requests_client import OAuth2Session
-        client = OAuth2Session(
-            client_id=config["client_id"],
-            client_secret=config["client_secret"]
-        )
-        
-        token = client.refresh_token(
-            config["token_url"],
-            refresh_token=request.refresh_token
-        )
-        
-        # Update user's token info
-        user.oauth_access_token = token["access_token"]
-        user.oauth_refresh_token = token.get("refresh_token", request.refresh_token)
-        user.oauth_token_expires_at = datetime.utcnow() + timedelta(seconds=token.get("expires_in", 3600))
-        
-        db.commit()
-        
-        # Create new access token
-        access_token = create_access_token(subject=user.id)
-        
-        return {
-            "access_token": access_token,
-            "refresh_token": token.get("refresh_token", request.refresh_token),
-            "expires_in": token.get("expires_in", 3600)
-        }
-        
-    except Exception as e:
-        raise HTTPException(status_code=401, detail=f"Token refresh failed: {str(e)}") 

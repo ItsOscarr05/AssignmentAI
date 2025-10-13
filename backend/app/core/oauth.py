@@ -16,15 +16,6 @@ class OAuthConfig:
                 "scope": "openid email profile",
                 "redirect_uri": f"{settings.BACKEND_URL}/api/v1/auth/oauth/google/callback",
             },
-            "github": {
-                "client_id": settings.GITHUB_CLIENT_ID,
-                "client_secret": settings.GITHUB_CLIENT_SECRET,
-                "authorize_url": "https://github.com/login/oauth/authorize",
-                "token_url": "https://github.com/login/oauth/access_token",
-                "userinfo_url": "https://api.github.com/user",
-                "scope": "user:email",
-                "redirect_uri": f"{settings.BACKEND_URL}/api/v1/auth/oauth/github/callback",
-            },
         }
 
     def get_provider_config(self, provider: str) -> Dict:
@@ -68,12 +59,6 @@ class OAuthConfig:
                     "email": user_info.get("email"),
                     "name": user_info.get("name"),
                     "picture": user_info.get("picture"),
-                })
-            elif provider == "github":
-                normalized_info.update({
-                    "email": user_info.get("email"),
-                    "name": user_info.get("name") or user_info.get("login"),
-                    "picture": user_info.get("avatar_url"),
                 })
 
             return normalized_info

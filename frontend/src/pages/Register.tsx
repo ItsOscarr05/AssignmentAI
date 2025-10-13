@@ -1,5 +1,4 @@
 import {
-  GitHub as GitHubIcon,
   Google as GoogleIcon,
   Visibility,
   VisibilityOff,
@@ -840,66 +839,36 @@ const Register: React.FC = () => {
                   </Typography>
                 </Divider>
 
-                <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    startIcon={<GoogleIcon />}
-                    onClick={async () => {
-                      try {
-                        const authService = (
-                          await import('../services/authManager')
-                        ).AuthManager.getInstance();
-                        const response = await authService.getOAuthUrl('google');
-                        if (response && response.url) {
-                          window.location.href = response.url;
-                        } else {
-                          console.error('Invalid OAuth response:', response);
-                        }
-                      } catch (error) {
-                        console.error('Google OAuth error:', error);
-                        setError('Google OAuth error occurred');
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  startIcon={<GoogleIcon />}
+                  onClick={async () => {
+                    try {
+                      const authService = (
+                        await import('../services/authManager')
+                      ).AuthManager.getInstance();
+                      const response = await authService.getOAuthUrl('google');
+                      if (response && response.url) {
+                        window.location.href = response.url;
+                      } else {
+                        console.error('Invalid OAuth response:', response);
                       }
-                    }}
-                    sx={{
-                      py: 1.5,
-                      fontFamily: "'Inter', sans-serif",
-                      fontWeight: 500,
-                      letterSpacing: '0.01em',
-                    }}
-                  >
-                    Google
-                  </Button>
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    startIcon={<GitHubIcon />}
-                    onClick={async () => {
-                      try {
-                        const authService = (
-                          await import('../services/authManager')
-                        ).AuthManager.getInstance();
-                        const response = await authService.getOAuthUrl('github');
-                        if (response && response.url) {
-                          window.location.href = response.url;
-                        } else {
-                          console.error('Invalid OAuth response:', response);
-                        }
-                      } catch (error) {
-                        console.error('GitHub OAuth error:', error);
-                        setError('GitHub OAuth error occurred');
-                      }
-                    }}
-                    sx={{
-                      py: 1.5,
-                      fontFamily: "'Inter', sans-serif",
-                      fontWeight: 500,
-                      letterSpacing: '0.01em',
-                    }}
-                  >
-                    GitHub
-                  </Button>
-                </Stack>
+                    } catch (error) {
+                      console.error('Google OAuth error:', error);
+                      setError('Google OAuth error occurred');
+                    }
+                  }}
+                  sx={{
+                    py: 1.5,
+                    mb: 3,
+                    fontFamily: "'Inter', sans-serif",
+                    fontWeight: 500,
+                    letterSpacing: '0.01em',
+                  }}
+                >
+                  Google
+                </Button>
 
                 <Typography
                   variant="body2"

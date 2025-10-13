@@ -277,69 +277,98 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
           />
 
           {/* Password Requirements Display */}
-          {passwordForm.newPassword.length > 0 && (
-            <Box sx={{ mt: 1, mb: 1 }}>
+          {passwordForm.newPassword && (
+            <Box
+              sx={{
+                mt: 2,
+                mb: 2,
+                p: 2,
+                backgroundColor: theme =>
+                  theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.05)'
+                    : 'rgba(0, 0, 0, 0.02)',
+                borderRadius: 1,
+                border: '1px solid',
+                borderColor: theme =>
+                  theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+              }}
+            >
               <Typography
                 variant="body2"
                 sx={{
-                  color: theme => (theme.palette.mode === 'dark' ? 'white' : 'text.secondary'),
-                  fontWeight: 400,
-                  fontSize: '0.8rem',
-                  mb: 1,
+                  color: theme => (theme.palette.mode === 'dark' ? 'white' : 'text.primary'),
+                  fontWeight: 600,
+                  fontSize: '0.85rem',
+                  mb: 1.5,
                 }}
               >
                 Password Requirements:
               </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
                 <Typography
                   variant="body2"
                   sx={{
                     color: passwordRequirements.minLength ? 'success.main' : 'error.main',
-                    fontWeight: 400,
-                    fontSize: '0.75rem',
+                    fontWeight: 500,
+                    fontSize: '0.8rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
                   }}
                 >
-                  • At least 8 characters {passwordRequirements.minLength ? '✓' : '✗'}
+                  {passwordRequirements.minLength ? '✓' : '✗'} At least 8 characters
                 </Typography>
                 <Typography
                   variant="body2"
                   sx={{
                     color: passwordRequirements.hasUpperCase ? 'success.main' : 'error.main',
-                    fontWeight: 400,
-                    fontSize: '0.75rem',
+                    fontWeight: 500,
+                    fontSize: '0.8rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
                   }}
                 >
-                  • One uppercase letter {passwordRequirements.hasUpperCase ? '✓' : '✗'}
+                  {passwordRequirements.hasUpperCase ? '✓' : '✗'} One uppercase letter
                 </Typography>
                 <Typography
                   variant="body2"
                   sx={{
                     color: passwordRequirements.hasLowerCase ? 'success.main' : 'error.main',
-                    fontWeight: 400,
-                    fontSize: '0.75rem',
+                    fontWeight: 500,
+                    fontSize: '0.8rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
                   }}
                 >
-                  • One lowercase letter {passwordRequirements.hasLowerCase ? '✓' : '✗'}
+                  {passwordRequirements.hasLowerCase ? '✓' : '✗'} One lowercase letter
                 </Typography>
                 <Typography
                   variant="body2"
                   sx={{
                     color: passwordRequirements.hasNumber ? 'success.main' : 'error.main',
-                    fontWeight: 400,
-                    fontSize: '0.75rem',
+                    fontWeight: 500,
+                    fontSize: '0.8rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
                   }}
                 >
-                  • One number {passwordRequirements.hasNumber ? '✓' : '✗'}
+                  {passwordRequirements.hasNumber ? '✓' : '✗'} One number
                 </Typography>
                 <Typography
                   variant="body2"
                   sx={{
                     color: passwordRequirements.hasSpecialChar ? 'success.main' : 'error.main',
-                    fontWeight: 400,
-                    fontSize: '0.75rem',
+                    fontWeight: 500,
+                    fontSize: '0.8rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
                   }}
                 >
-                  • One special character {passwordRequirements.hasSpecialChar ? '✓' : '✗'}
+                  {passwordRequirements.hasSpecialChar ? '✓' : '✗'} One special character
                 </Typography>
               </Box>
             </Box>
