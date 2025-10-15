@@ -134,8 +134,8 @@ const Dashboard: React.FC = () => {
               sx={{
                 borderRadius: 2,
                 mx: 1,
-                mb: 2.5,
-                py: 2,
+                mb: 1.15,
+                py: 1.15,
                 '&:hover': {
                   backgroundColor: 'rgba(255, 255, 255, 0.1)',
                 },

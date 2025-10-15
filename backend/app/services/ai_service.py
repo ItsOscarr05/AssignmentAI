@@ -41,7 +41,7 @@ class AIService:
         try:
             from app.models.user import User
             # Get user object
-            result = self.db.execute(select(User).filter(User.id == user_id))
+            result = await self.db.execute(select(User).filter(User.id == user_id))
             user = result.scalar_one_or_none()
             if user:
                 await self.usage_service.track_usage(
@@ -54,9 +54,9 @@ class AIService:
         except Exception as e:
             logger.error(f"Failed to track token usage: {str(e)}")
 
-    def get_user_model(self, user_id: int) -> str:
+    async def get_user_model(self, user_id: int) -> str:
         """Get the AI model assigned to a user's subscription"""
-        result = self.db.execute(
+        result = await self.db.execute(
             select(Subscription).filter(
                 Subscription.user_id == user_id,
                 Subscription.status == SubscriptionStatus.ACTIVE
@@ -69,9 +69,9 @@ class AIService:
         
         return str(subscription.ai_model)
 
-    def get_user_plan(self, user_id: int) -> str:
+    async def get_user_plan(self, user_id: int) -> str:
         """Get the user's subscription plan for token limits"""
-        result = self.db.execute(
+        result = await self.db.execute(
             select(Subscription).filter(
                 Subscription.user_id == user_id,
                 Subscription.status == SubscriptionStatus.ACTIVE
@@ -156,7 +156,7 @@ class AIService:
         """
         try:
             # Get the user's assigned model
-            model = self.get_user_model(user_id)
+            model = await self.get_user_model(user_id)
             
             # Construct the prompt for the AI model
             prompt = self._construct_feedback_prompt(submission_content, feedback_type)
@@ -486,7 +486,7 @@ class AIService:
         """
 
         # Get the user's assigned model for evaluation
-        model = self.get_user_model(user_id)
+        model = await self.get_user_model(user_id)
         
         response = await self.client.chat.completions.create(
             model=model,
@@ -571,7 +571,7 @@ class AIService:
         """
         try:
             # Get user's subscription model
-            user_model = self.get_user_model(user_id) if user_id else "gpt-4o-mini"
+            user_model = await self.get_user_model(user_id) if user_id else "gpt-4o-mini"
             logger.info(f"Using user model for chat: {user_model}")
             
             # Prepare conversation messages
@@ -591,7 +591,7 @@ class AIService:
             logger.info(f"Using {user_model} for chat response with {len(messages)} context messages")
             
             # Get user's plan for token limits
-            user_plan = self.get_user_plan(user_id) if user_id else "free"
+            user_plan = await self.get_user_plan(user_id) if user_id else "free"
             plan_max_tokens = settings.AI_RESPONSE_LIMITS.get(user_plan, settings.AI_MAX_TOKENS)
             
             # Respect model-specific token limits
@@ -678,7 +678,7 @@ class AIService:
         """
         try:
             # Get user's subscription model
-            user_model = self.get_user_model(user_id) if user_id else "gpt-4o-mini"
+            user_model = await self.get_user_model(user_id) if user_id else "gpt-4o-mini"
             logger.info(f"Using streaming with user model: {user_model}")
             
             # Prepare conversation messages
@@ -696,7 +696,7 @@ class AIService:
             messages.append({"role": "user", "content": prompt})
             
             # Get user's plan for token limits
-            user_plan = self.get_user_plan(user_id) if user_id else "free"
+            user_plan = await self.get_user_plan(user_id) if user_id else "free"
             plan_max_tokens = settings.AI_RESPONSE_LIMITS.get(user_plan, settings.AI_MAX_TOKENS)
             
             # Respect model-specific token limits
@@ -769,7 +769,7 @@ class AIService:
         """
         try:
             # Get user's subscription model for fallback too
-            user_model = self.get_user_model(user_id) if user_id else "gpt-4o-mini"
+            user_model = await self.get_user_model(user_id) if user_id else "gpt-4o-mini"
             logger.info(f"Using fallback method with user model: {user_model}")
             
             # Construct a system prompt for general chat/conversation

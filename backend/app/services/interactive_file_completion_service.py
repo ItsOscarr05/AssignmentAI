@@ -70,13 +70,13 @@ class InteractiveFileCompletionService:
         self.file_processing_service = FileProcessingService(db_session)
         self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
     
-    def _get_user_model(self, user_id: int) -> str:
+    async def _get_user_model(self, user_id: int) -> str:
         """Get the AI model assigned to a user's subscription"""
         from app.models.subscription import Subscription, SubscriptionStatus
         from sqlalchemy import select
         
         try:
-            result = self.db.execute(
+            result = await self.db.execute(
                 select(Subscription).filter(
                     Subscription.user_id == user_id,
                     Subscription.status == SubscriptionStatus.ACTIVE
@@ -167,7 +167,7 @@ class InteractiveFileCompletionService:
             from sqlalchemy import select
             
             # Get user object
-            result = self.db.execute(select(User).filter(User.id == user_id))
+            result = await self.db.execute(select(User).filter(User.id == user_id))
             user = result.scalar_one_or_none()
             
             if user:
@@ -234,7 +234,7 @@ class InteractiveFileCompletionService:
                 original_content=file_upload.extracted_content,
                 current_content=file_upload.extracted_content,
                 status=SessionStatus.ACTIVE,
-                model_used=self._get_user_model(user_id)
+                model_used=await self._get_user_model(user_id)
             )
             
             # Save initial version

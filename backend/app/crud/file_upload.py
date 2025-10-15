@@ -1,10 +1,12 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from app.models.file_upload import FileUpload
 from app.schemas.file_upload import FileUploadCreate, FileUploadUpdate
 from datetime import datetime
 
-def create_file_upload(db: Session, file_upload: FileUploadCreate, user_id: int) -> FileUpload:
+async def create_file_upload(db: Union[Session, AsyncSession], file_upload: FileUploadCreate, user_id: int) -> FileUpload:
     """Create a new file upload record"""
     db_file_upload = FileUpload(
         filename=file_upload.filename,
@@ -25,8 +27,15 @@ def create_file_upload(db: Session, file_upload: FileUploadCreate, user_id: int)
         processing_status=file_upload.processing_status
     )
     db.add(db_file_upload)
-    db.commit()
-    db.refresh(db_file_upload)
+    
+    # Handle both sync and async sessions
+    if isinstance(db, AsyncSession):
+        await db.commit()
+        await db.refresh(db_file_upload)
+    else:
+        db.commit()
+        db.refresh(db_file_upload)
+    
     return db_file_upload
 
 def get_file_upload(db: Session, file_upload_id: int) -> Optional[FileUpload]:

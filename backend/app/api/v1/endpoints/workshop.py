@@ -128,7 +128,7 @@ async def check_openai_quota():
 # Initialize services
 image_analysis_service = ImageAnalysisService()
 
-def create_file_upload_record(
+async def create_file_upload_record(
     db: Session,
     user_id: int,
     file: UploadFile,
@@ -157,7 +157,7 @@ def create_file_upload_record(
             }
         )
         
-        db_file_upload = file_upload_crud.create_file_upload(db, file_upload_data, user_id)
+        db_file_upload = await file_upload_crud.create_file_upload(db, file_upload_data, user_id)
         return {
             "file_upload_id": db_file_upload.id,
             "success": True
@@ -596,7 +596,7 @@ async def upload_and_process_file(
                     )
                 
                 # Create file upload record
-                upload_record = create_file_upload_record(
+                upload_record = await create_file_upload_record(
                     db, current_user.id, file, file_path, "image", 
                     extracted_content=None, ai_analysis=analysis
                 )
@@ -621,7 +621,7 @@ async def upload_and_process_file(
                 analysis = f"Image uploaded successfully. Analysis failed: {str(e)}"
                 
                 # Create file upload record
-                upload_record = create_file_upload_record(
+                upload_record = await create_file_upload_record(
                     db, current_user.id, file, file_path, "image", 
                     extracted_content=None, ai_analysis=analysis, processing_status="failed"
                 )
@@ -721,7 +721,7 @@ async def upload_and_process_file(
             logger.info("Preparing response for AI analysis...")
             
             # Create file upload record
-            upload_record = create_file_upload_record(
+            upload_record = await create_file_upload_record(
                 db, current_user.id, file, file_path, file_info['type'], 
                 extracted_content=content, ai_analysis=analysis
             )
@@ -918,7 +918,7 @@ async def upload_and_process_file(
             analysis = "File uploaded successfully. Content analysis not available for this file type."
             
             # Create file upload record
-            upload_record = create_file_upload_record(
+            upload_record = await create_file_upload_record(
                 db, current_user.id, file, file_path, "unknown", 
                 extracted_content=content, ai_analysis=analysis
             )
@@ -1096,7 +1096,7 @@ async def process_link(
                     }
                 )
                 
-                db_file_upload = file_upload_crud.create_file_upload(db, file_upload_data, current_user.id)
+                db_file_upload = await file_upload_crud.create_file_upload(db, file_upload_data, current_user.id)
                 file_upload_id = db_file_upload.id
             except Exception as e:
                 logger.error(f"Failed to create file upload record for link: {str(e)}")
