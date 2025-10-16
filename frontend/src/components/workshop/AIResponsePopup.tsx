@@ -9,7 +9,6 @@ import {
   KeyboardArrowDown as KeyboardArrowDownIcon,
   Remove as MinimizeIcon,
   RecordVoiceOverOutlined,
-  Token as TokenIcon,
 } from '@mui/icons-material';
 import {
   Alert,
@@ -1069,8 +1068,14 @@ ${data.transcript
     <Box
       sx={{
         width: { xs: '100%', md: '300px' },
-        borderLeft: { xs: 'none', md: '1px solid #f44336' },
-        borderTop: { xs: '1px solid #f44336', md: 'none' },
+        borderLeft: {
+          xs: 'none',
+          md: theme => `1px solid ${theme.palette.mode === 'dark' ? '#d32f2f' : '#d32f2f'}`,
+        },
+        borderTop: {
+          xs: theme => `1px solid ${theme.palette.mode === 'dark' ? '#d32f2f' : '#d32f2f'}`,
+          md: 'none',
+        },
         p: 2,
         backgroundColor: theme =>
           theme.palette.mode === 'dark' ? theme.palette.background.default : '#f8f9fa',
@@ -1084,7 +1089,7 @@ ${data.transcript
         gutterBottom
         sx={{
           fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' },
-          color: theme => (theme.palette.mode === 'dark' ? 'red' : 'black'),
+          color: '#d32f2f', // Red color for Conversation Engagement title
           mb: 2,
           textAlign: 'center',
         }}
@@ -1177,12 +1182,13 @@ ${data.transcript
           sx={{
             fontSize: '0.75rem',
             textTransform: 'none',
-            borderColor: 'red',
-            color: 'red',
+            borderColor: theme => (theme.palette.mode === 'dark' ? '#d32f2f' : '#d32f2f'),
+            color: theme => (theme.palette.mode === 'dark' ? '#d32f2f' : '#d32f2f'),
             fontWeight: 'bold',
             '&:hover': {
-              borderColor: 'red',
-              backgroundColor: 'rgba(244, 67, 54, 0.1)',
+              borderColor: theme => (theme.palette.mode === 'dark' ? '#d32f2f' : '#d32f2f'),
+              backgroundColor: theme =>
+                theme.palette.mode === 'dark' ? 'rgba(211, 47, 47, 0.1)' : 'rgba(211, 47, 47, 0.1)',
             },
           }}
         >
@@ -1320,7 +1326,7 @@ ${data.transcript
         gutterBottom
         sx={{
           fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' },
-          color: theme => (theme.palette.mode === 'dark' ? 'red' : 'black'),
+          color: '#d32f2f', // Red color for Quick Actions title
           mb: 2,
         }}
       >
@@ -1383,7 +1389,10 @@ ${data.transcript
             height: '90vh',
             borderTopLeftRadius: 16,
             borderTopRightRadius: 16,
-            border: '2px solid red',
+            border: theme => `2px solid ${theme.palette.mode === 'dark' ? '#d32f2f' : '#d32f2f'}`,
+            width: { xs: '85vw', sm: '90vw', md: '100%' }, // Thinner on mobile
+            maxWidth: { xs: '85vw', sm: '90vw', md: '100%' }, // Thinner on mobile
+            mx: 'auto', // Center the popup horizontally
           },
         }}
         ModalProps={{
@@ -1395,6 +1404,8 @@ ${data.transcript
             display: 'flex',
             flexDirection: 'column',
             height: '100%',
+            backgroundColor: theme =>
+              theme.palette.mode === 'dark' ? theme.palette.background.default : '#fff',
           }}
           onTouchStart={handleTouchStart}
         >
@@ -1406,9 +1417,17 @@ ${data.transcript
               alignItems: 'center',
               p: 2,
               borderBottom: '1px solid #e0e0e0',
+              backgroundColor: theme =>
+                theme.palette.mode === 'dark' ? theme.palette.background.default : '#fff',
             }}
           >
-            <Typography variant="h6" sx={{ color: 'red', fontWeight: 'bold' }}>
+            <Typography
+              variant="h6"
+              sx={{
+                color: '#d32f2f', // Red color for AI Chat Assistant title
+                fontWeight: 'bold',
+              }}
+            >
               {getTitle()}
             </Typography>
             <Box sx={{ display: 'flex', gap: 1 }}>
@@ -1429,7 +1448,17 @@ ${data.transcript
             <>
               {/* Mobile Content */}
               <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <Box sx={{ flex: 1, p: 2, overflow: 'auto' }}>{renderMainContent()}</Box>
+                <Box
+                  sx={{
+                    flex: 1,
+                    p: 2,
+                    overflow: 'auto',
+                    backgroundColor: theme =>
+                      theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+                  }}
+                >
+                  {renderMainContent()}
+                </Box>
                 <QuickActionsSidebar />
               </Box>
             </>
@@ -1451,10 +1480,11 @@ ${data.transcript
         PaperProps={{
           sx: {
             borderRadius: isFullscreen ? 0 : 3,
-            border: '2px solid red',
+            border: theme => `2px solid ${theme.palette.mode === 'dark' ? '#d32f2f' : '#d32f2f'}`,
             maxHeight: isFullscreen ? '100vh' : '90vh',
-            width: isFullscreen ? '100vw' : { xs: '95vw', sm: '90vw', md: '80vw' },
-            maxWidth: isFullscreen ? '100vw' : { xs: '95vw', sm: '90vw', md: '80vw' },
+            width: isFullscreen ? '100vw' : { xs: '90vw', sm: '90vw', md: '80vw' },
+            maxWidth: isFullscreen ? '100vw' : { xs: '85vw', sm: '90vw', md: '80vw' },
+            mx: 'auto', // Center the popup horizontally
             backgroundColor: theme => {
               console.log(
                 'Dialog background - mode:',
@@ -1476,7 +1506,7 @@ ${data.transcript
         <DialogTitle
           sx={{
             borderBottom: '1px solid',
-            borderColor: '#f44336',
+            borderColor: theme => (theme.palette.mode === 'dark' ? '#d32f2f' : '#d32f2f'),
             pb: 2,
             backgroundColor: theme =>
               theme.palette.mode === 'dark' ? theme.palette.background.default : '#fff',

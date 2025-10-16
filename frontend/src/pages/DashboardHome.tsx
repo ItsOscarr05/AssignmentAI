@@ -531,7 +531,7 @@ const DashboardHome: React.FC = () => {
         spacing={getAspectRatioStyle(aspectRatioStyles.grid.gap, breakpoint, 2)}
         sx={{ mb: 2, width: '100%' }}
       >
-        <Grid item xs={11.5} md={12}>
+        <Grid item xs={12} md={12}>
           <Paper
             sx={{
               p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2),
@@ -619,7 +619,7 @@ const DashboardHome: React.FC = () => {
         spacing={getAspectRatioStyle(aspectRatioStyles.grid.gap, breakpoint, 3)}
         sx={{ mb: 3, width: '100%' }}
       >
-        <Grid item xs={11.5} md={breakpoint === 'standard' ? 12 : 8}>
+        <Grid item xs={12} md={breakpoint === 'standard' ? 12 : 8}>
           <Paper
             sx={{
               p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2),
@@ -902,51 +902,65 @@ const DashboardHome: React.FC = () => {
                             {(activity.type === 'assignment' ||
                               activity.type === 'file_upload') && (
                               <>
-                                <Button
-                                  size="small"
-                                  sx={{
-                                    color: '#1976D2',
-                                    minWidth: 'auto',
-                                    px: 0.5,
-                                    py: 0.25,
-                                    fontSize: '0.75rem',
-                                    whiteSpace: 'nowrap',
-                                  }}
-                                  onClick={() => handleEditSubject(activity.id)}
-                                >
-                                  <EditIcon sx={{ fontSize: 16, mr: 0.25 }} />
-                                  Edit Subject
-                                </Button>
-                                <Button
-                                  size="small"
-                                  sx={{
-                                    color: '#009688',
-                                    minWidth: 'auto',
-                                    px: 0.5,
-                                    py: 0.25,
-                                    fontSize: '0.75rem',
-                                    whiteSpace: 'nowrap',
-                                  }}
-                                  onClick={() => handleViewCompletedFile(activity.id)}
-                                >
-                                  <VisibilityOutlinedIcon sx={{ fontSize: 16, mr: 0.25 }} />
-                                  View File
-                                </Button>
-                                <Button
-                                  size="small"
-                                  sx={{
-                                    color: '#f44336',
-                                    minWidth: 'auto',
-                                    px: 0.5,
-                                    py: 0.25,
-                                    fontSize: '0.75rem',
-                                    whiteSpace: 'nowrap',
-                                  }}
-                                  onClick={() => handleDeleteClick(activity.id)}
-                                >
-                                  <DeleteOutlinedIcon sx={{ fontSize: 16, mr: 0.25 }} />
-                                  Delete
-                                </Button>
+                                <Tooltip title="Edit Subject" arrow placement="top">
+                                  <Button
+                                    size="small"
+                                    sx={{
+                                      color: '#1976D2',
+                                      minWidth: 'auto',
+                                      px: { xs: 0.25, md: 0.5 },
+                                      py: 0.25,
+                                      fontSize: '0.75rem',
+                                      whiteSpace: 'nowrap',
+                                    }}
+                                    onClick={() => handleEditSubject(activity.id)}
+                                  >
+                                    <EditIcon sx={{ fontSize: 16, mr: { xs: 0, md: 0.25 } }} />
+                                    <Box sx={{ display: { xs: 'none', md: 'inline' } }}>
+                                      Edit Subject
+                                    </Box>
+                                  </Button>
+                                </Tooltip>
+                                <Tooltip title="View File" arrow placement="top">
+                                  <Button
+                                    size="small"
+                                    sx={{
+                                      color: '#009688',
+                                      minWidth: 'auto',
+                                      px: { xs: 0.25, md: 0.5 },
+                                      py: 0.25,
+                                      fontSize: '0.75rem',
+                                      whiteSpace: 'nowrap',
+                                    }}
+                                    onClick={() => handleViewCompletedFile(activity.id)}
+                                  >
+                                    <VisibilityOutlinedIcon
+                                      sx={{ fontSize: 16, mr: { xs: 0, md: 0.25 } }}
+                                    />
+                                    <Box sx={{ display: { xs: 'none', md: 'inline' } }}>
+                                      View File
+                                    </Box>
+                                  </Button>
+                                </Tooltip>
+                                <Tooltip title="Delete" arrow placement="top">
+                                  <Button
+                                    size="small"
+                                    sx={{
+                                      color: '#f44336',
+                                      minWidth: 'auto',
+                                      px: { xs: 0.25, md: 0.5 },
+                                      py: 0.25,
+                                      fontSize: '0.75rem',
+                                      whiteSpace: 'nowrap',
+                                    }}
+                                    onClick={() => handleDeleteClick(activity.id)}
+                                  >
+                                    <DeleteOutlinedIcon
+                                      sx={{ fontSize: 16, mr: { xs: 0, md: 0.25 } }}
+                                    />
+                                    <Box sx={{ display: { xs: 'none', md: 'inline' } }}>Delete</Box>
+                                  </Button>
+                                </Tooltip>
                               </>
                             )}
                           </Box>
@@ -980,7 +994,7 @@ const DashboardHome: React.FC = () => {
             </Box>
           </Paper>
         </Grid>
-        <Grid item xs={11.5} md={breakpoint === 'standard' ? 12 : 4}>
+        <Grid item xs={12} md={breakpoint === 'standard' ? 12 : 4}>
           {/* Assignment Disstribution Pie Chart */}
           <Paper
             sx={{
@@ -1138,7 +1152,7 @@ const DashboardHome: React.FC = () => {
         spacing={getAspectRatioStyle(aspectRatioStyles.grid.gap, breakpoint, 3)}
         sx={{ mb: 3, width: '100%' }}
       >
-        <Grid item xs={11.5} md={12}>
+        <Grid item xs={12} md={12}>
           <Paper
             sx={{
               p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 3),

@@ -1,3 +1,4 @@
+import { useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -73,6 +74,8 @@ const CustomTooltip: React.FC<TooltipProps<number, string>> = ({ active, payload
 const DashboardPieChart: React.FC<DashboardPieChartProps> = ({ data, distributionFilter }) => {
   const navigate = useNavigate();
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isLargeScreen = useMediaQuery(theme.breakpoints.up('lg'));
 
   const handlePieClick = (payload: any) => {
     if (payload && payload.name && payload.name !== 'No Subjects') {
@@ -94,7 +97,7 @@ const DashboardPieChart: React.FC<DashboardPieChartProps> = ({ data, distributio
           textAnchor="middle"
           dominantBaseline="middle"
           style={{
-            fontSize: '28px',
+            fontSize: isMobile ? '18px' : isLargeScreen ? '32px' : '28px',
             fontWeight: 'bold',
             fill: theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
           }}
@@ -107,7 +110,7 @@ const DashboardPieChart: React.FC<DashboardPieChartProps> = ({ data, distributio
           textAnchor="middle"
           dominantBaseline="middle"
           style={{
-            fontSize: '28px',
+            fontSize: isMobile ? '20px' : isLargeScreen ? '36px' : '28px',
             fontWeight: 'bold',
             fill: theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
           }}

@@ -152,7 +152,7 @@ const Settings: React.FC = () => {
   const { mode: appTheme, toggleTheme, darkThemeColor, setDarkThemeColor } = useAppTheme();
   const darkMode = appTheme === 'dark';
   const [language, setLanguage] = useState('en');
-  const { fontSize, setFontSize } = useFontSize();
+  const { fontSize } = useFontSize();
   const [animations, setAnimations] = useState(true);
   const [compactMode, setCompactMode] = useState(false);
 
@@ -2034,48 +2034,7 @@ const Settings: React.FC = () => {
                   </FormGroup>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <Typography gutterBottom>Font Size</Typography>
-                  <Slider
-                    value={fontSize}
-                    onChange={(_e, value) => setFontSize(value as number)}
-                    onChangeCommitted={(_e, value) => setFontSize(value as number)}
-                    min={12}
-                    max={28}
-                    step={2}
-                    marks={[
-                      { value: 12 },
-                      { value: 14 },
-                      { value: 16 },
-                      { value: 18 },
-                      { value: 20 },
-                      { value: 22 },
-                      { value: 24 },
-                      { value: 26 },
-                      { value: 28 },
-                    ]}
-                    valueLabelDisplay="auto"
-                    valueLabelFormat={value => `${value}px`}
-                    disableSwap
-                    track="normal"
-                    size="medium"
-                    sx={{
-                      '& .MuiSlider-track': {
-                        height: 4,
-                      },
-                      '& .MuiSlider-rail': {
-                        height: 4,
-                      },
-                      '& .MuiSlider-thumb': {
-                        height: 20,
-                        width: 20,
-                        '&:hover, &:focus, &:active': {
-                          boxShadow: '0 0 0 8px rgba(25, 118, 210, 0.16)',
-                        },
-                      },
-                    }}
-                  />
-
-                  <FormGroup sx={{ mt: 3 }}>
+                  <FormGroup>
                     <FormControlLabel
                       control={
                         <Switch
@@ -4084,175 +4043,287 @@ const Settings: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Security Audit Dialog */}
+      {/* Enhanced Security Audit Dialog */}
       <Dialog
         open={showSecurityAudit}
         onClose={() => setShowSecurityAudit(false)}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
         PaperProps={{
           sx: {
             backgroundColor: theme =>
               theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+            border: '2px solid #d32f2f',
+            borderRadius: 3,
           },
         }}
       >
-        <DialogTitle sx={{ color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black') }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <SecurityOutlined />
-            Security Audit Report
+        <DialogTitle
+          sx={{
+            color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+            borderBottom: '2px solid #d32f2f',
+            pb: 2,
+            background: theme =>
+              theme.palette.mode === 'dark'
+                ? 'linear-gradient(135deg, rgba(211, 47, 47, 0.1) 0%, rgba(211, 47, 47, 0.05) 100%)'
+                : 'linear-gradient(135deg, rgba(211, 47, 47, 0.05) 0%, rgba(211, 47, 47, 0.02) 100%)',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <SecurityOutlined sx={{ color: '#d32f2f', fontSize: 28 }} />
+            <Box>
+              <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#d32f2f' }}>
+                Security Audit Report
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Comprehensive security analysis • Generated {new Date().toLocaleDateString()}
+              </Typography>
+            </Box>
           </Box>
         </DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Comprehensive security analysis of your account and settings.
-          </Typography>
+        <DialogContent sx={{ p: 3 }}>
+          {/* Security Score Overview */}
+          <Box sx={{ mb: 4 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                p: 3,
+                borderRadius: 2,
+                background: theme =>
+                  theme.palette.mode === 'dark'
+                    ? 'linear-gradient(135deg, rgba(211, 47, 47, 0.1) 0%, rgba(211, 47, 47, 0.05) 100%)'
+                    : 'linear-gradient(135deg, rgba(211, 47, 47, 0.05) 0%, rgba(211, 47, 47, 0.02) 100%)',
+                border: '1px solid #d32f2f',
+              }}
+            >
+              <Box>
+                <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#d32f2f' }}>
+                  {calculateSecurityScore()}/100
+                </Typography>
+                <Typography variant="body1" color="text.secondary">
+                  Overall Security Score
+                </Typography>
+                <Chip
+                  label={
+                    calculateSecurityScore() >= 80
+                      ? 'Excellent'
+                      : calculateSecurityScore() >= 60
+                      ? 'Good'
+                      : 'Needs Improvement'
+                  }
+                  color={
+                    calculateSecurityScore() >= 80
+                      ? 'success'
+                      : calculateSecurityScore() >= 60
+                      ? 'warning'
+                      : 'error'
+                  }
+                  sx={{ mt: 1 }}
+                />
+              </Box>
+              <Box sx={{ textAlign: 'center' }}>
+                <Box
+                  sx={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: '50%',
+                    background: `conic-gradient(#d32f2f ${
+                      calculateSecurityScore() * 3.6
+                    }deg, #e0e0e0 0deg)`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    position: 'relative',
+                  }}
+                >
+                  <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#d32f2f' }}>
+                    {calculateSecurityScore()}%
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+          </Box>
 
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
-              <Typography variant="subtitle1" gutterBottom sx={{ color: 'primary.main' }}>
-                Security Score Breakdown
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2">Base Security</Typography>
-                  <Typography variant="body2">20/20</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2">Password Strength</Typography>
-                  <Typography variant="body2">
-                    {securitySettings.passwordStrength === 'strong'
-                      ? '20/20'
-                      : securitySettings.passwordStrength === 'medium'
-                      ? '10/20'
-                      : '0/20'}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2">Two-Factor Auth</Typography>
-                  <Typography variant="body2">
-                    {privacySettings.twoFactorAuth ? '25/25' : '0/25'}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2">Biometric Login</Typography>
-                  <Typography variant="body2">
-                    {privacySettings.biometricLogin ? '15/15' : '0/15'}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2">Auto-Lock</Typography>
-                  <Typography variant="body2">
-                    {privacySettings.autoLock ? '10/10' : '0/10'}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2">Account Security</Typography>
-                  <Typography variant="body2">10/10</Typography>
-                </Box>
-                <Divider sx={{ my: 1 }} />
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
-                  <Typography variant="body2">Total Score</Typography>
-                  <Typography variant="body2">{calculateSecurityScore()}/100</Typography>
-                </Box>
+              <Box sx={{ p: 3, height: '100%', border: '1px solid #d32f2f', borderRadius: 2 }}>
+                <Typography variant="h6" gutterBottom sx={{ color: '#d32f2f', fontWeight: 'bold' }}>
+                  Security Score Breakdown
+                </Typography>
+                <Stack spacing={2}>
+                  {[
+                    { name: 'Base Security', score: 20, max: 20, icon: <ShieldOutlined /> },
+                    {
+                      name: 'Password Strength',
+                      score:
+                        securitySettings.passwordStrength === 'strong'
+                          ? 20
+                          : securitySettings.passwordStrength === 'medium'
+                          ? 10
+                          : 0,
+                      max: 20,
+                      icon: <VpnKeyOutlined />,
+                    },
+                    {
+                      name: 'Two-Factor Auth',
+                      score: privacySettings.twoFactorAuth ? 25 : 0,
+                      max: 25,
+                      icon: <SecurityUpdateOutlined />,
+                    },
+                    {
+                      name: 'Biometric Login',
+                      score: privacySettings.biometricLogin ? 15 : 0,
+                      max: 15,
+                      icon: <FingerprintOutlined />,
+                    },
+                    {
+                      name: 'Auto-Lock',
+                      score: privacySettings.autoLock ? 10 : 0,
+                      max: 10,
+                      icon: <LockOutlined />,
+                    },
+                    {
+                      name: 'Account Security',
+                      score: 10,
+                      max: 10,
+                      icon: <VerifiedUserOutlined />,
+                    },
+                  ].map((item, index) => (
+                    <Box
+                      key={index}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        p: 2,
+                        borderRadius: 1,
+                        background: theme =>
+                          theme.palette.mode === 'dark'
+                            ? 'rgba(255,255,255,0.05)'
+                            : 'rgba(0,0,0,0.02)',
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {item.icon}
+                        <Typography variant="body2">{item.name}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: 'bold',
+                            color:
+                              item.score === item.max
+                                ? 'success.main'
+                                : item.score > 0
+                                ? 'warning.main'
+                                : 'error.main',
+                          }}
+                        >
+                          {item.score}/{item.max}
+                        </Typography>
+                        {item.score === item.max ? (
+                          <CheckCircle sx={{ color: 'success.main', fontSize: 16 }} />
+                        ) : item.score > 0 ? (
+                          <Warning sx={{ color: 'warning.main', fontSize: 16 }} />
+                        ) : (
+                          <Error sx={{ color: 'error.main', fontSize: 16 }} />
+                        )}
+                      </Box>
+                    </Box>
+                  ))}
+                </Stack>
               </Box>
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <Typography variant="subtitle1" gutterBottom sx={{ color: 'primary.main' }}>
-                Security Recommendations
-              </Typography>
-              {getSecurityRecommendations().length > 0 ? (
-                <List dense>
-                  {getSecurityRecommendations().map((recommendation, index) => (
-                    <ListItem key={index} sx={{ px: 0 }}>
-                      <ListItemIcon sx={{ minWidth: 32 }}>
+              <Box sx={{ p: 3, height: '100%', border: '1px solid #d32f2f', borderRadius: 2 }}>
+                <Typography variant="h6" gutterBottom sx={{ color: '#d32f2f', fontWeight: 'bold' }}>
+                  Security Recommendations
+                </Typography>
+                {getSecurityRecommendations().length > 0 ? (
+                  <Stack spacing={2}>
+                    {getSecurityRecommendations().map((recommendation, index) => (
+                      <Box
+                        key={index}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: 2,
+                          p: 2,
+                          borderRadius: 1,
+                          background: theme =>
+                            theme.palette.mode === 'dark'
+                              ? 'rgba(255,255,255,0.05)'
+                              : 'rgba(0,0,0,0.02)',
+                          border: '1px solid',
+                          borderColor:
+                            recommendation.priority === 'high' ? 'error.main' : 'warning.main',
+                        }}
+                      >
                         {recommendation.priority === 'high' ? (
-                          <Error fontSize="small" sx={{ color: recommendation.color }} />
+                          <Error sx={{ color: 'error.main', fontSize: 20, mt: 0.5 }} />
                         ) : (
-                          <Warning fontSize="small" sx={{ color: recommendation.color }} />
+                          <Warning sx={{ color: 'warning.main', fontSize: 20, mt: 0.5 }} />
                         )}
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={recommendation.text}
-                        primaryTypographyProps={{ variant: 'body2' }}
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-              ) : (
-                <Alert severity="success">
-                  <Typography variant="body2">
-                    Great job! Your security settings are well configured.
-                  </Typography>
-                </Alert>
-              )}
-
-              <Typography variant="subtitle1" sx={{ mt: 3, color: 'primary.main' }} gutterBottom>
-                Privacy Analysis
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2">Data Collection</Typography>
-                  <Typography
-                    variant="body2"
-                    color={privacySettings.dataCollection ? 'success.main' : 'error.main'}
-                  >
-                    {privacySettings.dataCollection ? 'Enabled' : 'Disabled'}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2">Analytics Sharing</Typography>
-                  <Typography
-                    variant="body2"
-                    color={privacySettings.shareAnalytics ? 'success.main' : 'error.main'}
-                  >
-                    {privacySettings.shareAnalytics ? 'Enabled' : 'Disabled'}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2">Activity Tracking</Typography>
-                  <Typography
-                    variant="body2"
-                    color={privacySettings.allowTracking ? 'success.main' : 'error.main'}
-                  >
-                    {privacySettings.allowTracking ? 'Enabled' : 'Disabled'}
-                  </Typography>
-                </Box>
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
+                            {recommendation.priority === 'high'
+                              ? 'High Priority'
+                              : 'Medium Priority'}
+                          </Typography>
+                          <Typography variant="body2">{recommendation.text}</Typography>
+                        </Box>
+                      </Box>
+                    ))}
+                  </Stack>
+                ) : (
+                  <Alert severity="success" sx={{ mt: 2 }}>
+                    <Typography variant="body2">
+                      🎉 Excellent! Your security settings are well configured. Keep up the great
+                      work!
+                    </Typography>
+                  </Alert>
+                )}
               </Box>
             </Grid>
           </Grid>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowSecurityAudit(false)}>Close</Button>
+        <DialogActions sx={{ p: 3, borderTop: '1px solid #d32f2f' }}>
+          <Button onClick={() => setShowSecurityAudit(false)} variant="outlined">
+            Close
+          </Button>
           <Button
             variant="contained"
             disabled={isRecordingAudit}
             onClick={async () => {
               try {
                 setIsRecordingAudit(true);
-
-                // Record the security audit
                 await securityService.recordSecurityAudit();
-
-                // Refresh security data to get updated audit timestamp
                 await loadSecurityData();
-
-                // Close the dialog
                 setShowSecurityAudit(false);
-
-                // Show success message
                 console.log('Security audit recorded successfully');
-                // You could add a toast notification here if you have a notification system
               } catch (error) {
                 console.error('Failed to record security audit:', error);
-                // Keep dialog open on error so user can try again
               } finally {
                 setIsRecordingAudit(false);
               }
             }}
+            sx={{
+              backgroundColor: '#d32f2f',
+              '&:hover': { backgroundColor: '#b71c1c' },
+            }}
           >
-            {isRecordingAudit ? 'Recording Audit...' : 'Record Audit & Close'}
+            {isRecordingAudit ? (
+              <>
+                <CircularProgress size={16} sx={{ mr: 1 }} />
+                Recording...
+              </>
+            ) : (
+              'Record New Audit'
+            )}
           </Button>
         </DialogActions>
       </Dialog>
@@ -4300,17 +4371,42 @@ const Settings: React.FC = () => {
         calculateDaysSinceCreation={calculateDaysSinceCreation}
       />
 
-      {/* AI Features Status Dialog */}
+      {/* Enhanced AI Features Status Dialog */}
       <Dialog
         open={showAIFeaturesTestDialog}
         onClose={() => setShowAIFeaturesTestDialog(false)}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: theme =>
+              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+            border: '2px solid #d32f2f',
+            borderRadius: 3,
+          },
+        }}
       >
-        <DialogTitle sx={{ color: 'primary.main' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <PsychologyOutlined sx={{ color: 'primary.main' }} />
-            AI Features Status
+        <DialogTitle
+          sx={{
+            color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+            borderBottom: '2px solid #d32f2f',
+            pb: 2,
+            background: theme =>
+              theme.palette.mode === 'dark'
+                ? 'linear-gradient(135deg, rgba(211, 47, 47, 0.1) 0%, rgba(211, 47, 47, 0.05) 100%)'
+                : 'linear-gradient(135deg, rgba(211, 47, 47, 0.05) 0%, rgba(211, 47, 47, 0.02) 100%)',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <PsychologyOutlined sx={{ color: '#d32f2f', fontSize: 28 }} />
+            <Box>
+              <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#d32f2f' }}>
+                AI Features Status
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Current AI configuration and feature availability
+              </Typography>
+            </Box>
           </Box>
         </DialogTitle>
         <DialogContent>

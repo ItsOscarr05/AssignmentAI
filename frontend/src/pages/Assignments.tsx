@@ -1043,7 +1043,7 @@ const Assignments: React.FC = () => {
         <TableContainer
           sx={{
             ...tableStyle,
-            overflow: 'hidden',
+            overflow: { xs: 'auto', md: 'hidden' },
             maxWidth: '100%',
             width: '100%',
             backgroundColor: theme =>
@@ -1051,7 +1051,7 @@ const Assignments: React.FC = () => {
             borderRadius: 3,
           }}
         >
-          <Table sx={{ width: '100%' }}>
+          <Table sx={{ width: '100%', minWidth: { xs: '600px', md: 'auto' } }}>
             <TableHead
               sx={{
                 backgroundColor: theme =>

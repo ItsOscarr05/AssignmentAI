@@ -975,14 +975,8 @@ const Workshop: React.FC = () => {
               p: { xs: 0.75, sm: 1, md: 3 },
               mb: { xs: 2, sm: 3, md: 4 },
               overflow: 'hidden',
-              width: { xs: '95%', sm: '100%' },
-              mx: { xs: 'auto', sm: 0 },
               backgroundColor: theme =>
                 theme.palette.mode === 'dark' ? theme.palette.background.default : '#fff',
-              '@media (max-width: 480px)': {
-                width: '98%',
-                mx: 'auto',
-              },
             }}
           >
             <Box
@@ -1034,8 +1028,8 @@ const Workshop: React.FC = () => {
                   data={activityData}
                   margin={{
                     top: 20,
-                    right: 30,
-                    left: 20,
+                    right: 10,
+                    left: -30,
                     bottom: 20,
                   }}
                 >
@@ -1148,12 +1142,6 @@ const Workshop: React.FC = () => {
               p: { xs: 0.75, sm: 1, md: 3 },
               mb: { xs: 2, sm: 3, md: 4 },
               overflow: 'hidden',
-              width: { xs: '95%', sm: '100%' },
-              mx: { xs: 'auto', sm: 0 },
-              '@media (max-width: 480px)': {
-                width: '98%',
-                mx: 'auto',
-              },
             }}
           >
             <Box
@@ -1273,16 +1261,6 @@ const Workshop: React.FC = () => {
                 p: { xs: 0.75, sm: 1, md: 3 },
                 mb: { xs: 2, sm: 3, md: 4 },
                 overflow: 'hidden',
-                width: { xs: '95%', sm: '100%' },
-                mx: { xs: 'auto', sm: 0 },
-                '@media (minWidth: 960px)': {
-                  width: '100%',
-                  maxWidth: '100%',
-                },
-                '@media (max-width: 480px)': {
-                  width: '98%',
-                  mx: 'auto',
-                },
               }}
             >
               <Typography
@@ -1324,21 +1302,10 @@ const Workshop: React.FC = () => {
               ...cardStyle,
               p: { xs: 0.75, sm: 1, md: 3 },
               overflow: 'hidden',
-              width: { xs: '95%', sm: '100%' },
-              mx: { xs: 'auto', sm: 0 },
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
               minHeight: { xs: '380px', sm: '320px', md: '280px' },
-              '@media (min-width: 960px)': {
-                width: '100%',
-                maxWidth: '100%',
-              },
-              '@media (max-width: 480px)': {
-                width: '98%',
-                mx: 'auto',
-                minHeight: '380px',
-              },
             }}
           >
             <Typography

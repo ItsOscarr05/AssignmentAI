@@ -251,14 +251,14 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
         PaperProps={{
           sx: {
             height: '90vh',
-            border: '3px solid #f44336',
+            border: theme => `3px solid ${theme.palette.mode === 'dark' ? '#d32f2f' : '#d32f2f'}`,
             borderRadius: 4,
           },
         }}
       >
         <DialogTitle
           sx={{
-            borderBottom: '3px solid #f44336',
+            borderBottom: theme => `3px solid ${theme.palette.mode === 'dark' ? '#d32f2f' : '#d32f2f'}`,
             p: 2,
           }}
         >

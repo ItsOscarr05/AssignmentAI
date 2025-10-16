@@ -443,7 +443,7 @@ const LinkChatModal: React.FC<LinkChatModalProps> = ({
           '& .MuiDialog-paper': {
             height: '90vh',
             maxHeight: '90vh',
-            border: '3px solid #f44336',
+            border: theme => `3px solid ${theme.palette.mode === 'dark' ? '#d32f2f' : '#d32f2f'}`,
             borderRadius: '12px',
           },
         }}
