@@ -128,8 +128,8 @@ async def check_openai_quota():
 # Initialize services
 image_analysis_service = ImageAnalysisService()
 
-def create_file_upload_record(
-    db: Session,
+async def create_file_upload_record(
+    db: AsyncSession,
     user_id: int,
     file: UploadFile,
     file_path: str,
@@ -157,7 +157,8 @@ def create_file_upload_record(
             }
         )
         
-        db_file_upload = file_upload_crud.create_file_upload(db, file_upload_data, user_id)
+        db_file_upload = await file_upload_crud.create_file_upload_async(db, file_upload_data, user_id)
+        logger.info(f"Successfully created file upload record with ID: {db_file_upload.id}")
         return {
             "file_upload_id": db_file_upload.id,
             "success": True
@@ -639,7 +640,7 @@ async def upload_and_process_file(
                     )
                 
                 # Create file upload record
-                upload_record = create_file_upload_record(
+                upload_record = await create_file_upload_record(
                     db, current_user.id, file, file_path, "image", 
                     extracted_content=None, ai_analysis=analysis
                 )
@@ -664,7 +665,7 @@ async def upload_and_process_file(
                 analysis = f"Image uploaded successfully. Analysis failed: {str(e)}"
                 
                 # Create file upload record
-                upload_record = create_file_upload_record(
+                upload_record = await create_file_upload_record(
                     db, current_user.id, file, file_path, "image", 
                     extracted_content=None, ai_analysis=analysis, processing_status="failed"
                 )
@@ -770,10 +771,11 @@ async def upload_and_process_file(
             logger.info("Preparing response for AI analysis...")
             
             # Create file upload record
-            upload_record = create_file_upload_record(
+            upload_record = await create_file_upload_record(
                 db, current_user.id, file, file_path, file_info['type'], 
                 extracted_content=content, ai_analysis=analysis
             )
+            logger.info(f"Upload record created: {upload_record}")
             
             # Include processed structured data for CSV/Excel files
             processed_data = None
@@ -954,6 +956,7 @@ async def upload_and_process_file(
             }
             logger.info(f"Response prepared successfully. Content length: {len(content)}, Analysis length: {len(analysis)}")
             logger.info(f"Processed data included: {processed_data is not None}")
+            logger.info(f"Final response data: {response_data}")
             if processed_data:
                 logger.info(f"Processed data structure: {type(processed_data)}, keys: {list(processed_data.keys()) if isinstance(processed_data, dict) else 'not a dict'}")
             else:
@@ -967,7 +970,7 @@ async def upload_and_process_file(
             analysis = "File uploaded successfully. Content analysis not available for this file type."
             
             # Create file upload record
-            upload_record = create_file_upload_record(
+            upload_record = await create_file_upload_record(
                 db, current_user.id, file, file_path, "unknown", 
                 extracted_content=content, ai_analysis=analysis
             )

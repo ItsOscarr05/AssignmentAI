@@ -352,6 +352,7 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
       }
 
       const fileData = await response.json();
+      console.log('Raw file data from backend:', fileData);
 
       // Add to history
       const historyItem: HistoryItem = {
@@ -360,14 +361,14 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
         content: fileData.analysis,
         timestamp: new Date().toISOString(),
         type: 'file',
-        fileId: fileData.id,
+        fileId: fileData.file_upload_id, // Use the database file_upload_id
         serviceUsed: fileData.service_used,
         fileCategory: fileData.file_category,
       };
 
       const completedFile = {
         ...newFile,
-        id: fileData.file_upload_id || fileData.id, // Use the database file_upload_id, fallback to UUID
+        id: fileData.file_upload_id, // Use the database file_upload_id as the primary ID
         name: fileData.name, // Use the corrected filename from backend (e.g., .xls instead of .csv)
         type: fileData.type, // Use the corrected MIME type from backend (e.g., application/vnd.ms-excel)
         status: 'completed' as const,
@@ -377,6 +378,14 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
         processed_data: fileData.processed_data, // Include processed structured data for Excel/CSV files
         uploaded_at: fileData.uploaded_at,
       };
+
+      console.log('File upload completed:', {
+        temporaryId: fileId,
+        databaseId: fileData.file_upload_id,
+        fileName: fileData.name,
+        rawFileData: fileData,
+        completedFile
+      });
 
       set(state => {
         const newHistory = [...state.history, historyItem];

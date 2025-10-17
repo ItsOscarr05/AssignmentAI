@@ -1464,7 +1464,7 @@ ${data.transcript
                 >
                   {renderMainContent()}
                 </Box>
-                <QuickActionsSidebar />
+                {uploadType === 'text' && <QuickActionsSidebar />}
               </Box>
             </>
           )}
@@ -1617,8 +1617,8 @@ ${data.transcript
               {renderMainContent()}
             </Box>
 
-            {/* Quick Actions & AI Suggestions Sidebar */}
-            <QuickActionsSidebar />
+            {/* Quick Actions & AI Suggestions Sidebar - Only show for text/chat content */}
+            {uploadType === 'text' && <QuickActionsSidebar />}
           </DialogContent>
         ) : (
           <DialogContent

@@ -1,5 +1,6 @@
 from typing import List, Optional
 from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.file_upload import FileUpload
 from app.schemas.file_upload import FileUploadCreate, FileUploadUpdate
 from datetime import datetime
@@ -27,6 +28,31 @@ def create_file_upload(db: Session, file_upload: FileUploadCreate, user_id: int)
     db.add(db_file_upload)
     db.commit()
     db.refresh(db_file_upload)
+    return db_file_upload
+
+async def create_file_upload_async(db: AsyncSession, file_upload: FileUploadCreate, user_id: int) -> FileUpload:
+    """Create a new file upload record asynchronously"""
+    db_file_upload = FileUpload(
+        filename=file_upload.filename,
+        original_filename=file_upload.original_filename,
+        file_path=file_upload.file_path,
+        file_size=file_upload.file_size,
+        mime_type=file_upload.mime_type,
+        file_type=file_upload.file_type,
+        user_id=user_id,
+        assignment_id=file_upload.assignment_id,
+        is_link=file_upload.is_link,
+        link_url=file_upload.link_url,
+        link_title=file_upload.link_title,
+        link_description=file_upload.link_description,
+        upload_metadata=file_upload.upload_metadata,
+        extracted_content=file_upload.extracted_content,
+        ai_analysis=file_upload.ai_analysis,
+        processing_status=file_upload.processing_status
+    )
+    db.add(db_file_upload)
+    await db.commit()
+    await db.refresh(db_file_upload)
     return db_file_upload
 
 def get_file_upload(db: Session, file_upload_id: int) -> Optional[FileUpload]:

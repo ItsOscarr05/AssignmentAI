@@ -521,9 +521,12 @@ const Workshop: React.FC = () => {
     if (linkInput.trim()) {
       setIsLinkProcessing(true);
       try {
-        await addLink({ url: linkInput, title: linkInput });
-        // The addLink function will handle the result internally
-        setShowLinkChatModal(true);
+        const linkData = await addLink({ url: linkInput, title: linkInput });
+        if (linkData) {
+          // Open the Link Chat Modal with the processed link data
+          setLastProcessedLink(linkData);
+          setShowLinkChatModal(true);
+        }
         setLinkInput('');
       } catch (error) {
         console.error('Error processing link:', error);

@@ -31,7 +31,6 @@ import {
   Grid,
   IconButton,
   LinearProgress,
-  Paper,
   Snackbar,
   TextField,
   Tooltip,
@@ -68,6 +67,7 @@ const LinkChatModal: React.FC<LinkChatModalProps> = ({
   const [streamingMessage, setStreamingMessage] = useState('');
   const [showDetailedDistribution, setShowDetailedDistribution] = useState(false);
   const [hoveredTopic, setHoveredTopic] = useState<string | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -445,6 +445,7 @@ const LinkChatModal: React.FC<LinkChatModalProps> = ({
             maxHeight: '90vh',
             border: theme => `3px solid ${theme.palette.mode === 'dark' ? '#d32f2f' : '#d32f2f'}`,
             borderRadius: '12px',
+            bgcolor: 'background.default',
           },
         }}
       >
@@ -456,6 +457,7 @@ const LinkChatModal: React.FC<LinkChatModalProps> = ({
               alignItems: 'center',
               p: 2,
               borderBottom: '1px solid #e0e0e0',
+              bgcolor: 'background.default',
             }}
           >
             <Box display="flex" alignItems="center" gap={1.5}>
@@ -477,23 +479,24 @@ const LinkChatModal: React.FC<LinkChatModalProps> = ({
           </Box>
         </DialogTitle>
 
-        <DialogContent sx={{ p: 0, height: '100%' }}>
+        <DialogContent sx={{ p: 0, height: '100%', overflow: 'auto' }}>
           <Box
             sx={{
-              height: '100%',
+              minHeight: '100%',
               display: 'flex',
+              flexDirection: { xs: 'column', md: 'row' },
               gap: 2,
               p: 2,
+              bgcolor: 'background.default',
             }}
           >
-            {/* Link Content Panel - LEFT (60% width) */}
-            <Paper
-              elevation={3}
+            {/* Link Content Panel - Analysis (Top on mobile, Left on desktop) */}
+            <Box
               sx={{
-                flex: 3,
+                flex: { xs: 'none', md: 3 },
+                minHeight: { xs: '40vh', md: 'auto' },
                 display: 'flex',
                 flexDirection: 'column',
-                overflow: 'hidden',
                 border: '2px solid #f44336',
                 borderRadius: 3,
               }}
@@ -541,23 +544,28 @@ const LinkChatModal: React.FC<LinkChatModalProps> = ({
                     </Tooltip>
                   </Box>
                 </Box>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{
+                    mt: 1,
+                    wordBreak: 'break-all',
+                    overflowWrap: 'break-word',
+                  }}
+                >
                   {linkData.url}
                 </Typography>
               </Box>
-              <Box sx={{ flex: 1, overflow: 'auto', p: 2, bgcolor: 'grey.50' }}>
-                <Paper
-                  elevation={0}
+              <Box sx={{ flex: 1, p: 2, bgcolor: 'background.default' }}>
+                <Box
                   sx={{
-                    height: '100%',
-                    bgcolor: 'white',
-                    overflow: 'hidden',
+                    bgcolor: 'background.paper',
                     display: 'flex',
                     flexDirection: 'column',
                   }}
                 >
                   {/* Comprehensive Dashboard */}
-                  <Box sx={{ flex: 1, p: 3, overflow: 'auto' }}>
+                  <Box sx={{ flex: 1, p: 3 }}>
                     {contentStats && (
                       <>
                         {/* AI Insights Summary */}
@@ -678,54 +686,64 @@ const LinkChatModal: React.FC<LinkChatModalProps> = ({
                                                   }}
                                                   onMouseEnter={() => setHoveredTopic(topic)}
                                                   onMouseLeave={() => setHoveredTopic(null)}
+                                                  onMouseMove={(
+                                                    e: React.MouseEvent<SVGPathElement>
+                                                  ) => {
+                                                    const rect =
+                                                      e.currentTarget.ownerSVGElement?.getBoundingClientRect();
+                                                    if (rect) {
+                                                      setTooltipPosition({
+                                                        x: e.clientX - rect.left,
+                                                        y: e.clientY - rect.top,
+                                                      });
+                                                    }
+                                                  }}
                                                 />
                                               </g>
                                             );
                                           });
                                         })()}
-                                        <circle cx="90" cy="90" r="55" fill="white" />
                                       </svg>
-                                      <Box
-                                        sx={{
-                                          position: 'absolute',
-                                          top: '50%',
-                                          left: '50%',
-                                          transform: 'translate(-50%, -50%)',
-                                          textAlign: 'center',
-                                        }}
-                                      >
-                                        {hoveredTopic ? (
-                                          <>
-                                            <Typography
-                                              variant="body2"
-                                              fontWeight="bold"
-                                              color="primary"
-                                            >
-                                              {hoveredTopic}
-                                            </Typography>
-                                            <Typography
-                                              variant="h4"
-                                              fontWeight="bold"
-                                              color="#f44336"
-                                            >
-                                              {contentStats.topicDistribution[hoveredTopic]}%
-                                            </Typography>
-                                          </>
-                                        ) : (
-                                          <>
-                                            <Typography variant="caption" color="text.secondary">
-                                              Topics
-                                            </Typography>
-                                            <Typography
-                                              variant="h5"
-                                              fontWeight="bold"
-                                              color="primary"
-                                            >
-                                              {contentStats.keyTopics.length}
-                                            </Typography>
-                                          </>
-                                        )}
-                                      </Box>
+                                      {hoveredTopic && (
+                                        <Box
+                                          sx={{
+                                            position: 'absolute',
+                                            top: `${tooltipPosition.y - 45}px`,
+                                            left: `${tooltipPosition.x}px`,
+                                            transform: 'translateX(-50%)',
+                                            bgcolor: 'background.paper',
+                                            px: 1,
+                                            py: 0.5,
+                                            borderRadius: 0.5,
+                                            boxShadow: 2,
+                                            border: '1px solid',
+                                            borderColor: 'divider',
+                                            zIndex: 10,
+                                            minWidth: '80px',
+                                            textAlign: 'center',
+                                            pointerEvents: 'none',
+                                            transition: 'top 0.1s ease, left 0.1s ease',
+                                          }}
+                                        >
+                                          <Typography
+                                            variant="caption"
+                                            fontWeight="bold"
+                                            color="primary"
+                                            noWrap
+                                            sx={{ fontSize: '0.7rem' }}
+                                          >
+                                            {hoveredTopic}
+                                          </Typography>
+                                          <Typography
+                                            variant="body2"
+                                            fontWeight="bold"
+                                            color="#f44336"
+                                            sx={{ fontSize: '0.75rem' }}
+                                          >
+                                            {contentStats.topicDistribution[hoveredTopic]}%
+                                          </Typography>
+                                        </Box>
+                                      )}
                                     </Box>
 
                                     <Box
@@ -743,7 +761,10 @@ const LinkChatModal: React.FC<LinkChatModalProps> = ({
                                         bgcolor: 'transparent',
                                         transition: 'all 0.3s',
                                         '&:hover': {
-                                          bgcolor: 'rgba(244, 67, 54, 0.05)',
+                                          bgcolor: theme =>
+                                            theme.palette.mode === 'dark'
+                                              ? 'rgba(244, 67, 54, 0.1)'
+                                              : 'rgba(244, 67, 54, 0.05)',
                                         },
                                         width: '100%',
                                         justifyContent: 'center',
@@ -860,7 +881,15 @@ const LinkChatModal: React.FC<LinkChatModalProps> = ({
                                 </Typography>
                                 <Typography
                                   variant="body2"
-                                  sx={{ lineHeight: 1.6, color: 'text.primary' }}
+                                  sx={{
+                                    lineHeight: 1.6,
+                                    color: 'text.primary',
+                                    wordBreak: 'break-word',
+                                    overflowWrap: 'break-word',
+                                    hyphens: 'auto',
+                                    WebkitHyphens: 'auto',
+                                    msHyphens: 'auto',
+                                  }}
                                 >
                                   {linkData.analysis?.summary ||
                                     `This ${contentStats.readabilityLevel.toLowerCase()}-level content contains ${contentStats.wordCount.toLocaleString()} words covering topics like ${contentStats.keyTopics
@@ -1031,7 +1060,7 @@ const LinkChatModal: React.FC<LinkChatModalProps> = ({
                             >
                               <Avatar
                                 sx={{
-                                  bgcolor: 'white',
+                                  bgcolor: 'background.paper',
                                   mx: 'auto',
                                   mb: 1,
                                 }}
@@ -1058,7 +1087,7 @@ const LinkChatModal: React.FC<LinkChatModalProps> = ({
                             >
                               <Avatar
                                 sx={{
-                                  bgcolor: 'white',
+                                  bgcolor: 'background.paper',
                                   mx: 'auto',
                                   mb: 1,
                                 }}
@@ -1085,7 +1114,7 @@ const LinkChatModal: React.FC<LinkChatModalProps> = ({
                             >
                               <Avatar
                                 sx={{
-                                  bgcolor: 'white',
+                                  bgcolor: 'background.paper',
                                   mx: 'auto',
                                   mb: 1,
                                 }}
@@ -1112,7 +1141,7 @@ const LinkChatModal: React.FC<LinkChatModalProps> = ({
                             >
                               <Avatar
                                 sx={{
-                                  bgcolor: 'white',
+                                  bgcolor: 'background.paper',
                                   mx: 'auto',
                                   mb: 1,
                                 }}
@@ -1227,18 +1256,17 @@ const LinkChatModal: React.FC<LinkChatModalProps> = ({
                       </>
                     )}
                   </Box>
-                </Paper>
+                </Box>
               </Box>
-            </Paper>
+            </Box>
 
-            {/* Chat Panel - RIGHT (40% width) */}
-            <Paper
-              elevation={3}
+            {/* Chat Panel - Chat (Bottom on mobile, Right on desktop) */}
+            <Box
               sx={{
-                flex: 2,
+                flex: { xs: 'none', md: 2 },
+                minHeight: { xs: '60vh', md: 'auto' },
                 display: 'flex',
                 flexDirection: 'column',
-                overflow: 'hidden',
                 border: '2px solid #f44336',
                 borderRadius: 3,
               }}
@@ -1264,7 +1292,6 @@ const LinkChatModal: React.FC<LinkChatModalProps> = ({
                 ref={chatContainerRef}
                 sx={{
                   flex: 1,
-                  overflow: 'auto',
                   p: 2,
                   display: 'flex',
                   flexDirection: 'column',
@@ -1285,7 +1312,7 @@ const LinkChatModal: React.FC<LinkChatModalProps> = ({
                         maxWidth: '80%',
                         p: 2,
                         borderRadius: 2,
-                        bgcolor: message.role === 'user' ? 'transparent' : 'grey.100',
+                        bgcolor: message.role === 'user' ? 'transparent' : 'background.paper',
                         border: message.role === 'user' ? '2px solid' : 'none',
                         borderColor: message.role === 'user' ? 'primary.main' : 'transparent',
                         color: message.role === 'user' ? 'text.primary' : 'text.primary',
@@ -1304,7 +1331,14 @@ const LinkChatModal: React.FC<LinkChatModalProps> = ({
                           {formatUTCToTime(message.timestamp)}
                         </Typography>
                       </Box>
-                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                          overflowWrap: 'break-word',
+                        }}
+                      >
                         {message.content}
                       </Typography>
                       <Box display="flex" justifyContent="flex-end" mt={1}>
@@ -1317,6 +1351,76 @@ const LinkChatModal: React.FC<LinkChatModalProps> = ({
                     </Box>
                   </Box>
                 ))}
+
+                {/* Empty State Placeholder */}
+                {chatHistory.length === 0 && !thinking && !streaming && (
+                  <Box
+                    sx={{
+                      flex: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      textAlign: 'center',
+                      py: 4,
+                      px: 2,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 80,
+                        height: 80,
+                        borderRadius: '50%',
+                        bgcolor: 'background.paper',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        mb: 3,
+                        border: '2px solid #f44336',
+                      }}
+                    >
+                      <AIIcon sx={{ fontSize: 40, color: '#f44336' }} />
+                    </Box>
+                    <Typography variant="h6" fontWeight="bold" color="text.primary" sx={{ mb: 1 }}>
+                      Start a conversation
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      Ask me anything about this link's content
+                    </Typography>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: 1,
+                        justifyContent: 'center',
+                        maxWidth: 300,
+                      }}
+                    >
+                      {[
+                        "What's the main topic?",
+                        'Summarize this content',
+                        'What are the key points?',
+                        'Is this reliable?',
+                      ].map((suggestion, index) => (
+                        <Chip
+                          key={index}
+                          label={suggestion}
+                          size="small"
+                          variant="outlined"
+                          sx={{
+                            borderColor: '#f44336',
+                            color: '#f44336',
+                            '&:hover': {
+                              bgcolor: 'rgba(244, 67, 54, 0.1)',
+                            },
+                            cursor: 'pointer',
+                          }}
+                          onClick={() => setNewMessage(suggestion)}
+                        />
+                      ))}
+                    </Box>
+                  </Box>
+                )}
 
                 {/* Thinking indicator */}
                 {thinking && !streaming && (
@@ -1331,7 +1435,7 @@ const LinkChatModal: React.FC<LinkChatModalProps> = ({
                       sx={{
                         p: 2,
                         borderRadius: 2,
-                        bgcolor: 'grey.100',
+                        bgcolor: 'background.paper',
                         display: 'flex',
                         alignItems: 'center',
                         gap: 1,
@@ -1360,7 +1464,7 @@ const LinkChatModal: React.FC<LinkChatModalProps> = ({
                         maxWidth: '80%',
                         p: 2,
                         borderRadius: 2,
-                        bgcolor: 'grey.100',
+                        bgcolor: 'background.paper',
                         color: 'text.primary',
                       }}
                     >
@@ -1370,7 +1474,14 @@ const LinkChatModal: React.FC<LinkChatModalProps> = ({
                           AI
                         </Typography>
                       </Box>
-                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                          overflowWrap: 'break-word',
+                        }}
+                      >
                         {streamingMessage}
                         <span
                           style={{
@@ -1425,13 +1536,13 @@ const LinkChatModal: React.FC<LinkChatModalProps> = ({
                     disabled={!newMessage.trim() || sending || thinking || streaming}
                     sx={{
                       bgcolor: 'primary.main',
-                      color: 'white',
+                      color: 'primary.contrastText',
                       '&:hover': {
                         bgcolor: 'primary.dark',
                       },
                       '&:disabled': {
-                        bgcolor: 'grey.300',
-                        color: 'grey.500',
+                        bgcolor: 'action.disabled',
+                        color: 'action.disabled',
                       },
                     }}
                   >
@@ -1439,7 +1550,7 @@ const LinkChatModal: React.FC<LinkChatModalProps> = ({
                   </IconButton>
                 </Box>
               </Box>
-            </Paper>
+            </Box>
           </Box>
         </DialogContent>
 

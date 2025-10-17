@@ -22,8 +22,12 @@ import {
   DialogTitle,
   Divider,
   IconButton,
-  Paper,
   Snackbar,
+  Table,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   TextField,
   Tooltip,
   Typography,
@@ -59,6 +63,8 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
   const [message, setMessage] = useState('');
   const [currentContent, setCurrentContent] = useState('');
   const [proposedContent, setProposedContent] = useState<string | null>(null);
+  const [proposedData, setProposedData] = useState<any>(null);
+  const [streamingProposedContent, setStreamingProposedContent] = useState('');
   const [showDiff, setShowDiff] = useState(false);
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -95,20 +101,266 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const renderSpreadsheetData = (processedData: any) => {
+    if (!processedData || !processedData.sheets) {
+      return <Typography>No structured data available</Typography>;
+    }
+
+    const firstSheetName = Object.keys(processedData.sheets)[0];
+    const sheetData = processedData.sheets[firstSheetName];
+
+    if (!sheetData || !Array.isArray(sheetData) || sheetData.length === 0) {
+      return <Typography>No data available in spreadsheet</Typography>;
+    }
+
+    // Generate column headers A-Z
+    const columnHeaders = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
+
+    // Debug logging
+    console.log('Column headers:', columnHeaders);
+    console.log('Sheet data:', sheetData);
+
+    // Ensure we have at least 15 rows
+    const minRows = 15;
+    const actualRows = Math.max(sheetData.length, minRows);
+
+    // Create a grid with proper Excel-like structure
+    const createExcelGrid = () => {
+      const rows = [];
+
+      // Create header row with column letters
+      const headerRow = (
+        <TableRow key="header">
+          <TableCell
+            sx={{
+              width: '40px',
+              minWidth: '40px',
+              backgroundColor: theme =>
+                theme.palette.mode === 'dark'
+                  ? 'rgba(33, 150, 243, 0.2)'
+                  : 'rgba(33, 150, 243, 0.4)',
+              color: 'text.primary',
+              border: '1px solid #f44336',
+              fontWeight: 'bold',
+              textAlign: 'center',
+              fontSize: '12px',
+            }}
+          >
+            {/* Empty cell for row numbers column */}
+          </TableCell>
+          {columnHeaders.map(col => (
+            <TableCell
+              key={col}
+              sx={{
+                width: '80px',
+                minWidth: '80px',
+                backgroundColor: theme =>
+                  theme.palette.mode === 'dark'
+                    ? 'rgba(33, 150, 243, 0.2)'
+                    : 'rgba(33, 150, 243, 0.4)',
+                color: 'text.primary',
+                border: '1px solid #f44336',
+                fontWeight: 'bold',
+                textAlign: 'center',
+                fontSize: '12px',
+              }}
+            >
+              {col}
+            </TableCell>
+          ))}
+        </TableRow>
+      );
+      rows.push(headerRow);
+
+      // Create data rows
+      for (let rowIndex = 0; rowIndex < actualRows; rowIndex++) {
+        const rowData = sheetData[rowIndex] || [];
+        const rowNumber = rowIndex + 1;
+
+        const dataRow = (
+          <TableRow key={rowIndex}>
+            {/* Row number cell */}
+            <TableCell
+              sx={{
+                width: '40px',
+                minWidth: '40px',
+                backgroundColor: theme =>
+                  theme.palette.mode === 'dark'
+                    ? 'rgba(33, 150, 243, 0.15)'
+                    : 'rgba(33, 150, 243, 0.3)',
+                color: 'text.primary',
+                border: '1px solid #f44336',
+                fontWeight: 'bold',
+                textAlign: 'center',
+                fontSize: '12px',
+              }}
+            >
+              {rowNumber}
+            </TableCell>
+
+            {/* Data cells A-Z */}
+            {columnHeaders.map((_, colIndex) => {
+              const cellValue = rowData[colIndex];
+              return (
+                <TableCell
+                  key={`${rowIndex}-${colIndex}`}
+                  sx={{
+                    width: '80px',
+                    minWidth: '80px',
+                    color: 'text.primary',
+                    border: '1px solid #f44336',
+                    backgroundColor: theme =>
+                      theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.02)' : 'transparent',
+                    fontSize: '12px',
+                    padding: '4px 8px',
+                    textAlign: cellValue && typeof cellValue === 'number' ? 'right' : 'left',
+                  }}
+                >
+                  {cellValue !== null && cellValue !== undefined ? String(cellValue) : ''}
+                </TableCell>
+              );
+            })}
+          </TableRow>
+        );
+        rows.push(dataRow);
+      }
+
+      return rows;
+    };
+
+    return (
+      <TableContainer
+        sx={{
+          maxHeight: '100%',
+          overflow: 'auto',
+          width: '100%',
+          minWidth: '100%',
+        }}
+      >
+        <Table
+          size="small"
+          sx={{
+            borderCollapse: 'separate',
+            borderSpacing: 0,
+            width: '100%',
+            minWidth: `${40 + 26 * 80}px`, // Row header + 26 columns
+            '& .MuiTableCell-root': {
+              border: '1px solid #f44336',
+              padding: '4px 8px',
+            },
+          }}
+        >
+          <TableHead>{createExcelGrid()}</TableHead>
+        </Table>
+      </TableContainer>
+    );
+  };
+
+  const clearProposedChanges = () => {
+    setProposedContent(null);
+    setProposedData(null);
+    setStreamingProposedContent('');
+  };
+
+  const parseProposedContent = (content: string) => {
+    try {
+      // Try to parse as JSON first (if AI returns structured data)
+      const parsed = JSON.parse(content);
+      if (parsed && typeof parsed === 'object') {
+        return parsed;
+      }
+    } catch (e) {
+      // If not JSON, try to parse as CSV/table format
+      const lines = content.split('\n').filter(line => line.trim());
+      if (lines.length === 0) return null;
+
+      // Parse CSV-like format
+      const rows = lines.map(line => {
+        // Split by comma, but handle quoted values
+        const values = line.split(',').map(val => val.trim().replace(/^"|"$/g, ''));
+        return values;
+      });
+
+      // Create structured data similar to processed_data format
+      const firstSheetName = 'Sheet1';
+      return {
+        sheets: {
+          [firstSheetName]: rows,
+        },
+      };
+    }
+    return null;
+  };
+
+  const renderPreviewContent = () => {
+    // Check for streaming proposed content first
+    if (streamingProposedContent) {
+      const parsedData = parseProposedContent(streamingProposedContent);
+      if (parsedData) {
+        return renderSpreadsheetData(parsedData);
+      }
+    }
+
+    if (proposedData) {
+      return renderSpreadsheetData(proposedData);
+    }
+
+    if (proposedContent) {
+      // Try to parse the proposed content and show as table
+      const parsedData = parseProposedContent(proposedContent);
+      if (parsedData) {
+        return renderSpreadsheetData(parsedData);
+      }
+      // Fallback to text if parsing fails
+      return (
+        <Typography sx={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
+          {proposedContent}
+        </Typography>
+      );
+    }
+
+    if (selectedFile?.processed_data) {
+      return renderSpreadsheetData(selectedFile.processed_data);
+    }
+
+    if (currentContent) {
+      return (
+        <Typography sx={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
+          {currentContent}
+        </Typography>
+      );
+    }
+
+    return <Typography>No content yet...</Typography>;
+  };
+
   const initializeSession = async () => {
     if (!selectedFile) return;
 
     try {
       setLoading(true);
-      const newSession = await fileCompletionChatService.startSession(
-        parseInt(selectedFile.id, 10)
-      );
+
+      console.log('Selected file for session initialization:', selectedFile);
+      console.log('Selected file ID:', selectedFile.id);
+      console.log('Selected file ID type:', typeof selectedFile.id);
+
+      // Ensure file ID is a valid number
+      const fileId = parseInt(selectedFile.id, 10);
+      if (isNaN(fileId)) {
+        throw new Error(`Invalid file ID: ${selectedFile.id}`);
+      }
+
+      console.log('Starting session for file ID:', fileId);
+      const newSession = await fileCompletionChatService.startSession(fileId);
       setSession(newSession);
       setCurrentContent(newSession.current_content || '');
       setError(null);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to start session');
+      const errorMessage = err.response?.data?.detail || err.message || 'Failed to start session';
+      setError(errorMessage);
       console.error('Error starting session:', err);
+      console.error('Selected file:', selectedFile);
+      console.error('File ID:', selectedFile?.id);
     } finally {
       setLoading(false);
     }
@@ -154,6 +406,13 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
       // If AI proposed changes, show them
       if (response.proposed_changes.preview_available && response.proposed_changes.new_content) {
         setProposedContent(response.proposed_changes.new_content);
+
+        // Try to parse the proposed content as structured data
+        const parsedData = parseProposedContent(response.proposed_changes.new_content);
+        if (parsedData) {
+          setProposedData(parsedData);
+        }
+
         setSnackbar({
           open: true,
           message: 'AI has proposed changes. Review and apply them!',
@@ -179,6 +438,8 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
       setSession(updatedSession);
       setCurrentContent(updatedSession.current_content || '');
       setProposedContent(null);
+      setProposedData(null);
+      setStreamingProposedContent('');
       setShowDiff(false);
 
       setSnackbar({
@@ -250,15 +511,16 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
         fullWidth
         PaperProps={{
           sx: {
-            height: '90vh',
-            border: theme => `3px solid ${theme.palette.mode === 'dark' ? '#d32f2f' : '#d32f2f'}`,
+            border: '3px solid #f44336',
             borderRadius: 4,
           },
         }}
       >
         <DialogTitle
           sx={{
-            borderBottom: theme => `3px solid ${theme.palette.mode === 'dark' ? '#d32f2f' : '#d32f2f'}`,
+            bgcolor: 'background.paper',
+            borderBottom: theme =>
+              `3px solid ${theme.palette.mode === 'dark' ? '#d32f2f' : '#d32f2f'}`,
             p: 2,
           }}
         >
@@ -311,7 +573,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
           </Box>
         </DialogTitle>
 
-        <DialogContent sx={{ p: 0, height: '100%' }}>
+        <DialogContent sx={{ p: 0, height: '100%', bgcolor: 'background.default' }}>
           {loading ? (
             <Box
               sx={{
@@ -333,34 +595,45 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
                 p: 4,
               }}
             >
-              <Alert severity="error">{error}</Alert>
+              <Alert severity="error">{error || 'An error occurred'}</Alert>
             </Box>
           ) : (
             <Box
               sx={{
                 height: '100%',
                 display: 'flex',
+                flexDirection: { xs: 'column', md: 'row' },
                 gap: 2,
                 p: 2,
+                minHeight: { xs: '600px', md: 'auto' }, // Ensure minimum height on mobile
               }}
             >
-              {/* Preview Panel - NOW ON LEFT (60% width) */}
-              <Paper
-                elevation={3}
+              {/* Preview Panel - Responsive width */}
+              <Box
                 sx={{
-                  flex: 3,
+                  flex: { xs: 'none', md: 3 },
+                  width: { xs: '100%', md: 'auto' },
+                  height: { xs: '50%', md: 'auto' },
+                  minHeight: { xs: '300px', md: 'auto' }, // Ensure minimum height on mobile
                   display: 'flex',
                   flexDirection: 'column',
-                  overflow: 'hidden',
+                  overflow: 'auto',
                   border: '2px solid #f44336',
                   borderRadius: 3,
+                  bgcolor: theme =>
+                    theme.palette.mode === 'dark'
+                      ? 'rgba(33, 150, 243, 0.1)'
+                      : 'rgba(33, 150, 243, 0.05)',
                 }}
               >
                 <Box
                   sx={{
                     p: 2,
-                    bgcolor: 'background.default',
                     borderBottom: '3px solid #f44336',
+                    backgroundColor: theme =>
+                      theme.palette.mode === 'dark'
+                        ? 'rgba(33, 150, 243, 0.1)'
+                        : 'rgba(33, 150, 243, 0.05)',
                   }}
                 >
                   <Box display="flex" justifyContent="space-between" alignItems="center">
@@ -384,11 +657,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
                           >
                             Apply Changes
                           </Button>
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            onClick={() => setProposedContent(null)}
-                          >
+                          <Button variant="outlined" size="small" onClick={clearProposedChanges}>
                             Discard
                           </Button>
                         </>
@@ -404,32 +673,41 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
                     </Box>
                   </Box>
                 </Box>
-                <Box sx={{ flex: 1, overflowY: 'auto', p: 2, bgcolor: 'grey.50' }}>
-                  <Paper
-                    elevation={0}
+                <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
+                  <Box
                     sx={{
                       p: 2,
-                      bgcolor: 'white',
+                      color: 'text.primary',
                       fontFamily: 'monospace',
                       whiteSpace: 'pre-wrap',
                       wordBreak: 'break-word',
+                      minWidth: 'fit-content',
+                      backgroundColor: theme =>
+                        theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.02)' : 'transparent',
+                      borderRadius: 1,
                     }}
                   >
-                    {proposedContent || currentContent || 'No content yet...'}
-                  </Paper>
+                    {renderPreviewContent()}
+                  </Box>
                 </Box>
-              </Paper>
+              </Box>
 
-              {/* Chat Panel - NOW ON RIGHT (40% width) */}
-              <Paper
-                elevation={3}
+              {/* Chat Panel - Responsive width */}
+              <Box
                 sx={{
-                  flex: 2,
+                  flex: { xs: 'none', md: 2 },
+                  width: { xs: '100%', md: 'auto' },
+                  height: { xs: '50%', md: 'auto' },
+                  minHeight: { xs: '300px', md: 'auto' }, // Ensure minimum height on mobile
                   display: 'flex',
                   flexDirection: 'column',
                   overflow: 'hidden',
                   border: '2px solid #f44336',
                   borderRadius: 3,
+                  bgcolor: theme =>
+                    theme.palette.mode === 'dark'
+                      ? 'rgba(33, 150, 243, 0.1)'
+                      : 'rgba(33, 150, 243, 0.05)',
                 }}
               >
                 {/* Chat Messages */}
@@ -472,13 +750,20 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
                           <AIIcon fontSize="small" />
                         )}
                       </Box>
-                      <Paper
-                        elevation={1}
+                      <Box
                         sx={{
                           p: 2,
                           maxWidth: '75%',
-                          bgcolor: msg.role === 'user' ? 'primary.light' : 'background.paper',
+                          bgcolor:
+                            msg.role === 'user'
+                              ? 'primary.main'
+                              : theme =>
+                                  theme.palette.mode === 'dark'
+                                    ? 'rgba(33, 150, 243, 0.2)'
+                                    : 'rgba(33, 150, 243, 0.1)',
                           color: msg.role === 'user' ? 'primary.contrastText' : 'text.primary',
+                          borderRadius: 2,
+                          border: '1px solid #f44336',
                         }}
                       >
                         <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
@@ -490,7 +775,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
                         >
                           {formatUTCToTime(msg.timestamp)}
                         </Typography>
-                      </Paper>
+                      </Box>
                       {msg.role === 'assistant' && (
                         <Tooltip title="Copy">
                           <IconButton size="small" onClick={() => copyToClipboard(msg.content)}>
@@ -512,7 +797,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
                 </Box>
 
                 {/* Input Area */}
-                <Divider />
+                <Divider sx={{ borderColor: 'white' }} />
                 <Box sx={{ p: 2 }}>
                   <Box display="flex" gap={1} mb={1}>
                     <TextField
@@ -659,7 +944,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
                     />
                   </Box>
                 </Box>
-              </Paper>
+              </Box>
             </Box>
           )}
         </DialogContent>
