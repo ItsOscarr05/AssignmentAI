@@ -310,7 +310,12 @@ async def generate_content(
                 logger.error(f"Diagram generation failed: {str(e)}")
                 logger.info("Falling back to general AI service...")
                 # Fallback to general AI
-                content = await ai_service.generate_assignment_content_from_prompt(prompt)
+                content = await ai_service.generate_assignment_content_from_prompt(
+                    prompt, 
+                    user_id=current_user.id, 
+                    feature='diagram_fallback', 
+                    action='generate'
+                )
                 logger.info(f"General AI fallback completed. Content length: {len(content)} characters")
                 return {
                     "content": content,
@@ -340,7 +345,12 @@ async def generate_content(
             # Route to AI service with code generation focus
             logger.info("Routing to AI service for code generation...")
             code_prompt = f"Generate code for the following request: {prompt}\n\nPlease provide complete, working code with comments and explanations."
-            content = await ai_service.generate_assignment_content_from_prompt(code_prompt)
+            content = await ai_service.generate_assignment_content_from_prompt(
+                code_prompt, 
+                user_id=current_user.id, 
+                feature='code_generation', 
+                action='generate'
+            )
             logger.info(f"Code generation completed. Content length: {len(content)} characters")
             return {
                 "content": content,
@@ -354,7 +364,12 @@ async def generate_content(
             # Route to AI service with math focus
             logger.info("Routing to AI service for math solving...")
             math_prompt = f"Solve this mathematical problem step by step: {prompt}\n\nPlease show your work and explain each step."
-            content = await ai_service.generate_assignment_content_from_prompt(math_prompt)
+            content = await ai_service.generate_assignment_content_from_prompt(
+                math_prompt, 
+                user_id=current_user.id, 
+                feature='math_solving', 
+                action='solve'
+            )
             logger.info(f"Math solving completed. Content length: {len(content)} characters")
             return {
                 "content": content,
@@ -387,14 +402,37 @@ async def generate_content(
                         try:
                             logger.info("Starting streaming generation...")
                             chunk_count = 0
+                            full_response = ""
                             async for chunk in ai_service.generate_chat_response_stream(prompt, conversation_history, current_user.id):
                                 chunk_count += 1
+                                full_response += chunk
                                 # Log chunk info without full content to avoid Unicode issues
                                 chunk_preview = chunk[:100].replace('\n', ' ').replace('\r', ' ') if chunk else ""
                                 logger.info(f"Yielding chunk {chunk_count} ({len(chunk)} chars): {chunk_preview}...")
                                 # Format chunk as Server-Sent Events
                                 yield f"data: {json.dumps({'content': chunk, 'done': False})}\n\n"
                             logger.info(f"Streaming completed. Total chunks: {chunk_count}")
+                            
+                            # Track token usage after streaming completes
+                            try:
+                                # Estimate tokens based on prompt and response
+                                estimated_tokens = len(prompt.split()) + len(full_response.split())
+                                await ai_service.track_token_usage(
+                                    user_id=current_user.id,
+                                    feature='workshop_chat',
+                                    action='streaming_response',
+                                    tokens_used=estimated_tokens,
+                                    metadata={
+                                        'prompt_length': len(prompt),
+                                        'response_length': len(full_response),
+                                        'conversation_length': len(conversation_history) if conversation_history else 0,
+                                        'model': await ai_service.get_user_model(current_user.id)
+                                    }
+                                )
+                                logger.info(f"Token usage tracked: {estimated_tokens} tokens for streaming chat")
+                            except Exception as e:
+                                logger.error(f"Failed to track token usage for streaming chat: {str(e)}")
+                            
                             # Send final completion signal
                             yield f"data: {json.dumps({'content': '', 'done': True, 'timestamp': datetime.utcnow().isoformat(), 'service_used': 'gpt_chat_stream'})}\n\n"
                         except Exception as e:
@@ -422,7 +460,12 @@ async def generate_content(
                     }
             else:
                 logger.info("Detected assignment request, using assignment-focused AI...")
-                content = await ai_service.generate_assignment_content_from_prompt(prompt)
+                content = await ai_service.generate_assignment_content_from_prompt(
+                    prompt, 
+                    user_id=current_user.id, 
+                    feature='workshop_assignment', 
+                    action='generate'
+                )
                 logger.info(f"Assignment generation completed. Content length: {len(content)} characters")
                 return {
                     "content": content,
@@ -708,7 +751,13 @@ async def upload_and_process_file(
                     logger.error(f"Token enforcement failed for user {current_user.id}: {str(e)}")
                     analysis = f"Unable to verify token limits. Please contact support."
                 else:
-                    analysis = await ai_service.generate_assignment_content_from_prompt(analysis_prompt)
+                    analysis = await ai_service.generate_assignment_content_from_prompt(
+                        analysis_prompt, 
+                        user_id=current_user.id, 
+                        feature='file_upload_analysis', 
+                        action='analyze_content'
+                    )
+                    
                 logger.info(f"AI analysis completed successfully, length: {len(analysis)}")
                 logger.info(f"Analysis preview (first 200 chars): {analysis[:200]}...")
             except Exception as e:
@@ -1000,7 +1049,13 @@ async def process_uploaded_file(
             logger.error(f"Token enforcement failed for user {current_user.id}: {str(e)}")
             result = f"Unable to verify token limits. Please contact support."
         else:
-            result = await ai_service.generate_assignment_content_from_prompt(prompt)
+            result = await ai_service.generate_assignment_content_from_prompt(
+                prompt, 
+                user_id=current_user.id, 
+                feature='file_processing', 
+                action=action
+            )
+                
         logger.info(f"AI processing completed. Result length: {len(result)}")
         logger.info("=== WORKSHOP FILES/PROCESS ENDPOINT COMPLETED SUCCESSFULLY ===")
         
@@ -1050,7 +1105,12 @@ async def process_link(
                 estimated_tokens = len(analysis_prompt.split()) * 2  # Rough estimate
                 await ai_service.enforce_token_limit(current_user.id, estimated_tokens)
                 logger.info(f"Token limit check passed for user {current_user.id}")
-                analysis = await ai_service.generate_assignment_content_from_prompt(analysis_prompt)
+                analysis = await ai_service.generate_assignment_content_from_prompt(
+                    analysis_prompt, 
+                    user_id=current_user.id, 
+                    feature='link_analysis', 
+                    action='analyze'
+                )
             except HTTPException as e:
                 logger.warning(f"Token limit exceeded for user {current_user.id}: {e.detail}")
                 analysis = f"Token limit exceeded. {e.detail}"
@@ -1058,21 +1118,6 @@ async def process_link(
                 logger.error(f"Token enforcement failed for user {current_user.id}: {str(e)}")
                 analysis = f"Unable to verify token limits. Please contact support."
             logger.info(f"AI analysis completed. Analysis length: {len(analysis)}")
-            
-            # Track token usage for link processing
-            estimated_tokens = len(analysis_prompt.split()) + len(analysis.split())
-            await ai_service.track_token_usage(
-                user_id=current_user.id,
-                feature='link_analysis',
-                action='process',
-                tokens_used=estimated_tokens,
-                metadata={
-                    'url': url,
-                    'content_length': len(result['content']),
-                    'title': result['title']
-                }
-            )
-            logger.info(f"Token usage tracked: {estimated_tokens} tokens for link processing")
             
             # Create file upload record for link
             try:

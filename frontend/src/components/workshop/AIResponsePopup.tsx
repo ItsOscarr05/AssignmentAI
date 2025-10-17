@@ -431,6 +431,11 @@ const AIResponsePopup: React.FC<AIResponsePopupProps> = ({
     // Clear workshop history from store
     console.log('Clearing workshop history from store on popup close');
     clearHistory();
+    // Reset chat messages state
+    setChatMessages([]);
+    // Reset other states
+    setAnimatedScore(0);
+    setClearChatRef(null);
     onClose();
   };
 

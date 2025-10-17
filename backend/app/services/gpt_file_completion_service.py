@@ -45,7 +45,7 @@ class GPTFileCompletionService:
         """
         try:
             # Get user's subscription model
-            model = self.ai_service.get_user_model(user_id)
+            model = await self.ai_service.get_user_model(user_id)
             logger.info(f"Completing {file_type} file for user {user_id} using model {model}")
             
             # Route to appropriate completion method
@@ -199,7 +199,7 @@ ORIGINAL DOCUMENT:
 COMPLETED DOCUMENT (return the full document with all blanks filled):"""
 
             # Get user's AI settings for token limits
-            user_plan = self.ai_service.get_user_plan(user_id)
+            user_plan = await self.ai_service.get_user_plan(user_id)
             from app.core.validation import get_subscription_token_limit
             max_tokens = min(get_subscription_token_limit(user_plan), 16000)  # Cap at 16K for response
             
@@ -284,7 +284,7 @@ ORIGINAL SPREADSHEET:
 COMPLETED SPREADSHEET (provide filled data, calculated values, and any analyses):"""
 
             # Get token limit
-            user_plan = self.ai_service.get_user_plan(user_id)
+            user_plan = await self.ai_service.get_user_plan(user_id)
             from app.core.validation import get_subscription_token_limit
             max_tokens = min(get_subscription_token_limit(user_plan), 16000)
             
@@ -377,7 +377,7 @@ ORIGINAL CODE:
 COMPLETED CODE (return only the code, no explanations):"""
 
             # Get token limit
-            user_plan = self.ai_service.get_user_plan(user_id)
+            user_plan = await self.ai_service.get_user_plan(user_id)
             from app.core.validation import get_subscription_token_limit
             max_tokens = min(get_subscription_token_limit(user_plan), 16000)
             
@@ -463,7 +463,7 @@ ORIGINAL DATA:
 COMPLETED DATA (return valid {file_type.upper()}):"""
 
             # Get token limit
-            user_plan = self.ai_service.get_user_plan(user_id)
+            user_plan = await self.ai_service.get_user_plan(user_id)
             from app.core.validation import get_subscription_token_limit
             max_tokens = min(get_subscription_token_limit(user_plan), 16000)
             
