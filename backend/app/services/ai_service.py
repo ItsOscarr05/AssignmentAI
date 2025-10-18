@@ -63,7 +63,7 @@ class AIService:
         subscription = result.scalar_one_or_none()
         
         if not subscription:
-            return "gpt-4o-mini"  # Default model for users without subscription (Free plan model)
+            return "gpt-5-nano"  # Default model for users without subscription (Free plan model)
         
         return str(subscription.ai_model)
 
@@ -587,7 +587,7 @@ class AIService:
         """
         try:
             # Get user's subscription model
-            user_model = await self.get_user_model(user_id) if user_id else "gpt-4o-mini"
+            user_model = await self.get_user_model(user_id) if user_id else "gpt-5-nano"
             logger.info(f"Using user model for chat: {user_model}")
             
             # Prepare conversation messages
@@ -694,7 +694,7 @@ class AIService:
         """
         try:
             # Get user's subscription model
-            user_model = await self.get_user_model(user_id) if user_id else "gpt-4o-mini"
+            user_model = await self.get_user_model(user_id) if user_id else "gpt-5-nano"
             logger.info(f"Using streaming with user model: {user_model}")
             
             # Prepare conversation messages
@@ -785,7 +785,7 @@ class AIService:
         """
         try:
             # Get user's subscription model for fallback too
-            user_model = await self.get_user_model(user_id) if user_id else "gpt-4o-mini"
+            user_model = await self.get_user_model(user_id) if user_id else "gpt-5-nano"
             logger.info(f"Using fallback method with user model: {user_model}")
             
             # Construct a system prompt for general chat/conversation

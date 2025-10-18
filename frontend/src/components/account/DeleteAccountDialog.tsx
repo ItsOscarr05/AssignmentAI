@@ -127,6 +127,9 @@ const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({
             '& .MuiAlert-icon': {
               color: theme => (theme.palette.mode === 'dark' ? 'white' : undefined),
             },
+            border: '2.5px solid',
+            borderColor: theme =>
+              theme.palette.mode === 'dark' ? 'rgba(211, 47, 47, 0.3)' : 'rgba(211, 47, 47, 0.2)',
           }}
         >
           <Typography
@@ -276,6 +279,9 @@ const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({
             '& .MuiAlert-icon': {
               color: theme => (theme.palette.mode === 'dark' ? 'white' : undefined),
             },
+            border: '2.5px solid',
+            borderColor: theme =>
+              theme.palette.mode === 'dark' ? 'rgba(211, 47, 47, 0.3)' : 'rgba(211, 47, 47, 0.2)',
           }}
         >
           <Typography variant="caption">

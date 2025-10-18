@@ -3,6 +3,7 @@ import {
   CelebrationOutlined,
   CheckCircleOutlined,
   Close,
+  EmojiEventsOutlined,
   LibraryBooksOutlined,
   Refresh,
   StorageOutlined,
@@ -780,9 +781,16 @@ const AccountInformationDialog: React.FC<AccountInformationDialogProps> = ({
               <Typography
                 variant="subtitle2"
                 gutterBottom
-                sx={{ color: theme.palette.primary.main, mb: 2 }}
+                sx={{
+                  color: theme.palette.primary.main,
+                  mb: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                }}
               >
-                🏆 Achievements
+                <EmojiEventsOutlined sx={{ fontSize: 20 }} />
+                Achievements
               </Typography>
               <Box
                 sx={{
@@ -794,10 +802,23 @@ const AccountInformationDialog: React.FC<AccountInformationDialogProps> = ({
                   textAlign: 'center',
                 }}
               >
-                <Typography variant="h6" color="warning.main" gutterBottom>
-                  {userData?.created_at && calculateDaysSinceCreation(userData.created_at) > 30
-                    ? '🎯 Veteran User'
-                    : '🚀 Active User'}
+                <Typography
+                  variant="h6"
+                  color="warning.main"
+                  gutterBottom
+                  sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}
+                >
+                  {userData?.created_at && calculateDaysSinceCreation(userData.created_at) > 30 ? (
+                    <>
+                      <VerifiedUserOutlined sx={{ fontSize: 24 }} />
+                      Veteran User
+                    </>
+                  ) : (
+                    <>
+                      <TrendingUpOutlined sx={{ fontSize: 24 }} />
+                      Active User
+                    </>
+                  )}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   {userData?.created_at && calculateDaysSinceCreation(userData.created_at) > 30

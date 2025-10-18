@@ -63,7 +63,7 @@ export interface WorkshopState {
   saveContent: (content: string) => Promise<void>;
   addFile: (file: globalThis.File) => Promise<void>;
   deleteFile: (id: string) => Promise<void>;
-  addLink: (link: Omit<Link, 'id'>) => Promise<void>;
+  addLink: (link: Omit<Link, 'id'>) => Promise<Link>;
   deleteLink: (id: string) => Promise<void>;
   deleteHistoryItem: (id: string) => Promise<void>;
   clearHistory: () => void;
@@ -384,7 +384,7 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
         databaseId: fileData.file_upload_id,
         fileName: fileData.name,
         rawFileData: fileData,
-        completedFile
+        completedFile,
       });
 
       set(state => {
@@ -496,7 +496,7 @@ export const useWorkshopStore = create<WorkshopState>(set => ({
           isLoading: false,
         });
       }
-      return null;
+      throw error;
     }
   },
 

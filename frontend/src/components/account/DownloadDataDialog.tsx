@@ -358,6 +358,9 @@ const DownloadDataDialog: React.FC<DownloadDataDialogProps> = ({
             '& .MuiAlert-icon': {
               color: theme => (theme.palette.mode === 'dark' ? 'white' : undefined),
             },
+            border: '2.5px solid',
+            borderColor: theme =>
+              theme.palette.mode === 'dark' ? 'rgba(25, 118, 210, 0.3)' : 'rgba(25, 118, 210, 0.2)',
           }}
         >
           <Typography variant="caption">

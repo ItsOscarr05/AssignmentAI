@@ -74,8 +74,7 @@ const CustomTooltip: React.FC<TooltipProps<number, string>> = ({ active, payload
 const DashboardPieChart: React.FC<DashboardPieChartProps> = ({ data, distributionFilter }) => {
   const navigate = useNavigate();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isLargeScreen = useMediaQuery(theme.breakpoints.up('lg'));
+  const isTallScreen = useMediaQuery('(max-height: 600px) and (max-width: 480px)');
 
   const handlePieClick = (payload: any) => {
     if (payload && payload.name && payload.name !== 'No Subjects') {
@@ -93,11 +92,11 @@ const DashboardPieChart: React.FC<DashboardPieChartProps> = ({ data, distributio
       <PieChart>
         <text
           x="50%"
-          y="45%"
+          y="40%"
           textAnchor="middle"
           dominantBaseline="middle"
           style={{
-            fontSize: isMobile ? '18px' : isLargeScreen ? '32px' : '28px',
+            fontSize: isTallScreen ? '14px' : '24px',
             fontWeight: 'bold',
             fill: theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
           }}
@@ -106,11 +105,11 @@ const DashboardPieChart: React.FC<DashboardPieChartProps> = ({ data, distributio
         </text>
         <text
           x="50%"
-          y="55%"
+          y="60%"
           textAnchor="middle"
           dominantBaseline="middle"
           style={{
-            fontSize: isMobile ? '20px' : isLargeScreen ? '36px' : '28px',
+            fontSize: isTallScreen ? '16px' : '32px',
             fontWeight: 'bold',
             fill: theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
           }}

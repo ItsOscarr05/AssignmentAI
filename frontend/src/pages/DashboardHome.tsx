@@ -908,15 +908,24 @@ const DashboardHome: React.FC = () => {
                                     sx={{
                                       color: '#1976D2',
                                       minWidth: 'auto',
-                                      px: { xs: 0.25, md: 0.5 },
+                                      px: { xs: 0.25, sm: 0.5 },
                                       py: 0.25,
                                       fontSize: '0.75rem',
                                       whiteSpace: 'nowrap',
                                     }}
                                     onClick={() => handleEditSubject(activity.id)}
                                   >
-                                    <EditIcon sx={{ fontSize: 16, mr: { xs: 0, md: 0.25 } }} />
-                                    <Box sx={{ display: { xs: 'none', md: 'inline' } }}>
+                                    <EditIcon sx={{ fontSize: 16, mr: { xs: 0, sm: 0.25 } }} />
+                                    <Box
+                                      sx={{
+                                        display: {
+                                          xs: 'none',
+                                          sm: 'inline',
+                                          '@media (max-height: 600px) and (max-width: 480px)':
+                                            'none', // Hide on phones (tall aspect ratio)
+                                        },
+                                      }}
+                                    >
                                       Edit Subject
                                     </Box>
                                   </Button>
@@ -927,7 +936,7 @@ const DashboardHome: React.FC = () => {
                                     sx={{
                                       color: '#009688',
                                       minWidth: 'auto',
-                                      px: { xs: 0.25, md: 0.5 },
+                                      px: { xs: 0.25, sm: 0.5 },
                                       py: 0.25,
                                       fontSize: '0.75rem',
                                       whiteSpace: 'nowrap',
@@ -935,9 +944,18 @@ const DashboardHome: React.FC = () => {
                                     onClick={() => handleViewCompletedFile(activity.id)}
                                   >
                                     <VisibilityOutlinedIcon
-                                      sx={{ fontSize: 16, mr: { xs: 0, md: 0.25 } }}
+                                      sx={{ fontSize: 16, mr: { xs: 0, sm: 0.25 } }}
                                     />
-                                    <Box sx={{ display: { xs: 'none', md: 'inline' } }}>
+                                    <Box
+                                      sx={{
+                                        display: {
+                                          xs: 'none',
+                                          sm: 'inline',
+                                          '@media (max-height: 600px) and (max-width: 480px)':
+                                            'none', // Hide on phones (tall aspect ratio)
+                                        },
+                                      }}
+                                    >
                                       View File
                                     </Box>
                                   </Button>
@@ -948,7 +966,7 @@ const DashboardHome: React.FC = () => {
                                     sx={{
                                       color: '#f44336',
                                       minWidth: 'auto',
-                                      px: { xs: 0.25, md: 0.5 },
+                                      px: { xs: 0.25, sm: 0.5 },
                                       py: 0.25,
                                       fontSize: '0.75rem',
                                       whiteSpace: 'nowrap',
@@ -956,9 +974,20 @@ const DashboardHome: React.FC = () => {
                                     onClick={() => handleDeleteClick(activity.id)}
                                   >
                                     <DeleteOutlinedIcon
-                                      sx={{ fontSize: 16, mr: { xs: 0, md: 0.25 } }}
+                                      sx={{ fontSize: 16, mr: { xs: 0, sm: 0.25 } }}
                                     />
-                                    <Box sx={{ display: { xs: 'none', md: 'inline' } }}>Delete</Box>
+                                    <Box
+                                      sx={{
+                                        display: {
+                                          xs: 'none',
+                                          sm: 'inline',
+                                          '@media (max-height: 600px) and (max-width: 480px)':
+                                            'none', // Hide on phones (tall aspect ratio)
+                                        },
+                                      }}
+                                    >
+                                      Delete
+                                    </Box>
                                   </Button>
                                 </Tooltip>
                               </>
