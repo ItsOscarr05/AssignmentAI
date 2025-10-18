@@ -284,7 +284,7 @@ ORIGINAL SPREADSHEET:
 COMPLETED SPREADSHEET (provide filled data, calculated values, and any analyses):"""
 
             # Get token limit
-            user_plan = self.ai_service.get_user_plan(user_id)
+            user_plan = await self.ai_service.get_user_plan(user_id)
             from app.core.validation import get_subscription_token_limit
             max_tokens = min(get_subscription_token_limit(user_plan), 16000)
             
@@ -377,7 +377,7 @@ ORIGINAL CODE:
 COMPLETED CODE (return only the code, no explanations):"""
 
             # Get token limit
-            user_plan = self.ai_service.get_user_plan(user_id)
+            user_plan = await self.ai_service.get_user_plan(user_id)
             from app.core.validation import get_subscription_token_limit
             max_tokens = min(get_subscription_token_limit(user_plan), 16000)
             
@@ -463,7 +463,7 @@ ORIGINAL DATA:
 COMPLETED DATA (return valid {file_type.upper()}):"""
 
             # Get token limit
-            user_plan = self.ai_service.get_user_plan(user_id)
+            user_plan = await self.ai_service.get_user_plan(user_id)
             from app.core.validation import get_subscription_token_limit
             max_tokens = min(get_subscription_token_limit(user_plan), 16000)
             

@@ -61,8 +61,8 @@ const DetailedFeatureComparison: React.FC<DetailedFeatureComparisonProps> = ({
       <Box
         onClick={e => e.stopPropagation()}
         sx={{
-          width: { xs: '95vw', md: '80vw' },
-          maxWidth: { xs: '95vw', md: '1200px' },
+          width: { xs: '90vw', md: '80vw' },
+          maxWidth: { xs: '90vw', md: '1200px' },
           maxHeight: { xs: '90vh', md: '80vh' },
           backgroundColor: theme =>
             theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
@@ -70,11 +70,12 @@ const DetailedFeatureComparison: React.FC<DetailedFeatureComparisonProps> = ({
           position: 'relative',
           pt: { xs: 2, md: 3 },
           pb: { xs: 2, md: 3 },
-          pl: { xs: 2, md: 3 },
-          pr: 0,
+          pl: { xs: 1, md: 3 },
+          pr: { xs: 1, md: 0 },
           display: 'flex',
           flexDirection: 'column',
           border: '2px solid red',
+          mx: 'auto', // Center the popup horizontally
         }}
       >
         <IconButton
@@ -98,11 +99,11 @@ const DetailedFeatureComparison: React.FC<DetailedFeatureComparisonProps> = ({
             sx={{
               display: 'grid',
               gridTemplateColumns:
-                'minmax(220px, 1.5fr) repeat(' + plansWithCurrentPlan.length + ', 1fr)',
+                'minmax(180px, 1.5fr) repeat(' + plansWithCurrentPlan.length + ', minmax(80px, 1fr))',
               alignItems: 'center',
               fontWeight: 700,
               mb: 2,
-              px: 2,
+              px: { xs: 1, md: 2 },
               py: 1,
               borderBottom: theme => `2px solid ${theme.palette.mode === 'dark' ? '#444' : '#eee'}`,
               background: theme =>
@@ -113,7 +114,7 @@ const DetailedFeatureComparison: React.FC<DetailedFeatureComparisonProps> = ({
               sx={{
                 display: 'flex',
                 alignItems: 'center',
-                fontSize: { xs: '1.1rem', md: '1.2rem' },
+                fontSize: { xs: '0.9rem', md: '1.2rem' },
                 color: 'red',
                 fontWeight: 700,
               }}
@@ -128,14 +129,16 @@ const DetailedFeatureComparison: React.FC<DetailedFeatureComparisonProps> = ({
                   textAlign: 'center',
                   color: plan.color,
                   fontWeight: 700,
-                  fontSize: { xs: '1.1rem', md: '1.2rem' },
+                  fontSize: { xs: '0.9rem', md: '1.2rem' },
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 1,
                 }}
               >
-                <Box sx={{ fontSize: 16, display: 'flex', alignItems: 'center' }}>{plan.icon}</Box>
+                <Box sx={{ fontSize: { xs: 18, md: 20 }, display: 'flex', alignItems: 'center' }}>
+                  {plan.icon}
+                </Box>
                 {plan.name}
               </Box>
             ))}
@@ -146,10 +149,10 @@ const DetailedFeatureComparison: React.FC<DetailedFeatureComparisonProps> = ({
               sx={{
                 display: 'grid',
                 gridTemplateColumns:
-                  'minmax(220px, 1.5fr) repeat(' + plansWithCurrentPlan.length + ', 1fr)',
+                  'minmax(180px, 1.5fr) repeat(' + plansWithCurrentPlan.length + ', minmax(80px, 1fr))',
                 alignItems: 'center',
                 minHeight: 40,
-                px: 2,
+                px: { xs: 1, md: 2 },
                 py: 1,
                 background: theme =>
                   theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',

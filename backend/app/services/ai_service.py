@@ -31,10 +31,8 @@ class AIService:
         self.model_version = settings.AI_MODEL_VERSION
         self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
         self.model = settings.OPENAI_MODEL
-        # Create usage service for tracking tokens
-        from sqlalchemy.orm import Session
-        sync_db = Session(bind=db.bind)
-        self.usage_service = UsageService(sync_db)
+        # Create usage service for tracking tokens with async session
+        self.usage_service = UsageService(db)
 
     async def track_token_usage(self, user_id: int, feature: str, action: str, tokens_used: int, metadata: dict = None):
         """Track token usage for a user"""
@@ -65,7 +63,7 @@ class AIService:
         subscription = result.scalar_one_or_none()
         
         if not subscription:
-            return "gpt-4o-mini"  # Default model for users without subscription (Free plan model)
+            return "gpt-5-nano"  # Default model for users without subscription (Free plan model)
         
         return str(subscription.ai_model)
 
@@ -498,6 +496,24 @@ class AIService:
         )
 
         analysis = response.choices[0].message.content
+        
+        # Track token usage
+        if hasattr(response, 'usage') and response.usage:
+            tokens_used = response.usage.total_tokens
+            try:
+                await self.track_token_usage(
+                    user_id=user_id,
+                    feature='submission_analysis',
+                    action='analyze',
+                    tokens_used=tokens_used,
+                    metadata={
+                        'model': model,
+                        'submission_length': len(submission_content),
+                        'analysis_length': len(analysis) if analysis else 0
+                    }
+                )
+            except Exception as e:
+                logger.error(f"Failed to track token usage for submission analysis: {str(e)}")
 
         # Parse the response to extract structured information
         # This is a simple implementation - you might want to make this more robust
@@ -571,7 +587,11 @@ class AIService:
         """
         try:
             # Get user's subscription model
+<<<<<<< HEAD
             user_model = await self.get_user_model(user_id) if user_id else "gpt-4o-mini"
+=======
+            user_model = await self.get_user_model(user_id) if user_id else "gpt-5-nano"
+>>>>>>> 0350350e2150a72a6e82e5f5f5842c4b03b44b54
             logger.info(f"Using user model for chat: {user_model}")
             
             # Prepare conversation messages
@@ -678,7 +698,11 @@ class AIService:
         """
         try:
             # Get user's subscription model
+<<<<<<< HEAD
             user_model = await self.get_user_model(user_id) if user_id else "gpt-4o-mini"
+=======
+            user_model = await self.get_user_model(user_id) if user_id else "gpt-5-nano"
+>>>>>>> 0350350e2150a72a6e82e5f5f5842c4b03b44b54
             logger.info(f"Using streaming with user model: {user_model}")
             
             # Prepare conversation messages
@@ -769,7 +793,11 @@ class AIService:
         """
         try:
             # Get user's subscription model for fallback too
+<<<<<<< HEAD
             user_model = await self.get_user_model(user_id) if user_id else "gpt-4o-mini"
+=======
+            user_model = await self.get_user_model(user_id) if user_id else "gpt-5-nano"
+>>>>>>> 0350350e2150a72a6e82e5f5f5842c4b03b44b54
             logger.info(f"Using fallback method with user model: {user_model}")
             
             # Construct a system prompt for general chat/conversation
@@ -826,13 +854,16 @@ class AIService:
                 detail=f"Failed to generate chat response: {str(e)}"
             )
 
-    async def generate_assignment_content_from_prompt(self, prompt: str) -> str:
+    async def generate_assignment_content_from_prompt(self, prompt: str, user_id: int = None, feature: str = 'assignment_generation', action: str = 'generate') -> str:
         """
         Generate assignment content from a natural language prompt.
         This method is used for chat-based assignment input.
         
         Args:
             prompt: Natural language description of the assignment
+            user_id: Optional user ID for token tracking
+            feature: Feature name for token tracking (default: 'assignment_generation')
+            action: Action name for token tracking (default: 'generate')
             
         Returns:
             Generated assignment content as string
@@ -882,6 +913,25 @@ class AIService:
                 prompt_preview = prompt[:100].replace('\n', ' ').replace('\r', ' ') if prompt else ""
                 logger.error(f"OpenAI returned None content for prompt: {prompt_preview}...")
                 raise ValueError("OpenAI returned None content")
+            
+            # Track token usage if user_id is provided
+            if user_id and hasattr(response, 'usage') and response.usage:
+                tokens_used = response.usage.total_tokens
+                try:
+                    await self.track_token_usage(
+                        user_id=user_id,
+                        feature=feature,
+                        action=action,
+                        tokens_used=tokens_used,
+                        metadata={
+                            'model': self.model,
+                            'prompt_length': len(prompt),
+                            'response_length': len(content)
+                        }
+                    )
+                    logger.info(f"Token usage tracked: {tokens_used} tokens for {feature}/{action}")
+                except Exception as e:
+                    logger.error(f"Failed to track token usage: {str(e)}")
             
             logger.info(f"Successfully generated content of length: {len(content)} characters")
             # Safely log content to avoid Unicode encoding issues

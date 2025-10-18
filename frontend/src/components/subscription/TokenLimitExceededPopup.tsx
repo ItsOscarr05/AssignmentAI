@@ -28,15 +28,15 @@ interface TokenLimitExceededPopupProps {
   limit?: number;
 }
 
-const TokenLimitExceededPopup: React.FC<TokenLimitExceededPopupProps> = ({ 
-  open, 
-  onClose, 
-  currentUsage = 101651, 
-  limit = 100000 
+const TokenLimitExceededPopup: React.FC<TokenLimitExceededPopupProps> = ({
+  open,
+  onClose,
+  currentUsage = 101651,
+  limit = 100000,
 }) => {
   const theme = useTheme();
   const navigate = useNavigate();
-  const redColor = '#f44336'; // Use red for token limit exceeded
+  const redColor = theme.palette.mode === 'dark' ? '#d32f2f' : '#d32f2f'; // Use theme-aware red for token limit exceeded
 
   const upgradeFeatures = [
     {
@@ -184,7 +184,10 @@ const TokenLimitExceededPopup: React.FC<TokenLimitExceededPopupProps> = ({
             }}
           >
             Your monthly limit is {limit.toLocaleString()} tokens, but you've exceeded it by{' '}
-            <strong style={{ color: redColor }}>{overage.toLocaleString()} tokens ({percentOver}% over)</strong>.
+            <strong style={{ color: redColor }}>
+              {overage.toLocaleString()} tokens ({percentOver}% over)
+            </strong>
+            .
           </Typography>
 
           <Typography
@@ -327,7 +330,8 @@ const TokenLimitExceededPopup: React.FC<TokenLimitExceededPopupProps> = ({
               zIndex: 1,
             }}
           >
-            Don't worry! Your token usage will reset next month, or you can upgrade now to continue using AI features immediately.
+            Don't worry! Your token usage will reset next month, or you can upgrade now to continue
+            using AI features immediately.
           </Typography>
         </Box>
 

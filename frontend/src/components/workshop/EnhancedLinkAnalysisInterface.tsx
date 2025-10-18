@@ -8,7 +8,6 @@ import {
   Link as LinkIcon,
   OpenInNew as OpenInNewIcon,
   HourglassEmpty as ProcessingIcon,
-  Refresh as RefreshIcon,
   Schedule as ScheduleIcon,
   Share as ShareIcon,
 } from '@mui/icons-material';
@@ -22,7 +21,6 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Divider,
   IconButton,
   LinearProgress,
   List,
@@ -157,53 +155,15 @@ const EnhancedLinkAnalysisInterface: React.FC<EnhancedLinkAnalysisInterfaceProps
     }
   };
 
-  const handleProcessAction = async (action: string) => {
-    if (!analysisResults) return;
-
-    try {
-      // For link analysis, we'll use the existing content and apply different prompts
-      const prompt =
-        action === 'summarize'
-          ? `Summarize this web content: ${analysisResults.content.substring(0, 1000)}`
-          : action === 'extract'
-          ? `Extract key points from this web content: ${analysisResults.content.substring(
-              0,
-              1000
-            )}`
-          : `Rewrite this web content: ${analysisResults.content.substring(0, 1000)}`;
-
-      const result = await PopupApiService.generateContent(prompt);
-
-      // Update analysis results with new content
-      setAnalysisResults(prev =>
-        prev
-          ? {
-              ...prev,
-              analysis: result,
-            }
-          : null
-      );
-
-      setSnackbar({
-        open: true,
-        message: `${action.charAt(0).toUpperCase() + action.slice(1)} completed successfully`,
-        severity: 'success',
-      });
-    } catch (error) {
-      console.error(`Error processing ${action}:`, error);
-      setSnackbar({
-        open: true,
-        message: `Failed to ${action} content. Please try again.`,
-        severity: 'error',
-      });
-    }
-  };
-
   const handleCopyAnalysis = async () => {
     if (!analysisResults) return;
 
     try {
-      await navigator.clipboard.writeText(analysisResults.analysis);
+      const analysisText =
+        typeof analysisResults.analysis === 'string'
+          ? analysisResults.analysis
+          : JSON.stringify(analysisResults.analysis, null, 2);
+      await navigator.clipboard.writeText(analysisText);
       setSnackbar({
         open: true,
         message: 'Analysis copied to clipboard',
@@ -251,9 +211,14 @@ const EnhancedLinkAnalysisInterface: React.FC<EnhancedLinkAnalysisInterfaceProps
     if (!analysisResults) return;
 
     try {
+      const analysisText =
+        typeof analysisResults.analysis === 'string'
+          ? analysisResults.analysis
+          : JSON.stringify(analysisResults.analysis, null, 2);
+
       const shareData = {
         title: `Analysis of ${link.title}`,
-        text: analysisResults.analysis.substring(0, 200) + '...',
+        text: analysisText.substring(0, 200) + '...',
         url: link.url,
       };
 
@@ -261,7 +226,7 @@ const EnhancedLinkAnalysisInterface: React.FC<EnhancedLinkAnalysisInterfaceProps
         await navigator.share(shareData);
       } else {
         // Fallback: copy to clipboard
-        await navigator.clipboard.writeText(analysisResults.analysis);
+        await navigator.clipboard.writeText(analysisText);
         setSnackbar({
           open: true,
           message: 'Analysis copied to clipboard (sharing not supported)',
@@ -384,14 +349,6 @@ const EnhancedLinkAnalysisInterface: React.FC<EnhancedLinkAnalysisInterfaceProps
                 <>
                   <Button
                     variant="outlined"
-                    startIcon={<RefreshIcon />}
-                    onClick={() => handleProcessAction('analyze')}
-                    sx={{ borderColor: 'blue', color: 'blue' }}
-                  >
-                    Re-analyze
-                  </Button>
-                  <Button
-                    variant="outlined"
                     startIcon={<DownloadIcon />}
                     onClick={() => setShowExportDialog(true)}
                     sx={{ borderColor: 'green', color: 'green' }}
@@ -462,30 +419,138 @@ const EnhancedLinkAnalysisInterface: React.FC<EnhancedLinkAnalysisInterfaceProps
             </Box>
           </Box>
 
-          <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', mb: 2 }}>
-            {analysisResults.analysis}
-          </Typography>
+          {/* Analysis Content */}
+          {typeof analysisResults.analysis === 'object' &&
+          analysisResults.analysis &&
+          !Array.isArray(analysisResults.analysis) ? (
+            <Box sx={{ mb: 2 }}>
+              {/* Summary */}
+              {'summary' in analysisResults.analysis && analysisResults.analysis.summary && (
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="h6" gutterBottom sx={{ color: 'primary.main' }}>
+                    Summary
+                  </Typography>
+                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                    {analysisResults.analysis.summary}
+                  </Typography>
+                </Box>
+              )}
 
-          {/* Quick Actions */}
-          <Divider sx={{ my: 2 }} />
-          <Typography variant="subtitle2" gutterBottom>
-            Quick Actions:
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            <Button
-              size="small"
-              variant="outlined"
-              onClick={() => handleProcessAction('summarize')}
-            >
-              Summarize
-            </Button>
-            <Button size="small" variant="outlined" onClick={() => handleProcessAction('extract')}>
-              Extract Key Points
-            </Button>
-            <Button size="small" variant="outlined" onClick={() => handleProcessAction('rewrite')}>
-              Rewrite
-            </Button>
-          </Box>
+              {/* Key Points */}
+              {'keyPoints' in analysisResults.analysis &&
+                analysisResults.analysis.keyPoints &&
+                analysisResults.analysis.keyPoints.length > 0 && (
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="h6" gutterBottom sx={{ color: 'primary.main' }}>
+                      Key Points
+                    </Typography>
+                    <List dense>
+                      {analysisResults.analysis.keyPoints.map((point: string, index: number) => (
+                        <ListItem key={index} sx={{ py: 0.5 }}>
+                          <ListItemIcon sx={{ minWidth: 32 }}>
+                            <Typography
+                              variant="body2"
+                              sx={{ color: 'primary.main', fontWeight: 'bold' }}
+                            >
+                              {index + 1}.
+                            </Typography>
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={point}
+                            sx={{ '& .MuiListItemText-primary': { fontSize: '0.875rem' } }}
+                          />
+                        </ListItem>
+                      ))}
+                    </List>
+                  </Box>
+                )}
+
+              {/* Analysis Metrics */}
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" gutterBottom sx={{ color: 'primary.main' }}>
+                  Analysis Metrics
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                  {'contentType' in analysisResults.analysis &&
+                    analysisResults.analysis.contentType && (
+                      <Chip
+                        label={`Type: ${analysisResults.analysis.contentType}`}
+                        color="primary"
+                        variant="outlined"
+                      />
+                    )}
+                  {'credibility' in analysisResults.analysis &&
+                    analysisResults.analysis.credibility && (
+                      <Chip
+                        label={`Credibility: ${analysisResults.analysis.credibility}/10`}
+                        color={
+                          analysisResults.analysis.credibility >= 7
+                            ? 'success'
+                            : analysisResults.analysis.credibility >= 5
+                            ? 'warning'
+                            : 'error'
+                        }
+                        variant="outlined"
+                      />
+                    )}
+                  {'readingTime' in analysisResults.analysis &&
+                    analysisResults.analysis.readingTime && (
+                      <Chip
+                        label={`Reading Time: ${analysisResults.analysis.readingTime} min`}
+                        color="info"
+                        variant="outlined"
+                      />
+                    )}
+                  {'wordCount' in analysisResults.analysis &&
+                    analysisResults.analysis.wordCount && (
+                      <Chip
+                        label={`Words: ${analysisResults.analysis.wordCount}`}
+                        color="info"
+                        variant="outlined"
+                      />
+                    )}
+                  {'sentiment' in analysisResults.analysis &&
+                    analysisResults.analysis.sentiment && (
+                      <Chip
+                        label={`Sentiment: ${analysisResults.analysis.sentiment}`}
+                        color={
+                          analysisResults.analysis.sentiment === 'positive'
+                            ? 'success'
+                            : analysisResults.analysis.sentiment === 'negative'
+                            ? 'error'
+                            : 'info'
+                        }
+                        variant="outlined"
+                      />
+                    )}
+                </Box>
+              </Box>
+
+              {/* Related Topics */}
+              {'relatedTopics' in analysisResults.analysis &&
+                analysisResults.analysis.relatedTopics &&
+                analysisResults.analysis.relatedTopics.length > 0 && (
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="h6" gutterBottom sx={{ color: 'primary.main' }}>
+                      Related Topics
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                      {analysisResults.analysis.relatedTopics.map(
+                        (topic: string, index: number) => (
+                          <Chip key={index} label={topic} size="small" variant="outlined" />
+                        )
+                      )}
+                    </Box>
+                  </Box>
+                )}
+            </Box>
+          ) : (
+            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', mb: 2 }}>
+              {typeof analysisResults.analysis === 'string'
+                ? analysisResults.analysis
+                : 'No analysis available'}
+            </Typography>
+          )}
         </Box>
       )}
 

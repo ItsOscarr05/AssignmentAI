@@ -9,9 +9,9 @@ AssignmentAI uses different OpenAI models based on user subscription tiers to op
 | Subscription Plan | AI Model       | Token Limit | Description                                         |
 | ----------------- | -------------- | ----------- | --------------------------------------------------- |
 | **Free**          | `gpt-5-nano`   | 100,000     | Fast, efficient model for basic assignments         |
-| **Plus**          | `gpt-4.1-mini` | 200,000     | Balanced performance and cost for enhanced features |
-| **Pro**           | `gpt-4-turbo`  | 400,000     | Advanced model for professional-grade assignments   |
-| **Max**           | `gpt-5`        | 800,000     | Premium model for maximum quality and complexity    |
+| **Plus**          | `gpt-4.1-mini` | 250,000     | Balanced performance and cost for enhanced features |
+| **Pro**           | `gpt-4-turbo`  | 500,000     | Advanced model for professional-grade assignments   |
+| **Max**           | `gpt-5`        | 1,000,000   | Premium model for maximum quality and complexity    |
 
 ## Implementation Details
 
@@ -53,17 +53,17 @@ const subscriptionConfig: Record<SubscriptionPlan, SubscriptionConfig> = {
   },
   plus: {
     model: 'gpt-4.1-mini',
-    tokenLimit: 200000,
+    tokenLimit: 250000,
     label: 'GPT-4.1 Mini',
   },
   pro: {
     model: 'gpt-4-turbo',
-    tokenLimit: 400000,
+    tokenLimit: 500000,
     label: 'GPT-4 Turbo',
   },
   max: {
     model: 'gpt-5',
-    tokenLimit: 800000,
+    tokenLimit: 1000000,
     label: 'GPT-5',
   },
 };
@@ -113,9 +113,9 @@ OPENAI_MODEL=gpt-4.1-nano  # Default model (overridden by subscription)
 Each subscription tier has a monthly token limit:
 
 - **Free**: 100,000 tokens/month
-- **Plus**: 200,000 tokens/month
-- **Pro**: 400,000 tokens/month
-- **Max**: 800,000 tokens/month
+- **Plus**: 250,000 tokens/month
+- **Pro**: 500,000 tokens/month
+- **Max**: 1,000,000 tokens/month
 
 Token usage is tracked per user and resets monthly.
 

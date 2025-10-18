@@ -41,6 +41,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   Customized,
   Legend,
   Tooltip as RechartsTooltip,
@@ -223,8 +224,39 @@ const Workshop: React.FC = () => {
     });
   });
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [animatedPercent, setAnimatedPercent] = useState(0);
   const [isTokenChartHovered, setIsTokenChartHovered] = useState(false);
+
+  // Helper function to calculate bar opacity based on filters
+  const getBarOpacity = (dataKey: string, date: string) => {
+    if (selectedArea && selectedDay) {
+      // Both filters active - only show if both match
+      return selectedArea === dataKey && selectedDay === date ? 0.8 : 0.1;
+    } else if (selectedArea) {
+      // Only area filter active
+      return selectedArea === dataKey ? 0.8 : 0.15;
+    } else if (selectedDay) {
+      // Only day filter active
+      return selectedDay === date ? 0.8 : 0.15;
+    } else {
+      // No filters active
+      return 0.4;
+    }
+  };
+
+  const getStrokeOpacity = (dataKey: string, date: string) => {
+    if (selectedArea && selectedDay) {
+      return selectedArea === dataKey && selectedDay === date ? 1 : 0.2;
+    } else if (selectedArea) {
+      return selectedArea === dataKey ? 1 : 0.3;
+    } else if (selectedDay) {
+      return selectedDay === date ? 1 : 0.3;
+    } else {
+      return 1;
+    }
+  };
+
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -521,8 +553,9 @@ const Workshop: React.FC = () => {
     if (linkInput.trim()) {
       setIsLinkProcessing(true);
       try {
-        await addLink({ url: linkInput, title: linkInput });
-        // The addLink function will handle the result internally
+        const linkData = await addLink({ url: linkInput, title: linkInput });
+        // Open the Link Chat Modal with the processed link data
+        setLastProcessedLink(linkData);
         setShowLinkChatModal(true);
         setLinkInput('');
       } catch (error) {
@@ -784,7 +817,14 @@ const Workshop: React.FC = () => {
           borderRadius: 2,
         }}
       >
-        <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+        <Typography
+          variant="subtitle2"
+          sx={{
+            fontWeight: 'bold',
+            mb: 1,
+            color: theme => (theme.palette.mode === 'dark' ? 'white' : 'inherit'),
+          }}
+        >
           {label}
         </Typography>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
@@ -975,14 +1015,8 @@ const Workshop: React.FC = () => {
               p: { xs: 0.75, sm: 1, md: 3 },
               mb: { xs: 2, sm: 3, md: 4 },
               overflow: 'hidden',
-              width: { xs: '95%', sm: '100%' },
-              mx: { xs: 'auto', sm: 0 },
               backgroundColor: theme =>
                 theme.palette.mode === 'dark' ? theme.palette.background.default : '#fff',
-              '@media (max-width: 480px)': {
-                width: '98%',
-                mx: 'auto',
-              },
             }}
           >
             <Box
@@ -1034,8 +1068,8 @@ const Workshop: React.FC = () => {
                   data={activityData}
                   margin={{
                     top: 20,
-                    right: 30,
-                    left: 20,
+                    right: 10,
+                    left: -30,
                     bottom: 20,
                   }}
                 >
@@ -1079,61 +1113,127 @@ const Workshop: React.FC = () => {
                     stroke="#E53935"
                     strokeWidth={2}
                     fill="#E53935"
-                    fillOpacity={selectedArea ? (selectedArea === 'chats' ? 0.8 : 0.15) : 0.4}
-                    strokeOpacity={selectedArea ? (selectedArea === 'chats' ? 1 : 0.3) : 1}
                     name="Chats"
                     radius={[4, 4, 0, 0]}
-                  />
+                  >
+                    {activityData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill="#E53935"
+                        fillOpacity={getBarOpacity('chats', entry.date)}
+                        stroke="#E53935"
+                        strokeOpacity={getStrokeOpacity('chats', entry.date)}
+                        onClick={() => {
+                          setSelectedDay(prev => (prev === entry.date ? null : entry.date));
+                        }}
+                      />
+                    ))}
+                  </Bar>
                   <Bar
                     dataKey="summarize"
                     stroke="#FB8C00"
                     strokeWidth={2}
                     fill="#FB8C00"
-                    fillOpacity={selectedArea ? (selectedArea === 'summarize' ? 0.8 : 0.15) : 0.4}
-                    strokeOpacity={selectedArea ? (selectedArea === 'summarize' ? 1 : 0.3) : 1}
                     name="Summarize"
                     radius={[4, 4, 0, 0]}
-                  />
+                  >
+                    {activityData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill="#FB8C00"
+                        fillOpacity={getBarOpacity('summarize', entry.date)}
+                        stroke="#FB8C00"
+                        strokeOpacity={getStrokeOpacity('summarize', entry.date)}
+                        onClick={() => {
+                          setSelectedDay(prev => (prev === entry.date ? null : entry.date));
+                        }}
+                      />
+                    ))}
+                  </Bar>
                   <Bar
                     dataKey="extract"
                     stroke="#FDD835"
                     strokeWidth={2}
                     fill="#FDD835"
-                    fillOpacity={selectedArea ? (selectedArea === 'extract' ? 0.8 : 0.15) : 0.4}
-                    strokeOpacity={selectedArea ? (selectedArea === 'extract' ? 1 : 0.3) : 1}
                     name="Extract"
                     radius={[4, 4, 0, 0]}
-                  />
+                  >
+                    {activityData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill="#FDD835"
+                        fillOpacity={getBarOpacity('extract', entry.date)}
+                        stroke="#FDD835"
+                        strokeOpacity={getStrokeOpacity('extract', entry.date)}
+                        onClick={() => {
+                          setSelectedDay(prev => (prev === entry.date ? null : entry.date));
+                        }}
+                      />
+                    ))}
+                  </Bar>
                   <Bar
                     dataKey="links"
                     stroke="#43A047"
                     strokeWidth={2}
                     fill="#43A047"
-                    fillOpacity={selectedArea ? (selectedArea === 'links' ? 0.8 : 0.15) : 0.4}
-                    strokeOpacity={selectedArea ? (selectedArea === 'links' ? 1 : 0.3) : 1}
                     name="Links"
                     radius={[4, 4, 0, 0]}
-                  />
+                  >
+                    {activityData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill="#43A047"
+                        fillOpacity={getBarOpacity('links', entry.date)}
+                        stroke="#43A047"
+                        strokeOpacity={getStrokeOpacity('links', entry.date)}
+                        onClick={() => {
+                          setSelectedDay(prev => (prev === entry.date ? null : entry.date));
+                        }}
+                      />
+                    ))}
+                  </Bar>
                   <Bar
                     dataKey="rewrite"
                     stroke="#1E88E5"
                     strokeWidth={2}
                     fill="#1E88E5"
-                    fillOpacity={selectedArea ? (selectedArea === 'rewrite' ? 0.8 : 0.15) : 0.4}
-                    strokeOpacity={selectedArea ? (selectedArea === 'rewrite' ? 1 : 0.3) : 1}
                     name="Rewrite"
                     radius={[4, 4, 0, 0]}
-                  />
+                  >
+                    {activityData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill="#1E88E5"
+                        fillOpacity={getBarOpacity('rewrite', entry.date)}
+                        stroke="#1E88E5"
+                        strokeOpacity={getStrokeOpacity('rewrite', entry.date)}
+                        onClick={() => {
+                          setSelectedDay(prev => (prev === entry.date ? null : entry.date));
+                        }}
+                      />
+                    ))}
+                  </Bar>
                   <Bar
                     dataKey="files"
                     stroke="#8E24AA"
                     strokeWidth={2}
                     fill="#8E24AA"
-                    fillOpacity={selectedArea ? (selectedArea === 'files' ? 0.8 : 0.15) : 0.4}
-                    strokeOpacity={selectedArea ? (selectedArea === 'files' ? 1 : 0.3) : 1}
                     name="Files"
                     radius={[4, 4, 0, 0]}
-                  />
+                  >
+                    {activityData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill="#8E24AA"
+                        fillOpacity={getBarOpacity('files', entry.date)}
+                        stroke="#8E24AA"
+                        strokeOpacity={getStrokeOpacity('files', entry.date)}
+                        onClick={() => {
+                          setSelectedDay(prev => (prev === entry.date ? null : entry.date));
+                        }}
+                      />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </Box>
@@ -1148,12 +1248,6 @@ const Workshop: React.FC = () => {
               p: { xs: 0.75, sm: 1, md: 3 },
               mb: { xs: 2, sm: 3, md: 4 },
               overflow: 'hidden',
-              width: { xs: '95%', sm: '100%' },
-              mx: { xs: 'auto', sm: 0 },
-              '@media (max-width: 480px)': {
-                width: '98%',
-                mx: 'auto',
-              },
             }}
           >
             <Box
@@ -1273,16 +1367,6 @@ const Workshop: React.FC = () => {
                 p: { xs: 0.75, sm: 1, md: 3 },
                 mb: { xs: 2, sm: 3, md: 4 },
                 overflow: 'hidden',
-                width: { xs: '95%', sm: '100%' },
-                mx: { xs: 'auto', sm: 0 },
-                '@media (minWidth: 960px)': {
-                  width: '100%',
-                  maxWidth: '100%',
-                },
-                '@media (max-width: 480px)': {
-                  width: '98%',
-                  mx: 'auto',
-                },
               }}
             >
               <Typography
@@ -1324,21 +1408,10 @@ const Workshop: React.FC = () => {
               ...cardStyle,
               p: { xs: 0.75, sm: 1, md: 3 },
               overflow: 'hidden',
-              width: { xs: '95%', sm: '100%' },
-              mx: { xs: 'auto', sm: 0 },
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
               minHeight: { xs: '380px', sm: '320px', md: '280px' },
-              '@media (min-width: 960px)': {
-                width: '100%',
-                maxWidth: '100%',
-              },
-              '@media (max-width: 480px)': {
-                width: '98%',
-                mx: 'auto',
-                minHeight: '380px',
-              },
             }}
           >
             <Typography

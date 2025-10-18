@@ -134,8 +134,19 @@ const Dashboard: React.FC = () => {
               sx={{
                 borderRadius: 2,
                 mx: 1,
+<<<<<<< HEAD
                 mb: 1.15,
                 py: 1.15,
+=======
+                mb: {
+                  xs: 2.5, // Mobile
+                  sm: 1, // Tablet
+                  md: 1.15, // Small laptop
+                  lg: 1.15, // Laptop
+                  xl: 2.5, // Full-sized monitor
+                },
+                py: 2,
+>>>>>>> 0350350e2150a72a6e82e5f5f5842c4b03b44b54
                 '&:hover': {
                   backgroundColor: 'rgba(255, 255, 255, 0.1)',
                 },

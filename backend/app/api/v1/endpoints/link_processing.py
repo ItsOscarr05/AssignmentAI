@@ -115,7 +115,12 @@ async def chat_with_link(
         """
         
         # Generate AI response
-        response = await ai_service.generate_assignment_content_from_prompt(context_prompt)
+        response = await ai_service.generate_assignment_content_from_prompt(
+            context_prompt, 
+            user_id=current_user.id, 
+            feature='link_chat', 
+            action='chat_message'
+        )
         
         # Check if the response suggests updating the analysis
         updated_analysis = None
@@ -176,7 +181,12 @@ async def suggest_related_links(
         """
         
         # Generate suggestions
-        suggestions_text = await ai_service.generate_assignment_content_from_prompt(suggestion_prompt)
+        suggestions_text = await ai_service.generate_assignment_content_from_prompt(
+            suggestion_prompt, 
+            user_id=current_user.id, 
+            feature='link_suggestions', 
+            action='suggest_related'
+        )
         
         # Parse URLs from response
         suggested_urls = []

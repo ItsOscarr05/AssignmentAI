@@ -74,6 +74,7 @@ import {
   Tab,
   Tabs,
   TextField,
+  Tooltip,
   Typography,
   useTheme,
 } from '@mui/material';
@@ -86,6 +87,7 @@ import DownloadDataDialog from '../components/account/DownloadDataDialog';
 import AIFeaturesDemo from '../components/ai/AIFeaturesDemo';
 import DateFormatSelector from '../components/common/DateFormatSelector';
 import AutoLockWarningDialog from '../components/security/AutoLockWarningDialog';
+import SecurityAuditDialog from '../components/security/SecurityAuditDialog';
 import { useFontSize } from '../contexts/FontSizeContext';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { preferences, users } from '../services/api';
@@ -152,7 +154,7 @@ const Settings: React.FC = () => {
   const { mode: appTheme, toggleTheme, darkThemeColor, setDarkThemeColor } = useAppTheme();
   const darkMode = appTheme === 'dark';
   const [language, setLanguage] = useState('en');
-  const { fontSize, setFontSize } = useFontSize();
+  const { fontSize } = useFontSize();
   const [animations, setAnimations] = useState(true);
   const [compactMode, setCompactMode] = useState(false);
 
@@ -256,7 +258,7 @@ const Settings: React.FC = () => {
   // Subscription Settings
   const [subscription, setSubscription] = useState({
     plan: 'free' as SubscriptionPlan,
-    model: 'gpt-4.1-nano', // Will be updated based on actual plan
+    model: 'gpt-5-nano', // Will be updated based on actual plan
     tokenLimit: 100000, // Will be updated based on actual plan
   });
 
@@ -391,10 +393,6 @@ const Settings: React.FC = () => {
     }
 
     // Check for security recommendations
-    if (!privacySettings.twoFactorAuth) {
-      errors.push('Two-factor authentication is recommended for enhanced security');
-    }
-
     if (securitySettings.passwordStrength === 'weak') {
       errors.push('Consider strengthening your password for better security');
     }
@@ -444,6 +442,61 @@ const Settings: React.FC = () => {
     return securitySettings.passwordStrength;
   };
 
+  // Format timezone with friendly name and UTC offset
+  const getTimezoneDisplay = (tz: string): string => {
+    try {
+      // Map of timezone identifiers to their standard names
+      const timezoneNames: { [key: string]: string } = {
+        UTC: 'Coordinated Universal Time',
+        'America/New_York': 'Eastern Standard Time',
+        'America/Chicago': 'Central Standard Time',
+        'America/Denver': 'Mountain Standard Time',
+        'America/Los_Angeles': 'Pacific Standard Time',
+        'America/Anchorage': 'Alaska Standard Time',
+        'Pacific/Honolulu': 'Hawaii-Aleutian Standard Time',
+        'Europe/London': 'Greenwich Mean Time',
+        'Europe/Paris': 'Central European Time',
+        'Europe/Berlin': 'Central European Time',
+        'Europe/Madrid': 'Central European Time',
+        'Europe/Rome': 'Central European Time',
+        'Europe/Amsterdam': 'Central European Time',
+        'Asia/Tokyo': 'Japan Standard Time',
+        'Asia/Shanghai': 'China Standard Time',
+        'Asia/Hong_Kong': 'Hong Kong Time',
+        'Asia/Singapore': 'Singapore Standard Time',
+        'Asia/Seoul': 'Korea Standard Time',
+        'Asia/Dubai': 'Gulf Standard Time',
+        'Asia/Kolkata': 'India Standard Time',
+        'Australia/Sydney': 'Australian Eastern Standard Time',
+        'Australia/Melbourne': 'Australian Eastern Standard Time',
+        'Australia/Brisbane': 'Australian Eastern Standard Time',
+        'Australia/Perth': 'Australian Western Standard Time',
+        'Pacific/Auckland': 'New Zealand Standard Time',
+      };
+
+      // Get the standard name or fallback to the timezone identifier
+      const timeZoneName = timezoneNames[tz] || tz;
+
+      // Calculate current UTC offset
+      const now = new Date();
+      const utcDate = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));
+      const tzDate = new Date(now.toLocaleString('en-US', { timeZone: tz }));
+      const offsetMinutes = (tzDate.getTime() - utcDate.getTime()) / (1000 * 60);
+      const offsetHours = Math.floor(Math.abs(offsetMinutes) / 60);
+      const offsetMins = Math.abs(offsetMinutes) % 60;
+
+      // Format offset as UTC±XX:XX
+      const sign = offsetMinutes >= 0 ? '+' : '-';
+      const offset = `UTC${sign}${String(offsetHours).padStart(2, '0')}:${String(
+        offsetMins
+      ).padStart(2, '0')}`;
+
+      return `${timeZoneName} (${offset})`;
+    } catch (error) {
+      return tz;
+    }
+  };
+
   const calculateSecurityScore = () => {
     let score = 0;
 
@@ -455,22 +508,17 @@ const Settings: React.FC = () => {
     if (currentPasswordStrength === 'strong') score += 20;
     else if (currentPasswordStrength === 'medium') score += 10;
 
-    // Two-factor authentication
-    if (privacySettings.twoFactorAuth) score += 25;
-
-    // Biometric login
-    if (privacySettings.biometricLogin) score += 15;
-
     // Auto-lock
     if (privacySettings.autoLock) score += 10;
 
-    return Math.min(100, score);
+    // Account security (always included)
+    score += 10;
+
+    return Math.min(60, score); // Maximum score is now 60
   };
 
   const getSecuritySummary = () => {
     const enabledFeatures = [];
-    if (privacySettings.twoFactorAuth) enabledFeatures.push('2FA');
-    if (privacySettings.biometricLogin) enabledFeatures.push('Biometric');
     if (privacySettings.autoLock) enabledFeatures.push('Auto-lock');
     if (privacySettings.dataCollection) enabledFeatures.push('Data Collection');
     if (privacySettings.shareAnalytics) enabledFeatures.push('Analytics');
@@ -478,8 +526,8 @@ const Settings: React.FC = () => {
     // Calculate security level based on frontend calculated score
     const calculatedScore = calculateSecurityScore();
     let securityLevel = 'Low';
-    if (calculatedScore >= 80) securityLevel = 'High';
-    else if (calculatedScore >= 50) securityLevel = 'Medium';
+    if (calculatedScore >= 48) securityLevel = 'High'; // 80% of 60
+    else if (calculatedScore >= 30) securityLevel = 'Medium'; // 50% of 60
 
     return {
       enabledFeatures: enabledFeatures.join(', ') || 'None',
@@ -494,8 +542,6 @@ const Settings: React.FC = () => {
     const summary = getSecuritySummary();
     return summary;
   }, [
-    privacySettings.twoFactorAuth,
-    privacySettings.biometricLogin,
     privacySettings.autoLock,
     privacySettings.dataCollection,
     privacySettings.shareAnalytics,
@@ -506,14 +552,6 @@ const Settings: React.FC = () => {
 
   const getSecurityRecommendations = () => {
     const recommendations = [];
-
-    if (!privacySettings.twoFactorAuth) {
-      recommendations.push({
-        text: 'Enable two-factor authentication for enhanced security',
-        priority: 'high',
-        color: 'error.main',
-      });
-    }
 
     if (getCurrentPasswordStrength() === 'weak') {
       recommendations.push({
@@ -526,14 +564,6 @@ const Settings: React.FC = () => {
     if (!privacySettings.autoLock) {
       recommendations.push({
         text: 'Enable auto-lock to protect your account when inactive',
-        priority: 'medium',
-        color: 'warning.main',
-      });
-    }
-
-    if (!privacySettings.biometricLogin) {
-      recommendations.push({
-        text: 'Enable biometric login for enhanced security and convenience',
         priority: 'medium',
         color: 'warning.main',
       });
@@ -555,15 +585,6 @@ const Settings: React.FC = () => {
   // Security checklist data with priority ordering
   const securityChecklistData = [
     {
-      id: '2fa',
-      title: 'Two-Factor Authentication',
-      description: 'Add an extra layer of security to your account',
-      status: privacySettings.twoFactorAuth ? 'success' : 'error',
-      action: privacySettings.twoFactorAuth ? '2FA Enabled' : 'Enable 2FA',
-      icon: <ShieldOutlined />,
-      priority: 1, // Highest priority
-    },
-    {
       id: 'password',
       title: 'Strong Password',
       description:
@@ -576,16 +597,7 @@ const Settings: React.FC = () => {
           : 'error',
       action: getCurrentPasswordStrength() === 'strong' ? 'Password Strong' : 'Change Password',
       icon: <VpnKeyOutlined />,
-      priority: 2, // High priority
-    },
-    {
-      id: 'biometric',
-      title: 'Biometric Login',
-      description: 'Use fingerprint or face recognition for quick and secure login',
-      status: privacySettings.biometricLogin ? 'success' : 'warning',
-      action: privacySettings.biometricLogin ? 'Biometric Enabled' : 'Enable Biometric',
-      icon: <FingerprintOutlined />,
-      priority: 3, // Medium priority
+      priority: 1, // High priority
     },
     {
       id: 'autolock',
@@ -594,7 +606,7 @@ const Settings: React.FC = () => {
       status: privacySettings.autoLock ? 'success' : 'warning',
       action: privacySettings.autoLock ? 'Auto-Lock Enabled' : 'Enable Auto-Lock',
       icon: <LockOutlined />,
-      priority: 4, // Medium priority
+      priority: 2, // Medium priority
     },
     {
       id: 'updates',
@@ -603,7 +615,7 @@ const Settings: React.FC = () => {
       status: 'success',
       action: 'Check Updates',
       icon: <SecurityUpdateOutlined />,
-      priority: 5, // Lower priority
+      priority: 3, // Lower priority
     },
   ];
 
@@ -936,11 +948,11 @@ const Settings: React.FC = () => {
   const getProgressBarColor = (percentage: number) => {
     if (percentage < 25) return theme.palette.error.main; // Red for low range
     if (percentage < 50) return theme.palette.warning.main; // Orange for low-mid range
-    if (percentage < 75) return theme.palette.warning.main; // Orange for mid range
+    if (percentage < 80) return theme.palette.warning.main; // Orange for mid range
     return theme.palette.success.main; // Green for high range
   };
 
-  const progressBarColor = getProgressBarColor(calculateSecurityScore());
+  const progressBarColor = getProgressBarColor((calculateSecurityScore() / 60) * 100);
 
   // Animated percentage for smooth counting - start with calculated score, then update with backend data
   const [animatedSecurityScore, setAnimatedSecurityScore] = useState(() => {
@@ -982,12 +994,7 @@ const Settings: React.FC = () => {
     }, stepDuration);
 
     return () => clearInterval(timer);
-  }, [
-    privacySettings.twoFactorAuth,
-    privacySettings.biometricLogin,
-    privacySettings.autoLock,
-    securitySettings.passwordStrength,
-  ]); // Watch for changes in relevant settings
+  }, [privacySettings.autoLock, securitySettings.passwordStrength]); // Watch for changes in relevant settings
 
   // Debug subscription state changes
   useEffect(() => {
@@ -1453,7 +1460,7 @@ const Settings: React.FC = () => {
             plan = 'pro';
           } else if (
             subscriptionData.ai_model === 'gpt-5' &&
-            subscriptionData.token_limit === 100000
+            subscriptionData.token_limit === 1000000
           ) {
             plan = 'max';
           } else if (
@@ -2034,48 +2041,7 @@ const Settings: React.FC = () => {
                   </FormGroup>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <Typography gutterBottom>Font Size</Typography>
-                  <Slider
-                    value={fontSize}
-                    onChange={(_e, value) => setFontSize(value as number)}
-                    onChangeCommitted={(_e, value) => setFontSize(value as number)}
-                    min={12}
-                    max={28}
-                    step={2}
-                    marks={[
-                      { value: 12 },
-                      { value: 14 },
-                      { value: 16 },
-                      { value: 18 },
-                      { value: 20 },
-                      { value: 22 },
-                      { value: 24 },
-                      { value: 26 },
-                      { value: 28 },
-                    ]}
-                    valueLabelDisplay="auto"
-                    valueLabelFormat={value => `${value}px`}
-                    disableSwap
-                    track="normal"
-                    size="medium"
-                    sx={{
-                      '& .MuiSlider-track': {
-                        height: 4,
-                      },
-                      '& .MuiSlider-rail': {
-                        height: 4,
-                      },
-                      '& .MuiSlider-thumb': {
-                        height: 20,
-                        width: 20,
-                        '&:hover, &:focus, &:active': {
-                          boxShadow: '0 0 0 8px rgba(25, 118, 210, 0.16)',
-                        },
-                      },
-                    }}
-                  />
-
-                  <FormGroup sx={{ mt: 3 }}>
+                  <FormGroup>
                     <FormControlLabel
                       control={
                         <Switch
@@ -2251,7 +2217,7 @@ const Settings: React.FC = () => {
                         color="text.secondary"
                         sx={{ mt: 1, display: 'block' }}
                       >
-                        Current Time Zone: {timezone}
+                        Current Time Zone: {getTimezoneDisplay(timezone)}
                       </Typography>
                     </FormControl>
                   </Box>
@@ -2878,7 +2844,7 @@ const Settings: React.FC = () => {
                       transition: 'color 0.3s ease-in-out',
                     }}
                   >
-                    {Math.round(animatedSecurityScore)}%
+                    {Math.round((animatedSecurityScore / 60) * 100)}%
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -2889,11 +2855,14 @@ const Settings: React.FC = () => {
                       borderRadius: 5,
                       background: 'rgba(0,0,0,0.1)',
                       overflow: 'hidden',
+                      border: '2px solid',
+                      borderColor: progressBarColor,
+                      transition: 'border-color 0.3s ease-in-out',
                     }}
                   >
                     <Box
                       sx={{
-                        width: `${animatedSecurityScore}%`,
+                        width: `${(animatedSecurityScore / 60) * 100}%`,
                         height: '100%',
                         background: progressBarColor,
                         borderRadius: 5,
@@ -2907,7 +2876,7 @@ const Settings: React.FC = () => {
                     color={progressBarColor}
                     sx={{ transition: 'color 0.3s ease-in-out' }}
                   >
-                    {Math.round(animatedSecurityScore)}%
+                    {Math.round((animatedSecurityScore / 60) * 100)}%
                   </Typography>
                 </Box>
                 <Typography
@@ -3019,18 +2988,9 @@ const Settings: React.FC = () => {
                         size="small"
                         onClick={() => {
                           // Handle action based on item.id
-                          if (item.id === '2fa') {
-                            // Toggle two-factor authentication
-                            setPrivacySettings({
-                              ...privacySettings,
-                              twoFactorAuth: !privacySettings.twoFactorAuth,
-                            });
-                          } else if (item.id === 'biometric') {
-                            // Toggle biometric login
-                            setPrivacySettings({
-                              ...privacySettings,
-                              biometricLogin: !privacySettings.biometricLogin,
-                            });
+                          if (item.id === '2fa' || item.id === 'biometric') {
+                            // These features are coming soon - do nothing
+                            return;
                           } else if (item.id === 'autolock') {
                             // Toggle auto-lock account
                             setPrivacySettings({
@@ -3214,29 +3174,41 @@ const Settings: React.FC = () => {
                     Account Security
                   </Typography>
                   <FormGroup>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={privacySettings.twoFactorAuth}
-                          onChange={e =>
-                            setPrivacySettings({
-                              ...privacySettings,
-                              twoFactorAuth: e.target.checked,
-                            })
-                          }
-                        />
-                      }
-                      label={
-                        <Box
-                          sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}
-                        >
-                          <ShieldOutlined fontSize="small" />
-                          <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
-                            Two-Factor Authentication
-                          </Typography>
-                        </Box>
-                      }
-                    />
+                    <Tooltip title="Coming Soon" arrow>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={privacySettings.twoFactorAuth}
+                            disabled={true}
+                            sx={{
+                              opacity: 0.5,
+                              '& .MuiSwitch-thumb': {
+                                backgroundColor: 'grey.400',
+                              },
+                              '& .MuiSwitch-track': {
+                                backgroundColor: 'grey.300',
+                              },
+                            }}
+                          />
+                        }
+                        label={
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                              flexWrap: 'wrap',
+                              opacity: 0.5,
+                            }}
+                          >
+                            <ShieldOutlined fontSize="small" />
+                            <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
+                              Two-Factor Authentication
+                            </Typography>
+                          </Box>
+                        }
+                      />
+                    </Tooltip>
                     {privacySettings.twoFactorAuth && (
                       <Typography
                         variant="caption"
@@ -3246,29 +3218,41 @@ const Settings: React.FC = () => {
                         ✓ Two-factor authentication provides extra security
                       </Typography>
                     )}
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={privacySettings.biometricLogin}
-                          onChange={e =>
-                            setPrivacySettings({
-                              ...privacySettings,
-                              biometricLogin: e.target.checked,
-                            })
-                          }
-                        />
-                      }
-                      label={
-                        <Box
-                          sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}
-                        >
-                          <FingerprintOutlined fontSize="small" />
-                          <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
-                            Biometric Login
-                          </Typography>
-                        </Box>
-                      }
-                    />
+                    <Tooltip title="Coming Soon" arrow>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={privacySettings.biometricLogin}
+                            disabled={true}
+                            sx={{
+                              opacity: 0.5,
+                              '& .MuiSwitch-thumb': {
+                                backgroundColor: 'grey.400',
+                              },
+                              '& .MuiSwitch-track': {
+                                backgroundColor: 'grey.300',
+                              },
+                            }}
+                          />
+                        }
+                        label={
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                              flexWrap: 'wrap',
+                              opacity: 0.5,
+                            }}
+                          >
+                            <FingerprintOutlined fontSize="small" />
+                            <Typography sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
+                              Biometric Login
+                            </Typography>
+                          </Box>
+                        }
+                      />
+                    </Tooltip>
                     {privacySettings.biometricLogin && (
                       <Typography
                         variant="caption"
@@ -3511,7 +3495,7 @@ const Settings: React.FC = () => {
                       </ListItemIcon>
                       <ListItemText
                         primary="Security Score"
-                        secondary={`${Math.round(animatedSecurityScore)}/100`}
+                        secondary={`${Math.round(animatedSecurityScore)}/60`}
                         primaryTypographyProps={{
                           sx: { fontSize: { xs: '0.875rem', md: '1rem' } },
                         }}
@@ -3562,7 +3546,7 @@ const Settings: React.FC = () => {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                         <BarChartOutlined fontSize="small" color="action" />
                         <Typography variant="body2">
-                          Score: {Math.round(animatedSecurityScore)}/100
+                          Score: {Math.round(animatedSecurityScore)}/60
                         </Typography>
                       </Box>
 
@@ -4084,178 +4068,29 @@ const Settings: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Security Audit Dialog */}
-      <Dialog
+      {/* Enhanced Security Audit Dialog */}
+      <SecurityAuditDialog
         open={showSecurityAudit}
         onClose={() => setShowSecurityAudit(false)}
-        maxWidth="md"
-        fullWidth
-        PaperProps={{
-          sx: {
-            backgroundColor: theme =>
-              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
-          },
+        securitySettings={securitySettings}
+        privacySettings={privacySettings}
+        calculateSecurityScore={calculateSecurityScore}
+        getSecurityRecommendations={getSecurityRecommendations}
+        isRecordingAudit={isRecordingAudit}
+        onRecordAudit={async () => {
+          try {
+            setIsRecordingAudit(true);
+            await securityService.recordSecurityAudit();
+            await loadSecurityData();
+            setShowSecurityAudit(false);
+            console.log('Security audit recorded successfully');
+          } catch (error) {
+            console.error('Failed to record security audit:', error);
+          } finally {
+            setIsRecordingAudit(false);
+          }
         }}
-      >
-        <DialogTitle sx={{ color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black') }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <SecurityOutlined />
-            Security Audit Report
-          </Box>
-        </DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Comprehensive security analysis of your account and settings.
-          </Typography>
-
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <Typography variant="subtitle1" gutterBottom sx={{ color: 'primary.main' }}>
-                Security Score Breakdown
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2">Base Security</Typography>
-                  <Typography variant="body2">20/20</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2">Password Strength</Typography>
-                  <Typography variant="body2">
-                    {securitySettings.passwordStrength === 'strong'
-                      ? '20/20'
-                      : securitySettings.passwordStrength === 'medium'
-                      ? '10/20'
-                      : '0/20'}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2">Two-Factor Auth</Typography>
-                  <Typography variant="body2">
-                    {privacySettings.twoFactorAuth ? '25/25' : '0/25'}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2">Biometric Login</Typography>
-                  <Typography variant="body2">
-                    {privacySettings.biometricLogin ? '15/15' : '0/15'}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2">Auto-Lock</Typography>
-                  <Typography variant="body2">
-                    {privacySettings.autoLock ? '10/10' : '0/10'}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2">Account Security</Typography>
-                  <Typography variant="body2">10/10</Typography>
-                </Box>
-                <Divider sx={{ my: 1 }} />
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
-                  <Typography variant="body2">Total Score</Typography>
-                  <Typography variant="body2">{calculateSecurityScore()}/100</Typography>
-                </Box>
-              </Box>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Typography variant="subtitle1" gutterBottom sx={{ color: 'primary.main' }}>
-                Security Recommendations
-              </Typography>
-              {getSecurityRecommendations().length > 0 ? (
-                <List dense>
-                  {getSecurityRecommendations().map((recommendation, index) => (
-                    <ListItem key={index} sx={{ px: 0 }}>
-                      <ListItemIcon sx={{ minWidth: 32 }}>
-                        {recommendation.priority === 'high' ? (
-                          <Error fontSize="small" sx={{ color: recommendation.color }} />
-                        ) : (
-                          <Warning fontSize="small" sx={{ color: recommendation.color }} />
-                        )}
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={recommendation.text}
-                        primaryTypographyProps={{ variant: 'body2' }}
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-              ) : (
-                <Alert severity="success">
-                  <Typography variant="body2">
-                    Great job! Your security settings are well configured.
-                  </Typography>
-                </Alert>
-              )}
-
-              <Typography variant="subtitle1" sx={{ mt: 3, color: 'primary.main' }} gutterBottom>
-                Privacy Analysis
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2">Data Collection</Typography>
-                  <Typography
-                    variant="body2"
-                    color={privacySettings.dataCollection ? 'success.main' : 'error.main'}
-                  >
-                    {privacySettings.dataCollection ? 'Enabled' : 'Disabled'}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2">Analytics Sharing</Typography>
-                  <Typography
-                    variant="body2"
-                    color={privacySettings.shareAnalytics ? 'success.main' : 'error.main'}
-                  >
-                    {privacySettings.shareAnalytics ? 'Enabled' : 'Disabled'}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2">Activity Tracking</Typography>
-                  <Typography
-                    variant="body2"
-                    color={privacySettings.allowTracking ? 'success.main' : 'error.main'}
-                  >
-                    {privacySettings.allowTracking ? 'Enabled' : 'Disabled'}
-                  </Typography>
-                </Box>
-              </Box>
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowSecurityAudit(false)}>Close</Button>
-          <Button
-            variant="contained"
-            disabled={isRecordingAudit}
-            onClick={async () => {
-              try {
-                setIsRecordingAudit(true);
-
-                // Record the security audit
-                await securityService.recordSecurityAudit();
-
-                // Refresh security data to get updated audit timestamp
-                await loadSecurityData();
-
-                // Close the dialog
-                setShowSecurityAudit(false);
-
-                // Show success message
-                console.log('Security audit recorded successfully');
-                // You could add a toast notification here if you have a notification system
-              } catch (error) {
-                console.error('Failed to record security audit:', error);
-                // Keep dialog open on error so user can try again
-              } finally {
-                setIsRecordingAudit(false);
-              }
-            }}
-          >
-            {isRecordingAudit ? 'Recording Audit...' : 'Record Audit & Close'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      />
 
       {/* Delete Account Confirmation Dialog */}
       <DeleteAccountDialog
@@ -4300,17 +4135,42 @@ const Settings: React.FC = () => {
         calculateDaysSinceCreation={calculateDaysSinceCreation}
       />
 
-      {/* AI Features Status Dialog */}
+      {/* Enhanced AI Features Status Dialog */}
       <Dialog
         open={showAIFeaturesTestDialog}
         onClose={() => setShowAIFeaturesTestDialog(false)}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: theme =>
+              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+            border: '2px solid #d32f2f',
+            borderRadius: 3,
+          },
+        }}
       >
-        <DialogTitle sx={{ color: 'primary.main' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <PsychologyOutlined sx={{ color: 'primary.main' }} />
-            AI Features Status
+        <DialogTitle
+          sx={{
+            color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+            borderBottom: '2px solid #d32f2f',
+            pb: 2,
+            background: theme =>
+              theme.palette.mode === 'dark'
+                ? 'linear-gradient(135deg, rgba(211, 47, 47, 0.1) 0%, rgba(211, 47, 47, 0.05) 100%)'
+                : 'linear-gradient(135deg, rgba(211, 47, 47, 0.05) 0%, rgba(211, 47, 47, 0.02) 100%)',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <PsychologyOutlined sx={{ color: '#d32f2f', fontSize: 28 }} />
+            <Box>
+              <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#d32f2f' }}>
+                AI Features Status
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Current AI configuration and feature availability
+              </Typography>
+            </Box>
           </Box>
         </DialogTitle>
         <DialogContent>

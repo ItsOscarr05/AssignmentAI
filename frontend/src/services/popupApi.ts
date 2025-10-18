@@ -17,7 +17,20 @@ export interface LinkAnalysisResult {
   title: string;
   content: string;
   type: string;
-  analysis: string;
+  analysis:
+    | string
+    | {
+        summary?: string;
+        keyPoints?: string[];
+        contentType?: string;
+        credibility?: number;
+        readingTime?: number;
+        wordCount?: number;
+        relatedTopics?: string[];
+        sentiment?: string;
+        suggestedActions?: string[];
+        analyzedAt?: string;
+      };
   extracted_at: string;
 }
 

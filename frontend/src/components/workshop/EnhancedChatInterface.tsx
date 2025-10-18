@@ -116,9 +116,11 @@ const EnhancedChatInterface = React.forwardRef<
   // Convert workshop history to chat messages only on initial load
   useEffect(() => {
     if (workshopHistory.length > 0 && !hasInitializedMessages.current && !isCleared) {
+      console.log('Converting workshop history to chat messages:', workshopHistory);
       const chatMessages: ChatMessage[] = [];
 
       workshopHistory.forEach(item => {
+        console.log('Processing history item:', item);
         // Add user message
         chatMessages.push({
           id: `${item.id}-user`,
@@ -129,17 +131,20 @@ const EnhancedChatInterface = React.forwardRef<
           reactions: { thumbsUp: 0, thumbsDown: 0 },
         });
 
-        // Add AI response
-        chatMessages.push({
-          id: `${item.id}-ai`,
-          prompt: item.prompt,
-          content: item.content,
-          timestamp: item.timestamp,
-          isUser: false,
-          reactions: { thumbsUp: 0, thumbsDown: 0 },
-        });
+        // Add AI response (only if there's content)
+        if (item.content && item.content.trim()) {
+          chatMessages.push({
+            id: `${item.id}-ai`,
+            prompt: item.prompt,
+            content: item.content,
+            timestamp: item.timestamp,
+            isUser: false,
+            reactions: { thumbsUp: 0, thumbsDown: 0 },
+          });
+        }
       });
 
+      console.log('Converted chat messages:', chatMessages);
       setMessages(chatMessages);
       hasInitializedMessages.current = true;
     }
@@ -271,6 +276,7 @@ const EnhancedChatInterface = React.forwardRef<
     hasInitializedMessages.current = false;
     setHasStreamed(false);
     setConversationMemory([]); // Clear conversation memory
+    console.log('Chat cleared successfully');
   }, [streamingInterval]);
 
   // Set up clear function when onClear is provided
@@ -325,10 +331,17 @@ const EnhancedChatInterface = React.forwardRef<
       reactions: { thumbsUp: 0, thumbsDown: 0 },
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    console.log('Adding user message:', userMessage);
+    setMessages(prev => {
+      const newMessages = [...prev, userMessage];
+      console.log('Updated messages array:', newMessages);
+      return newMessages;
+    });
     addToMemory(userMessage); // Add user message to memory
     setIsCleared(false); // Reset cleared flag when new message is sent
-    setInput('');
+
+    // Don't clear input immediately - let it show until AI response is complete
+    // setInput(''); // Commented out to keep message visible
     setIsTyping(true);
 
     // Create a placeholder AI message for streaming
@@ -342,7 +355,12 @@ const EnhancedChatInterface = React.forwardRef<
       reactions: { thumbsUp: 0, thumbsDown: 0 },
     };
 
-    setMessages(prev => [...prev, aiMessage]);
+    console.log('Adding AI message placeholder:', aiMessage);
+    setMessages(prev => {
+      const newMessages = [...prev, aiMessage];
+      console.log('Updated messages with AI placeholder:', newMessages);
+      return newMessages;
+    });
     setStreamingMessageId(aiMessageId);
     setStreamingContent('');
     setHasStreamed(false); // Reset hasStreamed for new message
@@ -361,22 +379,31 @@ const EnhancedChatInterface = React.forwardRef<
 
       // Use streaming for better performance with real-time updates
       await generateContent(contextualMessage, true, (chunk: string) => {
+        console.log('Received chunk:', chunk);
         // Update streaming content in real-time
-        setStreamingContent(prev => prev + chunk);
+        setStreamingContent(prev => {
+          const newContent = prev + chunk;
+          console.log('Updated streaming content:', newContent);
+          // Also update the message content in real-time
+          setMessages(prevMessages => {
+            const updatedMessages = prevMessages.map(msg =>
+              msg.id === streamingMessageId ? { ...msg, content: newContent } : msg
+            );
+            console.log('Updated messages during streaming:', updatedMessages);
+            return updatedMessages;
+          });
+          return newContent;
+        });
         // Auto-scroll during streaming
         if (messagesEndRef.current) {
           messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
         }
       });
 
-      // After streaming completes, ensure the message content is set
-      if (streamingMessageId && streamingContent) {
-        console.log('Streaming completed, setting final content for message:', streamingMessageId);
-        setMessages(prev =>
-          prev.map(msg =>
-            msg.id === streamingMessageId ? { ...msg, content: streamingContent } : msg
-          )
-        );
+      // After streaming completes, clear input and finalize
+      if (streamingMessageId) {
+        console.log('Streaming completed for message:', streamingMessageId);
+        setInput(''); // Clear input after AI response is complete
         setIsTyping(false);
         setStreamingMessageId(null);
         setHasStreamed(true);
@@ -391,6 +418,7 @@ const EnhancedChatInterface = React.forwardRef<
       setTimeout(() => {
         if (isTyping && streamingMessageId) {
           console.log('Safety timeout: stopping loading state');
+          setInput(''); // Clear input on timeout
           setIsTyping(false);
           setStreamingMessageId(null);
           setStreamingContent('');
@@ -403,6 +431,7 @@ const EnhancedChatInterface = React.forwardRef<
         message: 'Failed to generate response. Please try again.',
         severity: 'error',
       });
+      setInput(''); // Clear input on error
       setIsTyping(false);
       setStreamingMessageId(null);
       setStreamingContent('');
@@ -485,6 +514,7 @@ const EnhancedChatInterface = React.forwardRef<
       >
         {messages.length > 0 ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {console.log('Rendering messages:', messages)}
             {messages.map(message => (
               <Box
                 key={message.id}

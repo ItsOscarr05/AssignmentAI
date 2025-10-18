@@ -54,11 +54,19 @@ const WorkshopFileUpload: React.FC<WorkshopFileUploadProps> = ({ onFileUploaded 
         console.log('File upload completed');
         if (onFileUploaded) {
           console.log('Calling onFileUploaded callback');
-          // Get the uploaded file from the store
-          const uploadedFile = useWorkshopStore.getState().files.find(f => f.name === file.name);
-          if (uploadedFile) {
-            onFileUploaded(uploadedFile);
-          }
+          // Get the uploaded file from the store - wait a bit for the store to update
+          setTimeout(() => {
+            const uploadedFile = useWorkshopStore
+              .getState()
+              .files.find(f => f.name === file.name && f.status === 'completed');
+            if (uploadedFile) {
+              console.log('Found uploaded file for callback:', uploadedFile);
+              onFileUploaded(uploadedFile);
+            } else {
+              console.log('Could not find uploaded file in store');
+              console.log('Available files:', useWorkshopStore.getState().files);
+            }
+          }, 100); // Small delay to ensure store is updated
         }
       }
     },
@@ -197,8 +205,8 @@ const WorkshopFileUpload: React.FC<WorkshopFileUploadProps> = ({ onFileUploaded 
     if (!filledFile) return;
 
     try {
-      const blob = await fileProcessingService.downloadFilledFile(filledFile.file_id);
-      fileProcessingService.downloadFile(blob, filledFile.filled_file_name);
+      const result = await fileProcessingService.downloadFilledFile(filledFile.file_id);
+      fileProcessingService.downloadFile(result.blob, filledFile.filled_file_name);
     } catch (error) {
       console.error('Download failed:', error);
     }
@@ -462,10 +470,13 @@ const WorkshopFileUpload: React.FC<WorkshopFileUploadProps> = ({ onFileUploaded 
                 <ListItemText
                   primary={file.name}
                   secondary={
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
+                    <Box component="div">
+                      <Box
+                        component="span"
+                        sx={{ display: 'block', fontSize: '0.875rem', color: 'text.secondary' }}
+                      >
                         {formatFileSize(file.size)} • {file.type}
-                      </Typography>
+                      </Box>
                       {file.status === 'uploading' && (
                         <Box sx={{ mt: 1 }}>
                           <LinearProgress
@@ -473,36 +484,76 @@ const WorkshopFileUpload: React.FC<WorkshopFileUploadProps> = ({ onFileUploaded 
                             value={uploadProgress[file.id] || 0}
                             sx={{ height: 4, borderRadius: 2 }}
                           />
-                          <Typography variant="caption" color="text.secondary">
+                          <Box
+                            component="span"
+                            sx={{
+                              display: 'block',
+                              fontSize: '0.75rem',
+                              color: 'text.secondary',
+                              mt: 0.5,
+                            }}
+                          >
                             Uploading... {Math.round(uploadProgress[file.id] || 0)}%
-                          </Typography>
+                          </Box>
                         </Box>
                       )}
                       {file.status === 'processing' && (
                         <Box sx={{ mt: 1 }}>
                           <LinearProgress sx={{ height: 4, borderRadius: 2 }} />
-                          <Typography variant="caption" color="text.secondary">
+                          <Box
+                            component="span"
+                            sx={{
+                              display: 'block',
+                              fontSize: '0.75rem',
+                              color: 'text.secondary',
+                              mt: 0.5,
+                            }}
+                          >
                             Processing file...
-                          </Typography>
+                          </Box>
                         </Box>
                       )}
                       {aiFillingFiles.has(file.id) && (
                         <Box sx={{ mt: 1 }}>
                           <LinearProgress sx={{ height: 4, borderRadius: 2 }} />
-                          <Typography variant="caption" color="text.secondary">
+                          <Box
+                            component="span"
+                            sx={{
+                              display: 'block',
+                              fontSize: '0.75rem',
+                              color: 'text.secondary',
+                              mt: 0.5,
+                            }}
+                          >
                             AI is filling your file...
-                          </Typography>
+                          </Box>
                         </Box>
                       )}
                       {file.status === 'completed' && file.analysis && (
-                        <Typography variant="body2" color="success.main" sx={{ mt: 1 }}>
+                        <Box
+                          component="span"
+                          sx={{
+                            display: 'block',
+                            fontSize: '0.875rem',
+                            color: 'success.main',
+                            mt: 1,
+                          }}
+                        >
                           ✓ Processed successfully
-                        </Typography>
+                        </Box>
                       )}
                       {filledFiles.has(file.id) && (
-                        <Typography variant="body2" color="primary.main" sx={{ mt: 1 }}>
+                        <Box
+                          component="span"
+                          sx={{
+                            display: 'block',
+                            fontSize: '0.875rem',
+                            color: 'primary.main',
+                            mt: 1,
+                          }}
+                        >
                           ✓ AI filled - Ready to download
-                        </Typography>
+                        </Box>
                       )}
                     </Box>
                   }
