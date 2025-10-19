@@ -25,6 +25,8 @@ import {
 import { useTheme } from '@mui/material/styles';
 import { ReactNode, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useAdPopup, useAdSensePopup } from '../hooks/useAdPopup';
+import { AdPopup, AdSensePopup } from './ads';
 
 // Navigation items for the sidebar
 const navigationItems = [
@@ -48,6 +50,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
+
+  // Upgrade popup for free users (every 10 minutes)
+  const { showAd: showUpgradeAd, closeAd: closeUpgradeAd } = useAdPopup();
+
+  // AdSense popup for free users (every 20 minutes, offset from upgrade)
+  const { showAd: showAdSenseAd, closeAd: closeAdSenseAd } = useAdSensePopup();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -151,6 +159,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       >
         {children || <Outlet />}
       </Box>
+
+      {/* Upgrade Popup for free users (every 10 minutes) */}
+      <AdPopup open={showUpgradeAd} onClose={closeUpgradeAd} />
+
+      {/* AdSense Popup for free users (every 20 minutes) */}
+      <AdSensePopup open={showAdSenseAd} onClose={closeAdSenseAd} />
     </Box>
   );
 };
