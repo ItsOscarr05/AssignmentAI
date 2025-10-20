@@ -20,18 +20,60 @@ depends_on = None
 
 def upgrade() -> None:
     # Drop unused tables that are no longer in our models
-    op.drop_index('ix_systemlog_id', table_name='systemlog')
-    op.drop_table('systemlog')
+    # Check if objects exist before dropping them to avoid errors on fresh databases
     
-    op.drop_index('idx_token_expires', table_name='tokens')
-    op.drop_index('idx_token_user_type', table_name='tokens')
-    op.drop_index('ix_tokens_id', table_name='tokens')
-    op.drop_index('ix_tokens_token', table_name='tokens')
-    op.drop_table('tokens')
+    # Drop systemlog table and its index if they exist
+    try:
+        op.drop_index('ix_systemlog_id', table_name='systemlog')
+    except Exception:
+        pass  # Index doesn't exist, continue
     
-    op.drop_index('ix_user_sessions_device_key', table_name='user_sessions')
-    op.drop_index('ix_user_sessions_id', table_name='user_sessions')
-    op.drop_table('user_sessions')
+    try:
+        op.drop_table('systemlog')
+    except Exception:
+        pass  # Table doesn't exist, continue
+    
+    # Drop tokens table and its indexes if they exist
+    try:
+        op.drop_index('idx_token_expires', table_name='tokens')
+    except Exception:
+        pass
+    
+    try:
+        op.drop_index('idx_token_user_type', table_name='tokens')
+    except Exception:
+        pass
+    
+    try:
+        op.drop_index('ix_tokens_id', table_name='tokens')
+    except Exception:
+        pass
+    
+    try:
+        op.drop_index('ix_tokens_token', table_name='tokens')
+    except Exception:
+        pass
+    
+    try:
+        op.drop_table('tokens')
+    except Exception:
+        pass
+    
+    # Drop user_sessions table and its indexes if they exist
+    try:
+        op.drop_index('ix_user_sessions_device_key', table_name='user_sessions')
+    except Exception:
+        pass
+    
+    try:
+        op.drop_index('ix_user_sessions_id', table_name='user_sessions')
+    except Exception:
+        pass
+    
+    try:
+        op.drop_table('user_sessions')
+    except Exception:
+        pass
 
 
 def downgrade() -> None:
