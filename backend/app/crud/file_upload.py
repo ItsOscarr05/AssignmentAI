@@ -1,10 +1,7 @@
 from typing import List, Optional, Union
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
-<<<<<<< HEAD
 from sqlalchemy import select
-=======
->>>>>>> 0350350e2150a72a6e82e5f5f5842c4b03b44b54
 from app.models.file_upload import FileUpload
 from app.schemas.file_upload import FileUploadCreate, FileUploadUpdate
 from datetime import datetime

@@ -129,11 +129,7 @@ async def check_openai_quota():
 image_analysis_service = ImageAnalysisService()
 
 async def create_file_upload_record(
-<<<<<<< HEAD
-    db: Session,
-=======
     db: AsyncSession,
->>>>>>> 0350350e2150a72a6e82e5f5f5842c4b03b44b54
     user_id: int,
     file: UploadFile,
     file_path: str,
@@ -161,12 +157,8 @@ async def create_file_upload_record(
             }
         )
         
-<<<<<<< HEAD
         db_file_upload = await file_upload_crud.create_file_upload(db, file_upload_data, user_id)
-=======
-        db_file_upload = await file_upload_crud.create_file_upload_async(db, file_upload_data, user_id)
         logger.info(f"Successfully created file upload record with ID: {db_file_upload.id}")
->>>>>>> 0350350e2150a72a6e82e5f5f5842c4b03b44b54
         return {
             "file_upload_id": db_file_upload.id,
             "success": True

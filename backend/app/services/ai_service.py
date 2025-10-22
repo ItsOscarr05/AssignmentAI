@@ -587,11 +587,7 @@ class AIService:
         """
         try:
             # Get user's subscription model
-<<<<<<< HEAD
             user_model = await self.get_user_model(user_id) if user_id else "gpt-4o-mini"
-=======
-            user_model = await self.get_user_model(user_id) if user_id else "gpt-5-nano"
->>>>>>> 0350350e2150a72a6e82e5f5f5842c4b03b44b54
             logger.info(f"Using user model for chat: {user_model}")
             
             # Prepare conversation messages
@@ -698,11 +694,7 @@ class AIService:
         """
         try:
             # Get user's subscription model
-<<<<<<< HEAD
             user_model = await self.get_user_model(user_id) if user_id else "gpt-4o-mini"
-=======
-            user_model = await self.get_user_model(user_id) if user_id else "gpt-5-nano"
->>>>>>> 0350350e2150a72a6e82e5f5f5842c4b03b44b54
             logger.info(f"Using streaming with user model: {user_model}")
             
             # Prepare conversation messages
@@ -793,11 +785,7 @@ class AIService:
         """
         try:
             # Get user's subscription model for fallback too
-<<<<<<< HEAD
             user_model = await self.get_user_model(user_id) if user_id else "gpt-4o-mini"
-=======
-            user_model = await self.get_user_model(user_id) if user_id else "gpt-5-nano"
->>>>>>> 0350350e2150a72a6e82e5f5f5842c4b03b44b54
             logger.info(f"Using fallback method with user model: {user_model}")
             
             # Construct a system prompt for general chat/conversation
