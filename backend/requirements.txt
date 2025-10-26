@@ -21,10 +21,7 @@ zxcvbn>=4.4.28
 
 # AI and external services
 openai>=1.12.0
-anthropic>=0.18.0
 google-generativeai>=0.3.2
-torch>=2.2.0
-transformers>=4.37.2
 httpx>=0.24.0
 authlib>=1.2.0
 requests>=2.31.0
@@ -59,17 +56,10 @@ aiohttp>=3.8.0
 beautifulsoup4>=4.12.0
 lxml>=5.1.0
 
-# Data analysis and visualization
-matplotlib>=3.7.2
-seaborn>=0.12.2
-pandas>=2.1.0
-numpy>=1.24.3
-
 # Math verification and symbolic computation
 sympy>=1.12
 
-# Image processing
-opencv-python>=4.8.1
+# Image processing (OCR)
 pytesseract>=0.3.10
 
 # OAuth and external auth
