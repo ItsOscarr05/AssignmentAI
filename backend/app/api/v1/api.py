@@ -114,40 +114,4 @@ def get_submissions_by_user(user_id: int, db=Depends(get_db)):
         sub_dict = sub.__dict__.copy()
         sub_dict["student_id"] = sub_dict.pop("user_id", None)
         result.append(sub_dict)
-    return {"items": result, "total": len(result)}
-
-@api_router.get("/assignments/{assignment_id}/ai-assignments", tags=["AI Assignments"])
-def get_ai_assignments_by_assignment(assignment_id: int, skip: int = 0, limit: int = 100, db=Depends(get_db)):
-    """Get all AI-generated assignments for a specific assignment."""
-    ai_assignments = ai_assignment_crud.get_ai_assignment_by_assignment(db, assignment_id, skip=skip, limit=limit)
-    total = ai_assignment_crud.count_ai_assignments_by_assignment(db, assignment_id)
-    items = []
-    for a in ai_assignments:
-        try:
-            items.append(AIAssignment.model_validate(a))
-        except Exception:
-            continue
-    return {
-        "items": items,
-        "total": len(items),
-        "skip": skip,
-        "limit": limit
-    }
-
-@api_router.get("/users/{user_id}/ai-assignments", tags=["AI Assignments"])
-def get_ai_assignments_by_user(user_id: int, skip: int = 0, limit: int = 100, db=Depends(get_db)):
-    """Get all AI-generated assignments for a specific user."""
-    ai_assignments = ai_assignment_crud.get_ai_assignments_by_user(db, user_id, skip=skip, limit=limit)
-    total = ai_assignment_crud.count_ai_assignments_by_user(db, user_id)
-    items = []
-    for a in ai_assignments:
-        try:
-            items.append(AIAssignment.model_validate(a))
-        except Exception:
-            continue
-    return {
-        "items": items,
-        "total": len(items),
-        "skip": skip,
-        "limit": limit
-    } 
+    return {"items": result, "total": len(result)} 

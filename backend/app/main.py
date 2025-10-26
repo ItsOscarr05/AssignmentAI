@@ -342,6 +342,41 @@ async def health_check():
         "uptime": datetime.fromtimestamp(psutil.boot_time()).isoformat(),
     }
 
+@app.get("/metrics")
+async def metrics():
+    """Prometheus metrics endpoint"""
+    # Get system information
+    cpu_percent = psutil.cpu_percent(interval=0.1)
+    memory = psutil.virtual_memory()
+    disk = psutil.disk_usage('/')
+    
+    # Format metrics in Prometheus format
+    metrics_output = f"""# HELP assignmentai_cpu_usage CPU usage percentage
+# TYPE assignmentai_cpu_usage gauge
+assignmentai_cpu_usage {cpu_percent}
+
+# HELP assignmentai_memory_usage Memory usage percentage
+# TYPE assignmentai_memory_usage gauge
+assignmentai_memory_usage {memory.percent}
+
+# HELP assignmentai_disk_usage Disk usage percentage
+# TYPE assignmentai_disk_usage gauge
+assignmentai_disk_usage {disk.percent}
+
+# HELP assignmentai_memory_bytes Memory usage in bytes
+# TYPE assignmentai_memory_bytes gauge
+assignmentai_memory_bytes {{type="used"}} {memory.used}
+assignmentai_memory_bytes {{type="total"}} {memory.total}
+
+# HELP assignmentai_disk_bytes Disk usage in bytes
+# TYPE assignmentai_disk_bytes gauge
+assignmentai_disk_bytes {{type="used"}} {disk.used}
+assignmentai_disk_bytes {{type="total"}} {disk.total}
+"""
+    
+    from fastapi.responses import PlainTextResponse
+    return PlainTextResponse(content=metrics_output, media_type="text/plain")
+
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",

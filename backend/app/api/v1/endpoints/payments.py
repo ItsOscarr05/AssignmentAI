@@ -242,16 +242,6 @@ async def test_create_subscription(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/cancel-subscription")
-async def cancel_subscription(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Cancel the current subscription"""
-    payment_service = PaymentService(db)
-    return await payment_service.cancel_subscription(user=current_user)
-
-
 @router.get("/plans")
 async def get_plans():
     """Get available subscription plans (public)"""
