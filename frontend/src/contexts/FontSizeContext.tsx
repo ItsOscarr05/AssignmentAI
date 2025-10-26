@@ -23,7 +23,7 @@ export const FontSizeProvider: React.FC<FontSizeProviderProps> = ({ children }) 
   }, []);
 
   // No-op function for compatibility
-  const setFontSize = (size: number) => {
+  const setFontSize = () => {
     // Font size is now fixed at 20px, so this does nothing
     console.log('Font size is fixed at 20px');
   };

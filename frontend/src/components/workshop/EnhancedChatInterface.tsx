@@ -514,7 +514,6 @@ const EnhancedChatInterface = React.forwardRef<
       >
         {messages.length > 0 ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {console.log('Rendering messages:', messages)}
             {messages.map(message => (
               <Box
                 key={message.id}

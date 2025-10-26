@@ -1,8 +1,4 @@
-import {
-  Google as GoogleIcon,
-  Visibility,
-  VisibilityOff,
-} from '@mui/icons-material';
+import { Google as GoogleIcon, Visibility, VisibilityOff } from '@mui/icons-material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import {
   Alert,
@@ -13,16 +9,15 @@ import {
   Divider,
   Grid,
   Link,
-  Stack,
   TextField,
   Typography,
   useTheme,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
+import TermsPrivacyModal from '../components/auth/TermsPrivacyModal';
 import HeroParticles from '../components/HeroParticles';
 import { useAuth } from '../contexts/AuthContext';
-import TermsPrivacyModal from '../components/auth/TermsPrivacyModal';
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -209,7 +204,7 @@ const Register: React.FC = () => {
         });
 
         setSuccess('Registration successful!');
-        
+
         // Show terms and privacy modal instead of auto-redirect
         setShowTermsModal(true);
       } catch (error: any) {
@@ -900,7 +895,7 @@ const Register: React.FC = () => {
           </Grid>
         </Grid>
       </Container>
-      
+
       {/* Terms and Privacy Modal */}
       <TermsPrivacyModal
         open={showTermsModal}

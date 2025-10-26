@@ -16,8 +16,7 @@ export const OAuthCallback: React.FC = () => {
       const state = searchParams.get('state');
       const error = searchParams.get('error');
       const token = searchParams.get('token');
-      const provider = searchParams.get('provider');
-      
+
       // User info from URL parameters (sent by backend)
       const userId = searchParams.get('user_id');
       const userEmail = searchParams.get('user_email');
@@ -34,7 +33,7 @@ export const OAuthCallback: React.FC = () => {
           // Store token using token manager
           tokenManager.storeTokens({
             access_token: token,
-            refresh_token: null,
+            refresh_token: undefined,
             expires_in: 3600, // Default 1 hour
             token_type: 'bearer',
           });
@@ -48,69 +47,72 @@ export const OAuthCallback: React.FC = () => {
 
           // Use user info from URL parameters if available, otherwise fetch from backend
           let user;
-          
+
           if (userId && userEmail && userName) {
             // Use user info from URL parameters (preferred - no API call needed)
             const decodedName = decodeURIComponent(userName);
             const [firstName, ...rest] = decodedName.split(' ');
             const lastName = rest.join(' ');
-            
+
             user = {
-              id: parseInt(userId),
+              id: userId,
               email: userEmail,
               name: decodedName,
-              role: 'student',
+              role: 'student' as const,
               firstName: firstName || '',
               lastName: lastName || '',
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
             };
-            
+
             console.log('Using user info from URL parameters:', user);
           } else {
             // Fallback: Get user info from backend with retry logic
             let retryCount = 0;
             const maxRetries = 3;
-            
+
             while (retryCount < maxRetries) {
               try {
                 const { AuthService } = await import('../../services/auth/AuthService');
                 const currentUser = await AuthService.getCurrentUser();
-                
+
                 // Create user object
                 const name = typeof currentUser.name === 'string' ? currentUser.name : '';
                 const [firstName, ...rest] = name.split(' ');
                 const lastName = rest.join(' ');
-                
+
                 user = {
-                  id: currentUser.id,
+                  id: String(currentUser.id),
                   email: currentUser.email,
                   name: name,
-                  role: 'student',
+                  role: 'student' as const,
                   firstName: firstName || '',
                   lastName: lastName || '',
                   createdAt: new Date().toISOString(),
                   updatedAt: new Date().toISOString(),
                 };
-                
+
                 console.log('Fetched user info from backend:', user);
                 break; // Success, exit retry loop
               } catch (userError) {
                 retryCount++;
-                console.warn(`Failed to get user info (attempt ${retryCount}/${maxRetries}):`, userError);
-                
+                console.warn(
+                  `Failed to get user info (attempt ${retryCount}/${maxRetries}):`,
+                  userError
+                );
+
                 if (retryCount >= maxRetries) {
                   console.error('Failed to get user info after all retries:', userError);
                   setError('Failed to get user information');
                   return;
                 }
-                
+
                 // Wait before retrying
                 await new Promise(resolve => setTimeout(resolve, 1000));
               }
             }
           }
-          
+
           if (user) {
             // Update AuthContext
             updateUser(user);
