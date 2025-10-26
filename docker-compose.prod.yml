@@ -101,9 +101,9 @@ services:
     image: traefik:v3.0
     restart: always
     ports:
-      - '8081:80'
+      - '80:80'
       - '443:443'
-      - '8082:8080' # Dashboard (optional, secure in production)
+      - '8080:8080' # Dashboard (optional, secure in production)
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
