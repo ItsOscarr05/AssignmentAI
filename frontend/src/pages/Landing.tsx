@@ -3,8 +3,8 @@
 import { styled } from '@mui/material/styles';
 import React, { lazy, useEffect, useRef, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import HeroParticles from '../components/HeroParticles';
-import RedStarField from '../components/RedStarField';
+import RedStarField from '../components/common/RedStarField';
+import HeroParticles from '../components/layout/HeroParticles';
 // Remove the Next.js Link wrapper and use MUI's styled directly
 
 // For MUI Links that need to use React Router
@@ -354,12 +354,14 @@ const Landing: React.FC = () => {
             flexDirection: { xs: 'column', sm: 'row', md: 'row' },
             justifyContent: { xs: 'center', sm: 'space-between', md: 'space-between' },
             alignItems: { xs: 'center', sm: 'center', md: 'center' },
-            px: { xs: 2, sm: 3, md: 4, lg: 10 },
+            px: { xs: 1, sm: 3, md: 4, lg: 10 },
+            pl: { xs: 0.5, sm: 3, md: 4, lg: 10 },
             pt: { xs: 3, sm: 3 },
             pb: { xs: 2, sm: 0, md: 0 },
             position: 'absolute',
             top: 0,
             left: 0,
+            ml: { xs: -1, sm: 0, md: 0 },
             zIndex: 10,
             gap: { xs: 2, sm: 0, md: 0 },
           }}
@@ -370,7 +372,7 @@ const Landing: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               marginRight: { xs: 0, sm: -10, md: -10 },
-              marginLeft: { xs: -1, sm: -1.5, md: 0.5 },
+              marginLeft: { xs: -2, sm: -1.5, md: 0.5 },
               flexShrink: 0,
               mb: { xs: 1, sm: 0, md: 0 },
             }}
@@ -1603,7 +1605,7 @@ const Landing: React.FC = () => {
                           {plan.name === 'Plus' && (
                             <Chip
                               icon={<PsychologyOutlined />}
-                              label="GPT-4.1 Mini"
+                              label="GPT-5 Mini"
                               size="small"
                               sx={{
                                 backgroundColor: '#e8f5e9',
@@ -1620,7 +1622,7 @@ const Landing: React.FC = () => {
                           {plan.name === 'Pro' && (
                             <Chip
                               icon={<AutoAwesomeOutlined />}
-                              label="GPT-4 Turbo"
+                              label="GPT-5 Mini"
                               size="small"
                               sx={{
                                 backgroundColor: '#f3e5f5',

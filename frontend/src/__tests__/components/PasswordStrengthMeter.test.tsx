@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { PasswordStrengthMeter } from '../../components/PasswordStrengthMeter';
+import { PasswordStrengthMeter } from '../../components/auth/PasswordStrengthMeter';
 import { ThemeProvider } from '../../contexts/ThemeContext';
 
 const renderPasswordStrengthMeter = (props = {}) => {

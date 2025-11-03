@@ -4,6 +4,7 @@ import {
   BadgeOutlined,
   EditOutlined,
   EmailOutlined,
+  InfoOutlined as InfoOutlinedIcon,
   LanguageOutlined,
   LocationOnOutlined,
   LogoutOutlined,
@@ -116,8 +117,31 @@ const ProfileSection = ({ title, icon, children }: any) => {
   );
 };
 
-const StatCard = ({ icon, title, value, color, onClick, sx }: any) => {
+const StatCard = ({ icon, title, value, color, onClick, sx, tooltip }: any) => {
   const theme = useTheme();
+  const titleComponent = tooltip ? (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+      <Typography color="text.secondary">{title}</Typography>
+      <Tooltip
+        title={tooltip}
+        arrow
+        placement="top"
+      >
+        <InfoOutlinedIcon
+          sx={{
+            color: 'text.secondary',
+            fontSize: 16,
+            cursor: 'help',
+            opacity: 0.7,
+            '&:hover': { opacity: 1 },
+          }}
+        />
+      </Tooltip>
+    </Box>
+  ) : (
+    <Typography color="text.secondary">{title}</Typography>
+  );
+
   return (
     <Box
       onClick={onClick}
@@ -159,7 +183,7 @@ const StatCard = ({ icon, title, value, color, onClick, sx }: any) => {
       <Typography variant="h6" fontWeight="bold" sx={{ mb: 1 }}>
         {value}
       </Typography>
-      <Typography color="text.secondary">{title}</Typography>
+      {titleComponent}
     </Box>
   );
 };
@@ -578,10 +602,7 @@ const Profile: React.FC = () => {
           variant="h4"
           fontWeight="normal"
           sx={{
-            background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
-            backgroundClip: 'text',
-            WebkitBackgroundClip: 'text',
-            color: 'transparent',
+            color: '#d32f2f',
             ml: { xs: 0, md: 4 },
             fontSize: { xs: '1.75rem', md: '2.125rem' },
           }}
@@ -813,6 +834,25 @@ const Profile: React.FC = () => {
                   <StatCard
                     icon={<AssignmentOutlined />}
                     title="Total Assignments"
+                    tooltip={
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                          Total Assignments
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          The total number of assignments you have created across all subjects and statuses.
+                        </Typography>
+                        <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                          • Includes assignments in all statuses (not started, in progress, completed)
+                        </Typography>
+                        <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                          • Count includes all assignments regardless of subject or priority
+                        </Typography>
+                        <Typography variant="caption" sx={{ display: 'block', fontStyle: 'italic', mt: 1 }}>
+                          Create new assignments to increase this count
+                        </Typography>
+                      </Box>
+                    }
                     value={
                       assignmentsLoading || fileUploadsLoading ? (
                         <CircularProgress size={28} />
@@ -830,6 +870,28 @@ const Profile: React.FC = () => {
                   <StatCard
                     icon={<BadgeOutlined />}
                     title="Subscription Type"
+                    tooltip={
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                          Subscription Type
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          Your current subscription plan determines your available features, AI tokens, and usage limits.
+                        </Typography>
+                        <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                          • Free plan: Limited features and tokens
+                        </Typography>
+                        <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                          • Paid plans: Enhanced features, more tokens, priority support
+                        </Typography>
+                        <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                          • Upgrade anytime from the Price Plan page
+                        </Typography>
+                        <Typography variant="caption" sx={{ display: 'block', fontStyle: 'italic', mt: 1 }}>
+                          Manage your subscription in the Price Plan section
+                        </Typography>
+                      </Box>
+                    }
                     value={
                       currentSubscription === undefined ? (
                         <CircularProgress size={28} />
@@ -853,6 +915,25 @@ const Profile: React.FC = () => {
                   <StatCard
                     icon={<VerifiedOutlined />}
                     title="Member Since"
+                    tooltip={
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                          Member Since
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          The date you joined AssignmentAI. This shows how long you've been a member of the platform.
+                        </Typography>
+                        <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                          • Based on your account creation date
+                        </Typography>
+                        <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                          • Used to track your account history and activity
+                        </Typography>
+                        <Typography variant="caption" sx={{ display: 'block', fontStyle: 'italic', mt: 1 }}>
+                          Thank you for being a member!
+                        </Typography>
+                      </Box>
+                    }
                     value={
                       currentSubscription === undefined ? (
                         <CircularProgress size={28} />

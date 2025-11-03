@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import PerformanceDashboard from '../../components/PerformanceDashboard';
+import PerformanceDashboard from '../../components/dashboard/PerformanceDashboard';
 
 // Mock Material-UI components
 vi.mock('@mui/material', () => ({

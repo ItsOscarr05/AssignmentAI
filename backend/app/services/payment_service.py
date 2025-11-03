@@ -216,14 +216,14 @@ class PaymentService:
                 "name": "Plus", 
                 "price": 4.99,
                 "plan_id": settings.STRIPE_PRICE_PLUS,  # Store actual Stripe price ID
-                "ai_model": "gpt-4.1-mini",
+                "ai_model": "gpt-5-mini",
                 "token_limit": 250000
             },
             settings.STRIPE_PRICE_PRO: {
                 "name": "Pro", 
                 "price": 9.99,
                 "plan_id": settings.STRIPE_PRICE_PRO,  # Store actual Stripe price ID
-                "ai_model": "gpt-4-turbo",
+                "ai_model": "gpt-5-mini",
                 "token_limit": 500000
             },
             settings.STRIPE_PRICE_MAX: {

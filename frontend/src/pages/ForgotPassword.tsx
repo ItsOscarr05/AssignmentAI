@@ -2,7 +2,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Box, Button, Container, Divider, Grid, TextField, Typography } from '@mui/material';
 import React, { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import HeroParticles from '../components/HeroParticles';
+import HeroParticles from '../components/layout/HeroParticles';
 import { useAuth } from '../contexts/AuthContext';
 
 const ForgotPassword: React.FC = () => {

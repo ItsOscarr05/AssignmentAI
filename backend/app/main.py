@@ -219,21 +219,31 @@ app = FastAPI(
 # app.add_exception_handler(RequestValidationError, request_validation_error_handler)  # type: ignore
 
 # Configure CORS
+# Build CORS origins list with production domains
+cors_origins = [
+    settings.FRONTEND_URL,
+    "https://assignmentai.app",
+    "https://www.assignmentai.app",
+    "http://localhost:3001",
+    "http://localhost:3000",
+    "http://127.0.0.1:3001",
+    "http://127.0.0.1:3000"
+] if settings.FRONTEND_URL else [
+    "https://assignmentai.app",
+    "https://www.assignmentai.app",
+    "http://localhost:3001",
+    "http://localhost:3000", 
+    "http://127.0.0.1:3001",
+    "http://127.0.0.1:3000",
+    "*"
+]
+
+# Remove duplicates and None values
+cors_origins = list(dict.fromkeys([origin for origin in cors_origins if origin]))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        settings.FRONTEND_URL,
-        "http://localhost:3001",
-        "http://localhost:3000",
-        "http://127.0.0.1:3001",
-        "http://127.0.0.1:3000"
-    ] if settings.FRONTEND_URL else [
-        "http://localhost:3001",
-        "http://localhost:3000", 
-        "http://127.0.0.1:3001",
-        "http://127.0.0.1:3000",
-        "*"
-    ],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -664,15 +664,53 @@ const DashboardHome: React.FC = () => {
                   : 5
               }
             >
-              <Typography
-                variant="h5"
-                sx={{
-                  fontWeight: 'bold',
-                  color: theme => (theme.palette.mode === 'dark' ? '#ffffff' : '#000000'),
-                }}
-              >
-                Recent & Active Assignments
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    fontWeight: 'bold',
+                    color: theme => (theme.palette.mode === 'dark' ? '#ffffff' : '#000000'),
+                  }}
+                >
+                  Recent & Active Assignments
+                </Typography>
+                <Tooltip
+                  title={
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                        Recent & Active Assignments
+                      </Typography>
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        View and manage your assignments. Filter by status to see assignments that are not started, in progress, or completed.
+                      </Typography>
+                      <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                        • Use filter buttons to view specific assignment statuses
+                      </Typography>
+                      <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                        • Click on any assignment card to view details
+                      </Typography>
+                      <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                        • Create new assignments using the "Create Assignment" button
+                      </Typography>
+                      <Typography variant="caption" sx={{ display: 'block', fontStyle: 'italic', mt: 1 }}>
+                        Assignments are sorted by most recently updated
+                      </Typography>
+                    </Box>
+                  }
+                  arrow
+                  placement="top"
+                >
+                  <InfoOutlinedIcon
+                    sx={{
+                      color: 'text.secondary',
+                      fontSize: 20,
+                      cursor: 'help',
+                      opacity: 0.7,
+                      '&:hover': { opacity: 1 },
+                    }}
+                  />
+                </Tooltip>
+              </Box>
               <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
                 <Button
                   size="small"
@@ -1065,12 +1103,39 @@ const DashboardHome: React.FC = () => {
               >
                 Assignment Subject Distribution
               </Typography>
-              <Tooltip title="Select a section to navigate to assignments" arrow>
+              <Tooltip
+                title={
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                      Assignment Subject Distribution
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      Visual breakdown of your assignments by subject area. Click on any segment to filter and view assignments for that subject.
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                      • Interactive pie chart shows distribution across all subjects
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                      • Click segments to filter assignments by subject
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                      • Hover to see exact counts and percentages
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', fontStyle: 'italic', mt: 1 }}>
+                      Helps identify which subjects you work on most frequently
+                    </Typography>
+                  </Box>
+                }
+                arrow
+                placement="top"
+              >
                 <InfoOutlinedIcon
                   sx={{
                     color: 'text.secondary',
-                    fontSize: '20px',
-                    cursor: 'pointer',
+                    fontSize: 20,
+                    cursor: 'help',
+                    opacity: 0.7,
+                    '&:hover': { opacity: 1 },
                   }}
                 />
               </Tooltip>
@@ -1196,16 +1261,53 @@ const DashboardHome: React.FC = () => {
               width: '100%',
             }}
           >
-            <Typography
-              variant="h5"
-              sx={{
-                fontWeight: 'bold',
-                mb: 2,
-                color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
-              }}
-            >
-              AI Activity Insights
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: 'bold',
+                  color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+                }}
+              >
+                AI Activity Insights
+              </Typography>
+              <Tooltip
+                title={
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                      AI Activity Insights
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      Track your AI usage statistics and productivity metrics. This card provides insights into how you're using AI features for assignments and content generation.
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                      • Assignments Generated: Total assignments created with AI assistance
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                      • Completed Activities: Number of AI-powered tasks finished
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                      • Token Usage: Monthly and lifetime AI token consumption
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', fontStyle: 'italic', mt: 1 }}>
+                      Insights update in real-time as you use AI features
+                    </Typography>
+                  </Box>
+                }
+                arrow
+                placement="top"
+              >
+                <InfoOutlinedIcon
+                  sx={{
+                    color: 'text.secondary',
+                    fontSize: 20,
+                    cursor: 'help',
+                    opacity: 0.7,
+                    '&:hover': { opacity: 1 },
+                  }}
+                />
+              </Tooltip>
+            </Box>
             {activityInsights.assignmentsGenerated === 0 &&
             activityInsights.completedActivities === 0 &&
             (monthlyTokenUsage ?? 0) === 0 &&

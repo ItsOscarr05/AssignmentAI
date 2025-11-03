@@ -164,8 +164,8 @@ const TransactionsModal: React.FC<TransactionsModalProps> = ({
           </IconButton>
         </Box>
       </DialogTitle>
-      <DialogContent sx={{ p: 0, overflow: 'auto', maxHeight: '60vh' }}>
-        <List sx={{ py: 0, width: '100%' }}>
+      <DialogContent sx={{ p: 2, overflowX: 'hidden', overflowY: 'auto', maxHeight: '60vh' }}>
+        <List sx={{ py: 0, width: '100%', overflow: 'hidden' }}>
           {currentTransactions.map((transaction, index) => {
             const type = getTransactionType(transaction.description);
             const transactionIcon = getTransactionIcon(transaction);
@@ -176,8 +176,8 @@ const TransactionsModal: React.FC<TransactionsModalProps> = ({
                   button
                   onClick={e => onTransactionClick(e, transaction)}
                   sx={{
-                    pl: 1,
-                    pr: 1,
+                    pl: 0.75,
+                    pr: 0.75,
                     py: 1,
                     position: 'relative',
                     borderLeft: 'none',
@@ -187,6 +187,9 @@ const TransactionsModal: React.FC<TransactionsModalProps> = ({
                     transition: 'all 0.2s ease-in-out',
                     display: 'flex',
                     alignItems: 'center',
+                    width: '100%',
+                    maxWidth: '100%',
+                    boxSizing: 'border-box',
                     '&:hover': {
                       boxShadow: theme =>
                         theme.palette.mode === 'dark'
@@ -195,7 +198,7 @@ const TransactionsModal: React.FC<TransactionsModalProps> = ({
                       transform: 'translateY(-1px)',
                     },
                     mb: 1,
-                    mx: 1,
+                    mx: 0,
                     borderRadius: 2,
                     '::before': {
                       content: '""',
@@ -210,9 +213,9 @@ const TransactionsModal: React.FC<TransactionsModalProps> = ({
                     },
                   }}
                 >
-                  <ListItemIcon sx={{ minWidth: 32, pl: 0.5 }}>
+                  <ListItemIcon sx={{ minWidth: 28, maxWidth: 28, flexShrink: 0, pl: 0.5 }}>
                     {React.cloneElement(transactionIcon, {
-                      sx: { color: transactionColor, fontSize: 22 },
+                      sx: { color: transactionColor, fontSize: 20 },
                     })}
                   </ListItemIcon>
 
@@ -223,9 +226,9 @@ const TransactionsModal: React.FC<TransactionsModalProps> = ({
                       flexDirection: 'column',
                       flex: '1 1 auto',
                       minWidth: 0,
-                      mr: 0.5,
+                      mr: 0.75,
                       overflow: 'hidden',
-                      maxWidth: 'calc(100% - 60px)',
+                      maxWidth: 'calc(100% - 100px)',
                     }}
                   >
                     <Typography
@@ -233,16 +236,17 @@ const TransactionsModal: React.FC<TransactionsModalProps> = ({
                       sx={{
                         color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
                         fontWeight: 500,
-                        fontSize: '0.9rem',
+                        fontSize: '0.85rem',
                         lineHeight: 1.2,
                         marginBottom: '4px',
-                        wordBreak: 'break-word',
-                        overflowWrap: 'break-word',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       {transaction.description}
                     </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
                       <Chip
                         label={type}
                         size="small"
@@ -251,8 +255,9 @@ const TransactionsModal: React.FC<TransactionsModalProps> = ({
                           color: theme =>
                             theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
                           fontWeight: 600,
-                          fontSize: '0.7rem',
-                          height: 20,
+                          fontSize: '0.65rem',
+                          height: 18,
+                          flexShrink: 0,
                         }}
                       />
                       <Typography
@@ -260,7 +265,8 @@ const TransactionsModal: React.FC<TransactionsModalProps> = ({
                         sx={{
                           color: theme =>
                             theme.palette.mode === 'dark' ? 'text.secondary' : 'text.secondary',
-                          fontSize: '0.75rem',
+                          fontSize: '0.7rem',
+                          whiteSpace: 'nowrap',
                         }}
                       >
                         {formatDistanceToNow(parseISO(transaction.created_at), {
@@ -278,9 +284,11 @@ const TransactionsModal: React.FC<TransactionsModalProps> = ({
                       color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
                       border: 'none',
                       fontWeight: 700,
-                      fontSize: '1.1rem',
+                      fontSize: '0.85rem',
                       minWidth: 'auto',
                       flexShrink: 0,
+                      px: 0.5,
+                      whiteSpace: 'nowrap',
                     }}
                   />
                 </ListItem>

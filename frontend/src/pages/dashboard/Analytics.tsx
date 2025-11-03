@@ -53,7 +53,7 @@ const Analytics = () => {
 
   return (
     <Container maxWidth="xl">
-      <Typography variant="h4" component="h1" gutterBottom>
+      <Typography variant="h4" component="h1" gutterBottom sx={{ color: '#d32f2f' }}>
         Analytics Dashboard
       </Typography>
       <Suspense

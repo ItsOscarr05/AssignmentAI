@@ -753,7 +753,7 @@ const Assignments: React.FC = () => {
                 <Typography
                   variant={breakpoint === 'tall' ? 'h6' : breakpoint === 'square' ? 'h5' : 'h4'}
                   sx={{
-                    color: theme.palette.primary.main,
+                    color: '#d32f2f',
                     fontWeight: 400,
                     borderBottom: 'none',
                     pb: 0,

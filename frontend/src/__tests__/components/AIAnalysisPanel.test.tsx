@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import AIAnalysisPanel from '../../components/AIAnalysisPanel';
+import AIAnalysisPanel from '../../components/ai/AIAnalysisPanel';
 import { TokenLimitProvider } from '../../contexts/TokenLimitContext';
 
 // Mock the TokenLimitContext

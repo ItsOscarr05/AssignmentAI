@@ -1,437 +1,167 @@
-import {
-  Assignment as AssignmentIcon,
-  Apartment as DepartmentIcon,
-  Description as DescriptionIcon,
-  Edit as EditIcon,
-  Feedback as FeedbackIcon,
-  Grade as GradeIcon,
-  Login as LoginIcon,
-  Save as SaveIcon,
-  School as SchoolIcon,
-} from '@mui/icons-material';
-import {
-  Avatar,
-  Box,
-  Button,
-  Chip,
-  Grid,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Paper,
-  TextField,
-  Typography,
-} from '@mui/material';
-import { format } from 'date-fns';
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { UserProfile as UserProfileType, UserProfileUpdate } from '../../types/user';
-import { FileUpload } from '../common/FileUpload';
-import LoadingSpinner from '../common/LoadingSpinner';
-import { Toast } from '../common/Toast';
+import { Box, Button, CircularProgress, TextField, Typography } from '@mui/material';
+import React, { useState } from 'react';
 
-const UserProfile: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<UserProfileType | null>(null);
-  const [editing, setEditing] = useState(false);
-  const [editForm, setEditForm] = useState<Partial<UserProfileType>>({});
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [toast, setToast] = useState<{
-    open: boolean;
-    message: string;
-    severity: 'success' | 'error' | 'info' | 'warning';
-  }>({
-    open: false,
-    message: '',
-    severity: 'info',
+interface User {
+  id: string;
+  email: string;
+  full_name: string;
+  role: string;
+  is_active: boolean;
+  is_verified: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+interface UserProfileProps {
+  user: User;
+  onUpdate?: (user: Partial<User>) => void;
+  onPasswordChange?: (data: { current_password: string; new_password: string }) => void;
+  on2FASetup?: () => void;
+  on2FAVerify?: (code: string) => void;
+  isLoading?: boolean;
+  error?: string;
+}
+
+const UserProfile: React.FC<UserProfileProps> = ({
+  user,
+  onUpdate,
+  onPasswordChange,
+  on2FASetup,
+  on2FAVerify,
+  isLoading = false,
+  error,
+}) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState<Partial<User>>({});
+  const [passwordData, setPasswordData] = useState({
+    current_password: '',
+    new_password: '',
+    confirm_password: '',
   });
+  const [verificationCode, setVerificationCode] = useState('');
 
-  useEffect(() => {
-    fetchProfile();
-  }, [id]);
+  const handleUpdate = () => {
+    if (onUpdate) {
+      onUpdate(formData);
+    }
+    setIsEditing(false);
+  };
 
-  const fetchProfile = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/users/${id}`);
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch profile');
-      }
-
-      const data = await response.json();
-      setProfile(data);
-    } catch (error) {
-      setToast({
-        open: true,
-        message: 'Failed to load profile',
-        severity: 'error',
+  const handlePasswordChange = () => {
+    if (onPasswordChange && passwordData.new_password === passwordData.confirm_password) {
+      onPasswordChange({
+        current_password: passwordData.current_password,
+        new_password: passwordData.new_password,
       });
-    } finally {
-      setLoading(false);
     }
   };
-
-  const handleEdit = () => {
-    if (!profile) return;
-    setEditForm({
-      firstName: profile.firstName,
-      lastName: profile.lastName,
-      bio: profile.bio,
-      institution: profile.institution,
-      department: profile.department,
-    });
-    setEditing(true);
-  };
-
-  const handleSave = async () => {
-    try {
-      setLoading(true);
-      const formData = new FormData();
-
-      // Add profile data
-      const updateData: UserProfileUpdate = {
-        firstName: editForm.firstName,
-        lastName: editForm.lastName,
-        bio: editForm.bio,
-        institution: editForm.institution,
-        department: editForm.department,
-      };
-      formData.append('profile', JSON.stringify(updateData));
-
-      // Add avatar if changed
-      if (avatarFile) {
-        formData.append('avatar', avatarFile);
-      }
-
-      const response = await fetch(`/api/users/${id}`, {
-        method: 'PUT',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update profile');
-      }
-
-      const updatedProfile = await response.json();
-      setProfile(updatedProfile);
-      setEditing(false);
-      setEditForm({});
-      setAvatarFile(null);
-      setToast({
-        open: true,
-        message: 'Profile updated successfully',
-        severity: 'success',
-      });
-    } catch (error) {
-      setToast({
-        open: true,
-        message: 'Failed to update profile',
-        severity: 'error',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAvatarUpload = (file: File) => {
-    setAvatarFile(file);
-  };
-
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case 'submission':
-        return <AssignmentIcon />;
-      case 'grade':
-        return <GradeIcon />;
-      case 'feedback':
-        return <FeedbackIcon />;
-      case 'login':
-        return <LoginIcon />;
-      default:
-        return <AssignmentIcon />;
-    }
-  };
-
-  if (loading) {
-    return <LoadingSpinner />;
-  }
-
-  if (!profile) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <Typography variant="h6">Profile not found</Typography>
-      </Box>
-    );
-  }
 
   return (
-    <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4">Profile</Typography>
+    <Box sx={{ p: 3 }}>
+      {isLoading && <CircularProgress />}
+      {error && <Typography color="error">{error}</Typography>}
+
+      <Typography variant="h5" gutterBottom>
+        {user.full_name}
+      </Typography>
+      <Typography variant="body1" gutterBottom>
+        Email: {user.email}
+      </Typography>
+      <Typography variant="body1" gutterBottom>
+        Role: {user.role}
+      </Typography>
+      <Typography variant="body1" gutterBottom>
+        Status: {user.is_verified ? 'Verified' : 'Not Verified'}
+      </Typography>
+
+      {!isEditing ? (
+        <Button variant="contained" onClick={() => setIsEditing(true)} disabled={isLoading}>
+          Edit Profile
+        </Button>
+      ) : (
+        <Box sx={{ mt: 2 }}>
+          <TextField
+            label="Full Name"
+            value={formData.full_name || user.full_name}
+            onChange={e => setFormData({ ...formData, full_name: e.target.value })}
+            fullWidth
+            margin="normal"
+          />
+          <Button variant="contained" onClick={handleUpdate} disabled={isLoading}>
+            Save Changes
+          </Button>
+          <Button variant="outlined" onClick={() => setIsEditing(false)} sx={{ ml: 1 }}>
+            Cancel
+          </Button>
+        </Box>
+      )}
+
+      <Box sx={{ mt: 3 }}>
+        <Typography variant="h6" gutterBottom>
+          Change Password
+        </Typography>
+        <TextField
+          label="Current Password"
+          type="password"
+          value={passwordData.current_password}
+          onChange={e => setPasswordData({ ...passwordData, current_password: e.target.value })}
+          fullWidth
+          margin="normal"
+        />
+        <TextField
+          label="New Password"
+          type="password"
+          value={passwordData.new_password}
+          onChange={e => setPasswordData({ ...passwordData, new_password: e.target.value })}
+          fullWidth
+          margin="normal"
+        />
+        <TextField
+          label="Confirm Password"
+          type="password"
+          value={passwordData.confirm_password}
+          onChange={e => setPasswordData({ ...passwordData, confirm_password: e.target.value })}
+          fullWidth
+          margin="normal"
+        />
         <Button
           variant="contained"
-          startIcon={editing ? <SaveIcon /> : <EditIcon />}
-          onClick={editing ? handleSave : handleEdit}
-          disabled={loading}
+          onClick={handlePasswordChange}
+          disabled={isLoading}
+          sx={{ mt: 2 }}
         >
-          {editing ? 'Save Changes' : 'Edit Profile'}
+          Update Password
         </Button>
       </Box>
 
-      <Grid container spacing={3}>
-        {/* Profile Information */}
-        <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 3, textAlign: 'center' }}>
-            <Box position="relative" display="inline-block">
-              <Avatar
-                src={editing ? URL.createObjectURL(avatarFile || new Blob()) : profile.avatar}
-                sx={{ width: 120, height: 120, mb: 2 }}
-              />
-              {editing && (
-                <Box position="absolute" bottom={0} right={0}>
-                  <FileUpload
-                    onFileSelect={handleAvatarUpload}
-                    accept="image/*"
-                    maxSize={5 * 1024 * 1024} // 5MB
-                    multiple={false}
-                  />
-                </Box>
-              )}
-            </Box>
-            <Typography variant="h5" gutterBottom>
-              {editing ? (
-                <TextField
-                  fullWidth
-                  value={editForm.firstName || ''}
-                  onChange={e => setEditForm({ ...editForm, firstName: e.target.value })}
-                  placeholder="First Name"
-                  size="small"
-                  label="First Name"
-                  inputProps={{ 'data-testid': 'first-name-input' }}
-                />
-              ) : (
-                `${profile.firstName} ${profile.lastName}`
-              )}
-            </Typography>
-            <Typography color="text.secondary" gutterBottom>
-              {profile.email}
-            </Typography>
-            <Chip
-              label={profile.role}
-              color={
-                profile.role === 'admin'
-                  ? 'error'
-                  : profile.role === 'teacher'
-                  ? 'primary'
-                  : 'success'
-              }
-              size="small"
-              sx={{ mb: 2 }}
+      <Box sx={{ mt: 3 }}>
+        <Typography variant="h6" gutterBottom>
+          Two-Factor Authentication
+        </Typography>
+        {!user.is_verified ? (
+          <Button variant="contained" onClick={on2FASetup} disabled={isLoading}>
+            Setup 2FA
+          </Button>
+        ) : (
+          <Box>
+            <TextField
+              label="Verification Code"
+              value={verificationCode}
+              onChange={e => setVerificationCode(e.target.value)}
+              fullWidth
+              margin="normal"
             />
-            {editing ? (
-              <TextField
-                fullWidth
-                multiline
-                rows={3}
-                value={editForm.bio || ''}
-                onChange={e => setEditForm({ ...editForm, bio: e.target.value })}
-                placeholder="Bio"
-                size="small"
-                sx={{ mb: 2 }}
-                label="Bio"
-                inputProps={{ 'data-testid': 'bio-input' }}
-              />
-            ) : (
-              profile.bio && (
-                <Typography variant="body2" paragraph>
-                  {profile.bio}
-                </Typography>
-              )
-            )}
-          </Paper>
-        </Grid>
-
-        {/* Statistics */}
-        <Grid item xs={12} md={8}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Statistics
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={6} sm={3}>
-                <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
-                  <Typography variant="h4">{profile.statistics.totalAssignments}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Total Assignments
-                  </Typography>
-                </Paper>
-              </Grid>
-              <Grid item xs={6} sm={3}>
-                <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
-                  <Typography variant="h4">{profile.statistics.averageGrade}%</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Average Grade
-                  </Typography>
-                </Paper>
-              </Grid>
-              <Grid item xs={6} sm={3}>
-                <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
-                  <Typography variant="h4">{profile.statistics.submissionRate}%</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Submission Rate
-                  </Typography>
-                </Paper>
-              </Grid>
-              <Grid item xs={6} sm={3}>
-                <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
-                  <Typography variant="h4">{profile.statistics.feedbackReceived}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Feedback Received
-                  </Typography>
-                </Paper>
-              </Grid>
-            </Grid>
-          </Paper>
-        </Grid>
-
-        {/* Additional Information */}
-        <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Additional Information
-            </Typography>
-            <List>
-              {editing ? (
-                <>
-                  <ListItem>
-                    <ListItemIcon>
-                      <SchoolIcon />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={
-                        <TextField
-                          fullWidth
-                          value={editForm.institution || ''}
-                          onChange={e =>
-                            setEditForm({
-                              ...editForm,
-                              institution: e.target.value,
-                            })
-                          }
-                          placeholder="Institution"
-                          size="small"
-                          label="Institution"
-                          inputProps={{ 'data-testid': 'institution-input' }}
-                        />
-                      }
-                    />
-                  </ListItem>
-                  <ListItem>
-                    <ListItemIcon>
-                      <DepartmentIcon />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={
-                        <TextField
-                          fullWidth
-                          value={editForm.department || ''}
-                          onChange={e =>
-                            setEditForm({
-                              ...editForm,
-                              department: e.target.value,
-                            })
-                          }
-                          placeholder="Department"
-                          size="small"
-                          label="Department"
-                          inputProps={{ 'data-testid': 'department-input' }}
-                        />
-                      }
-                    />
-                  </ListItem>
-                </>
-              ) : (
-                <>
-                  {profile.institution && (
-                    <ListItem>
-                      <ListItemIcon>
-                        <SchoolIcon />
-                      </ListItemIcon>
-                      <ListItemText primary={profile.institution} />
-                    </ListItem>
-                  )}
-                  {profile.department && (
-                    <ListItem>
-                      <ListItemIcon>
-                        <DepartmentIcon />
-                      </ListItemIcon>
-                      <ListItemText primary={profile.department} />
-                    </ListItem>
-                  )}
-                </>
-              )}
-              <ListItem>
-                <ListItemIcon>
-                  <DescriptionIcon />
-                </ListItemIcon>
-                <ListItemText
-                  primary="Member Since"
-                  secondary={format(new Date(profile.createdAt), 'MMM d, yyyy')}
-                />
-              </ListItem>
-              <ListItem>
-                <ListItemIcon>
-                  <LoginIcon />
-                </ListItemIcon>
-                <ListItemText
-                  primary="Last Login"
-                  secondary={format(new Date(profile.lastLogin), 'MMM d, yyyy h:mm a')}
-                />
-              </ListItem>
-            </List>
-          </Paper>
-        </Grid>
-
-        {/* Recent Activity */}
-        <Grid item xs={12} md={8}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Recent Activity
-            </Typography>
-            <List>
-              {profile.recentActivity.map(activity => (
-                <ListItem key={activity.id}>
-                  <ListItemIcon>{getActivityIcon(activity.type)}</ListItemIcon>
-                  <ListItemText
-                    primary={activity.title}
-                    secondary={
-                      <>
-                        <Typography component="span" variant="body2">
-                          {activity.description}
-                        </Typography>
-                        <br />
-                        <Typography component="span" variant="caption" color="text.secondary">
-                          {format(new Date(activity.timestamp), 'MMM d, yyyy h:mm a')}
-                        </Typography>
-                      </>
-                    }
-                  />
-                </ListItem>
-              ))}
-            </List>
-          </Paper>
-        </Grid>
-      </Grid>
-
-      <Toast
-        open={toast.open}
-        message={toast.message}
-        severity={toast.severity}
-        onClose={() => setToast({ ...toast, open: false })}
-      />
+            <Button
+              variant="contained"
+              onClick={() => on2FAVerify?.(verificationCode)}
+              disabled={isLoading}
+              sx={{ mt: 2 }}
+            >
+              Verify 2FA
+            </Button>
+          </Box>
+        )}
+      </Box>
     </Box>
   );
 };

@@ -381,46 +381,47 @@ const AITokens: React.FC = () => {
   const displayedUsageData = range === '7' ? usageData7 : usageData30;
 
   // Token usage info for free tier features
+  // Estimates based on typical prompt + response token usage patterns
   const tokenUsageInfo = [
     {
       title: 'Assignment Analysis',
-      tokens: '500 tokens',
+      tokens: '1,200 tokens',
       description: 'Basic analysis of your assignment requirements and structure',
       features: ['Requirements breakdown', 'Structure suggestions', 'Key points identification'],
     },
     {
       title: 'Essay Review',
-      tokens: '1000 tokens',
+      tokens: '3,000 tokens',
       description: 'Comprehensive review of your essay with feedback and suggestions',
       features: ['Grammar and style check', 'Content analysis', 'Improvement suggestions'],
     },
     {
       title: 'Image Analysis',
-      tokens: '1500 tokens',
+      tokens: '1,200 tokens',
       description: 'Analyze and extract information from images using AI',
       features: ['Object detection', 'Text extraction (OCR)', 'Scene description'],
     },
     {
       title: 'Math Problem Solving',
-      tokens: '750 tokens',
+      tokens: '1,000 tokens',
       description: 'Step-by-step solutions for mathematical problems',
       features: ['Solution steps', 'Formula explanations', 'Alternative methods'],
     },
     {
       title: 'Programming Completion',
-      tokens: '1300 tokens',
+      tokens: '1,500 tokens',
       description: 'AI-powered code completion and suggestions for programming tasks',
       features: ['Code generation', 'Syntax suggestions', 'Bug detection'],
     },
     {
       title: 'Science Lab Report',
-      tokens: '900 tokens',
+      tokens: '2,000 tokens',
       description: 'Analysis and formatting of lab experiment data',
       features: ['Data analysis', 'Conclusion generation', 'Format assistance'],
     },
     {
       title: 'History Timeline',
-      tokens: '1100 tokens',
+      tokens: '1,800 tokens',
       description: 'Create and analyze historical timelines',
       features: ['Event sequencing', 'Source verification', 'Context analysis'],
     },
@@ -661,16 +662,53 @@ const AITokens: React.FC = () => {
                 theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
             }}
           >
-            <Typography
-              variant="h6"
-              gutterBottom
-              sx={{
-                color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
-                fontWeight: 'normal',
-              }}
-            >
-              Token Usage
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              <Typography
+                variant="h6"
+                gutterBottom
+                sx={{
+                  color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+                  fontWeight: 'normal',
+                  mb: 0,
+                }}
+              >
+                Token Usage
+              </Typography>
+              <Tooltip
+                title={
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                      Token Usage Overview
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      Track your AI token consumption for this billing cycle. Tokens are used when you interact with AI features like assignment analysis, essay review, and image analysis.
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                      • Remaining tokens reset monthly based on your subscription plan
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                      • Usage is tracked automatically for all AI-powered features
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', fontStyle: 'italic', mt: 1 }}>
+                      Click the progress bar to see detailed usage guide
+                    </Typography>
+                  </Box>
+                }
+                arrow
+                placement="top"
+              >
+                <InfoIcon
+                  sx={{
+                    color: 'text.secondary',
+                    fontSize: 20,
+                    cursor: 'help',
+                    opacity: 0.7,
+                    '&:hover': { opacity: 1 },
+                    mb: 0.5,
+                  }}
+                />
+              </Tooltip>
+            </Box>
             <Typography
               variant="subtitle2"
               sx={{
@@ -922,16 +960,56 @@ const AITokens: React.FC = () => {
                 theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
             }}
           >
-            <Typography
-              variant="h6"
-              gutterBottom
-              sx={{
-                color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
-                fontWeight: 'normal',
-              }}
-            >
-              Usage History
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              <Typography
+                variant="h6"
+                gutterBottom
+                sx={{
+                  color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+                  fontWeight: 'normal',
+                  mb: 0,
+                }}
+              >
+                Usage History
+              </Typography>
+              <Tooltip
+                title={
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                      Usage History Chart
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      Visualize your token usage over time with an interactive line chart. Track daily consumption and cumulative totals for the selected period.
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                      • Switch between 7-day and 30-day views using the toggle buttons
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                      • Hover over data points to see detailed information for each day
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                      • Shows daily token usage and cumulative totals
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', fontStyle: 'italic', mt: 1 }}>
+                      Chart updates automatically as you use AI features
+                    </Typography>
+                  </Box>
+                }
+                arrow
+                placement="top"
+              >
+                <InfoIcon
+                  sx={{
+                    color: 'text.secondary',
+                    fontSize: 20,
+                    cursor: 'help',
+                    opacity: 0.7,
+                    '&:hover': { opacity: 1 },
+                    mb: 0.5,
+                  }}
+                />
+              </Tooltip>
+            </Box>
             <ToggleButtonGroup
               value={range}
               exclusive
@@ -1122,16 +1200,56 @@ const AITokens: React.FC = () => {
                 theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
             }}
           >
-            <Typography
-              variant="h6"
-              gutterBottom
-              sx={{
-                color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
-                fontWeight: 'normal',
-              }}
-            >
-              Token Cost Calculator
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              <Typography
+                variant="h6"
+                gutterBottom
+                sx={{
+                  color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+                  fontWeight: 'normal',
+                  mb: 0,
+                }}
+              >
+                Token Cost Calculator
+              </Typography>
+              <Tooltip
+                title={
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                      Token Cost Calculator
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      Estimate the cost of purchasing additional tokens. Tokens are priced at $1.00 per 1,000 tokens (minus 1 cent processing fee).
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                      • Enter the number of tokens you want to purchase
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                      • Cost updates automatically as you type
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                      • Purchased tokens are added to your current balance
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', fontStyle: 'italic', mt: 1 }}>
+                      Minimum purchase: 1,000 tokens
+                    </Typography>
+                  </Box>
+                }
+                arrow
+                placement="top"
+              >
+                <InfoIcon
+                  sx={{
+                    color: 'text.secondary',
+                    fontSize: 20,
+                    cursor: 'help',
+                    opacity: 0.7,
+                    '&:hover': { opacity: 1 },
+                    mb: 0.5,
+                  }}
+                />
+              </Tooltip>
+            </Box>
             <Box
               sx={{
                 display: 'flex',
@@ -1332,16 +1450,56 @@ const AITokens: React.FC = () => {
                 theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
             }}
           >
-            <Typography
-              variant="h6"
-              gutterBottom
-              sx={{
-                color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
-                fontWeight: 'normal',
-              }}
-            >
-              Recent Transactions
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              <Typography
+                variant="h6"
+                gutterBottom
+                sx={{
+                  color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
+                  fontWeight: 'normal',
+                  mb: 0,
+                }}
+              >
+                Recent Transactions
+              </Typography>
+              <Tooltip
+                title={
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                      Recent Transactions
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      View your recent token purchases and subscription transactions. Click on any transaction to see more details.
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                      • Shows up to 3 most recent transactions
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                      • Includes subscription payments and token purchases
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                      • Click "View All Transactions" to see complete history
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', fontStyle: 'italic', mt: 1 }}>
+                      Transactions are ordered by most recent first
+                    </Typography>
+                  </Box>
+                }
+                arrow
+                placement="top"
+              >
+                <InfoIcon
+                  sx={{
+                    color: 'text.secondary',
+                    fontSize: 20,
+                    cursor: 'help',
+                    opacity: 0.7,
+                    '&:hover': { opacity: 1 },
+                    mb: 0.5,
+                  }}
+                />
+              </Tooltip>
+            </Box>
             {transactions.length === 0 ? (
               <Box
                 display="flex"
@@ -1385,6 +1543,7 @@ const AITokens: React.FC = () => {
                           onClick={e => handleTransactionClick(e, transaction)}
                           sx={{
                             pl: 0,
+                            pr: 1,
                             position: 'relative',
                             borderLeft: 'none',
                             background: theme =>
@@ -1393,6 +1552,8 @@ const AITokens: React.FC = () => {
                                 : '#fff',
                             border: `2px solid ${transactionColor}`,
                             transition: 'all 0.2s ease-in-out',
+                            display: 'flex',
+                            alignItems: 'center',
                             '&:hover': {
                               boxShadow: theme =>
                                 theme.palette.mode === 'dark'
@@ -1415,18 +1576,28 @@ const AITokens: React.FC = () => {
                             },
                           }}
                         >
-                          <ListItemIcon sx={{ minWidth: 40, pl: 1 }}>
+                          <ListItemIcon sx={{ minWidth: 40, pl: 1, flexShrink: 0 }}>
                             {React.cloneElement(transactionIcon, {
                               sx: { color: transactionColor, fontSize: 28 },
                             })}
                           </ListItemIcon>
                           <ListItemText
+                            sx={{
+                              flex: '1 1 auto',
+                              minWidth: 0,
+                              mr: 1,
+                              overflow: 'hidden',
+                            }}
                             primary={
                               <Typography
                                 sx={{
                                   color: theme =>
                                     theme.palette.mode === 'dark' ? 'white' : 'black',
                                   fontWeight: 500,
+                                  fontSize: '0.95rem',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
                                 }}
                               >
                                 {transaction.description}
@@ -1467,13 +1638,16 @@ const AITokens: React.FC = () => {
                           />
                           <Chip
                             label={`$${transaction.amount.toFixed(2)}`}
-                            size="medium"
+                            size="small"
                             sx={{
                               backgroundColor: 'transparent',
                               color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
                               border: 'none',
                               fontWeight: 700,
-                              fontSize: '1.5rem',
+                              fontSize: '1rem',
+                              minWidth: 'auto',
+                              flexShrink: 0,
+                              px: 1,
                             }}
                           />
                         </ListItem>
@@ -1683,6 +1857,44 @@ const AITokens: React.FC = () => {
                           >
                             {info.title}
                           </Typography>
+                          <Tooltip
+                            title={
+                              <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                                  {info.title}
+                                </Typography>
+                                <Typography variant="body2" sx={{ mb: 1 }}>
+                                  {info.description}
+                                </Typography>
+                                <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
+                                  Features:
+                                </Typography>
+                                <Typography variant="caption" component="div">
+                                  {info.features.map((f, idx) => (
+                                    <span key={idx}>
+                                      • {f}
+                                      {idx < info.features.length - 1 && <br />}
+                                    </span>
+                                  ))}
+                                </Typography>
+                                <Typography variant="caption" sx={{ display: 'block', mt: 1, fontStyle: 'italic' }}>
+                                  Estimated: {info.tokens} per request
+                                </Typography>
+                              </Box>
+                            }
+                            arrow
+                            placement="top"
+                          >
+                            <InfoIcon
+                              sx={{
+                                color: 'text.secondary',
+                                fontSize: 18,
+                                cursor: 'help',
+                                opacity: 0.7,
+                                '&:hover': { opacity: 1 },
+                              }}
+                            />
+                          </Tooltip>
                         </Box>
                         <Chip
                           label={info.tokens}
@@ -1772,6 +1984,44 @@ const AITokens: React.FC = () => {
                           >
                             {info.title}
                           </Typography>
+                          <Tooltip
+                            title={
+                              <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                                  {info.title}
+                                </Typography>
+                                <Typography variant="body2" sx={{ mb: 1 }}>
+                                  {info.description}
+                                </Typography>
+                                <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
+                                  Features:
+                                </Typography>
+                                <Typography variant="caption" component="div">
+                                  {info.features.map((f, idx) => (
+                                    <span key={idx}>
+                                      • {f}
+                                      {idx < info.features.length - 1 && <br />}
+                                    </span>
+                                  ))}
+                                </Typography>
+                                <Typography variant="caption" sx={{ display: 'block', mt: 1, fontStyle: 'italic' }}>
+                                  Estimated: {info.tokens} per request
+                                </Typography>
+                              </Box>
+                            }
+                            arrow
+                            placement="top"
+                          >
+                            <InfoIcon
+                              sx={{
+                                color: 'text.secondary',
+                                fontSize: 18,
+                                cursor: 'help',
+                                opacity: 0.7,
+                                '&:hover': { opacity: 1 },
+                              }}
+                            />
+                          </Tooltip>
                         </Box>
                         <Chip
                           label={info.tokens}

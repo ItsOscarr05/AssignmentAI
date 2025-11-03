@@ -35,7 +35,12 @@ const AISettings: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom className="page-title">
+      <Typography 
+        variant="h4" 
+        gutterBottom 
+        className="page-title"
+        sx={{ color: '#d32f2f' }}
+      >
         AI Settings
       </Typography>
       <Grid container spacing={3}>

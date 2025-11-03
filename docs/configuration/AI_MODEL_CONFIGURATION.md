@@ -9,8 +9,8 @@ AssignmentAI uses different OpenAI models based on user subscription tiers to op
 | Subscription Plan | AI Model       | Token Limit | Description                                         |
 | ----------------- | -------------- | ----------- | --------------------------------------------------- |
 | **Free**          | `gpt-5-nano`   | 100,000     | Fast, efficient model for basic assignments         |
-| **Plus**          | `gpt-4.1-mini` | 250,000     | Balanced performance and cost for enhanced features |
-| **Pro**           | `gpt-4-turbo`  | 500,000     | Advanced model for professional-grade assignments   |
+| **Plus**          | `gpt-5-mini`   | 250,000     | Balanced performance and cost for enhanced features |
+| **Pro**           | `gpt-5-mini`   | 500,000     | Advanced model for professional-grade assignments   |
 | **Max**           | `gpt-5`        | 1,000,000   | Premium model for maximum quality and complexity    |
 
 ## Implementation Details
@@ -26,12 +26,12 @@ model_mapping = {
         'token_limit': 100000
     },
     'price_plus': {
-        'model': 'gpt-4.1-mini',
-        'token_limit': 200000
+        'model': 'gpt-5-mini',
+        'token_limit': 250000
     },
     'price_pro': {
-        'model': 'gpt-4-turbo',
-        'token_limit': 400000
+        'model': 'gpt-5-mini',
+        'token_limit': 500000
     },
     'price_max': {
         'model': 'gpt-5',
@@ -52,14 +52,14 @@ const subscriptionConfig: Record<SubscriptionPlan, SubscriptionConfig> = {
     label: 'GPT-5 Nano',
   },
   plus: {
-    model: 'gpt-4.1-mini',
+    model: 'gpt-5-mini',
     tokenLimit: 250000,
-    label: 'GPT-4.1 Mini',
+    label: 'GPT-5 Mini',
   },
   pro: {
-    model: 'gpt-4-turbo',
+    model: 'gpt-5-mini',
     tokenLimit: 500000,
-    label: 'GPT-4 Turbo',
+    label: 'GPT-5 Mini',
   },
   max: {
     model: 'gpt-5',
@@ -87,19 +87,13 @@ OPENAI_MODEL=gpt-4.1-nano  # Default model (overridden by subscription)
 - **Capabilities**: Good for basic assignment generation
 - **Best for**: Simple tasks, quick responses
 
-### GPT-4.1 Mini (Plus Plan)
+### GPT-5 Mini (Plus & Pro Plans)
 
 - **Speed**: Fast
-- **Cost**: Low
-- **Capabilities**: Good balance of quality and efficiency
-- **Best for**: Most common assignment types
-
-### GPT-4 Turbo (Pro Plan)
-
-- **Speed**: Fast
-- **Cost**: Medium
-- **Capabilities**: Advanced reasoning and analysis
-- **Best for**: Complex assignments, detailed analysis
+- **Cost**: Low to Medium
+- **Capabilities**: Good balance of quality and efficiency with advanced reasoning
+- **Best for**: Most common assignment types (Plus) and complex assignments (Pro)
+- **Difference**: Plus plan has 250,000 tokens/month, Pro plan has 500,000 tokens/month
 
 ### GPT-5 (Max Plan)
 

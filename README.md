@@ -113,12 +113,32 @@ assignmentai/
 
 ## Documentation
 
-- [API Documentation](API_DOCUMENTATION.md)
-- [Environment Setup](ENVIRONMENT_SETUP.md)
-- [Security Guide](SECURITY_GUIDE.md)
-- [User Guide](USER_GUIDE.md)
-- [Deployment Guide](DEPLOYMENT_GUIDE.md)
-- [Production Monitoring](PRODUCTION_MONITORING_GUIDE.md)
+All documentation has been consolidated into the `docs/` directory:
+
+### Getting Started
+- [Getting Started Guide](docs/setup/GETTING_STARTED.md) - Setup and installation instructions
+
+### Guides
+- [User Guide](docs/guides/USER_GUIDE.md) - End-user documentation
+- [Security Guide](docs/guides/SECURITY_GUIDE.md) - Security best practices
+- [Testing Guide](docs/guides/TESTING_GUIDE.md) - Testing documentation
+
+### API & Development
+- [API Documentation](docs/api/API_DOCUMENTATION.md) - Complete API reference
+
+### Deployment
+- [Deployment Guide](docs/deployment/DEPLOYMENT_GUIDE.md) - Production deployment instructions
+- [Production Monitoring](docs/deployment/PRODUCTION_MONITORING_GUIDE.md) - Monitoring and maintenance
+
+### Configuration
+- [AI Model Configuration](docs/configuration/AI_MODEL_CONFIGURATION.md) - AI model settings by plan
+- [Price Plan Projection](docs/configuration/PRICE_PLAN_PROJECTION.md) - Pricing and cost analysis
+
+### Features
+- Feature implementation docs are located in [docs/features/](docs/features/)
+
+### Archive
+- Historical fix/debug documentation is archived in [docs/archive/](docs/archive/)
 
 ## Contributing
 

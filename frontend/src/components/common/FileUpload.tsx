@@ -1,378 +1,480 @@
 import {
   Close as CloseIcon,
+  CloudUpload as CloudUploadIcon,
+  Delete as DeleteIcon,
   Description as DescriptionIcon,
-  Google as GoogleIcon,
+  Download as DownloadIcon,
+  FileCopy as FileCopyIcon,
   Image as ImageIcon,
-  CloudUpload as UploadIcon,
+  InsertDriveFile as InsertDriveFileIcon,
+  PictureAsPdf as PictureAsPdfIcon,
+  Refresh as RefreshIcon,
+  Upload as UploadIcon,
+  Visibility as VisibilityIcon,
 } from '@mui/icons-material';
-import { Alert, Box, Button, IconButton, LinearProgress, Paper, Typography } from '@mui/material';
-import React, { useRef, useState } from 'react';
-import { GoogleDocsIntegration } from '../files/GoogleDocsIntegration';
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Grid,
+  IconButton,
+  LinearProgress,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemSecondaryAction,
+  ListItemText,
+  Paper,
+  Typography,
+  useTheme,
+} from '@mui/material';
+import { useSnackbar } from 'notistack';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useDropzone } from 'react-dropzone';
+import { api } from '../services/api';
 
 interface FileUploadProps {
-  files?: File[];
-  value?: File | File[];
-  onChange?: (files: File[]) => void;
+  onFileUpload?: (file: File) => void;
   onFileSelect?: (file: File) => void;
-  onFileRemove?: (file: File) => void;
-  accept?: string;
-  maxSize?: number; // in bytes
   multiple?: boolean;
-  disabled?: boolean;
-  error?: string;
-  loading?: boolean;
-  success?: string;
-  reset?: boolean;
-  onUpload?: (files: File[]) => void;
-  onCancel?: () => void;
-  onDrop?: (files: File[]) => void;
-  onDragEnter?: () => void;
-  onDragLeave?: () => void;
+  accept?: string[];
+  maxSize?: number;
+  showPreview?: boolean;
+  showActions?: boolean;
+  autoUpload?: boolean;
 }
 
-export const FileUpload: React.FC<
-  FileUploadProps & { title?: string; description?: string; buttonText?: string }
-> = ({
-  files = [],
-  value,
-  onChange,
-  onFileSelect,
-  onFileRemove,
-  accept = '*/*',
-  maxSize = 10 * 1024 * 1024, // 10MB default
-  multiple = false,
-  disabled = false,
-  error,
-  loading = false,
-  success,
-  reset = false,
-  onUpload,
-  onCancel,
-  onDrop,
-  onDragEnter,
-  onDragLeave,
-  title,
-  description,
-  buttonText,
+interface UploadedFile {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  url: string;
+  uploadedAt: string;
+  status: 'uploading' | 'completed' | 'error';
+  progress?: number;
+  error?: string;
+}
+
+const FileUpload: React.FC<FileUploadProps> = ({
+  onFileUpload,
+  multiple = true,
+  accept = [
+    'image/*',
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'text/plain',
+  ],
+  maxSize = 10 * 1024 * 1024, // 10MB
+  showActions = true,
+  autoUpload = true,
 }) => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [dragActive, setDragActive] = useState(false);
-  const [internalFiles, setInternalFiles] = useState<File[]>([]);
-  const [errorState, setErrorState] = useState<string | undefined>(undefined);
-  const [showGoogleDocs, setShowGoogleDocs] = useState(false);
+  const theme = useTheme();
+  const { enqueueSnackbar } = useSnackbar();
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
-  // Use value if provided, otherwise use files, otherwise use internalFiles
-  const displayedFiles = value
-    ? Array.isArray(value)
-      ? value
-      : [value]
-    : files.length > 0
-    ? files
-    : internalFiles;
+  // Load existing files on component mount
+  useEffect(() => {
+    loadExistingFiles();
+  }, []);
 
-  React.useEffect(() => {
-    if (reset) {
-      setInternalFiles([]);
-      if (onCancel) onCancel();
-    }
-  }, [reset, onCancel]);
-
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true);
-      if (onDragEnter) onDragEnter();
-    } else if (e.type === 'dragleave') {
-      setDragActive(false);
-      if (onDragLeave) onDragLeave();
+  const loadExistingFiles = async () => {
+    try {
+      const response = await api.get('/files');
+      setUploadedFiles(
+        response.data.map((file: any) => ({
+          ...file,
+          status: 'completed' as const,
+        }))
+      );
+    } catch (error) {
+      console.error('Failed to load existing files:', error);
     }
   };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    const droppedFiles = Array.from(e.dataTransfer.files);
-    handleFiles(droppedFiles);
-    if (onDrop) onDrop(droppedFiles);
-  };
-
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = e.target.files;
-    if (selectedFiles) {
-      handleFiles(Array.from(selectedFiles));
-    }
-  };
-
-  const isFileTypeValid = (file: File) => {
-    if (accept === '*/*') return true;
-    const acceptedTypes = accept.split(',').map(type => type.trim());
-    return acceptedTypes.some(type => {
-      if (type.startsWith('.')) {
-        return file.name.endsWith(type);
-      } else if (type.endsWith('/*')) {
-        return file.type.startsWith(type.replace('/*', ''));
-      } else {
-        return file.type === type;
-      }
-    });
-  };
-
-  const handleFiles = (newFiles: File[]) => {
-    // First check total size if multiple files are allowed
-    if (multiple) {
-      const allFiles = [...displayedFiles, ...newFiles];
-      const totalSize = allFiles.reduce((acc, file) => acc + file.size, 0);
-      if (totalSize > maxSize) {
-        setErrorState('Total file size exceeds limit');
-        if (onChange) {
-          onChange([]);
-        } else {
-          setInternalFiles([]);
+  const onDrop = useCallback(
+    (acceptedFiles: File[]) => {
+      const validFiles = acceptedFiles.filter(file => {
+        if (file.size > maxSize) {
+          enqueueSnackbar(
+            `File ${file.name} is too large. Maximum size is ${maxSize / (1024 * 1024)}MB`,
+            { variant: 'error' }
+          );
+          return false;
         }
-        return;
-      }
-    }
+        return true;
+      });
 
-    // Then validate individual files
-    let validFiles: File[] = [];
-    for (const file of newFiles) {
-      if (!isFileTypeValid(file)) {
-        setErrorState('Invalid file type');
-        return;
-      }
-      if (file.size > maxSize) {
-        setErrorState('File size exceeds limit');
-        return;
-      }
-      validFiles.push(file);
-    }
+      if (validFiles.length > 0) {
+        setSelectedFiles(prev => (multiple ? [...prev, ...validFiles] : validFiles));
 
-    // Only process files if they're all valid
-    if (validFiles.length > 0) {
-      setErrorState(undefined);
-      if (onFileSelect) {
-        onFileSelect(validFiles[0]);
-      }
-      if (onChange) {
-        if (multiple) {
-          onChange([...displayedFiles, ...validFiles]);
-        } else {
-          onChange(validFiles);
+        if (autoUpload) {
+          handleUpload(validFiles);
         }
-      } else {
-        setInternalFiles(multiple ? [...displayedFiles, ...validFiles] : validFiles);
       }
-      if (onUpload) {
-        onUpload(validFiles);
+    },
+    [maxSize, multiple, autoUpload, enqueueSnackbar]
+  );
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: accept.reduce((acc, type) => ({ ...acc, [type]: [] }), {}),
+    multiple,
+    maxSize,
+  });
+
+  const handleUpload = async (files: File[]) => {
+    setUploading(true);
+
+    const newFiles: UploadedFile[] = files.map(file => ({
+      id: Math.random().toString(36).substr(2, 9),
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      url: '',
+      uploadedAt: new Date().toISOString(),
+      status: 'uploading' as const,
+      progress: 0,
+    }));
+
+    setUploadedFiles(prev => [...prev, ...newFiles]);
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const fileIndex = uploadedFiles.length + i;
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await api.post('/files/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          onUploadProgress: progressEvent => {
+            const progress = progressEvent.total
+              ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
+              : 0;
+            setUploadedFiles(prev =>
+              prev.map((f, index) => (index === fileIndex ? { ...f, progress } : f))
+            );
+          },
+        });
+
+        setUploadedFiles(prev =>
+          prev.map((f, index) =>
+            index === fileIndex
+              ? { ...f, ...response.data, status: 'completed' as const, progress: 100 }
+              : f
+          )
+        );
+
+        enqueueSnackbar(`${file.name} uploaded successfully`, { variant: 'success' });
+        onFileUpload?.(file);
+      } catch (error: any) {
+        setUploadedFiles(prev =>
+          prev.map((f, index) =>
+            index === fileIndex
+              ? {
+                  ...f,
+                  status: 'error' as const,
+                  error: error.response?.data?.detail || 'Upload failed',
+                }
+              : f
+          )
+        );
+        enqueueSnackbar(`Failed to upload ${file.name}`, { variant: 'error' });
       }
+    }
+
+    setUploading(false);
+    setSelectedFiles([]);
+  };
+
+  const handleDelete = async (fileId: string) => {
+    try {
+      await api.delete(`/files/${fileId}`);
+      setUploadedFiles(prev => prev.filter(f => f.id !== fileId));
+      enqueueSnackbar('File deleted successfully', { variant: 'success' });
+    } catch (error) {
+      enqueueSnackbar('Failed to delete file', { variant: 'error' });
     }
   };
 
-  const handleRemove = (index: number) => {
-    let newFiles = [...displayedFiles];
-    const removedFile = newFiles.splice(index, 1)[0];
-    if (onChange) {
-      onChange(newFiles);
-    } else {
-      setInternalFiles(newFiles);
-    }
-    if (onFileRemove && removedFile) {
-      onFileRemove(removedFile);
+  const handleDownload = async (file: UploadedFile) => {
+    try {
+      const response = await api.get(`/files/${file.id}/download`, {
+        responseType: 'blob',
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', file.name);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      enqueueSnackbar('Failed to download file', { variant: 'error' });
     }
   };
 
-  const getFileIcon = (file: File) => {
-    if (file.type.startsWith('image/')) {
-      return <ImageIcon sx={{ fontSize: 40 }} />;
-    }
-    return <DescriptionIcon sx={{ fontSize: 40 }} />;
+  const handlePreview = (file: UploadedFile) => {
+    setPreviewFile(file);
+    setPreviewOpen(true);
   };
 
-  // Accessibility: announce file selection
-  const fileAnnouncement = displayedFiles.length ? displayedFiles.map(f => f.name).join(', ') : '';
+  const handleCopyLink = async (file: UploadedFile) => {
+    try {
+      await navigator.clipboard.writeText(file.url);
+      enqueueSnackbar('File link copied to clipboard', { variant: 'success' });
+    } catch (error) {
+      enqueueSnackbar('Failed to copy link', { variant: 'error' });
+    }
+  };
 
-  const handleGoogleDocSelect = (file: { id: string; name: string; content: string }) => {
-    const blob = new Blob([file.content], { type: 'text/plain' });
-    const googleDocFile = new File([blob], file.name, { type: 'text/plain' });
+  const getFileIcon = (type: string) => {
+    if (type.startsWith('image/')) return <ImageIcon />;
+    if (type === 'application/pdf') return <PictureAsPdfIcon />;
+    if (type.includes('word') || type.includes('document')) return <DescriptionIcon />;
+    return <InsertDriveFileIcon />;
+  };
 
-    if (onFileSelect) {
-      onFileSelect(googleDocFile);
-    }
-    if (onChange) {
-      if (multiple) {
-        onChange([...displayedFiles, googleDocFile]);
-      } else {
-        onChange([googleDocFile]);
-      }
-    } else {
-      setInternalFiles(multiple ? [...displayedFiles, googleDocFile] : [googleDocFile]);
-    }
-    if (onUpload) {
-      onUpload([googleDocFile]);
-    }
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
   };
 
   return (
     <Box>
-      {(errorState || error) && (
-        <Alert severity="error" sx={{ mt: 2 }} id="file-upload-error">
-          {errorState || error}
-        </Alert>
-      )}
-      {title && (
+      {/* Upload Area */}
+      <Paper
+        {...getRootProps()}
+        sx={{
+          border: `2px dashed ${isDragActive ? theme.palette.primary.main : theme.palette.divider}`,
+          borderRadius: 2,
+          p: 4,
+          textAlign: 'center',
+          cursor: 'pointer',
+          backgroundColor: isDragActive ? theme.palette.action.hover : 'transparent',
+          transition: 'all 0.2s ease-in-out',
+          '&:hover': {
+            borderColor: theme.palette.primary.main,
+            backgroundColor: theme.palette.action.hover,
+          },
+        }}
+      >
+        <input {...getInputProps()} />
+        <CloudUploadIcon sx={{ fontSize: 48, color: theme.palette.primary.main, mb: 2 }} />
         <Typography variant="h6" gutterBottom>
-          {title}
+          {isDragActive ? 'Drop files here' : 'Drag & drop files here'}
         </Typography>
-      )}
-      {description && (
-        <Typography variant="body2" color="textSecondary" gutterBottom>
-          {description}
+        <Typography variant="body2" color="text.secondary">
+          or click to select files
         </Typography>
-      )}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept={accept}
-        multiple={multiple}
-        onChange={handleFileInput}
-        style={{ display: 'none' }}
-        id="file-upload"
-        aria-label="Upload file"
-        aria-describedby="file-upload-description"
-        aria-invalid={!!error || !!errorState}
-        aria-errormessage={error || errorState ? 'file-upload-error' : undefined}
-        tabIndex={0}
-        disabled={disabled || loading}
-      />
-      <label htmlFor="file-upload">
-        <span
-          style={{
-            position: 'absolute',
-            width: 1,
-            height: 1,
-            padding: 0,
-            margin: -1,
-            overflow: 'hidden',
-            clip: 'rect(0,0,0,0)',
-            border: 0,
-          }}
-        >
-          Upload file / File input
-        </span>
-        <Paper
-          sx={{
-            p: 3,
-            textAlign: 'center',
-            border: '2px dashed',
-            borderColor: dragActive ? 'primary.main' : 'grey.300',
-            backgroundColor: dragActive ? 'action.hover' : 'background.paper',
-            cursor: disabled || loading ? 'not-allowed' : 'pointer',
-            opacity: disabled || loading ? 0.7 : 1,
-            outline: dragActive ? '2px solid #1976d2' : undefined,
-          }}
-          onDragEnter={handleDrag}
-          onDragLeave={handleDrag}
-          onDragOver={handleDrag}
-          onDrop={handleDrop}
-          onClick={() => !disabled && !loading && fileInputRef.current?.click()}
-          tabIndex={0}
-          role="button"
-          aria-disabled={disabled || loading}
-        >
-          <UploadIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
+        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+          Supported formats: PDF, DOCX, DOC, TXT, Images • Max size: {maxSize / (1024 * 1024)}MB
+        </Typography>
+      </Paper>
+
+      {/* Selected Files */}
+      {selectedFiles.length > 0 && !autoUpload && (
+        <Box sx={{ mt: 2 }}>
           <Typography variant="h6" gutterBottom>
-            Drag and drop files here
+            Selected Files ({selectedFiles.length})
           </Typography>
-          <Typography variant="body2" color="textSecondary">
-            {buttonText ? buttonText : 'or click to select files'}
-          </Typography>
-          <Typography
-            variant="caption"
-            color="textSecondary"
-            display="block"
-            sx={{ mt: 1 }}
-            id="file-upload-description"
-          >
-            Maximum file size: {maxSize / (1024 * 1024)}MB
-          </Typography>
-          {loading && (
-            <Box sx={{ mt: 2 }}>
-              <LinearProgress role="progressbar" />
-              <Typography variant="caption" color="textSecondary" sx={{ mt: 1 }}>
-                Uploading...
-              </Typography>
-            </Box>
-          )}
-          {success && (
-            <Alert severity="success" sx={{ mt: 2 }}>
-              {success}
-            </Alert>
-          )}
+          <List>
+            {selectedFiles.map((file, index) => (
+              <ListItem key={index}>
+                <ListItemIcon>{getFileIcon(file.type)}</ListItemIcon>
+                <ListItemText
+                  primary={file.name}
+                  secondary={`${formatFileSize(file.size)} • ${file.type}`}
+                />
+                <ListItemSecondaryAction>
+                  <IconButton
+                    edge="end"
+                    onClick={() => {
+                      setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+                    }}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </ListItemSecondaryAction>
+              </ListItem>
+            ))}
+          </List>
           <Button
-            variant="outlined"
-            startIcon={<GoogleIcon />}
-            onClick={e => {
-              e.stopPropagation();
-              setShowGoogleDocs(true);
-            }}
+            variant="contained"
+            onClick={() => handleUpload(selectedFiles)}
+            disabled={uploading}
+            startIcon={uploading ? <CircularProgress size={20} /> : <UploadIcon />}
             sx={{ mt: 2 }}
           >
-            Import from Google Docs
+            {uploading ? 'Uploading...' : 'Upload Files'}
           </Button>
-        </Paper>
-      </label>
-
-      <GoogleDocsIntegration
-        open={showGoogleDocs}
-        onClose={() => setShowGoogleDocs(false)}
-        onSelect={handleGoogleDocSelect}
-      />
-
-      <div
-        aria-live="polite"
-        style={{ position: 'absolute', left: -9999, height: 1, width: 1, overflow: 'hidden' }}
-      >
-        {fileAnnouncement}
-      </div>
-
-      {!(errorState || error) &&
-        displayedFiles.map((file, index) => (
-          <Paper key={index} sx={{ p: 2, mt: 2, display: 'flex', alignItems: 'center' }}>
-            {getFileIcon(file)}
-            <Box sx={{ ml: 2, flexGrow: 1 }}>
-              <Typography variant="body1" aria-live="polite" data-testid="file-name">
-                {file.name}
-              </Typography>
-              <Typography variant="caption" color="textSecondary">
-                {(file.size / 1024).toFixed(2)} KB
-              </Typography>
-            </Box>
-            <IconButton
-              onClick={() => handleRemove(index)}
-              size="small"
-              aria-label={`Remove ${file.name}`}
-            >
-              <CloseIcon />
-            </IconButton>
-          </Paper>
-        ))}
-
-      {!(errorState || error) && (displayedFiles.length > 0 || success) && (
-        <Button
-          variant="outlined"
-          color="secondary"
-          sx={{ mt: 2 }}
-          onClick={() => {
-            setInternalFiles([]);
-            if (onCancel) onCancel();
-          }}
-          tabIndex={0}
-        >
-          Reset
-        </Button>
+        </Box>
       )}
+
+      {/* Uploaded Files */}
+      {uploadedFiles.length > 0 && (
+        <Box sx={{ mt: 3 }}>
+          <Box
+            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
+          >
+            <Typography variant="h6">Uploaded Files ({uploadedFiles.length})</Typography>
+            <Button startIcon={<RefreshIcon />} onClick={loadExistingFiles} size="small">
+              Refresh
+            </Button>
+          </Box>
+
+          <Grid container spacing={2}>
+            {uploadedFiles.map(file => (
+              <Grid item xs={12} sm={6} md={4} key={file.id}>
+                <Card>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      {getFileIcon(file.type)}
+                      <Typography variant="subtitle2" sx={{ ml: 1, flexGrow: 1 }}>
+                        {file.name}
+                      </Typography>
+                      <Chip
+                        label={file.status}
+                        size="small"
+                        color={
+                          file.status === 'completed'
+                            ? 'success'
+                            : file.status === 'error'
+                            ? 'error'
+                            : 'warning'
+                        }
+                      />
+                    </Box>
+
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      {formatFileSize(file.size)} • {formatDate(file.uploadedAt)}
+                    </Typography>
+
+                    {file.status === 'uploading' && file.progress !== undefined && (
+                      <Box sx={{ mt: 1 }}>
+                        <LinearProgress variant="determinate" value={file.progress} />
+                        <Typography variant="caption">{file.progress}%</Typography>
+                      </Box>
+                    )}
+
+                    {file.status === 'error' && (
+                      <Typography variant="caption" color="error" display="block">
+                        {file.error}
+                      </Typography>
+                    )}
+
+                    {showActions && file.status === 'completed' && (
+                      <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                        <IconButton
+                          size="small"
+                          onClick={() => handlePreview(file)}
+                          title="Preview"
+                        >
+                          <VisibilityIcon />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDownload(file)}
+                          title="Download"
+                        >
+                          <DownloadIcon />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleCopyLink(file)}
+                          title="Copy Link"
+                        >
+                          <FileCopyIcon />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDelete(file.id)}
+                          title="Delete"
+                          color="error"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
+                    )}
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      )}
+
+      {/* File Preview Dialog */}
+      <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>
+          {previewFile?.name}
+          <IconButton
+            onClick={() => setPreviewOpen(false)}
+            sx={{ position: 'absolute', right: 8, top: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          {previewFile && (
+            <Box>
+              {previewFile.type.startsWith('image/') ? (
+                <img
+                  src={previewFile.url}
+                  alt={previewFile.name}
+                  style={{ maxWidth: '100%', height: 'auto' }}
+                />
+              ) : previewFile.type === 'application/pdf' ? (
+                <iframe
+                  src={previewFile.url}
+                  width="100%"
+                  height="600px"
+                  title={previewFile.name}
+                />
+              ) : (
+                <Typography>
+                  Preview not available for this file type. Please download to view.
+                </Typography>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPreviewOpen(false)}>Close</Button>
+          {previewFile && (
+            <Button onClick={() => handleDownload(previewFile)} startIcon={<DownloadIcon />}>
+              Download
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
+
+export default FileUpload;

@@ -1,7 +1,7 @@
 import { Alert, Box, CircularProgress, Container, Grid, Paper, Typography } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import AIAnalysisPanel from '../components/AIAnalysisPanel';
+import AIAnalysisPanel from '../components/ai/AIAnalysisPanel';
 
 interface Submission {
   id: number;

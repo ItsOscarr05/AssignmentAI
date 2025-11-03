@@ -1,4 +1,3 @@
-import { Box, Button, Typography } from '@mui/material';
 import { Component, ErrorInfo, ReactNode } from 'react';
 
 interface Props {
@@ -27,32 +26,26 @@ export class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: '100vh',
-            p: 3,
-            textAlign: 'center',
-          }}
-        >
-          <Typography variant="h4" gutterBottom>
-            Something went wrong
-          </Typography>
-          <Typography variant="body1" color="text.secondary" paragraph>
-            {this.state.error?.message || 'An unexpected error occurred'}
-          </Typography>
-          <Button variant="contained" color="primary" onClick={() => window.location.reload()}>
+        <div style={{ padding: '20px', textAlign: 'center' }}>
+          <h1>Something went wrong</h1>
+          <p>We apologize for the inconvenience. Please try refreshing the page.</p>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#d32f2f',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+            }}
+          >
             Refresh Page
-          </Button>
-        </Box>
+          </button>
+        </div>
       );
     }
 
     return this.props.children;
   }
 }
-
-export default ErrorBoundary;

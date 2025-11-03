@@ -1,7 +1,7 @@
 import { AnimatePresence } from 'framer-motion';
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import PageTransition from './components/PageTransition';
+import PageTransition from './components/layout/PageTransition';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { FontSizeProvider } from './contexts/FontSizeContext';
 import { ThemeProvider } from './theme/ThemeProvider';

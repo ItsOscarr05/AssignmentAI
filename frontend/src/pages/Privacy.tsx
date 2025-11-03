@@ -1,6 +1,6 @@
 import { Box, Container, Divider, Paper, Typography } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
-import RedStarField from '../components/RedStarField';
+import RedStarField from '../components/common/RedStarField';
 import PageHeader from '../components/common/PageHeader';
 
 const Privacy = () => {

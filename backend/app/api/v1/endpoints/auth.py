@@ -3,6 +3,7 @@ from typing import Any, Optional, Dict
 from fastapi import APIRouter, Body, Depends, HTTPException, status, Request, Response
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from jose import jwt, JWTError
 from passlib.context import CryptContext
 from pydantic import EmailStr, ValidationError
@@ -145,8 +146,30 @@ async def login(
                 detail="Too many login attempts. Please try again later."
             )
         
-        # Find user by email
-        user = db.query(User).filter(User.email == login_data.email).first()
+        # Find user by email (case-insensitive and trimmed)
+        # Normalize email: lowercase and strip whitespace
+        normalized_email = login_data.email.lower().strip() if login_data.email else ""
+        logger.info(f"Searching for user with normalized email: '{normalized_email}' (original: '{login_data.email}')")
+        
+        # Use case-insensitive comparison with PostgreSQL's LOWER function
+        # This handles cases where email might have different casing in the database
+        user = db.query(User).filter(
+            func.lower(func.rtrim(func.ltrim(User.email))) == normalized_email
+        ).first()
+        
+        # If not found with case-insensitive, try exact match as fallback
+        if not user:
+            user = db.query(User).filter(User.email == login_data.email).first()
+        
+        if user:
+            logger.info(f"Found user: id={user.id}, email='{user.email}', normalized='{normalized_email}'")
+        else:
+            # Log all users for debugging (only in development)
+            if settings.ENVIRONMENT == "development":
+                all_users = db.query(User).limit(10).all()
+                user_emails = [(u.id, u.email, u.email.lower().strip() if u.email else "") for u in all_users]
+                logger.info(f"Available users in database (first 10): {user_emails}")
+                logger.info(f"No user found matching email: '{normalized_email}'")
         
         # Log login attempt (even for non-existent users to prevent user enumeration)
         from app.models.security import AuditLog

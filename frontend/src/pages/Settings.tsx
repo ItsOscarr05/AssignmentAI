@@ -301,14 +301,14 @@ const Settings: React.FC = () => {
       label: 'GPT-5 Nano',
     },
     plus: {
-      model: 'gpt-4.1-mini',
+      model: 'gpt-5-mini',
       tokenLimit: 250000,
-      label: 'GPT-4.1 Mini',
+      label: 'GPT-5 Mini',
     },
     pro: {
-      model: 'gpt-4-turbo',
+      model: 'gpt-5-mini',
       tokenLimit: 500000,
-      label: 'GPT-4 Turbo',
+      label: 'GPT-5 Mini',
     },
     max: {
       model: 'gpt-5',
@@ -1454,17 +1454,17 @@ const Settings: React.FC = () => {
           let plan: SubscriptionPlan = 'free';
 
           if (
-            subscriptionData.ai_model === 'gpt-4-turbo' &&
-            subscriptionData.token_limit === 500000
-          ) {
-            plan = 'pro';
-          } else if (
             subscriptionData.ai_model === 'gpt-5' &&
             subscriptionData.token_limit === 1000000
           ) {
             plan = 'max';
           } else if (
-            subscriptionData.ai_model === 'gpt-4.1-mini' &&
+            subscriptionData.ai_model === 'gpt-5-mini' &&
+            subscriptionData.token_limit === 500000
+          ) {
+            plan = 'pro';
+          } else if (
+            subscriptionData.ai_model === 'gpt-5-mini' &&
             subscriptionData.token_limit === 250000
           ) {
             plan = 'plus';
@@ -1825,10 +1825,7 @@ const Settings: React.FC = () => {
           variant="h4"
           fontWeight="normal"
           sx={{
-            background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
-            backgroundClip: 'text',
-            WebkitBackgroundClip: 'text',
-            color: 'transparent',
+            color: '#d32f2f',
             ml: { xs: 0, md: 4 },
           }}
         >
@@ -4295,10 +4292,8 @@ const Settings: React.FC = () => {
                   <Typography variant="body1">
                     {subscription.model === 'gpt-5-nano'
                       ? 'GPT-5 Nano'
-                      : subscription.model === 'gpt-4.1-mini'
-                      ? 'GPT-4.1 Mini'
-                      : subscription.model === 'gpt-4-turbo'
-                      ? 'GPT-4 Turbo'
+                      : subscription.model === 'gpt-5-mini'
+                      ? 'GPT-5 Mini'
                       : subscription.model === 'gpt-5'
                       ? 'GPT-5'
                       : subscription.model}

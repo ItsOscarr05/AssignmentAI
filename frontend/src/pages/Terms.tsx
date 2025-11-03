@@ -1,7 +1,7 @@
 import { Box, Container, Divider, Link, Paper, Typography } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import RedStarField from '../components/RedStarField';
+import RedStarField from '../components/common/RedStarField';
 import PageHeader from '../components/common/PageHeader';
 
 const Terms = () => {

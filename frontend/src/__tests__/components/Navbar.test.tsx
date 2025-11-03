@@ -2,7 +2,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import Navbar from '../../components/Navbar';
+import Navbar from '../../components/layout/Navbar';
 import { theme } from '../../theme';
 
 // Mock Material-UI components

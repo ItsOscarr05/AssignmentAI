@@ -12,6 +12,7 @@ import {
   FormatQuoteOutlined,
   GppGoodOutlined,
   Group,
+  InfoOutlined as InfoOutlinedIcon,
   LibraryBooksOutlined,
   LocalOfferOutlined,
   MoreVert,
@@ -43,13 +44,14 @@ import {
   MenuItem,
   Stack,
   Switch,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import DetailedFeatureComparison from '../components/DetailedFeatureComparison';
+import DetailedFeatureComparison from '../components/subscription/DetailedFeatureComparison';
 import SubscriptionPaymentWrapper from '../components/payment/SubscriptionPaymentWrapper';
 import SuccessPopup from '../components/payment/SuccessPopup';
 import SorryToSeeYouGoPopup from '../components/subscription/SorryToSeeYouGoPopup';
@@ -742,9 +744,52 @@ const PricePlan: React.FC = () => {
           pb: 2,
         }}
       >
-        <Typography variant="h4" fontWeight="normal" className="page-title" sx={{ ml: 4 }}>
-          Price Plan
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 4 }}>
+          <Typography 
+            variant="h4" 
+            fontWeight="normal" 
+            className="page-title"
+            sx={{ color: '#d32f2f' }}
+          >
+            Price Plan
+          </Typography>
+          <Tooltip
+            title={
+              <Box>
+                <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                  Price Plan
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  Compare and select a subscription plan that best fits your needs. Each plan offers different features, AI token allowances, and access levels.
+                </Typography>
+                <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                  • Free plan: Basic features with limited tokens
+                </Typography>
+                <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                  • Paid plans: More tokens, advanced features, priority support
+                </Typography>
+                <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                  • Toggle detailed comparison view to see feature differences
+                </Typography>
+                <Typography variant="caption" sx={{ display: 'block', fontStyle: 'italic', mt: 1 }}>
+                  Upgrade or change plans at any time
+                </Typography>
+              </Box>
+            }
+            arrow
+            placement="top"
+          >
+            <InfoOutlinedIcon
+              sx={{
+                color: 'text.secondary',
+                fontSize: 20,
+                cursor: 'help',
+                opacity: 0.7,
+                '&:hover': { opacity: 1 },
+              }}
+            />
+          </Tooltip>
+        </Box>
         <FormControlLabel
           control={
             <Switch
@@ -952,7 +997,7 @@ const PricePlan: React.FC = () => {
                               {plan.name === 'Plus' && (
                                 <Chip
                                   icon={<PsychologyOutlined />}
-                                  label="GPT-4.1 Mini"
+                                  label="GPT-5 Mini"
                                   size="small"
                                   sx={{
                                     backgroundColor: '#e8f5e9',
@@ -969,7 +1014,7 @@ const PricePlan: React.FC = () => {
                               {plan.name === 'Pro' && (
                                 <Chip
                                   icon={<AutoAwesomeOutlined />}
-                                  label="GPT-4 Turbo"
+                                  label="GPT-5 Mini"
                                   size="small"
                                   sx={{
                                     backgroundColor: '#f3e5f5',

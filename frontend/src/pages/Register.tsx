@@ -16,7 +16,7 @@ import {
 import React, { useEffect, useState } from 'react';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import TermsPrivacyModal from '../components/auth/TermsPrivacyModal';
-import HeroParticles from '../components/HeroParticles';
+import HeroParticles from '../components/layout/HeroParticles';
 import { useAuth } from '../contexts/AuthContext';
 
 const Register: React.FC = () => {

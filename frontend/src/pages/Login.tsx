@@ -22,7 +22,7 @@ import {
 import React, { useEffect, useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
-import HeroParticles from '../components/HeroParticles';
+import HeroParticles from '../components/layout/HeroParticles';
 import { useAuth } from '../contexts/AuthContext';
 
 const Login: React.FC = () => {
@@ -167,8 +167,11 @@ const Login: React.FC = () => {
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && email && password) {
-      handleSubmit(e as any);
+    // Let the form's onSubmit handle Enter key - no need to manually trigger
+    // This prevents double submission
+    if (e.key === 'Enter') {
+      // Form will handle submission via onSubmit
+      return;
     }
   };
 

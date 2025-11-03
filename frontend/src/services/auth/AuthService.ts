@@ -3,6 +3,10 @@ import { AuthResponse, LoginRequest, TokenWith2FA, TwoFactorSetup, User } from '
 
 export class AuthService {
   static async login(credentials: LoginRequest): Promise<TokenWith2FA> {
+    const fullUrl = `${api.defaults.baseURL}/auth/login`;
+    console.log('AuthService.login - Full URL:', fullUrl);
+    console.log('AuthService.login - API baseURL:', api.defaults.baseURL);
+    console.log('AuthService.login - VITE_API_URL:', import.meta.env.VITE_API_URL);
     const response = await api.post<TokenWith2FA>('/auth/login', credentials);
     return response.data;
   }

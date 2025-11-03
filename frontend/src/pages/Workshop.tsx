@@ -1028,29 +1028,56 @@ const Workshop: React.FC = () => {
                 flexWrap: 'wrap',
               }}
             >
-              <Typography
-                variant="h6"
-                gutterBottom
-                sx={{
-                  fontWeight: 'bold',
-                  fontSize: { xs: '1.3rem', sm: '1.5rem', md: '1.8rem' },
-                  mb: { xs: 0.5, sm: 1 },
-                  color: theme => (theme.palette.mode === 'dark' ? 'red' : 'black'),
-                }}
-              >
-                Weekly Activity Overview
-              </Typography>
-              <Tooltip title="View your AI activity over time" arrow>
-                <InfoIcon
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography
+                  variant="h6"
+                  gutterBottom
                   sx={{
-                    color: 'gray',
-                    fontSize: { xs: 14, sm: 16, md: 20 },
-                    cursor: 'pointer',
-                    position: 'relative',
-                    top: { xs: '-2px', sm: '-5px' },
+                    fontWeight: 'bold',
+                    fontSize: { xs: '1.3rem', sm: '1.5rem', md: '1.8rem' },
+                    mb: { xs: 0.5, sm: 1 },
+                    color: theme => (theme.palette.mode === 'dark' ? 'red' : 'black'),
                   }}
-                />
-              </Tooltip>
+                >
+                  Weekly Activity Overview
+                </Typography>
+                <Tooltip
+                  title={
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                        Weekly Activity Overview
+                      </Typography>
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        Track your AI usage and interaction patterns over the past week. This chart shows daily activity to help you understand your workflow trends.
+                      </Typography>
+                      <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                        • Bar chart displays daily AI interactions and assignments
+                      </Typography>
+                      <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                        • Hover over bars to see exact values for each day
+                      </Typography>
+                      <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                        • Use this data to identify your most productive days
+                      </Typography>
+                      <Typography variant="caption" sx={{ display: 'block', fontStyle: 'italic', mt: 1 }}>
+                        Updated in real-time as you use AI features
+                      </Typography>
+                    </Box>
+                  }
+                  arrow
+                  placement="top"
+                >
+                  <InfoIcon
+                    sx={{
+                      color: 'text.secondary',
+                      fontSize: { xs: 16, sm: 18, md: 20 },
+                      cursor: 'help',
+                      opacity: 0.7,
+                      '&:hover': { opacity: 1 },
+                    }}
+                  />
+                </Tooltip>
+              </Box>
             </Box>
             <Box
               sx={{
@@ -1261,18 +1288,56 @@ const Workshop: React.FC = () => {
                 pb: { xs: 0.75, sm: 1 },
               }}
             >
-              <Typography
-                variant="h6"
-                sx={{
-                  fontWeight: 700,
-                  fontSize: { xs: '1.3rem', sm: '1.5rem', md: '1.8rem' },
-                  mb: { xs: 0.5, sm: 0 },
-                  textAlign: { xs: 'left', sm: 'left' },
-                  color: theme => (theme.palette.mode === 'dark' ? 'red' : 'black'),
-                }}
-              >
-                Upload Content
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: { xs: '1.3rem', sm: '1.5rem', md: '1.8rem' },
+                    mb: { xs: 0.5, sm: 0 },
+                    textAlign: { xs: 'left', sm: 'left' },
+                    color: theme => (theme.palette.mode === 'dark' ? 'red' : 'black'),
+                  }}
+                >
+                  Upload Content
+                </Typography>
+                <Tooltip
+                  title={
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                        Upload Content
+                      </Typography>
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        Add files, links, or text to your assignment workspace. Upload documents, images, or provide URLs to analyze with AI assistance.
+                      </Typography>
+                      <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                        • File Upload: Add PDFs, images, documents, or code files
+                      </Typography>
+                      <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                        • Link Upload: Provide URLs for AI to analyze web content
+                      </Typography>
+                      <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                        • Text Input: Type or paste content directly
+                      </Typography>
+                      <Typography variant="caption" sx={{ display: 'block', fontStyle: 'italic', mt: 1 }}>
+                        All uploaded content becomes available for AI analysis
+                      </Typography>
+                    </Box>
+                  }
+                  arrow
+                  placement="top"
+                >
+                  <InfoIcon
+                    sx={{
+                      color: 'text.secondary',
+                      fontSize: { xs: 16, sm: 18, md: 20 },
+                      cursor: 'help',
+                      opacity: 0.7,
+                      '&:hover': { opacity: 1 },
+                    }}
+                  />
+                </Tooltip>
+              </Box>
               <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
                 <Button
                   onClick={() => setActiveTab(0)}
@@ -1414,17 +1479,55 @@ const Workshop: React.FC = () => {
               minHeight: { xs: '380px', sm: '320px', md: '280px' },
             }}
           >
-            <Typography
-              variant="h6"
-              gutterBottom
-              sx={{
-                fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' },
-                color: theme => (theme.palette.mode === 'dark' ? 'red' : 'black'),
-              }}
-            >
-              Assignment Tokens
-              {subscriptionLoading && <CircularProgress size={16} sx={{ ml: 1, color: 'red' }} />}
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography
+                variant="h6"
+                gutterBottom
+                sx={{
+                  fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' },
+                  color: theme => (theme.palette.mode === 'dark' ? 'red' : 'black'),
+                }}
+              >
+                Assignment Tokens
+                {subscriptionLoading && <CircularProgress size={16} sx={{ ml: 1, color: 'red' }} />}
+              </Typography>
+              <Tooltip
+                title={
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                      Assignment Tokens
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      Your available AI tokens for assignment-related features. Tokens are consumed when using AI analysis, feedback, or completion features.
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                      • Tokens are deducted per AI request or analysis
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                      • Different features consume different amounts of tokens
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                      • Purchase additional tokens or upgrade your plan to get more
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', fontStyle: 'italic', mt: 1 }}>
+                      Check the AI Tokens page for detailed usage information
+                    </Typography>
+                  </Box>
+                }
+                arrow
+                placement="top"
+              >
+                <InfoIcon
+                  sx={{
+                    color: 'text.secondary',
+                    fontSize: { xs: 16, sm: 18, md: 20 },
+                    cursor: 'help',
+                    opacity: 0.7,
+                    '&:hover': { opacity: 1 },
+                  }}
+                />
+              </Tooltip>
+            </Box>
             <Box
               sx={{
                 display: 'grid',
