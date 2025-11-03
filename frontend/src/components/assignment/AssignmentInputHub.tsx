@@ -131,7 +131,7 @@ export const AssignmentInputHub: React.FC<AssignmentInputHubProps> = ({
         <FileUpload
           onUpload={handleFilesUploaded}
           multiple={true}
-          accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+          accept={['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain']}
           maxSize={10 * 1024 * 1024} // 10MB
         />
       </TabPanel>

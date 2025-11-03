@@ -211,7 +211,7 @@ const AISubmissionAnalyzer: React.FC = () => {
             <FileUpload
               files={files}
               onChange={handleFileChange}
-              accept=".pdf,.doc,.docx,.txt"
+              accept={['.pdf', '.doc', '.docx', '.txt']}
               maxSize={10 * 1024 * 1024} // 10MB
               multiple
             />
