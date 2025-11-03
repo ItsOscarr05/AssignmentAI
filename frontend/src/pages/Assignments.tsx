@@ -85,7 +85,6 @@ interface Assignment {
 }
 
 const Assignments: React.FC = () => {
-  const theme = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
 

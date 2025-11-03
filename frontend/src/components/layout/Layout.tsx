@@ -25,8 +25,8 @@ import {
 import { useTheme } from '@mui/material/styles';
 import { ReactNode, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { useAdPopup, useAdSensePopup } from '../hooks/useAdPopup';
-import { AdPopup, AdSensePopup } from './ads';
+import { useAdPopup, useAdSensePopup } from '../../hooks/useAdPopup';
+import { AdPopup, AdSensePopup } from '../ads';
 
 // Navigation items for the sidebar
 const navigationItems = [

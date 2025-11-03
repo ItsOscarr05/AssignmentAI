@@ -38,7 +38,7 @@ import {
 import { useSnackbar } from 'notistack';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { api } from '../services/api';
+import { api } from '../../services/api';
 
 interface FileUploadProps {
   onFileUpload?: (file: File) => void;
@@ -163,7 +163,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
           headers: {
             'Content-Type': 'multipart/form-data',
           },
-          onUploadProgress: progressEvent => {
+          onUploadProgress: (progressEvent: any) => {
             const progress = progressEvent.total
               ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
               : 0;

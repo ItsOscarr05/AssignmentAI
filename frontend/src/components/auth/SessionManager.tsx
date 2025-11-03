@@ -26,7 +26,7 @@ import {
   Typography,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
-import { AuthService } from '../services/auth/AuthService';
+import { AuthService } from '../../services/auth/AuthService';
 
 interface Session {
   id: string;

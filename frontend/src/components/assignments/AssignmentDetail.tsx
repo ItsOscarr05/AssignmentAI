@@ -29,7 +29,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Assignment } from '../../types/assignment';
 import { ConfirmationDialog } from '../common/ConfirmationDialog';
-import { FileUpload } from '../common/FileUpload';
+import FileUpload from '../common/FileUpload';
 import { Toast } from '../common/Toast';
 
 interface AssignmentDetailProps {

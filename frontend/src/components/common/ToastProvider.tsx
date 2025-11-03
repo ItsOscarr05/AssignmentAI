@@ -1,6 +1,6 @@
 import { Alert, Box, Snackbar } from '@mui/material';
 import React from 'react';
-import { useToast } from '../hooks/useToast';
+import { useToast } from '../../hooks/useToast';
 
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { toasts, removeToast } = useToast();
@@ -19,7 +19,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           gap: 1,
         }}
       >
-        {toasts.map(toast => (
+        {toasts.map((toast: any) => (
           <Snackbar
             key={toast.id}
             open={true}

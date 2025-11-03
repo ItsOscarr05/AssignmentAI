@@ -16,8 +16,8 @@ import {
   Typography,
 } from '@mui/material';
 import React, { useState } from 'react';
-import { useTokenLimitContext } from '../contexts/TokenLimitContext';
-import { TokenLimitWarning } from './common/TokenLimitWarning';
+import { useTokenLimitContext } from '../../contexts/TokenLimitContext';
+import { TokenLimitWarning } from '../common/TokenLimitWarning';
 
 interface AnalysisResult {
   analysis: string;

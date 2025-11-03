@@ -20,7 +20,7 @@ import {
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { SubmissionAnalysis } from '../../types/ai';
-import { FileUpload } from '../common/FileUpload';
+import FileUpload from '../common/FileUpload';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { Toast } from '../common/Toast';
 

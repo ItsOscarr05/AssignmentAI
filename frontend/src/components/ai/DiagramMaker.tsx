@@ -33,8 +33,8 @@ import {
   Typography,
 } from '@mui/material';
 import React, { useCallback, useContext, useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { SnackbarContext } from '../contexts/SnackbarContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { SnackbarContext } from '../../contexts/SnackbarContext';
 
 interface DiagramType {
   value: string;

@@ -2,7 +2,7 @@ import { Chat as ChatIcon, Link as LinkIcon, Upload as UploadIcon } from '@mui/i
 import { Alert, Box, Paper, Tab, Tabs, Typography } from '@mui/material';
 import React, { useState } from 'react';
 import { AIChatInterface } from '../ai/AIChatInterface';
-import { FileUpload } from '../common/FileUpload';
+import FileUpload from '../common/FileUpload';
 import { LinkSubmissionForm } from '../input/LinkSubmissionForm';
 
 interface AssignmentInputHubProps {
