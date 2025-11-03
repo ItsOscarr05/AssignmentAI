@@ -41,8 +41,14 @@ import { useDropzone } from 'react-dropzone';
 import { api } from '../../services/api';
 
 interface FileUploadProps {
+  // Legacy props (for backward compatibility)
   onFileUpload?: (file: File) => void;
   onFileSelect?: (file: File) => void;
+  // New controlled component props
+  files?: File[];
+  onChange?: (files: File[]) => void | Promise<void>;
+  onUpload?: (files: File[]) => void;
+  // Common props
   multiple?: boolean;
   accept?: string[];
   maxSize?: number;
@@ -65,6 +71,10 @@ interface UploadedFile {
 
 const FileUpload: React.FC<FileUploadProps> = ({
   onFileUpload,
+  onFileSelect,
+  files: controlledFiles,
+  onChange,
+  onUpload,
   multiple = true,
   accept = [
     'image/*',
@@ -80,7 +90,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [internalFiles, setInternalFiles] = useState<File[]>([]);
+  const selectedFiles = controlledFiles !== undefined ? controlledFiles : internalFiles;
   const [uploading, setUploading] = useState(false);
   const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -118,9 +129,26 @@ const FileUpload: React.FC<FileUploadProps> = ({
       });
 
       if (validFiles.length > 0) {
-        setSelectedFiles(prev => (multiple ? [...prev, ...validFiles] : validFiles));
+        const newFiles = multiple ? [...selectedFiles, ...validFiles] : validFiles;
+        
+        // Update controlled or internal state
+        if (controlledFiles !== undefined) {
+          // Controlled component - call onChange
+          if (onChange) {
+            onChange(newFiles);
+          }
+        } else {
+          // Uncontrolled component - update internal state
+          setInternalFiles(newFiles);
+        }
 
-        if (autoUpload) {
+        // Call onFileSelect for each file (legacy support)
+        validFiles.forEach(file => onFileSelect?.(file));
+
+        // Handle upload
+        if (onUpload) {
+          onUpload(newFiles);
+        } else if (autoUpload) {
           handleUpload(validFiles);
         }
       }
