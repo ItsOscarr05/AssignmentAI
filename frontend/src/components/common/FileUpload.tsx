@@ -228,7 +228,11 @@ const FileUpload: React.FC<FileUploadProps> = ({
     }
 
     setUploading(false);
-    setSelectedFiles([]);
+    if (controlledFiles === undefined) {
+      setInternalFiles([]);
+    } else if (onChange) {
+      onChange([]);
+    }
   };
 
   const handleDelete = async (fileId: string) => {
@@ -343,7 +347,12 @@ const FileUpload: React.FC<FileUploadProps> = ({
                   <IconButton
                     edge="end"
                     onClick={() => {
-                      setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+                      const newFiles = selectedFiles.filter((_: File, i: number) => i !== index);
+                      if (controlledFiles === undefined) {
+                        setInternalFiles(newFiles);
+                      } else if (onChange) {
+                        onChange(newFiles);
+                      }
                     }}
                   >
                     <DeleteIcon />
