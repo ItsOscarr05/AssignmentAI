@@ -12,8 +12,8 @@ import {
   Typography,
 } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
-import RedStarField from '../components/common/RedStarField';
 import PageHeader from '../components/common/PageHeader';
+import RedStarField from '../components/common/RedStarField';
 import { contactService } from '../services/contactService';
 
 interface ContactFormData {
@@ -97,11 +97,11 @@ const Contact = () => {
           <PageHeader title="Contact Us" />
           <Divider sx={{ mb: 4, borderColor: 'primary.main', opacity: 0.2 }} />
           <Typography variant="h5" sx={{ mb: 2, fontWeight: 600, color: 'black' }}>
-            We're here to help
+            I'm here to help
           </Typography>
           <Typography variant="body1" sx={{ mb: 4, fontSize: '1.15rem', color: 'black' }}>
-            Have a question, suggestion, or need support? Fill out the form below or reach out to us
-            directly. Our team is dedicated to providing prompt and helpful responses to ensure you
+            Have a question, suggestion, or need support? Fill out the form below or reach out to me
+            directly. My team is dedicated to providing prompt and helpful responses to ensure you
             have the best experience with AssignmentAI.
           </Typography>
           <Grid container spacing={6}>
@@ -113,7 +113,7 @@ const Contact = () => {
                     Thank you for reaching out!
                   </Typography>
                   <Typography variant="body1" sx={{ mb: 4, color: 'black' }}>
-                    Your message has been received. Our team will get back to you as soon as
+                    Your message has been received. My team will get back to you as soon as
                     possible.
                   </Typography>
                   <Button
@@ -273,7 +273,7 @@ const Contact = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <HelpOutline sx={{ mr: 2, color: 'primary.main' }} />
                     <Typography variant="body1" sx={{ color: 'black' }}>
-                      Check our FAQ for quick answers
+                      Check my FAQ for quick answers
                     </Typography>
                   </Box>
                 </Stack>
@@ -285,14 +285,14 @@ const Contact = () => {
                   <b style={{ color: 'black' }}>How quickly will I get a response?</b>
                   <br />
                   <Typography variant="body2" sx={{ color: '#666666' }}>
-                    We aim to respond to all inquiries within 24 hours during business days.
+                    I aim to respond to all inquiries within 24 hours during business days.
                   </Typography>
                 </Typography>
                 <Typography variant="body2" sx={{ mb: 1 }}>
                   <b style={{ color: 'black' }}>Can I request a feature?</b>
                   <br />
                   <Typography variant="body2" sx={{ color: '#666666' }}>
-                    Absolutely! We welcome suggestions and feedback—just use the form or email us
+                    Absolutely! I welcome suggestions and feedback—just use the form or email me
                     directly.
                   </Typography>
                 </Typography>
@@ -300,7 +300,7 @@ const Contact = () => {
                   <b style={{ color: 'black' }}>Is my information safe?</b>
                   <br />
                   <Typography variant="body2" sx={{ color: '#666666' }}>
-                    Yes. We take privacy and security seriously. Your contact details and messages
+                    Yes. I take privacy and security seriously. Your contact details and messages
                     are handled with strict confidentiality.
                   </Typography>
                 </Typography>

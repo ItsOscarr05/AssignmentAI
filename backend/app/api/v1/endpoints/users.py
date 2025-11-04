@@ -217,12 +217,12 @@ async def upload_avatar(
     
     return {"avatarUrl": avatar_path}
 
-@router.delete("/account")
+@router.delete("/me")
 async def delete_account(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Delete current user's account"""
+    """Delete current user's account and all related entities"""
     # Create storage service
     storage_service = StorageService(db)
     
@@ -230,20 +230,38 @@ async def delete_account(
     if current_user.avatar:
         storage_service.delete_file(current_user.avatar)
     
-    # Delete user
+    # Delete user and all related entities
     user_crud.delete_user_account(db, str(current_user.id))
     return {"message": "Account deleted successfully"}
 
-@router.post("/change-password")
+@router.post("/me/verify-password")
+async def verify_password(
+    password: str = Body(..., embed=True),
+    current_user: User = Depends(get_current_user),
+):
+    """Verify if the provided password matches the user's current password"""
+    is_valid = user_crud.verify_user_password(current_user, password)
+    return {"is_valid": is_valid}
+
+@router.post("/me/change-password")
 async def change_password(
-    current_password: str = Form(...),
-    new_password: str = Form(...),
+    password_data: dict = Body(...),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Change user's password"""
+    current_password = password_data.get("currentPassword")
+    new_password = password_data.get("newPassword")
+    
+    if not current_password or not new_password:
+        raise HTTPException(status_code=400, detail="Current password and new password are required")
+    
     if not user_crud.verify_user_password(current_user, current_password):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
+    
+    # Check if new password is the same as current password
+    if user_crud.verify_user_password(current_user, new_password):
+        raise HTTPException(status_code=400, detail="New password must be different from current password")
     
     user_crud.update_password(db, str(current_user.id), new_password)
     return {"message": "Password changed successfully"}

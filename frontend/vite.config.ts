@@ -9,6 +9,13 @@ export default defineConfig({
     port: 3001,
     host: true,
     open: false,
+    hmr: {
+      overlay: true,
+    },
+    watch: {
+      usePolling: true,
+      interval: 1000,
+    },
   },
   resolve: {
     alias: {

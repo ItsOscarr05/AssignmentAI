@@ -1,9 +1,13 @@
 import { Box, Container, Divider, Paper, Typography } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
-import RedStarField from '../components/common/RedStarField';
+import { useSearchParams } from 'react-router-dom';
 import PageHeader from '../components/common/PageHeader';
+import RedStarField from '../components/common/RedStarField';
 
 const Privacy = () => {
+  const [searchParams] = useSearchParams();
+  const fromModal = searchParams.get('fromModal') === 'true';
+
   // Starfield logic
   const mainContentRef = useRef<HTMLDivElement>(null);
   const [contentHeight, setContentHeight] = useState<number>(0);
@@ -17,6 +21,44 @@ const Privacy = () => {
     window.addEventListener('resize', updateHeight);
     return () => window.removeEventListener('resize', updateHeight);
   }, []);
+
+  // Handle closing window when opened from modal
+  useEffect(() => {
+    if (fromModal) {
+      const handlePopState = () => {
+        // Check if there's history to go back to
+        if (window.history.length <= 1) {
+          window.close();
+        }
+      };
+
+      // Listen for browser back button
+      window.addEventListener('popstate', handlePopState);
+
+      return () => {
+        window.removeEventListener('popstate', handlePopState);
+      };
+    }
+  }, [fromModal]);
+
+  const handleBackClick = () => {
+    if (fromModal) {
+      // If opened from modal, try to close the window
+      // window.close() only works if the window was opened by JavaScript
+      if (window.history.length <= 1) {
+        window.close();
+      } else {
+        // If there's history, go back first
+        window.history.back();
+        // Then close after a short delay if still in the same state
+        setTimeout(() => {
+          if (window.history.length <= 1) {
+            window.close();
+          }
+        }, 100);
+      }
+    }
+  };
 
   return (
     <Box
@@ -39,22 +81,24 @@ const Privacy = () => {
             position: 'relative',
           }}
         >
-          <PageHeader title="Privacy Policy" />
+          <PageHeader
+            title="Privacy Policy"
+            onBackClick={fromModal ? handleBackClick : undefined}
+          />
           <Divider sx={{ mb: 4, borderColor: 'primary.main', opacity: 0.2 }} />
           <Typography variant="body1" sx={{ mb: 3, fontSize: '1.15rem', color: 'black' }}>
-            At AssignmentAI, we take your privacy seriously. This Privacy Policy ("Policy")
+            At AssignmentAI, I take your privacy seriously. This Privacy Policy ("Policy")
             constitutes a legally binding agreement between you ("User," "you," or "your") and
-            AssignmentAI ("Company," "we," "us," or "our") regarding the collection, use,
-            disclosure, and safeguarding of your information when you access or use our platform.
-            This Policy is designed to provide transparency about our data practices and your
-            privacy rights. By accessing or using AssignmentAI, you expressly consent to the
-            practices described herein and acknowledge that you have read, understood, and agree to
-            be bound by this Policy.
+            AssignmentAI ("Company," "I," "me," or "my") regarding the collection, use, disclosure,
+            and safeguarding of your information when you access or use my platform. This Policy is
+            designed to provide transparency about my data practices and your privacy rights. By
+            accessing or using AssignmentAI, you expressly consent to the practices described herein
+            and acknowledge that you have read, understood, and agree to be bound by this Policy.
           </Typography>
           {[
             {
-              title: '1. Information We Collect',
-              content: `We collect and process various categories of information to provide, maintain, and improve our services. This includes, but is not limited to:
+              title: '1. Information I Collect',
+              content: `I collect and process various categories of information to provide, maintain, and improve my services. This includes, but is not limited to:
 
           • Personal Identifiable Information (PII):
             - Full name and contact details
@@ -89,8 +133,8 @@ const Privacy = () => {
             - Local storage and cache data`,
             },
             {
-              title: '2. How We Use Your Information',
-              content: `We process your information for various legitimate business purposes, including but not limited to:
+              title: '2. How I Use Your Information',
+              content: `I process your information for various legitimate business purposes, including but not limited to:
 
           • Service Provision and Enhancement:
             - Delivering and maintaining core platform functionality
@@ -117,12 +161,12 @@ const Privacy = () => {
             - Preventing fraud and unauthorized access
             - Detecting and addressing security threats
             - Complying with legal obligations
-            - Enforcing our terms and policies
-            - Protecting our rights and interests`,
+            - Enforcing my terms and policies
+            - Protecting my rights and interests`,
             },
             {
               title: '3. Information Sharing and Disclosure',
-              content: `We may disclose your information in the following circumstances, subject to appropriate safeguards and confidentiality obligations:
+              content: `I may disclose your information in the following circumstances, subject to appropriate safeguards and confidentiality obligations:
 
           • Service Providers and Partners:
             - Cloud infrastructure and hosting providers
@@ -135,7 +179,7 @@ const Privacy = () => {
           • Legal and Regulatory Compliance:
             - Response to lawful requests from government authorities
             - Compliance with court orders and legal proceedings
-            - Protection of our legal rights and interests
+            - Protection of my legal rights and interests
             - Investigation of potential violations
             - Prevention of illegal activities
 
@@ -151,11 +195,11 @@ const Privacy = () => {
             - In response to your requests
             - For marketing or promotional purposes
 
-          We maintain strict controls over information sharing and never sell your personal information to third parties.`,
+          I maintain strict controls over information sharing and never sell your personal information to third parties.`,
             },
             {
               title: '4. Data Security',
-              content: `We implement a comprehensive, multi-layered security framework to protect your information:
+              content: `I implement a comprehensive, multi-layered security framework to protect your information:
 
           • Technical Safeguards:
             - Industry-standard encryption (AES-256, TLS 1.3)
@@ -181,11 +225,11 @@ const Privacy = () => {
             - Disaster recovery capabilities
             - Backup and redundancy systems
 
-          While we implement robust security measures, no system is completely secure. We continuously monitor and update our security practices to address emerging threats.`,
+          While I implement robust security measures, no system is completely secure. I continuously monitor and update my security practices to address emerging threats.`,
             },
             {
               title: '5. Data Retention',
-              content: `We maintain a comprehensive data retention framework that balances operational needs with privacy considerations:
+              content: `I maintain a comprehensive data retention framework that balances operational needs with privacy considerations:
 
           • Retention Periods:
             - Active user data: Retained while account is active
@@ -209,7 +253,7 @@ const Privacy = () => {
             - Statistical analysis purposes
             - Historical trend analysis
 
-          We regularly review our retention practices to ensure compliance with applicable laws and best practices.`,
+          I regularly review my retention practices to ensure compliance with applicable laws and best practices.`,
             },
             {
               title: '6. Your Rights and Choices',
@@ -239,11 +283,11 @@ const Privacy = () => {
             - Right to challenge outcomes
             - Right to request review
 
-          To exercise these rights, please contact our Data Protection Officer at privacy@assignmentai.app. We will respond to your request within 30 days.`,
+          To exercise these rights, please contact my Data Protection Officer at privacy@assignmentai.app. I will respond to your request within 30 days.`,
             },
             {
               title: "7. Children's Privacy",
-              content: `We maintain strict compliance with children's privacy protection laws and regulations:
+              content: `I maintain strict compliance with children's privacy protection laws and regulations:
 
           • Age Restrictions:
             - Platform limited to users 13 years and older
@@ -269,11 +313,11 @@ const Privacy = () => {
             - Regular compliance reviews
             - Staff training on child protection
 
-          We do not knowingly collect or process information from children under 13. If we discover such information, we will promptly delete it.`,
+          I do not knowingly collect or process information from children under 13. If I discover such information, I will promptly delete it.`,
             },
             {
               title: '8. International Data Transfers',
-              content: `We maintain a robust framework for international data transfers:
+              content: `I maintain a robust framework for international data transfers:
 
           • Transfer Mechanisms:
             - Standard Contractual Clauses (SCCs)
@@ -299,11 +343,11 @@ const Privacy = () => {
             - Regulatory reporting
             - Compliance documentation
 
-          We ensure appropriate safeguards are in place for all international data transfers.`,
+          I ensure appropriate safeguards are in place for all international data transfers.`,
             },
             {
               title: '9. Changes to This Privacy Policy',
-              content: `We maintain a transparent process for policy updates:
+              content: `I maintain a transparent process for policy updates:
 
           • Update Procedures:
             - Regular policy reviews
@@ -329,11 +373,11 @@ const Privacy = () => {
             - Opt-out options
             - Grandfathering provisions
 
-          We encourage regular review of this Policy for updates.`,
+          I encourage regular review of this Policy for updates.`,
             },
             {
               title: '10. Contact Us',
-              content: `For privacy-related inquiries and requests, please contact us through the following channels:
+              content: `For privacy-related inquiries and requests, please contact me through the following channels:
 
           • Data Protection Officer:
             Email: privacy@assignmentai.app
@@ -356,7 +400,7 @@ const Privacy = () => {
             - Community forums
             - Knowledge base
 
-          We are committed to addressing your privacy concerns promptly and effectively.`,
+          I am committed to addressing your privacy concerns promptly and effectively.`,
             },
           ].map((section, idx) => (
             <div key={section.title}>
@@ -366,7 +410,7 @@ const Privacy = () => {
                   mt: idx === 0 ? 0 : 5,
                   mb: 1,
                   fontWeight: 600,
-                  color: 'primary.main',
+                  color: '#D32F2F',
                   letterSpacing: 0.5,
                 }}
               >

@@ -1,41 +1,27 @@
 import {
-  AllInclusive,
   AnalyticsOutlined,
-  AutoAwesomeOutlined,
   BarChartOutlined,
   Brush,
   CheckCircle,
   CheckCircleOutlined,
   CompareArrows,
-  CurrencyBitcoin as CurrencyBitcoinIcon,
   DataUsageOutlined,
   DeleteForeverOutlined,
-  DesignServicesOutlined,
   DownloadOutlined,
   Error,
   EventOutlined,
   FingerprintOutlined,
-  FormatQuoteOutlined,
-  GppGoodOutlined,
   HistoryOutlined,
   Info,
   Language,
-  LibraryBooksOutlined,
   LockOutlined,
-  PaletteOutlined,
   PrivacyTipOutlined,
   PsychologyOutlined,
-  RocketLaunchOutlined,
   Save,
-  SchoolOutlined,
-  ScienceOutlined,
   Search,
   SecurityOutlined,
   SecurityUpdateOutlined,
   ShieldOutlined,
-  SmartToyOutlined,
-  Spellcheck,
-  TextSnippetOutlined,
   Tune,
   VerifiedUserOutlined,
   VisibilityOffOutlined,
@@ -48,7 +34,6 @@ import {
   Alert,
   Box,
   Button,
-  Chip,
   CircularProgress,
   Dialog,
   DialogActions,
@@ -88,6 +73,8 @@ import AIFeaturesDemo from '../components/ai/AIFeaturesDemo';
 import DateFormatSelector from '../components/common/DateFormatSelector';
 import AutoLockWarningDialog from '../components/security/AutoLockWarningDialog';
 import SecurityAuditDialog from '../components/security/SecurityAuditDialog';
+import AIFeaturesStatusModal from '../components/settings/AIFeaturesStatusModal';
+import ModelComparisonModal from '../components/settings/ModelComparisonModal';
 import { useFontSize } from '../contexts/FontSizeContext';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { preferences, users } from '../services/api';
@@ -156,7 +143,6 @@ const Settings: React.FC = () => {
   const [language, setLanguage] = useState('en');
   const { fontSize } = useFontSize();
   const [animations, setAnimations] = useState(true);
-  const [compactMode, setCompactMode] = useState(false);
 
   // Language & Date Settings
   const [dateFormat, setDateFormat] = useState<DateFormat>(() => {
@@ -185,7 +171,6 @@ const Settings: React.FC = () => {
   // AI Settings Validation & Feedback
   const [aiSettingsError, setAiSettingsError] = useState<string | null>(null);
   const [showModelComparison, setShowModelComparison] = useState(false);
-  const [selectedModelPlan, setSelectedModelPlan] = useState<SubscriptionPlan | null>(null);
   const [isValidatingSettings, setIsValidatingSettings] = useState(false);
   const [showAIFeaturesDemo, setShowAIFeaturesDemo] = useState(false);
 
@@ -224,6 +209,8 @@ const Settings: React.FC = () => {
   const [showSecurityAudit, setShowSecurityAudit] = useState(false);
   const [isRecordingAudit, setIsRecordingAudit] = useState(false);
   const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [deleteAccountError, setDeleteAccountError] = useState<string | null>(null);
   const [showDownloadDataDialog, setShowDownloadDataDialog] = useState(false);
 
   const [isExportingData, setIsExportingData] = useState(false);
@@ -658,7 +645,6 @@ const Settings: React.FC = () => {
       language,
       fontSize,
       animations,
-      compactMode,
       dateFormat,
       tokenContextLimit,
       temperature,
@@ -680,7 +666,6 @@ const Settings: React.FC = () => {
     language,
     fontSize,
     animations,
-    compactMode,
     dateFormat,
     tokenContextLimit,
     temperature,
@@ -775,7 +760,6 @@ const Settings: React.FC = () => {
           dark_mode: darkMode,
           font_size: fontSize,
           animations: animations,
-          compact_mode: compactMode,
         },
         language: {
           language: language,
@@ -827,7 +811,6 @@ const Settings: React.FC = () => {
         language,
         fontSize,
         animations,
-        compactMode,
         dateFormat,
         tokenContextLimit,
         temperature,
@@ -904,15 +887,6 @@ const Settings: React.FC = () => {
       document.body.style.removeProperty('--disable-animations');
     }
   }, [animations]);
-
-  // Apply compact mode
-  useEffect(() => {
-    if (compactMode) {
-      document.body.classList.add('compact-mode');
-    } else {
-      document.body.classList.remove('compact-mode');
-    }
-  }, [compactMode]);
 
   // Dark mode is now handled by Material-UI theme system
 
@@ -1192,8 +1166,19 @@ const Settings: React.FC = () => {
       setShowChangePasswordDialog(false);
       setPasswordError(null);
 
-      // Show success message (you could add a snackbar here)
-      console.log('Password changed successfully');
+      // Log out the user and redirect to login page
+      // Clear auth state before navigation
+      localStorage.removeItem('token');
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user');
+
+      // Navigate to login page
+      navigate('/login', {
+        state: {
+          message: 'Password changed successfully. Please login with your new password.',
+        },
+      });
     } catch (error: any) {
       console.error('Password change error:', error);
       setPasswordError(
@@ -1206,22 +1191,36 @@ const Settings: React.FC = () => {
     }
   };
 
-  const handleDeleteAccount = async (confirmationText: string) => {
+  const handleDeleteAccount = async (_confirmationText: string) => {
     try {
-      // TODO: Implement actual account deletion API call
-      console.log('Deleting account with confirmation:', confirmationText);
+      setIsDeletingAccount(true);
+      setDeleteAccountError(null);
 
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Call the API to delete the account
+      await users.deleteAccount();
 
-      // For now, just close the dialog
+      // Close the dialog
       setShowDeleteAccountDialog(false);
 
-      // TODO: Redirect to logout or show success message
-      console.log('Account deletion completed');
-    } catch (error) {
+      // Clear all authentication data
+      localStorage.clear();
+      sessionStorage.clear();
+
+      // Navigate to register page
+      navigate('/register', {
+        state: {
+          message: 'Your account has been successfully deleted.',
+        },
+      });
+    } catch (error: any) {
       console.error('Account deletion failed:', error);
-      // TODO: Handle error appropriately
+      setDeleteAccountError(
+        error.response?.data?.detail ||
+          error.message ||
+          'Failed to delete account. Please try again.'
+      );
+    } finally {
+      setIsDeletingAccount(false);
     }
   };
 
@@ -1453,10 +1452,7 @@ const Settings: React.FC = () => {
           // Determine plan based on ai_model and token_limit
           let plan: SubscriptionPlan = 'free';
 
-          if (
-            subscriptionData.ai_model === 'gpt-5' &&
-            subscriptionData.token_limit === 1000000
-          ) {
+          if (subscriptionData.ai_model === 'gpt-5' && subscriptionData.token_limit === 1000000) {
             plan = 'max';
           } else if (
             subscriptionData.ai_model === 'gpt-5-mini' &&
@@ -1518,10 +1514,6 @@ const Settings: React.FC = () => {
       }
       if (userPreferences.theme) {
         // Theme is handled by context, no need to set here
-      }
-
-      if (userPreferences.compact_mode !== undefined) {
-        setCompactMode(userPreferences.compact_mode);
       }
 
       // Load AI settings from dedicated endpoint
@@ -1630,7 +1622,6 @@ const Settings: React.FC = () => {
         language,
         fontSize,
         animations,
-        compactMode,
         dateFormat,
         tokenContextLimit,
         temperature,
@@ -1653,7 +1644,6 @@ const Settings: React.FC = () => {
     language,
     fontSize,
     animations,
-    compactMode,
     dateFormat,
     tokenContextLimit,
     temperature,
@@ -1717,7 +1707,6 @@ const Settings: React.FC = () => {
       await preferences.update({
         language,
         theme: darkMode ? 'dark' : 'light',
-        compact_mode: compactMode,
         custom_preferences: {
           dateFormat,
           timezone,
@@ -2047,15 +2036,6 @@ const Settings: React.FC = () => {
                         />
                       }
                       label="Enable Animations"
-                    />
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={compactMode}
-                          onChange={e => setCompactMode(e.target.checked)}
-                        />
-                      }
-                      label="Compact Mode"
                     />
                   </FormGroup>
                 </Grid>
@@ -3654,390 +3634,12 @@ const Settings: React.FC = () => {
       </Box>
 
       {/* Model Comparison Dialog */}
-      <Dialog
+      <ModelComparisonModal
         open={showModelComparison}
         onClose={() => setShowModelComparison(false)}
-        maxWidth="md"
-        fullWidth
-        PaperProps={{
-          sx: {
-            backgroundColor: theme =>
-              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
-          },
-        }}
-      >
-        <DialogContent>
-          <DialogTitle sx={{ color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black') }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <CompareArrows />
-              AI Model Comparison
-            </Box>
-          </DialogTitle>
-          <Grid container spacing={3}>
-            {Object.entries(subscriptionConfig).map(([plan, config]) => (
-              <Grid item xs={12} md={6} key={plan}>
-                <Paper
-                  elevation={2}
-                  onClick={() => setSelectedModelPlan(plan as SubscriptionPlan)}
-                  sx={{
-                    p: 3,
-                    pt: 4,
-                    border: selectedModelPlan === plan ? '3px solid' : '1px solid',
-                    borderColor:
-                      selectedModelPlan === plan
-                        ? plan === 'free'
-                          ? '#2196f3'
-                          : plan === 'plus'
-                          ? '#4caf50'
-                          : plan === 'pro'
-                          ? '#9c27b0'
-                          : '#ff9800'
-                        : 'divider',
-                    borderRadius: 2,
-                    position: 'relative',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease-in-out',
-                    '&:hover': {
-                      transform: 'translateY(-2px)',
-                      boxShadow: 4,
-                      borderColor:
-                        plan === 'free'
-                          ? '#2196f3'
-                          : plan === 'plus'
-                          ? '#4caf50'
-                          : plan === 'pro'
-                          ? '#9c27b0'
-                          : '#ff9800',
-                    },
-                  }}
-                >
-                  {selectedModelPlan === plan && (
-                    <Chip
-                      label="Selected"
-                      size="small"
-                      sx={{
-                        position: 'absolute',
-                        top: 8,
-                        left: 8,
-                        backgroundColor:
-                          plan === 'free'
-                            ? '#2196f3'
-                            : plan === 'plus'
-                            ? '#4caf50'
-                            : plan === 'pro'
-                            ? '#9c27b0'
-                            : '#ff9800',
-                        color: theme => (theme.palette.mode === 'dark' ? 'white' : 'white'),
-                        fontWeight: 'bold',
-                      }}
-                    />
-                  )}
-
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    {plan === 'free' && (
-                      <SmartToyOutlined
-                        sx={{
-                          fontSize: '1.5rem',
-                          color: '#2196f3',
-                        }}
-                      />
-                    )}
-                    {plan === 'plus' && (
-                      <PsychologyOutlined
-                        sx={{
-                          fontSize: '1.5rem',
-                          color: '#4caf50',
-                        }}
-                      />
-                    )}
-                    {plan === 'pro' && (
-                      <AutoAwesomeOutlined
-                        sx={{
-                          fontSize: '1.5rem',
-                          color: '#9c27b0',
-                        }}
-                      />
-                    )}
-                    {plan === 'max' && (
-                      <RocketLaunchOutlined
-                        sx={{
-                          fontSize: '1.5rem',
-                          color: '#ff9800',
-                        }}
-                      />
-                    )}
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        color:
-                          plan === 'free'
-                            ? '#2196f3'
-                            : plan === 'plus'
-                            ? '#4caf50'
-                            : plan === 'pro'
-                            ? '#9c27b0'
-                            : '#ff9800',
-                        fontWeight: 'bold',
-                      }}
-                    >
-                      {config.label}
-                    </Typography>
-                  </Box>
-
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    {plan.charAt(0).toUpperCase() + plan.slice(1)} Plan
-                  </Typography>
-
-                  <Box sx={{ mt: 2 }}>
-                    <Typography variant="subtitle2" gutterBottom>
-                      Features:
-                    </Typography>
-                    <List dense>
-                      <ListItem sx={{ px: 0 }}>
-                        <ListItemIcon sx={{ minWidth: 32 }}>
-                          <CurrencyBitcoinIcon
-                            sx={{
-                              fontSize: '1.2rem',
-                              color:
-                                plan === 'free'
-                                  ? '#2196f3'
-                                  : plan === 'plus'
-                                  ? '#4caf50'
-                                  : plan === 'pro'
-                                  ? '#9c27b0'
-                                  : '#ff9800',
-                            }}
-                          />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={`${config.tokenLimit.toLocaleString()} token limit`}
-                          primaryTypographyProps={{ variant: 'body2' }}
-                        />
-                      </ListItem>
-                      <ListItem sx={{ px: 0 }}>
-                        <ListItemIcon sx={{ minWidth: 32 }}>
-                          {plan === 'free' ? (
-                            <SchoolOutlined
-                              sx={{
-                                fontSize: '1.2rem',
-                                color: '#2196f3',
-                              }}
-                            />
-                          ) : plan === 'plus' ? (
-                            <ScienceOutlined
-                              sx={{
-                                fontSize: '1.2rem',
-                                color: '#4caf50',
-                              }}
-                            />
-                          ) : plan === 'pro' ? (
-                            <Search
-                              sx={{
-                                fontSize: '1.2rem',
-                                color: '#9c27b0',
-                              }}
-                            />
-                          ) : (
-                            <AllInclusive
-                              sx={{
-                                fontSize: '1.2rem',
-                                color: '#ff9800',
-                              }}
-                            />
-                          )}
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={
-                            plan === 'free'
-                              ? 'Basic Assignment Analysis'
-                              : plan === 'plus'
-                              ? 'Advanced Writing Analysis'
-                              : plan === 'pro'
-                              ? 'AI-Powered Research Assistance'
-                              : 'Unlimited Assignment Analysis'
-                          }
-                          primaryTypographyProps={{ variant: 'body2' }}
-                        />
-                      </ListItem>
-                      <ListItem sx={{ px: 0 }}>
-                        <ListItemIcon sx={{ minWidth: 32 }}>
-                          {plan === 'free' ? (
-                            <Spellcheck
-                              sx={{
-                                fontSize: '1.2rem',
-                                color: '#2196f3',
-                              }}
-                            />
-                          ) : plan === 'plus' ? (
-                            <PaletteOutlined
-                              sx={{
-                                fontSize: '1.2rem',
-                                color: '#4caf50',
-                              }}
-                            />
-                          ) : plan === 'pro' ? (
-                            <FormatQuoteOutlined
-                              sx={{
-                                fontSize: '1.2rem',
-                                color: '#9c27b0',
-                              }}
-                            />
-                          ) : (
-                            <BarChartOutlined
-                              sx={{
-                                fontSize: '1.2rem',
-                                color: '#ff9800',
-                              }}
-                            />
-                          )}
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={
-                            plan === 'free'
-                              ? 'Grammar & Spelling Check'
-                              : plan === 'plus'
-                              ? 'Style & Tone Suggestions'
-                              : plan === 'pro'
-                              ? 'Citation & Reference Check'
-                              : 'Advanced Analytics Dashboard'
-                          }
-                          primaryTypographyProps={{ variant: 'body2' }}
-                        />
-                      </ListItem>
-                      <ListItem sx={{ px: 0 }}>
-                        <ListItemIcon sx={{ minWidth: 32 }}>
-                          {plan === 'free' ? (
-                            <TextSnippetOutlined
-                              sx={{
-                                fontSize: '1.2rem',
-                                color: '#2196f3',
-                              }}
-                            />
-                          ) : plan === 'plus' ? (
-                            <LibraryBooksOutlined
-                              sx={{
-                                fontSize: '1.2rem',
-                                color: '#4caf50',
-                              }}
-                            />
-                          ) : plan === 'pro' ? (
-                            <GppGoodOutlined
-                              sx={{
-                                fontSize: '1.2rem',
-                                color: '#9c27b0',
-                              }}
-                            />
-                          ) : (
-                            <DesignServicesOutlined
-                              sx={{
-                                fontSize: '1.2rem',
-                                color: '#ff9800',
-                              }}
-                            />
-                          )}
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={
-                            plan === 'free'
-                              ? 'Basic Templates'
-                              : plan === 'plus'
-                              ? 'Extended Templates Library'
-                              : plan === 'pro'
-                              ? 'Plagiarism Detection'
-                              : 'Custom Assignment Templates'
-                          }
-                          primaryTypographyProps={{ variant: 'body2' }}
-                        />
-                      </ListItem>
-                    </List>
-                  </Box>
-
-                  <Box sx={{ mt: 2 }}>
-                    <Typography variant="subtitle2" gutterBottom>
-                      Performance:
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {plan === 'free' && 'Good for basic tasks and learning'}
-                      {plan === 'plus' && 'Balanced performance for most use cases'}
-                      {plan === 'pro' && 'High performance for complex assignments'}
-                      {plan === 'max' && 'Maximum performance for advanced analysis'}
-                    </Typography>
-                  </Box>
-
-                  <Box sx={{ mt: 2 }}>
-                    <Typography variant="subtitle2" gutterBottom>
-                      Pricing:
-                    </Typography>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        color: 'error.main',
-                        fontWeight: 'bold',
-                      }}
-                    >
-                      {plan === 'free' && 'Free'}
-                      {plan === 'plus' && '$4.99/month'}
-                      {plan === 'pro' && '$9.99/month'}
-                      {plan === 'max' && '$14.99/month'}
-                    </Typography>
-                  </Box>
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowModelComparison(false)}>Close</Button>
-          {selectedModelPlan && (
-            <Button
-              variant="contained"
-              disabled={selectedModelPlan === subscription.plan}
-              onClick={() => {
-                if (selectedModelPlan !== subscription.plan) {
-                  setShowModelComparison(false);
-                  navigate('/dashboard/price-plan');
-                }
-              }}
-              sx={{
-                backgroundColor:
-                  selectedModelPlan === subscription.plan
-                    ? '#9e9e9e'
-                    : selectedModelPlan === 'free'
-                    ? '#2196f3'
-                    : selectedModelPlan === 'plus'
-                    ? '#4caf50'
-                    : selectedModelPlan === 'pro'
-                    ? '#9c27b0'
-                    : '#ff9800',
-                '&:hover': {
-                  backgroundColor:
-                    selectedModelPlan === subscription.plan
-                      ? '#9e9e9e'
-                      : selectedModelPlan === 'free'
-                      ? '#1976d2'
-                      : selectedModelPlan === 'plus'
-                      ? '#388e3c'
-                      : selectedModelPlan === 'pro'
-                      ? '#7b1fa2'
-                      : '#f57c00',
-                },
-                '&:disabled': {
-                  backgroundColor: '#9e9e9e',
-                  color: theme => (theme.palette.mode === 'dark' ? '#ffffff' : '#ffffff'),
-                },
-              }}
-            >
-              {selectedModelPlan === subscription.plan
-                ? 'Current Plan'
-                : `Upgrade to ${
-                    selectedModelPlan
-                      ? selectedModelPlan.charAt(0).toUpperCase() + selectedModelPlan.slice(1)
-                      : ''
-                  }`}
-            </Button>
-          )}
-        </DialogActions>
-      </Dialog>
+        subscriptionConfig={subscriptionConfig}
+        subscription={subscription}
+      />
 
       {/* AI Features Demo Dialog */}
       <Dialog
@@ -4092,10 +3694,13 @@ const Settings: React.FC = () => {
       {/* Delete Account Confirmation Dialog */}
       <DeleteAccountDialog
         open={showDeleteAccountDialog}
-        onClose={() => setShowDeleteAccountDialog(false)}
+        onClose={() => {
+          setShowDeleteAccountDialog(false);
+          setDeleteAccountError(null);
+        }}
         onSubmit={handleDeleteAccount}
-        isLoading={false}
-        error={null}
+        isLoading={isDeletingAccount}
+        error={deleteAccountError}
       />
 
       {/* Download Data Dialog */}
@@ -4133,188 +3738,18 @@ const Settings: React.FC = () => {
       />
 
       {/* Enhanced AI Features Status Dialog */}
-      <Dialog
+      <AIFeaturesStatusModal
         open={showAIFeaturesTestDialog}
         onClose={() => setShowAIFeaturesTestDialog(false)}
-        maxWidth="lg"
-        fullWidth
-        PaperProps={{
-          sx: {
-            backgroundColor: theme =>
-              theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
-            border: '2px solid #d32f2f',
-            borderRadius: 3,
-          },
-        }}
-      >
-        <DialogTitle
-          sx={{
-            color: theme => (theme.palette.mode === 'dark' ? 'white' : 'black'),
-            borderBottom: '2px solid #d32f2f',
-            pb: 2,
-            background: theme =>
-              theme.palette.mode === 'dark'
-                ? 'linear-gradient(135deg, rgba(211, 47, 47, 0.1) 0%, rgba(211, 47, 47, 0.05) 100%)'
-                : 'linear-gradient(135deg, rgba(211, 47, 47, 0.05) 0%, rgba(211, 47, 47, 0.02) 100%)',
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <PsychologyOutlined sx={{ color: '#d32f2f', fontSize: 28 }} />
-            <Box>
-              <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#d32f2f' }}>
-                AI Features Status
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Current AI configuration and feature availability
-              </Typography>
-            </Box>
-          </Box>
-        </DialogTitle>
-        <DialogContent>
-          <Stack spacing={3}>
-            <Alert
-              severity="info"
-              sx={{
-                '& .MuiAlert-icon': { color: 'info.main' },
-                '& .MuiAlert-message': { color: 'info.main' },
-              }}
-            >
-              View the current status and configuration of your AI features.
-            </Alert>
-
-            <Box>
-              <Typography variant="h6" gutterBottom sx={{ color: 'primary.main' }}>
-                Feature Status
-              </Typography>
-              <Stack spacing={2}>
-                {[
-                  { key: 'autoComplete', label: 'Auto Complete', enabled: autoComplete },
-                  { key: 'codeSnippets', label: 'Code Snippets', enabled: codeSnippets },
-                  { key: 'aiSuggestions', label: 'AI Suggestions', enabled: aiSuggestions },
-                  {
-                    key: 'realTimeAnalysis',
-                    label: 'Real-time Analysis',
-                    enabled: realTimeAnalysis,
-                  },
-                ].map(({ key, label, enabled }) => (
-                  <Box
-                    key={key}
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      p: 2,
-                      border: 1,
-                      borderColor: 'divider',
-                      borderRadius: 1,
-                      bgcolor: 'background.paper',
-                      opacity: enabled ? 1 : 0.6,
-                    }}
-                  >
-                    <Box display="flex" alignItems="center" gap={2}>
-                      {enabled ? (
-                        <CheckCircle color="success" />
-                      ) : (
-                        <Typography variant="body2" color="text.secondary">
-                          -
-                        </Typography>
-                      )}
-                      <Box>
-                        <Typography variant="subtitle1">{label}</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {enabled ? 'Feature enabled and ready' : 'Feature disabled'}
-                        </Typography>
-                      </Box>
-                    </Box>
-                    <Chip
-                      label={enabled ? 'Enabled' : 'Disabled'}
-                      size="small"
-                      color={enabled ? 'success' : 'default'}
-                    />
-                  </Box>
-                ))}
-              </Stack>
-            </Box>
-
-            <Box>
-              <Typography variant="h6" gutterBottom sx={{ color: 'primary.main' }}>
-                Current AI Settings
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Token Context Limit
-                  </Typography>
-                  <Typography variant="body1">{tokenContextLimit.toLocaleString()}</Typography>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Temperature
-                  </Typography>
-                  <Typography variant="body1">{temperature}</Typography>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Context Length
-                  </Typography>
-                  <Typography variant="body1">{contextLength}</Typography>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Model
-                  </Typography>
-                  <Typography variant="body1">{subscription.model}</Typography>
-                </Grid>
-              </Grid>
-            </Box>
-
-            <Box>
-              <Typography variant="h6" gutterBottom sx={{ color: 'primary.main' }}>
-                Performance Information
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Response Time
-                  </Typography>
-                  <Typography variant="body1">~2-5 seconds</Typography>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Token Usage
-                  </Typography>
-                  <Typography variant="body1">Varies by request</Typography>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Model Version
-                  </Typography>
-                  <Typography variant="body1">
-                    {subscription.model === 'gpt-5-nano'
-                      ? 'GPT-5 Nano'
-                      : subscription.model === 'gpt-5-mini'
-                      ? 'GPT-5 Mini'
-                      : subscription.model === 'gpt-5'
-                      ? 'GPT-5'
-                      : subscription.model}
-                  </Typography>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    API Status
-                  </Typography>
-                  <Typography variant="body1" color="success.main">
-                    Connected
-                  </Typography>
-                </Grid>
-              </Grid>
-            </Box>
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowAIFeaturesTestDialog(false)}>Close</Button>
-        </DialogActions>
-      </Dialog>
+        autoComplete={autoComplete}
+        codeSnippets={codeSnippets}
+        aiSuggestions={aiSuggestions}
+        realTimeAnalysis={realTimeAnalysis}
+        tokenContextLimit={tokenContextLimit}
+        temperature={temperature}
+        contextLength={contextLength}
+        subscription={subscription}
+      />
 
       {/* Unsaved Changes Dialog */}
       <Dialog open={showUnsavedChangesDialog} onClose={cancelNavigation} maxWidth="sm" fullWidth>
@@ -4473,18 +3908,6 @@ const Settings: React.FC = () => {
         /* Enhanced switch focus states */
         .MuiSwitch-root:focus-within .MuiSwitch-switchBase {
           box-shadow: 0 0 0 8px rgba(25, 118, 210, 0.16);
-        }
-        
-        /* Compact mode styles - exclude sidebar */
-        .compact-mode .MuiPaper-root:not(.MuiDrawer-paper) {
-          padding: 16px !important;
-          margin-bottom: 16px !important;
-        }
-        .compact-mode .MuiTypography-h5:not(.MuiDrawer-root .MuiTypography-h5) {
-          font-size: 1.1rem !important;
-        }
-        .compact-mode .MuiFormControlLabel-root:not(.MuiDrawer-root .MuiFormControlLabel-root) {
-          margin-bottom: 8px !important;
         }
         
         /* Animation disable styles */

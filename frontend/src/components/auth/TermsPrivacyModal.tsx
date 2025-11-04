@@ -12,7 +12,6 @@ import {
   Typography,
 } from '@mui/material';
 import React, { ChangeEvent, useState } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
 
 interface TermsPrivacyModalProps {
   open: boolean;
@@ -40,10 +39,17 @@ const TermsPrivacyModal: React.FC<TermsPrivacyModalProps> = ({ open, onAccept, o
           borderRadius: 3,
           padding: 2,
           border: '2.5px solid #D32F2F',
+          backgroundColor: '#ffffff',
+          color: '#000000',
+        },
+        '& .MuiDialog-container': {
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
         },
       }}
     >
-      <DialogTitle sx={{ textAlign: 'center', pb: 2 }}>
+      <DialogTitle
+        sx={{ textAlign: 'center', pb: 2, backgroundColor: '#ffffff', color: '#000000' }}
+      >
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
           <SecurityOutlined sx={{ fontSize: '1.8rem', color: '#D32F2F' }} />
           <Typography
@@ -59,7 +65,7 @@ const TermsPrivacyModal: React.FC<TermsPrivacyModalProps> = ({ open, onAccept, o
         </Box>
       </DialogTitle>
 
-      <DialogContent sx={{ pb: 3 }}>
+      <DialogContent sx={{ pb: 3, backgroundColor: '#ffffff', color: '#000000' }}>
         <Typography
           variant="body1"
           sx={{
@@ -91,15 +97,19 @@ const TermsPrivacyModal: React.FC<TermsPrivacyModalProps> = ({ open, onAccept, o
             }
             label={
               <Link
-                component={RouterLink}
-                to="/terms"
-                target="_blank"
+                component="a"
+                href="/terms?fromModal=true"
+                onClick={e => {
+                  e.preventDefault();
+                  window.open('/terms?fromModal=true', '_blank');
+                }}
                 sx={{
                   color: '#D32F2F',
                   textDecoration: 'underline',
                   fontWeight: 500,
                   fontSize: '1rem',
                   fontFamily: "'Inter', sans-serif",
+                  cursor: 'pointer',
                   '&:hover': {
                     color: '#B71C1C',
                   },
@@ -108,7 +118,7 @@ const TermsPrivacyModal: React.FC<TermsPrivacyModalProps> = ({ open, onAccept, o
                 Terms of Service
               </Link>
             }
-            sx={{ display: 'block', mb: 2, justifyContent: 'center' }}
+            sx={{ display: 'block', mb: 2, justifyContent: 'center', color: '#000000' }}
           />
 
           <FormControlLabel
@@ -126,15 +136,19 @@ const TermsPrivacyModal: React.FC<TermsPrivacyModalProps> = ({ open, onAccept, o
             }
             label={
               <Link
-                component={RouterLink}
-                to="/privacy"
-                target="_blank"
+                component="a"
+                href="/privacy?fromModal=true"
+                onClick={e => {
+                  e.preventDefault();
+                  window.open('/privacy?fromModal=true', '_blank');
+                }}
                 sx={{
                   color: '#D32F2F',
                   textDecoration: 'underline',
                   fontWeight: 500,
                   fontSize: '1rem',
                   fontFamily: "'Inter', sans-serif",
+                  cursor: 'pointer',
                   '&:hover': {
                     color: '#B71C1C',
                   },
@@ -143,7 +157,7 @@ const TermsPrivacyModal: React.FC<TermsPrivacyModalProps> = ({ open, onAccept, o
                 Privacy Policy
               </Link>
             }
-            sx={{ display: 'block', justifyContent: 'center' }}
+            sx={{ display: 'block', justifyContent: 'center', color: '#000000' }}
           />
         </Box>
 
@@ -162,7 +176,9 @@ const TermsPrivacyModal: React.FC<TermsPrivacyModalProps> = ({ open, onAccept, o
         </Typography>
       </DialogContent>
 
-      <DialogActions sx={{ justifyContent: 'center', gap: 2, px: 3, pb: 3 }}>
+      <DialogActions
+        sx={{ justifyContent: 'center', gap: 2, px: 3, pb: 3, backgroundColor: '#ffffff' }}
+      >
         <Button
           onClick={onDecline}
           variant="outlined"

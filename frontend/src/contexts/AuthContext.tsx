@@ -237,6 +237,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('isMockUser', 'false');
       setIsMockUser(false);
 
+      // Ensure new users start with light mode
+      // Check if preferences exist in backend, if not, default to light
+      // Only fetch if we have a valid token to avoid 401 loops
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const { preferences: preferencesService } = await import('../services/api');
+          const userPreferences = await preferencesService.get();
+
+          if (userPreferences && userPreferences.theme) {
+            // User has preferences, use their theme
+            localStorage.setItem('theme-mode', userPreferences.theme === 'dark' ? 'dark' : 'light');
+          } else {
+            // New user with no preferences, default to light mode
+            localStorage.setItem('theme-mode', 'light');
+          }
+        } catch (error: any) {
+          // If preferences fetch fails, default to light mode for new users
+          // Don't retry or log - just use default
+          if (!localStorage.getItem('theme-mode')) {
+            localStorage.setItem('theme-mode', 'light');
+          }
+        }
+      } else {
+        // No token, default to light mode
+        if (!localStorage.getItem('theme-mode')) {
+          localStorage.setItem('theme-mode', 'light');
+        }
+      }
+
       // Store remember me preference and form data if enabled
       if (credentials.rememberMe) {
         console.log('Storing remember me data:', {

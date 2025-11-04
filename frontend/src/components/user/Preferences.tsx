@@ -191,17 +191,6 @@ export const Preferences: React.FC = () => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} md={6}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={preferences.compact_mode}
-                    onChange={e => handlePreferenceChange({ compact_mode: e.target.checked })}
-                  />
-                }
-                label="Compact Mode"
-              />
-            </Grid>
           </Grid>
         </TabPanel>
 

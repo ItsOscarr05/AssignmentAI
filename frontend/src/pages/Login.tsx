@@ -5,6 +5,7 @@ import {
   VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
 import {
+  Alert,
   Box,
   Button,
   Checkbox,
@@ -20,7 +21,7 @@ import {
   Typography,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 
 import HeroParticles from '../components/layout/HeroParticles';
 import { useAuth } from '../contexts/AuthContext';
@@ -36,6 +37,10 @@ const Login: React.FC = () => {
   const [passwordError, setPasswordError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Get success message from navigation state (e.g., after password change)
+  const successMessage = location.state?.message;
 
   // Auto-fill email and password if remember me was previously enabled
   useEffect(() => {
@@ -543,14 +548,34 @@ const Login: React.FC = () => {
                   </Link>
                 </Box>
 
+                {successMessage && (
+                  <Alert
+                    severity="success"
+                    sx={{
+                      mt: 2,
+                      mb: 2,
+                      backgroundColor: '#e8f5e9',
+                      color: '#2e7d32',
+                      '& .MuiAlert-icon': {
+                        color: '#2e7d32',
+                      },
+                    }}
+                  >
+                    {successMessage}
+                  </Alert>
+                )}
                 {error && (
                   <Typography
-                    color="error"
                     sx={{
                       mt: 2,
                       textAlign: 'center',
                       fontFamily: "'Inter', sans-serif",
                       fontWeight: 400,
+                      color: '#c62828',
+                      backgroundColor: '#ffebee',
+                      padding: '12px 16px',
+                      borderRadius: '4px',
+                      border: '1px solid #ef5350',
                     }}
                   >
                     {error}

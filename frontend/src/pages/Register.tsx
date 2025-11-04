@@ -40,6 +40,9 @@ const Register: React.FC = () => {
   const location = useLocation();
   const theme = useTheme();
 
+  // Get success message from navigation state (e.g., after account deletion)
+  const successMessage = location.state?.message;
+
   // Password validation requirements
   const passwordRequirements = {
     minLength: formData.password.length >= 8,
@@ -440,11 +443,41 @@ const Register: React.FC = () => {
                   },
                 }}
               >
+                {successMessage && (
+                  <Alert
+                    severity="success"
+                    sx={{
+                      mb: 2,
+                      backgroundColor: '#e8f5e9',
+                      color: '#2e7d32',
+                      '& .MuiAlert-icon': {
+                        color: '#2e7d32',
+                      },
+                    }}
+                  >
+                    {successMessage}
+                  </Alert>
+                )}
                 {error && (
-                  <Alert severity="error" sx={{ mb: 3 }} role="alert">
+                  <Alert
+                    severity="error"
+                    sx={{
+                      mb: 3,
+                      backgroundColor: '#ffebee',
+                      color: '#c62828',
+                      '& .MuiAlert-icon': {
+                        color: '#c62828',
+                      },
+                    }}
+                    role="alert"
+                  >
                     <Typography
                       variant="body2"
-                      sx={{ fontFamily: "'Inter', sans-serif", fontWeight: 400 }}
+                      sx={{
+                        fontFamily: "'Inter', sans-serif",
+                        fontWeight: 400,
+                        color: '#c62828',
+                      }}
                     >
                       {error}
                     </Typography>
@@ -452,10 +485,25 @@ const Register: React.FC = () => {
                 )}
 
                 {success && (
-                  <Alert severity="success" sx={{ mb: 3 }} role="alert">
+                  <Alert
+                    severity="success"
+                    sx={{
+                      mb: 3,
+                      backgroundColor: '#e8f5e9',
+                      color: '#2e7d32',
+                      '& .MuiAlert-icon': {
+                        color: '#2e7d32',
+                      },
+                    }}
+                    role="alert"
+                  >
                     <Typography
                       variant="body2"
-                      sx={{ fontFamily: "'Inter', sans-serif", fontWeight: 400 }}
+                      sx={{
+                        fontFamily: "'Inter', sans-serif",
+                        fontWeight: 400,
+                        color: '#2e7d32',
+                      }}
                     >
                       {success}
                     </Typography>

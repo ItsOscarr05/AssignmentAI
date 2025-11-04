@@ -355,13 +355,13 @@ const Landing: React.FC = () => {
             justifyContent: { xs: 'center', sm: 'space-between', md: 'space-between' },
             alignItems: { xs: 'center', sm: 'center', md: 'center' },
             px: { xs: 1, sm: 3, md: 4, lg: 10 },
-            pl: { xs: 0, sm: 3, md: 4, lg: 10 },
+            pl: { xs: 2, sm: 3, md: 4, lg: 10 },
             pt: { xs: 3, sm: 3 },
             pb: { xs: 2, sm: 0, md: 0 },
             position: 'absolute',
             top: 0,
             left: 0,
-            ml: { xs: -4, sm: 0, md: 0 },
+            ml: { xs: 0, sm: 0, md: 0 },
             zIndex: 10,
             gap: { xs: 2, sm: 0, md: 0 },
           }}
@@ -371,10 +371,12 @@ const Landing: React.FC = () => {
             sx={{
               display: 'flex',
               alignItems: 'center',
+              marginLeft: { xs: 0, sm: -1.5, md: 0.5 },
               marginRight: { xs: 0, sm: -10, md: -10 },
-              marginLeft: { xs: -3, sm: -1.5, md: 0.5 },
               flexShrink: 0,
               mb: { xs: 1, sm: 0, md: 0 },
+              justifyContent: { xs: 'center', sm: 'flex-start', md: 'flex-start' },
+              width: { xs: 'fit-content', sm: 'auto', md: 'auto' },
             }}
           >
             <Box
@@ -675,10 +677,7 @@ const Landing: React.FC = () => {
                   align="center"
                   sx={{
                     fontWeight: 800,
-                    background: 'linear-gradient(45deg, #D32F2F 30%, #FF5252 90%)',
-                    backgroundClip: 'text',
-                    WebkitBackgroundClip: 'text',
-                    color: 'transparent',
+                    color: '#D32F2F',
                     fontSize: { xs: '2.0rem', md: '3.0rem' },
                     letterSpacing: 1,
                   }}
@@ -826,10 +825,7 @@ const Landing: React.FC = () => {
                   align="center"
                   sx={{
                     fontWeight: 800,
-                    background: 'linear-gradient(45deg, #D32F2F 30%, #FF5252 90%)',
-                    backgroundClip: 'text',
-                    WebkitBackgroundClip: 'text',
-                    color: 'transparent',
+                    color: '#D32F2F',
                     fontSize: { xs: '2.0rem', md: '3.0rem' },
                     letterSpacing: 1,
                   }}
@@ -1091,10 +1087,7 @@ const Landing: React.FC = () => {
                   align="center"
                   sx={{
                     fontWeight: 800,
-                    background: 'linear-gradient(45deg, #D32F2F 30%, #FF5252 90%)',
-                    backgroundClip: 'text',
-                    WebkitBackgroundClip: 'text',
-                    color: 'transparent',
+                    color: '#D32F2F',
                     fontSize: { xs: '2.0rem', md: '3.0rem' },
                     letterSpacing: 1,
                   }}
@@ -1221,10 +1214,7 @@ const Landing: React.FC = () => {
                 align="center"
                 sx={{
                   fontWeight: 800,
-                  background: 'linear-gradient(45deg, #D32F2F 30%, #FF5252 90%)',
-                  backgroundClip: 'text',
-                  WebkitBackgroundClip: 'text',
-                  color: 'transparent',
+                  color: '#D32F2F',
                   fontSize: { xs: '2.0rem', md: '3.0rem' },
                   letterSpacing: 1,
                 }}
@@ -1339,10 +1329,7 @@ const Landing: React.FC = () => {
                 align="center"
                 sx={{
                   fontWeight: 800,
-                  background: 'linear-gradient(45deg, #D32F2F 30%, #FF5252 90%)',
-                  backgroundClip: 'text',
-                  WebkitBackgroundClip: 'text',
-                  color: 'transparent',
+                  color: '#D32F2F',
                   fontSize: { xs: '2.0rem', md: '3.0rem' },
                   letterSpacing: 1,
                 }}
@@ -1477,10 +1464,7 @@ const Landing: React.FC = () => {
                 align="center"
                 sx={{
                   fontWeight: 800,
-                  background: 'linear-gradient(45deg, #D32F2F 30%, #FF5252 90%)',
-                  backgroundClip: 'text',
-                  WebkitBackgroundClip: 'text',
-                  color: 'transparent',
+                  color: '#D32F2F',
                   fontSize: { xs: '2.0rem', md: '3.0rem' },
                   letterSpacing: 1,
                 }}
@@ -1857,10 +1841,7 @@ const Landing: React.FC = () => {
                   align="center"
                   sx={{
                     fontWeight: 800,
-                    background: 'linear-gradient(45deg, #D32F2F 30%, #FF5252 90%)',
-                    backgroundClip: 'text',
-                    WebkitBackgroundClip: 'text',
-                    color: 'transparent',
+                    color: '#D32F2F',
                     fontSize: { xs: '2.0rem', md: '3.0rem' },
                     letterSpacing: 1,
                   }}
@@ -1952,10 +1933,7 @@ const Landing: React.FC = () => {
                 align="center"
                 sx={{
                   fontWeight: 800,
-                  background: 'linear-gradient(45deg, #D32F2F 30%, #FF5252 90%)',
-                  backgroundClip: 'text',
-                  WebkitBackgroundClip: 'text',
-                  color: 'transparent',
+                  color: '#D32F2F',
                   fontSize: { xs: '2.0rem', md: '3.0rem' },
                   letterSpacing: 1,
                 }}
@@ -2077,7 +2055,7 @@ const Landing: React.FC = () => {
                 fontSize: { xs: '1.2rem', md: '1.5rem' },
               }}
             >
-              We're here to help—reach out anytime!
+              I'm here to help—reach out anytime!
             </Typography>
             <Divider sx={{ mb: 3, borderColor: 'primary.main', opacity: 0.15 }} />
             <Stack
@@ -2139,8 +2117,8 @@ const Landing: React.FC = () => {
                 fontWeight: 500,
               }}
             >
-              Have a question, suggestion, or need support? Our team is here to help you 24/7. Click
-              below to reach out and we'll get back to you as soon as possible.
+              Have a question, suggestion, or need support? My team is here to help you 24/7. Click
+              below to reach out and I'll get back to you as soon as possible.
             </Typography>
             <Button
               variant="contained"

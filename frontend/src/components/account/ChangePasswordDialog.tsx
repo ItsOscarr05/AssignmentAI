@@ -13,7 +13,8 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { users } from '../../services/api';
 
 interface ChangePasswordDialogProps {
   open: boolean;
@@ -43,6 +44,8 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  const [currentPasswordValid, setCurrentPasswordValid] = useState<boolean | null>(null);
+  const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
 
   // Password requirements validation
   const passwordRequirements = {
@@ -51,6 +54,10 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
     hasLowerCase: /[a-z]/.test(passwordForm.newPassword),
     hasNumber: /\d/.test(passwordForm.newPassword),
     hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(passwordForm.newPassword),
+    notCurrentPassword:
+      passwordForm.newPassword && passwordForm.currentPassword
+        ? passwordForm.newPassword !== passwordForm.currentPassword
+        : true,
   };
 
   const validateConfirmPassword = (confirmPassword: string) => {
@@ -60,6 +67,38 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
       setConfirmPasswordError('');
     }
   };
+
+  // Debounced password verification
+  const verifyCurrentPassword = useCallback(async (password: string) => {
+    if (!password || password.length === 0) {
+      setCurrentPasswordValid(null);
+      return;
+    }
+
+    setIsVerifyingPassword(true);
+    try {
+      const result = await users.verifyPassword(password);
+      setCurrentPasswordValid(result.is_valid);
+    } catch (error) {
+      // If verification fails, assume password is invalid
+      setCurrentPasswordValid(false);
+    } finally {
+      setIsVerifyingPassword(false);
+    }
+  }, []);
+
+  // Debounce password verification
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (passwordForm.currentPassword) {
+        verifyCurrentPassword(passwordForm.currentPassword);
+      } else {
+        setCurrentPasswordValid(null);
+      }
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [passwordForm.currentPassword, verifyCurrentPassword]);
 
   const handleSubmit = async () => {
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
@@ -81,6 +120,7 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
       confirmPassword: '',
     });
     setConfirmPasswordError('');
+    setCurrentPasswordValid(null);
     onClose();
   };
 
@@ -175,6 +215,16 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
               })
             }
             disabled={isLoading}
+            error={currentPasswordValid === false && passwordForm.currentPassword.length > 0}
+            helperText={
+              isVerifyingPassword
+                ? 'Verifying...'
+                : currentPasswordValid === false && passwordForm.currentPassword.length > 0
+                ? 'Not your current password'
+                : currentPasswordValid === true
+                ? '✓ Current password verified'
+                : ''
+            }
             sx={{
               '& .MuiOutlinedInput-root': {
                 backgroundColor: theme =>
@@ -195,10 +245,19 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
               '& .MuiInputLabel-root': {
                 color: theme => (theme.palette.mode === 'dark' ? 'white' : 'text.primary'),
               },
+              '& .MuiFormHelperText-root': {
+                color:
+                  currentPasswordValid === false
+                    ? 'error.main'
+                    : currentPasswordValid === true
+                    ? 'success.main'
+                    : undefined,
+              },
             }}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
+                  {isVerifyingPassword ? <CircularProgress size={20} sx={{ mr: 1 }} /> : null}
                   <IconButton
                     onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                     edge="end"
@@ -369,6 +428,19 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
                   }}
                 >
                   {passwordRequirements.hasSpecialChar ? '✓' : '✗'} One special character
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: passwordRequirements.notCurrentPassword ? 'success.main' : 'error.main',
+                    fontWeight: 500,
+                    fontSize: '0.8rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                  }}
+                >
+                  {passwordRequirements.notCurrentPassword ? '✓' : '✗'} Not current password
                 </Typography>
               </Box>
             </Box>

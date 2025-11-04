@@ -283,8 +283,20 @@ app.add_middleware(
 # Add token tracking middleware
 app.add_middleware(TokenTrackingMiddleware)
 
-# Mount static files
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# Mount static files (only if directory exists)
+# Check both backend/static and current working directory/static
+backend_dir = os.path.dirname(os.path.dirname(__file__))
+static_dir_backend = os.path.join(backend_dir, "static")
+static_dir_cwd = os.path.join(os.getcwd(), "static")
+
+if os.path.exists(static_dir_backend):
+    app.mount("/static", StaticFiles(directory=static_dir_backend), name="static")
+    logger.info(f"Static files mounted from {static_dir_backend}")
+elif os.path.exists(static_dir_cwd):
+    app.mount("/static", StaticFiles(directory=static_dir_cwd), name="static")
+    logger.info(f"Static files mounted from {static_dir_cwd}")
+else:
+    logger.warning(f"Static directory not found (checked {static_dir_backend} and {static_dir_cwd}), skipping static file mount")
 
 # Include API router
 print("DEBUG: Including API router...")

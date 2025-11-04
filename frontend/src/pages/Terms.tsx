@@ -1,10 +1,13 @@
 import { Box, Container, Divider, Link, Paper, Typography } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
-import RedStarField from '../components/common/RedStarField';
+import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import PageHeader from '../components/common/PageHeader';
+import RedStarField from '../components/common/RedStarField';
 
 const Terms = () => {
+  const [searchParams] = useSearchParams();
+  const fromModal = searchParams.get('fromModal') === 'true';
+
   // Starfield logic
   const mainContentRef = useRef<HTMLDivElement>(null);
   const [contentHeight, setContentHeight] = useState<number>(0);
@@ -18,6 +21,44 @@ const Terms = () => {
     window.addEventListener('resize', updateHeight);
     return () => window.removeEventListener('resize', updateHeight);
   }, []);
+
+  // Handle closing window when opened from modal
+  useEffect(() => {
+    if (fromModal) {
+      const handlePopState = () => {
+        // Check if there's history to go back to
+        if (window.history.length <= 1) {
+          window.close();
+        }
+      };
+
+      // Listen for browser back button
+      window.addEventListener('popstate', handlePopState);
+
+      return () => {
+        window.removeEventListener('popstate', handlePopState);
+      };
+    }
+  }, [fromModal]);
+
+  const handleBackClick = () => {
+    if (fromModal) {
+      // If opened from modal, try to close the window
+      // window.close() only works if the window was opened by JavaScript
+      if (window.history.length <= 1) {
+        window.close();
+      } else {
+        // If there's history, go back first
+        window.history.back();
+        // Then close after a short delay if still in the same state
+        setTimeout(() => {
+          if (window.history.length <= 1) {
+            window.close();
+          }
+        }, 100);
+      }
+    }
+  };
 
   return (
     <Box
@@ -40,14 +81,17 @@ const Terms = () => {
             position: 'relative',
           }}
         >
-          <PageHeader title="Terms of Service" />
+          <PageHeader
+            title="Terms of Service"
+            onBackClick={fromModal ? handleBackClick : undefined}
+          />
           <Divider sx={{ mb: 4, borderColor: 'primary.main', opacity: 0.2 }} />
           <Typography variant="body1" sx={{ mb: 3, fontSize: '1.15rem', color: 'black' }}>
-            Welcome to AssignmentAI. By accessing or using our platform, you acknowledge and agree
-            to be legally bound by these Terms of Service ("Terms"). These Terms constitute a
-            binding agreement between you (the "User") and AssignmentAI (the "Company"). Please read
-            them carefully before using our services. If you do not agree to these Terms, you must
-            not use AssignmentAI.
+            Welcome to AssignmentAI. By accessing or using my platform, you acknowledge and agree to
+            be legally bound by these Terms of Service ("Terms"). These Terms constitute a binding
+            agreement between you (the "User") and AssignmentAI (the "Company"). Please read them
+            carefully before using my services. If you do not agree to these Terms, you must not use
+            AssignmentAI.
           </Typography>
           {[
             {
@@ -80,7 +124,7 @@ const Terms = () => {
             },
             {
               title: '8. Privacy',
-              content: `Your privacy is important to us. AssignmentAI may collect, use, store, and process various types of information, including but not limited to personal information, usage data, device information, and communications with the platform. By using AssignmentAI, you consent to the collection, processing, storage, and transfer of your information, which may occur in jurisdictions outside your own. AssignmentAI implements reasonable administrative, technical, and physical safeguards to protect your information, but cannot guarantee absolute security. Your use of the platform is also governed by our Privacy Policy, which is incorporated by reference into these Terms. You may have certain rights under applicable privacy laws, including the right to access, correct, or delete your personal information, subject to legal and operational requirements. By using the platform, you consent to the practices described in the Privacy Policy and these Terms.`,
+              content: `Your privacy is important to me. AssignmentAI may collect, use, store, and process various types of information, including but not limited to personal information, usage data, device information, and communications with the platform. By using AssignmentAI, you consent to the collection, processing, storage, and transfer of your information, which may occur in jurisdictions outside your own. AssignmentAI implements reasonable administrative, technical, and physical safeguards to protect your information, but cannot guarantee absolute security. Your use of the platform is also governed by my Privacy Policy, which is incorporated by reference into these Terms. You may have certain rights under applicable privacy laws, including the right to access, correct, or delete your personal information, subject to legal and operational requirements. By using the platform, you consent to the practices described in the Privacy Policy and these Terms.`,
             },
             {
               title: '9. Termination',
@@ -88,7 +132,7 @@ const Terms = () => {
             },
             {
               title: '10. Disclaimers and Limitation of Liability',
-              content: `ASSIGNMENTAI IS PROVIDED ON AN "AS IS" AND "AS AVAILABLE" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT. TO THE MAXIMUM EXTENT PERMITTED BY LAW, ASSIGNMENTAI AND ITS AFFILIATES, OFFICERS, EMPLOYEES, AND AGENTS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS OR REVENUES, WHETHER INCURRED DIRECTLY OR INDIRECTLY, OR ANY LOSS OF DATA, USE, GOODWILL, OR OTHER INTANGIBLE LOSSES, RESULTING FROM (A) YOUR USE OR INABILITY TO USE THE PLATFORM; (B) ANY UNAUTHORIZED ACCESS TO OR USE OF OUR SERVERS AND/OR ANY PERSONAL INFORMATION STORED THEREIN; OR (C) ANY OTHER MATTER RELATING TO THE PLATFORM.`,
+              content: `ASSIGNMENTAI IS PROVIDED ON AN "AS IS" AND "AS AVAILABLE" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT. TO THE MAXIMUM EXTENT PERMITTED BY LAW, ASSIGNMENTAI AND ITS AFFILIATES, OFFICERS, EMPLOYEES, AND AGENTS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS OR REVENUES, WHETHER INCURRED DIRECTLY OR INDIRECTLY, OR ANY LOSS OF DATA, USE, GOODWILL, OR OTHER INTANGIBLE LOSSES, RESULTING FROM (A) YOUR USE OR INABILITY TO USE THE PLATFORM; (B) ANY UNAUTHORIZED ACCESS TO OR USE OF MY SERVERS AND/OR ANY PERSONAL INFORMATION STORED THEREIN; OR (C) ANY OTHER MATTER RELATING TO THE PLATFORM.`,
             },
             {
               title: '11. Changes to Terms',
@@ -102,7 +146,7 @@ const Terms = () => {
                   mt: idx === 0 ? 0 : 5,
                   mb: 1,
                   fontWeight: 600,
-                  color: 'primary.main',
+                  color: '#D32F2F',
                   letterSpacing: 0.5,
                 }}
               >
@@ -128,7 +172,7 @@ const Terms = () => {
                 },
               }}
             >
-              contact us
+              contact me
             </Link>{' '}
             at support@assignmentai.app.
           </Typography>

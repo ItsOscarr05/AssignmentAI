@@ -27,8 +27,14 @@ interface ThemeProviderProps {
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   // Load theme preferences from localStorage on component mount
+  // Default to 'light' for new users
   const [mode, setMode] = useState<ThemeMode>(() => {
     const savedMode = localStorage.getItem('theme-mode');
+    // If no saved mode, default to light (new user)
+    if (!savedMode) {
+      localStorage.setItem('theme-mode', 'light');
+      return 'light';
+    }
     return (savedMode as ThemeMode) || 'light';
   });
 
@@ -36,6 +42,52 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     const savedColor = localStorage.getItem('dark-theme-color');
     return (savedColor as DarkThemeColor) || 'navy';
   });
+
+  // Sync theme with backend preferences when user is logged in
+  useEffect(() => {
+    const syncThemeWithBackend = async () => {
+      const user = localStorage.getItem('user');
+      const token = localStorage.getItem('token');
+
+      // Only try to fetch preferences if user is authenticated
+      if (!user || !token) {
+        // No user logged in, ensure light mode for new sessions
+        if (!localStorage.getItem('theme-mode')) {
+          setMode('light');
+          localStorage.setItem('theme-mode', 'light');
+        }
+        return;
+      }
+
+      try {
+        const { preferences: preferencesService } = await import('../services/api');
+        const userPreferences = await preferencesService.get();
+
+        if (userPreferences && userPreferences.theme) {
+          // Backend preference takes precedence
+          const backendTheme = userPreferences.theme === 'dark' ? 'dark' : 'light';
+          setMode(backendTheme);
+          localStorage.setItem('theme-mode', backendTheme);
+        } else {
+          // No preferences in backend yet (new user), ensure light mode
+          if (!localStorage.getItem('theme-mode')) {
+            setMode('light');
+            localStorage.setItem('theme-mode', 'light');
+          }
+        }
+      } catch (error: any) {
+        // If preferences fetch fails (401, network error, etc.), don't retry
+        // Just use localStorage theme or default to light
+        if (!localStorage.getItem('theme-mode')) {
+          setMode('light');
+          localStorage.setItem('theme-mode', 'light');
+        }
+        // Don't log or retry - just silently use localStorage/default
+      }
+    };
+
+    syncThemeWithBackend();
+  }, []);
 
   // Save theme mode to localStorage whenever it changes
   useEffect(() => {

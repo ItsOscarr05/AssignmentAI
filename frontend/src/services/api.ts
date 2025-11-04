@@ -504,6 +504,10 @@ export const users = {
     });
     return response.data;
   },
+  verifyPassword: async (password: string): Promise<{ is_valid: boolean }> => {
+    const response = await api.post('/users/me/verify-password', { password });
+    return response.data;
+  },
   changePassword: async (data: { currentPassword: string; newPassword: string }): Promise<void> => {
     await api.post('/users/me/change-password', data);
   },
@@ -643,7 +647,7 @@ export const streamChatWithLink = async (
     console.log('Request data:', data);
     console.log('Token exists:', !!token);
     console.log('Token preview:', token ? token.substring(0, 20) + '...' : 'null');
-    
+
     const response = await fetch(fullUrl, {
       method: 'POST',
       headers: {
@@ -673,12 +677,12 @@ export const streamChatWithLink = async (
     while (true) {
       const { done, value } = await reader.read();
       console.log('Read chunk:', { done, valueLength: value?.length });
-      
+
       if (done) break;
 
       const chunk = decoder.decode(value, { stream: true });
       console.log('Decoded chunk:', chunk);
-      
+
       buffer += chunk;
       const lines = buffer.split('\n');
       buffer = lines.pop() || '';
@@ -687,12 +691,12 @@ export const streamChatWithLink = async (
 
       for (const line of lines) {
         console.log('Processing line:', line);
-        
+
         if (line.startsWith('data: ')) {
           try {
             const jsonStr = line.slice(6);
             console.log('JSON string:', jsonStr);
-            
+
             const jsonData = JSON.parse(jsonStr);
             console.log('Parsed JSON:', jsonData);
 

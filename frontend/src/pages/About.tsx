@@ -8,15 +8,15 @@ import {
 } from '@mui/icons-material';
 import { Box, Container, Divider, Grid, Paper, Typography } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
-import RedStarField from '../components/common/RedStarField';
 import PageHeader from '../components/common/PageHeader';
+import RedStarField from '../components/common/RedStarField';
 
 const About = () => {
   const values = [
     {
       icon: <SchoolOutlined sx={{ fontSize: 40, color: 'primary.main' }} />,
       title: 'Educational Excellence',
-      description: `We're committed to enhancing the learning experience through innovative AI technology. We believe that education is the foundation of personal and societal growth. Our platform is designed to support students and educators in achieving their highest potential, fostering curiosity, critical thinking, and a lifelong love of learning.`,
+      description: `I'm committed to enhancing the learning experience through innovative AI technology. I believe that education is the foundation of personal and societal growth. My platform is designed to support students and educators in achieving their highest potential, fostering curiosity, critical thinking, and a lifelong love of learning.`,
     },
     {
       icon: <AutoAwesomeOutlined sx={{ fontSize: 40, color: 'primary.main' }} />,
@@ -41,7 +41,7 @@ const About = () => {
     {
       icon: <EmojiObjectsOutlined sx={{ fontSize: 40, color: 'primary.main' }} />,
       title: 'Continuous Improvement',
-      description: `Constantly evolving this platform based on user feedback and needs. I listen to our community and am committed to refining and expanding features to better serve the ever-changing landscape of education.`,
+      description: `Constantly evolving this platform based on user feedback and needs. I listen to my community and am committed to refining and expanding features to better serve the ever-changing landscape of education.`,
     },
   ];
 
@@ -84,7 +84,7 @@ const About = () => {
           <Divider sx={{ mb: 3, borderColor: 'primary.main', opacity: 0.2 }} />
 
           <Typography variant="h5" sx={{ mb: 1, fontWeight: 600, color: '#D32F2F' }}>
-            Our Mission
+            My Mission
           </Typography>
           <Typography variant="body1" sx={{ mb: 3, fontSize: '1.15rem', color: 'black' }}>
             AssignmentAI was born from a simple yet powerful vision: to democratize access to
@@ -103,7 +103,7 @@ const About = () => {
           </Typography>
 
           <Typography variant="h5" sx={{ mb: 1, fontWeight: 600, color: '#D32F2F' }}>
-            Our Story
+            My Story
           </Typography>
           <Typography variant="body1" sx={{ mb: 3, fontSize: '1.15rem', color: 'black' }}>
             Founded by a single James Madison University freshman who experienced firsthand the
@@ -125,7 +125,7 @@ const About = () => {
           </Typography>
 
           <Typography variant="h5" sx={{ mb: 1, fontWeight: 600, color: '#D32F2F' }}>
-            Our Values
+            My Values
           </Typography>
           <Grid container spacing={3} sx={{ mb: 3 }}>
             {values.map((value, index) => (
@@ -162,7 +162,7 @@ const About = () => {
           </Grid>
 
           <Typography variant="h5" sx={{ mb: 1, fontWeight: 600, color: '#D32F2F' }}>
-            Our Commitment
+            My Commitment
           </Typography>
           <Typography variant="body1" sx={{ mb: 3, fontSize: '1.15rem', color: 'black' }}>
             I am committed to continuous innovation, user privacy, and educational excellence. This
@@ -178,7 +178,7 @@ const About = () => {
           </Typography>
 
           <Typography variant="h5" sx={{ mb: 1, fontWeight: 600, color: '#D32F2F' }}>
-            Join Our Journey
+            Join My Journey
           </Typography>
           <Typography variant="body1" sx={{ fontSize: '1.15rem', color: 'black' }}>
             Whether you're a student looking to improve your academic performance, an educator
@@ -186,8 +186,8 @@ const About = () => {
             outcomes, AssignmentAI is here to support your educational journey.
             <br />
             <br />I invite you to connect with me, share your experiences, and help shape the future
-            of AssignmentAI. Participate in our community forums, attend our webinars, or contribute
-            your ideas for new features. Together, we can create a smarter, more inclusive, and more
+            of AssignmentAI. Participate in my community forums, attend my webinars, or contribute
+            your ideas for new features. Together, I can create a smarter, more inclusive, and more
             effective educational environment for everyone.
           </Typography>
         </Paper>

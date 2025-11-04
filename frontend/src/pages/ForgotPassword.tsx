@@ -313,12 +313,16 @@ const ForgotPassword: React.FC = () => {
 
                   {error && (
                     <Typography
-                      color="error"
                       sx={{
                         mt: 2,
                         textAlign: 'center',
                         fontFamily: "'Inter', sans-serif",
                         fontWeight: 400,
+                        color: '#c62828',
+                        backgroundColor: '#ffebee',
+                        padding: '12px 16px',
+                        borderRadius: '4px',
+                        border: '1px solid #ef5350',
                       }}
                     >
                       {error}

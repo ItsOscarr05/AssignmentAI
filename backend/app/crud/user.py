@@ -233,7 +233,7 @@ def update_password(db: Session, user_id: str, new_password: str) -> None:
     db.refresh(user)
 
 def delete_user_account(db: Session, user_id: str) -> None:
-    """Delete user"""
+    """Delete user and all related entities"""
     # Convert user_id to int since User.id is an integer
     try:
         user_id_int = int(user_id)
@@ -244,6 +244,83 @@ def delete_user_account(db: Session, user_id: str) -> None:
     if not user:
         raise ValueError("User not found")
     
+    # Delete all related entities
+    from app.models.preference import Preference
+    from app.models.assignment import Assignment
+    from app.models.submission import Submission
+    from app.models.feedback import Feedback
+    from app.models.ai_assignment import AIAssignment
+    from app.models.file_upload import FileUpload
+    from app.models.file_completion_session import FileCompletionSession
+    from app.models.subscription import Subscription
+    from app.models.usage import Usage
+    from app.models.template import Template
+    from app.models.citation import Citation
+    from app.models.token import Token
+    from app.models.security import SecurityAlert, AuditLog, TwoFactorSetup
+    from app.models.transaction import Transaction
+    
+    # Delete preferences
+    db.query(Preference).filter(Preference.user_id == user_id_int).delete()
+    
+    # Delete feedback for user's submissions first (Feedback is linked to submissions, not users)
+    # Get all submission IDs for this user before deleting submissions
+    submission_ids = db.query(Submission.id).filter(Submission.user_id == user_id_int).all()
+    if submission_ids:
+        submission_id_list = [sub_id[0] for sub_id in submission_ids]
+        db.query(Feedback).filter(Feedback.submission_id.in_(submission_id_list)).delete()
+    
+    # Delete submissions
+    db.query(Submission).filter(Submission.user_id == user_id_int).delete()
+    
+    # Delete AI assignments for user's assignments (AIAssignment is linked to assignments, not users)
+    # Get all assignment IDs for this user before deleting assignments
+    assignment_ids = db.query(Assignment.id).filter(Assignment.user_id == user_id_int).all()
+    if assignment_ids:
+        assignment_id_list = [ass_id[0] for ass_id in assignment_ids]
+        db.query(AIAssignment).filter(AIAssignment.assignment_id.in_(assignment_id_list)).delete()
+    
+    # Delete assignments (after AI assignments are deleted)
+    db.query(Assignment).filter(Assignment.user_id == user_id_int).delete()
+    
+    # Note: File model doesn't have user_id attribute, files are managed through FileUpload
+    # Files will be deleted when FileUploads are deleted
+    
+    # Delete file uploads
+    db.query(FileUpload).filter(FileUpload.user_id == user_id_int).delete()
+    
+    # Delete file completion sessions
+    db.query(FileCompletionSession).filter(FileCompletionSession.user_id == user_id_int).delete()
+    
+    # Delete subscriptions
+    db.query(Subscription).filter(Subscription.user_id == user_id_int).delete()
+    
+    # Delete usage records
+    db.query(Usage).filter(Usage.user_id == user_id_int).delete()
+    # Note: UsageLimit doesn't have user_id - it's a global configuration table based on plan_id
+    
+    # Note: Activity model doesn't have user_id attribute - skipping activity deletion
+    
+    # Delete templates (uses creator_id instead of user_id)
+    db.query(Template).filter(Template.creator_id == user_id_int).delete()
+    
+    # Delete citations
+    db.query(Citation).filter(Citation.user_id == user_id_int).delete()
+    
+    # Delete tokens
+    db.query(Token).filter(Token.user_id == user_id_int).delete()
+    
+    # Delete security records
+    db.query(SecurityAlert).filter(SecurityAlert.user_id == user_id_int).delete()
+    db.query(AuditLog).filter(AuditLog.user_id == user_id_int).delete()
+    two_factor = db.query(TwoFactorSetup).filter(TwoFactorSetup.user_id == user_id_int).first()
+    if two_factor:
+        db.delete(two_factor)
+    
+    # Delete transactions
+    db.query(Transaction).filter(Transaction.user_id == user_id_int).delete()
+    
+    # Finally, delete the user
     db.delete(user)
     db.commit()
 
