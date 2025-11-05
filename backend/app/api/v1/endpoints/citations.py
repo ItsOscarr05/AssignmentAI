@@ -2,11 +2,27 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
 from app.core.deps import get_current_user, get_db
+from app.core.feature_access import has_feature_access, get_user_plan
 from app.services.citation_service import CitationService
 from app.models.user import User
 from pydantic import BaseModel, ConfigDict
 
 router = APIRouter()
+
+def check_citation_access(current_user: User, db: Session):
+    """Helper function to check citation management access"""
+    if not has_feature_access(current_user, "citation_management", db):
+        plan = get_user_plan(current_user, db)
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "Citation management not available in your plan",
+                "feature": "citation_management",
+                "current_plan": plan,
+                "upgrade_message": "Upgrade to Pro plan to access citation management",
+                "upgrade_url": "/dashboard/price-plan"
+            }
+        )
 
 class CitationCreate(BaseModel):
     title: str
@@ -82,7 +98,8 @@ async def create_citation(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Create a new citation"""
+    """Create a new citation. Requires Pro or Max plan."""
+    check_citation_access(current_user, db)
     citation_service = CitationService(db)
     return await citation_service.create_citation(
         user=current_user,
@@ -97,7 +114,8 @@ async def list_citations(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """List user's citations with optional filtering"""
+    """List user's citations with optional filtering. Requires Pro or Max plan."""
+    check_citation_access(current_user, db)
     citation_service = CitationService(db)
     
     # Parse tags if provided
@@ -119,7 +137,8 @@ async def generate_citations_batch(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Generate formatted citations for multiple sources"""
+    """Generate formatted citations for multiple sources. Requires Pro or Max plan."""
+    check_citation_access(current_user, db)
     citation_service = CitationService(db)
     citations_data = [citation.model_dump() for citation in citations]
     return await citation_service.generate_citations_batch(
@@ -134,7 +153,8 @@ async def extract_citation_from_url(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Extract citation information from a URL"""
+    """Extract citation information from a URL. Requires Pro or Max plan."""
+    check_citation_access(current_user, db)
     citation_service = CitationService(db)
     return await citation_service.extract_citation_from_url(url)
 
@@ -144,7 +164,8 @@ async def validate_doi(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Validate and fetch metadata for a DOI"""
+    """Validate and fetch metadata for a DOI. Requires Pro or Max plan."""
+    check_citation_access(current_user, db)
     citation_service = CitationService(db)
     return await citation_service.validate_doi(doi)
 
@@ -154,7 +175,8 @@ async def get_citation_formats(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get all formatted versions of a citation"""
+    """Get all formatted versions of a citation. Requires Pro or Max plan."""
+    check_citation_access(current_user, db)
     citation_service = CitationService(db)
     citation = await citation_service.get_citation(citation_id, current_user)
     return citation.formatted_citations
@@ -165,7 +187,8 @@ async def get_citation(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get a citation by ID"""
+    """Get a citation by ID. Requires Pro or Max plan."""
+    check_citation_access(current_user, db)
     citation_service = CitationService(db)
     return await citation_service.get_citation(citation_id, current_user)
 
@@ -176,7 +199,8 @@ async def update_citation(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Update a citation"""
+    """Update a citation. Requires Pro or Max plan."""
+    check_citation_access(current_user, db)
     citation_service = CitationService(db)
     updates = citation.model_dump(exclude_unset=True)
     return await citation_service.update_citation(
@@ -191,7 +215,8 @@ async def delete_citation(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Delete a citation"""
+    """Delete a citation. Requires Pro or Max plan."""
+    check_citation_access(current_user, db)
     citation_service = CitationService(db)
     await citation_service.delete_citation(user=current_user, citation_id=citation_id)
     return {"message": "Citation deleted successfully"}
@@ -202,7 +227,8 @@ async def duplicate_citation(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Duplicate an existing citation"""
+    """Duplicate an existing citation. Requires Pro or Max plan."""
+    check_citation_access(current_user, db)
     citation_service = CitationService(db)
     original_citation = await citation_service.get_citation(citation_id, current_user)
     

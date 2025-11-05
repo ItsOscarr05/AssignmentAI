@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Form, UploadFile, File
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.core.deps import get_current_user, get_db
+from app.core.feature_access import has_feature_access, get_user_plan
 from app.services.image_analysis_service import ImageAnalysisService
 from app.models.user import User
 import logging
@@ -54,7 +55,20 @@ async def analyze_image(
 ):
     """
     Analyze an image and provide an answer to a question or problem.
+    Requires Pro or Max plan.
     """
+    if not has_feature_access(current_user, "image_analysis", db):
+        plan = get_user_plan(current_user, db)
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "Image analysis not available in your plan",
+                "feature": "image_analysis",
+                "current_plan": plan,
+                "upgrade_message": "Upgrade to Pro plan to access image analysis",
+                "upgrade_url": "/dashboard/price-plan"
+            }
+        )
     try:
         # Decode base64 image data
         try:

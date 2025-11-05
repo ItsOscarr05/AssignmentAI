@@ -11,106 +11,111 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 # Define feature access matrix by subscription plan
+# Based on PRD: AssignmentAI Pricing System Optimization Plan
+# 
+# Core Features (available to all plans):
+# - assignmentai_core_assistant (renamed from basic_assignment_generation)
+# - grammar_spelling_check
+# - basic_writing_suggestions
+# - Templates (Basic/Standard/Advanced/Custom based on tier)
+#
+# Feature Progression:
+# Free: Core features + Basic Templates (5 assignments/day, 100k tokens/mo)
+# Plus: Core + Standard Templates + AI Notebook + Weekly Usage Report (25/day, 250k/mo)
+# Pro: Core + Advanced Templates + Image Analysis + Code Review + Citation + Ad-Free + Shared Assignments + Custom Tone (100/day, 500k/mo)
+# Max: Core + Custom Templates + Performance Insights + Priority Generation + Priority Support (Unlimited/day, 1M/mo)
+
 FEATURE_ACCESS_MATRIX = {
     "free": {
-        "basic_assignment_generation": True,
+        # Core Features - Available to all plans
+        "assignmentai_core_assistant": True,
         "grammar_spelling_check": True,
         "basic_writing_suggestions": True,
         "basic_templates": True,
-        # Premium features - NOT available
-        "advanced_writing_analysis": False,
-        "style_tone_suggestions": False,
-        "extended_templates": False,
-        "ad_free_experience": False,
-        "citation_management": False,
-        "basic_plagiarism_detection": False,
-        "diagram_generation": False,
-        "image_analysis": True,
-        "code_analysis": False,
-        "smart_content_summarization": False,
-        "data_analysis": False,
-        "advanced_research_assistant": False,
-        "advanced_analytics": False,
+        "standard_templates": True,  # Now available to all plans
+        # Free tier limitations
+        "advanced_templates": False,
         "custom_templates": False,
-        "ai_learning_path": False,
-        "advanced_content_optimization": False,
-        "enterprise_collaboration": False,
+        "image_analysis": False,
+        "code_review_assistant": False,
+        "citation_management": False,
+        "ad_free_experience": False,
+        "ai_notebook": False,
+        "weekly_usage_report": False,
+        "shared_assignments": False,
+        "custom_writing_tone": False,
+        "performance_insights_dashboard": False,
+        "priority_generation": False,
+        "priority_support": False,
     },
     "plus": {
-        # Inherit all free features
-        "basic_assignment_generation": True,
+        # Core Features - Available to all plans
+        "assignmentai_core_assistant": True,
         "grammar_spelling_check": True,
         "basic_writing_suggestions": True,
-        "basic_templates": True,
-        "image_analysis": True,
-        "code_analysis": True,
-        "smart_content_summarization": True,
-        # Plus-specific features
-        "advanced_writing_analysis": True,
-        "style_tone_suggestions": True,
-        "extended_templates": True,
+        "basic_templates": True,  # Now available to all plans
+        "standard_templates": True,  # Now available to all plans
+        # Plus tier additions
+        "style_tone_analysis": True,  # Analyze writing style and tone
+        "enhanced_writing_suggestions": True,  # More detailed writing feedback
         "ad_free_experience": True,
-        # Higher tier features - NOT available
-        "citation_management": False,
-        "basic_plagiarism_detection": False,
-        "diagram_generation": False,
-        "data_analysis": False,
-        "advanced_research_assistant": False,
-        "advanced_analytics": False,
+        # Plus tier limitations
+        "advanced_templates": False,
         "custom_templates": False,
-        "ai_learning_path": False,
-        "advanced_content_optimization": False,
-        "enterprise_collaboration": False,
+        "image_analysis": False,
+        "code_review_assistant": False,
+        "citation_management": False,
+        "shared_assignments": False,
+        "custom_writing_tone": False,
+        "performance_insights_dashboard": False,
+        "priority_generation": False,
+        "priority_support": False,
     },
     "pro": {
-        # Inherit all free and plus features
-        "basic_assignment_generation": True,
+        # Core Features - Available to all plans
+        "assignmentai_core_assistant": True,
         "grammar_spelling_check": True,
         "basic_writing_suggestions": True,
-        "basic_templates": True,
-        "advanced_writing_analysis": True,
-        "style_tone_suggestions": True,
-        "extended_templates": True,
-        "ad_free_experience": True,
+        "basic_templates": True,  # Now available to all plans
+        "standard_templates": True,  # Now available to all plans
+        "advanced_templates": True,  # Upgrade from Standard
+        # Pro tier additions
         "image_analysis": True,
-        "code_analysis": True,
-        "smart_content_summarization": True,
-        # Pro-specific features
+        "code_review_assistant": True,
         "citation_management": True,
-        "basic_plagiarism_detection": True,
-        "diagram_generation": True,
-        "data_analysis": True,
-        "advanced_research_assistant": True,
-        # Max tier features - NOT available
-        "advanced_analytics": False,
+        "ad_free_experience": True,
+        "custom_writing_tone": True,
+        "style_tone_analysis": True,  # Inherited from Plus
+        "enhanced_writing_suggestions": True,  # Inherited from Plus
+        # Pro tier limitations
         "custom_templates": False,
-        "ai_learning_path": False,
-        "advanced_content_optimization": False,
-        "enterprise_collaboration": False,
+        "shared_assignments": False,  # Not available for single-user system
+        "performance_insights_dashboard": False,
+        "priority_generation": False,  # Not available for initial launch
+        "priority_support": False,  # Not available for initial launch
     },
     "max": {
-        # All features available
-        "basic_assignment_generation": True,
+        # Core Features - Available to all plans
+        "assignmentai_core_assistant": True,
         "grammar_spelling_check": True,
         "basic_writing_suggestions": True,
-        "basic_templates": True,
-        "advanced_writing_analysis": True,
-        "style_tone_suggestions": True,
-        "extended_templates": True,
-        "ad_free_experience": True,
-        "citation_management": True,
-        "basic_plagiarism_detection": True,
-        "diagram_generation": True,
+        "basic_templates": True,  # Now available to all plans
+        "standard_templates": True,  # Now available to all plans
+        "advanced_templates": True,
+        "custom_templates": True,  # Max tier addition
+        # Max tier additions
         "image_analysis": True,
-        "code_analysis": True,
-        "smart_content_summarization": True,
-        "data_analysis": True,
-        "advanced_research_assistant": True,
-        "advanced_analytics": True,
-        "custom_templates": True,
-        "ai_learning_path": True,
-        "advanced_content_optimization": True,
-        "enterprise_collaboration": True,
+        "code_review_assistant": True,
+        "citation_management": True,
+        "ad_free_experience": True,
+        "custom_writing_tone": True,
+        "performance_insights_dashboard": True,
+        "style_tone_analysis": True,  # Inherited from Plus
+        "enhanced_writing_suggestions": True,  # Inherited from Plus
+        # Max tier limitations
+        "shared_assignments": False,  # Not available for single-user system
+        "priority_generation": False,  # Not available for initial launch
+        "priority_support": False,  # Not available for initial launch
     }
 }
 
@@ -180,22 +185,26 @@ def require_feature(feature: str):
 def get_upgrade_message(current_plan: str, feature: str) -> str:
     """Get appropriate upgrade message based on current plan and required feature"""
     if current_plan == "free":
-        if feature in ["advanced_writing_analysis", "style_tone_suggestions", "extended_templates", "ad_free_experience", "code_analysis", "smart_content_summarization"]:
+        if feature in ["standard_templates", "style_tone_analysis", "enhanced_writing_suggestions", "ad_free_experience"]:
             return "Upgrade to Plus plan to access this feature"
-        elif feature in ["citation_management", "basic_plagiarism_detection", "diagram_generation", "data_analysis", "advanced_research_assistant"]:
+        elif feature in ["advanced_templates", "image_analysis", "code_review_assistant", "citation_management", "custom_writing_tone"]:
             return "Upgrade to Pro plan to access this feature"
-        else:
+        elif feature in ["custom_templates", "performance_insights_dashboard"]:
             return "Upgrade to Max plan to access this feature"
+        else:
+            return "Upgrade to access this feature"
     elif current_plan == "plus":
-        if feature in ["citation_management", "basic_plagiarism_detection", "diagram_generation", "data_analysis", "advanced_research_assistant"]:
+        if feature in ["advanced_templates", "image_analysis", "code_review_assistant", "citation_management", "custom_writing_tone"]:
             return "Upgrade to Pro plan to access this feature"
-        else:
+        elif feature in ["custom_templates", "performance_insights_dashboard"]:
             return "Upgrade to Max plan to access this feature"
+        else:
+            return "Upgrade to access this feature"
     elif current_plan == "pro":
-        if feature in ["advanced_analytics", "custom_templates", "ai_learning_path", "advanced_content_optimization", "enterprise_collaboration"]:
+        if feature in ["custom_templates", "performance_insights_dashboard"]:
             return "Upgrade to Max plan to access this feature"
         else:
-            return "Contact support for access to this feature"
+            return "Upgrade to Max plan to access this feature"
     else:
         return "Contact support for access to this feature"
 
@@ -206,21 +215,24 @@ def get_available_features(user: User, db: Session) -> Dict[str, bool]:
 
 def get_feature_requirements() -> Dict[str, Dict[str, List[str]]]:
     """Get feature requirements for each plan"""
+    # Core features available to all plans
+    core_features = ["assignmentai_core_assistant", "grammar_spelling_check", "basic_writing_suggestions"]
+    
     return {
         "free": {
-            "available": ["basic_assignment_generation", "grammar_spelling_check", "basic_writing_suggestions", "basic_templates", "image_analysis"],
-            "unavailable": ["advanced_writing_analysis", "style_tone_suggestions", "extended_templates", "ad_free_experience", "citation_management", "basic_plagiarism_detection", "diagram_generation", "code_analysis", "smart_content_summarization", "data_analysis", "advanced_research_assistant", "advanced_analytics", "custom_templates", "ai_learning_path", "advanced_content_optimization", "enterprise_collaboration"]
+            "available": core_features + ["basic_templates", "standard_templates"],
+            "unavailable": ["advanced_templates", "custom_templates", "image_analysis", "code_review_assistant", "citation_management", "ad_free_experience", "style_tone_analysis", "enhanced_writing_suggestions", "shared_assignments", "custom_writing_tone", "performance_insights_dashboard", "priority_generation", "priority_support"]
         },
         "plus": {
-            "available": ["basic_assignment_generation", "grammar_spelling_check", "basic_writing_suggestions", "basic_templates", "advanced_writing_analysis", "style_tone_suggestions", "extended_templates", "ad_free_experience", "image_analysis", "code_analysis", "smart_content_summarization"],
-            "unavailable": ["citation_management", "basic_plagiarism_detection", "diagram_generation", "data_analysis", "advanced_research_assistant", "advanced_analytics", "custom_templates", "ai_learning_path", "advanced_content_optimization", "enterprise_collaboration"]
+            "available": core_features + ["basic_templates", "standard_templates", "style_tone_analysis", "enhanced_writing_suggestions", "ad_free_experience"],
+            "unavailable": ["advanced_templates", "custom_templates", "image_analysis", "code_review_assistant", "citation_management", "shared_assignments", "custom_writing_tone", "performance_insights_dashboard", "priority_generation", "priority_support"]
         },
         "pro": {
-            "available": ["basic_assignment_generation", "grammar_spelling_check", "basic_writing_suggestions", "basic_templates", "advanced_writing_analysis", "style_tone_suggestions", "extended_templates", "ad_free_experience", "citation_management", "basic_plagiarism_detection", "diagram_generation", "image_analysis", "code_analysis", "smart_content_summarization", "data_analysis", "advanced_research_assistant"],
-            "unavailable": ["advanced_analytics", "custom_templates", "ai_learning_path", "advanced_content_optimization", "enterprise_collaboration"]
+            "available": core_features + ["basic_templates", "standard_templates", "advanced_templates", "image_analysis", "code_review_assistant", "citation_management", "ad_free_experience", "custom_writing_tone", "style_tone_analysis", "enhanced_writing_suggestions"],
+            "unavailable": ["custom_templates", "shared_assignments", "performance_insights_dashboard", "priority_generation", "priority_support"]
         },
         "max": {
-            "available": ["basic_assignment_generation", "grammar_spelling_check", "basic_writing_suggestions", "basic_templates", "advanced_writing_analysis", "style_tone_suggestions", "extended_templates", "ad_free_experience", "citation_management", "basic_plagiarism_detection", "diagram_generation", "image_analysis", "code_analysis", "smart_content_summarization", "data_analysis", "advanced_research_assistant", "advanced_analytics", "custom_templates", "ai_learning_path", "advanced_content_optimization", "enterprise_collaboration"],
-            "unavailable": []
+            "available": core_features + ["basic_templates", "standard_templates", "advanced_templates", "custom_templates", "image_analysis", "code_review_assistant", "citation_management", "ad_free_experience", "custom_writing_tone", "performance_insights_dashboard", "style_tone_analysis", "enhanced_writing_suggestions"],
+            "unavailable": ["shared_assignments", "priority_generation", "priority_support"]
         }
     } 

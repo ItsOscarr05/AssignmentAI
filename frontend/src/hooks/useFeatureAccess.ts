@@ -80,112 +80,177 @@ export const useFeatureAccess = (featureName: string): FeatureAccessResult => {
 };
 
 // Feature access matrix based on subscription plans
+// Updated to match the new pricing structure
 const getFeatureAccess = (featureName: string, plan: string): boolean => {
   const featureMatrix: Record<string, Record<string, boolean>> = {
-    // Smart Content Summarization - Plus, Pro, Max
-    smart_content_summarization: {
-      free: false,
-      plus: true,
-      pro: true,
-      max: true,
-    },
-    // Advanced Research Assistant - Pro, Max
-    advanced_research_assistant: {
-      free: false,
-      plus: false,
-      pro: true,
-      max: true,
-    },
-    // Advanced Content Optimization - Max only
-    advanced_content_optimization: {
-      free: false,
-      plus: false,
-      pro: false,
-      max: true,
-    },
-    // Image Analysis - Free, Plus, Pro, Max
-    image_analysis: {
+    // Core Features - Available to all plans
+    assignmentai_core_assistant: {
       free: true,
       plus: true,
       pro: true,
       max: true,
     },
-    // Code Analysis - Plus, Pro, Max
-    code_analysis: {
-      free: false,
+    basic_assignment_generation: {  // Legacy alias
+      free: true,
       plus: true,
       pro: true,
       max: true,
     },
-    // Data Analysis - Pro, Max
-    data_analysis: {
+    grammar_spelling_check: {
+      free: true,
+      plus: true,
+      pro: true,
+      max: true,
+    },
+    basic_writing_suggestions: {
+      free: true,
+      plus: true,
+      pro: true,
+      max: true,
+    },
+    basic_templates: {
+      free: true,
+      plus: true,
+      pro: true,
+      max: true,
+    },
+    standard_templates: {
+      free: true,
+      plus: true,
+      pro: true,
+      max: true,
+    },
+    // Tiered features
+    advanced_templates: {
       free: false,
       plus: false,
       pro: true,
       max: true,
     },
-    // Advanced Writing Analysis - Pro, Max
-    advanced_writing_analysis: {
-      free: false,
-      plus: false,
-      pro: true,
-      max: true,
-    },
-    // Style & Tone Suggestions - Plus, Pro, Max
-    style_tone_suggestions: {
-      free: false,
-      plus: true,
-      pro: true,
-      max: true,
-    },
-    // Extended Templates - Plus, Pro, Max
-    extended_templates: {
-      free: false,
-      plus: true,
-      pro: true,
-      max: true,
-    },
-    // Ad-Free Experience - Pro, Max
-    ad_free_experience: {
-      free: false,
-      plus: false,
-      pro: true,
-      max: true,
-    },
-    // Citation Management - Plus, Pro, Max
-    citation_management: {
-      free: false,
-      plus: true,
-      pro: true,
-      max: true,
-    },
-    // Basic Plagiarism Detection - Plus, Pro, Max
-    basic_plagiarism_detection: {
-      free: false,
-      plus: true,
-      pro: true,
-      max: true,
-    },
-    // Advanced Analytics - Pro, Max
-    advanced_analytics: {
-      free: false,
-      plus: false,
-      pro: true,
-      max: true,
-    },
-    // Priority Support - Pro, Max
-    priority_support: {
-      free: false,
-      plus: false,
-      pro: true,
-      max: true,
-    },
-    // Custom Templates - Max only
     custom_templates: {
       free: false,
       plus: false,
       pro: false,
       max: true,
+    },
+    // Plus tier features
+    style_tone_analysis: {
+      free: false,
+      plus: true,
+      pro: true,
+      max: true,
+    },
+    enhanced_writing_suggestions: {
+      free: false,
+      plus: true,
+      pro: true,
+      max: true,
+    },
+    // Pro tier features
+    image_analysis: {
+      free: false,
+      plus: false,
+      pro: true,
+      max: true,
+    },
+    code_review_assistant: {
+      free: false,
+      plus: false,
+      pro: true,
+      max: true,
+    },
+    code_analysis: {  // Legacy alias for code_review_assistant
+      free: false,
+      plus: false,
+      pro: true,
+      max: true,
+    },
+    citation_management: {
+      free: false,
+      plus: false,
+      pro: true,
+      max: true,
+    },
+    custom_writing_tone: {
+      free: false,
+      plus: false,
+      pro: true,
+      max: true,
+    },
+    // Max tier features
+    performance_insights_dashboard: {
+      free: false,
+      plus: false,
+      pro: false,
+      max: true,
+    },
+    advanced_analytics: {  // Legacy alias
+      free: false,
+      plus: false,
+      pro: false,
+      max: true,
+    },
+    // Ad logic - only free shows ads
+    ad_free_experience: {
+      free: false,
+      plus: true,
+      pro: true,
+      max: true,
+    },
+    // Legacy features (kept for backward compatibility)
+    smart_content_summarization: {
+      free: false,
+      plus: false,
+      pro: false,
+      max: false,
+    },
+    advanced_research_assistant: {
+      free: false,
+      plus: false,
+      pro: false,
+      max: false,
+    },
+    advanced_content_optimization: {
+      free: false,
+      plus: false,
+      pro: false,
+      max: false,
+    },
+    data_analysis: {
+      free: false,
+      plus: false,
+      pro: false,
+      max: false,
+    },
+    advanced_writing_analysis: {
+      free: false,
+      plus: false,
+      pro: false,
+      max: false,
+    },
+    style_tone_suggestions: {
+      free: false,
+      plus: false,
+      pro: false,
+      max: false,
+    },
+    extended_templates: {
+      free: false,
+      plus: false,
+      pro: false,
+      max: false,
+    },
+    basic_plagiarism_detection: {
+      free: false,
+      plus: false,
+      pro: false,
+      max: false,
+    },
+    priority_support: {
+      free: false,
+      plus: false,
+      pro: false,
+      max: false,
     },
   };
 

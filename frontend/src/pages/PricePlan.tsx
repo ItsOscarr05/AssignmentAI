@@ -4,14 +4,13 @@ import {
   AutoFixHighOutlined,
   BarChartOutlined,
   BlockOutlined,
+  CalendarToday,
   CheckCircle,
   Close as CloseIcon,
   DesignServicesOutlined,
   DiamondOutlined,
   EmojiEventsOutlined,
   FormatQuoteOutlined,
-  GppGoodOutlined,
-  Group,
   InfoOutlined as InfoOutlinedIcon,
   LibraryBooksOutlined,
   LocalOfferOutlined,
@@ -20,7 +19,6 @@ import {
   PsychologyOutlined,
   RocketLaunchOutlined,
   SchoolOutlined,
-  ScienceOutlined,
   SmartToyOutlined,
   Spellcheck,
   StarOutline,
@@ -51,9 +49,9 @@ import { useSnackbar } from 'notistack';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import DetailedFeatureComparison from '../components/subscription/DetailedFeatureComparison';
 import SubscriptionPaymentWrapper from '../components/payment/SubscriptionPaymentWrapper';
 import SuccessPopup from '../components/payment/SuccessPopup';
+import DetailedFeatureComparison from '../components/subscription/DetailedFeatureComparison';
 import SorryToSeeYouGoPopup from '../components/subscription/SorryToSeeYouGoPopup';
 import { useAspectRatio } from '../hooks/useAspectRatio';
 import { api } from '../services/api';
@@ -91,12 +89,12 @@ interface Plan {
 
 const features: Feature[] = [
   {
-    name: 'Basic Assignment Analysis',
+    name: 'AssignmentAI Core Assistant',
     free: true,
     plus: true,
     pro: true,
     max: true,
-    description: 'Get basic feedback on your assignments',
+    description: 'Core AI assistant for assignment analysis and feedback',
   },
   {
     name: 'Grammar & Spelling Check',
@@ -107,12 +105,12 @@ const features: Feature[] = [
     description: 'Check for common grammar and spelling errors',
   },
   {
-    name: 'Basic Writing Suggestions',
+    name: 'Writing Suggestions',
     free: true,
     plus: true,
     pro: true,
     max: true,
-    description: 'Receive basic suggestions to improve your writing',
+    description: 'Receive suggestions to improve your writing',
   },
   {
     name: 'Basic Templates',
@@ -123,36 +121,44 @@ const features: Feature[] = [
     description: 'Access to basic writing templates',
   },
   {
-    name: 'Advanced Writing Analysis',
-    free: false,
+    name: 'Standard Templates',
+    free: true,
     plus: true,
     pro: true,
     max: true,
-    description: 'Deep analysis of writing structure, coherence, and argument strength',
+    description: 'Access to standard writing templates library',
   },
   {
-    name: 'Style & Tone Suggestions',
+    name: 'Advanced Templates',
     free: false,
-    plus: true,
+    plus: false,
     pro: true,
     max: true,
-    description: 'Get suggestions to improve writing style and tone',
+    description: 'Access to advanced writing templates',
   },
   {
-    name: 'Extended Templates Library',
+    name: 'Advanced + Custom Templates',
     free: false,
-    plus: true,
-    pro: true,
+    plus: false,
+    pro: false,
     max: true,
-    description: 'Access to an expanded library of writing templates',
+    description: 'Advanced templates plus ability to create custom templates',
   },
   {
-    name: 'Ad-Free Experience',
+    name: 'Image Analysis',
     free: false,
-    plus: true,
+    plus: false,
     pro: true,
     max: true,
-    description: 'Enjoy an ad-free experience',
+    description: 'Analyze images and extract text using AI',
+  },
+  {
+    name: 'Code Review Assistant',
+    free: false,
+    plus: false,
+    pro: true,
+    max: true,
+    description: 'AI-powered code review and analysis',
   },
   {
     name: 'Citation Management',
@@ -163,100 +169,44 @@ const features: Feature[] = [
     description: 'Create and manage citations in APA, MLA, Chicago, and Harvard formats',
   },
   {
-    name: 'Basic Plagiarism Check',
-    free: false,
-    plus: false,
-    pro: true,
-    max: true,
-    description: 'Basic plagiarism detection for submitted content',
-  },
-  {
-    name: 'Diagram Generation',
-    free: false,
-    plus: false,
-    pro: true,
-    max: true,
-    description: 'Generate charts, flowcharts, and visual diagrams',
-  },
-  {
-    name: 'Image Analysis',
-    free: true,
-    plus: true,
-    pro: true,
-    max: true,
-    description: 'Analyze images and extract text using AI',
-  },
-  {
-    name: 'Code Analysis',
+    name: 'Style & Tone Analysis',
     free: false,
     plus: true,
     pro: true,
     max: true,
-    description: 'AI-powered code review and analysis',
+    description: 'Analyze and improve your writing style and tone',
   },
   {
-    name: 'Smart Content Summarization',
+    name: 'Enhanced Writing Suggestions',
     free: false,
     plus: true,
     pro: true,
     max: true,
-    description: 'Intelligent content summarization with key insights',
+    description: 'Get more detailed and comprehensive writing feedback',
   },
   {
-    name: 'Data File Analysis',
+    name: 'Ad-Free Experience',
+    free: false,
+    plus: true,
+    pro: true,
+    max: true,
+    description: 'Enjoy an ad-free experience',
+  },
+  {
+    name: 'Custom Writing Tone',
     free: false,
     plus: false,
     pro: true,
     max: true,
-    description: 'Analyze CSV, Excel, and other data files',
+    description: 'Customize writing tone and style preferences',
   },
   {
-    name: 'Advanced Research Assistant',
-    free: false,
-    plus: false,
-    pro: true,
-    max: true,
-    description: 'AI-powered research and fact-checking',
-  },
-  {
-    name: 'Advanced Analytics Dashboard',
+    name: 'Performance Insights Dashboard',
     free: false,
     plus: false,
     pro: false,
     max: true,
     description: 'Detailed analytics and insights about your usage and performance',
-  },
-  {
-    name: 'Custom Assignment Templates',
-    free: false,
-    plus: false,
-    pro: false,
-    max: true,
-    description: 'Create and save custom templates for repeated use',
-  },
-  {
-    name: 'AI-Powered Learning Path',
-    free: false,
-    plus: false,
-    pro: false,
-    max: true,
-    description: 'Personalized learning recommendations and progress tracking',
-  },
-  {
-    name: 'Advanced Content Optimization',
-    free: false,
-    plus: false,
-    pro: false,
-    max: true,
-    description: 'AI-powered content optimization for maximum impact',
-  },
-  {
-    name: 'Enterprise Collaboration Tools',
-    free: false,
-    plus: false,
-    pro: false,
-    max: true,
-    description: 'Team collaboration features and shared workspaces',
   },
 ];
 
@@ -264,76 +214,87 @@ const plans: Plan[] = [
   {
     name: 'Free',
     price: 0,
-    description: 'Perfect starting tool with basic assistance',
+    description: 'Perfect for getting started with AI-powered assignment help',
     icon: <LocalOfferOutlined sx={{ fontSize: 48 }} />,
     color: '#2196f3',
     features: [
-      'Basic Assignment Analysis',
+      'AssignmentAI Core Assistant',
       'Grammar & Spelling Check',
-      'Basic Writing Suggestions',
+      'Writing Suggestions',
       'Basic Templates',
-      'Image Analysis',
+      '5 assignments/day',
     ],
     priceId: import.meta.env.VITE_STRIPE_PRICE_FREE || '', // Use environment variable as fallback
-    bestFor: 'Perfect starting tool with basic writing assistance',
+    bestFor: 'Entry-level — good for testing core AI assistance',
     tokenBoost: 100000,
     isCurrentPlan: false,
   },
   {
     name: 'Plus',
     price: 4.99,
-    description: 'Enhanced features for more serious students',
+    description: 'Enhanced writing tools with style analysis and ad-free experience',
     icon: <StarOutline sx={{ fontSize: 48 }} />,
     color: '#4caf50',
     features: [
-      'Advanced Writing Analysis',
-      'Style & Tone Suggestions',
-      'Extended Templates Library',
-      'Code Analysis',
-      'Smart Content Summarization',
+      'AssignmentAI Core Assistant',
+      'Grammar & Spelling Check',
+      'Writing Suggestions',
+      'Standard Templates',
+      'Style & Tone Analysis',
+      'Enhanced Writing Suggestions',
+      '25 assignments/day',
       'Ad-Free Experience',
     ],
     popular: true,
     priceId: import.meta.env.VITE_STRIPE_PRICE_PLUS || '', // Use environment variable as fallback
-    bestFor: 'Enhanced features for more serious students',
+    bestFor: 'For casual students — better writing tools & moderate limits',
     tokenBoost: 250000,
     isCurrentPlan: false,
   },
   {
     name: 'Pro',
     price: 9.99,
-    description: 'Advanced features for professional students',
+    description: 'Advanced features including image analysis, code review, and citations',
     icon: <DiamondOutlined sx={{ fontSize: 48 }} />,
     color: '#9c27b0',
     features: [
+      'AssignmentAI Core Assistant',
+      'Grammar & Spelling Check',
+      'Writing Suggestions',
+      'Advanced Templates',
+      'Image Analysis',
+      'Code Review Assistant',
       'Citation Management',
-      'Basic Plagiarism Check',
-      'Diagram Generation',
-      'Data File Analysis',
-      'Advanced Research Assistant',
+      'Custom Writing Tone',
+      '100 assignments/day',
       'Ad-Free Experience',
     ],
     priceId: import.meta.env.VITE_STRIPE_PRICE_PRO || '', // Use environment variable as fallback
-    bestFor: 'Advanced features for professional students',
+    bestFor: 'For frequent users — professional-grade output & extra features',
     tokenBoost: 500000,
     isCurrentPlan: false,
   },
   {
     name: 'Max',
     price: 14.99,
-    description: 'Ultimate package for power users',
+    description: 'Unlimited access with custom templates and performance analytics',
     icon: <EmojiEventsOutlined sx={{ fontSize: 48 }} />,
     color: '#FF8C00',
     features: [
-      'Advanced Analytics Dashboard',
-      'Custom Assignment Templates',
-      'AI-Powered Learning Path',
-      'Advanced Content Optimization',
-      'Enterprise Collaboration Tools',
+      'AssignmentAI Core Assistant',
+      'Grammar & Spelling Check',
+      'Writing Suggestions',
+      'Advanced + Custom Templates',
+      'Image Analysis',
+      'Code Review Assistant',
+      'Citation Management',
+      'Custom Writing Tone',
+      'Performance Insights Dashboard',
+      'Unlimited assignments/day',
       'Ad-Free Experience',
     ],
     priceId: import.meta.env.VITE_STRIPE_PRICE_MAX || '', // Use environment variable as fallback
-    bestFor: 'Ultimate package for power users',
+    bestFor: 'For power users — full capabilities & automation tools',
     tokenBoost: 1000000,
     isCurrentPlan: false,
   },
@@ -357,48 +318,45 @@ const getPlanColor = (planName: string, backendColor?: string) => {
 
 const getFeatureIcon = (featureName: string, color: string) => {
   switch (featureName) {
-    case 'Basic Assignment Analysis':
+    case 'AssignmentAI Core Assistant':
       return <SchoolOutlined sx={{ color }} />;
     case 'Grammar & Spelling Check':
       return <Spellcheck sx={{ color }} />;
+    case 'Writing Suggestions':
     case 'Basic Writing Suggestions':
       return <AutoFixHighOutlined sx={{ color }} />;
     case 'Basic Templates':
       return <TextSnippetOutlined sx={{ color }} />;
-    case 'Advanced Writing Analysis':
-      return <ScienceOutlined sx={{ color }} />;
-    case 'Style & Tone Suggestions':
-      return <PaletteOutlined sx={{ color }} />;
-    case 'Extended Templates Library':
+    case 'Standard Templates':
       return <LibraryBooksOutlined sx={{ color }} />;
-    case 'Citation Management':
-      return <FormatQuoteOutlined sx={{ color }} />;
-    case 'Basic Plagiarism Check':
-      return <GppGoodOutlined sx={{ color }} />;
-    case 'Diagram Generation':
+    case 'Advanced Templates':
+      return <LibraryBooksOutlined sx={{ color }} />;
+    case 'Advanced + Custom Templates':
       return <DesignServicesOutlined sx={{ color }} />;
     case 'Image Analysis':
       return <SmartToyOutlined sx={{ color }} />;
+    case 'Code Review Assistant':
     case 'Code Analysis':
       return <PsychologyOutlined sx={{ color }} />;
-    case 'Data File Analysis':
-      return <BarChartOutlined sx={{ color }} />;
-    case 'Advanced Research Assistant':
-      return <PsychologyOutlined sx={{ color }} />;
-    case 'Advanced Analytics Dashboard':
-      return <BarChartOutlined sx={{ color }} />;
-    case 'Custom Assignment Templates':
-      return <DesignServicesOutlined sx={{ color }} />;
-    case 'AI-Powered Learning Path':
-      return <SchoolOutlined sx={{ color }} />;
-    case 'Advanced Content Optimization':
-      return <AutoAwesomeOutlined sx={{ color }} />;
-    case 'Enterprise Collaboration Tools':
-      return <Group sx={{ color }} />;
-    case 'Smart Content Summarization':
-      return <AutoAwesomeOutlined sx={{ color }} />;
+    case 'Citation Management':
+      return <FormatQuoteOutlined sx={{ color }} />;
     case 'Ad-Free Experience':
       return <BlockOutlined sx={{ color }} />;
+    case 'Style & Tone Analysis':
+      return <PaletteOutlined sx={{ color }} />;
+    case 'Enhanced Writing Suggestions':
+      return <AutoAwesomeOutlined sx={{ color }} />;
+    case 'Custom Writing Tone':
+      return <PaletteOutlined sx={{ color }} />;
+    case 'Performance Insights Dashboard':
+    case 'Advanced Analytics Dashboard':
+      return <BarChartOutlined sx={{ color }} />;
+    // Assignment limits (daily)
+    case '5 assignments/day':
+    case '25 assignments/day':
+    case '100 assignments/day':
+    case 'Unlimited assignments/day':
+      return <CalendarToday sx={{ color }} />;
     default:
       return <CheckCircle sx={{ color }} />;
   }
@@ -745,9 +703,9 @@ const PricePlan: React.FC = () => {
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 4 }}>
-          <Typography 
-            variant="h4" 
-            fontWeight="normal" 
+          <Typography
+            variant="h4"
+            fontWeight="normal"
             className="page-title"
             sx={{ color: '#d32f2f' }}
           >
@@ -760,7 +718,8 @@ const PricePlan: React.FC = () => {
                   Price Plan
                 </Typography>
                 <Typography variant="body2" sx={{ mb: 1 }}>
-                  Compare and select a subscription plan that best fits your needs. Each plan offers different features, AI token allowances, and access levels.
+                  Compare and select a subscription plan that best fits your needs. Each plan offers
+                  different features, AI token allowances, and access levels.
                 </Typography>
                 <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
                   • Free plan: Basic features with limited tokens
@@ -803,7 +762,7 @@ const PricePlan: React.FC = () => {
 
       <Container>
         <Stack spacing={6}>
-          <Grid container spacing={4} justifyContent="center">
+          <Grid container spacing={4} justifyContent="center" sx={{ alignItems: 'stretch' }}>
             {plansLoading ? (
               <Grid item xs={12}>
                 <Box sx={{ textAlign: 'center', py: 8 }}>
@@ -839,9 +798,19 @@ const PricePlan: React.FC = () => {
                 {plansWithCurrentPlan
                   .filter(plan => plan.priceId && plan.priceId !== '') // Only show plans with valid price IDs
                   .map(plan => (
-                    <Grid item xs={12} sm={6} md={6} lg={3} xl={3} key={plan.name}>
+                    <Grid
+                      item
+                      xs={12}
+                      sm={6}
+                      md={6}
+                      lg={3}
+                      xl={3}
+                      key={plan.name}
+                      sx={{ display: 'flex' }}
+                    >
                       <Box
                         sx={{
+                          width: '100%',
                           height: '100%',
                           display: 'flex',
                           flexDirection: 'column',
@@ -921,8 +890,11 @@ const PricePlan: React.FC = () => {
                           </IconButton>
                         )}
 
-                        <Box sx={{ flexGrow: 1, p: 3 }}>
-                          <Stack spacing={2}>
+                        <Box sx={{ flexGrow: 1, p: 3, display: 'flex', flexDirection: 'column' }}>
+                          <Stack
+                            spacing={2}
+                            sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}
+                          >
                             <Box
                               sx={{
                                 display: 'flex',
@@ -1095,147 +1067,100 @@ const PricePlan: React.FC = () => {
                               </Typography>
                             )}
                             <Divider />
-                            <Stack spacing={1.5}>
-                              {plan.name === 'Free' && (
-                                <Typography
-                                  variant="caption"
-                                  sx={{
-                                    color: theme =>
-                                      theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
-                                    fontSize: { xs: '0.95rem', md: '1.05rem' },
-                                    pl: 0.5,
-                                  }}
-                                >
-                                  Free Features
-                                </Typography>
-                              )}
-                              {plan.name === 'Plus' && (
-                                <Typography
-                                  variant="caption"
-                                  sx={{
-                                    color: theme =>
-                                      theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
-                                    fontSize: { xs: '0.95rem', md: '1.05rem' },
-                                    pl: 0.5,
-                                  }}
-                                >
-                                  +Everything in Free
-                                </Typography>
-                              )}
-                              {plan.name === 'Pro' && (
-                                <Typography
-                                  variant="caption"
-                                  sx={{
-                                    color: theme =>
-                                      theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
-                                    fontSize: { xs: '0.95rem', md: '1.05rem' },
-                                    pl: 0.5,
-                                  }}
-                                >
-                                  +Everything in Plus
-                                </Typography>
-                              )}
-                              {plan.name === 'Max' && (
-                                <Typography
-                                  variant="caption"
-                                  sx={{
-                                    color: theme =>
-                                      theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
-                                    fontSize: { xs: '0.95rem', md: '1.05rem' },
-                                    pl: 0.5,
-                                  }}
-                                >
-                                  +Everything in Pro
-                                </Typography>
-                              )}
-                              {plan.features.map(feature =>
-                                feature.startsWith('Everything in') ? (
-                                  <Typography
-                                    key={feature}
-                                    variant="caption"
-                                    sx={{
-                                      color: theme =>
-                                        theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
-                                      fontSize: { xs: '0.95rem', md: '1.05rem' },
-                                      fontWeight: 500,
-                                      pl: 0.5,
-                                    }}
-                                  >
-                                    {feature}
-                                  </Typography>
-                                ) : (
-                                  <Stack
-                                    key={feature}
-                                    direction="row"
-                                    spacing={1}
-                                    alignItems="center"
-                                  >
-                                    {getFeatureIcon(feature, plan.color)}
+                            <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                              <Stack spacing={1.5}>
+                                {plan.features.map(feature =>
+                                  feature.startsWith('Everything in') ? (
                                     <Typography
-                                      variant="body2"
+                                      key={feature}
+                                      variant="caption"
                                       sx={{
-                                        fontSize: { xs: '1.0rem', md: '1.1rem' },
                                         color: theme =>
                                           theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+                                        fontSize: { xs: '0.95rem', md: '1.05rem' },
+                                        fontWeight: 500,
+                                        pl: 0.5,
                                       }}
                                     >
                                       {feature}
                                     </Typography>
-                                  </Stack>
-                                )
-                              )}
-                            </Stack>
-                            <Button
-                              variant={plan.popular ? 'contained' : 'outlined'}
-                              color="primary"
-                              size="large"
-                              onClick={() => {
-                                if (plan.price === 0) {
-                                  // For Free plan, show the cancel subscription popup
-                                  setShowCancelDialog(true);
-                                } else {
-                                  handlePlanSelect(plan);
-                                }
-                              }}
-                              disabled={plan.isCurrentPlan}
-                              sx={{
-                                px: 3.5,
-                                py: 1.8,
-                                fontWeight: 700,
-                                fontSize: '1.0rem',
-                                borderRadius: 2,
-                                ...(plan.popular
-                                  ? {
-                                      bgcolor: '#D32F2F',
-                                      color: 'white',
-                                      '&:hover': { bgcolor: '#B71C1C' },
-                                    }
-                                  : {
-                                      borderColor: '#D32F2F',
-                                      color: '#D32F2F',
-                                      '&:hover': {
-                                        borderColor: '#B71C1C',
-                                        bgcolor: 'rgba(211, 47, 47, 0.04)',
-                                      },
-                                    }),
-                                textTransform: 'none',
-                                ...(plan.isCurrentPlan && {
-                                  backgroundColor: 'transparent',
-                                  color: plan.color,
-                                  borderColor: plan.color,
-                                  '&:hover': {
+                                  ) : (
+                                    <Stack
+                                      key={feature}
+                                      direction="row"
+                                      spacing={1}
+                                      alignItems="center"
+                                    >
+                                      {getFeatureIcon(feature, plan.color)}
+                                      <Typography
+                                        variant="body2"
+                                        sx={{
+                                          fontSize: { xs: '1.0rem', md: '1.1rem' },
+                                          color: theme =>
+                                            theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+                                        }}
+                                      >
+                                        {feature}
+                                      </Typography>
+                                    </Stack>
+                                  )
+                                )}
+                              </Stack>
+                            </Box>
+                            <Box sx={{ mt: 'auto', pt: 2 }}>
+                              <Button
+                                variant={plan.popular ? 'contained' : 'outlined'}
+                                color="primary"
+                                size="large"
+                                fullWidth
+                                onClick={() => {
+                                  if (plan.price === 0) {
+                                    // For Free plan, show the cancel subscription popup
+                                    setShowCancelDialog(true);
+                                  } else {
+                                    handlePlanSelect(plan);
+                                  }
+                                }}
+                                disabled={plan.isCurrentPlan}
+                                sx={{
+                                  px: 3.5,
+                                  py: 1.8,
+                                  fontWeight: 700,
+                                  fontSize: '1.0rem',
+                                  borderRadius: 2,
+                                  ...(plan.popular
+                                    ? {
+                                        bgcolor: '#D32F2F',
+                                        color: 'white',
+                                        '&:hover': { bgcolor: '#B71C1C' },
+                                      }
+                                    : {
+                                        borderColor: '#D32F2F',
+                                        color: '#D32F2F',
+                                        '&:hover': {
+                                          borderColor: '#B71C1C',
+                                          bgcolor: 'rgba(211, 47, 47, 0.04)',
+                                        },
+                                      }),
+                                  textTransform: 'none',
+                                  ...(plan.isCurrentPlan && {
                                     backgroundColor: 'transparent',
                                     color: plan.color,
-                                  },
-                                }),
-                              }}
-                            >
-                              {plan.isCurrentPlan
-                                ? 'Current Plan'
-                                : plan.price === 0
-                                ? 'Get Started Free'
-                                : 'Choose Plan'}
-                            </Button>
+                                    borderColor: plan.color,
+                                    '&:hover': {
+                                      backgroundColor: 'transparent',
+                                      color: plan.color,
+                                    },
+                                  }),
+                                }}
+                              >
+                                {plan.isCurrentPlan
+                                  ? 'Current Plan'
+                                  : plan.price === 0
+                                  ? 'Get Started Free'
+                                  : 'Choose Plan'}
+                              </Button>
+                            </Box>
                           </Stack>
                         </Box>
                       </Box>

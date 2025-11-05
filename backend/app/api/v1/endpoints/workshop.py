@@ -329,16 +329,16 @@ async def generate_content(
             logger.info("Code generation keywords detected!")
             # Check if user has access to code generation
             logger.info("Checking code generation feature access...")
-            if not has_feature_access(current_user, "code_analysis", db):
+            if not has_feature_access(current_user, "code_review_assistant", db):
                 plan = get_user_plan(current_user, db)
-                logger.warning(f"User {current_user.id} denied access to code analysis. Plan: {plan}")
+                logger.warning(f"User {current_user.id} denied access to code review assistant. Plan: {plan}")
                 raise HTTPException(
                     status_code=403,
                     detail={
-                        "error": "Code analysis not available in your plan",
-                        "feature": "code_analysis",
+                        "error": "Code review assistant not available in your plan",
+                        "feature": "code_review_assistant",
                         "current_plan": plan,
-                        "upgrade_message": "Upgrade to Pro plan to access code analysis",
+                        "upgrade_message": "Upgrade to Pro plan to access code review assistant",
                         "upgrade_url": "/dashboard/price-plan"
                     }
                 )
@@ -356,7 +356,7 @@ async def generate_content(
             return {
                 "content": content,
                 "timestamp": datetime.utcnow().isoformat(),
-                "service_used": "code_analysis"
+                "service_used": "code_review_assistant"
             }
         
         # Detect math problem solving

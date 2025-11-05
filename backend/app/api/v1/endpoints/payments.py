@@ -260,10 +260,12 @@ async def get_plans():
             "price": 0,
             "interval": "month",
             "features": [
-                "Basic assignment generation",
-                "5 assignments per month",
-                "Standard AI model",
-                "Email support"
+                "AssignmentAI Core Assistant",
+                "Grammar & Spelling Check",
+                "Writing Suggestions",
+                "Basic Templates",
+                "5 assignments/day",
+                "100,000 tokens/month"
             ],
             "priceId": settings.STRIPE_PRICE_FREE
         },
@@ -273,11 +275,15 @@ async def get_plans():
             "price": 4.99,
             "interval": "month",
             "features": [
-                "Enhanced assignment generation",
-                "25 assignments per month",
-                "Advanced AI model",
-                "Priority support",
-                "Export to DOCX"
+                "AssignmentAI Core Assistant",
+                "Grammar & Spelling Check",
+                "Writing Suggestions",
+                "Standard Templates",
+                "Style & Tone Analysis",
+                "Enhanced Writing Suggestions",
+                "25 assignments/day",
+                "250,000 tokens/month",
+                "Ad-Free Experience"
             ],
             "priceId": settings.STRIPE_PRICE_PLUS
         },
@@ -287,12 +293,17 @@ async def get_plans():
             "price": 9.99,
             "interval": "month",
             "features": [
-                "Unlimited assignment generation",
-                "Premium AI model",
-                "Advanced templates",
-                "Citation helper",
-                "Priority support",
-                "Export to DOCX/PDF"
+                "AssignmentAI Core Assistant",
+                "Grammar & Spelling Check",
+                "Writing Suggestions",
+                "Advanced Templates",
+                "Image Analysis",
+                "Code Review Assistant",
+                "Citation Management",
+                "Custom Writing Tone",
+                "100 assignments/day",
+                "500,000 tokens/month",
+                "Ad-Free Experience"
             ],
             "priceId": settings.STRIPE_PRICE_PRO
         },
@@ -302,12 +313,18 @@ async def get_plans():
             "price": 14.99,
             "interval": "month",
             "features": [
-                "Everything in Pro",
-                "Custom AI models",
-                "Advanced analytics",
-                "API access",
-                "Dedicated support",
-                "White-label options"
+                "AssignmentAI Core Assistant",
+                "Grammar & Spelling Check",
+                "Writing Suggestions",
+                "Advanced + Custom Templates",
+                "Image Analysis",
+                "Code Review Assistant",
+                "Citation Management",
+                "Custom Writing Tone",
+                "Performance Insights Dashboard",
+                "Unlimited assignments/day",
+                "1,000,000 tokens/month",
+                "Ad-Free Experience"
             ],
             "priceId": settings.STRIPE_PRICE_MAX
         }
@@ -342,10 +359,12 @@ async def get_plans_with_status(
             "interval": "month",
             "color": "#2196f3",
             "features": [
-                "Basic assignment generation",
-                "5 assignments per month",
-                "Standard AI model",
-                "Email support"
+                "AssignmentAI Core Assistant",
+                "Grammar & Spelling Check",
+                "Writing Suggestions",
+                "Basic Templates",
+                "5 assignments/day",
+                "100,000 tokens/month"
             ],
             "priceId": settings.STRIPE_PRICE_FREE,
             "isCurrentPlan": current_plan_id == settings.STRIPE_PRICE_FREE,
@@ -358,11 +377,15 @@ async def get_plans_with_status(
             "interval": "month",
             "color": "#4caf50",
             "features": [
-                "Enhanced assignment generation",
-                "25 assignments per month",
-                "Advanced AI model",
-                "Priority support",
-                "Export to DOCX"
+                "AssignmentAI Core Assistant",
+                "Grammar & Spelling Check",
+                "Writing Suggestions",
+                "Standard Templates",
+                "Style & Tone Analysis",
+                "Enhanced Writing Suggestions",
+                "25 assignments/day",
+                "250,000 tokens/month",
+                "Ad-Free Experience"
             ],
             "priceId": settings.STRIPE_PRICE_PLUS,
             "isCurrentPlan": current_plan_id == settings.STRIPE_PRICE_PLUS,
@@ -375,12 +398,17 @@ async def get_plans_with_status(
             "interval": "month",
             "color": "#9c27b0",
             "features": [
-                "Unlimited assignment generation",
-                "Premium AI model",
-                "Advanced templates",
-                "Citation helper",
-                "Priority support",
-                "Export to DOCX/PDF"
+                "AssignmentAI Core Assistant",
+                "Grammar & Spelling Check",
+                "Writing Suggestions",
+                "Advanced Templates",
+                "Image Analysis",
+                "Code Review Assistant",
+                "Citation Management",
+                "Custom Writing Tone",
+                "100 assignments/day",
+                "500,000 tokens/month",
+                "Ad-Free Experience"
             ],
             "priceId": settings.STRIPE_PRICE_PRO,
             "isCurrentPlan": current_plan_id == settings.STRIPE_PRICE_PRO,
@@ -393,12 +421,18 @@ async def get_plans_with_status(
             "interval": "month",
             "color": "#ff9800",
             "features": [
-                "Everything in Pro",
-                "Custom AI models",
-                "Advanced analytics",
-                "API access",
-                "Dedicated support",
-                "White-label options"
+                "AssignmentAI Core Assistant",
+                "Grammar & Spelling Check",
+                "Writing Suggestions",
+                "Advanced + Custom Templates",
+                "Image Analysis",
+                "Code Review Assistant",
+                "Citation Management",
+                "Custom Writing Tone",
+                "Performance Insights Dashboard",
+                "Unlimited assignments/day",
+                "1,000,000 tokens/month",
+                "Ad-Free Experience"
             ],
             "priceId": settings.STRIPE_PRICE_MAX,
             "isCurrentPlan": current_plan_id == settings.STRIPE_PRICE_MAX,

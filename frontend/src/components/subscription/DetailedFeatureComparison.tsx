@@ -41,6 +41,39 @@ const DetailedFeatureComparison: React.FC<DetailedFeatureComparisonProps> = ({
 }) => {
   if (!open) return null;
 
+  // Sort features to create cascading effect - no breaks in checkmarks
+  const sortedFeatures = [...features].sort((a, b) => {
+    // Helper to get the tier where feature starts (0=Free, 1=Plus, 2=Pro, 3=Max)
+    const getStartTier = (feature: Feature): number => {
+      if (feature.free) return 0;
+      if (feature.plus) return 1;
+      if (feature.pro) return 2;
+      return 3;
+    };
+
+    // Helper to get the tier where feature ends (count of consecutive checkmarks)
+    const getEndTier = (feature: Feature): number => {
+      if (feature.max) return 3;
+      if (feature.pro) return 2;
+      if (feature.plus) return 1;
+      return 0;
+    };
+
+    const aStart = getStartTier(a);
+    const bStart = getStartTier(b);
+    const aEnd = getEndTier(a);
+    const bEnd = getEndTier(b);
+
+    // First sort by start tier (earlier tiers first)
+    if (aStart !== bStart) {
+      return aStart - bStart;
+    }
+
+    // Then sort by end tier (features that continue to higher tiers first)
+    // This creates the cascading effect
+    return bEnd - aEnd;
+  });
+
   return (
     <Box
       sx={{
@@ -143,7 +176,7 @@ const DetailedFeatureComparison: React.FC<DetailedFeatureComparisonProps> = ({
               </Box>
             ))}
           </Box>
-          {features.map(feature => (
+          {sortedFeatures.map(feature => (
             <Box
               key={feature.name}
               sx={{
@@ -194,9 +227,12 @@ const DetailedFeatureComparison: React.FC<DetailedFeatureComparisonProps> = ({
                 </Box>
               </Box>
               {plansWithCurrentPlan.map(plan => {
-                const isIncluded = plansWithCurrentPlan
-                  .slice(0, plansWithCurrentPlan.indexOf(plan) + 1)
-                  .some(p => p.features.includes(feature.name));
+                // Use the feature boolean flags directly
+                const isIncluded = 
+                  (plan.name === 'Free' && feature.free) ||
+                  (plan.name === 'Plus' && feature.plus) ||
+                  (plan.name === 'Pro' && feature.pro) ||
+                  (plan.name === 'Max' && feature.max);
                 return (
                   <Box
                     key={plan.name}
