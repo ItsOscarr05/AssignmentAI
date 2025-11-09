@@ -28,7 +28,7 @@ from app.core.error_handlers import (
     validation_error_handler,
     request_validation_error_handler
 )
-from app.middleware.security import SecurityMiddleware
+from app.middleware.security import SecurityMiddleware, SecurityHeadersMiddleware
 from app.middleware.rate_limit import RateLimitMiddleware
 from app.middleware.error_handler import ErrorHandlerMiddleware
 from app.middleware.logging import LoggingMiddleware
@@ -251,31 +251,25 @@ app.add_middleware(
 )
 
 # Add security headers middleware
-# app.add_middleware(SecurityMiddleware)
+app.add_middleware(SecurityMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
 
-# Add rate limiting middleware
-# app.add_middleware(RateLimitMiddleware, requests_per_minute=60)
+# Add rate limiting middleware (disabled in tests by default)
+# app.add_middleware(RateLimitMiddleware, requests_per_minute=settings.RATE_LIMIT_REQUESTS)
 
 # Add other middleware
 # app.add_middleware(ErrorHandlerMiddleware)
 # app.add_middleware(LoggingMiddleware)
 
-# Add performance middleware
-# app.add_middleware(
-#     PerformanceMiddleware,
-#     cache_ttl=settings.CACHE_TTL,
-#     cache_enabled=settings.CACHE_ENABLED,
-#     query_optimization_enabled=settings.QUERY_OPTIMIZATION_ENABLED
-# )
-
-# app.add_middleware(
-#     QueryOptimizationMiddleware,
-#     enabled=settings.QUERY_OPTIMIZATION_ENABLED,
-#     slow_query_threshold=settings.SLOW_QUERY_THRESHOLD
-# )
+# Add performance and query optimization middleware
+app.add_middleware(
+    QueryOptimizationMiddleware,
+    enabled=settings.QUERY_OPTIMIZATION_ENABLED,
+    slow_query_threshold=settings.SLOW_QUERY_THRESHOLD,
+)
 
 # Add file size limit middleware
-# app.middleware("http")(file_size_limit_middleware)
+app.middleware("http")(file_size_limit_middleware)
 
 # Add compression middleware
 # app.add_middleware(GZipMiddleware, minimum_size=1000)

@@ -20,6 +20,8 @@ class Feedback(Base):
     # Foreign Keys
     submission_id: Mapped[int] = mapped_column(Integer, ForeignKey("submissions.id"), nullable=False)
 
+    submission = relationship("Submission", back_populates="feedback_entries")
+
     # Add indexes for common queries
     __table_args__ = (
         Index('idx_feedback_submission', 'submission_id'),

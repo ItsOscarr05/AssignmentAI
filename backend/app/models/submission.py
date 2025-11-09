@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional, Dict, Any
 from sqlalchemy import Column, Integer, String, Text, DateTime, Float, JSON, Index, Enum
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base_class import Base
 import enum
 
@@ -37,3 +37,9 @@ class Submission(Base):
         Index('idx_submission_student', 'user_id'),
         Index('idx_submission_date', 'submitted_at'),
     ) 
+
+    feedback_entries = relationship(
+        "Feedback",
+        back_populates="submission",
+        cascade="all, delete-orphan"
+    )

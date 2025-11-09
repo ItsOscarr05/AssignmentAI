@@ -30,6 +30,9 @@ FEATURE_KEYS = [
     "advanced_writing_analysis",
     "style_tone_suggestions",
     "advanced_analytics",
+    "smart_content_summarization",
+    "advanced_research_assistant",
+    "advanced_content_optimization",
 ]
 
 def _build_feature_matrix() -> Dict[str, Dict[str, bool]]:
@@ -53,6 +56,9 @@ def _build_feature_matrix() -> Dict[str, Dict[str, bool]]:
         "advanced_writing_analysis": False,
         "style_tone_suggestions": False,
         "advanced_analytics": False,
+        "smart_content_summarization": False,
+        "advanced_research_assistant": False,
+        "advanced_content_optimization": False,
     }
 
     plus = base | {
@@ -63,6 +69,7 @@ def _build_feature_matrix() -> Dict[str, Dict[str, bool]]:
         "code_analysis": True,
         "code_review_assistant": True,
         "image_analysis": True,
+        "smart_content_summarization": True,
     }
 
     pro = plus | {
@@ -72,11 +79,13 @@ def _build_feature_matrix() -> Dict[str, Dict[str, bool]]:
         "code_analysis": True,
         "image_analysis": True,
         "citation_management": True,
+        "advanced_research_assistant": True,
     }
 
     max_plan = pro | {
         "custom_templates": True,
         "advanced_analytics": True,
+        "advanced_content_optimization": True,
     }
 
     # Ensure every plan exposes every key explicitly (matrix consistency tests)

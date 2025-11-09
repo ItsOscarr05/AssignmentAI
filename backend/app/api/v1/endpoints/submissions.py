@@ -72,7 +72,11 @@ async def create_submission(
     if body.get('attachments') and isinstance(body['attachments'], list):
         body['attachments'] = json.dumps(body['attachments'])
     
-    submission = schemas.SubmissionCreate(**body)
+    try:
+        submission = schemas.SubmissionCreate(**body)
+    except ValidationError as exc:
+        logging.error(f"Submission payload validation error: {exc.errors()}")
+        raise HTTPException(status_code=422, detail=exc.errors())
     
     # Check if assignment exists and get its due date
     assignment = db.query(models.Assignment).filter(models.Assignment.id == submission.assignment_id).first()

@@ -104,22 +104,28 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('title', sa.String(length=500), nullable=False),
-    sa.Column('authors', sa.String(length=500), nullable=True),
-    sa.Column('publication_year', sa.Integer(), nullable=True),
+    sa.Column('authors', sa.String(length=500), nullable=False),
+    sa.Column('year', sa.String(length=4), nullable=True),
     sa.Column('journal', sa.String(length=255), nullable=True),
     sa.Column('volume', sa.String(length=50), nullable=True),
     sa.Column('issue', sa.String(length=50), nullable=True),
     sa.Column('pages', sa.String(length=100), nullable=True),
     sa.Column('doi', sa.String(length=255), nullable=True),
     sa.Column('url', sa.String(length=500), nullable=True),
-    sa.Column('citation_type', sa.String(length=50), nullable=False),
-    sa.Column('citation_style', sa.String(length=50), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.Column('publisher', sa.String(length=255), nullable=True),
+    sa.Column('location', sa.String(length=255), nullable=True),
+    sa.Column('citation_type', sa.String(length=50), nullable=False, server_default='journal'),
+    sa.Column('formatted_citations', sa.JSON(), nullable=True),
+    sa.Column('notes', sa.Text(), nullable=True),
+    sa.Column('tags', sa.JSON(), nullable=True),
     sa.Column('citation_metadata', sa.JSON(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('(CURRENT_TIMESTAMP)')),
+    sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.text('(CURRENT_TIMESTAMP)')),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_citations_id'), 'citations', ['id'], unique=False)
+    op.create_index('idx_citations_user', 'citations', ['user_id'], unique=False)
+    op.create_index('idx_citations_doi', 'citations', ['doi'], unique=False)
     op.create_table('classes',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(), nullable=False),
@@ -226,19 +232,26 @@ def upgrade() -> None:
     op.create_index(op.f('ix_subscriptions_id'), 'subscriptions', ['id'], unique=False)
     op.create_table('templates',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('name', sa.String(length=255), nullable=False),
+    sa.Column('title', sa.String(length=255), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
-    sa.Column('content', sa.Text(), nullable=False),
-    sa.Column('template_type', sa.String(length=50), nullable=False),
-    sa.Column('creator_id', sa.Integer(), nullable=False),
-    sa.Column('is_public', sa.Boolean(), nullable=True),
-    sa.Column('is_active', sa.Boolean(), nullable=True),
-    sa.Column('created_at', sa.DateTime(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(), nullable=True),
-    sa.Column('template_metadata', sa.JSON(), nullable=True),
+    sa.Column('content', sa.JSON(), nullable=False),
+    sa.Column('type', sa.String(length=50), nullable=False),
+    sa.Column('category', sa.String(length=100), nullable=True),
+    sa.Column('tags', sa.JSON(), nullable=True),
+    sa.Column('style', sa.JSON(), nullable=True),
+    sa.Column('is_public', sa.Boolean(), nullable=False, server_default=sa.text('0')),
+    sa.Column('is_active', sa.Boolean(), nullable=False, server_default=sa.text('1')),
+    sa.Column('created_by', sa.Integer(), nullable=False),
+    sa.Column('usage_count', sa.Integer(), nullable=False, server_default=sa.text('0')),
+    sa.Column('metadata', sa.JSON(), nullable=True),
+    sa.Column('variables', sa.JSON(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('(CURRENT_TIMESTAMP)')),
+    sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.text('(CURRENT_TIMESTAMP)')),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_templates_id'), 'templates', ['id'], unique=False)
+    op.create_index('idx_templates_created_by', 'templates', ['created_by'], unique=False)
+    op.create_index('idx_templates_type', 'templates', ['type'], unique=False)
     op.create_table('two_factor_setups',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=True),
@@ -359,6 +372,8 @@ def downgrade() -> None:
     op.drop_table('usage')
     op.drop_index(op.f('ix_two_factor_setups_id'), table_name='two_factor_setups')
     op.drop_table('two_factor_setups')
+    op.drop_index('idx_templates_type', table_name='templates')
+    op.drop_index('idx_templates_created_by', table_name='templates')
     op.drop_index(op.f('ix_templates_id'), table_name='templates')
     op.drop_table('templates')
     op.drop_index(op.f('ix_subscriptions_id'), table_name='subscriptions')
@@ -381,6 +396,8 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_classes_code'), table_name='classes')
     op.drop_table('classes')
     op.drop_table('class_members')
+    op.drop_index('idx_citations_doi', table_name='citations')
+    op.drop_index('idx_citations_user', table_name='citations')
     op.drop_index(op.f('ix_citations_id'), table_name='citations')
     op.drop_table('citations')
     op.drop_index(op.f('ix_audit_logs_id'), table_name='audit_logs')

@@ -80,7 +80,11 @@ Format the response in a clear, structured manner."""
     ) -> Optional[Assignment]:
         """Create a new assignment with AI-generated content."""
         # Generate content using AI
-        content = await self.generate_content(obj_in, user_id)
+        generate_kwargs = {}
+        if self.db is not None:
+            generate_kwargs["user_id"] = user_id
+
+        content = await self.generate_content(obj_in, **generate_kwargs)
         
         # Update the assignment data with generated content
         obj_in_data = obj_in.model_dump()

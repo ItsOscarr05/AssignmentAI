@@ -171,10 +171,11 @@ async def generate_feedback(
         ai_service = AIService(mock_async_db)  # type: ignore
         
         # Estimate tokens needed based on submission length
+        submission_text = feedback_request.submission_content or ""
         tokens_needed = 500  # Base estimate
-        if len(submission.content) > 2000:
+        if len(submission_text) > 2000:
             tokens_needed = 800
-        elif len(submission.content) < 500:
+        elif len(submission_text) < 500:
             tokens_needed = 300
         
         await ai_service.enforce_token_limit(current_user.id, tokens_needed)

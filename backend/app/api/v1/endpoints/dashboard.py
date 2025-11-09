@@ -59,75 +59,59 @@ async def test_dashboard_models(
 @router.get("/stats")
 async def get_dashboard_stats(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
-    """Get dashboard statistics for the current user"""
+    """Get dashboard statistics for the current user."""
     try:
-        print(f"Getting dashboard stats for user: {current_user.id}")
-        # Get assignment statistics
-        try:
-            total_assignments = db.query(Assignment).filter(
-                Assignment.created_by_id == current_user.id
-            ).count()
-            print(f"Total assignments: {total_assignments}")
-        except Exception as e:
-            print(f"Error getting total assignments: {e}")
-            total_assignments = 0
-        
-        try:
-            completed_assignments = db.query(Assignment).filter(
-                Assignment.created_by_id == current_user.id,
-                Assignment.status == "published"
-            ).count()
-            print(f"Completed assignments: {completed_assignments}")
-        except Exception as e:
-            print(f"Error getting completed assignments: {e}")
-            completed_assignments = 0
-        
-        try:
-            pending_assignments = db.query(Assignment).filter(
-                Assignment.created_by_id == current_user.id,
-                Assignment.status.in_(["draft", "archived"])
-            ).count()
-            print(f"Pending assignments: {pending_assignments}")
-        except Exception as e:
-            print(f"Error getting pending assignments: {e}")
-            pending_assignments = 0
-        
-        # Get file statistics - temporarily disabled due to missing user_id field
-        total_files = 0
+        total_assignments = db.query(Assignment).filter(
+            Assignment.created_by_id == current_user.id
+        ).count()
+
+        completed_assignments = db.query(Assignment).filter(
+            Assignment.created_by_id == current_user.id,
+            Assignment.status.in_(["completed", "published"]),
+        ).count()
+
+        pending_assignments = db.query(Assignment).filter(
+            Assignment.created_by_id == current_user.id,
+            Assignment.status.in_(["draft", "pending", "archived"]),
+        ).count()
+
+        file_query = db.query(File)
+        file_user_field = getattr(File, "user_id", None)
+        if file_user_field is not None:
+            file_query = file_query.filter(file_user_field == current_user.id)
+        else:
+            file_query = file_query.filter(True)
+
+        total_files = file_query.count()
+        files = file_query.all()
         storage_used = 0
-        
-        # Get storage limit based on subscription
-        try:
-            subscription = db.query(Subscription).filter(
+        for file in files:
+            size_value = getattr(file, "size", None)
+            if size_value is None:
+                size_value = getattr(file, "file_size", None)
+            storage_used += (size_value or 0)
+
+        subscription = (
+            db.query(Subscription)
+            .filter(
                 Subscription.user_id == current_user.id,
-                Subscription.status == "active"
-            ).first()
-            print(f"Subscription found: {subscription is not None}")
-        except Exception as e:
-            print(f"Error getting subscription: {e}")
-            subscription = None
-        
+                Subscription.status == "active",
+            )
+            .first()
+        )
         storage_limit = get_storage_limit(subscription)
-        
-        # Calculate monthly usage
-        try:
-            start_of_month = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-            monthly_assignments = db.query(Assignment).filter(
-                Assignment.created_by_id == current_user.id,
-                Assignment.created_at >= start_of_month
-            ).count()
-            print(f"Monthly assignments: {monthly_assignments}")
-        except Exception as e:
-            print(f"Error getting monthly assignments: {e}")
-            monthly_assignments = 0
-        
+
+        start_of_month = datetime.now().replace(
+            day=1, hour=0, minute=0, second=0, microsecond=0
+        )
+        monthly_assignments = db.query(Assignment).filter(
+            Assignment.created_by_id == current_user.id,
+            Assignment.created_at >= start_of_month,
+        ).count()
         monthly_limit = get_monthly_limit(subscription)
-        
-        print(f"Dashboard stats calculated: assignments={total_assignments}, completed={completed_assignments}, pending={pending_assignments}, files={total_files}, storage={storage_used}, monthly={monthly_assignments}")
-        
-        # Return basic data for now to get the endpoint working
+
         return {
             "totalAssignments": total_assignments,
             "completedAssignments": completed_assignments,
@@ -138,40 +122,46 @@ async def get_dashboard_stats(
             "monthlyUsage": monthly_assignments,
             "monthlyLimit": monthly_limit,
         }
-    except Exception as e:
-        print(f"Dashboard stats error: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 @router.get("/activity")
 async def get_recent_activity(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    limit: int = 10
+    limit: int = 10,
 ):
-    """Get recent activity for the current user"""
+    """Get recent activity for the current user."""
     try:
-        # Get recent activities - temporarily disabled due to missing user_id field
-        # activities = db.query(Activity).filter(
-        #     Activity.user_id == current_user.id
-        # ).order_by(Activity.created_at.desc()).limit(limit).all()
-        
-        # activity_list = []
-        # for activity in activities:
-        #     activity_data = {
-        #         "id": str(activity.id),
-        #         "type": activity.type,
-        #         "title": get_activity_title(activity),
-        #         "description": get_activity_description(activity),
-        #         "timestamp": activity.created_at.isoformat(),
-        #     }
-        #     activity_list.append(activity_data)
-        
-        # return activity_list
-        return []
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        activities = (
+            db.query(Activity)
+            .filter(Activity.user_id == current_user.id)
+            .order_by(Activity.created_at.desc())
+            .limit(limit)
+            .all()
+        )
+
+        activity_list = []
+        for activity in activities:
+            activity_list.append(
+                {
+                    "id": str(getattr(activity, "id", "")),
+                    "type": getattr(activity, "type", ""),
+                    "title": get_activity_title(activity),
+                    "description": get_activity_description(activity),
+                    "timestamp": getattr(
+                        activity, "created_at", datetime.utcnow()
+                    ).isoformat(),
+                }
+            )
+
+        return activity_list
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 @router.get("/assignments/recent")
 async def get_recent_assignments(
@@ -204,29 +194,51 @@ async def get_recent_assignments(
 async def get_recent_files(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    limit: int = 5
+    limit: int = 5,
 ):
-    """Get recent files for the current user - temporarily disabled due to missing user_id field"""
-    # try:
-    #     files = db.query(File).filter(
-    #         File.user_id == current_user.id
-    #     ).order_by(File.created_at.desc()).limit(limit).all()
-    #     
-    #     file_list = []
-    #     for file in files:
-    #         file_data = {
-    #         "id": str(file.id),
-    #         "name": file.name,
-    #         "size": file.size,
-    #         "type": file.type,
-    #         "created_at": file.created_at.isoformat(),
-    #     }
-    #         file_list.append(file_data)
-    #     
-    #     return file_list
-    # except Exception as e:
-    #     raise HTTPException(status_code=500, detail=str(e))
-    return []
+    """Get recent files for the current user."""
+    try:
+        file_user_field = getattr(File, "user_id", None)
+        order_field = getattr(
+            File, "created_at", getattr(File, "uploaded_at", None)
+        )
+
+        file_query = db.query(File)
+        if file_user_field is not None:
+            file_query = file_query.filter(file_user_field == current_user.id)
+        else:
+            file_query = file_query.filter(True)
+
+        if order_field is not None:
+            file_query = file_query.order_by(order_field.desc())
+        else:
+            file_query = file_query.order_by()
+
+        files = file_query.limit(limit).all()
+
+        file_list = []
+        for file in files:
+            file_list.append(
+                {
+                    "id": str(getattr(file, "id", "")),
+                    "name": getattr(file, "name", getattr(file, "filename", "")),
+                    "size": (
+                        getattr(file, "size", getattr(file, "file_size", 0)) or 0
+                    ),
+                    "type": getattr(file, "type", getattr(file, "mime_type", "")),
+                    "created_at": getattr(
+                        file,
+                        "created_at",
+                        getattr(file, "uploaded_at", datetime.utcnow()),
+                    ).isoformat(),
+                }
+            )
+
+        return file_list
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 @router.get("/file-uploads/recent")
 async def get_recent_file_uploads(
@@ -296,7 +308,8 @@ async def get_usage_analytics(
                     "pending": 0,
                 }
             daily_stats[date_key]["assignments"] += 1
-            if assignment.status == "published":
+            status_value = (getattr(assignment, "status", "") or "").lower()
+            if status_value in {"completed", "published", "submitted", "graded"}:
                 daily_stats[date_key]["completed"] += 1
             else:
                 daily_stats[date_key]["pending"] += 1
@@ -320,16 +333,21 @@ def get_storage_limit(subscription: Subscription) -> int:
     try:
         if not subscription:
             return 100 * 1024 * 1024  # 100MB for free users
-        
-        # Storage limits by plan
-        storage_limits = {
-            settings.STRIPE_PRICE_FREE: 100 * 1024 * 1024,  # 100MB
-            settings.STRIPE_PRICE_PLUS: 1 * 1024 * 1024 * 1024,  # 1GB
-            settings.STRIPE_PRICE_PRO: 5 * 1024 * 1024 * 1024,  # 5GB
-            settings.STRIPE_PRICE_MAX: 10 * 1024 * 1024 * 1024,  # 10GB
-        }
-        
-        return storage_limits.get(subscription.plan_id, 100 * 1024 * 1024)
+
+        plan_id = (getattr(subscription, "plan_id", "") or "").lower()
+        plan_aliases = [
+            (100 * 1024 * 1024, [settings.STRIPE_PRICE_FREE, "price_free", "free"]),
+            (1 * 1024 * 1024 * 1024, [settings.STRIPE_PRICE_PLUS, "price_plus", "plus"]),
+            (5 * 1024 * 1024 * 1024, [settings.STRIPE_PRICE_PRO, "price_pro", "pro"]),
+            (10 * 1024 * 1024 * 1024, [settings.STRIPE_PRICE_MAX, "price_max", "max"]),
+        ]
+
+        for limit, candidates in plan_aliases:
+            for candidate in candidates:
+                if candidate and plan_id == candidate.lower():
+                    return limit
+
+        return 100 * 1024 * 1024  # Default to 100MB
     except Exception as e:
         print(f"Error in get_storage_limit: {e}")
         return 100 * 1024 * 1024  # Default to 100MB
@@ -339,16 +357,21 @@ def get_monthly_limit(subscription: Subscription) -> int:
     try:
         if not subscription:
             return 5  # 5 assignments for free users
-        
-        # Assignment limits by plan
-        assignment_limits = {
-            settings.STRIPE_PRICE_FREE: 5,
-            settings.STRIPE_PRICE_PLUS: 25,
-            settings.STRIPE_PRICE_PRO: 100,
-            settings.STRIPE_PRICE_MAX: -1,  # Unlimited
-        }
-        
-        return assignment_limits.get(subscription.plan_id, 5)
+
+        plan_id = (getattr(subscription, "plan_id", "") or "").lower()
+        plan_aliases = [
+            (5, [settings.STRIPE_PRICE_FREE, "price_free", "free"]),
+            (25, [settings.STRIPE_PRICE_PLUS, "price_plus", "plus"]),
+            (100, [settings.STRIPE_PRICE_PRO, "price_pro", "pro"]),
+            (-1, [settings.STRIPE_PRICE_MAX, "price_max", "max"]),
+        ]
+
+        for limit, candidates in plan_aliases:
+            for candidate in candidates:
+                if candidate and plan_id == candidate.lower():
+                    return limit
+
+        return 5
     except Exception as e:
         print(f"Error in get_monthly_limit: {e}")
         return 5  # Default to 5 assignments
@@ -373,18 +396,24 @@ def get_activity_title(activity: Activity) -> str:
 def get_activity_description(activity: Activity) -> str:
     """Get activity description based on type and metadata"""
     try:
-        metadata = getattr(activity, 'activity_metadata', {}) or {}
-        
-        if activity.type == "assignment_created":
+        raw_metadata = getattr(activity, "metadata", None)
+        if raw_metadata is None:
+            raw_metadata = getattr(activity, "activity_metadata", None)
+
+        metadata = raw_metadata if isinstance(raw_metadata, dict) else {}
+
+        activity_type = getattr(activity, "type", "")
+
+        if activity_type == "assignment_created":
             title = metadata.get("title", "Assignment")
             return f"Created assignment: {title}"
-        elif activity.type == "assignment_completed":
+        elif activity_type == "assignment_completed":
             title = metadata.get("title", "Assignment")
             return f"Completed assignment: {title}"
-        elif activity.type == "file_uploaded":
+        elif activity_type == "file_uploaded":
             filename = metadata.get("filename", "File")
             return f"Uploaded file: {filename}"
-        elif activity.type == "subscription_updated":
+        elif activity_type == "subscription_updated":
             plan = metadata.get("plan", "Plan")
             return f"Updated to {plan} plan"
         else:

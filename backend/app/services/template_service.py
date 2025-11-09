@@ -9,6 +9,14 @@ class TemplateService:
     def __init__(self, db: Session):
         self.db = db
 
+    @staticmethod
+    def _hydrate_template(template: Template) -> Template:
+        if template is not None:
+            setattr(template, "metadata", getattr(template, "_metadata", None) or {})
+            if template.tags is None:
+                setattr(template, "tags", [])
+        return template
+
     async def create_template(
         self,
         user: User,
@@ -29,19 +37,21 @@ class TemplateService:
             category=category,
             is_public=is_public,
             created_by=user.id,
-            metadata=metadata or {}
         )
+        if metadata is not None:
+            template._metadata = metadata or {}
+        self._hydrate_template(template)
         self.db.add(template)
         self.db.commit()
         self.db.refresh(template)
-        return template
+        return self._hydrate_template(template)
 
     async def get_template(self, template_id: int) -> Template:
         """Get a template by ID"""
         template = self.db.query(Template).filter(Template.id == template_id).first()
         if not template:
             raise HTTPException(status_code=404, detail="Template not found")
-        return template
+        return self._hydrate_template(template)
 
     async def list_templates(
         self,
@@ -67,7 +77,8 @@ class TemplateService:
         if category:
             query = query.filter(Template.category == category)
             
-        return query.all()
+        templates = query.all()
+        return [self._hydrate_template(t) for t in templates]
 
     async def update_template(
         self,
@@ -84,13 +95,15 @@ class TemplateService:
         
         # Update fields
         for field, value in updates.items():
-            if hasattr(template, field):
+            if field == "metadata":
+                template._metadata = value or {}
+            elif hasattr(template, field):
                 setattr(template, field, value)
         
         template.updated_at = datetime.utcnow()
         self.db.commit()
         self.db.refresh(template)
-        return template
+        return self._hydrate_template(template)
 
     async def delete_template(self, user: User, template_id: int) -> None:
         """Delete a template"""
@@ -106,7 +119,7 @@ class TemplateService:
     async def increment_usage(self, template_id: int) -> None:
         """Increment the usage count of a template"""
         template = await self.get_template(template_id)
-        template.usage_count += 1
+        template.usage_count = (template.usage_count or 0) + 1
         self.db.commit()
 
     async def expand_template(

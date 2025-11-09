@@ -1,23 +1,28 @@
-import pytest
 import os
 import uuid
-from typing import Dict, Any
+import warnings
 from datetime import datetime, timedelta
+from typing import Dict, Any
+
+import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
-from app.main import app
+
 from app.core.config import settings
-from app.db.base_class import Base
-from app.models.user import User
-from app.models.class_model import Class
-from app.models.assignment import Assignment, AssignmentStatus, DifficultyLevel
-from app.models.submission import Submission, SubmissionStatus
-from app.models.ai_assignment import AIAssignment
-from app.models.feedback import Feedback
+from app.core.rate_limit import FallbackRateLimiter
 from app.core.security import get_password_hash, create_access_token, create_refresh_token
 from app.database import get_db
-from app.core.rate_limit import FallbackRateLimiter
-from sqlalchemy import create_engine, text
+from app.db.base_class import Base
+from app.main import app
+from app.models.ai_assignment import AIAssignment
+from app.models.assignment import Assignment, AssignmentStatus, DifficultyLevel
+from app.models.class_model import Class
+from app.models.feedback import Feedback
+from app.models.submission import Submission, SubmissionStatus
+from app.models.user import User
+# Silence third-party deprecation noise during tests
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="PyPDF2")
 
 # Set testing environment
 os.environ["TESTING"] = "true"

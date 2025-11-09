@@ -40,6 +40,7 @@ from app.crud import submission as submission_crud
 from app.schemas.submission import SubmissionList
 from app.crud import ai_assignment as ai_assignment_crud
 from app.schemas.ai_assignment import AIAssignment
+import json
 
 api_router = APIRouter()
 
@@ -87,12 +88,34 @@ def get_feedback_by_submission(submission_id: int, db=Depends(get_db)):
 def get_feedback_by_user(user_id: int, db=Depends(get_db)):
     """Get all feedback for a user (root-level endpoint)."""
     items = feedback_crud.get_feedback_by_user(db, user_id)
-    result = []
-    for fb in items:
-        fb_dict = fb.__dict__.copy()
-        if hasattr(fb, 'submission') and fb.submission is not None and hasattr(fb.submission, 'user_id'):
-            fb_dict['user_id'] = fb.submission.user_id
-        result.append(fb_dict)
+
+    def _serialize_feedback(fb) -> dict:
+        metadata = getattr(fb, "feedback_metadata", {}) or {}
+        if isinstance(metadata, str):
+            try:
+                metadata = json.loads(metadata)
+            except Exception:
+                metadata = {}
+
+        payload = {
+            "id": getattr(fb, "id", None),
+            "submission_id": getattr(fb, "submission_id", None),
+            "content": getattr(fb, "content", ""),
+            "feedback_type": getattr(fb, "feedback_type", ""),
+            "confidence_score": getattr(fb, "confidence_score", None),
+            "score": getattr(fb, "score", None),
+            "feedback_metadata": metadata,
+            "created_at": getattr(fb, "created_at", None),
+            "updated_at": getattr(fb, "updated_at", None),
+        }
+        submission = getattr(fb, "submission", None)
+        if submission is not None:
+            user_from_submission = getattr(submission, "user_id", None)
+            if user_from_submission is not None:
+                payload["user_id"] = user_from_submission
+        return payload
+
+    result = [_serialize_feedback(fb) for fb in items]
     return {"items": result}
 
 @api_router.get("/assignments/{assignment_id}/submissions", tags=["Submissions"])

@@ -90,7 +90,12 @@ class AIService:
         
         return plan_mapping.get(subscription.plan_name.lower(), "free")
 
-    async def generate_assignment(self, request: AssignmentGenerationRequest) -> AssignmentGenerationResponse:
+    async def generate_assignment(
+        self,
+        request: AssignmentGenerationRequest,
+        *,
+        user_id: Optional[int] = None,
+    ) -> AssignmentGenerationResponse:
         """
         Generate an assignment using AI based on the provided request parameters.
         """
@@ -106,8 +111,10 @@ class AIService:
             # Construct the prompt for the AI model
             prompt = self._construct_assignment_prompt(request)
             
+            request_user_id = user_id or getattr(request, "user_id", None)
+
             # Call OpenAI API with retry logic
-            response = await self._call_openai_with_retry(prompt, request.user_id)
+            response = await self._call_openai_with_retry(prompt, request_user_id)
             
             # Parse and structure the AI response
             assignment_content = self._parse_assignment_content(response)

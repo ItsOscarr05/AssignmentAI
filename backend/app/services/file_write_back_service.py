@@ -14,7 +14,6 @@ from docx import Document
 from docx.shared import Inches, Pt, RGBColor
 from docx.oxml.shared import qn
 from docx.enum.text import WD_COLOR_INDEX
-import PyPDF2
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.colors import black, blue

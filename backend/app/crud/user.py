@@ -1,6 +1,8 @@
 from typing import Any, Dict, Optional, Union, List
-from sqlalchemy.orm import Session
 from datetime import datetime
+from sqlalchemy import text
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import Session
 
 from app.core.security import get_password_hash, verify_password
 from app.crud.base import CRUDBase
@@ -301,8 +303,16 @@ def delete_user_account(db: Session, user_id: str) -> None:
     
     # Note: Activity model doesn't have user_id attribute - skipping activity deletion
     
-    # Delete templates (uses creator_id instead of user_id)
-    db.query(Template).filter(Template.creator_id == user_id_int).delete()
+    # Delete templates authored by the user (support legacy column names)
+    template_owner_column = getattr(Template, "created_by", None) or getattr(Template, "creator_id", None)
+    if template_owner_column is not None:
+        try:
+            db.query(Template).filter(template_owner_column == user_id_int).delete()
+        except OperationalError:
+            # Legacy sqlite schema may still reference creator_id
+            db.execute(text("DELETE FROM templates WHERE creator_id = :user_id"), {"user_id": user_id_int})
+    else:
+        db.execute(text("DELETE FROM templates WHERE creator_id = :user_id"), {"user_id": user_id_int})
     
     # Delete citations
     db.query(Citation).filter(Citation.user_id == user_id_int).delete()

@@ -298,7 +298,19 @@ class PaymentService:
             }
         }
 
-        return plan_mapping.get(subscription.plan_id, plan_mapping[settings.STRIPE_PRICE_FREE])
+        legacy_mapping = {
+            "price_free": plan_mapping[settings.STRIPE_PRICE_FREE],
+            "price_plus": plan_mapping[settings.STRIPE_PRICE_PLUS],
+            "price_pro": plan_mapping[settings.STRIPE_PRICE_PRO],
+            "price_max": plan_mapping[settings.STRIPE_PRICE_MAX],
+        }
+
+        if subscription.plan_id in plan_mapping:
+            return plan_mapping[subscription.plan_id]
+        if subscription.plan_id in legacy_mapping:
+            return legacy_mapping[subscription.plan_id]
+
+        return plan_mapping[settings.STRIPE_PRICE_FREE]
 
     async def cancel_subscription(self, user: User) -> Dict[str, Any]:
         """
@@ -307,48 +319,49 @@ class PaymentService:
         - Updates the local database to mark subscription as cancelled
         - Returns confirmation message
         """
-        try:
-            # Get the user's current active subscription
-            subscription = self.db.query(Subscription).filter(
-                Subscription.user_id == user.id,
-                Subscription.status.in_([SubscriptionStatus.ACTIVE, SubscriptionStatus.CANCELING])
-            ).first()
-            
-            if not subscription:
-                raise HTTPException(
-                    status_code=404, 
-                    detail="No active subscription found to cancel"
+        # Get the user's current active subscription
+        subscription = self.db.query(Subscription).filter(
+            Subscription.user_id == user.id,
+            Subscription.status.in_([SubscriptionStatus.ACTIVE, SubscriptionStatus.CANCELING])
+        ).first()
+        
+        if not subscription:
+            raise HTTPException(
+                status_code=404, 
+                detail="No active subscription found to cancel"
+            )
+        
+        message = "Subscription will be canceled at the end of the current period."
+
+        # Cancel the subscription in Stripe if it's a real Stripe subscription
+        if (
+            subscription.stripe_subscription_id and 
+            not subscription.stripe_subscription_id.startswith('test_') and
+            not subscription.stripe_subscription_id.startswith('free_sub_')
+        ):
+            try:
+                stripe.Subscription.modify(
+                    subscription.stripe_subscription_id,
+                    cancel_at_period_end=True
                 )
-            
-            # Cancel the subscription in Stripe if it's a real Stripe subscription
-            if (subscription.stripe_subscription_id and 
-                not subscription.stripe_subscription_id.startswith('test_') and
-                not subscription.stripe_subscription_id.startswith('free_sub_')):
-                
-                try:
-                    stripe_sub = stripe.Subscription.modify(
-                        subscription.stripe_subscription_id,
-                        cancel_at_period_end=True
-                    )
-                    print(f"Stripe subscription {subscription.stripe_subscription_id} marked for cancellation")
-                except stripe.error.StripeError as e:
-                    print(f"Warning: Could not cancel Stripe subscription: {e}")
-                    # Continue with local cancellation even if Stripe fails
-            
-            # Update the subscription status in local database
+                print(f"Stripe subscription {subscription.stripe_subscription_id} marked for cancellation")
+                subscription.status = SubscriptionStatus.CANCELING
+            except stripe.error.StripeError as exc:
+                raise HTTPException(status_code=400, detail=str(exc))
+        else:
+            # Local/test subscriptions can be cancelled immediately
             subscription.status = SubscriptionStatus.CANCELED
-            subscription.canceled_at = datetime.now()
-            self.db.commit()
-            
-            return {
-                "message": "Subscription cancelled successfully",
-                "subscription_id": subscription.id,
-                "plan_name": subscription.plan_name,
-                "status": "cancelled"
-            }
-            
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=str(e))
+            message = "Subscription cancelled successfully."
+
+        subscription.canceled_at = datetime.now()
+        self.db.commit()
+
+        return {
+            "message": message,
+            "subscription_id": subscription.id,
+            "plan_name": subscription.plan_name,
+            "status": subscription.status.value if hasattr(subscription.status, "value") else subscription.status
+        }
 
     async def get_current_subscription(self, user: User) -> Dict[str, Any]:
         """Get current user's subscription"""
@@ -363,11 +376,7 @@ class PaymentService:
             print(f"DEBUG: Found subscription in database: ID={subscription.id}, Plan={subscription.plan_id}, Stripe={subscription.stripe_subscription_id}")
         else:
             print(f"DEBUG: No active subscription found for user {user.id}")
-            
-            # No more test user logic - just create free plan for users without subscription
-            
-            # For other users, create a free plan subscription
-            return await self._create_free_plan_subscription(user)
+            raise HTTPException(status_code=404, detail="No active subscription found")
 
         # Get subscription details from Stripe (only for paid plans)
         # Skip Stripe validation for test/fake subscription IDs
@@ -393,7 +402,7 @@ class PaymentService:
                 
                 return {
                     "id": subscription.id,
-                    "status": subscription.status.value,
+                    "status": subscription.status.value if hasattr(subscription.status, "value") else subscription.status,
                     "plan_id": subscription.plan_id,
                     "current_period_end": current_period_end,
                     "cancel_at_period_end": cancel_at_period_end,
@@ -406,10 +415,10 @@ class PaymentService:
                 # Don't create a new free plan - just return what we have
                 return {
                     "id": subscription.id,
-                    "status": subscription.status.value,
+                    "status": subscription.status.value if hasattr(subscription.status, "value") else subscription.status,
                     "plan_id": subscription.plan_id,
                     "current_period_end": subscription.current_period_end.isoformat() if subscription.current_period_end else None,
-                    "cancel_at_period_end": subscription.cancel_at_period_end,
+                    "cancel_at_period_end": getattr(subscription, "cancel_at_period_end", False),
                     "ai_model": subscription.ai_model,
                     "token_limit": subscription.token_limit
                 }
@@ -418,10 +427,10 @@ class PaymentService:
                 # Return local subscription data as fallback
                 return {
                     "id": subscription.id,
-                    "status": subscription.status.value,
+                    "status": subscription.status.value if hasattr(subscription.status, "value") else subscription.status,
                     "plan_id": subscription.plan_id,
                     "current_period_end": subscription.current_period_end.isoformat() if subscription.current_period_end else None,
-                    "cancel_at_period_end": subscription.cancel_at_period_end,
+                    "cancel_at_period_end": getattr(subscription, "cancel_at_period_end", False),
                     "ai_model": subscription.ai_model,
                     "token_limit": subscription.token_limit
                 }
@@ -429,10 +438,10 @@ class PaymentService:
             # Free plan subscription - return local data
             return {
                 "id": subscription.id,
-                "status": subscription.status.value,
+                "status": subscription.status.value if hasattr(subscription.status, "value") else subscription.status,
                 "plan_id": subscription.plan_id,
                 "current_period_end": subscription.current_period_end.isoformat() if subscription.current_period_end else None,
-                "cancel_at_period_end": subscription.cancel_at_period_end,
+                "cancel_at_period_end": getattr(subscription, "cancel_at_period_end", False),
                 "ai_model": subscription.ai_model,
                 "token_limit": subscription.token_limit
             }

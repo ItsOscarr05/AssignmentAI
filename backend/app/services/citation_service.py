@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import List, Dict, Any, Optional
 from sqlalchemy.orm import Session
 from app.models.user import User
@@ -7,6 +9,7 @@ from datetime import datetime
 import re
 import requests
 from urllib.parse import urlparse
+
 
 class CitationService:
     def __init__(self, db: Session):
@@ -40,7 +43,7 @@ class CitationService:
             citation_type=citation_data.get('type', 'journal'),
             formatted_citations=formatted_citations,
             notes=citation_data.get('notes', ''),
-            tags=citation_data.get('tags', [])
+            tags=citation_data.get('tags') or []
         )
         
         self.db.add(citation)
@@ -97,8 +100,19 @@ class CitationService:
         citation = await self.get_citation(citation_id, user)
         
         # Validate updates
-        if 'title' in updates or 'authors' in updates or 'year' in updates:
-            self._validate_citation_data(updates)
+        if any(field in updates for field in ['title', 'authors', 'year']):
+            try:
+                self._validate_citation_data(updates)
+            except HTTPException as exc:
+                detail_msg = str(exc.detail).lower() if isinstance(exc.detail, str) else str(exc.detail)
+                if exc.status_code == 400 and "is required" in detail_msg:
+                    normalized_updates = dict(updates)
+                    for required_field in ['title', 'authors']:
+                        if required_field not in normalized_updates:
+                            normalized_updates[required_field] = getattr(citation, required_field)
+                    self._validate_citation_data(normalized_updates)
+                else:
+                    raise
         
         # Update fields
         for field, value in updates.items():
@@ -156,12 +170,19 @@ class CitationService:
                     'formatted': formatted.get(format_type, ''),
                     'valid': True
                 })
-            except Exception as e:
+            except HTTPException as exc:
                 results.append({
                     'data': citation_data,
                     'formatted': '',
                     'valid': False,
-                    'error': str(e)
+                    'error': exc.detail if isinstance(exc.detail, str) else str(exc.detail)
+                })
+            except Exception as exc:
+                results.append({
+                    'data': citation_data,
+                    'formatted': '',
+                    'valid': False,
+                    'error': str(exc)
                 })
         
         return results
@@ -184,8 +205,8 @@ class CitationService:
                 'authors': 'Unknown',
                 'publisher': parsed_url.netloc
             }
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Failed to extract citation: {str(e)}")
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail=f"Failed to extract citation: {str(exc)}")
 
     async def validate_doi(self, doi: str) -> Dict[str, Any]:
         """Validate and fetch metadata for a DOI"""
@@ -213,19 +234,24 @@ class CitationService:
             else:
                 return {'valid': False, 'error': 'DOI not found'}
                 
-        except Exception as e:
-            return {'valid': False, 'error': str(e)}
+        except Exception as exc:
+            return {'valid': False, 'error': str(exc)}
 
     def _validate_citation_data(self, data: Dict[str, Any]) -> None:
         """Validate citation data"""
         required_fields = ['title', 'authors']
         
         for field in required_fields:
-            if not data.get(field):
+            if field not in data:
+                raise HTTPException(status_code=400, detail=f"{field} is required")
+            value = data.get(field)
+            if value is None:
+                raise HTTPException(status_code=400, detail=f"{field} is required")
+            if isinstance(value, str) and not value.strip():
                 raise HTTPException(status_code=400, detail=f"{field} is required")
         
         # Validate year format
-        if data.get('year'):
+        if 'year' in data and data.get('year'):
             year = str(data['year'])
             if not re.match(r'^\d{4}$', year):
                 raise HTTPException(status_code=400, detail="Year must be a 4-digit number")
@@ -235,19 +261,19 @@ class CitationService:
                 raise HTTPException(status_code=400, detail="Year cannot be in the future")
         
         # Validate DOI format
-        if data.get('doi'):
+        if 'doi' in data and data.get('doi'):
             doi_pattern = r'^10\.\d{4,9}\/[-._;()/:A-Z0-9]+$'
             if not re.match(doi_pattern, data['doi'], re.IGNORECASE):
                 raise HTTPException(status_code=400, detail="Invalid DOI format")
         
         # Validate URL format
-        if data.get('url'):
+        if 'url' in data and data.get('url'):
             try:
                 parsed = urlparse(data['url'])
                 if not parsed.scheme or not parsed.netloc:
                     raise ValueError()
-            except:
-                raise HTTPException(status_code=400, detail="Invalid URL format")
+            except Exception as exc:
+                raise HTTPException(status_code=400, detail="Invalid URL format") from exc
 
     def _generate_formatted_citations(self, data: Dict[str, Any]) -> Dict[str, str]:
         """Generate citations in multiple formats"""

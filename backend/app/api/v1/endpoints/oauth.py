@@ -1,331 +1,248 @@
-from fastapi import APIRouter, Request, Response, HTTPException, Depends
-from fastapi.responses import RedirectResponse
-from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
+import logging
 import secrets
 from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-import logging
+from sqlalchemy.orm import Session
 
 from app.core.oauth import oauth_config
+from app.core.redis_client import redis_client
 from app.core.security import create_access_token
 from app.database import get_db
 from app.models.user import User
-from app.core.config import settings
-from app.core.redis_client import redis_client
 
 OAUTH_STATE_TTL = 600  # 10 minutes
 
 router = APIRouter()
-
 logger = logging.getLogger(__name__)
+
 
 class OAuthCallbackRequest(BaseModel):
     code: str
     state: str
 
+
 class OAuthRefreshRequest(BaseModel):
     refresh_token: str
 
+
 def _store_oauth_state(state: str, provider: str) -> bool:
-    """Store OAuth state in Redis with error handling"""
+    """Store OAuth state in Redis with error handling."""
     try:
         redis_client.setex(f"oauth_state:{state}", OAUTH_STATE_TTL, provider)
-        logger.info(f"Stored OAuth state: {state} for provider: {provider}")
+        logger.debug("Stored OAuth state %s for provider %s", state, provider)
         return True
-    except Exception as e:
-        logger.error(f"Failed to store OAuth state in Redis: {e}")
+    except Exception as exc:  # pragma: no cover - defensive logging
+        logger.error("Failed to store OAuth state: %s", exc)
         return False
 
+
 def _get_oauth_state(state: str) -> Optional[str]:
-    """Get OAuth state from Redis with error handling"""
+    """Retrieve and clear OAuth state from Redis."""
     try:
         provider = redis_client.get(f"oauth_state:{state}")
         if provider:
             redis_client.delete(f"oauth_state:{state}")
-            logger.info(f"Retrieved and deleted OAuth state: {state}")
+            logger.debug("Retrieved OAuth state %s for provider %s", state, provider)
         return provider
-    except Exception as e:
-        logger.error(f"Failed to get OAuth state from Redis: {e}")
+    except Exception as exc:  # pragma: no cover - defensive logging
+        logger.error("Failed to retrieve OAuth state: %s", exc)
         return None
 
-@router.get("/google/authorize")
-async def google_authorize():
-    """Generate Google OAuth authorization URL"""
+
+@router.get("/{provider}/authorize")
+async def authorize(provider: str):
+    """Generate an authorization URL for the given provider."""
+    provider = provider.lower()
+    config = oauth_config.get_provider_config(provider)
+
+    state_seed = secrets.token_urlsafe(32)
     try:
-        # Generate a secure state parameter
-        state = secrets.token_urlsafe(32)
-        logger.info(f"Generated OAuth state: {state} for provider: google")
-        
-        # Store state in Redis
-        if not _store_oauth_state(state, "google"):
-            raise HTTPException(status_code=500, detail="Failed to store OAuth state")
-        
-        # Get Google OAuth configuration
-        config = oauth_config.get_provider_config("google")
-        
-        # Create authorization URL
         from authlib.integrations.requests_client import OAuth2Session
-        client = OAuth2Session(
-            client_id=config["client_id"],
-            scope=config["scope"],
-            redirect_uri=config["redirect_uri"]
-        )
-        
-        authorization_url, _ = client.create_authorization_url(
-            config["authorize_url"],
-            state=state
-        )
-        
-        # Debug logging to see what URL is being generated
-        logger.info(f"Generated authorization URL: {authorization_url}")
-        logger.info(f"OAuth config: client_id={config.get('client_id', 'NOT_SET')[:20]}..., redirect_uri={config.get('redirect_uri')}")
-        
-        return {
-            "url": authorization_url,
-            "state": state
+
+        client_kwargs = {
+            "client_id": config["client_id"],
+            "scope": config["scope"],
         }
-    except Exception as e:
-        logger.error(f"Failed to generate Google authorization URL: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to generate authorization URL: {str(e)}")
+        if config.get("redirect_uri"):
+            client_kwargs["redirect_uri"] = config["redirect_uri"]
+
+        client = OAuth2Session(**client_kwargs)
+        authorization_url, returned_state = client.create_authorization_url(
+            config["authorize_url"],
+            state=state_seed,
+        )
+        state = returned_state or state_seed
+    except Exception as exc:
+        logger.error("Failed to create authorization URL for %s: %s", provider, exc)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate authorization URL: {str(exc)}",
+        ) from exc
+
+    if not _store_oauth_state(state, provider):
+        raise HTTPException(status_code=500, detail="Failed to store OAuth state")
+
+    return {"url": authorization_url, "state": state}
 
 
-@router.post("/google/callback")
-async def google_callback(
+@router.post("/{provider}/callback")
+async def oauth_callback(
+    provider: str,
     request: OAuthCallbackRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    """Handle Google OAuth callback"""
+    """Handle OAuth callback for the given provider."""
+    provider = provider.lower()
+    stored_provider = _get_oauth_state(request.state)
+    if not stored_provider:
+        raise HTTPException(status_code=400, detail="Invalid state parameter")
+    if stored_provider != provider:
+        raise HTTPException(status_code=400, detail="State does not match provider")
+
+    config = oauth_config.get_provider_config(provider)
     try:
-        logger.info(f"OAuth callback endpoint called (POST handler)")
-        logger.info(f"State received in callback: {request.state}")
-        
-        # Validate state parameter using Redis
-        provider = _get_oauth_state(request.state)
-        if not provider:
-            logger.error(f"State {request.state} not found in Redis!")
-            raise HTTPException(status_code=400, detail="Invalid state parameter")
-        
-        # Get Google OAuth configuration
-        config = oauth_config.get_provider_config("google")
-        
-        # Exchange code for tokens
         from authlib.integrations.requests_client import OAuth2Session
+
         client = OAuth2Session(
             client_id=config["client_id"],
-            client_secret=config["client_secret"],
-            redirect_uri=config["redirect_uri"]
+            client_secret=config.get("client_secret"),
+            redirect_uri=config.get("redirect_uri"),
+            scope=config.get("scope"),
         )
-        
-        token = client.fetch_token(
-            config["token_url"],
-            authorization_response=f"?code={request.code}&state={request.state}"
-        )
-        
-        # Get user info
-        user_info = client.get(config["userinfo_url"]).json()
-        
-        # Find or create user
-        user = db.query(User).filter(User.email == user_info["email"]).first()
-        
+
+        try:
+            token = client.fetch_token(
+                config["token_url"],
+                code=request.code,
+                grant_type="authorization_code",
+                redirect_uri=config.get("redirect_uri"),
+            )
+        except Exception as exc:
+            logger.error("%s token exchange failed: %s", provider, exc)
+            return {"error": f"Token exchange failed: {str(exc)}"}
+
+        try:
+            headers = config.get("userinfo_headers")
+            raw_user_info = client.get(config["userinfo_url"], headers=headers).json()
+        except Exception as exc:
+            logger.error("%s user info fetch failed: %s", provider, exc)
+            return {"error": f"Failed to fetch user info: {str(exc)}"}
+
+        normalized_info = oauth_config.normalize_user_info(provider, raw_user_info)
+        email = normalized_info.get("email")
+        if not email:
+            return {"error": "Email not provided by OAuth provider"}
+
+        user = db.query(User).filter(User.email == email).first()
+        expires_in = int(token.get("expires_in", 3600))
+        token_expiry = datetime.utcnow() + timedelta(seconds=expires_in)
+
         if not user:
-            # Create new user
             user = User(
-                email=user_info["email"],
-                name=user_info.get("name", ""),
-                hashed_password="oauth_user_no_password",  # Dummy password for OAuth users
-                oauth_provider="google",
-                oauth_access_token=token["access_token"],
+                email=email,
+                name=normalized_info.get("name"),
+                avatar=normalized_info.get("picture"),
+                hashed_password="oauth_user_no_password",
+                oauth_provider=provider,
+                oauth_access_token=token.get("access_token"),
                 oauth_refresh_token=token.get("refresh_token"),
-                oauth_token_expires_at=datetime.utcnow() + timedelta(seconds=token.get("expires_in", 3600)),
-                is_verified=True,  # OAuth users are pre-verified
-                updated_at=datetime.utcnow()
+                oauth_token_expires_at=token_expiry,
+                is_active=True,
+                is_verified=True,
             )
             db.add(user)
         else:
-            # Update existing user's OAuth info
-            user.oauth_provider = "google"
-            user.oauth_access_token = token["access_token"]
-            user.oauth_refresh_token = token.get("refresh_token")
-            user.oauth_token_expires_at = datetime.utcnow() + timedelta(seconds=token.get("expires_in", 3600))
+            user.oauth_provider = provider
+            user.oauth_access_token = token.get("access_token")
+            if token.get("refresh_token"):
+                user.oauth_refresh_token = token["refresh_token"]
+            user.oauth_token_expires_at = token_expiry
             user.is_verified = True
             user.updated_at = datetime.utcnow()
-        
+            if not user.name and normalized_info.get("name"):
+                user.name = normalized_info["name"]
+            if normalized_info.get("picture"):
+                user.avatar = normalized_info["picture"]
+
         db.commit()
         db.refresh(user)
-        
-        # Create access token
-        access_token = create_access_token(subject=user.id)
 
-        # Return JSON response for API calls, redirect for browser calls
-        return {
+        access_token = create_access_token(subject=user.id)
+        response = {
             "access_token": access_token,
             "refresh_token": token.get("refresh_token"),
             "token_type": "bearer",
-            "expires_in": token.get("expires_in", 3600),
+            "expires_in": expires_in,
             "user": {
                 "id": user.id,
                 "email": user.email,
-                "name": user.name
-            }
+                "name": user.name,
+                "avatar": user.avatar,
+            },
         }
-        
+        return response
+
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"OAuth callback failed: {e}")
-        return {
-            "error": f"OAuth callback failed: {str(e)}"
-        }
+    except Exception as exc:  # pragma: no cover - defensive logging
+        logger.exception("OAuth callback failed for %s", provider)
+        return {"error": f"OAuth callback failed: {str(exc)}"}
 
 
-
-
-@router.get("/test")
-async def test_route():
-    """Test route to verify router is working"""
-    print("=== TEST ROUTE CALLED (PRINT) ===")
-    logger.info("=== TEST ROUTE CALLED (LOGGER) ===")
-    return {"message": "Test route working"}
-
-@router.get("/debug/google-config")
-async def debug_google_config():
-    """Debug endpoint to check Google OAuth configuration"""
-    try:
-        config = oauth_config.get_provider_config("google")
-        
-        # Check if credentials are set
-        client_id_set = bool(config.get("client_id"))
-        client_secret_set = bool(config.get("client_secret"))
-        
-        return {
-            "client_id_set": client_id_set,
-            "client_id_preview": config.get("client_id", "").split('.')[0] + "..." if config.get("client_id") else "NOT SET",
-            "client_secret_set": client_secret_set,
-            "authorize_url": config.get("authorize_url"),
-            "redirect_uri": config.get("redirect_uri"),
-            "scope": config.get("scope"),
-            "backend_url": settings.BACKEND_URL,
-            "frontend_url": settings.FRONTEND_URL
-        }
-    except Exception as e:
-        logger.error(f"Debug config failed: {e}")
-        return {"error": str(e)}
-
-@router.get("/google/callback")
-async def google_callback_get(request: Request, db: Session = Depends(get_db)):
-    """Handle Google OAuth callback via GET (for browser redirects)"""
-    print("=== GET CALLBACK ENDPOINT ENTERED (PRINT) ===")
-    logger.info("=== GET CALLBACK ENDPOINT ENTERED (LOGGER) ===")
-    try:
-        print("GET callback endpoint called (PRINT)")
-        logger.info("GET callback endpoint called (LOGGER)")
-        code = request.query_params.get("code")
-        state = request.query_params.get("state")
-        print(f"Code: {code[:20]}... State: {state} (PRINT)")
-        logger.info(f"Code: {code[:20]}... State: {state} (LOGGER)")
-        
-        if not code or not state:
-            logger.error("Missing code or state in callback")
-            raise HTTPException(status_code=400, detail="Missing code or state in callback")
-        
-        # Call the POST callback logic
-        from pydantic import BaseModel
-        class DummyCallbackRequest(BaseModel):
-            code: str
-            state: str
-        dummy_request = DummyCallbackRequest(code=code, state=state)
-        logger.info("Calling POST callback logic")
-        result = await google_callback(dummy_request, db)
-        logger.info(f"POST callback result type: {type(result)}")
-        logger.info(f"POST callback result: {result}")
-        
-        # Extract the access token and user info from the result
-        if isinstance(result, dict) and "access_token" in result:
-            access_token = result["access_token"]
-            user_info = result.get("user", {})
-            logger.info(f"Access token extracted: {access_token[:20]}...")
-            
-            # Build frontend URL with token and user info
-            frontend_url = f"{settings.FRONTEND_URL}/auth/callback?provider=google&token={access_token}"
-            
-            # Add user info to URL parameters if available
-            if user_info:
-                if user_info.get("id"):
-                    frontend_url += f"&user_id={user_info['id']}"
-                if user_info.get("email"):
-                    frontend_url += f"&user_email={user_info['email']}"
-                if user_info.get("name"):
-                    # URL encode the name to handle spaces and special characters
-                    import urllib.parse
-                    encoded_name = urllib.parse.quote(user_info['name'])
-                    frontend_url += f"&user_name={encoded_name}"
-            
-            logger.info(f"Redirecting to: {frontend_url}")
-            return RedirectResponse(url=frontend_url)
-        else:
-            logger.error(f"Invalid result format: {result}")
-            # Something went wrong, redirect with error
-            frontend_url = f"{settings.FRONTEND_URL}/auth/callback?error=oauth_failed&provider=google"
-            return RedirectResponse(url=frontend_url)
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"GET callback exception: {e}")
-        # Redirect to frontend with error
-        frontend_url = f"{settings.FRONTEND_URL}/auth/callback?error=oauth_failed&provider=google"
-        return RedirectResponse(url=frontend_url)
-
-
-
-
-@router.post("/google/refresh")
-async def google_refresh(
+@router.post("/{provider}/refresh")
+async def oauth_refresh(
+    provider: str,
     request: OAuthRefreshRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    """Refresh Google OAuth token"""
+    """Refresh an OAuth token for providers that support it."""
+    provider = provider.lower()
+    if not oauth_config.provider_supports_refresh(provider):
+        raise HTTPException(
+            status_code=400,
+            detail=f"{provider} does not support token refresh",
+        )
+
+    user = (
+        db.query(User)
+        .filter(
+            User.oauth_provider == provider,
+            User.oauth_refresh_token == request.refresh_token,
+        )
+        .first()
+    )
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+    config = oauth_config.get_provider_config(provider)
     try:
-        # Find user with this refresh token
-        user = db.query(User).filter(
-            User.oauth_provider == "google",
-            User.oauth_refresh_token == request.refresh_token
-        ).first()
-        
-        if not user:
-            raise HTTPException(status_code=401, detail="Invalid refresh token")
-        
-        # Get Google OAuth configuration
-        config = oauth_config.get_provider_config("google")
-        
-        # Refresh token
         from authlib.integrations.requests_client import OAuth2Session
+
         client = OAuth2Session(
             client_id=config["client_id"],
-            client_secret=config["client_secret"]
+            client_secret=config.get("client_secret"),
         )
-        
         token = client.refresh_token(
             config["token_url"],
-            refresh_token=request.refresh_token
+            refresh_token=request.refresh_token,
         )
-        
-        # Update user's token info
-        user.oauth_access_token = token["access_token"]
-        user.oauth_refresh_token = token.get("refresh_token", request.refresh_token)
-        user.oauth_token_expires_at = datetime.utcnow() + timedelta(seconds=token.get("expires_in", 3600))
-        
-        db.commit()
-        
-        # Create new access token
-        access_token = create_access_token(subject=user.id)
-        
-        return {
-            "access_token": access_token,
-            "refresh_token": token.get("refresh_token", request.refresh_token),
-            "expires_in": token.get("expires_in", 3600)
-        }
-        
-    except Exception as e:
-        logger.error(f"Token refresh error: {e}")
-        raise HTTPException(status_code=401, detail=f"Token refresh failed: {str(e)}")
+    except Exception as exc:
+        logger.error("%s token refresh failed: %s", provider, exc)
+        raise HTTPException(status_code=401, detail=f"Token refresh failed: {str(exc)}") from exc
+
+    expires_in = int(token.get("expires_in", 3600))
+    user.oauth_access_token = token.get("access_token")
+    user.oauth_refresh_token = token.get("refresh_token", request.refresh_token)
+    user.oauth_token_expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
+
+    db.commit()
+
+    access_token = create_access_token(subject=user.id)
+    return {
+        "access_token": access_token,
+        "refresh_token": user.oauth_refresh_token,
+        "expires_in": expires_in,
+    }

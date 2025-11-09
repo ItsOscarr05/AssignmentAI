@@ -418,9 +418,23 @@ def read_current_user(current_user: User = Depends(get_current_user)) -> UserPro
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def register(
-    payload: RegisterRequest,
+    user_in: Dict[str, Any] = Body(...),
     db: Session = Depends(get_db),
 ) -> Dict[str, Any]:
+    try:
+        payload = RegisterRequest(**user_in)
+    except ValidationError as exc:
+        provided_keys = {key for key in user_in.keys() if key in {"email", "password", "full_name"}}
+        if not provided_keys:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email, password, and full_name are required",
+            )
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=exc.errors(),
+        )
+
     if _get_user_by_email(db, payload.email):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

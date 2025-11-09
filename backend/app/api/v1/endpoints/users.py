@@ -223,16 +223,22 @@ async def delete_account(
     db: Session = Depends(get_db)
 ):
     """Delete current user's account and all related entities"""
-    # Create storage service
     storage_service = StorageService(db)
-    
-    # Delete avatar if exists
     if current_user.avatar:
         storage_service.delete_file(current_user.avatar)
-    
-    # Delete user and all related entities
     user_crud.delete_user_account(db, str(current_user.id))
     return {"message": "Account deleted successfully"}
+
+
+@router.delete("/account")
+async def delete_account_alias(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Backwards-compatible alias for deleting the current user's account.
+    """
+    return await delete_account(current_user=current_user, db=db)
 
 @router.post("/me/verify-password")
 async def verify_password(
@@ -243,28 +249,40 @@ async def verify_password(
     is_valid = user_crud.verify_user_password(current_user, password)
     return {"is_valid": is_valid}
 
+def _change_password_logic(current_user: User, db: Session, current_password: str, new_password: str) -> Dict[str, str]:
+    if not current_password or not new_password:
+        raise HTTPException(status_code=400, detail="Current password and new password are required")
+    if not user_crud.verify_user_password(current_user, current_password):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    if user_crud.verify_user_password(current_user, new_password):
+        raise HTTPException(status_code=400, detail="New password must be different from current password")
+    user_crud.update_password(db, str(current_user.id), new_password)
+    return {"message": "Password changed successfully"}
+
+
 @router.post("/me/change-password")
 async def change_password(
-    password_data: dict = Body(...),
+    password_data: Dict[str, str] = Body(...),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Change user's password"""
+    """Change user's password (JSON payload)."""
     current_password = password_data.get("currentPassword")
     new_password = password_data.get("newPassword")
-    
-    if not current_password or not new_password:
-        raise HTTPException(status_code=400, detail="Current password and new password are required")
-    
-    if not user_crud.verify_user_password(current_user, current_password):
-        raise HTTPException(status_code=400, detail="Current password is incorrect")
-    
-    # Check if new password is the same as current password
-    if user_crud.verify_user_password(current_user, new_password):
-        raise HTTPException(status_code=400, detail="New password must be different from current password")
-    
-    user_crud.update_password(db, str(current_user.id), new_password)
-    return {"message": "Password changed successfully"}
+    return _change_password_logic(current_user, db, current_password, new_password)
+
+
+@router.post("/change-password")
+async def change_password_form(
+    current_password: str = Form(..., alias="current_password"),
+    new_password: str = Form(..., alias="new_password"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Change the user's password using form-encoded data.
+    """
+    return _change_password_logic(current_user, db, current_password, new_password)
 
 
 @router.get("/{user_id}/ai-assignments", response_model=dict)

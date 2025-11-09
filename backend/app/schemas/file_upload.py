@@ -1,5 +1,5 @@
 from typing import Optional, Dict, Any
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 
 class FileUploadBase(BaseModel):
@@ -45,8 +45,7 @@ class FileUploadResponse(FileUploadBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class FileUploadList(BaseModel):
     items: list[FileUploadResponse]

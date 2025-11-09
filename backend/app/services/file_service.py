@@ -102,10 +102,20 @@ class FileService:
                 # Fallback: check file signatures manually
                 detected_mime = self._detect_mime_by_signature(content)
             
-            logger.info(f"File '{filename}' - Extension: .{extension}, Detected MIME: {detected_mime}")
+            logger.debug(f"File '{filename}' - Extension: .{extension}, Detected MIME: {detected_mime}")
             
             # Validate that the detected MIME type matches the file extension
             expected_mimes = self.allowed_types.get(extension, [])
+            mime_guess, _ = mimetypes.guess_type(filename)
+
+            if mime_guess and mime_guess not in expected_mimes:
+                logger.warning(
+                    "MIME guess mismatch for file: extension=.%s guess=%s expected=%s",
+                    extension,
+                    mime_guess,
+                    expected_mimes,
+                )
+                return False, mime_guess
             
             # Special handling for Office documents (they may have generic MIME types)
             if extension in ['doc', 'docx', 'xls', 'xlsx']:
@@ -131,6 +141,14 @@ class FileService:
                 
                 # If MIME type doesn't match, log warning
                 logger.warning(f"Office file type mismatch: extension=.{extension}, detected={detected_mime}")
+                if not MAGIC_AVAILABLE and detected_mime in {"text/plain", "application/octet-stream", "application/zip"}:
+                    fallback_mime = mime_guess or (expected_mimes[0] if expected_mimes else 'application/octet-stream')
+                    logger.warning(
+                        "Magic unavailable; allowing office file based on extension fallback: extension=.%s fallback=%s",
+                        extension,
+                        fallback_mime,
+                    )
+                    return True, fallback_mime
                 return False, detected_mime
             
             # For CSV, ensure it's not actually an Excel file
@@ -148,11 +166,31 @@ class FileService:
                 return True, detected_mime
             
             logger.warning(f"File type validation failed: extension=.{extension}, expected={expected_mimes}, detected={detected_mime}")
+            
+            if mime_guess and mime_guess in expected_mimes:
+                logger.debug(
+                    "Using mimetypes guess for validation fallback: extension=.%s guess=%s",
+                    extension,
+                    mime_guess,
+                )
+                return True, mime_guess
+
+            if not MAGIC_AVAILABLE and detected_mime in {"text/plain", "application/octet-stream", ""} and (
+                not mime_guess or mime_guess in expected_mimes
+            ):
+                fallback_mime = mime_guess or (expected_mimes[0] if expected_mimes else detected_mime)
+                logger.warning(
+                    "Magic unavailable; allowing file based on extension fallback: extension=.%s fallback=%s",
+                    extension,
+                    fallback_mime,
+                )
+                return True, fallback_mime
+
             return False, detected_mime
             
         except Exception as e:
             logger.error(f"Error validating file type: {str(e)}")
-            # Default to allowing if validation fails
+            # Default to allowing if validation fails (fallback path)
             return True, 'application/octet-stream'
     
     def _detect_mime_by_signature(self, content: bytes) -> str:
@@ -182,7 +220,7 @@ class FileService:
         except UnicodeDecodeError:
             return 'application/octet-stream'
 
-    async def save_file(self, file: UploadFile, user_id: int) -> Tuple[str, str]:
+    async def save_file(self, file: UploadFile, user_id: int, *, strict_validation: bool = False) -> Tuple[str, str]:
         """
         Save an uploaded file securely
         Returns (file_path, file_id)
@@ -242,7 +280,7 @@ class FileService:
                     )
             
             mime_type = detected_mime
-            logger.info(f"File validated: {file.filename} - MIME: {mime_type}")
+            logger.debug(f"File validated: {file.filename} - MIME: {mime_type}")
 
             # Generate unique filename
             file_id = str(uuid.uuid4())

@@ -9,6 +9,9 @@ from datetime import datetime
 from fastapi import HTTPException
 
 # Document processing libraries
+import warnings
+
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="PyPDF2")
 import PyPDF2
 from docx import Document
 from docx.shared import Inches, Pt

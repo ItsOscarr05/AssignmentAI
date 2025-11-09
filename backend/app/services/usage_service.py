@@ -3,6 +3,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 from sqlalchemy import func, select
 from datetime import datetime, timedelta
+import asyncio
+import inspect
+try:
+    from unittest.mock import AsyncMock
+except ImportError:  # pragma: no cover
+    AsyncMock = None
 from app.models.usage import Usage, UsageLimit
 from app.models.user import User
 from app.models.subscription import Subscription, SubscriptionStatus
@@ -11,7 +17,10 @@ from fastapi import HTTPException
 class UsageService:
     def __init__(self, db):
         self.db = db
-        self.is_async = isinstance(db, AsyncSession)
+        commit_callable = getattr(db, "commit", None)
+        self.is_async = isinstance(db, AsyncSession) or asyncio.iscoroutinefunction(commit_callable) or (
+            AsyncMock is not None and isinstance(commit_callable, AsyncMock)
+        )
 
     async def track_usage(
         self,
@@ -34,11 +43,18 @@ class UsageService:
             requests_made=1,
             usage_metadata=metadata or {}
         )
-        self.db.add(usage)
+        add_result = self.db.add(usage)
+        if inspect.isawaitable(add_result):
+            await add_result
         
         if self.is_async:
-            await self.db.commit()
-            await self.db.refresh(usage)
+            commit_result = self.db.commit()
+            if inspect.isawaitable(commit_result):
+                await commit_result
+
+            refresh_result = self.db.refresh(usage)
+            if inspect.isawaitable(refresh_result):
+                await refresh_result
         else:
             self.db.commit()
             self.db.refresh(usage)
