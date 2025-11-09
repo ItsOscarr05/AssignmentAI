@@ -34,6 +34,19 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     return encoded_jwt
 
 
+def authenticate_user(db: Session, email: str, password: str) -> Optional[User]:
+    """
+    Authenticate a user by email and password.
+    """
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        return None
+    if not password:
+        return None
+    if not verify_password(password, user.hashed_password):
+        return None
+    return user
+
 
 def get_current_user(db: Session, token: str) -> Optional[User]:
     credentials_exception = None

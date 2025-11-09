@@ -33,21 +33,28 @@ def upgrade() -> None:
     op.create_table('ai_assignments',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('assignment_id', sa.Integer(), nullable=False),
-    sa.Column('ai_model_used', sa.String(length=100), nullable=False),
-    sa.Column('generation_prompt', sa.Text(), nullable=False),
-    sa.Column('generated_content', sa.Text(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('prompt', sa.Text(), nullable=False),
+    sa.Column('model', sa.String(length=100), nullable=False),
+    sa.Column('max_tokens', sa.Integer(), nullable=False),
+    sa.Column('temperature', sa.Float(), nullable=False),
+    sa.Column('status', sa.String(length=50), nullable=False, server_default='pending'),
+    sa.Column('generated_content', sa.Text(), nullable=True),
+    sa.Column('model_version', sa.String(length=50), nullable=True),
     sa.Column('confidence_score', sa.Float(), nullable=True),
     sa.Column('generation_metadata', sa.JSON(), nullable=True),
     sa.Column('processing_time', sa.Float(), nullable=True),
     sa.Column('tokens_used', sa.Integer(), nullable=True),
     sa.Column('cost', sa.Float(), nullable=True),
+    sa.Column('generated_at', sa.DateTime(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index('idx_ai_assignment_assignment', 'ai_assignments', ['assignment_id'], unique=False)
+    op.create_index('idx_ai_assignment_user', 'ai_assignments', ['user_id'], unique=False)
     op.create_index('idx_ai_assignment_created', 'ai_assignments', ['created_at'], unique=False)
-    op.create_index('idx_ai_assignment_model', 'ai_assignments', ['ai_model_used'], unique=False)
+    op.create_index('idx_ai_assignment_model', 'ai_assignments', ['model'], unique=False)
     op.create_index(op.f('ix_ai_assignments_id'), 'ai_assignments', ['id'], unique=False)
     op.create_table('assignments',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -62,16 +69,16 @@ def upgrade() -> None:
     sa.Column('content', sa.Text(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
-    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), sa.ForeignKey('users.id', ondelete='CASCADE'), nullable=False),
     sa.Column('max_score', sa.Float(), nullable=False),
     sa.Column('status', sa.Enum('DRAFT', 'PUBLISHED', 'ARCHIVED', name='assignmentstatus'), nullable=False),
     sa.Column('description', sa.Text(), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('due_date', sa.DateTime(), nullable=False),
     sa.Column('attachments', sa.Text(), nullable=True),
-    sa.Column('created_by_id', sa.Integer(), nullable=False),
-    sa.Column('teacher_id', sa.Integer(), nullable=False),
-    sa.Column('class_id', sa.Integer(), nullable=False),
+    sa.Column('created_by_id', sa.Integer(), sa.ForeignKey('users.id', ondelete='CASCADE'), nullable=False),
+    sa.Column('teacher_id', sa.Integer(), sa.ForeignKey('users.id', ondelete='CASCADE'), nullable=False),
+    sa.Column('class_id', sa.Integer(), sa.ForeignKey('classes.id', ondelete='CASCADE'), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index('idx_assignment_class', 'assignments', ['class_id'], unique=False)
@@ -113,21 +120,21 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_citations_id'), 'citations', ['id'], unique=False)
-    op.create_table('class_members',
-    sa.Column('class_id', sa.Integer(), nullable=False),
-    sa.Column('student_id', sa.Integer(), nullable=False),
-    sa.PrimaryKeyConstraint('class_id', 'student_id')
-    )
     op.create_table('classes',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(), nullable=False),
     sa.Column('code', sa.String(), nullable=False),
     sa.Column('description', sa.String(), nullable=False),
-    sa.Column('teacher_id', sa.Integer(), nullable=False),
+    sa.Column('teacher_id', sa.Integer(), sa.ForeignKey('users.id', ondelete='CASCADE'), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_classes_code'), 'classes', ['code'], unique=True)
     op.create_index(op.f('ix_classes_id'), 'classes', ['id'], unique=False)
+    op.create_table('class_members',
+    sa.Column('class_id', sa.Integer(), sa.ForeignKey('classes.id', ondelete='CASCADE'), nullable=False),
+    sa.Column('student_id', sa.Integer(), sa.ForeignKey('users.id', ondelete='CASCADE'), nullable=False),
+    sa.PrimaryKeyConstraint('class_id', 'student_id')
+    )
     op.create_table('files',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('filename', sa.String(length=255), nullable=False),
@@ -388,6 +395,7 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_ai_assignments_id'), table_name='ai_assignments')
     op.drop_index('idx_ai_assignment_model', table_name='ai_assignments')
     op.drop_index('idx_ai_assignment_created', table_name='ai_assignments')
+    op.drop_index('idx_ai_assignment_user', table_name='ai_assignments')
     op.drop_index('idx_ai_assignment_assignment', table_name='ai_assignments')
     op.drop_table('ai_assignments')
     op.drop_index(op.f('ix_activities_id'), table_name='activities')

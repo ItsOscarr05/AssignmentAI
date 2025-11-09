@@ -1,9 +1,13 @@
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, TYPE_CHECKING
 from sqlalchemy import Boolean, Column, Integer, String, Index, DateTime, JSON
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.sql import func
 from app.db.base_class import Base
+from app.models.class_model import class_members
+
+if TYPE_CHECKING:
+    from app.models.class_model import Class
 
 
 class User(Base):
@@ -48,6 +52,16 @@ class User(Base):
     # Relationships - minimal for basic authentication
     transactions: Mapped[List["Transaction"]] = relationship("Transaction", back_populates="user")
     file_completion_sessions: Mapped[List["FileCompletionSession"]] = relationship("FileCompletionSession", back_populates="user", lazy="dynamic")
+    classes: Mapped[List["Class"]] = relationship(
+        "Class",
+        secondary=class_members,
+        back_populates="students",
+    )
+    taught_classes: Mapped[List["Class"]] = relationship(
+        "Class",
+        back_populates="teacher",
+        foreign_keys="Class.teacher_id",
+    )
 
 
     def __init__(self, **kwargs):

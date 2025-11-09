@@ -40,7 +40,8 @@ class ChatWithLinkResponse(BaseModel):
     response: str
     updated_analysis: Optional[Dict[str, Any]] = None
 
-# Note: AIService will be instantiated per request with db session
+# Provide a module-level hook for tests to patch
+ai_service = AIService
 
 @router.get("/health")
 async def workshop_health_check():
@@ -251,12 +252,12 @@ async def generate_content(
     logger.info(f"Request timestamp: {datetime.utcnow()}")
 
     # Initialize AI service with database session
-    ai_service = AIService(db=db)
+    ai_service_instance = ai_service(db=db)
     
     # Enforce token limits before making AI calls
     try:
         estimated_tokens = len(prompt.split()) * 2  # Rough estimate
-        await ai_service.enforce_token_limit(current_user.id, estimated_tokens)
+        await ai_service_instance.enforce_token_limit(current_user.id, estimated_tokens)
         logger.info(f"Token limit check passed for user {current_user.id}")
     except HTTPException as e:
         logger.warning(f"Token limit exceeded for user {current_user.id}: {e.detail}")
@@ -311,7 +312,7 @@ async def generate_content(
                 logger.error(f"Diagram generation failed: {str(e)}")
                 logger.info("Falling back to general AI service...")
                 # Fallback to general AI
-                content = await ai_service.generate_assignment_content_from_prompt(
+                content = await ai_service_instance.generate_assignment_content_from_prompt(
                     prompt, 
                     user_id=current_user.id, 
                     feature='diagram_fallback', 
@@ -346,7 +347,7 @@ async def generate_content(
             # Route to AI service with code generation focus
             logger.info("Routing to AI service for code generation...")
             code_prompt = f"Generate code for the following request: {prompt}\n\nPlease provide complete, working code with comments and explanations."
-            content = await ai_service.generate_assignment_content_from_prompt(
+            content = await ai_service_instance.generate_assignment_content_from_prompt(
                 code_prompt, 
                 user_id=current_user.id, 
                 feature='code_generation', 

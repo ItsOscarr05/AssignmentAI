@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, List
-from sqlalchemy import Column, Integer, String, Text, DateTime, Enum, Float, Index, Boolean
+from sqlalchemy import Column, Integer, String, Text, DateTime, Enum, Float, Index, Boolean, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base_class import Base
 import enum
@@ -30,16 +30,16 @@ class Assignment(Base):
     content: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    user_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     max_score: Mapped[float] = mapped_column(Float, default=100.0)
     status: Mapped[AssignmentStatus] = mapped_column(Enum(AssignmentStatus), default=AssignmentStatus.DRAFT)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     due_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     attachments: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON string of file URLs
-    created_by_id: Mapped[int] = mapped_column(Integer, nullable=False)
-    teacher_id: Mapped[int] = mapped_column(Integer, nullable=False)
-    class_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_by_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    teacher_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    class_id: Mapped[int] = mapped_column(Integer, ForeignKey("classes.id", ondelete="CASCADE"), nullable=False)
 
     # Add indexes for common queries
     __table_args__ = (
@@ -50,4 +50,5 @@ class Assignment(Base):
     )
 
     # Relationships
-    file_uploads = relationship("FileUpload", back_populates="assignment") 
+    file_uploads = relationship("FileUpload", back_populates="assignment")
+    class_ = relationship("Class", back_populates="assignments")

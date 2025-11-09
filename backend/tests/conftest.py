@@ -14,7 +14,7 @@ from app.models.assignment import Assignment, AssignmentStatus, DifficultyLevel
 from app.models.submission import Submission, SubmissionStatus
 from app.models.ai_assignment import AIAssignment
 from app.models.feedback import Feedback
-from app.core.security import get_password_hash, create_access_token
+from app.core.security import get_password_hash, create_access_token, create_refresh_token
 from app.database import get_db
 from app.core.rate_limit import FallbackRateLimiter
 from sqlalchemy import create_engine, text
@@ -74,8 +74,16 @@ def db():
 @pytest.fixture
 def client(db):
     """Create a test client."""
+    def override_get_db():
+        try:
+            yield db
+        finally:
+            db.expire_all()
+
+    app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as test_client:
         yield test_client
+    app.dependency_overrides.pop(get_db, None)
 
 @pytest.fixture(scope="function")
 def test_user(db) -> User:
@@ -272,6 +280,11 @@ def cleanup_feedback(db):
 def test_token(test_user) -> str:
     """Create a test token."""
     return create_access_token(test_user.id)
+
+@pytest.fixture(scope="function")
+def test_refresh_token(test_user) -> str:
+    """Create a test refresh token."""
+    return create_refresh_token(test_user.id)
 
 @pytest.fixture(scope="function")
 def superuser(db) -> User:
