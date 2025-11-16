@@ -293,7 +293,7 @@ const Workshop: React.FC = () => {
   // Use token limit hook for subscription and token data
   const { subscription, tokenUsage: tokenLimitData } = useTokenLimit();
 
-  const { totalTokens, usedTokens, remainingTokens } = useTokenUsage(subscription);
+  const { totalTokens, usedTokens } = useTokenUsage(subscription);
 
   const uploadContentRef = useRef<HTMLDivElement>(null);
   const rewriteTabRef = useRef<HTMLDivElement>(null);
@@ -461,8 +461,7 @@ const Workshop: React.FC = () => {
         const fileUploadLimitEntry =
           limits.find(
             limit =>
-              limit.limit_type === 'daily' &&
-              limit.feature.toLowerCase().includes('file_upload')
+              limit.limit_type === 'daily' && limit.feature.toLowerCase().includes('file_upload')
           ) || null;
 
         if (fileUploadLimitEntry) {
@@ -1145,7 +1144,8 @@ const Workshop: React.FC = () => {
                         Weekly Activity Overview
                       </Typography>
                       <Typography variant="body2" sx={{ mb: 1 }}>
-                        Track your AI usage and interaction patterns over the past week. This chart shows daily activity to help you understand your workflow trends.
+                        Track your AI usage and interaction patterns over the past week. This chart
+                        shows daily activity to help you understand your workflow trends.
                       </Typography>
                       <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
                         • Bar chart displays daily AI interactions and assignments
@@ -1156,7 +1156,10 @@ const Workshop: React.FC = () => {
                       <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
                         • Use this data to identify your most productive days
                       </Typography>
-                      <Typography variant="caption" sx={{ display: 'block', fontStyle: 'italic', mt: 1 }}>
+                      <Typography
+                        variant="caption"
+                        sx={{ display: 'block', fontStyle: 'italic', mt: 1 }}
+                      >
                         Updated in real-time as you use AI features
                       </Typography>
                     </Box>
@@ -1405,7 +1408,8 @@ const Workshop: React.FC = () => {
                         Upload Content
                       </Typography>
                       <Typography variant="body2" sx={{ mb: 1 }}>
-                        Add files, links, or text to your assignment workspace. Upload documents, images, or provide URLs to analyze with AI assistance.
+                        Add files, links, or text to your assignment workspace. Upload documents,
+                        images, or provide URLs to analyze with AI assistance.
                       </Typography>
                       <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
                         • File Upload: Add PDFs, images, documents, or code files
@@ -1416,7 +1420,10 @@ const Workshop: React.FC = () => {
                       <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
                         • Text Input: Type or paste content directly
                       </Typography>
-                      <Typography variant="caption" sx={{ display: 'block', fontStyle: 'italic', mt: 1 }}>
+                      <Typography
+                        variant="caption"
+                        sx={{ display: 'block', fontStyle: 'italic', mt: 1 }}
+                      >
                         All uploaded content becomes available for AI analysis
                       </Typography>
                     </Box>
@@ -1606,7 +1613,10 @@ const Workshop: React.FC = () => {
                     <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
                       • Remaining assignments reset every day at midnight
                     </Typography>
-                    <Typography variant="caption" sx={{ display: 'block', fontStyle: 'italic', mt: 1 }}>
+                    <Typography
+                      variant="caption"
+                      sx={{ display: 'block', fontStyle: 'italic', mt: 1 }}
+                    >
                       Stay within your plan limits to keep AI tools available all day.
                     </Typography>
                   </Box>

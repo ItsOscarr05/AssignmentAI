@@ -73,33 +73,19 @@ export const FeatureAccessErrorComponent: React.FC<FeatureAccessErrorProps> = ({
 
         <Alert severity="warning" sx={{ mb: 2 }} data-severity="warning">
           <AlertTitle>Upgrade Required</AlertTitle>
-          <Box component="p" variant="body2" sx={{ typography: 'body2', mb: 1 }}>
+          <Typography component="p" variant="body2" sx={{ mb: 1 }}>
             <strong>{featureName}</strong> is not available in your current plan.
-          </Box>
-          <Box
-            component="p"
-            variant="body2"
-            sx={{ typography: 'body2', color: 'text.secondary' }}
-          >
+          </Typography>
+          <Typography component="p" variant="body2" sx={{ color: 'text.secondary' }}>
             {error.upgrade_message}
-          </Box>
+          </Typography>
         </Alert>
 
         <Box display="flex" alignItems="center" mb={2}>
-          <Box
-            component="span"
-            data-testid="chip"
-            label={`Current Plan: ${planName}`}
-            sx={{ display: 'inline-flex', mr: 1 }}
-          >
+          <Box component="span" data-testid="chip" sx={{ display: 'inline-flex', mr: 1 }}>
             <Chip label={`Current Plan: ${planName}`} color="default" size="small" />
           </Box>
-          <Box
-            component="span"
-            data-testid="chip"
-            label={`Required: ${featureName}`}
-            sx={{ display: 'inline-flex' }}
-          >
+          <Box component="span" data-testid="chip" sx={{ display: 'inline-flex' }}>
             <Chip label={`Required: ${featureName}`} color="warning" size="small" />
           </Box>
         </Box>
@@ -131,14 +117,10 @@ export const FeatureAccessErrorComponent: React.FC<FeatureAccessErrorProps> = ({
         </Box>
 
         <Box mt={2} p={1} bgcolor="grey.50" borderRadius={1}>
-          <Box
-            component="p"
-            variant="caption"
-            sx={{ typography: 'caption', color: 'text.secondary', m: 0 }}
-          >
+          <Typography component="p" variant="caption" sx={{ color: 'text.secondary', m: 0 }}>
             <strong>Tip:</strong> Upgrade your plan to unlock premium features and get more value
             from AssignmentAI.
-          </Box>
+          </Typography>
         </Box>
       </CardContent>
     </Card>

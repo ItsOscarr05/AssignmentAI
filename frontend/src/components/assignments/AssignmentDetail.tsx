@@ -220,7 +220,7 @@ const AssignmentDetail: React.FC<AssignmentDetailProps> = ({
   });
 
   const statusColor: 'success' | 'warning' | 'error' =
-    assignment.status === 'published' || assignment.status === 'active'
+    assignment.status === 'published'
       ? 'success'
       : assignment.status === 'draft'
       ? 'warning'

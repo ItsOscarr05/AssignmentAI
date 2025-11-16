@@ -1,17 +1,16 @@
-import { Box, Button, CircularProgress, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, CircularProgress, TextField, Typography } from '@mui/material';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { auth } from '../../services/api';
 
 interface TwoFactorVerifyProps {
-  onVerify: (code: string) => Promise<void>;
-  onCancel: () => void;
+  onSuccess?: () => void;
+  onCancel?: () => void;
   email?: string;
   maxAttempts?: number;
   error?: string;
 }
 
 export const TwoFactorVerify = ({
-  onVerify,
   onCancel,
   email = 'test@example.com',
   maxAttempts = 3,
@@ -21,24 +20,28 @@ export const TwoFactorVerify = ({
   const [error, setError] = useState(initialError || '');
   const [isLoading, setIsLoading] = useState(false);
   const [attempts, setAttempts] = useState(0);
-  const navigate = useNavigate();
+  const [useBackup, setUseBackup] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!code) {
-      setError('Verification code is required');
-      return;
-    }
-    if (!/^\d{6}$/.test(code)) {
-      setError('Verification code must be 6 digits');
+    if (!code || code.length !== 6) {
+      setError('Invalid verification code');
       return;
     }
 
     setIsLoading(true);
     try {
-      await onVerify(code);
+      if (useBackup) {
+        await auth.verifyBackupCode(code);
+      } else {
+        await auth.verify2FA(code);
+      }
+      setError('');
+      setAttempts(0);
+      onSuccess?.();
     } catch (err: any) {
-      setError(err.message || 'Invalid verification code');
+      const apiMessage = err?.response?.data?.detail || 'Invalid verification code';
+      setError(apiMessage);
       setAttempts(prev => prev + 1);
     } finally {
       setIsLoading(false);
@@ -53,7 +56,7 @@ export const TwoFactorVerify = ({
     }
   };
 
-  const isDisabled = isLoading || attempts >= maxAttempts;
+  const isDisabled = isLoading || attempts >= maxAttempts || code.length !== 6;
 
   return (
             <Box className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
@@ -64,13 +67,13 @@ export const TwoFactorVerify = ({
         <Box className="mb-6">
           <Typography className="mb-4">Verify your identity</Typography>
           <Typography className="mb-4">Enter the code sent to your email</Typography>
-          <Typography className="mb-4" color="textSecondary">
+          <Typography className="mb-4" color="text.secondary">
             {email.replace(/(?<=.{1}).(?=.*@)/g, '...')}
           </Typography>
           <TextField
             fullWidth
             id="verification-code"
-            label="Verification Code"
+            label={useBackup ? 'Backup Code' : 'Verification Code'}
             value={code}
             onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
             onKeyDown={handleKeyDown}
@@ -78,8 +81,11 @@ export const TwoFactorVerify = ({
             helperText={error}
             disabled={isDisabled}
             inputProps={{
+              ...{
+                'data-testid': 'text-field',
+              },
               maxLength: 6,
-              'aria-label': 'Verification Code',
+              'aria-label': useBackup ? 'Backup Code' : 'Verification Code',
               'aria-required': 'true',
               'aria-invalid': !!error,
               'aria-describedby': error ? 'verification-error' : undefined,
@@ -89,6 +95,11 @@ export const TwoFactorVerify = ({
               id: 'verification-error',
             }}
           />
+          {!!error && (
+            <Alert severity="error" sx={{ mt: 1 }}>
+              {error}
+            </Alert>
+          )}
           {isLoading && (
             <CircularProgress
               size={24}
@@ -117,7 +128,7 @@ export const TwoFactorVerify = ({
               variant="outlined"
               color="secondary"
               fullWidth
-              onClick={onCancel}
+              onClick={() => onCancel?.()}
               disabled={isDisabled}
             >
               Cancel
@@ -128,10 +139,10 @@ export const TwoFactorVerify = ({
           <Button
             type="button"
             color="primary"
-            onClick={() => navigate('/backup-code')}
+            onClick={() => setUseBackup(prev => !prev)}
             disabled={isDisabled}
           >
-            Use Backup Code Instead
+            {useBackup ? 'Use Authenticator App Instead' : 'Use Backup Code Instead'}
           </Button>
         </Box>
       </form>

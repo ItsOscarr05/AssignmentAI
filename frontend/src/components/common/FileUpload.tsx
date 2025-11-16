@@ -26,11 +26,6 @@ import {
   Grid,
   IconButton,
   LinearProgress,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemSecondaryAction,
-  ListItemText,
   Paper,
   Typography,
   useTheme,
@@ -121,7 +116,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
     return list.map(item => item.trim()).filter(Boolean);
   }, [accept, acceptedFileTypes]);
 
-  const selectedFiles = controlledFiles ??
+  const selectedFiles =
+    controlledFiles ??
     (value !== undefined ? (Array.isArray(value) ? value : value ? [value] : []) : undefined) ??
     internalFiles;
 
@@ -307,14 +303,23 @@ const FileUpload: React.FC<FileUploadProps> = ({
         handleUpload(validFiles);
       }
     },
-    [autoUpload, enqueueSnackbar, handleUpload, isFileAccepted, maxSize, multiple, onFileSelect, onUpload, selectedFiles, updateFilesState]
+    [
+      autoUpload,
+      enqueueSnackbar,
+      handleUpload,
+      isFileAccepted,
+      maxSize,
+      multiple,
+      onFileSelect,
+      onUpload,
+      selectedFiles,
+      updateFilesState,
+    ]
   );
 
   const onDrop = useCallback(
     (acceptedFiles: File[] | FileList) => {
-      const filesArray = Array.isArray(acceptedFiles)
-        ? acceptedFiles
-        : Array.from(acceptedFiles);
+      const filesArray = Array.isArray(acceptedFiles) ? acceptedFiles : Array.from(acceptedFiles);
       handleSelectedFiles(filesArray);
     },
     [handleSelectedFiles]
@@ -336,7 +341,10 @@ const FileUpload: React.FC<FileUploadProps> = ({
     onDropRejected,
     maxSize,
     accept: normalizedAccept.some(value => value.includes('/'))
-      ? normalizedAccept.reduce((acc, type) => ({ ...acc, [type]: [] }), {} as Record<string, string[]>)
+      ? normalizedAccept.reduce(
+          (acc, type) => ({ ...acc, [type]: [] }),
+          {} as Record<string, string[]>
+        )
       : undefined,
     multiple,
   });
