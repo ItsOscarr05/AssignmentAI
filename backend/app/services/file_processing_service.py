@@ -511,6 +511,7 @@ class FileProcessingService:
             # Separate fill-in-blank questions for batch processing
             fill_in_blank_sections = []
             other_sections = []
+            calculation_sections = []
             
             for i, section in enumerate(fillable_sections):
                 # Handle both 'type' and 'section_type' field names
@@ -527,7 +528,6 @@ class FileProcessingService:
                 logger.info(f"Fill-in-blank sections: {[(i, section.get('type', 'unknown'), section.get('text', '')[:50]) for i, section in fill_in_blank_sections]}")
                 
                 # Separate calculation sections from regular questions
-                calculation_sections = []
                 question_sections = []
                 
                 for i, section in fill_in_blank_sections:

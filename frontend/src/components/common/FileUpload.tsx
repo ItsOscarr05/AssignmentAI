@@ -36,7 +36,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { api } from '../../services/api';
 
@@ -44,13 +44,16 @@ interface FileUploadProps {
   // Legacy props (for backward compatibility)
   onFileUpload?: (file: File) => void;
   onFileSelect?: (file: File) => void;
+  onFileRemove?: (file: File, index?: number) => void;
+  value?: File | File[];
+  acceptedFileTypes?: string[];
   // New controlled component props
   files?: File[];
   onChange?: (files: File[]) => void | Promise<void>;
   onUpload?: (files: File[]) => void;
   // Common props
   multiple?: boolean;
-  accept?: string[];
+  accept?: string | string[];
   maxSize?: number;
   showPreview?: boolean;
   showActions?: boolean;
@@ -72,9 +75,12 @@ interface UploadedFile {
 const FileUpload: React.FC<FileUploadProps> = ({
   onFileUpload,
   onFileSelect,
+  onFileRemove,
   files: controlledFiles,
   onChange,
   onUpload,
+  value,
+  acceptedFileTypes,
   multiple = true,
   accept = [
     'image/*',
@@ -90,11 +96,44 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
-  const [internalFiles, setInternalFiles] = useState<File[]>([]);
-  const selectedFiles = controlledFiles !== undefined ? controlledFiles : internalFiles;
+  const [internalFiles, setInternalFiles] = useState<File[]>(() => {
+    if (controlledFiles !== undefined) {
+      return controlledFiles;
+    }
+    if (value !== undefined) {
+      return Array.isArray(value) ? value : value ? [value] : [];
+    }
+    return [];
+  });
   const [uploading, setUploading] = useState(false);
   const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const normalizedAccept = useMemo(() => {
+    const sources: Array<string | string[] | undefined> = [accept, acceptedFileTypes];
+    const rawValues = sources.find(source => source !== undefined) ?? accept;
+    const list = Array.isArray(rawValues)
+      ? rawValues
+      : typeof rawValues === 'string'
+      ? rawValues.split(',')
+      : [];
+    return list.map(item => item.trim()).filter(Boolean);
+  }, [accept, acceptedFileTypes]);
+
+  const selectedFiles = controlledFiles ??
+    (value !== undefined ? (Array.isArray(value) ? value : value ? [value] : []) : undefined) ??
+    internalFiles;
+
+  useEffect(() => {
+    if (controlledFiles !== undefined) {
+      setInternalFiles(controlledFiles);
+      return;
+    }
+    if (value !== undefined) {
+      setInternalFiles(Array.isArray(value) ? value : value ? [value] : []);
+    }
+  }, [controlledFiles, value]);
 
   // Load existing files on component mount
   useEffect(() => {
@@ -115,124 +154,201 @@ const FileUpload: React.FC<FileUploadProps> = ({
     }
   };
 
-  const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
-      const validFiles = acceptedFiles.filter(file => {
+  const isFileAccepted = useCallback(
+    (file: File) => {
+      if (!normalizedAccept.length) return true;
+      const fileType = file.type.toLowerCase();
+      const fileName = file.name.toLowerCase();
+      return normalizedAccept.some(type => {
+        const value = type.toLowerCase();
+        if (!value) return false;
+        if (value.startsWith('.')) {
+          return fileName.endsWith(value);
+        }
+        if (value.endsWith('/*')) {
+          return fileType.startsWith(value.replace('/*', ''));
+        }
+        return fileType === value || fileType.startsWith(value);
+      });
+    },
+    [normalizedAccept]
+  );
+
+  const updateFilesState = useCallback(
+    (nextFiles: File[]) => {
+      if (controlledFiles !== undefined) {
+        onChange?.(nextFiles);
+        return;
+      }
+      if (value !== undefined) {
+        onChange?.(nextFiles);
+        setInternalFiles(nextFiles);
+        return;
+      }
+      setInternalFiles(nextFiles);
+      onChange?.(nextFiles);
+    },
+    [controlledFiles, onChange, value]
+  );
+
+  const handleUpload = useCallback(
+    async (files: File[]) => {
+      setUploading(true);
+
+      const newFiles: UploadedFile[] = files.map(file => ({
+        id: Math.random().toString(36).substr(2, 9),
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        url: '',
+        uploadedAt: new Date().toISOString(),
+        status: 'uploading' as const,
+        progress: 0,
+      }));
+
+      setUploadedFiles(prev => [...prev, ...newFiles]);
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const fileIndex = uploadedFiles.length + i;
+
+        try {
+          const formData = new FormData();
+          formData.append('files', file);
+
+          const response = await api.post('/files/upload', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+            onUploadProgress: (progressEvent: any) => {
+              const progress = progressEvent.total
+                ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
+                : 0;
+              setUploadedFiles(prev =>
+                prev.map((f, index) => (index === fileIndex ? { ...f, progress } : f))
+              );
+            },
+          });
+
+          setUploadedFiles(prev =>
+            prev.map((f, index) =>
+              index === fileIndex
+                ? { ...f, ...response.data, status: 'completed' as const, progress: 100 }
+                : f
+            )
+          );
+
+          enqueueSnackbar(`${file.name} uploaded successfully`, { variant: 'success' });
+          onFileUpload?.(file);
+        } catch (error: any) {
+          setUploadedFiles(prev =>
+            prev.map((f, index) =>
+              index === fileIndex
+                ? {
+                    ...f,
+                    status: 'error' as const,
+                    error: error.response?.data?.detail || 'Upload failed',
+                  }
+                : f
+            )
+          );
+          enqueueSnackbar(`Failed to upload ${file.name}`, { variant: 'error' });
+        }
+      }
+
+      setUploading(false);
+      if (controlledFiles === undefined && value === undefined) {
+        setInternalFiles([]);
+      } else if (onChange) {
+        onChange([]);
+      }
+    },
+    [controlledFiles, enqueueSnackbar, onChange, onFileUpload, uploadedFiles.length, value]
+  );
+
+  const handleSelectedFiles = useCallback(
+    (incoming: File[]) => {
+      const filesArray = Array.from(incoming);
+      if (!filesArray.length) {
+        return;
+      }
+
+      const validFiles: File[] = [];
+      for (const file of filesArray) {
+        if (!isFileAccepted(file)) {
+          setErrorMessage('Invalid file type');
+          enqueueSnackbar(`Invalid file type: ${file.name}`, { variant: 'error' });
+          continue;
+        }
         if (file.size > maxSize) {
+          setErrorMessage(`File size exceeds ${Math.round(maxSize / (1024 * 1024))}MB`);
           enqueueSnackbar(
             `File ${file.name} is too large. Maximum size is ${maxSize / (1024 * 1024)}MB`,
             { variant: 'error' }
           );
-          return false;
+          continue;
         }
-        return true;
-      });
+        validFiles.push(file);
+      }
 
-      if (validFiles.length > 0) {
-        const newFiles = multiple ? [...selectedFiles, ...validFiles] : validFiles;
-        
-        // Update controlled or internal state
-        if (controlledFiles !== undefined) {
-          // Controlled component - call onChange
-          if (onChange) {
-            onChange(newFiles);
-          }
-        } else {
-          // Uncontrolled component - update internal state
-          setInternalFiles(newFiles);
-        }
+      if (!validFiles.length) {
+        return;
+      }
 
-        // Call onFileSelect for each file (legacy support)
-        validFiles.forEach(file => onFileSelect?.(file));
+      setErrorMessage(null);
+      validFiles.forEach(file => onFileSelect?.(file));
 
-        // Handle upload
-        if (onUpload) {
-          onUpload(newFiles);
-        } else if (autoUpload) {
-          handleUpload(validFiles);
-        }
+      const nextFiles = multiple ? [...selectedFiles, ...validFiles] : validFiles;
+      updateFilesState(nextFiles);
+
+      if (onUpload) {
+        onUpload(nextFiles);
+      } else if (autoUpload) {
+        handleUpload(validFiles);
       }
     },
-    [maxSize, multiple, autoUpload, enqueueSnackbar]
+    [autoUpload, enqueueSnackbar, handleUpload, isFileAccepted, maxSize, multiple, onFileSelect, onUpload, selectedFiles, updateFilesState]
+  );
+
+  const onDrop = useCallback(
+    (acceptedFiles: File[] | FileList) => {
+      const filesArray = Array.isArray(acceptedFiles)
+        ? acceptedFiles
+        : Array.from(acceptedFiles);
+      handleSelectedFiles(filesArray);
+    },
+    [handleSelectedFiles]
+  );
+
+  const onDropRejected = useCallback(
+    (fileRejections: any[]) => {
+      if (fileRejections && fileRejections.length > 0) {
+        const reasons = fileRejections[0].errors.map((e: any) => e.message).join(', ');
+        setErrorMessage(reasons);
+        enqueueSnackbar(reasons, { variant: 'error' });
+      }
+    },
+    [enqueueSnackbar]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: accept.reduce((acc, type) => ({ ...acc, [type]: [] }), {}),
-    multiple,
+    onDropRejected,
     maxSize,
+    accept: normalizedAccept.some(value => value.includes('/'))
+      ? normalizedAccept.reduce((acc, type) => ({ ...acc, [type]: [] }), {} as Record<string, string[]>)
+      : undefined,
+    multiple,
   });
 
-  const handleUpload = async (files: File[]) => {
-    setUploading(true);
+  const inputProps = getInputProps();
 
-    const newFiles: UploadedFile[] = files.map(file => ({
-      id: Math.random().toString(36).substr(2, 9),
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      url: '',
-      uploadedAt: new Date().toISOString(),
-      status: 'uploading' as const,
-      progress: 0,
-    }));
-
-    setUploadedFiles(prev => [...prev, ...newFiles]);
-
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const fileIndex = uploadedFiles.length + i;
-
-      try {
-        const formData = new FormData();
-        formData.append('file', file);
-
-        const response = await api.post('/files/upload', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-          onUploadProgress: (progressEvent: any) => {
-            const progress = progressEvent.total
-              ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
-              : 0;
-            setUploadedFiles(prev =>
-              prev.map((f, index) => (index === fileIndex ? { ...f, progress } : f))
-            );
-          },
-        });
-
-        setUploadedFiles(prev =>
-          prev.map((f, index) =>
-            index === fileIndex
-              ? { ...f, ...response.data, status: 'completed' as const, progress: 100 }
-              : f
-          )
-        );
-
-        enqueueSnackbar(`${file.name} uploaded successfully`, { variant: 'success' });
-        onFileUpload?.(file);
-      } catch (error: any) {
-        setUploadedFiles(prev =>
-          prev.map((f, index) =>
-            index === fileIndex
-              ? {
-                  ...f,
-                  status: 'error' as const,
-                  error: error.response?.data?.detail || 'Upload failed',
-                }
-              : f
-          )
-        );
-        enqueueSnackbar(`Failed to upload ${file.name}`, { variant: 'error' });
-      }
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) {
+      return;
     }
-
-    setUploading(false);
-    if (controlledFiles === undefined) {
-      setInternalFiles([]);
-    } else if (onChange) {
-      onChange([]);
-    }
+    handleSelectedFiles(Array.from(files));
   };
 
   const handleDelete = async (fileId: string) => {
@@ -278,6 +394,15 @@ const FileUpload: React.FC<FileUploadProps> = ({
     }
   };
 
+  const removeSelectedFile = (index: number) => {
+    const files = selectedFiles;
+    if (!files || !files[index]) return;
+    const fileToRemove = files[index];
+    onFileRemove?.(fileToRemove, index);
+    const nextFiles = files.filter((_, i) => i !== index);
+    updateFilesState(nextFiles);
+  };
+
   const getFileIcon = (type: string) => {
     if (type.startsWith('image/')) return <ImageIcon />;
     if (type === 'application/pdf') return <PictureAsPdfIcon />;
@@ -296,6 +421,9 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
   };
+
+  const maxSizeInMB = Math.round(maxSize / (1024 * 1024));
+  const acceptAttribute = normalizedAccept.length ? normalizedAccept.join(',') : undefined;
 
   return (
     <Box>
@@ -316,60 +444,78 @@ const FileUpload: React.FC<FileUploadProps> = ({
           },
         }}
       >
-        <input {...getInputProps()} />
+        <input
+          {...inputProps}
+          onChange={handleInputChange}
+          aria-label="Upload file"
+          accept={acceptAttribute}
+        />
         <CloudUploadIcon sx={{ fontSize: 48, color: theme.palette.primary.main, mb: 2 }} />
         <Typography variant="h6" gutterBottom>
-          {isDragActive ? 'Drop files here' : 'Drag & drop files here'}
+          {isDragActive ? 'Drop files here' : 'Drag and drop files here'}
         </Typography>
         <Typography variant="body2" color="text.secondary">
           or click to select files
         </Typography>
-        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
-          Supported formats: PDF, DOCX, DOC, TXT, Images • Max size: {maxSize / (1024 * 1024)}MB
+        <Typography
+          id="file-upload-description"
+          variant="caption"
+          color="text.secondary"
+          display="block"
+          sx={{ mt: 1 }}
+        >
+          Maximum file size: {maxSizeInMB}MB
         </Typography>
+        {normalizedAccept.length > 0 && (
+          <Typography variant="caption" color="text.secondary" display="block">
+            Accepted file types: {normalizedAccept.join(', ')}
+          </Typography>
+        )}
       </Paper>
 
+      {errorMessage && (
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="body2" color="error" role="alert">
+            {errorMessage}
+          </Typography>
+        </Box>
+      )}
+
       {/* Selected Files */}
-      {selectedFiles.length > 0 && !autoUpload && (
+      {selectedFiles.length > 0 && (
         <Box sx={{ mt: 2 }}>
           <Typography variant="h6" gutterBottom>
             Selected Files ({selectedFiles.length})
           </Typography>
-          <List>
-            {selectedFiles.map((file, index) => (
-              <ListItem key={index}>
-                <ListItemIcon>{getFileIcon(file.type)}</ListItemIcon>
-                <ListItemText
-                  primary={file.name}
-                  secondary={`${formatFileSize(file.size)} • ${file.type}`}
-                />
-                <ListItemSecondaryAction>
-                  <IconButton
-                    edge="end"
-                    onClick={() => {
-                      const newFiles = selectedFiles.filter((_: File, i: number) => i !== index);
-                      if (controlledFiles === undefined) {
-                        setInternalFiles(newFiles);
-                      } else if (onChange) {
-                        onChange(newFiles);
-                      }
-                    }}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </ListItemSecondaryAction>
-              </ListItem>
-            ))}
-          </List>
-          <Button
-            variant="contained"
-            onClick={() => handleUpload(selectedFiles)}
-            disabled={uploading}
-            startIcon={uploading ? <CircularProgress size={20} /> : <UploadIcon />}
-            sx={{ mt: 2 }}
-          >
-            {uploading ? 'Uploading...' : 'Upload Files'}
-          </Button>
+          {selectedFiles.map((file, index) => (
+            <Box
+              key={`${file.name}-${index}`}
+              sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}
+            >
+              <Typography data-testid="file-name" sx={{ mr: 2 }}>
+                {file.name}
+              </Typography>
+              <Button
+                variant="text"
+                size="small"
+                onClick={() => removeSelectedFile(index)}
+                aria-label={`Remove ${file.name}`}
+              >
+                Remove {file.name}
+              </Button>
+            </Box>
+          ))}
+          {!autoUpload && (
+            <Button
+              variant="contained"
+              onClick={() => handleUpload(selectedFiles)}
+              disabled={uploading}
+              startIcon={uploading ? <CircularProgress size={20} /> : <UploadIcon />}
+              sx={{ mt: 2 }}
+            >
+              {uploading ? 'Uploading...' : 'Upload Files'}
+            </Button>
+          )}
         </Box>
       )}
 
@@ -473,6 +619,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
           <IconButton
             onClick={() => setPreviewOpen(false)}
             sx={{ position: 'absolute', right: 8, top: 8 }}
+            aria-label="Close preview"
           >
             <CloseIcon />
           </IconButton>
@@ -515,3 +662,4 @@ const FileUpload: React.FC<FileUploadProps> = ({
 };
 
 export default FileUpload;
+export { FileUpload };

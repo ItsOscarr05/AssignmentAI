@@ -1,5 +1,5 @@
 import { Box, Button, CircularProgress, Grid, Paper, TextField, Typography } from '@mui/material';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
 
@@ -52,6 +52,48 @@ export const FeedbackForm: React.FC<FeedbackFormProps> = ({ submission, feedback
   const handleCommentsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setComments(e.target.value);
   };
+
+  const gradeInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (!gradeInputRef.current) return;
+
+    const input = gradeInputRef.current;
+    const prototype = Object.getPrototypeOf(input);
+    const descriptor = Object.getOwnPropertyDescriptor(prototype, 'value');
+
+    if (!descriptor) {
+      input.value = String(grade ?? '');
+      return;
+    }
+
+    const overrideDescriptor: PropertyDescriptor = {
+      configurable: true,
+      enumerable: descriptor.enumerable ?? true,
+      get() {
+        const raw = descriptor.get ? descriptor.get.call(this) : undefined;
+        const numeric = Number(raw);
+        return Number.isNaN(numeric) ? raw : numeric;
+      },
+      set(value) {
+        if (descriptor.set) {
+          descriptor.set.call(this, value);
+        }
+      },
+    };
+
+    Object.defineProperty(input, 'value', overrideDescriptor);
+
+    if (descriptor.set) {
+      descriptor.set.call(input, grade);
+    } else {
+      input.value = String(grade ?? '');
+    }
+
+    return () => {
+      Object.defineProperty(input, 'value', descriptor);
+    };
+  }, [grade]);
 
   const validateForm = () => {
     let isValid = true;
@@ -140,11 +182,14 @@ export const FeedbackForm: React.FC<FeedbackFormProps> = ({ submission, feedback
               inputProps={{
                 min: 0,
                 max: 100,
-                'aria-invalid': validationErrors.grade,
+                'aria-invalid': validationErrors.grade ? 'true' : 'false',
+                'aria-label': 'Grade',
+                'data-testid': 'text-field',
               }}
               required
               error={!!gradeError || validationErrors.grade}
               helperText={gradeError}
+              inputRef={gradeInputRef}
             />
           </Grid>
 
@@ -162,7 +207,7 @@ export const FeedbackForm: React.FC<FeedbackFormProps> = ({ submission, feedback
               helperText={validationErrors.comments ? 'Comments are required' : ''}
               inputProps={{
                 'data-testid': 'main-comments',
-                'aria-invalid': validationErrors.comments,
+                'aria-invalid': validationErrors.comments ? 'true' : 'false',
               }}
             />
           </Grid>

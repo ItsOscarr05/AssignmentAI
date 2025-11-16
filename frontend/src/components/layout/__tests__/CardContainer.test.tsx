@@ -4,6 +4,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { theme } from '../../../theme';
 import { CardContainer } from '../CardContainer';
 
+const normalizeColor = (color: string) => {
+  if (!color) return color;
+  if (color.startsWith('#')) {
+    const hex = color.replace('#', '');
+    const bigint = parseInt(hex, 16);
+    const r = (bigint >> 16) & 255;
+    const g = (bigint >> 8) & 255;
+    const b = bigint & 255;
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+  return color;
+};
+
 // Mock the Material-UI useTheme hook
 vi.mock('@mui/material', async importOriginal => {
   const actual = await importOriginal();
@@ -186,6 +199,6 @@ describe('CardContainer', () => {
 
     // Check for Material-UI classes and attributes
     expect(card.className).toContain('MuiPaper-root');
-    expect(card.style.border).toBe(`2px solid ${theme.palette.primary.main}`);
+    expect(card.style.border).toBe(`2px solid ${normalizeColor(theme.palette.primary.main)}`);
   });
 });

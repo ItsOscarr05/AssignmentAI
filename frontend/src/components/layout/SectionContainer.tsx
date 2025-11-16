@@ -16,28 +16,31 @@ export const SectionContainer: React.FC<SectionContainerProps> = ({
   variant = 'default',
   children,
 }) => {
-  const getVariantStyles = () => {
-    switch (variant) {
-      case 'outlined':
-        return {
-          border: '1px solid',
-          borderColor: 'divider',
-        };
-      case 'elevated':
-        return {
-          boxShadow: 1,
-        };
-      case 'interactive':
-        return {
-          cursor: 'pointer',
-          transition: 'background-color 0.2s',
-          '&:hover': {
-            backgroundColor: 'action.hover',
-          },
-        };
-      default:
-        return {};
-    }
+  const baseStyle = {
+    padding: '24px',
+    marginBottom: '24px',
+    backgroundColor: 'var(--mui-palette-background-paper)',
+    borderRadius: 'var(--mui-shape-borderRadius)',
+  };
+
+  const variantStyles =
+    variant === 'outlined'
+      ? { border: '1px solid', borderColor: 'var(--mui-palette-divider)' }
+      : variant === 'elevated'
+      ? { boxShadow: 'var(--mui-elevation-1)' }
+      : variant === 'interactive'
+      ? { cursor: 'pointer', transition: 'background-color 0.2s' }
+      : {};
+
+  const titleStyle = {
+    margin: '0',
+    color: 'var(--mui-palette-text-primary)',
+    fontWeight: 'bold',
+  };
+
+  const subtitleStyle = {
+    marginTop: '8px',
+    color: 'var(--mui-palette-text-secondary)',
   };
 
   return (
@@ -48,11 +51,20 @@ export const SectionContainer: React.FC<SectionContainerProps> = ({
         mb: 3,
         backgroundColor: 'background.paper',
         borderRadius: 1,
-        ...getVariantStyles(),
+        ...(variant === 'outlined' && { border: '1px solid', borderColor: 'divider' }),
+        ...(variant === 'elevated' && { boxShadow: 1 }),
+        ...(variant === 'interactive' && {
+          cursor: 'pointer',
+          transition: 'background-color 0.2s',
+          '&:hover': {
+            backgroundColor: 'action.hover',
+          },
+        }),
         '&:last-child': {
           mb: 0,
         },
       }}
+      style={{ ...baseStyle, ...variantStyles }}
     >
       {(title || subtitle || actions) && (
         <Box
@@ -74,6 +86,7 @@ export const SectionContainer: React.FC<SectionContainerProps> = ({
                   color: 'text.primary',
                   fontWeight: 'bold',
                 }}
+                style={titleStyle}
               >
                 {title}
               </Typography>
@@ -85,6 +98,7 @@ export const SectionContainer: React.FC<SectionContainerProps> = ({
                   mt: 1,
                   color: 'text.secondary',
                 }}
+                style={subtitleStyle}
               >
                 {subtitle}
               </Typography>

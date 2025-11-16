@@ -57,8 +57,16 @@ const CustomAssignmentTemplates: React.FC = () => {
     content: '',
   });
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pendingDeleteTemplate, setPendingDeleteTemplate] = useState<any | null>(null);
 
-  const categories = ['general', 'essay', 'mathematics', 'science', 'history'];
+  const categories = [
+    { value: 'general', label: 'General' },
+    { value: 'essay', label: 'Essay' },
+    { value: 'mathematics', label: 'Mathematics' },
+    { value: 'science', label: 'Science' },
+    { value: 'history', label: 'History' },
+  ];
 
   const handleCreateTemplate = () => {
     setEditingTemplate(null);
@@ -137,13 +145,9 @@ const CustomAssignmentTemplates: React.FC = () => {
   };
 
   const handleDeleteTemplate = async (templateId: string) => {
-    if (window.confirm('Are you sure you want to delete this template?')) {
-      try {
-        await deleteTemplate(templateId);
-      } catch (err) {
-        console.error('Failed to delete template:', err);
-      }
-    }
+    const template = templates.find(item => item.id === templateId);
+    setPendingDeleteTemplate(template ?? null);
+    setDeleteDialogOpen(true);
   };
 
   const handleCopyTemplate = (template: any) => {
@@ -336,7 +340,6 @@ const CustomAssignmentTemplates: React.FC = () => {
               onChange={e => setFormData({ ...formData, name: e.target.value })}
               error={!!formErrors.name}
               helperText={formErrors.name}
-              required
             />
             <TextField
               id="template-description"
@@ -348,7 +351,6 @@ const CustomAssignmentTemplates: React.FC = () => {
               onChange={e => setFormData({ ...formData, description: e.target.value })}
               error={!!formErrors.description}
               helperText={formErrors.description}
-              required
             />
             <FormControl fullWidth>
               <InputLabel id="category-label">Category</InputLabel>
@@ -358,10 +360,17 @@ const CustomAssignmentTemplates: React.FC = () => {
                 value={formData.category}
                 label="Category"
                 onChange={e => setFormData({ ...formData, category: e.target.value })}
+                renderValue={value => {
+                  const option = categories.find(category => category.value === value);
+                  if (!option) {
+                    return 'Select category';
+                  }
+                  return `${option.label} (selected)`;
+                }}
               >
                 {categories.map(category => (
-                  <MenuItem key={category} value={category}>
-                    {category.charAt(0).toUpperCase() + category.slice(1)}
+                  <MenuItem key={category.value} value={category.value}>
+                    {category.label}
                   </MenuItem>
                 ))}
               </Select>
@@ -379,7 +388,6 @@ const CustomAssignmentTemplates: React.FC = () => {
                 'Enter the template content with placeholders in square brackets'
               }
               error={!!formErrors.content}
-              required
             />
             {submitError && (
               <Alert severity="error" sx={{ mt: 2 }}>
@@ -396,6 +404,38 @@ const CustomAssignmentTemplates: React.FC = () => {
             startIcon={editingTemplate ? <SaveIcon /> : <AddIcon />}
           >
             {editingTemplate ? 'Update' : 'Create'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Delete Template</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete{' '}
+            <strong>{pendingDeleteTemplate?.name ?? 'this template'}</strong>?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button
+            color="error"
+            onClick={async () => {
+              if (!pendingDeleteTemplate) {
+                setDeleteDialogOpen(false);
+                return;
+              }
+              try {
+                await deleteTemplate(pendingDeleteTemplate.id);
+              } catch (err) {
+                console.error('Failed to delete template:', err);
+              } finally {
+                setDeleteDialogOpen(false);
+                setPendingDeleteTemplate(null);
+              }
+            }}
+          >
+            Delete
           </Button>
         </DialogActions>
       </Dialog>

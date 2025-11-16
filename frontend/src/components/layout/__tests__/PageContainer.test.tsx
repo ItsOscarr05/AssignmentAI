@@ -131,6 +131,19 @@ const renderPageContainer = (props = {}) => {
   );
 };
 
+const normalizeColor = (color: string) => {
+  if (!color) return color;
+  if (color.startsWith('#')) {
+    const hex = color.replace('#', '');
+    const bigint = parseInt(hex, 16);
+    const r = (bigint >> 16) & 255;
+    const g = (bigint >> 8) & 255;
+    const b = bigint & 255;
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+  return color;
+};
+
 describe('PageContainer', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -163,7 +176,7 @@ describe('PageContainer', () => {
 
     // Check container styles
     expect(container.style.padding).toBe('24px');
-    expect(container.style.margin).toBe('0 auto');
+    expect(container.style.margin.replace('0px', '0')).toBe('0 auto');
   });
 
   it('renders with proper header styles', () => {
@@ -224,9 +237,9 @@ describe('PageContainer', () => {
 
     // Check typography styles
     expect(title.style.fontSize).toBe(theme.typography.h4.fontSize);
-    expect(title.style.fontWeight).toBe(theme.typography.fontWeightBold);
+    expect(Number(title.style.fontWeight)).toBe(theme.typography.fontWeightBold);
     expect(subtitle.style.fontSize).toBe(theme.typography.subtitle1.fontSize);
-    expect(subtitle.style.fontWeight).toBe(theme.typography.fontWeightRegular);
+    expect(Number(subtitle.style.fontWeight)).toBe(theme.typography.fontWeightRegular);
   });
 
   it('renders with proper elevation', () => {
@@ -261,7 +274,11 @@ describe('PageContainer', () => {
     const content = screen.getByTestId('page-content');
 
     // Check background colors
-    expect(container.style.backgroundColor).toBe(theme.palette.background.default);
-    expect(content.style.backgroundColor).toBe(theme.palette.background.paper);
+    expect(normalizeColor(container.style.backgroundColor)).toBe(
+      normalizeColor(theme.palette.background.default)
+    );
+    expect(normalizeColor(content.style.backgroundColor)).toBe(
+      normalizeColor(theme.palette.background.paper)
+    );
   });
 });

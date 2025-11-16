@@ -11,6 +11,33 @@ interface PageContainerProps {
 export function PageContainer({ title, subtitle, children, actions }: PageContainerProps) {
   const theme = useTheme();
 
+  const containerStyle = {
+    padding: theme.spacing(3),
+    maxWidth: `${theme.breakpoints.values.lg}px`,
+    margin: '0 auto',
+    backgroundColor: theme.palette.background.default,
+  };
+
+  const titleStyle = {
+    color: theme.palette.text.primary,
+    margin: 0,
+    fontSize: theme.typography.h4.fontSize,
+    fontWeight: theme.typography.fontWeightBold,
+  };
+
+  const subtitleStyle = {
+    marginTop: theme.spacing(1),
+    fontSize: theme.typography.subtitle1.fontSize,
+    fontWeight: theme.typography.fontWeightRegular,
+  };
+
+  const contentStyle = {
+    padding: theme.spacing(3),
+    backgroundColor: theme.palette.background.paper,
+    borderRadius: `${theme.shape.borderRadius}px`,
+    boxShadow: theme.shadows[1],
+  };
+
   return (
     <Container
       data-testid="page-container"
@@ -23,6 +50,7 @@ export function PageContainer({ title, subtitle, children, actions }: PageContai
           padding: theme.spacing(2),
         },
       }}
+      style={containerStyle}
     >
       {(title || subtitle || actions) && (
         <Box
@@ -48,6 +76,7 @@ export function PageContainer({ title, subtitle, children, actions }: PageContai
                   fontSize: theme.typography.h4.fontSize,
                   fontWeight: theme.typography.fontWeightBold,
                 }}
+                style={titleStyle}
               >
                 {title}
               </Typography>
@@ -62,6 +91,7 @@ export function PageContainer({ title, subtitle, children, actions }: PageContai
                   fontSize: theme.typography.subtitle1.fontSize,
                   fontWeight: theme.typography.fontWeightRegular,
                 }}
+                style={subtitleStyle}
               >
                 {subtitle}
               </Typography>
@@ -83,6 +113,7 @@ export function PageContainer({ title, subtitle, children, actions }: PageContai
           borderRadius: theme.shape.borderRadius,
           boxShadow: theme.shadows[1],
         }}
+        style={contentStyle}
       >
         {children}
       </Paper>

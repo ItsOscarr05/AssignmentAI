@@ -129,6 +129,19 @@ const renderSectionContainer = (props = {}) => {
   );
 };
 
+const normalizeColor = (color: string) => {
+  if (!color) return color;
+  if (color.startsWith('#')) {
+    const hex = color.replace('#', '');
+    const bigint = parseInt(hex, 16);
+    const r = (bigint >> 16) & 255;
+    const g = (bigint >> 8) & 255;
+    const b = bigint & 255;
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+  return color;
+};
+
 describe('SectionContainer', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -158,8 +171,8 @@ describe('SectionContainer', () => {
   it('renders with custom variant', () => {
     renderSectionContainer({ variant: 'outlined' });
     const container = screen.getByTestId('section-container');
-    expect(container.style.border).toBe('1px solid');
-    expect(container.style.borderColor).toBe('divider');
+    expect(container.style.border).toBe('1px solid rgba(0, 0, 0, 0.12)');
+    expect(container.style.borderColor).toBe('rgba(0, 0, 0, 0.12)');
   });
 
   it('renders with proper container styles', () => {
@@ -190,8 +203,8 @@ describe('SectionContainer', () => {
     const title = screen.getByText('Test Section');
 
     // Check title styles
-    expect(title.style.margin).toBe('0');
-    expect(title.style.color).toBe(theme.palette.text.primary);
+    expect(title.style.margin.replace('0px', '0')).toBe('0');
+    expect(normalizeColor(title.style.color)).toBe(normalizeColor(theme.palette.text.primary));
   });
 
   it('renders with proper subtitle styles', () => {
@@ -200,7 +213,7 @@ describe('SectionContainer', () => {
 
     // Check subtitle styles
     expect(subtitle.style.marginTop).toBe('8px');
-    expect(subtitle.style.color).toBe(theme.palette.text.secondary);
+    expect(normalizeColor(subtitle.style.color)).toBe(normalizeColor(theme.palette.text.secondary));
   });
 
   it('renders with proper content styles', () => {
@@ -230,9 +243,9 @@ describe('SectionContainer', () => {
 
     // Check typography styles
     expect(title.style.fontSize).toBe(theme.typography.h5.fontSize);
-    expect(title.style.fontWeight).toBe(theme.typography.fontWeightBold);
+    expect(Number(title.style.fontWeight)).toBe(theme.typography.fontWeightBold);
     expect(subtitle.style.fontSize).toBe(theme.typography.subtitle1.fontSize);
-    expect(subtitle.style.fontWeight).toBe(theme.typography.fontWeightRegular);
+    expect(Number(subtitle.style.fontWeight)).toBe(theme.typography.fontWeightRegular);
   });
 
   it('renders with proper elevation', () => {
@@ -278,8 +291,8 @@ describe('SectionContainer', () => {
     const container = screen.getByTestId('section-container');
 
     // Check border styles
-    expect(container.style.border).toBe('1px solid');
-    expect(container.style.borderColor).toBe('divider');
+    expect(container.style.border).toBe('1px solid rgba(0, 0, 0, 0.12)');
+    expect(container.style.borderColor).toBe('rgba(0, 0, 0, 0.12)');
   });
 
   it('renders with proper hover styles for interactive variant', () => {

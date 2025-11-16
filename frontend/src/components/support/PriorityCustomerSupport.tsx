@@ -232,7 +232,7 @@ const PriorityCustomerSupport: React.FC = () => {
               <List>
                 {supportChannels.map((channel, index) => (
                   <ListItem key={index} sx={{ px: 0 }}>
-                    <ListItemIcon>
+                    <ListItemIcon data-testid="list-item-icon">
                       <Avatar sx={{ bgcolor: channel.color, width: 40, height: 40 }}>
                         {channel.icon}
                       </Avatar>
@@ -350,60 +350,69 @@ const PriorityCustomerSupport: React.FC = () => {
         </Grid>
       </Grid>
 
-      {/* Create Ticket Dialog */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Create Support Ticket</DialogTitle>
-        <DialogContent>
-          <Stack spacing={3} sx={{ mt: 1 }}>
-            <TextField
-              id="ticket-title"
-              label="Ticket Title"
-              fullWidth
-              value={formData.title}
-              onChange={e => setFormData({ ...formData, title: e.target.value })}
-              error={!!formErrors.title}
-              helperText={formErrors.title}
-              required
-            />
-            <TextField
-              id="ticket-description"
-              label="Description"
-              fullWidth
-              multiline
-              rows={4}
-              value={formData.description}
-              onChange={e => setFormData({ ...formData, description: e.target.value })}
-              helperText={
-                formErrors.description || 'Please provide a detailed description of your issue'
-              }
-              error={!!formErrors.description}
-              required
-            />
-            <FormControl fullWidth>
-              <InputLabel id="priority-label">Priority</InputLabel>
-              <Select
-                labelId="priority-label"
-                id="priority-select"
-                value={formData.priority}
-                label="Priority"
-                onChange={e => setFormData({ ...formData, priority: e.target.value as any })}
-              >
-                {priorityLevels.map(level => (
-                  <MenuItem key={level.level} value={level.level}>
-                    {level.label} - {level.responseTime}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleSubmitTicket} variant="contained">
-            Submit
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {dialogOpen && (
+        <Dialog
+          open
+          onClose={() => setDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
+          data-testid="dialog"
+        >
+          <DialogTitle>Create Support Ticket</DialogTitle>
+          <DialogContent>
+            <Stack spacing={3} sx={{ mt: 1 }}>
+              <TextField
+                id="ticket-title"
+                label="Ticket Title"
+                fullWidth
+                value={formData.title}
+                onChange={e => setFormData({ ...formData, title: e.target.value })}
+                error={!!formErrors.title}
+                helperText={formErrors.title}
+                required
+                inputProps={{ 'aria-label': 'Ticket Title' }}
+              />
+              <TextField
+                id="ticket-description"
+                label="Description"
+                fullWidth
+                multiline
+                rows={4}
+                value={formData.description}
+                onChange={e => setFormData({ ...formData, description: e.target.value })}
+                helperText={
+                  formErrors.description || 'Please provide a detailed description of your issue'
+                }
+                error={!!formErrors.description}
+                required
+                inputProps={{ 'aria-label': 'Description' }}
+              />
+              <FormControl fullWidth>
+                <InputLabel id="priority-label">Priority</InputLabel>
+                <Select
+                  labelId="priority-label"
+                  id="priority-select"
+                  value={formData.priority}
+                  label="Priority"
+                  onChange={e => setFormData({ ...formData, priority: e.target.value as any })}
+                >
+                  {priorityLevels.map(level => (
+                    <MenuItem key={level.level} value={level.level}>
+                      {level.label} - {level.responseTime}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleSubmitTicket} variant="contained">
+              Submit
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
     </Box>
   );
 };

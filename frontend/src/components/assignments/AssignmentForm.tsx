@@ -17,7 +17,7 @@ import {
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useAuth } from '../../hooks/useAuth';
@@ -97,6 +97,17 @@ const AssignmentForm: React.FC<AssignmentFormProps> = ({
       ...initialData,
     },
   });
+
+  const submitButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (!submitButtonRef.current) return;
+    if (isSubmitting) {
+      submitButtonRef.current.setAttribute('disabled', 'true');
+    } else {
+      submitButtonRef.current.removeAttribute('disabled');
+    }
+  }, [isSubmitting]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -320,7 +331,13 @@ const AssignmentForm: React.FC<AssignmentFormProps> = ({
           ))}
 
           <Grid item xs={12}>
-            <Button type="submit" variant="contained" color="primary" disabled={isSubmitting}>
+            <Button
+              ref={submitButtonRef}
+              type="submit"
+              variant="contained"
+              color="primary"
+              disabled={isSubmitting}
+            >
               {isSubmitting ? 'Creating...' : 'Create Assignment'}
             </Button>
           </Grid>

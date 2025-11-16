@@ -68,6 +68,7 @@ vi.mock('@mui/icons-material', () => ({
   Edit: () => <span>Edit</span>,
   CloudUpload: () => <span>CloudUpload</span>,
   Upload: () => <span>Upload</span>,
+  Refresh: () => <span>Refresh</span>,
   CheckCircle: () => <span>CheckCircle</span>,
   Error: () => <span>Error</span>,
   Warning: () => <span>Warning</span>,

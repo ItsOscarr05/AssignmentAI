@@ -1,11 +1,7 @@
-import { ThemeProvider } from '@mui/material/styles';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { SnackbarProvider } from 'notistack';
 import React from 'react';
-import { BrowserRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSupport } from '../../../hooks/useSupport';
-import { theme } from '../../../theme';
 import PriorityCustomerSupport from '../PriorityCustomerSupport';
 
 // Mock the support API
@@ -22,15 +18,7 @@ vi.mock('../../../hooks/useSupport', () => ({
 
 const mockUseSupport = vi.mocked(useSupport);
 
-const renderWithProviders = (component: React.ReactElement) => {
-  return render(
-    <ThemeProvider theme={theme}>
-      <BrowserRouter>
-        <SnackbarProvider>{component}</SnackbarProvider>
-      </BrowserRouter>
-    </ThemeProvider>
-  );
-};
+const renderWithProviders = (component: React.ReactElement) => render(component);
 
 describe('PriorityCustomerSupport', () => {
   beforeEach(() => {

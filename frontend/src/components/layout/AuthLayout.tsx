@@ -9,6 +9,35 @@ interface AuthLayoutProps {
 const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title = 'AssignmentAI' }) => {
   const theme = useTheme();
 
+  const containerStyle = {
+    minHeight: '100vh',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.palette.background.default,
+    padding: theme.spacing(2),
+  };
+
+  const contentStyle = {
+    backgroundColor: theme.palette.background.paper,
+    borderRadius: `${theme.shape.borderRadius}px`,
+    boxShadow: theme.shadows[3],
+    padding: theme.spacing(4),
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    gap: theme.spacing(3),
+    width: '100%',
+  };
+
+  const headerStyle = {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    gap: theme.spacing(2),
+    width: '100%',
+  };
+
   return (
     <Box
       data-testid="auth-layout-container"
@@ -17,26 +46,28 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title = 'AssignmentAI
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: (theme: Theme) => theme.palette.background.default,
-        padding: (theme: Theme) => theme.spacing(2),
+        backgroundColor: theme.palette.background.default,
+        padding: theme.spacing(2),
       }}
+      style={containerStyle}
     >
       <Container maxWidth="sm">
         <Box
           data-testid="auth-layout-content"
           sx={{
-            backgroundColor: (theme: Theme) => theme.palette.background.paper,
-            borderRadius: (theme: Theme) => theme.shape.borderRadius,
-            boxShadow: (theme: Theme) => theme.shadows[3],
-            padding: (theme: Theme) => theme.spacing(4),
+            backgroundColor: theme.palette.background.paper,
+            borderRadius: theme.shape.borderRadius,
+            boxShadow: theme.shadows[3],
+            padding: theme.spacing(4),
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: (theme: Theme) => theme.spacing(3),
+            gap: theme.spacing(3),
             [theme.breakpoints.down('sm')]: {
               margin: theme.spacing(2),
             },
           }}
+          style={contentStyle}
         >
           <Box
             data-testid="auth-layout-header"
@@ -44,9 +75,10 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title = 'AssignmentAI
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: (theme: Theme) => theme.spacing(2),
+              gap: theme.spacing(2),
               width: '100%',
             }}
+            style={headerStyle}
           >
             <Typography
               variant="h4"

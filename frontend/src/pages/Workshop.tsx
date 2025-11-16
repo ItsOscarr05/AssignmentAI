@@ -34,6 +34,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import dayjs from 'dayjs';
 import { animate } from 'framer-motion';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -62,6 +63,7 @@ import { useAspectRatio } from '../hooks/useAspectRatio';
 import { useTokenLimit } from '../hooks/useTokenLimit';
 import { useTokenUsage } from '../hooks/useTokenUsage';
 import { useWorkshopStore, WorkshopFile } from '../services/WorkshopService';
+import { usageService } from '../services/usageService';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 
 interface HistoryItem {
@@ -225,8 +227,14 @@ const Workshop: React.FC = () => {
   });
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const [animatedPercent, setAnimatedPercent] = useState(0);
-  const [isTokenChartHovered, setIsTokenChartHovered] = useState(false);
+  const DEFAULT_FILE_UPLOAD_DAILY_LIMIT = 5;
+  const [dailyFileUploadLimit, setDailyFileUploadLimit] = useState<number | null>(null);
+  const [fileUploadsCompletedToday, setFileUploadsCompletedToday] = useState<number>(0);
+  const [fileUploadLimitFeature, setFileUploadLimitFeature] = useState<string | null>(null);
+  const [isFileUsageLoading, setIsFileUsageLoading] = useState(false);
+  const [fileUploadAnimatedPercent, setFileUploadAnimatedPercent] = useState(0);
+  const [isFileChartHovered, setIsFileChartHovered] = useState(false);
+  const filePercentRef = useRef(0);
 
   // Helper function to calculate bar opacity based on filters
   const getBarOpacity = (dataKey: string, date: string) => {
@@ -283,13 +291,9 @@ const Workshop: React.FC = () => {
   const [showTokenLimitPopup, setShowTokenLimitPopup] = useState(false);
 
   // Use token limit hook for subscription and token data
-  const {
-    subscription,
-    tokenUsage: tokenLimitData,
-    loading: subscriptionLoading,
-  } = useTokenLimit();
+  const { subscription, tokenUsage: tokenLimitData } = useTokenLimit();
 
-  const { totalTokens, usedTokens, remainingTokens, percentUsed } = useTokenUsage(subscription);
+  const { totalTokens, usedTokens, remainingTokens } = useTokenUsage(subscription);
 
   const uploadContentRef = useRef<HTMLDivElement>(null);
   const rewriteTabRef = useRef<HTMLDivElement>(null);
@@ -416,26 +420,6 @@ const Workshop: React.FC = () => {
   }, [showFileUploadModal]);
 
   // Use real token usage for the circular progress bar
-  const tokenUsage = useMemo(
-    () => ({
-      label: subscriptionLoading
-        ? 'Loading...'
-        : tokenLimitData?.label || 'Free Plan (100,000 tokens/month)',
-      total: totalTokens,
-      used: usedTokens,
-      remaining: remainingTokens,
-      percentUsed: percentUsed,
-    }),
-    [
-      subscriptionLoading,
-      tokenLimitData?.label,
-      totalTokens,
-      usedTokens,
-      remainingTokens,
-      percentUsed,
-    ]
-  );
-
   useEffect(() => {
     if (location.hash === '#upload-content-card' && uploadContentRef.current) {
       uploadContentRef.current.scrollIntoView({
@@ -460,15 +444,105 @@ const Workshop: React.FC = () => {
   }, [location]);
 
   useEffect(() => {
-    const animation = animate(0, percentUsed, {
+    let isMounted = true;
+
+    const loadAssignmentUsage = async () => {
+      if (!isMounted) {
+        return;
+      }
+      setIsFileUsageLoading(true);
+      setFileUploadLimitFeature(null);
+      try {
+        const limits = await usageService.getUsageLimits();
+        if (!isMounted) {
+          return;
+        }
+
+        const fileUploadLimitEntry =
+          limits.find(
+            limit =>
+              limit.limit_type === 'daily' &&
+              limit.feature.toLowerCase().includes('file_upload')
+          ) || null;
+
+        if (fileUploadLimitEntry) {
+          const resolvedLimit =
+            fileUploadLimitEntry.limit_value && fileUploadLimitEntry.limit_value > 0
+              ? fileUploadLimitEntry.limit_value
+              : DEFAULT_FILE_UPLOAD_DAILY_LIMIT;
+          setDailyFileUploadLimit(resolvedLimit);
+          try {
+            const summary = await usageService.getUsageSummary({
+              feature: fileUploadLimitEntry.feature,
+              period: 'daily',
+            });
+            if (!isMounted) {
+              return;
+            }
+            setFileUploadsCompletedToday(summary[fileUploadLimitEntry.feature] ?? 0);
+            setFileUploadLimitFeature(fileUploadLimitEntry.feature);
+          } catch (summaryError) {
+            console.error('Failed to load file upload usage summary', summaryError);
+          }
+        } else {
+          setDailyFileUploadLimit(prev => prev ?? DEFAULT_FILE_UPLOAD_DAILY_LIMIT);
+        }
+      } catch (limitError) {
+        console.error('Failed to load file upload usage limits', limitError);
+        if (isMounted) {
+          setDailyFileUploadLimit(prev => prev ?? DEFAULT_FILE_UPLOAD_DAILY_LIMIT);
+        }
+      } finally {
+        if (isMounted) {
+          setIsFileUsageLoading(false);
+        }
+      }
+    };
+
+    loadAssignmentUsage();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [subscription?.plan_id]);
+
+  useEffect(() => {
+    if (fileUploadLimitFeature) {
+      return;
+    }
+
+    const today = dayjs();
+    const completedToday = workshopHistory.reduce((count, entry) => {
+      if (entry.type !== 'file' || !entry.timestamp) {
+        return count;
+      }
+      return dayjs(entry.timestamp).isSame(today, 'day') ? count + 1 : count;
+    }, 0);
+
+    setFileUploadsCompletedToday(completedToday);
+  }, [workshopHistory, fileUploadLimitFeature]);
+
+  const effectiveDailyLimit = dailyFileUploadLimit ?? DEFAULT_FILE_UPLOAD_DAILY_LIMIT;
+  const fileUploadPercent = useMemo(() => {
+    if (!effectiveDailyLimit || effectiveDailyLimit <= 0) {
+      return 0;
+    }
+    return Math.min(100, (fileUploadsCompletedToday / effectiveDailyLimit) * 100);
+  }, [fileUploadsCompletedToday, effectiveDailyLimit]);
+  const fileUploadsRemaining = Math.max(0, effectiveDailyLimit - fileUploadsCompletedToday);
+  const hasReachedFileLimit = fileUploadsRemaining <= 0;
+
+  useEffect(() => {
+    const animation = animate(filePercentRef.current, fileUploadPercent, {
       duration: 1.2,
       ease: 'circOut',
       onUpdate: latest => {
-        setAnimatedPercent(latest);
+        setFileUploadAnimatedPercent(latest);
       },
     });
+    filePercentRef.current = fileUploadPercent;
     return () => animation.stop();
-  }, [percentUsed]);
+  }, [fileUploadPercent]);
 
   // Populate history from workshopHistory
   useEffect(() => {
@@ -872,8 +946,31 @@ const Workshop: React.FC = () => {
     );
   };
 
-  const getProgressColor = (_percent: number) => '#D32F2F';
-  const progressColor = getProgressColor(percentUsed);
+  const planColors = {
+    free: '#1E88E5',
+    plus: '#43A047',
+    pro: '#8E24AA',
+    max: '#DAA520',
+  } as const;
+
+  const currentPlanKey = useMemo(() => {
+    const planId = subscription?.plan_id?.toLowerCase() ?? '';
+    if (planId.includes('max')) return 'max';
+    if (planId.includes('pro')) return 'pro';
+    if (planId.includes('plus')) return 'plus';
+    if (planId.includes('free')) return 'free';
+
+    const label = tokenLimitData?.label ? tokenLimitData.label.toLowerCase() : '';
+    if (label.includes('max')) return 'max';
+    if (label.includes('pro')) return 'pro';
+    if (label.includes('plus')) return 'plus';
+    if (label.includes('free')) return 'free';
+
+    return 'free';
+  }, [subscription?.plan_id, tokenLimitData?.label]);
+
+  const progressColor = planColors[currentPlanKey];
+  const planDisplayName = currentPlanKey.charAt(0).toUpperCase() + currentPlanKey.slice(1);
 
   return (
     <Box
@@ -1467,7 +1564,7 @@ const Workshop: React.FC = () => {
             </Box>
           )}
 
-          {/* Assignment Tokens */}
+          {/* Daily Assignment Counter */}
           <Box
             sx={{
               ...cardStyle,
@@ -1485,32 +1582,32 @@ const Workshop: React.FC = () => {
                 gutterBottom
                 sx={{
                   fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' },
-                  color: theme => (theme.palette.mode === 'dark' ? 'red' : 'black'),
+                  color: theme => (theme.palette.mode === 'dark' ? progressColor : 'black'),
                 }}
               >
-                Assignment Tokens
-                {subscriptionLoading && <CircularProgress size={16} sx={{ ml: 1, color: 'red' }} />}
+                Daily Assignment Progress
+                {isFileUsageLoading && (
+                  <CircularProgress size={16} sx={{ ml: 1, color: progressColor }} />
+                )}
               </Typography>
               <Tooltip
                 title={
                   <Box>
                     <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
-                      Assignment Tokens
+                      Daily Assignment Progress
                     </Typography>
                     <Typography variant="body2" sx={{ mb: 1 }}>
-                      Your available AI tokens for assignment-related features. Tokens are consumed when using AI analysis, feedback, or completion features.
+                      Track how many file uploads you&apos;ve completed today toward your assignment
+                      workflow&apos;s daily limit.
                     </Typography>
                     <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
-                      • Tokens are deducted per AI request or analysis
+                      • Hover over the ring to view exact totals
                     </Typography>
                     <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
-                      • Different features consume different amounts of tokens
-                    </Typography>
-                    <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
-                      • Purchase additional tokens or upgrade your plan to get more
+                      • Remaining assignments reset every day at midnight
                     </Typography>
                     <Typography variant="caption" sx={{ display: 'block', fontStyle: 'italic', mt: 1 }}>
-                      Check the AI Tokens page for detailed usage information
+                      Stay within your plan limits to keep AI tools available all day.
                     </Typography>
                   </Box>
                 }
@@ -1593,8 +1690,8 @@ const Workshop: React.FC = () => {
                     '@media (minWidth: 2560px)': 450,
                   },
                 }}
-                onMouseEnter={() => setIsTokenChartHovered(true)}
-                onMouseLeave={() => setIsTokenChartHovered(false)}
+                onMouseEnter={() => setIsFileChartHovered(true)}
+                onMouseLeave={() => setIsFileChartHovered(false)}
               >
                 {/* Background Track */}
                 <CircularProgress
@@ -1607,7 +1704,7 @@ const Workshop: React.FC = () => {
                     position: 'absolute',
                     top: '0%',
                     left: '0%',
-                    transform: 'translate(-10%, -10%)',
+                    transform: 'translate(-50%, -50%)',
                     width: '100%',
                     height: '100%',
                   }}
@@ -1615,7 +1712,7 @@ const Workshop: React.FC = () => {
                 {/* Actual progress */}
                 <CircularProgress
                   variant="determinate"
-                  value={animatedPercent}
+                  value={fileUploadAnimatedPercent}
                   size="100%"
                   thickness={6}
                   sx={{
@@ -1644,7 +1741,7 @@ const Workshop: React.FC = () => {
                     transition: 'opacity 0.3s ease-in-out',
                   }}
                 >
-                  {isTokenChartHovered ? (
+                  {isFileChartHovered ? (
                     <Box sx={{ textAlign: 'center' }}>
                       <Typography
                         variant={
@@ -1660,7 +1757,7 @@ const Workshop: React.FC = () => {
                         color={progressColor}
                         sx={{ fontWeight: 700 }}
                       >
-                        {tokenUsage.used.toLocaleString()}
+                        {fileUploadsCompletedToday}
                       </Typography>
                       <Divider sx={{ my: 0.5, width: '50%', mx: 'auto' }} />
                       <Typography
@@ -1676,7 +1773,7 @@ const Workshop: React.FC = () => {
                         color="text.secondary"
                         sx={{ fontWeight: 600 }}
                       >
-                        {tokenUsage.total.toLocaleString()}
+                        of {effectiveDailyLimit}
                       </Typography>
                     </Box>
                   ) : (
@@ -1694,7 +1791,7 @@ const Workshop: React.FC = () => {
                       color="text.secondary"
                       sx={{ fontWeight: 700 }}
                     >
-                      {Math.round(animatedPercent)}%
+                      {Math.round(fileUploadAnimatedPercent)}%
                     </Typography>
                   )}
                 </Box>
@@ -1710,28 +1807,17 @@ const Workshop: React.FC = () => {
                 }}
               >
                 <Typography variant="body2" color="text.secondary">
-                  {tokenUsage.label}
+                  {planDisplayName} plan · {effectiveDailyLimit} file uploads/day
                 </Typography>
-
-                {/* Show upgrade button if user is close to token limit */}
-                {subscription && percentUsed > 80 && (
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => window.open('/dashboard/price-plan', '_blank')}
-                    sx={{
-                      mt: 1,
-                      borderColor: 'red',
-                      color: 'red',
-                      '&:hover': {
-                        borderColor: 'red',
-                        backgroundColor: 'rgba(255, 0, 0, 0.04)',
-                      },
-                    }}
-                  >
-                    Upgrade Plan
-                  </Button>
-                )}
+                <Typography
+                  variant="body2"
+                  color={hasReachedFileLimit ? 'error.main' : 'text.secondary'}
+                  sx={{ mt: 0.5 }}
+                >
+                  {hasReachedFileLimit
+                    ? 'Daily limit reached'
+                    : `${fileUploadsRemaining} file uploads remaining today`}
+                </Typography>
               </Box>
             </Box>
           </Box>

@@ -272,7 +272,7 @@ app.add_middleware(
 app.middleware("http")(file_size_limit_middleware)
 
 # Add compression middleware
-# app.add_middleware(GZipMiddleware, minimum_size=1000)
+app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 # Add token tracking middleware
 app.add_middleware(TokenTrackingMiddleware)

@@ -23,16 +23,19 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const onDrop = useCallback(
-    async (acceptedFiles: File[]) => {
+    async (acceptedFiles: File[] | FileList) => {
       setUploading(true);
       setError(null);
       setProgress(0);
 
       try {
         const uploadedUrls: string[] = [];
+        const filesToProcess = Array.isArray(acceptedFiles)
+          ? acceptedFiles
+          : Array.from(acceptedFiles);
 
-        for (let i = 0; i < acceptedFiles.length; i++) {
-          const file = acceptedFiles[i];
+        for (let i = 0; i < filesToProcess.length; i++) {
+          const file = filesToProcess[i];
           const formData = new FormData();
           formData.append('file', file);
 
@@ -116,6 +119,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
     multiple,
   });
 
+  const inputProps = getInputProps();
+
   return (
     <Box sx={{ width: '100%' }}>
       <Paper
@@ -134,7 +139,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
           },
         }}
       >
-        <input {...getInputProps()} />
+        <input {...inputProps} aria-label="Select Files" />
         <CloudUploadIcon
           sx={{ fontSize: 48, color: 'primary.main', mb: 2 }}
           data-testid="CloudUploadIcon"

@@ -1,7 +1,5 @@
-import { ThemeProvider } from '@mui/material/styles';
 import { cleanup, render, screen } from '@testing-library/react';
 import React from 'react';
-import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { theme } from '../../../theme';
 import AuthLayout from '../AuthLayout';
@@ -15,14 +13,19 @@ vi.mock('@mui/material', async importOriginal => {
   };
 });
 
-const renderAuthLayout = (children: React.ReactNode) => {
-  return render(
-    <ThemeProvider theme={theme}>
-      <MemoryRouter>
-        <AuthLayout>{children}</AuthLayout>
-      </MemoryRouter>
-    </ThemeProvider>
-  );
+const renderAuthLayout = (children: React.ReactNode) => render(<AuthLayout>{children}</AuthLayout>);
+
+const normalizeColor = (color: string) => {
+  if (!color) return color;
+  if (color.startsWith('#')) {
+    const hex = color.replace('#', '');
+    const bigint = parseInt(hex, 16);
+    const r = (bigint >> 16) & 255;
+    const g = (bigint >> 8) & 255;
+    const b = bigint & 255;
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+  return color;
 };
 
 describe('AuthLayout', () => {
@@ -50,13 +53,17 @@ describe('AuthLayout', () => {
   it('applies correct theme based on dark mode setting', () => {
     renderAuthLayout('Test Content');
     const container = screen.getByTestId('auth-layout-container');
-    expect(container.style.backgroundColor).toBe(theme.palette.background.default);
+    expect(normalizeColor(container.style.backgroundColor)).toBe(
+      normalizeColor(theme.palette.background.default)
+    );
   });
 
   it('renders with custom background color', () => {
     renderAuthLayout('Test Content');
     const container = screen.getByTestId('auth-layout-container');
-    expect(container.style.backgroundColor).toBe(theme.palette.background.default);
+    expect(normalizeColor(container.style.backgroundColor)).toBe(
+      normalizeColor(theme.palette.background.default)
+    );
   });
 
   it('renders with proper spacing and padding', () => {

@@ -219,6 +219,21 @@ const AssignmentDetail: React.FC<AssignmentDetailProps> = ({
     day: 'numeric',
   });
 
+  const statusColor: 'success' | 'warning' | 'error' =
+    assignment.status === 'published' || assignment.status === 'active'
+      ? 'success'
+      : assignment.status === 'draft'
+      ? 'warning'
+      : 'error';
+
+  const difficultyColor: 'success' | 'warning' | 'error' | undefined = assignment.difficulty
+    ? assignment.difficulty === 'Easy'
+      ? 'success'
+      : assignment.difficulty === 'Medium'
+      ? 'warning'
+      : 'error'
+    : undefined;
+
   return (
     <Box sx={{ p: 3 }}>
       <Paper sx={{ p: 3 }}>
@@ -228,16 +243,15 @@ const AssignmentDetail: React.FC<AssignmentDetailProps> = ({
           </Typography>
           <Stack direction="row" spacing={2}>
             <Chip
-              label={assignment.status}
-              color={
-                assignment.status === 'published'
-                  ? 'success'
-                  : assignment.status === 'draft'
-                  ? 'warning'
-                  : 'error'
-              }
-              className="MuiChip-colorSuccess"
+              label={<span data-testid="chip-label">{assignment.status}</span>}
+              color={statusColor}
             />
+            {assignment.difficulty && (
+              <Chip
+                label={<span data-testid="chip-label">{assignment.difficulty}</span>}
+                color={difficultyColor}
+              />
+            )}
             <IconButton
               color="primary"
               onClick={() => onEdit?.(assignment)}

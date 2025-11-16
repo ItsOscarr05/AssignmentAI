@@ -2,9 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Body
 from sqlalchemy.orm import Session
 from typing import Dict, Any, Optional
 from pathlib import Path
+import json
 import uuid
 import os
 from datetime import datetime
+from asyncio import Lock
 
 from app.core.deps import get_db, get_current_user
 from app.models.user import User
@@ -14,6 +16,28 @@ from app.services.file_service import file_service
 from app.core.logger import logger
 
 router = APIRouter()
+
+_recent_response_cache: Dict[str, Dict[str, Any]] = {}
+_recent_cache_lock: Lock = Lock()
+
+
+async def _update_memory_cache(
+    key: str,
+    response: Dict[str, Any],
+    source_mtime: float,
+    filled_mtime: Optional[float],
+) -> None:
+    async with _recent_cache_lock:
+        _recent_response_cache[key] = {
+            "response": response,
+            "source_mtime": source_mtime,
+            "filled_mtime": filled_mtime,
+        }
+
+
+async def _remove_memory_cache(key: str) -> None:
+    async with _recent_cache_lock:
+        _recent_response_cache.pop(key, None)
 
 @router.post("/analyze")
 async def analyze_file_for_filling(
@@ -158,48 +182,194 @@ async def process_existing_file(
     try:
         logger.info(f"Processing existing file {file_id} with action {action} for user {current_user.id}")
         
-        # For now, we'll construct the file path based on the file_id
-        # In a real implementation, you'd fetch this from a database
         user_dir = Path(f"uploads/{current_user.id}")
         
         # Find the file with the given ID (look for files that might match)
         # This is a temporary solution - in production you'd have a proper file metadata table
         if not user_dir.exists():
             raise HTTPException(status_code=404, detail="File not found")
+
+        metadata: Dict[str, str] = {}
+        metadata_file = user_dir / f"{file_id}_metadata.txt"
+        if metadata_file.exists():
+            try:
+                with open(metadata_file, 'r', encoding='utf-8') as meta_file:
+                    for line in meta_file:
+                        if ':' in line:
+                            key, value = line.split(':', 1)
+                            metadata[key.strip()] = value.strip()
+            except Exception as meta_error:
+                logger.warning(f"Failed to read metadata for {file_id}: {meta_error}")
         
-        # Look for files in the user's directory
-        files = list(user_dir.glob("*"))
-        if not files:
-            raise HTTPException(status_code=404, detail="File not found")
+        original_filename = metadata.get('original_filename')
+        file_path: Optional[Path] = None
+        if original_filename:
+            candidate = user_dir / original_filename
+            if candidate.exists():
+                file_path = candidate
+                logger.info(f"Resolved file path from metadata: {candidate.name}")
         
-        # Try to match by file_id first, then fall back to most recent
-        file_path = None
-        logger.info(f"Looking for file with ID: {file_id}")
-        logger.info(f"Available files: {[f.name for f in files]}")
+        # Determine cache path early to leverage cached responses without scanning directory
+        cache_path = user_dir / f"{file_id}_{action}_cache.json"
+        cache_data = None
+        if cache_path.exists():
+            try:
+                with open(cache_path, 'r', encoding='utf-8') as cache_file:
+                    cache_data = json.load(cache_file)
+            except Exception as cache_error:
+                logger.warning(f"Failed to load cache for {file_id}: {cache_error}")
         
-        for file in files:
-            if file_id in str(file):
-                file_path = file
-                logger.info(f"Found exact match: {file.name}")
-                break
+        if cache_data and not file_path:
+            cached_original = cache_data.get("original_file_path")
+            if cached_original:
+                candidate = Path(cached_original)
+                if candidate.exists():
+                    file_path = candidate
         
-        # If no exact match, use the most recent file as fallback
+        # If still unresolved, search for matching file (limited glob)
         if not file_path:
-            logger.warning(f"No exact file match found for ID {file_id}, using most recent file")
-            # Sort files by modification time and get the most recent
-            files.sort(key=lambda f: f.stat().st_mtime)
-            file_path = files[-1]
-            logger.info(f"Using most recent file: {file_path.name} (modified: {file_path.stat().st_mtime})")
+            logger.info(f"Searching for file with ID {file_id}")
+            for candidate in user_dir.glob(f"*{file_id}*"):
+                if candidate.is_file():
+                    file_path = candidate
+                    logger.info(f"Found match via search: {candidate.name}")
+                    break
+        
+        if not file_path or not file_path.exists():
+            raise HTTPException(status_code=404, detail="File not found")
         
         logger.info(f"Processing file: {file_path.name}")
         
-        if not file_path.exists():
-            raise HTTPException(status_code=404, detail="File not found")
+        cache_key = f"{current_user.id}:{file_id}:{action}"
+        source_mtime = file_path.stat().st_mtime
+
+        async with _recent_cache_lock:
+            memory_entry = _recent_response_cache.get(cache_key)
+
+        if memory_entry:
+            entry_response = memory_entry.get("response")
+            entry_source_mtime = memory_entry.get("source_mtime", 0.0)
+            entry_filled_mtime = memory_entry.get("filled_mtime")
+            if entry_response and entry_source_mtime >= source_mtime:
+                if action == "fill":
+                    filled_path_str = entry_response.get("filled_file_path")
+                    if filled_path_str:
+                        filled_path = Path(filled_path_str)
+                        if filled_path.exists():
+                            filled_mtime = filled_path.stat().st_mtime
+                            if entry_filled_mtime is None or entry_filled_mtime >= filled_mtime:
+                                logger.info(f"Returning filled result for {file_id} from memory cache")
+                                return entry_response
+                else:
+                    logger.info(f"Returning {action} result for {file_id} from memory cache")
+                    return entry_response
+            await _remove_memory_cache(cache_key)
         
         # Initialize file processing service
         processing_service = FileProcessingService(db)
         
-        # Process the file
+        filled_file_match: Optional[Path] = None
+        if cache_data:
+            try:
+                cache_mtime = cache_path.stat().st_mtime
+                source_mtime = file_path.stat().st_mtime
+                if cache_mtime >= source_mtime:
+                    if action == "fill":
+                        filled_path_str = cache_data.get("filled_file_path")
+                        if filled_path_str:
+                            cached_filled = Path(filled_path_str)
+                            if cached_filled.exists():
+                                logger.info(f"Using cached filled result for file {file_id}")
+                                await _update_memory_cache(
+                                    cache_key,
+                                    cache_data,
+                                    source_mtime,
+                                    cached_filled.stat().st_mtime,
+                                )
+                                return cache_data
+                    else:
+                        logger.info(f"Using cached {action} result for file {file_id}")
+                        await _update_memory_cache(cache_key, cache_data, source_mtime, None)
+                        return cache_data
+            except Exception as cache_error:
+                logger.warning(f"Cache validation failed for {file_id}: {cache_error}")
+                cache_data = None
+
+        if action == "fill":
+            if metadata.get('filled_file_name'):
+                candidate = user_dir / metadata['filled_file_name']
+                if candidate.exists():
+                    filled_file_match = candidate
+            if not filled_file_match:
+                filled_candidates = sorted(
+                    user_dir.glob(f"filled_{file_id}_*"),
+                    key=lambda p: p.stat().st_mtime if p.exists() else 0,
+                    reverse=True,
+                )
+                filled_file_match = filled_candidates[0] if filled_candidates else None
+
+        # If we already have a filled file but no cache, reuse it without reprocessing
+        if action == "fill" and filled_file_match and filled_file_match.exists():
+            logger.info(f"Reusing existing filled file for {file_id} without reprocessing")
+            try:
+                file_extension = file_path.suffix[1:].lower()
+                original_content = await processing_service.supported_formats[file_extension](str(file_path))
+                filled_content = await processing_service.supported_formats[file_extension](
+                    str(filled_file_match)
+                )
+            except Exception as reuse_error:
+                logger.warning(
+                    f"Failed to reuse existing filled file for {file_id}, falling back to processing: {reuse_error}"
+                )
+            else:
+                clean_download_name = metadata.get('clean_download_name', filled_file_match.name)
+                internal_filled_name = metadata.get('filled_file_name', filled_file_match.name)
+
+                if 'filled_file_name' not in metadata:
+                    try:
+                        with open(metadata_file, 'a', encoding='utf-8') as meta_file:
+                            meta_file.write(f"filled_file_name:{filled_file_match.name}\n")
+                        metadata['filled_file_name'] = filled_file_match.name
+                        internal_filled_name = filled_file_match.name
+                    except Exception as meta_error:
+                        logger.warning(f"Failed to update metadata for {file_id}: {meta_error}")
+
+                response_data = {
+                    "file_id": file_id,
+                    "original_file_path": str(file_path),
+                    "filled_file_path": str(filled_file_match),
+                    "file_name": file_path.name,
+                    "filled_file_name": clean_download_name,
+                    "filled_internal_file_name": internal_filled_name,
+                    "file_type": file_extension,
+                    "sections_filled": len(filled_content.get('fillable_sections', [])),
+                    "original_content": original_content,
+                    "filled_content": filled_content,
+                    "fillable_sections": filled_content.get('fillable_sections', []),
+                    "text": filled_content.get('text', ''),
+                    "processed_at": datetime.fromtimestamp(
+                        filled_file_match.stat().st_mtime
+                    ).isoformat(),
+                    "status": "completed",
+                    "download_url": f"/api/v1/file-processing/download/{file_id}",
+                }
+
+                try:
+                    with open(cache_path, 'w', encoding='utf-8') as cache_file:
+                        json.dump(response_data, cache_file, ensure_ascii=False, default=str)
+                except Exception as cache_error:
+                    logger.warning(f"Failed to cache reused result for {file_id}: {cache_error}")
+
+                await _update_memory_cache(
+                    cache_key,
+                    response_data,
+                    source_mtime,
+                    filled_file_match.stat().st_mtime if filled_file_match.exists() else None,
+                )
+
+                return response_data
+
+        # Process the file if no valid cache or reusable filled file
         result = await processing_service.process_file(
             file_path=str(file_path),
             user_id=current_user.id,
@@ -244,16 +414,18 @@ async def process_existing_file(
             
             # Store the original filename and clean download name for future downloads
             metadata_file = file_path.parent / f"{file_id}_metadata.txt"
-            with open(metadata_file, 'w') as f:
+            with open(metadata_file, 'w', encoding='utf-8') as f:
                 f.write(f"original_filename:{file_path.name}\n")
                 f.write(f"clean_download_name:{clean_download_name}\n")
+                f.write(f"filled_file_name:{filled_file_name}\n")
             
-            return {
+            response_data = {
                 "file_id": file_id,
                 "original_file_path": str(file_path),
                 "filled_file_path": actual_filled_path,
                 "file_name": file_path.name,
                 "filled_file_name": clean_download_name,
+                "filled_internal_file_name": filled_file_name,
                 "file_type": result.get('file_type'),
                 "sections_filled": result.get('sections_filled', 0),
                 "original_content": result.get('original_content'),
@@ -264,8 +436,24 @@ async def process_existing_file(
                 "status": "completed",
                 "download_url": f"/api/v1/file-processing/download/{file_id}"
             }
+
+            # Cache response for future loads
+            try:
+                with open(cache_path, 'w', encoding='utf-8') as cache_file:
+                    json.dump(response_data, cache_file, ensure_ascii=False, default=str)
+            except Exception as cache_error:
+                logger.warning(f"Failed to cache filled result for {file_id}: {cache_error}")
+
+            await _update_memory_cache(
+                cache_key,
+                response_data,
+                source_mtime,
+                Path(actual_filled_path).stat().st_mtime if Path(actual_filled_path).exists() else None,
+            )
+
+            return response_data
         else:  # analyze
-            return {
+            response_data = {
                 "file_id": file_id,
                 "file_path": str(file_path),
                 "file_name": file_path.name,
@@ -275,6 +463,17 @@ async def process_existing_file(
                 "processed_at": result.get('processed_at'),
                 "status": "completed"
             }
+
+            # Cache analysis response
+            try:
+                with open(cache_path, 'w', encoding='utf-8') as cache_file:
+                    json.dump(response_data, cache_file, ensure_ascii=False, default=str)
+            except Exception as cache_error:
+                logger.warning(f"Failed to cache analysis result for {file_id}: {cache_error}")
+
+            await _update_memory_cache(cache_key, response_data, source_mtime, None)
+
+            return response_data
         
     except HTTPException:
         raise
