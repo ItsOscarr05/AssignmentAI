@@ -64,9 +64,6 @@ const getStripeErrorMessage = (stripeError: any): string => {
     case 'invalid_cvc':
       return "Your card's security code is invalid. Please check and try again.";
 
-    case 'card_declined':
-      return 'Your card was declined. Please try a different card.';
-
     case 'authentication_required':
       return 'Your card requires additional authentication. Please try again.';
 
