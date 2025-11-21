@@ -1,12 +1,10 @@
 import {
   AssignmentOutlined as AssignmentIcon,
-  AutoAwesomeOutlined,
   CheckCircleOutline as CheckCircleIcon,
   Edit as EditIcon,
   InfoOutlined as InfoOutlinedIcon,
   LightbulbOutlined,
   Pending as PendingIcon,
-  TrendingUp as TrendingUpIcon,
   CalendarToday as CalendarIcon,
   AllInclusive as InfinityIcon,
 } from '@mui/icons-material';
