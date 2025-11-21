@@ -19,6 +19,7 @@ import {
   PsychologyOutlined,
   RocketLaunchOutlined,
   SchoolOutlined,
+  SearchOutlined,
   SmartToyOutlined,
   Spellcheck,
   StarOutline,
@@ -122,7 +123,7 @@ const features: Feature[] = [
   },
   {
     name: 'Standard Templates',
-    free: true,
+    free: false,
     plus: true,
     pro: true,
     max: true,
@@ -137,12 +138,12 @@ const features: Feature[] = [
     description: 'Access to advanced writing templates',
   },
   {
-    name: 'Advanced + Custom Templates',
+    name: 'Custom Templates',
     free: false,
     plus: false,
     pro: false,
     max: true,
-    description: 'Advanced templates plus ability to create custom templates',
+    description: 'Create and save your own custom templates',
   },
   {
     name: 'Image Analysis',
@@ -196,17 +197,41 @@ const features: Feature[] = [
     name: 'Custom Writing Tone',
     free: false,
     plus: false,
-    pro: true,
+    pro: false,
     max: true,
     description: 'Customize writing tone and style preferences',
   },
   {
-    name: 'Performance Insights Dashboard',
+    name: 'Advanced Analytics',
     free: false,
     plus: false,
     pro: false,
     max: true,
     description: 'Detailed analytics and insights about your usage and performance',
+  },
+  {
+    name: 'Advanced Content Optimization',
+    free: false,
+    plus: false,
+    pro: false,
+    max: true,
+    description: 'AI-powered content optimization and enhancement',
+  },
+  {
+    name: 'Data Analysis',
+    free: false,
+    plus: false,
+    pro: true,
+    max: true,
+    description: 'Advanced data analysis and visualization tools',
+  },
+  {
+    name: 'Diagram Generation',
+    free: false,
+    plus: false,
+    pro: true,
+    max: true,
+    description: 'Generate diagrams and visualizations for your assignments',
   },
 ];
 
@@ -236,9 +261,6 @@ const plans: Plan[] = [
     icon: <StarOutline sx={{ fontSize: 48 }} />,
     color: '#4caf50',
     features: [
-      'AssignmentAI Core Assistant',
-      'Grammar & Spelling Check',
-      'Writing Suggestions',
       'Standard Templates',
       'Style & Tone Analysis',
       'Enhanced Writing Suggestions',
@@ -258,14 +280,10 @@ const plans: Plan[] = [
     icon: <DiamondOutlined sx={{ fontSize: 48 }} />,
     color: '#9c27b0',
     features: [
-      'AssignmentAI Core Assistant',
-      'Grammar & Spelling Check',
-      'Writing Suggestions',
       'Advanced Templates',
       'Image Analysis',
       'Code Review Assistant',
       'Citation Management',
-      'Custom Writing Tone',
       '100 assignments/day',
       'Ad-Free Experience',
     ],
@@ -277,19 +295,15 @@ const plans: Plan[] = [
   {
     name: 'Max',
     price: 14.99,
-    description: 'Unlimited access with custom templates and performance analytics',
+    description: 'Unlimited access with custom templates and advanced analytics',
     icon: <EmojiEventsOutlined sx={{ fontSize: 48 }} />,
     color: '#FF8C00',
     features: [
-      'AssignmentAI Core Assistant',
-      'Grammar & Spelling Check',
-      'Writing Suggestions',
-      'Advanced + Custom Templates',
-      'Image Analysis',
-      'Code Review Assistant',
-      'Citation Management',
-      'Custom Writing Tone',
-      'Performance Insights Dashboard',
+      'Custom Templates',
+      'Advanced Analytics',
+      'Advanced Content Optimization',
+      'Data Analysis',
+      'Diagram Generation',
       'Unlimited assignments/day',
       'Ad-Free Experience',
     ],
@@ -332,6 +346,7 @@ const getFeatureIcon = (featureName: string, color: string) => {
     case 'Advanced Templates':
       return <LibraryBooksOutlined sx={{ color }} />;
     case 'Advanced + Custom Templates':
+    case 'Custom Templates':
       return <DesignServicesOutlined sx={{ color }} />;
     case 'Image Analysis':
       return <SmartToyOutlined sx={{ color }} />;
@@ -350,7 +365,14 @@ const getFeatureIcon = (featureName: string, color: string) => {
       return <PaletteOutlined sx={{ color }} />;
     case 'Performance Insights Dashboard':
     case 'Advanced Analytics Dashboard':
+    case 'Advanced Analytics':
       return <BarChartOutlined sx={{ color }} />;
+    case 'Advanced Content Optimization':
+      return <AutoAwesomeOutlined sx={{ color }} />;
+    case 'Data Analysis':
+      return <SearchOutlined sx={{ color }} />;
+    case 'Diagram Generation':
+      return <DesignServicesOutlined sx={{ color }} />;
     // Assignment limits (daily)
     case '5 assignments/day':
     case '25 assignments/day':
@@ -1069,42 +1091,102 @@ const PricePlan: React.FC = () => {
                             <Divider />
                             <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                               <Stack spacing={1.5}>
-                                {plan.features.map(feature =>
-                                  feature.startsWith('Everything in') ? (
-                                    <Typography
-                                      key={feature}
-                                      variant="caption"
-                                      sx={{
-                                        color: theme =>
-                                          theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
-                                        fontSize: { xs: '0.95rem', md: '1.05rem' },
-                                        fontWeight: 500,
-                                        pl: 0.5,
-                                      }}
-                                    >
-                                      {feature}
-                                    </Typography>
-                                  ) : (
-                                    <Stack
-                                      key={feature}
-                                      direction="row"
-                                      spacing={1}
-                                      alignItems="center"
-                                    >
-                                      {getFeatureIcon(feature, plan.color)}
+                                {(() => {
+                                  // Filter features to show only unique ones per plan
+                                  // But always include assignment limits and Ad-Free Experience
+
+                                  // Get all features from lower-tier plans to compare
+                                  const lowerTierFeatures = new Set<string>();
+                                  if (plan.name === 'Plus') {
+                                    plans
+                                      .find(p => p.name === 'Free')
+                                      ?.features.forEach(f => lowerTierFeatures.add(f));
+                                  } else if (plan.name === 'Pro') {
+                                    plans
+                                      .find(p => p.name === 'Free')
+                                      ?.features.forEach(f => lowerTierFeatures.add(f));
+                                    plans
+                                      .find(p => p.name === 'Plus')
+                                      ?.features.forEach(f => lowerTierFeatures.add(f));
+                                  } else if (plan.name === 'Max') {
+                                    plans
+                                      .find(p => p.name === 'Free')
+                                      ?.features.forEach(f => lowerTierFeatures.add(f));
+                                    plans
+                                      .find(p => p.name === 'Plus')
+                                      ?.features.forEach(f => lowerTierFeatures.add(f));
+                                    plans
+                                      .find(p => p.name === 'Pro')
+                                      ?.features.forEach(f => lowerTierFeatures.add(f));
+                                  }
+
+                                  // Get unique features for this plan
+                                  const uniqueFeatures = plan.features.filter(feature => {
+                                    // Always include assignment limits (x assignments/day)
+                                    if (
+                                      feature.includes('assignments/day') ||
+                                      (feature.includes('assignment') && feature.includes('day'))
+                                    ) {
+                                      return true;
+                                    }
+                                    // Always include Ad-Free Experience if it exists for this plan
+                                    if (
+                                      feature.includes('Ad-Free') ||
+                                      feature.includes('ad-free')
+                                    ) {
+                                      return true;
+                                    }
+                                    // Skip "Everything in" features
+                                    if (feature.startsWith('Everything in')) {
+                                      return false;
+                                    }
+
+                                    // For Free plan, show all features (it's the base tier)
+                                    if (plan.name === 'Free') {
+                                      return true;
+                                    }
+
+                                    // For other plans, show only features not in lower tiers
+                                    return !lowerTierFeatures.has(feature);
+                                  });
+
+                                  return uniqueFeatures.map(feature =>
+                                    feature.startsWith('Everything in') ? (
                                       <Typography
-                                        variant="body2"
+                                        key={feature}
+                                        variant="caption"
                                         sx={{
-                                          fontSize: { xs: '1.0rem', md: '1.1rem' },
                                           color: theme =>
                                             theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+                                          fontSize: { xs: '0.95rem', md: '1.05rem' },
+                                          fontWeight: 500,
+                                          pl: 0.5,
                                         }}
                                       >
                                         {feature}
                                       </Typography>
-                                    </Stack>
-                                  )
-                                )}
+                                    ) : (
+                                      <Stack
+                                        key={feature}
+                                        direction="row"
+                                        spacing={1}
+                                        alignItems="center"
+                                      >
+                                        {getFeatureIcon(feature, plan.color)}
+                                        <Typography
+                                          variant="body2"
+                                          sx={{
+                                            fontSize: { xs: '1.0rem', md: '1.1rem' },
+                                            color: theme =>
+                                              theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+                                          }}
+                                        >
+                                          {feature}
+                                        </Typography>
+                                      </Stack>
+                                    )
+                                  );
+                                })()}
                               </Stack>
                             </Box>
                             <Box sx={{ mt: 'auto', pt: 2 }}>

@@ -224,6 +224,8 @@ cors_origins = [
     settings.FRONTEND_URL,
     "https://assignmentai.app",
     "https://www.assignmentai.app",
+    "https://assignmentai.com",
+    "https://www.assignmentai.com",
     "http://localhost:3001",
     "http://localhost:3000",
     "http://127.0.0.1:3001",
@@ -231,22 +233,28 @@ cors_origins = [
 ] if settings.FRONTEND_URL else [
     "https://assignmentai.app",
     "https://www.assignmentai.app",
+    "https://assignmentai.com",
+    "https://www.assignmentai.com",
     "http://localhost:3001",
     "http://localhost:3000", 
     "http://127.0.0.1:3001",
-    "http://127.0.0.1:3000",
-    "*"
+    "http://127.0.0.1:3000"
 ]
 
-# Remove duplicates and None values
-cors_origins = list(dict.fromkeys([origin for origin in cors_origins if origin]))
+# Remove duplicates and None values, and ensure we have valid origins
+cors_origins = list(dict.fromkeys([origin for origin in cors_origins if origin and origin != "*"]))
+
+# Log CORS configuration for debugging
+logger.info(f"CORS origins configured: {cors_origins}")
+logger.info(f"FRONTEND_URL from settings: {settings.FRONTEND_URL}")
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
+    expose_headers=["*"],
     max_age=3600,
 )
 

@@ -24,9 +24,12 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         )
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
-        response.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
+        # Note: These headers can interfere with CORS, so we'll be more permissive
+        # Cross-Origin-Embedder-Policy and Cross-Origin-Resource-Policy are commented out
+        # to allow CORS requests from the frontend
+        # response.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
         response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
-        response.headers["Cross-Origin-Resource-Policy"] = "same-site"
+        # response.headers["Cross-Origin-Resource-Policy"] = "same-site"
         
         # Sanitize response headers - create a list of invalid headers first
         invalid_headers = []

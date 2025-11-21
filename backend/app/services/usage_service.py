@@ -123,31 +123,34 @@ class UsageService:
             start_date = end_date - timedelta(days=1)
         elif period == 'weekly':
             start_date = end_date - timedelta(weeks=1)
+        elif period == 'lifetime':
+            # For lifetime, don't filter by date - get all records
+            start_date = None
         else:  # monthly
             start_date = end_date - timedelta(days=30)
+        
+        # Build query filters
+        query_filters = [Usage.user_id == user.id]
+        if start_date is not None:
+            query_filters.append(Usage.timestamp >= start_date)
             
         # Get total tokens used in the period
-        total_tokens_result = self.db.query(func.sum(Usage.tokens_used)).filter(
-            Usage.user_id == user.id,
-            Usage.timestamp >= start_date
-        ).scalar()
-        
+        total_tokens_query = self.db.query(func.sum(Usage.tokens_used)).filter(*query_filters)
+        total_tokens_result = total_tokens_query.scalar()
         total_tokens = int(total_tokens_result) if total_tokens_result else 0
         
         # Get usage by feature
-        feature_usage = self.db.query(
+        feature_usage_query = self.db.query(
             Usage.feature,
             func.sum(Usage.tokens_used).label('tokens_used'),
             func.count(Usage.id).label('requests_made')
-        ).filter(
-            Usage.user_id == user.id,
-            Usage.timestamp >= start_date
-        ).group_by(Usage.feature).all()
+        ).filter(*query_filters).group_by(Usage.feature)
+        feature_usage = feature_usage_query.all()
         
         return {
             'total_tokens': total_tokens,
             'period': period,
-            'start_date': start_date.isoformat(),
+            'start_date': start_date.isoformat() if start_date else None,
             'end_date': end_date.isoformat(),
             'feature_usage': {
                 feature: {

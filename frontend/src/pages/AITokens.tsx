@@ -44,8 +44,8 @@ import {
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { format } from 'date-fns';
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   CartesianGrid,
   Line,
@@ -81,10 +81,12 @@ interface Subscription {
 const AITokens: React.FC = () => {
   // All hooks at the top
   const { breakpoint } = useAspectRatio();
+  const location = useLocation();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [range, setRange] = React.useState<'7' | '30'>('7');
   const guideRef = React.useRef<HTMLDivElement>(null);
+  const usageHistoryRef = React.useRef<HTMLDivElement>(null);
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [popoverContent, setPopoverContent] = React.useState<any>(null);
   const calculateCost = (tokens: number) => tokens / 1000 - 0.01; // $1.00 per 1,000 tokens minus 1 cent
@@ -202,6 +204,34 @@ const AITokens: React.FC = () => {
     totalTokens,
     computedTotalTokens,
   });
+
+  // Handle navigation state to set range and scroll to Usage History
+  useEffect(() => {
+    if (location.state && (location.state as any).range === '30') {
+      setRange('30');
+      // Scroll to Usage History section after a short delay to ensure it's rendered
+      setTimeout(() => {
+        if (usageHistoryRef.current) {
+          usageHistoryRef.current.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          });
+        }
+      }, 100);
+    }
+    // Also check URL hash
+    if (location.hash === '#usage-history') {
+      setRange('30');
+      setTimeout(() => {
+        if (usageHistoryRef.current) {
+          usageHistoryRef.current.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          });
+        }
+      }, 100);
+    }
+  }, [location]);
 
   useEffect(() => {
     fetchSubscriptionData();
@@ -951,6 +981,8 @@ const AITokens: React.FC = () => {
           </Box>
 
           <Box
+            ref={usageHistoryRef}
+            id="usage-history"
             sx={{
               p: 2,
               mb: 2,

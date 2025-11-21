@@ -7,6 +7,8 @@ import {
   LightbulbOutlined,
   Pending as PendingIcon,
   TrendingUp as TrendingUpIcon,
+  CalendarToday as CalendarIcon,
+  AllInclusive as InfinityIcon,
 } from '@mui/icons-material';
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
@@ -118,6 +120,50 @@ const DashboardHome: React.FC = () => {
   // Get token usage data
   const { subscription } = useTokenLimit();
   const { usedTokens: monthlyTokenUsage, tokenUsageData } = useTokenUsage(subscription);
+  
+  // State for lifetime token usage
+  const [lifetimeTokenUsage, setLifetimeTokenUsage] = useState<number>(0);
+
+  // Fetch lifetime token usage separately
+  useEffect(() => {
+    const fetchLifetimeTokenUsage = async () => {
+      try {
+        // Fetch lifetime token usage with 'lifetime' period
+        const response = await api.get('/usage/tokens', {
+          params: { period: 'lifetime' },
+        });
+        
+        if (response.data && response.data.total_tokens !== undefined) {
+          setLifetimeTokenUsage(response.data.total_tokens);
+        } else {
+          // Fallback: calculate from feature_usage if total_tokens not available
+          if (response.data?.feature_usage) {
+            const total = Object.values(response.data.feature_usage).reduce(
+              (sum: number, usage: any) => sum + (usage.tokens_used || 0),
+              0
+            );
+            setLifetimeTokenUsage(total);
+          } else {
+            setLifetimeTokenUsage(0);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch lifetime token usage:', err);
+        // Fallback: calculate from monthly feature_usage if available
+        if (tokenUsageData?.feature_usage) {
+          const total = Object.values(tokenUsageData.feature_usage).reduce(
+            (sum: number, usage: any) => sum + (usage.tokens_used || 0),
+            0
+          );
+          setLifetimeTokenUsage(total);
+        } else {
+          setLifetimeTokenUsage(0);
+        }
+      }
+    };
+
+    fetchLifetimeTokenUsage();
+  }, [tokenUsageData]);
 
   // Fetch real assignments and file uploads
   useEffect(() => {
@@ -198,14 +244,6 @@ const DashboardHome: React.FC = () => {
   // Calculate stats from combined activities
   const assignmentsGenerated = combinedActivities.length;
   const assignmentsCompletedCount = assignments.filter(a => a.status === 'Completed').length;
-
-  // Calculate lifetime token usage from all feature usage
-  const lifetimeTokenUsage = tokenUsageData
-    ? Object.values(tokenUsageData.feature_usage).reduce(
-        (sum: number, usage: any) => sum + (usage.tokens_used || 0),
-        0
-      )
-    : 0;
 
   const stats = [
     {
@@ -520,21 +558,34 @@ const DashboardHome: React.FC = () => {
   return (
     <Box
       sx={{
-        overflow: 'hidden',
+        overflowX: 'hidden', // Prevent horizontal scroll on page
+        overflowY: 'auto',
         width: '100%',
-        padding: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2),
+        padding: {
+          xs: 1, // Reduced padding on mobile for wider cards
+          sm: 1.5,
+          md: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2),
+        },
       }}
     >
       {/* Top Section: Welcome */}
       <Grid
         container
-        spacing={getAspectRatioStyle(aspectRatioStyles.grid.gap, breakpoint, 2)}
+        spacing={{
+          xs: 1, // Reduced spacing on mobile for wider cards
+          sm: 1.5,
+          md: getAspectRatioStyle(aspectRatioStyles.grid.gap, breakpoint, 2),
+        }}
         sx={{ mb: 2, width: '100%' }}
       >
         <Grid item xs={12} md={12}>
           <Paper
             sx={{
-              p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2),
+              p: {
+                xs: 1.5, // Reduced padding on mobile for wider cards
+                sm: 2,
+                md: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2),
+              },
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
               background: theme =>
                 theme.palette.mode === 'dark'
@@ -616,13 +667,21 @@ const DashboardHome: React.FC = () => {
       {/* Middle Section: Recent & Active Assignments + Pie Chart */}
       <Grid
         container
-        spacing={getAspectRatioStyle(aspectRatioStyles.grid.gap, breakpoint, 3)}
+        spacing={{
+          xs: 1, // Reduced spacing on mobile for wider cards
+          sm: 1.5,
+          md: getAspectRatioStyle(aspectRatioStyles.grid.gap, breakpoint, 3),
+        }}
         sx={{ mb: 3, width: '100%' }}
       >
         <Grid item xs={12} md={breakpoint === 'standard' ? 12 : 8}>
           <Paper
             sx={{
-              p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2),
+              p: {
+                xs: 1.5, // Reduced padding on mobile for wider cards
+                sm: 2,
+                md: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2),
+              },
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
               background: theme =>
                 theme.palette.mode === 'dark'
@@ -800,19 +859,26 @@ const DashboardHome: React.FC = () => {
                     : breakpoint === 'standard'
                     ? 340
                     : 400,
-                overflow: 'hidden',
+                overflow: 'hidden', // Remove horizontal scroll
+                width: '100%',
+                maxWidth: '100%',
               }}
             >
-              <Table sx={{ width: '100%' }}>
+              <Table 
+                sx={{ 
+                  width: '100%', 
+                  tableLayout: 'fixed', // Fixed layout for better control
+                }}
+              >
                 <TableHead>
                   <TableRow>
                     <TableCell
                       sx={{
                         color: '#D32F2F',
                         fontWeight: 700,
-                        width: { xs: '25%', md: '30%' },
-                        maxWidth: { xs: '150px', md: '250px' },
-                        p: { xs: 1, md: 2 },
+                        width: { xs: '30%', sm: '30%', md: '30%' },
+                        p: { xs: 1, sm: 1.25, md: 2 },
+                        fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.875rem' },
                       }}
                     >
                       Assignment Name
@@ -821,10 +887,10 @@ const DashboardHome: React.FC = () => {
                       sx={{
                         color: '#D32F2F',
                         fontWeight: 700,
-                        width: { xs: '15%', md: '15%' },
-                        p: { xs: 1, md: 2 },
+                        width: { xs: '20%', sm: '15%', md: '15%' },
+                        p: { xs: 1, sm: 1.25, md: 2 },
                         whiteSpace: 'nowrap',
-                        fontSize: { xs: '0.75rem', md: '0.875rem' },
+                        fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.875rem' },
                       }}
                     >
                       File Status
@@ -833,8 +899,9 @@ const DashboardHome: React.FC = () => {
                       sx={{
                         color: '#D32F2F',
                         fontWeight: 700,
-                        width: { xs: '15%', md: '15%' },
-                        p: { xs: 1, md: 2 },
+                        width: { xs: '20%', sm: '15%', md: '15%' },
+                        p: { xs: 1, sm: 1.25, md: 2 },
+                        fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.875rem' },
                       }}
                     >
                       Last Updated
@@ -843,9 +910,10 @@ const DashboardHome: React.FC = () => {
                       sx={{
                         color: '#D32F2F',
                         fontWeight: 700,
-                        width: { xs: '45%', md: '40%' },
-                        p: { xs: 1, md: 2 },
-                        pl: { xs: 2, md: 3 },
+                        width: { xs: '30%', sm: '40%', md: '40%' },
+                        p: { xs: 1, sm: 1.25, md: 2 },
+                        pl: { xs: 1.5, sm: 2, md: 3 },
+                        fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.875rem' },
                       }}
                     >
                       File Actions
@@ -881,11 +949,12 @@ const DashboardHome: React.FC = () => {
                       <TableRow key={activity.id}>
                         <TableCell
                           sx={{
-                            p: { xs: 1, md: 2 },
-                            maxWidth: { xs: '150px', md: '250px' },
+                            p: { xs: 1, sm: 1.25, md: 2 },
+                            width: { xs: '30%', sm: '30%', md: '30%' },
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap',
+                            fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.875rem' },
                           }}
                         >
                           <Tooltip title={activity.title} arrow placement="top">
@@ -905,7 +974,13 @@ const DashboardHome: React.FC = () => {
                             </span>
                           </Tooltip>
                         </TableCell>
-                        <TableCell sx={{ p: { xs: 1, md: 2 } }}>
+                        <TableCell 
+                          sx={{ 
+                            p: { xs: 1, sm: 1.25, md: 2 },
+                            width: { xs: '20%', sm: '15%', md: '15%' },
+                            fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.875rem' },
+                          }}
+                        >
                           <span
                             style={{
                               color:
@@ -922,10 +997,23 @@ const DashboardHome: React.FC = () => {
                             {activity.status}
                           </span>
                         </TableCell>
-                        <TableCell sx={{ p: { xs: 1, md: 2 } }}>
+                        <TableCell 
+                          sx={{ 
+                            p: { xs: 1, sm: 1.25, md: 2 },
+                            width: { xs: '20%', sm: '15%', md: '15%' },
+                            fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.875rem' },
+                          }}
+                        >
                           {formatDateWithPreference(activity.createdAt)}
                         </TableCell>
-                        <TableCell sx={{ p: { xs: 1, md: 2 } }}>
+                        <TableCell 
+                          sx={{ 
+                            p: { xs: 1, sm: 1.25, md: 2 },
+                            width: { xs: '30%', sm: '40%', md: '40%' },
+                            pl: { xs: 1.5, sm: 2, md: 3 },
+                            fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.875rem' },
+                          }}
+                        >
                           <Box
                             sx={{
                               display: 'flex',
@@ -946,14 +1034,14 @@ const DashboardHome: React.FC = () => {
                                     sx={{
                                       color: '#1976D2',
                                       minWidth: 'auto',
-                                      px: { xs: 0.25, sm: 0.5 },
-                                      py: 0.25,
-                                      fontSize: '0.75rem',
+                                      px: { xs: 0.5, sm: 0.75 },
+                                      py: { xs: 0.25, sm: 0.35 },
+                                      fontSize: { xs: '0.7rem', sm: '0.8rem' },
                                       whiteSpace: 'nowrap',
                                     }}
                                     onClick={() => handleEditSubject(activity.id)}
                                   >
-                                    <EditIcon sx={{ fontSize: 16, mr: { xs: 0, sm: 0.25 } }} />
+                                    <EditIcon sx={{ fontSize: { xs: 16, sm: 18 }, mr: { xs: 0, sm: 0.25 } }} />
                                     <Box
                                       sx={{
                                         display: {
@@ -974,15 +1062,15 @@ const DashboardHome: React.FC = () => {
                                     sx={{
                                       color: '#009688',
                                       minWidth: 'auto',
-                                      px: { xs: 0.25, sm: 0.5 },
-                                      py: 0.25,
-                                      fontSize: '0.75rem',
+                                      px: { xs: 0.5, sm: 0.75 },
+                                      py: { xs: 0.25, sm: 0.35 },
+                                      fontSize: { xs: '0.7rem', sm: '0.8rem' },
                                       whiteSpace: 'nowrap',
                                     }}
                                     onClick={() => handleViewCompletedFile(activity.id)}
                                   >
                                     <VisibilityOutlinedIcon
-                                      sx={{ fontSize: 16, mr: { xs: 0, sm: 0.25 } }}
+                                      sx={{ fontSize: { xs: 16, sm: 18 }, mr: { xs: 0, sm: 0.25 } }}
                                     />
                                     <Box
                                       sx={{
@@ -1004,15 +1092,15 @@ const DashboardHome: React.FC = () => {
                                     sx={{
                                       color: '#f44336',
                                       minWidth: 'auto',
-                                      px: { xs: 0.25, sm: 0.5 },
-                                      py: 0.25,
-                                      fontSize: '0.75rem',
+                                      px: { xs: 0.5, sm: 0.75 },
+                                      py: { xs: 0.25, sm: 0.35 },
+                                      fontSize: { xs: '0.7rem', sm: '0.8rem' },
                                       whiteSpace: 'nowrap',
                                     }}
                                     onClick={() => handleDeleteClick(activity.id)}
                                   >
                                     <DeleteOutlinedIcon
-                                      sx={{ fontSize: 16, mr: { xs: 0, sm: 0.25 } }}
+                                      sx={{ fontSize: { xs: 16, sm: 18 }, mr: { xs: 0, sm: 0.25 } }}
                                     />
                                     <Box
                                       sx={{
@@ -1065,7 +1153,11 @@ const DashboardHome: React.FC = () => {
           {/* Assignment Disstribution Pie Chart */}
           <Paper
             sx={{
-              p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 3),
+              p: {
+                xs: 1.5, // Reduced padding on mobile for wider cards
+                sm: 2,
+                md: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 3),
+              },
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
               background: theme =>
                 theme.palette.mode === 'dark'
@@ -1243,13 +1335,21 @@ const DashboardHome: React.FC = () => {
       {/* Bottom Section: AI Activity & Insights + AssignmentAI Suggests */}
       <Grid
         container
-        spacing={getAspectRatioStyle(aspectRatioStyles.grid.gap, breakpoint, 3)}
+        spacing={{
+          xs: 1, // Match spacing with other sections
+          sm: 1.5,
+          md: getAspectRatioStyle(aspectRatioStyles.grid.gap, breakpoint, 3),
+        }}
         sx={{ mb: 3, width: '100%' }}
       >
-        <Grid item xs={12} md={12}>
+        <Grid item xs={12} md={breakpoint === 'standard' ? 12 : 8}>
           <Paper
             sx={{
-              p: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 3),
+              p: {
+                xs: 1.5, // Match padding with other cards
+                sm: 2,
+                md: getAspectRatioStyle(aspectRatioStyles.container.padding, breakpoint, 2), // Match Recent & Active Assignments padding
+              },
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
               background: theme =>
                 theme.palette.mode === 'dark'
@@ -1405,7 +1505,7 @@ const DashboardHome: React.FC = () => {
                 </Grid>
                 <Grid item xs={6}>
                   <Paper
-                    onClick={() => navigate('/dashboard/ai-tokens')}
+                    onClick={() => navigate('/dashboard/ai-tokens#usage-history', { state: { range: '30' } })}
                     sx={{
                       p: { xs: 1, md: 2 },
                       textAlign: 'center',
@@ -1422,7 +1522,7 @@ const DashboardHome: React.FC = () => {
                     }}
                   >
                     <Box display="flex" flexDirection="column" alignItems="center">
-                      <TrendingUpIcon sx={{ color: '#8E24AA', mb: 3 }} />
+                      <CalendarIcon sx={{ color: '#8E24AA', mb: 3, fontSize: { xs: 32, md: 40 } }} />
                       <Typography variant="subtitle2" color="text.secondary">
                         Monthly Token Usage
                       </Typography>
@@ -1434,7 +1534,7 @@ const DashboardHome: React.FC = () => {
                 </Grid>
                 <Grid item xs={6}>
                   <Paper
-                    onClick={() => navigate('/dashboard/ai-tokens')}
+                    onClick={() => navigate('/dashboard/profile', { state: { tab: 2 } })}
                     sx={{
                       p: { xs: 1, md: 2 },
                       textAlign: 'center',
@@ -1452,7 +1552,7 @@ const DashboardHome: React.FC = () => {
                     }}
                   >
                     <Box display="flex" flexDirection="column" alignItems="center">
-                      <AutoAwesomeOutlined sx={{ color: '#FFA000', mb: 3 }} />
+                      <InfinityIcon sx={{ color: '#FFA000', mb: 3, fontSize: { xs: 32, md: 40 } }} />
                       <Typography variant="subtitle2" color="text.secondary">
                         Lifetime Token Usage
                       </Typography>

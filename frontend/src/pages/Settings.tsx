@@ -77,7 +77,9 @@ import AIFeaturesStatusModal from '../components/settings/AIFeaturesStatusModal'
 import ModelComparisonModal from '../components/settings/ModelComparisonModal';
 import { useFontSize } from '../contexts/FontSizeContext';
 import { useAspectRatio } from '../hooks/useAspectRatio';
-import { preferences, users } from '../services/api';
+import { api, preferences, users } from '../services/api';
+import { fileUploadService } from '../services/fileUploadService';
+import { mapToCoreSubject } from '../services/subjectService';
 import securityService from '../services/SecurityService';
 import UserService from '../services/userService';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
@@ -1412,15 +1414,76 @@ const Settings: React.FC = () => {
     try {
       setIsLoadingUserData(true);
       setUserDataError(null);
-      const [currentUser, profile, stats] = await Promise.all([
+      const [currentUser, profile, stats, assignmentsResponse, fileUploadsResponse] = await Promise.all([
         UserService.getCurrentUser(),
         UserService.getUserProfile(),
         UserService.getDashboardStats(),
+        api.get('/assignments').catch(() => ({ data: [] })),
+        fileUploadService.getAll().catch(() => ({ items: [] })),
       ]);
 
       setUserData(currentUser);
       setUserProfile(profile);
-      setDashboardStats(stats);
+
+      // Process assignments and file uploads like Assignments page
+      const assignments = Array.isArray(assignmentsResponse.data)
+        ? assignmentsResponse.data
+        : Array.isArray(assignmentsResponse.data?.assignments)
+        ? assignmentsResponse.data.assignments
+        : [];
+      
+      const fileUploads = fileUploadsResponse.items || [];
+
+      // Create combined activities (same logic as Assignments page)
+      const combinedActivities: any[] = [];
+
+      // Add assignments
+      assignments.forEach((assignment: any) => {
+        combinedActivities.push({
+          id: `assignment-${assignment.id}`,
+          type: 'assignment',
+          title: assignment.title,
+          subject: assignment.subject,
+          status: assignment.status,
+          createdAt: assignment.createdAt || assignment.created_at,
+        });
+      });
+
+      // Add file uploads (excluding links)
+      fileUploads.forEach((upload: any) => {
+        if (upload.is_link) return;
+
+        const customSubject = upload.upload_metadata?.custom_subject;
+        const derivedSubject = mapToCoreSubject(
+          upload.original_filename || upload.filename || 'Unknown'
+        );
+
+        combinedActivities.push({
+          id: `file-${upload.id}`,
+          type: 'file_upload',
+          title: upload.original_filename,
+          subject: customSubject || derivedSubject,
+          status: 'Completed',
+          createdAt: upload.created_at,
+        });
+      });
+
+      // Calculate stats from combined activities
+      const totalAssignments = combinedActivities.length;
+      const completedAssignments = combinedActivities.filter(
+        (a: any) => a.status === 'Completed' || a.status === 'completed' || a.status === 'published'
+      ).length;
+      const pendingAssignments = combinedActivities.filter(
+        (a: any) => a.status !== 'Completed' && a.status !== 'completed' && a.status !== 'published'
+      ).length;
+
+      // Update dashboard stats with calculated values
+      setDashboardStats({
+        ...stats,
+        totalAssignments,
+        completedAssignments,
+        pendingAssignments,
+      });
     } catch (error) {
       console.error('Error loading user data:', error);
       setUserDataError('Failed to load user data. Please try again.');

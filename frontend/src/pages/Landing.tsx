@@ -28,6 +28,7 @@ import {
   BlockOutlined,
   BoltOutlined,
   BuildOutlined,
+  CalendarToday,
   CancelOutlined,
   CheckCircle,
   CheckCircleOutlineOutlined,
@@ -35,23 +36,28 @@ import {
   DesignServicesOutlined,
   DiamondOutlined,
   EmailOutlined,
+  EmojiEventsOutlined,
   FormatQuoteOutlined,
   GppGoodOutlined,
   Group,
   LanguageOutlined,
   LibraryBooksOutlined,
+  LocalOfferOutlined,
   PaletteOutlined,
   PhotoCameraOutlined,
   PsychologyOutlined,
   RocketLaunchOutlined,
   SchoolOutlined,
   ScienceOutlined,
+  SearchOutlined,
   SecurityOutlined,
   SmartToyOutlined,
   Spellcheck,
+  StarOutline,
   TextSnippetOutlined,
   ThumbDownOutlined,
   TrendingUpOutlined,
+  WorkspacePremium,
 } from '@mui/icons-material';
 import { Grid } from '@mui/material';
 import Box from '@mui/material/Box';
@@ -70,64 +76,78 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 // Lazy load icons
-const EmojiEventsOutlined = lazy(() =>
-  import('@mui/icons-material/EmojiEventsOutlined').then(module => ({
-    default: module.default,
-  }))
-);
 const HelpOutline = lazy(() =>
   import('@mui/icons-material/HelpOutline').then(module => ({
-    default: module.default,
-  }))
-);
-const LocalOfferOutlined = lazy(() =>
-  import('@mui/icons-material/LocalOfferOutlined').then(module => ({
-    default: module.default,
-  }))
-);
-const StarOutline = lazy(() =>
-  import('@mui/icons-material/StarOutline').then(module => ({
-    default: module.default,
-  }))
-);
-const WorkspacePremiumIcon = lazy(() =>
-  import('@mui/icons-material/WorkspacePremium').then(module => ({
     default: module.default,
   }))
 );
 
 const getFeatureIcon = (featureName: string, color: string) => {
   switch (featureName) {
-    case 'Basic Assignment Analysis':
+    case 'AssignmentAI Core Assistant':
       return <SchoolOutlined sx={{ color }} />;
     case 'Grammar & Spelling Check':
       return <Spellcheck sx={{ color }} />;
+    case 'Writing Suggestions':
     case 'Basic Writing Suggestions':
       return <AutoFixHighOutlined sx={{ color }} />;
     case 'Basic Templates':
       return <TextSnippetOutlined sx={{ color }} />;
+    case 'Standard Templates':
+      return <LibraryBooksOutlined sx={{ color }} />;
+    case 'Advanced Templates':
+      return <LibraryBooksOutlined sx={{ color }} />;
+    case 'Advanced + Custom Templates':
+    case 'Custom Templates':
+      return <DesignServicesOutlined sx={{ color }} />;
+    case 'Image Analysis':
+      return <SmartToyOutlined sx={{ color }} />;
+    case 'Code Review Assistant':
+    case 'Code Analysis':
+      return <PsychologyOutlined sx={{ color }} />;
+    case 'Citation Management':
+      return <FormatQuoteOutlined sx={{ color }} />;
+    case 'Ad-Free Experience':
+      return <BlockOutlined sx={{ color }} />;
+    case 'Style & Tone Analysis':
+      return <PaletteOutlined sx={{ color }} />;
+    case 'Enhanced Writing Suggestions':
+      return <AutoAwesomeOutlined sx={{ color }} />;
+    case 'Custom Writing Tone':
+      return <PaletteOutlined sx={{ color }} />;
+    case 'Performance Insights Dashboard':
+    case 'Advanced Analytics Dashboard':
+    case 'Advanced Analytics':
+      return <BarChartOutlined sx={{ color }} />;
+    case 'Advanced Content Optimization':
+      return <AutoAwesomeOutlined sx={{ color }} />;
+    case 'Data Analysis':
+      return <SearchOutlined sx={{ color }} />;
+    case 'Diagram Generation':
+      return <DesignServicesOutlined sx={{ color }} />;
+    // Assignment limits (daily)
+    case '5 assignments/day':
+    case '25 assignments/day':
+    case '100 assignments/day':
+    case 'Unlimited assignments/day':
+      return <CalendarToday sx={{ color }} />;
+    // Legacy cases for backward compatibility
+    case 'Basic Assignment Analysis':
+      return <SchoolOutlined sx={{ color }} />;
     case 'Advanced Writing Analysis':
       return <ScienceOutlined sx={{ color }} />;
     case 'Style & Tone Suggestions':
       return <PaletteOutlined sx={{ color }} />;
     case 'Extended Templates Library':
       return <LibraryBooksOutlined sx={{ color }} />;
-    case 'Citation Management':
-      return <FormatQuoteOutlined sx={{ color }} />;
     case 'Basic Plagiarism Check':
       return <GppGoodOutlined sx={{ color }} />;
     case 'Diagram Generation':
       return <DesignServicesOutlined sx={{ color }} />;
-    case 'Image Analysis':
-      return <SmartToyOutlined sx={{ color }} />;
-    case 'Code Analysis':
-      return <PsychologyOutlined sx={{ color }} />;
     case 'Data File Analysis':
       return <BarChartOutlined sx={{ color }} />;
     case 'Advanced Research Assistant':
       return <PsychologyOutlined sx={{ color }} />;
-    case 'Advanced Analytics Dashboard':
-      return <BarChartOutlined sx={{ color }} />;
     case 'Custom Assignment Templates':
       return <DesignServicesOutlined sx={{ color }} />;
     case 'AI-Powered Learning Path':
@@ -138,8 +158,6 @@ const getFeatureIcon = (featureName: string, color: string) => {
       return <Group sx={{ color }} />;
     case 'Smart Content Summarization':
       return <AutoAwesomeOutlined sx={{ color }} />;
-    case 'Ad-Free Experience':
-      return <BlockOutlined sx={{ color }} />;
     default:
       return <CheckCircle sx={{ color }} />;
   }
@@ -167,9 +185,6 @@ const plans = [
     icon: <StarOutline sx={{ fontSize: 48 }} />,
     color: '#4caf50',
     features: [
-      'AssignmentAI Core Assistant',
-      'Grammar & Spelling Check',
-      'Writing Suggestions',
       'Standard Templates',
       'Style & Tone Analysis',
       'Enhanced Writing Suggestions',
@@ -185,14 +200,10 @@ const plans = [
     icon: <DiamondOutlined sx={{ fontSize: 48 }} />,
     color: '#9c27b0',
     features: [
-      'AssignmentAI Core Assistant',
-      'Grammar & Spelling Check',
-      'Writing Suggestions',
       'Advanced Templates',
       'Image Analysis',
       'Code Review Assistant',
       'Citation Management',
-      'Custom Writing Tone',
       '100 assignments/day',
       'Ad-Free Experience',
     ],
@@ -200,19 +211,15 @@ const plans = [
   {
     name: 'Max',
     price: 14.99,
-    description: 'Unlimited access with custom templates and performance analytics',
+    description: 'Unlimited access with custom templates and advanced analytics',
     icon: <EmojiEventsOutlined sx={{ fontSize: 48 }} />,
-    color: '#ff9800',
+    color: '#FF8C00',
     features: [
-      'AssignmentAI Core Assistant',
-      'Grammar & Spelling Check',
-      'Writing Suggestions',
-      'Advanced + Custom Templates',
-      'Image Analysis',
-      'Code Review Assistant',
-      'Citation Management',
-      'Custom Writing Tone',
-      'Performance Insights Dashboard',
+      'Custom Templates',
+      'Advanced Analytics',
+      'Advanced Content Optimization',
+      'Data Analysis',
+      'Diagram Generation',
       'Unlimited assignments/day',
       'Ad-Free Experience',
     ],
@@ -1510,7 +1517,7 @@ const Landing: React.FC = () => {
                   >
                     {plan.popular && (
                       <Chip
-                        icon={<WorkspacePremiumIcon />}
+                        icon={<WorkspacePremium />}
                         label="Most Popular"
                         color="primary"
                         sx={{
@@ -1707,54 +1714,6 @@ const Landing: React.FC = () => {
                         )}
                         <Divider />
                         <Stack spacing={1.5}>
-                          {plan.name === 'Free' && (
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                color: '#000000',
-                                fontSize: { xs: '0.95rem', md: '1.05rem' },
-                                pl: 0.5,
-                              }}
-                            >
-                              Free Features
-                            </Typography>
-                          )}
-                          {plan.name === 'Plus' && (
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                color: '#000000',
-                                fontSize: { xs: '0.95rem', md: '1.05rem' },
-                                pl: 0.5,
-                              }}
-                            >
-                              + Everything in Free
-                            </Typography>
-                          )}
-                          {plan.name === 'Pro' && (
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                color: '#000000',
-                                fontSize: { xs: '0.95rem', md: '1.05rem' },
-                                pl: 0.5,
-                              }}
-                            >
-                              + Everything in Plus
-                            </Typography>
-                          )}
-                          {plan.name === 'Max' && (
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                color: '#000000',
-                                fontSize: { xs: '0.95rem', md: '1.05rem' },
-                                pl: 0.5,
-                              }}
-                            >
-                              + Everything in Pro
-                            </Typography>
-                          )}
                           {plan.features.map(feature =>
                             feature.startsWith('Everything in') ? (
                               <Typography

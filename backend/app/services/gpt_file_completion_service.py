@@ -183,20 +183,54 @@ Return your response as a structured JSON with:
                 text_content = str(file_content)
             
             # Create completion prompt
-            prompt = f"""You are completing an assignment document. Below is the content with blank spaces, incomplete sections, or questions that need to be filled in.
+            prompt = f"""You are an expert academic assistant completing an assignment document. Your task is to COMPLETELY fill out the assignment with comprehensive, accurate, and properly formatted answers.
 
-INSTRUCTIONS:
-1. Carefully read through the entire document
-2. Identify all blank spaces (indicated by underscores, brackets, or "TODO" markers)
-3. Complete each section with appropriate, detailed content
-4. Maintain the document's tone, style, and formatting
-5. Keep your answers relevant and contextual
-6. Return the COMPLETE document with all sections filled in
+CRITICAL REQUIREMENTS:
+1. Read the ENTIRE document carefully to understand context, instructions, and requirements
+2. Identify ALL incomplete sections including:
+   - Questions (Q1, Q2, Question 1, etc.)
+   - Blank spaces (_____, [BLANK], _______, etc.)
+   - Incomplete sentences or paragraphs
+   - Fill-in-the-blank exercises
+   - Multiple choice questions that need answers
+   - Essay prompts that need full responses
+   - Math problems that need solutions
+   - Any other incomplete content
+
+3. For EACH question or blank, provide:
+   - Complete, comprehensive answers (not just brief responses)
+   - Proper academic formatting and structure
+   - Detailed explanations where appropriate
+   - Step-by-step solutions for math/science problems
+   - Well-developed paragraphs for essay questions
+   - Accurate answers that demonstrate understanding
+
+4. Maintain the EXACT formatting of the original document:
+   - Keep all original text exactly as written
+   - Preserve question numbers, labels, and structure
+   - Maintain spacing, indentation, and layout
+   - Keep headers, sections, and organizational elements
+   - Do NOT add new sections or reorganize content
+
+5. Answer quality standards:
+   - Answers should be thorough and demonstrate subject knowledge
+   - Use appropriate academic tone and language
+   - Include relevant examples and details
+   - Show work for calculations (show formulas, steps, and final answers)
+   - Provide complete explanations, not just keywords
+   - Ensure answers are factually accurate and contextually appropriate
+
+6. Formatting rules:
+   - Place answers directly after each question (e.g., "Q1) [question text]\nA1) [complete answer]")
+   - For fill-in-the-blanks, replace blanks with appropriate words/phrases
+   - For multiple choice, indicate the correct answer (e.g., "Answer: B")
+   - Maintain consistent formatting throughout
 
 ORIGINAL DOCUMENT:
 {text_content}
 
-COMPLETED DOCUMENT (return the full document with all blanks filled):"""
+COMPLETED DOCUMENT:
+Return the COMPLETE document with ALL questions answered, ALL blanks filled, and ALL sections completed. Preserve the original structure and formatting exactly. Make sure every single incomplete element is fully addressed with comprehensive, accurate content."""
 
             # Get user's AI settings for token limits
             user_plan = await self.ai_service.get_user_plan(user_id)
@@ -209,7 +243,7 @@ COMPLETED DOCUMENT (return the full document with all blanks filled):"""
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a helpful AI assistant that completes assignments and documents. Always provide complete, detailed, and contextually appropriate content."
+                        "content": "You are an expert academic assistant specializing in completing assignments. Your role is to:\n\n1. Thoroughly analyze assignment documents\n2. Identify ALL incomplete sections, questions, and blanks\n3. Provide comprehensive, accurate, and well-formatted answers\n4. Maintain the exact structure and formatting of the original document\n5. Ensure every question is fully answered with appropriate detail\n6. Show work for calculations and provide explanations for concepts\n7. Use proper academic tone and demonstrate subject knowledge\n\nYou must complete the ENTIRE assignment - no questions left unanswered, no blanks left unfilled. The completed document should be ready for submission with all requirements met."
                     },
                     {
                         "role": "user",
@@ -217,7 +251,7 @@ COMPLETED DOCUMENT (return the full document with all blanks filled):"""
                     }
                 ],
                 max_completion_tokens=max_tokens,
-                temperature=0.7
+                temperature=0.3  # Lower temperature for more accurate, focused completions
             )
             
             completed_text = response.choices[0].message.content

@@ -29,6 +29,7 @@ import {
   useTheme,
 } from '@mui/material';
 import React, { useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import EditProfileDialog from '../components/profile/EditProfileDialog';
 import { useAuth } from '../contexts/AuthContext';
 import { useAssignments } from '../hooks/useApiQuery';
@@ -37,6 +38,7 @@ import { useProfileStore } from '../services/ProfileService';
 import { fileUploadService } from '../services/fileUploadService';
 import { paymentService, Subscription } from '../services/paymentService';
 import { mapToCoreSubject } from '../services/subjectService';
+import UserService from '../services/userService';
 import { aspectRatioStyles, getAspectRatioStyle } from '../styles/aspectRatioBreakpoints';
 import { parseUTCTimestamp } from '../utils/timezone';
 
@@ -193,10 +195,32 @@ const Profile: React.FC = () => {
   const { user, logout } = useAuth();
   const { breakpoint } = useAspectRatio();
   const { profile, isLoading, error, updateProfile, fetchProfile } = useProfileStore();
+  const location = useLocation();
 
-  const [tabValue, setTabValue] = useState(0);
+  // Initialize tab value from location state or default to 0
+  const [tabValue, setTabValue] = useState(() => {
+    // Check if location state has a tab index
+    if (location.state && typeof (location.state as any).tab === 'number') {
+      return (location.state as any).tab;
+    }
+    // Check URL search params for tab
+    const searchParams = new URLSearchParams(location.search);
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'achievements') return 2;
+    if (tabParam === 'activity') return 1;
+    return 0;
+  });
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [currentSubscription, setCurrentSubscription] = useState<Subscription | null>(null);
+  const [userData, setUserData] = useState<{
+    id: string;
+    email: string;
+    full_name: string;
+    role: string;
+    is_active: boolean;
+    is_verified: boolean;
+    created_at: string;
+  } | null>(null);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -214,12 +238,43 @@ const Profile: React.FC = () => {
     department: '',
   });
 
+  // Update tab value when location state changes
+  useEffect(() => {
+    if (location.state && typeof (location.state as any).tab === 'number') {
+      setTabValue((location.state as any).tab);
+    }
+    // Also check URL search params
+    const searchParams = new URLSearchParams(location.search);
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'achievements') {
+      setTabValue(2);
+    } else if (tabParam === 'activity') {
+      setTabValue(1);
+    } else if (tabParam === 'overview' || (!tabParam && !location.state)) {
+      setTabValue(0);
+    }
+  }, [location]);
+
   // Load profile data on component mount
   useEffect(() => {
     if (!profile) {
       fetchProfile();
     }
   }, [profile, fetchProfile]);
+
+  // Load user data (for account creation date)
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const currentUser = await UserService.getCurrentUser();
+        setUserData(currentUser);
+      } catch (error) {
+        console.error('Profile: Failed to fetch user data:', error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   // Load subscription data on component mount
   useEffect(() => {
@@ -524,24 +579,21 @@ const Profile: React.FC = () => {
     : 'John Doe';
   const displayEmail = profileData?.email || 'john.doe@example.com';
   // Get member since date from multiple possible sources
+  // Priority matches AccountInformationDialog: userData.created_at first
   const getMemberSince = (): string | undefined => {
-    // Try to get from subscription data first (most reliable)
-    if (currentSubscription?.current_period_end) {
+    // First priority: Use userData.created_at (same as AccountInformationDialog)
+    if (userData?.created_at) {
       try {
-        const periodEnd = parseUTCTimestamp(currentSubscription.current_period_end);
-        // Calculate approximate start date (subtract 1 month from period end)
-        const startDate = new Date(periodEnd);
-        startDate.setMonth(startDate.getMonth() - 1);
-        return startDate.toLocaleDateString(undefined, {
+        return parseUTCTimestamp(userData.created_at).toLocaleDateString(undefined, {
           year: 'numeric',
           month: '2-digit',
         });
       } catch (error) {
-        console.error('Error parsing subscription period:', error);
+        console.error('Error parsing userData.created_at:', error);
       }
     }
 
-    // Try to get from profile data
+    // Fallback: Try to get from profile data
     if (profileData && 'createdAt' in profileData && profileData.createdAt) {
       try {
         return parseUTCTimestamp((profileData as any).createdAt).toLocaleDateString(undefined, {
@@ -553,7 +605,7 @@ const Profile: React.FC = () => {
       }
     }
 
-    // Try to get from user data
+    // Fallback: Try to get from user data
     if (user && 'createdAt' in user && (user as any).createdAt) {
       try {
         return parseUTCTimestamp((user as any).createdAt).toLocaleDateString(undefined, {

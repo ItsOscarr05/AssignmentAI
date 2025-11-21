@@ -723,51 +723,77 @@ return b'''
     
     def _get_essay_prompt(self) -> str:
         return """
-        Write a comprehensive {tone} response to the following question:
+        Write a comprehensive, well-structured {tone} essay response to the following question. This is part of an assignment that must be completed fully and professionally.
         
         Question: {question}
         Context: {context}
         
         Requirements:
-        - Word count: approximately {word_count} words (±5%)
-        - Tone: {tone}
-        - Include {citations}
-        - Maintain proper academic formatting
-        - Provide detailed analysis and examples where appropriate
-        - Use clear, well-structured sentences
-        - Address the question directly and completely
-        - Include specific examples when relevant
+        - Word count: approximately {word_count} words (±5%) - ensure you meet this requirement
+        - Tone: {tone} - maintain consistent academic tone throughout
+        - Include {citations} - use proper citation format (APA, MLA, or Chicago style as appropriate)
+        - Structure: Include introduction, body paragraphs with clear arguments, and conclusion
+        - Content: Provide thorough analysis, detailed explanations, and relevant examples
+        - Evidence: Support arguments with specific examples, data, or references
+        - Clarity: Use clear, well-structured sentences and logical flow
+        - Completeness: Address ALL aspects of the question comprehensively
         
-        IMPORTANT: Provide only the response content without any prefix like "Answer:" or "Response:". 
-        Just provide the direct answer content that can be inserted into the document.
+        Essay Structure Guidelines:
+        1. Introduction: Clearly state the topic and your thesis/main argument
+        2. Body: Develop your arguments with detailed explanations, examples, and evidence
+        3. Conclusion: Summarize key points and reinforce your main argument
+        
+        Content Quality Standards:
+        - Demonstrate deep understanding of the subject matter
+        - Provide specific, relevant examples and evidence
+        - Use appropriate academic vocabulary and terminology
+        - Show critical thinking and analysis
+        - Ensure all claims are supported with reasoning or evidence
+        - Address counterarguments if relevant to the question
+        
+        IMPORTANT: Provide only the essay content without any prefix like "Answer:" or "Response:". 
+        Return a complete, well-developed essay that fully addresses the question and meets all requirements.
         """
     
     def _get_math_prompt(self) -> str:
         return """
-        Solve the following mathematical problem concisely:
+        Solve the following mathematical problem completely and accurately. Show all work step-by-step.
         
         Problem: {question}
         Context: {context}
         
         Requirements:
-        - Give a direct, concise answer
-        - Show the calculation clearly but briefly
-        - Use simple language without technical jargon
-        - Include the final answer with units
-        - Keep it formal but accessible
+        - Show COMPLETE step-by-step solution process
+        - Identify and state the formula(s) being used
+        - Show all substitutions with actual values
+        - Perform all calculations clearly
+        - Include the final answer with proper units
+        - Check your work if possible
+        - Use clear mathematical notation
         
-        Format Examples:
-        - "Using v = at: 2 × 5 = 10 m/s"
-        - "Using t = sqrt(2h/g): sqrt(2 × 20 ÷ 9.8) = 2.0 s"
+        Solution Format:
+        1. Identify the given information
+        2. State the relevant formula(s)
+        3. Substitute values into the formula
+        4. Show calculation steps
+        5. State final answer with units
+        
+        Example Format:
+        "Given: v₀ = 0 m/s, a = 2 m/s², t = 5 s
+        Using: v = v₀ + at
+        Substituting: v = 0 + (2)(5)
+        Calculating: v = 10 m/s
+        Answer: 10 m/s"
         
         Style Guidelines:
-        - Be direct and to the point
-        - Use simple mathematical notation (×, ÷, sqrt)
-        - Avoid unnecessary explanations
-        - Keep calculations clear but brief
+        - Be thorough and show all work
+        - Use clear mathematical notation (×, ÷, √, etc.)
+        - Include units in all steps where applicable
+        - Ensure calculations are accurate
+        - Make the solution easy to follow
         
-        IMPORTANT: Provide only the answer content without any prefix like "Answer:" or "Response:".
-        Give a concise, direct answer to the specific question asked.
+        IMPORTANT: Provide only the solution content without any prefix like "Answer:" or "Response:".
+        Give a complete solution showing all work and the final answer with units.
         """
     
     def _get_physics_prompt(self) -> str:
@@ -800,24 +826,36 @@ return b'''
     
     def _get_code_prompt(self) -> str:
         return """
-        Complete the following programming task:
+        Complete the following programming task with a fully functional, well-implemented solution.
         
         Task: {question}
         Context: {context}
         
         Requirements:
-        - Write clean, well-commented code
+        - Write COMPLETE, working code that solves the problem
+        - If this is a TODO comment, replace it with full implementation
+        - If this is an empty function body (pass), implement the complete function
+        - If this is a function signature, provide the full function implementation
+        - Ensure code is syntactically correct and will execute without errors
         - Follow best practices for the programming language
-        - Include error handling where appropriate
-        - Provide a working solution
-        - If this is a TODO comment or empty function body (pass), provide the actual implementation
-        - If this is a function signature, implement the complete function
-        - Make sure the code is syntactically correct and functional
+        - Include appropriate error handling and edge case handling
+        - Add helpful comments explaining key logic (but don't over-comment)
+        - Make sure the code is production-ready quality
         
-        IMPORTANT: For TODO comments or empty function bodies, replace them with actual working code.
-        Do not provide explanations or comments about the code - just the implementation.
+        Code Quality Standards:
+        - Handle edge cases and error conditions
+        - Use appropriate data structures and algorithms
+        - Write readable, maintainable code
+        - Follow language-specific conventions and style guides
+        - Ensure proper indentation and formatting
+        - Include necessary imports/dependencies
         
-        Provide the complete code solution.
+        IMPORTANT: 
+        - For TODO comments or empty function bodies, replace them with actual working code
+        - Do NOT provide explanations or markdown formatting - ONLY the code implementation
+        - Return the complete, executable code solution
+        
+        Provide the complete code solution ready to use.
         """
     
     def _get_spreadsheet_prompt(self) -> str:
@@ -840,19 +878,28 @@ return b'''
     
     def _get_fill_in_blank_prompt(self) -> str:
         return """
-        Fill in the blank for the following question:
+        Fill in the blank(s) for the following question. Provide the most appropriate and accurate answer.
         
         Question: {question}
         Context: {context}
         Word Bank: {word_bank}
         
         Requirements:
-        - Choose the most appropriate word from the context
-        - If word bank is provided, prefer words from the bank
-        - Provide a single word or short phrase
-        - Ensure the answer makes grammatical and contextual sense
+        - Carefully read the entire sentence/question to understand context
+        - If a word bank is provided, choose the most appropriate word from the bank
+        - If no word bank, select the word/phrase that best fits grammatically and contextually
+        - Ensure the answer maintains the meaning and flow of the sentence
+        - Consider the grammatical structure (verb tense, singular/plural, etc.)
+        - Ensure the answer is factually correct based on the context
         
-        Provide only the answer.
+        Selection Criteria:
+        1. Grammatical correctness (part of speech, tense, number)
+        2. Contextual appropriateness (makes sense in the sentence)
+        3. Factual accuracy (if the question relates to specific knowledge)
+        4. Word bank match (if word bank provided, use words from it)
+        
+        IMPORTANT: Provide only the answer word or phrase without any prefix like "Answer:" or "Response:".
+        Give the most appropriate answer that completes the blank correctly.
         """
     
     def _get_multiple_choice_prompt(self) -> str:
@@ -873,26 +920,34 @@ return b'''
     
     def _get_short_answer_prompt(self) -> str:
         return """
-        Provide a concise, direct answer to the following question:
+        Provide a comprehensive, complete answer to the following question. This is part of an assignment that needs to be fully completed.
         
         Question: {question}
         Context: {context}
         
         Requirements:
-        - Give a direct, concise answer
-        - Include key facts and details
-        - Maintain accuracy while being clear
-        - Address the question directly
-        - Include specific examples when relevant but keep them brief
-        - For math/physics problems: Show work concisely (e.g., "Using v = at: 2 × 5 = 10 m/s")
-        - For conceptual questions: Provide clear explanations with brief examples
+        - Provide a COMPLETE answer that fully addresses the question
+        - Include all key facts, details, and relevant information
+        - For math/physics problems: Show ALL work step-by-step (formula → substitution → calculation → final answer with units)
+        - For conceptual questions: Provide thorough explanations with specific examples
+        - For definitions: Include complete explanations, not just keywords
+        - For "why" or "explain" questions: Provide detailed reasoning and context
+        - Ensure the answer demonstrates understanding of the topic
+        - Use appropriate academic tone and terminology
+        
+        Answer Quality Standards:
+        - Answers should be substantial enough to show comprehension
+        - Include specific examples, data, or evidence when relevant
+        - Show calculations completely for math/science problems
+        - Provide context and background for conceptual questions
+        - Make sure the answer is complete enough to stand alone
         
         Style Guidelines:
-        - Be direct and to the point
-        - Use simple language without unnecessary words
-        - Keep explanations clear but concise
-        - Avoid overly conversational tone
+        - Be clear and comprehensive while remaining focused
+        - Use proper academic language appropriate for the subject
+        - Structure answers logically (introduction → main points → conclusion if appropriate)
+        - Include necessary details without being overly verbose
         
         IMPORTANT: Provide only the answer content without any prefix like "Answer:" or "Response:".
-        Give a concise, direct answer to the specific question asked.
+        Give a complete, comprehensive answer that fully addresses the question and demonstrates thorough understanding.
         """

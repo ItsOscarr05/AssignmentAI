@@ -117,7 +117,7 @@ const DetailedFeatureComparison: React.FC<DetailedFeatureComparisonProps> = ({
           sx={{
             position: 'absolute',
             top: 8,
-            left: 8,
+            right: 8,
             color: 'red',
             zIndex: 2,
           }}
@@ -166,13 +166,11 @@ const DetailedFeatureComparison: React.FC<DetailedFeatureComparisonProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: 1,
                 }}
               >
-                <Box sx={{ fontSize: { xs: 18, md: 20 }, display: 'flex', alignItems: 'center' }}>
+                <Box sx={{ fontSize: { xs: 24, md: 28 }, display: 'flex', alignItems: 'center' }}>
                   {plan.icon}
                 </Box>
-                {plan.name}
               </Box>
             ))}
           </Box>

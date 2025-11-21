@@ -91,6 +91,22 @@ const AccountInformationDialog: React.FC<AccountInformationDialogProps> = ({
 }) => {
   const theme = useTheme();
 
+  // Calculate security score percentage and determine color/label
+  const securityScorePercentage = (securitySettings.securityScore / 60) * 100;
+  const getSecurityScoreColor = () => {
+    return theme.palette.info.main; // Blue for all scores
+  };
+  
+  const getSecurityScoreLabel = (percentage: number) => {
+    if (percentage < 25) return { label: 'Weak', color: 'info' as const };
+    if (percentage < 50) return { label: 'Fair', color: 'info' as const };
+    if (percentage < 80) return { label: 'Good', color: 'info' as const };
+    return { label: 'Protected', color: 'info' as const };
+  };
+
+  const securityScoreColor = getSecurityScoreColor();
+  const securityScoreInfo = getSecurityScoreLabel(securityScorePercentage);
+
   return (
     <Dialog
       open={open}
@@ -522,7 +538,7 @@ const AccountInformationDialog: React.FC<AccountInformationDialogProps> = ({
                     textAlign: 'center',
                     p: 3,
                     border: 2,
-                    borderColor: 'info.main',
+                    borderColor: securityScoreColor,
                     borderRadius: 2,
                     bgcolor: 'background.paper',
                     position: 'relative',
@@ -539,7 +555,7 @@ const AccountInformationDialog: React.FC<AccountInformationDialogProps> = ({
                   }}
                 >
                   <Box sx={{ mb: 2 }}>
-                    <VerifiedUserOutlined sx={{ fontSize: 32, color: 'info.main' }} />
+                    <VerifiedUserOutlined sx={{ fontSize: 32, color: securityScoreColor }} />
                   </Box>
                   <Box
                     sx={{
@@ -549,7 +565,7 @@ const AccountInformationDialog: React.FC<AccountInformationDialogProps> = ({
                       justifyContent: 'center',
                     }}
                   >
-                    <Typography variant="h4" color="success.main" fontWeight="bold" sx={{ mb: 1 }}>
+                    <Typography variant="h4" fontWeight="bold" sx={{ mb: 1, color: securityScoreColor }}>
                       {securitySettings.securityScore}
                     </Typography>
                     <Typography
@@ -562,7 +578,12 @@ const AccountInformationDialog: React.FC<AccountInformationDialogProps> = ({
                     </Typography>
                   </Box>
                   <Box sx={{ mt: 'auto' }}>
-                    <Chip label="Protected" size="small" color="success" variant="outlined" />
+                    <Chip 
+                      label={securityScoreInfo.label} 
+                      size="small" 
+                      color={securityScoreInfo.color} 
+                      variant="outlined" 
+                    />
                   </Box>
                 </Box>
               </Grid>
@@ -720,11 +741,15 @@ const AccountInformationDialog: React.FC<AccountInformationDialogProps> = ({
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                         <Typography variant="body2" color="text.secondary">
                           Used:{' '}
-                          {Math.round((dashboardStats.storageUsed / (1024 * 1024)) * 100) / 100} MB
+                          {dashboardStats.storageUsed >= 1024 * 1024 * 1024
+                            ? `${Math.round((dashboardStats.storageUsed / (1024 * 1024 * 1024)) * 100) / 100} GB`
+                            : `${Math.round((dashboardStats.storageUsed / (1024 * 1024)) * 100) / 100} MB`}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                           Limit:{' '}
-                          {Math.round((dashboardStats.storageLimit / (1024 * 1024)) * 100) / 100} MB
+                          {dashboardStats.storageLimit >= 1024 * 1024 * 1024
+                            ? `${Math.round((dashboardStats.storageLimit / (1024 * 1024 * 1024)) * 100) / 100} GB`
+                            : `${Math.round((dashboardStats.storageLimit / (1024 * 1024)) * 100) / 100} MB`}
                         </Typography>
                       </Box>
                       <LinearProgress
@@ -736,14 +761,22 @@ const AccountInformationDialog: React.FC<AccountInformationDialogProps> = ({
                         sx={{ height: 8, borderRadius: 4 }}
                         color={
                           dashboardStats.storageUsed / dashboardStats.storageLimit > 0.8
+                            ? 'error'
+                            : dashboardStats.storageUsed / dashboardStats.storageLimit > 0.6
                             ? 'warning'
-                            : 'error'
+                            : 'success'
                         }
                       />
                     </Box>
                     <Typography variant="body2" color="text.secondary">
                       {dashboardStats.storageUsed / dashboardStats.storageLimit > 0.8 ? (
-                        '⚠️ Storage space is running low!'
+                        <Box
+                          component="span"
+                          sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}
+                        >
+                          <Typography sx={{ color: 'error.main' }}>⚠️</Typography>
+                          Storage space is running low!
+                        </Box>
                       ) : (
                         <Box
                           component="span"
@@ -759,14 +792,17 @@ const AccountInformationDialog: React.FC<AccountInformationDialogProps> = ({
                     <Box sx={{ textAlign: 'center' }}>
                       <StorageOutlined sx={{ fontSize: 64, color: 'error.main', mb: 2 }} />
                       <Typography variant="h4" color="error.main" fontWeight="bold">
-                        {Math.round(
-                          ((dashboardStats.storageLimit - dashboardStats.storageUsed) /
-                            (1024 * 1024)) *
-                            100
-                        ) / 100}
+                        {(() => {
+                          const available = dashboardStats.storageLimit - dashboardStats.storageUsed;
+                          return available >= 1024 * 1024 * 1024
+                            ? `${Math.round((available / (1024 * 1024 * 1024)) * 100) / 100}`
+                            : `${Math.round((available / (1024 * 1024)) * 100) / 100}`;
+                        })()}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        MB Available
+                        {dashboardStats.storageLimit - dashboardStats.storageUsed >= 1024 * 1024 * 1024
+                          ? 'GB Available'
+                          : 'MB Available'}
                       </Typography>
                     </Box>
                   </Grid>

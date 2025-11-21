@@ -1,0 +1,29 @@
+Mathematics Assignment: Algebra and Geometry
+
+Name: _____________________
+Date: _____________________
+
+PART I: Algebra Problems
+
+Problem 1: Solve for x: 3x + 7 = 22
+Show your work:
+Answer: _____
+
+Problem 2: Simplify the expression: (2x + 3)(x - 4)
+Show your work:
+Answer: _____
+
+Problem 3: A rectangle has a length that is 5 cm more than its width. If the perimeter is 34 cm, find the dimensions.
+Show your work:
+Answer: _____
+
+PART II: Geometry Problems
+
+Problem 4: Find the area of a circle with radius 6 cm. Use π = 3.14
+Show your work:
+Answer: _____
+
+Problem 5: A triangle has sides of length 5 cm, 12 cm, and 13 cm. Is this a right triangle? Explain.
+Show your work:
+Answer: _____
+
