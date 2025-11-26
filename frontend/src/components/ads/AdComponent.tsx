@@ -81,21 +81,24 @@ const AdComponent: React.FC<AdComponentProps> = ({ position, adSlot }) => {
 
   const config = adConfigs[position];
 
+  // Build sx props based on position
+  const sxProps = {
+    width: config.width,
+    minHeight: config.height,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: '4px',
+    overflow: 'hidden',
+    ...(position === 'top' && { marginBottom: '20px' }),
+    ...(position === 'bottom' && { marginTop: '20px' }),
+    ...(position === 'sidebar' && { marginLeft: '20px' }),
+  };
+
   return (
     <Box
       ref={adRef}
-      sx={{
-        width: config.width,
-        minHeight: config.height,
-        marginBottom: config.marginBottom,
-        marginTop: config.marginTop,
-        marginLeft: config.marginLeft,
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderRadius: '4px',
-        overflow: 'hidden',
-      }}
+      sx={sxProps}
     >
       <ins
         className="adsbygoogle"
