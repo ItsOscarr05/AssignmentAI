@@ -43,17 +43,19 @@ export const SecurityProvider: React.FC<SecurityProviderProps> = ({ children }) 
           httpEquiv="Content-Security-Policy"
           content={`
             default-src 'self';
-            script-src 'self' 'unsafe-inline' 'unsafe-eval';
-            style-src 'self' 'unsafe-inline';
-            img-src 'self' data: https:;
-            font-src 'self' data:;
-            connect-src 'self' ${import.meta.env.VITE_API_URL};
+            script-src 'self' 'unsafe-inline' 'unsafe-eval' https://pagead2.googlesyndication.com https://www.googletagmanager.com;
+            style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+            img-src 'self' data: https: https://*.googleusercontent.com https://*.google.com;
+            font-src 'self' data: https://fonts.gstatic.com;
+            connect-src 'self' ${import.meta.env.VITE_API_URL} https://*.google.com https://*.googleapis.com;
+            frame-src 'self' https://*.google.com https://*.doubleclick.net https://tpc.googlesyndication.com;
+            child-src 'self' https://*.google.com https://*.doubleclick.net;
           `}
         />
 
         {/* Other security headers */}
         <meta httpEquiv="X-Content-Type-Options" content="nosniff" />
-        <meta httpEquiv="X-Frame-Options" content="DENY" />
+        <meta httpEquiv="X-Frame-Options" content="SAMEORIGIN" />
         <meta httpEquiv="X-XSS-Protection" content="1; mode=block" />
         <meta httpEquiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
 

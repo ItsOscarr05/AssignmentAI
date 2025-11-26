@@ -1,0 +1,5 @@
+# ads.txt file for AssignmentAI
+# This file authorizes Google AdSense and other authorized digital sellers
+
+google.com, pub-7776520245096503, DIRECT, f08c47fec0942fa0
+

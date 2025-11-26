@@ -1,53 +1,114 @@
-import { Box, Typography } from '@mui/material';
-import React from 'react';
+import { Box } from '@mui/material';
+import React, { useEffect, useRef } from 'react';
 import { useAdContext } from '../../contexts/AdContext';
+
+// Type declaration for Google AdSense
+declare global {
+  interface Window {
+    adsbygoogle: any[];
+  }
+}
 
 interface AdComponentProps {
   position: 'top' | 'bottom' | 'sidebar';
+  // Optional ad slot ID - if not provided, will use auto ads
+  adSlot?: string;
 }
 
-const AdComponent: React.FC<AdComponentProps> = ({ position }) => {
+const AdComponent: React.FC<AdComponentProps> = ({ position, adSlot }) => {
   const { showAds, isLoading } = useAdContext();
+  const adRef = useRef<HTMLDivElement>(null);
+  const adPushed = useRef(false);
 
-  if (isLoading || !showAds) {
-    return null;
-  }
+  // AdSense publisher ID
+  const adClient = 'ca-pub-7776520245096503';
 
-  // Different ad styles based on position
-  const adStyles = {
+  // Different ad configurations based on position
+  const adConfigs = {
     top: {
       width: '100%',
       height: '90px',
       marginBottom: '20px',
+      adFormat: 'auto' as const,
+      responsive: true,
     },
     bottom: {
       width: '100%',
       height: '90px',
       marginTop: '20px',
+      adFormat: 'auto' as const,
+      responsive: true,
     },
     sidebar: {
       width: '300px',
       height: '600px',
       marginLeft: '20px',
+      adFormat: 'vertical' as const,
+      responsive: false,
     },
   };
 
+  useEffect(() => {
+    if (isLoading || !showAds || adPushed.current) {
+      return;
+    }
+
+    // Wait for AdSense script to load
+    const tryPushAd = () => {
+      if (typeof window !== 'undefined' && window.adsbygoogle) {
+        try {
+          // Push ad configuration to AdSense queue
+          (window.adsbygoogle = window.adsbygoogle || []).push({});
+          adPushed.current = true;
+        } catch (error) {
+          console.error(`[AdComponent:${position}] Error loading ad:`, error);
+        }
+      } else {
+        // Retry after a short delay if script hasn't loaded yet
+        setTimeout(tryPushAd, 100);
+      }
+    };
+
+    // Small delay to ensure DOM is ready
+    const timeoutId = setTimeout(tryPushAd, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [isLoading, showAds, position]);
+
+  if (isLoading || !showAds) {
+    return null;
+  }
+
+  const config = adConfigs[position];
+
   return (
     <Box
+      ref={adRef}
       sx={{
-        ...adStyles[position],
-        backgroundColor: '#f5f5f5',
+        width: config.width,
+        minHeight: config.height,
+        marginBottom: config.marginBottom,
+        marginTop: config.marginTop,
+        marginLeft: config.marginLeft,
         display: 'flex',
-        alignItems: 'center',
         justifyContent: 'center',
+        alignItems: 'center',
         borderRadius: '4px',
-        border: '1px solid #e0e0e0',
+        overflow: 'hidden',
       }}
     >
-      <Typography variant="body2" color="text.secondary">
-        Advertisement
-      </Typography>
-      {/* Here you would integrate your actual ad network (e.g., Google AdSense) */}
+      <ins
+        className="adsbygoogle"
+        style={{
+          display: 'block',
+          width: '100%',
+          height: config.height,
+        }}
+        data-ad-client={adClient}
+        {...(adSlot && { 'data-ad-slot': adSlot })}
+        data-ad-format={config.adFormat}
+        data-full-width-responsive={config.responsive ? 'true' : 'false'}
+      />
     </Box>
   );
 };
