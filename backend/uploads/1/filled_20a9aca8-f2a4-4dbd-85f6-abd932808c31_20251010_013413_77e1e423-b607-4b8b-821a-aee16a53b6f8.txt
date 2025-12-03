@@ -1,9 +1,0 @@
-Physics I – Kinematics Quiz
-Physics I – Kinematics Quiz
-Q1) A car accelerates from rest at 2 m/s^2 for 5 s. What is its final velocity?
-Q2) Drop a ball from 20 m (no air resistance). Approximate time to hit the ground?
-Q3) 60–80 words: Explain difference between velocity and speed with an example.
-
-Q1) A car accelerates from rest at 2 m/s^2 for 5 s. What is its final velocity?
-Q2) Drop a ball from 20 m (no air resistance). Approximate time to hit the ground?
-Q3) 60–80 words: Explain difference between velocity and speed with an example.: Velocity and speed both measure how fast an object is moving, but they differ in directionality. Speed is a scalar quantity that represents how fast an object travels without considering its direction, while velocity is a vector quantity that includes both speed and direction. For example, a car traveling at 60 km/h is described by its speed, whereas if it is moving north at 60 km/h, that specifies its velocity. Thus, velocity indicates both how fast and in which direction the object is moving.

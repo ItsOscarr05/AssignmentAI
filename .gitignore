@@ -280,6 +280,9 @@ backups/
 db_backup_*
 files_backup_*
 
+# Archived files
+archived/
+
 # Large media and data files
 *.mov
 *.avi

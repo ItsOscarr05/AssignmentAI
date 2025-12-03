@@ -1,2 +1,0 @@
-original_filename:20251009_213940_3994fd62-6619-4fd4-9b1c-98eb883c7d8f.csv
-clean_download_name:file_filled_20251009_1740.csv
